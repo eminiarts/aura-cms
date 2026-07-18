@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Models\Scopes;
 
+use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class TeamScope implements Scope
 {
@@ -47,9 +49,21 @@ class TeamScope implements Scope
 
                 // Only apply team scoping if teams are enabled
                 if (config('aura.teams') && $currentTeamId) {
-                    $builder->whereHas('teams', function ($query) use ($currentTeamId) {
-                        $query->where('teams.id', $currentTeamId);
-                    });
+                    // A Global Admin transcends the tenant boundary: their user
+                    // queries are never restricted to current-team members. The
+                    // bypass is gated strictly on the authenticated user being a
+                    // Global Admin, so it never leaks into ordinary requests.
+                    // (Auth::user() is already resolved here; the $applying guard
+                    // above prevents any re-entry while it is read.) The gate is
+                    // consulted directly so the check is host-overridable and safe
+                    // for any authenticatable, not only the Aura User model.
+                    $authUser = Auth::user();
+
+                    if (! ($authUser && Gate::forUser($authUser)->allows(User::GLOBAL_ADMIN_GATE))) {
+                        $builder->whereHas('teams', function ($query) use ($currentTeamId) {
+                            $query->where('teams.id', $currentTeamId);
+                        });
+                    }
                 }
 
                 self::$applying = false;
@@ -68,6 +82,19 @@ class TeamScope implements Scope
 
             // For Team model, don't apply team scope
             if ($model->getTable() === 'teams') {
+                self::$applying = false;
+
+                return;
+            }
+
+            // Roles resolve against the Role Catalog: within a team, queries see
+            // both the team's own Team Roles and the shared Global Roles
+            // (team_id = null). The merged/de-duplicated Roles UI is handled
+            // elsewhere; here we only make Global Roles visible at the query
+            // layer. Shadow resolution itself goes through Role::resolveForTeam.
+            if ($model instanceof Role) {
+                $model->scopeVisibleToTeam($builder, $currentTeamId);
+
                 self::$applying = false;
 
                 return;

@@ -70,7 +70,8 @@ test('created user can log in with the provided password', function () {
 
 test('user created in a team context is assigned to the correct team', function () {
     $team = $this->user->currentTeam;
-    $role = Role::where('team_id', $team->id)->where('slug', 'admin')->first();
+    // Attach-don't-mint: the assignable admin role is the shared Global Role.
+    $role = globalAdminRole();
 
     Livewire::test(Create::class, ['slug' => 'user'])
         ->set('form.fields.name', 'Team User')
@@ -86,10 +87,11 @@ test('user created in a team context is assigned to the correct team', function 
 
     expect($newUser)->not->toBeNull();
 
-    // User should have the role with the correct team
+    // The user holds the role via a Membership scoped to the team (pivot),
+    // even though the shared Global Role row carries team_id = null.
     $userRoles = $newUser->roles;
     expect($userRoles)->not->toBeEmpty();
-    expect($userRoles->first()->team_id)->toBe($team->id);
+    expect($userRoles->first()->pivot->team_id)->toBe($team->id);
     expect($newUser->current_team_id)->toBe($team->id);
 })->skip(fn () => ! config('aura.teams'), 'Team assignment requires teams enabled.');
 
@@ -115,7 +117,8 @@ test('client cannot assign a new user to another team', function () {
 
 test('user created with a role can log in and access the correct team', function () {
     $team = $this->user->currentTeam;
-    $role = Role::where('team_id', $team->id)->where('slug', 'admin')->first();
+    // Attach-don't-mint: the assignable admin role is the shared Global Role.
+    $role = globalAdminRole();
 
     Livewire::test(Create::class, ['slug' => 'user'])
         ->set('form.fields.name', 'Full Flow User')

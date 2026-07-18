@@ -46,36 +46,44 @@ describe('Permissions Table Structure', function () {
     });
 });
 
-describe('Team Role Creation', function () {
-    it('creates default admin role when team is created', function () {
+describe('Team Membership Creation', function () {
+    // Attach-don't-mint: creating a team no longer mints a per-team admin role;
+    // the creator is attached to the shared global `admin` role (team_id = null).
+    it('attaches the creator to the global admin role when team is created', function () {
         $team = Team::factory()->create();
 
-        $this->assertDatabaseHas('roles', [
+        $globalAdmin = Role::withoutGlobalScopes()
+            ->whereNull('team_id')
+            ->where('slug', 'admin')
+            ->first();
+
+        expect($globalAdmin)->not->toBeNull();
+        expect($globalAdmin->super_admin)->toBeTrue();
+
+        $this->assertDatabaseHas('user_role', [
             'team_id' => $team->id,
-            'name' => 'Admin',
-            'super_admin' => true,
+            'user_id' => $this->user->id,
+            'role_id' => $globalAdmin->id,
         ]);
     });
 
-    it('admin role has correct slug', function () {
+    it('does not mint a per-team admin role', function () {
         $team = Team::factory()->create();
 
-        $role = Role::withoutGlobalScopes()
+        $perTeamRole = Role::withoutGlobalScopes()
             ->where('team_id', $team->id)
-            ->where('super_admin', true)
-            ->first();
+            ->exists();
 
-        expect($role->slug)->toBe('admin');
+        expect($perTeamRole)->toBeFalse();
     });
 
-    it('admin role has super_admin flag set to true', function () {
+    it('makes the creator a super admin of the new team via the global role', function () {
         $team = Team::factory()->create();
 
-        $role = Role::withoutGlobalScopes()
-            ->where('team_id', $team->id)
-            ->first();
+        $this->user->update(['current_team_id' => $team->id]);
+        $this->user->refresh();
 
-        expect($role->super_admin)->toBeTrue();
+        expect($this->user->isSuperAdmin())->toBeTrue();
     });
 });
 
@@ -155,26 +163,34 @@ describe('Role Permissions Structure', function () {
 });
 
 describe('Role Team Association', function () {
-    it('role belongs to a team', function () {
+    it('a Team Role belongs to a team', function () {
         $team = Team::factory()->create();
 
-        $role = Role::withoutGlobalScopes()
-            ->where('team_id', $team->id)
-            ->first();
+        // A genuine Team Role (as opposed to the shared global admin) still
+        // carries the team_id it was created under.
+        $role = Role::create([
+            'name' => 'Editor',
+            'slug' => 'editor',
+            'team_id' => $team->id,
+            'permissions' => [],
+        ]);
 
         expect($role->team_id)->toBe($team->id);
     });
 
-    it('different teams have separate roles', function () {
+    it('teams share the single global admin role rather than minting separate rows', function () {
         $team1 = Team::factory()->create();
         $team2 = Team::factory()->create();
 
-        $team1Roles = Role::withoutGlobalScopes()->where('team_id', $team1->id)->count();
-        $team2Roles = Role::withoutGlobalScopes()->where('team_id', $team2->id)->count();
+        // No per-team admin rows are minted for either team.
+        expect(Role::withoutGlobalScopes()->where('team_id', $team1->id)->count())->toBe(0);
+        expect(Role::withoutGlobalScopes()->where('team_id', $team2->id)->count())->toBe(0);
 
-        // Each team should have at least one role (admin)
-        expect($team1Roles)->toBeGreaterThanOrEqual(1);
-        expect($team2Roles)->toBeGreaterThanOrEqual(1);
+        // Both teams' Memberships resolve to the same shared global admin role.
+        $globalAdmin = globalAdminRole();
+
+        $this->assertDatabaseHas('user_role', ['team_id' => $team1->id, 'role_id' => $globalAdmin->id]);
+        $this->assertDatabaseHas('user_role', ['team_id' => $team2->id, 'role_id' => $globalAdmin->id]);
     });
 });
 

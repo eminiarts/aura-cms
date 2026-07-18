@@ -91,7 +91,7 @@ describe('Registration With Teams', function () {
         expect($user->current_team_id)->toBe($team->id);
     });
 
-    test('team role is created on registration', function () {
+    test('registrant is attached to the global admin role on registration', function () {
         Team::factory()->create();
 
         $this->post(route('aura.register'), [
@@ -103,8 +103,12 @@ describe('Registration With Teams', function () {
         ]);
 
         $team = Team::where('name', 'New Team')->first();
+        $user = User::where('email', 'newuser@example.com')->first();
 
-        $this->assertDatabaseHas('roles', ['team_id' => $team->id]);
+        // Attach-don't-mint: no per-team role row; the registrant holds the
+        // shared global admin role (team_id = null) via a Membership.
+        $this->assertDatabaseMissing('roles', ['team_id' => $team->id]);
+        $this->assertDatabaseHas('user_role', ['team_id' => $team->id, 'user_id' => $user->id]);
     });
 
     test('registered event is dispatched', function () {
@@ -224,6 +228,27 @@ describe('Registration Without Teams', function () {
         ])
             ->assertSessionDoesntHaveErrors('team');
     });
+
+    test('registration self-heals the user role when the catalog was never seeded', function () {
+        $roleModel = app(config('aura.resources.role'));
+
+        // Precondition: the default `user` Global Role does not exist (bare
+        // migrate, no seeder run).
+        expect($roleModel::where('slug', 'user')->exists())->toBeFalse();
+
+        $this->post(route('aura.register'), [
+            'name' => 'Fresh User',
+            'email' => 'fresh-noseed@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])->assertRedirect(config('aura.auth.redirect'));
+
+        $this->assertAuthenticated();
+
+        $user = app(config('aura.resources.user'))::where('email', 'fresh-noseed@example.com')->first();
+        expect($user)->not->toBeNull();
+        expect($user->hasRole('user'))->toBeTrue();
+    })->skip(fn () => Schema::hasColumn('user_role', 'team_id'), 'Teams-off registration self-heal (runs on the teams-off schema).');
 
     test('name is required', function () {
         $this->post(route('aura.register'), [

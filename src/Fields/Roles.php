@@ -70,7 +70,13 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
             $roles = $row->getRelation('roles');
 
             if (config('aura.teams')) {
-                $roles = $roles->where('team_id', $row->getAttribute('current_team_id'))->values();
+                // Filter by the Membership pivot's team_id so Global Roles (held
+                // via a Membership but carrying team_id = null on the role row)
+                // are kept for the row's current team.
+                $currentTeamId = $row->getAttribute('current_team_id');
+                $roles = $roles
+                    ->filter(fn ($role) => optional($role->pivot)->team_id == $currentTeamId)
+                    ->values();
             }
 
             $row->setTableDisplayValue($slug, $roles);
@@ -80,7 +86,11 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
     public function relationship($model, $field)
     {
         if (config('aura.teams')) {
-            return $model->roles()->where('roles.team_id', $model->current_team_id);
+            // A user's roles in a team are resolved through the Membership pivot,
+            // not the role row's team_id. Filtering on roles.team_id would drop
+            // Global Roles (team_id = null) the user holds via a Membership, e.g.
+            // the shared global admin role. Filter on the pivot's team_id instead.
+            return $model->roles()->wherePivot('team_id', $model->current_team_id);
         }
 
         return $model->roles();
@@ -106,7 +116,12 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
         if (config('aura.teams')) {
             $teamId = $post->current_team_id ?? optional(auth()->user())->current_team_id;
             $currentRoles->wherePivot('team_id', $teamId);
-            $assignableRoles->where('team_id', $teamId);
+
+            // Assignable roles are the current team's own Team Roles plus the
+            // shared Global Roles (team_id = null) from the catalog. Roles owned
+            // by another team stay unassignable, so cross-team injection is still
+            // refused. (The super_admin escalation guard below is unchanged.)
+            $assignableRoles->visibleToTeam($teamId);
         }
 
         $requestedRoles = $assignableRoles->whereKey($roleIds)->get();
@@ -171,5 +186,21 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
         // Roles use a per-row team constraint that generic eager loading cannot
         // express; they are batched via preloadTableDisplay() instead.
         return null;
+    }
+
+    /**
+     * The user-form role picker offers the merged, shadow-resolved catalog: each
+     * slug once, the team's Shadow winning over the Global Role it shadows — the
+     * same resolved set the Roles index and the invitation modal present, so a
+     * shadowed Global Role never shows up twice in the search results. The search
+     * and result-mapping plumbing lives in AdvancedSelect::api(); this field only
+     * contributes the shadowResolved() constraint through the constrainApiQuery()
+     * hook.
+     */
+    protected function constrainApiQuery($query, $request): void
+    {
+        if (config('aura.teams') && method_exists($query->getModel(), 'scopeShadowResolved')) {
+            $query->shadowResolved(Role::currentTeamIdForResolution());
+        }
     }
 }

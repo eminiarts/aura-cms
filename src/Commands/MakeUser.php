@@ -8,6 +8,7 @@ use Aura\Base\Resources\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Auth;
 
+use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\password;
 use function Laravel\Prompts\text;
 
@@ -18,13 +19,25 @@ class MakeUser extends Command
     protected $signature = 'aura:user
                             {--name= : The name of the user}
                             {--email= : A valid email address}
-                            {--password= : The password for the user}';
+                            {--password= : The password for the user}
+                            {--global-admin : Grant the user instance-level Global Admin status}';
 
     public function handle(): int
     {
         $name = $this->option('name') ?? text('What is your name?');
         $email = $this->option('email') ?? text('What is your email?');
         $password = $this->option('password') ?? password('What is your password?');
+
+        $globalAdmin = (bool) $this->option('global-admin');
+
+        // Offer the Global Admin choice on any interactive run that did not
+        // already pass --global-admin — including partial-option runs like
+        // `aura:user --name=X`. Non-interactive runs (scripts, CI, --no-interaction)
+        // keep the flag off unless --global-admin was passed, so automation is
+        // never blocked on a prompt.
+        if (! $globalAdmin && $this->input->isInteractive()) {
+            $globalAdmin = confirm(label: 'Should this user be a Global Admin?', default: false);
+        }
 
         /** @var User $user */
         $user = User::create([
@@ -46,18 +59,20 @@ class MakeUser extends Command
 
             $user->forceFill(['current_team_id' => $team->id])->save();
         } else {
-            // Create an Admin role without team association
-            $role = Role::create([
-                'name' => 'Admin',
-                'slug' => 'admin',
-                'description' => 'Admin can perform everything.',
-                'super_admin' => true,
-                'permissions' => [],
-            ]);
+            // Reuse the seeded admin Global Role, self-healing it from the shared
+            // catalog defaults if the catalog was not seeded.
+            $role = Role::firstOrCreateCatalogRole('admin');
 
             // This bootstrap command creates the first administrator, so attach
             // the role directly instead of going through delegated role editing.
             $user->roles()->sync([$role->id]);
+        }
+
+        // The CLI is a trusted bootstrap path, so it writes the flag directly.
+        // saveQuietly bypasses the field pipeline's Global Admin escalation guard
+        // (which would otherwise refuse, as the actor is not yet a Global Admin).
+        if ($globalAdmin) {
+            $user->forceFill(['global_admin' => true])->saveQuietly();
         }
 
         $this->info('User created successfully.');
