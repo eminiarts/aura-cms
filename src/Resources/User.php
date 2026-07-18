@@ -409,7 +409,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             [
                 'name' => 'Teams',
                 'slug' => 'teams',
-                'type' => 'Aura\\Base\\Fields\\BelongsToMany',
+                'type' => 'Aura\\Base\\Fields\\UserTeams',
                 'resource' => 'Aura\\Base\\Resources\\Team',
                 'validation' => '',
                 'wrapper' => '',
