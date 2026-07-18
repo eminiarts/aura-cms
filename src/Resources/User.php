@@ -4,6 +4,7 @@ namespace Aura\Base\Resources;
 
 use Aura\Base\Database\Factories\UserFactory;
 use Aura\Base\Resource;
+use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
 use Aura\Base\Traits\ProfileFields;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\MustVerifyEmail;
@@ -327,7 +328,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             [
                 'name' => 'Email',
                 'type' => 'Aura\\Base\\Fields\\Email',
-                'validation' => 'required|email',
+                // Case-insensitive uniqueness: reject an email that already
+                // belongs to another user (any casing), instead of surfacing a
+                // raw DB unique-constraint 500. The Edit form ignores the current
+                // record automatically (see Edit::ignoreCurrentModelInRule).
+                'validation' => ['required', 'email', new CaseInsensitiveUniqueEmail],
                 'on_index' => true,
                 'searchable' => true,
                 'slug' => 'email',
