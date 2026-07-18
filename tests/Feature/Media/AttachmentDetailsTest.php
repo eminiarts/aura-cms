@@ -2,6 +2,7 @@
 
 use Aura\Base\Livewire\AttachmentDetails;
 use Aura\Base\Resources\Attachment;
+use Aura\Base\Resources\Role;
 
 use function Pest\Livewire\livewire;
 
@@ -27,6 +28,23 @@ test('opening the panel loads the attachment', function () {
         ->assertSet('title', 'photo.jpg')
         ->assertSee('Details')
         ->assertSee('2 KB');
+});
+
+test('the attachment id cannot bypass the view policy', function () {
+    $user = createAdmin();
+    $role = Role::where('slug', 'editor')->firstOrFail();
+    $permissions = $role->permissions;
+    $permissions['view-attachment'] = false;
+    $permissions['viewAny-attachment'] = true;
+    $role->update(['permissions' => $permissions]);
+
+    $this->actingAs($user->refresh());
+
+    $attachment = detailsAttachment('private.jpg');
+
+    livewire(AttachmentDetails::class)
+        ->call('open', $attachment->id)
+        ->assertForbidden();
 });
 
 test('editing the title persists to the attachment name', function () {

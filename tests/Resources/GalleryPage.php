@@ -14,7 +14,7 @@ class GalleryPage extends Resource
 
     public static string $type = 'GalleryPage';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

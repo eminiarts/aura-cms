@@ -4,6 +4,7 @@ namespace Aura\Base\Tests;
 
 use Aura\Base\Facades\Aura;
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Foundation\Application;
 
 class BrowserTestCase extends TestCase
 {
@@ -28,7 +29,10 @@ class BrowserTestCase extends TestCase
         $this->serveBuiltAssets();
     }
 
-    protected function defineEnvironment($app)
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
     {
         parent::defineEnvironment($app);
 

@@ -13,7 +13,7 @@
 >
     <div class="grid grid-cols-2 gap-2 my-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-3 md:gap-4 lg:gap-5 sm:my-3 md:my-4 lg:my-5">
         @forelse($rows as $row)
-        <div class="relative select-none" wire:key="grid_{{ $row->id }}">
+        <div class="relative group select-none" wire:key="grid_{{ $row->id }}">
             {{-- Picker: a card click only toggles selection (pure client state, no
                  Livewire roundtrip — mixing both races the entangled selection).
                  Index: a card click opens the Details Panel; the checkbox selects. --}}
@@ -21,7 +21,7 @@
                 x-on:click="@if ($field) toggleRow($event, {{ $row->id }}) @else Livewire.dispatch('open-attachment-details', { id: {{ $row->id }}, ids: rows.map(Number) }) @endif"
                 data-attachment-card="{{ $row->id }}">
                 <div class="relative">
-                    <div class="overflow-hidden relative w-full bg-gray-100 rounded-lg shadow-sm transition-all duration-300 ease-in-out dark:bg-gray-800 group aspect-w-10 aspect-h-7 hover:shadow-md focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100"
+                    <div class="overflow-hidden relative w-full bg-gray-100 rounded-lg shadow-sm transition-all duration-300 ease-in-out dark:bg-gray-800 aspect-w-10 aspect-h-7 hover:shadow-md focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100"
                         :class="{
                             'shadow-[inset_0_0_0_4px_theme(colors.primary.500)]': selected.includes('{{ $row->id }}'),
                             'opacity-50': maxFilesReached && !selected.includes('{{ $row->id }}'),
@@ -39,7 +39,7 @@
                             x-on:click.stop.prevent="Livewire.dispatch('open-attachment-details', { id: {{ $row->id }}, ids: rows.map(Number) })"
                             data-attachment-info="{{ $row->id }}"
                             aria-label="{{ __('Show details') }}"
-                            class="flex absolute right-3 bottom-3 justify-center items-center w-7 h-7 text-gray-600 rounded-full shadow-sm opacity-0 transition bg-white/90 hover:bg-white hover:text-gray-900 group-hover:opacity-100 dark:bg-gray-900/80 dark:text-gray-300 dark:hover:text-white"
+                            class="flex absolute right-3 bottom-3 justify-center items-center w-7 h-7 text-gray-600 rounded-full shadow-sm opacity-0 transition bg-white/90 hover:bg-white hover:text-gray-900 group-hover:opacity-100 focus-visible:opacity-100 dark:bg-gray-900/80 dark:text-gray-300 dark:hover:text-white"
                         >
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
                         </button>

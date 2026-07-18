@@ -74,3 +74,20 @@ test('a blocked file fails with a reason while the rest of the batch succeeds', 
     expect($attachments)->toHaveCount(1)
         ->and($attachments->first()->name)->toBe('photo.jpg');
 });
+
+test('a server-rejected file does not block the next upload', function () {
+    $page = visit('/admin/attachment');
+
+    browserAttachFiles($page, '#file-upload', [
+        __DIR__.'/fixtures/invalid.json',
+        __DIR__.'/fixtures/photo.jpg',
+    ]);
+
+    $page->wait(3);
+
+    $page->assertSee('invalid.json')
+        ->assertSee('must be a file of type')
+        ->assertSee('Uploaded');
+
+    expect(Attachment::query()->get()->map(fn (Attachment $attachment) => $attachment->name)->all())->toBe(['photo.jpg']);
+});

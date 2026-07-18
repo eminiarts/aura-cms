@@ -3,8 +3,11 @@
 use Aura\Base\Livewire\MediaUploader;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resources\Attachment;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
+use Livewire\Features\SupportTesting\Testable;
 
 use function Pest\Livewire\livewire;
 
@@ -29,11 +32,11 @@ function createAttachmentWithMime(string $name, string $mime, ?Carbon $createdAt
     return $attachment;
 }
 
-function mediaTable()
+function mediaTable(?Attachment $attachment = null): Testable
 {
     return livewire(Table::class, [
         'query' => null,
-        'model' => new Attachment,
+        'model' => $attachment ?? new Attachment,
         'settings' => [
             'default_view' => 'list',
             'actions' => false,
@@ -73,6 +76,53 @@ test('document quick filter means not image video or audio', function () {
 
     expect($rows->getCollection()->map(fn ($r) => $r->name)->sort()->values()->all())
         ->toBe(['archive.zip', 'data.csv', 'doc.pdf']);
+});
+
+test('type quick filters support custom-table attachments without meta', function () {
+    Schema::create('custom_table_attachments', function (Blueprint $table): void {
+        $table->id();
+        $table->string('name');
+        $table->string('url');
+        $table->string('title');
+        $table->unsignedBigInteger('size');
+        $table->string('mime_type');
+        $table->unsignedInteger('width')->nullable();
+        $table->unsignedInteger('height')->nullable();
+        $table->foreignId('user_id')->nullable();
+        $table->foreignId('team_id')->nullable();
+        $table->timestamps();
+    });
+
+    try {
+        CustomTableAttachment::withoutEvents(function (): void {
+            CustomTableAttachment::create([
+                'name' => 'photo.jpg',
+                'url' => 'media/photo.jpg',
+                'title' => 'photo.jpg',
+                'size' => 100,
+                'mime_type' => 'image/jpeg',
+                'user_id' => auth()->id(),
+                'team_id' => auth()->user()->current_team_id,
+            ]);
+            CustomTableAttachment::create([
+                'name' => 'document.pdf',
+                'url' => 'media/document.pdf',
+                'title' => 'document.pdf',
+                'size' => 100,
+                'mime_type' => 'application/pdf',
+                'user_id' => auth()->id(),
+                'team_id' => auth()->user()->current_team_id,
+            ]);
+        });
+
+        $component = mediaTable(new CustomTableAttachment)
+            ->call('setQuickFilter', 'type', 'image');
+
+        expect($component->instance()->rows->getCollection()->pluck('name')->all())
+            ->toBe(['photo.jpg']);
+    } finally {
+        Schema::dropIfExists('custom_table_attachments');
+    }
 });
 
 test('month quick filter narrows by upload month', function () {
@@ -146,3 +196,14 @@ test('alt text persists on an attachment', function () {
 
     expect(Attachment::find($attachment->id)->alt_text)->toBe('A blue square with white text');
 });
+
+class CustomTableAttachment extends Attachment
+{
+    public static $customTable = true;
+
+    public static bool $usesMeta = false;
+
+    protected $guarded = [];
+
+    protected $table = 'custom_table_attachments';
+}

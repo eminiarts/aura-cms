@@ -101,9 +101,9 @@ class Table extends Component
      * Resource-defined quick filters (e.g. media type, upload month).
      * The resource interprets these in its indexQuery() hook.
      *
-     * @var array<string, mixed>
+     * @var array<string, string|int|float|bool|array|null>
      */
-    public $quickFilters = [];
+    public array $quickFilters = [];
 
     public $resource;
 
@@ -155,11 +155,9 @@ class Table extends Component
 
     /**
      * Get the create link.
-     *
-     * @return string|null
      */
     #[Computed]
-    public function createLink()
+    public function createLink(): ?string
     {
         if ($this->settings['create_url']) {
             return $this->settings['create_url'];
@@ -420,11 +418,8 @@ class Table extends Component
 
     /**
      * Set or clear a quick filter. Passing null or '' clears the key.
-     *
-     * @param  mixed  $value
-     * @return void
      */
-    public function setQuickFilter(string $key, $value)
+    public function setQuickFilter(string $key, string|int|float|bool|array|null $value): void
     {
         if ($value === null || $value === '') {
             unset($this->quickFilters[$key]);

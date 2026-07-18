@@ -3,6 +3,7 @@
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Tests\Resources\GalleryPage;
 use Illuminate\Support\Facades\Storage;
+use Pest\Browser\Api\PendingAwaitablePage;
 
 // GalleryPage is registered (with routes) in BrowserTestCase::setUp.
 beforeEach(function () {
@@ -28,10 +29,10 @@ function seedPickerAttachment(string $name): Attachment
  * The picker's selection is client-side state until "Select" submits it —
  * read it straight from Alpine.
  */
-function pickerSelection($page): array
+function pickerSelection(PendingAwaitablePage $page): array
 {
     $json = $page->script(
-        "JSON.stringify(Alpine.\$data(document.querySelector('[data-attachment-card]').closest('[x-data]')).selected)"
+        "JSON.stringify(Alpine.\$data(document.querySelector('[data-attachment-table]')).selected)"
     );
 
     return array_map('intval', json_decode((string) $json, true) ?: []);
@@ -108,6 +109,7 @@ test('uploading inside the picker auto-selects the new attachment', function () 
     $attachment = Attachment::query()->first();
 
     expect($attachment)->not->toBeNull();
+    expect(pickerSelection($page))->toBe([$attachment->id]);
 
     // The fresh upload is selected without any manual click; Select + Save
     // proves it flowed into the field.
@@ -127,6 +129,14 @@ test('the picker details sidebar edits alt text and offers no delete', function 
     $page = visit('/admin/gallery-page/create');
 
     $page->click('[data-media-picker-button="gallery"]')->wait(2);
+
+    $page->hover('[data-attachment-card="'.$attachment->id.'"]')->wait(1);
+
+    $opacity = $page->script(
+        'getComputedStyle(document.querySelector(\'[data-attachment-info="'.$attachment->id.'"]\')).opacity'
+    );
+
+    expect((string) $opacity)->toBe('1');
 
     $page->click('[data-attachment-info="'.$attachment->id.'"]')->wait(1);
 

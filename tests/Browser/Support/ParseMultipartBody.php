@@ -5,6 +5,7 @@ namespace Aura\Base\Tests\Browser\Support;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Pest's in-process browser HTTP server hands multipart POST bodies to the
@@ -14,7 +15,7 @@ use Illuminate\Http\UploadedFile;
  */
 class ParseMultipartBody
 {
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
         $contentType = (string) $request->headers->get('content-type', '');
 
@@ -32,7 +33,7 @@ class ParseMultipartBody
         return $next($request);
     }
 
-    private static function assign(array &$target, string $name, mixed $value): void
+    private static function assign(array &$target, string $name, string|UploadedFile $value): void
     {
         if (preg_match('/^([^\[]+)\[([^\]]*)\]$/', $name, $matches)) {
             if ($matches[2] === '') {

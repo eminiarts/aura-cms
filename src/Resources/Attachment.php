@@ -3,7 +3,9 @@
 namespace Aura\Base\Resources;
 
 use Aura\Base\Jobs\GenerateImageThumbnail;
+use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -354,26 +356,40 @@ class Attachment extends Resource
     /**
      * Apply the table's quick filters (media type, upload month).
      */
-    public function indexQuery($query, $table = null)
+    public function indexQuery(Builder $query, ?Table $table = null): Builder
     {
-        $filters = $table->quickFilters ?? [];
+        $filters = $table?->quickFilters ?? [];
 
         $type = $filters['type'] ?? null;
 
         if ($type !== null && array_key_exists($type, self::MEDIA_TYPES)) {
-            $query->whereHas('meta', function ($meta) use ($type) {
-                $meta->where('key', 'mime_type');
+            if ($this->isMetaField('mime_type')) {
+                $query->whereHas('meta', function (Builder $meta) use ($type): void {
+                    $meta->where('key', 'mime_type');
+
+                    if ($type === 'document') {
+                        $meta->where(function (Builder $value): void {
+                            foreach (['image/%', 'video/%', 'audio/%'] as $prefix) {
+                                $value->where('value', 'not like', $prefix);
+                            }
+                        });
+                    } else {
+                        $meta->where('value', 'like', $type.'/%');
+                    }
+                });
+            } else {
+                $mimeTypeColumn = $this->qualifyColumn('mime_type');
 
                 if ($type === 'document') {
-                    $meta->where(function ($value) {
+                    $query->where(function (Builder $value) use ($mimeTypeColumn): void {
                         foreach (['image/%', 'video/%', 'audio/%'] as $prefix) {
-                            $value->where('value', 'not like', $prefix);
+                            $value->where($mimeTypeColumn, 'not like', $prefix);
                         }
                     });
                 } else {
-                    $meta->where('value', 'like', $type.'/%');
+                    $query->where($mimeTypeColumn, 'like', $type.'/%');
                 }
-            });
+            }
         }
 
         $month = $filters['month'] ?? null;

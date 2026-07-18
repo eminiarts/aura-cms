@@ -12,7 +12,7 @@ use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
-use Pest\Browser\Api\Webpage;
+use Pest\Browser\Api\PendingAwaitablePage;
 
 uses(TestCase::class)->in(__DIR__.'/Feature', __DIR__.'/FeatureWithDatabaseMigrations', __DIR__.'/Unit');
 
@@ -259,11 +259,10 @@ function createAdmin()
  * into the input via JavaScript and fires a `change` event — the same thing
  * a user's file-picker selection does.
  *
- * @param  Webpage  $page
  * @param  string  $selector  CSS selector of the file input
  * @param  array<int, string>|string  $paths  Fixture file path(s)
  */
-function browserAttachFiles($page, string $selector, array|string $paths): void
+function browserAttachFiles(PendingAwaitablePage $page, string $selector, array|string $paths): void
 {
     $payload = collect((array) $paths)->map(fn (string $path) => [
         'name' => basename($path),

@@ -2,9 +2,9 @@
     <div
         x-data="{
             disabled: {{ $disabled ? 'true' : 'false' }},
-            maxFiles: 20,
-            maxSize: 100 * 1024 * 1024,
-            blockedExtensions: ['php', 'phtml', 'php3', 'php4', 'php5', 'phar', 'sh', 'exe', 'bat', 'cmd', 'com', 'scr', 'vbs', 'js', 'jar', 'svg'],
+            maxFiles: @js($uploadPolicy['max_files']),
+            maxSize: @js($uploadPolicy['max_size_bytes']),
+            blockedExtensions: @js($uploadPolicy['blocked_extensions']),
             queue: [],
             isDropping: false,
             activeUpload: false,
@@ -95,10 +95,23 @@
 
                 @this.uploadMultiple('media', [next.file],
                     () => {
-                        item.status = 'uploaded';
-                        item.progress = 100;
+                        const result = $wire.uploadResult || {};
+
+                        if (result.successful) {
+                            item.status = 'uploaded';
+                            item.progress = 100;
+                            setTimeout(() => {
+                                window.dispatchEvent(new CustomEvent('picker-uploaded', {
+                                    detail: { ids: result.ids || [] },
+                                }));
+                            }, 500);
+                            this.scheduleDismiss(item);
+                        } else {
+                            item.status = 'failed';
+                            item.reason = result.message || `{{ __('Upload failed. Please try again.') }}`;
+                        }
+
                         this.activeUpload = false;
-                        this.scheduleDismiss(item);
                         this.processNext();
                     },
                     (message) => {

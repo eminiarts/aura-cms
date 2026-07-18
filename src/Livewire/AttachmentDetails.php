@@ -2,7 +2,10 @@
 
 namespace Aura\Base\Livewire;
 
+use Aura\Base\Resource;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -16,6 +19,7 @@ class AttachmentDetails extends Component
 {
     public string $altText = '';
 
+    #[Locked]
     public ?int $attachmentId = null;
 
     /**
@@ -25,6 +29,7 @@ class AttachmentDetails extends Component
      */
     public array $rowIds = [];
 
+    #[Locked]
     public string $surface = 'index';
 
     public string $title = '';
@@ -36,7 +41,7 @@ class AttachmentDetails extends Component
         $this->dispatch('attachment-details-closed');
     }
 
-    public function deleteAttachment()
+    public function deleteAttachment(): void
     {
         if ($this->surface !== 'index' || ! ($attachment = $this->attachment())) {
             return;
@@ -68,7 +73,7 @@ class AttachmentDetails extends Component
     }
 
     #[On('open-attachment-details')]
-    public function open($id, $ids = []): void
+    public function open(int|string $id, array $ids = []): void
     {
         $this->rowIds = array_map('intval', (array) $ids);
 
@@ -82,7 +87,7 @@ class AttachmentDetails extends Component
         }
     }
 
-    public function render()
+    public function render(): View
     {
         return view('aura::livewire.attachment-details', [
             'attachment' => $this->attachment(),
@@ -103,13 +108,19 @@ class AttachmentDetails extends Component
         $this->persist(['name' => $this->title]);
     }
 
-    protected function attachment()
+    protected function attachment(): ?Resource
     {
         if (! $this->attachmentId) {
-            return;
+            return null;
         }
 
-        return app(config('aura.resources.attachment'))::find($this->attachmentId);
+        $attachment = app(config('aura.resources.attachment'))::find($this->attachmentId);
+
+        if ($attachment) {
+            Gate::authorize('view', $attachment);
+        }
+
+        return $attachment;
     }
 
     protected function persist(array $attributes): void
