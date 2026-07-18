@@ -109,6 +109,14 @@ test('uploading inside the picker auto-selects the new attachment', function () 
     $attachment = Attachment::query()->first();
 
     expect($attachment)->not->toBeNull();
+
+    // The auto-select flows through a Livewire event roundtrip; poll briefly
+    // instead of trusting a single flat wait (flaked once on a loaded runner).
+    $tries = 10;
+    while (pickerSelection($page) === [] && $tries-- > 0) {
+        $page->wait(1);
+    }
+
     expect(pickerSelection($page))->toBe([$attachment->id]);
 
     // The fresh upload is selected without any manual click; Select + Save
