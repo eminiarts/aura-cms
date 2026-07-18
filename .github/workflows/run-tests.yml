@@ -100,6 +100,14 @@ jobs:
       - name: Run browser tests
         run: php -d memory_limit=1G vendor/bin/pest --testsuite Browser --no-coverage
 
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-screenshots
+          path: tests/Browser/Screenshots/
+          if-no-files-found: ignore
+
   fresh-install:
     name: Fresh Laravel install
     runs-on: ubuntu-latest
