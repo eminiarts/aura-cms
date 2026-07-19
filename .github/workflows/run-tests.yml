@@ -17,10 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # PHP 8.5 is allowed by composer.json (^8.4) but not yet gated in CI:
-        # it deterministically triggers pre-existing parallel-test isolation
-        # pollution (see the follow-up issue). Re-add '8.5' once that is fixed.
-        php: ['8.4']
+        php: ['8.4', '8.5']
         laravel: ['12', '13']
         include:
           - laravel: '12'
