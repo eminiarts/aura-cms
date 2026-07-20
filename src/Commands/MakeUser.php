@@ -20,7 +20,8 @@ class MakeUser extends Command
                             {--name= : The name of the user}
                             {--email= : A valid email address}
                             {--password= : The password for the user}
-                            {--global-admin : Grant the user instance-level Global Admin status}';
+                            {--global-admin : Grant the user instance-level Global Admin status}
+                            {--no-global-admin : Do not grant the user instance-level Global Admin status}';
 
     public function handle(): int
     {
@@ -28,15 +29,14 @@ class MakeUser extends Command
         $email = $this->option('email') ?? text('What is your email?');
         $password = $this->option('password') ?? password('What is your password?');
 
-        $globalAdmin = (bool) $this->option('global-admin');
+        $globalAdmin = ! $this->option('no-global-admin');
 
-        // Offer the Global Admin choice on any interactive run that did not
-        // already pass --global-admin — including partial-option runs like
-        // `aura:user --name=X`. Non-interactive runs (scripts, CI, --no-interaction)
-        // keep the flag off unless --global-admin was passed, so automation is
-        // never blocked on a prompt.
-        if (! $globalAdmin && $this->input->isInteractive()) {
-            $globalAdmin = confirm(label: 'Should this user be a Global Admin?', default: false);
+        // The first administrator is an instance operator by default. Interactive
+        // runs can decline the default, while automation can opt out explicitly.
+        if ($this->input->isInteractive()
+            && ! $this->option('global-admin')
+            && ! $this->option('no-global-admin')) {
+            $globalAdmin = confirm(label: 'Should this user be a Global Admin?', default: true);
         }
 
         /** @var User $user */

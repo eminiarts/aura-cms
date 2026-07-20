@@ -10,6 +10,19 @@ uses(RefreshDatabase::class);
 // These tests should be run in isolation during package development.
 
 describe('installation commands', function () {
+    it('exposes the unified installer options required by automation', function () {
+        $command = Artisan::all()['aura:install'];
+        $definition = $command->getDefinition();
+
+        expect($definition->hasOption('teams'))->toBeTrue()
+            ->and($definition->hasOption('registration'))->toBeTrue()
+            ->and($definition->hasOption('admin-name'))->toBeTrue()
+            ->and($definition->hasOption('admin-email'))->toBeTrue()
+            ->and($definition->hasOption('admin-password'))->toBeTrue()
+            ->and($definition->hasOption('no-admin'))->toBeTrue()
+            ->and($definition->hasOption('no-global-admin'))->toBeTrue();
+    });
+
     it('aura:install-config command is registered', function () {
         $commands = Artisan::all();
         expect(array_key_exists('aura:install-config', $commands))->toBeTrue();

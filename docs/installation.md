@@ -56,7 +56,7 @@ cd my-aura-project
 # DB_PASSWORD=
 
 # Install Aura CMS
-composer require eminiarts/aura-cms
+composer require eminiarts/aura-cms:1.0.0-beta.3
 
 # Publish, configure, migrate, and create the first administrator
 php artisan aura:install
@@ -130,10 +130,10 @@ php artisan db:show
 
 ```bash
 # Install via Composer
-composer require eminiarts/aura-cms
+composer require eminiarts/aura-cms:1.0.0-beta.3
 
 # If you encounter memory issues
-COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms
+COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms:1.0.0-beta.3
 ```
 
 ### Step 4: Publish and Configure Aura
@@ -144,7 +144,20 @@ For the guided path, run the interactive installer and skip to [Step 7](#step-7-
 php artisan aura:install
 ```
 
-The installer publishes the configuration, migrations, and assets; connects the User model; runs the migrations; and creates the first administrator. For a scripted or customized installation, run the underlying commands below instead.
+The installer publishes the configuration, migrations, and assets; connects the User model; runs the migrations; and creates the first administrator as a Global Admin by default.
+
+For CI or scripted installations, pass the configuration and administrator values explicitly:
+
+```bash
+php artisan aura:install --no-interaction \
+    --teams=true \
+    --registration=false \
+    --admin-name="Aura Admin" \
+    --admin-email="admin@example.com" \
+    --admin-password="use-a-secret-value"
+```
+
+Use `--no-admin` to skip creating the administrator or `--no-global-admin` to create it without instance-level Global Admin access. For a customized manual installation, run the underlying commands below instead.
 
 Publish the package configuration, then run Aura's interactive configuration command:
 
@@ -337,7 +350,7 @@ cp .env.example .env
 docker-compose up -d --build
 
 # Install Aura CMS in container
-docker-compose exec app composer require eminiarts/aura-cms
+docker-compose exec app composer require eminiarts/aura-cms:1.0.0-beta.3
 docker-compose exec app php artisan vendor:publish --tag=aura-config
 docker-compose exec app php artisan aura:install-config
 docker-compose exec app php artisan aura:extend-user-model
@@ -566,7 +579,7 @@ add_header Referrer-Policy "strict-origin-when-cross-origin";
 
 ```bash
 # Error: Allowed memory size exhausted
-COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms
+COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms:1.0.0-beta.3
 ```
 
 #### 2. Permission Denied Errors

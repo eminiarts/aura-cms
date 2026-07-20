@@ -180,7 +180,7 @@ Fatal error: Allowed memory size of X bytes exhausted
 **Solution:**
 ```bash
 # Increase memory limit for composer
-COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms
+COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms:1.0.0-beta.3
 ```
 
 ### Package Discovery Failed
