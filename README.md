@@ -76,17 +76,10 @@ Drop it in `app/Aura/Resources` and `/admin/article` serves a full CRUD interfac
 
 ```bash
 composer require eminiarts/aura-cms
-
-php artisan vendor:publish --tag=aura-config
-php artisan aura:install-config
-php artisan aura:extend-user-model
-php artisan vendor:publish --tag=aura-migrations
-php artisan migrate
-php artisan aura:publish
-php artisan aura:user
+php artisan aura:install
 ```
 
-These commands publish and configure Aura, connect your application user model, run the package migration, publish the frontend assets, and create the first administrator. Then log in and open `/admin`.
+The interactive installer publishes and configures Aura, connects your application user model, runs the package migrations, publishes the frontend assets, and creates the first administrator. Then log in and open `/admin`. The [installation guide](docs/installation.md) also documents every underlying command for scripted or customized installations.
 
 Aura 1.0 is a fresh baseline rather than an automated upgrade from 0.x. Existing 0.x applications should read [UPGRADING.md](UPGRADING.md) before changing constraints.
 

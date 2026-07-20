@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Aura CMS — Fresh Installation Audit</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --ink: #f4f0e6;
+            --muted: #a6a198;
+            --panel: #151714;
+            --panel-2: #1c1f1a;
+            --line: #34382f;
+            --acid: #b8f238;
+            --amber: #ffc857;
+            --red: #ff6b59;
+            --cyan: #65d7de;
+            --paper: #0d0f0c;
+            --mono: "Berkeley Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+            --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        }
+
+        * { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            background:
+                linear-gradient(rgba(184, 242, 56, .025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(184, 242, 56, .025) 1px, transparent 1px),
+                var(--paper);
+            background-size: 36px 36px;
+            font-family: var(--serif);
+            line-height: 1.55;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: .18;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.13'/%3E%3C/svg%3E");
+            mix-blend-mode: soft-light;
+            z-index: 20;
+        }
+
+        a { color: inherit; }
+
+        .shell {
+            width: min(1500px, calc(100% - 40px));
+            margin: 0 auto;
+        }
+
+        .masthead {
+            min-height: 78vh;
+            padding: 32px 0 64px;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .topline,
+        .meta-row,
+        .figure-meta,
+        .finding-head,
+        .section-kicker {
+            font-family: var(--mono);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .topline {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .live-mark {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .live-mark::before {
+            content: "";
+            width: 9px;
+            height: 9px;
+            background: var(--acid);
+            border-radius: 50%;
+            box-shadow: 0 0 24px var(--acid);
+        }
+
+        h1 {
+            align-self: center;
+            margin: 80px 0 48px;
+            max-width: 1180px;
+            font-size: clamp(64px, 10vw, 156px);
+            font-weight: 500;
+            line-height: .82;
+            letter-spacing: -.065em;
+        }
+
+        h1 span {
+            display: block;
+            color: var(--acid);
+            font-family: var(--mono);
+            font-size: .23em;
+            line-height: 2.3;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .lede {
+            max-width: 770px;
+            margin: 0 0 0 auto;
+            font-size: clamp(20px, 2vw, 30px);
+            color: #d7d2c7;
+        }
+
+        .meta-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            margin-top: 64px;
+            border: 1px solid var(--line);
+            background: var(--line);
+        }
+
+        .metric {
+            min-height: 110px;
+            padding: 20px;
+            background: var(--panel);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .metric small { color: var(--muted); font-size: 10px; }
+        .metric strong { font-size: clamp(22px, 3vw, 42px); font-weight: 500; }
+        .metric.pass strong { color: var(--acid); }
+        .metric.warn strong { color: var(--amber); }
+
+        main { padding: 96px 0 140px; }
+
+        section { margin: 0 0 128px; }
+
+        .section-head {
+            display: grid;
+            grid-template-columns: 190px 1fr;
+            gap: 40px;
+            align-items: start;
+            margin-bottom: 44px;
+        }
+
+        .section-kicker {
+            padding-top: 11px;
+            color: var(--acid);
+            font-size: 12px;
+        }
+
+        h2 {
+            margin: 0;
+            max-width: 980px;
+            font-size: clamp(42px, 6vw, 86px);
+            font-weight: 500;
+            line-height: .98;
+            letter-spacing: -.045em;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1.15fr .85fr;
+            gap: 20px;
+        }
+
+        .note,
+        .finding,
+        .question {
+            background: rgba(21, 23, 20, .94);
+            border: 1px solid var(--line);
+        }
+
+        .note { padding: clamp(24px, 4vw, 48px); }
+        .note p:first-child { margin-top: 0; }
+        .note p:last-child { margin-bottom: 0; }
+
+        .verdict {
+            display: grid;
+            min-height: 100%;
+            padding: 30px;
+            background: var(--acid);
+            color: #10120e;
+            align-content: space-between;
+        }
+
+        .verdict .stamp {
+            font-family: var(--mono);
+            font-size: clamp(52px, 8vw, 112px);
+            line-height: .8;
+            letter-spacing: -.08em;
+        }
+
+        .verdict p {
+            max-width: 420px;
+            margin: 80px 0 0;
+            font-family: var(--mono);
+            font-size: 13px;
+        }
+
+        .findings {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .finding {
+            min-height: 300px;
+            padding: 26px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .finding-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 48px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .badge {
+            padding: 3px 7px;
+            border: 1px solid currentColor;
+            white-space: nowrap;
+        }
+
+        .badge.fixed { color: var(--acid); }
+        .badge.context { color: var(--cyan); }
+        .badge.questioned { color: var(--amber); }
+
+        .finding h3 {
+            margin: 0 0 14px;
+            font-size: 30px;
+            font-weight: 500;
+            line-height: 1.05;
+        }
+
+        .finding p { margin: auto 0 0; color: var(--muted); }
+
+        .timeline {
+            position: relative;
+            display: grid;
+            gap: 28px;
+        }
+
+        .timeline::before {
+            content: "";
+            position: absolute;
+            left: 25px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: var(--line);
+        }
+
+        figure {
+            position: relative;
+            margin: 0 0 0 68px;
+            padding: 18px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            transition: transform .25s ease, border-color .25s ease;
+        }
+
+        figure::before {
+            content: attr(data-step);
+            position: absolute;
+            left: -68px;
+            top: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: var(--paper);
+            border: 1px solid var(--line);
+            color: var(--acid);
+            font-family: var(--mono);
+            font-size: 12px;
+            z-index: 1;
+        }
+
+        figure:hover {
+            transform: translateY(-3px);
+            border-color: #69705e;
+        }
+
+        figure img {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #000;
+            border: 1px solid #262a23;
+        }
+
+        figcaption {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 30px;
+            padding: 18px 4px 2px;
+        }
+
+        figcaption strong { font-size: 21px; font-weight: 500; }
+        figcaption p { margin: 5px 0 0; color: var(--muted); }
+
+        .figure-meta {
+            align-self: start;
+            color: var(--muted);
+            font-size: 10px;
+            text-align: right;
+        }
+
+        details {
+            margin: 20px 0 0;
+            border-top: 1px solid var(--line);
+        }
+
+        summary {
+            padding: 16px 0 0;
+            color: var(--acid);
+            cursor: pointer;
+            font-family: var(--mono);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .questions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .question { padding: 28px; }
+        .question span { color: var(--amber); font-family: var(--mono); font-size: 12px; }
+        .question h3 { margin: 30px 0 12px; font-size: 28px; font-weight: 500; }
+        .question p { margin: 0; color: var(--muted); }
+
+        .footer {
+            padding: 28px 0 48px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+
+        @media (max-width: 900px) {
+            .meta-row,
+            .findings,
+            .questions,
+            .summary-grid { grid-template-columns: 1fr; }
+            .section-head { grid-template-columns: 1fr; gap: 12px; }
+            .masthead { min-height: auto; }
+            h1 { margin-top: 110px; }
+            figcaption { grid-template-columns: 1fr; }
+            .figure-meta { text-align: left; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            figure { transition: none; }
+        }
+    </style>
+</head>
+<body>
+    <header class="masthead shell">
+        <div class="topline">
+            <div class="live-mark">Installation audit / complete</div>
+            <div>20 July 2026 · Laravel Herd · macOS</div>
+        </div>
+
+        <div>
+            <h1><span>Evidence report 001</span>Aura, from zero.</h1>
+            <p class="lede">A fresh Laravel 13 application was installed twice: first with the Packagist release and manual documentation, then with the current Aura branch and its unified installer. Every meaningful terminal state was captured directly from iTerm.</p>
+        </div>
+
+        <div class="meta-row">
+            <div class="metric pass"><small>Final outcome</small><strong>PASS</strong></div>
+            <div class="metric"><small>Host</small><strong>Laravel 13.20</strong></div>
+            <div class="metric"><small>Runtime</small><strong>PHP 8.4.19</strong></div>
+            <div class="metric warn"><small>Defects found</small><strong>1 fixed</strong></div>
+        </div>
+    </header>
+
+    <main class="shell">
+        <section id="summary">
+            <div class="section-head">
+                <div class="section-kicker">00 / Verdict</div>
+                <h2>The happy path works. The generated User model did not stay clean.</h2>
+            </div>
+            <div class="summary-grid">
+                <div class="note">
+                    <p>The current branch installs successfully into a stock Laravel 13 + Livewire 4 application. Its hidden-but-working <code>php artisan aura:install</code> command publishes configuration, assets, and migrations; transforms the User model; runs three Aura migrations; and creates the first administrator.</p>
+                    <p>The audit found one package defect at the public installer seam: the User model transformer left an unused <code>Authenticatable</code> import and incorrect namespace spacing. A Laravel Pint check failed immediately after a successful install. The transformer, regression test, documentation, and fresh-install CI checks were updated.</p>
+                </div>
+                <div class="verdict">
+                    <div class="stamp">01<br>FIX</div>
+                    <p>Installation is functional after the patch. The remaining items at the end of this report are product decisions, not blockers.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="findings">
+            <div class="section-head">
+                <div class="section-kicker">01 / Findings</div>
+                <h2>What the terminal evidence established.</h2>
+            </div>
+            <div class="findings">
+                <article class="finding">
+                    <div class="finding-head"><span>F-01</span><span class="badge fixed">Fixed</span></div>
+                    <h3>User model formatting</h3>
+                    <p>The installer produced a valid PHP class that failed Pint on three rules. The transformer now removes the obsolete import and preserves Laravel-standard namespace spacing.</p>
+                </article>
+                <article class="finding">
+                    <div class="finding-head"><span>F-02</span><span class="badge context">Context</span></div>
+                    <h3>Reset means database too</h3>
+                    <p>A Git reset did not touch the ignored SQLite database. The first replay exposed a pending Aura migration despite passing starter tests. The corrected baseline uses <code>migrate:fresh</code>.</p>
+                </article>
+                <article class="finding">
+                    <div class="finding-head"><span>F-03</span><span class="badge fixed">Improved</span></div>
+                    <h3>CI checks outcomes</h3>
+                    <p>The fresh-install job now checks pending migrations, route registration, published assets, User-model formatting, and the host application tests—not only command exit codes.</p>
+                </article>
+                <article class="finding">
+                    <div class="finding-head"><span>F-04</span><span class="badge fixed">Documented</span></div>
+                    <h3>One command exists</h3>
+                    <p>The current branch already has a guided <code>aura:install</code> flow, but the main documentation showed seven manual commands. Quick-start paths now lead with the unified installer.</p>
+                </article>
+                <article class="finding">
+                    <div class="finding-head"><span>F-05</span><span class="badge context">Passed</span></div>
+                    <h3>Consumer surface is live</h3>
+                    <p>The final run registered Aura routes, published assets, completed every Aura migration, returned the expected authentication redirect from <code>/admin</code>, and passed the starter suite.</p>
+                </article>
+                <article class="finding">
+                    <div class="finding-head"><span>F-06</span><span class="badge questioned">Review</span></div>
+                    <h3>Interactive-only polish</h3>
+                    <p>The unified installer is excellent for people, while CI still needs the lower-level commands to supply deterministic user credentials. An explicit automation mode could close that gap.</p>
+                </article>
+            </div>
+        </section>
+
+        <section id="attempt-one">
+            <div class="section-head">
+                <div class="section-kicker">02 / Attempt one</div>
+                <h2>Published v0.2.0, following the manual guide.</h2>
+            </div>
+            <div class="timeline">
+                <figure data-step="01">
+                    <a href="screenshots/01-clean-laravel-baseline.png"><img src="screenshots/01-clean-laravel-baseline.png" alt="iTerm showing a clean Laravel 13 baseline"></a>
+                    <figcaption><div><strong>Fresh application baseline</strong><p>Git is clean; Laravel 13.20.0 runs under PHP 8.4.19 in Herd.</p></div><div class="figure-meta">Baseline / pass</div></figcaption>
+                </figure>
+                <figure data-step="02">
+                    <a href="screenshots/02-composer-require-aura.png"><img src="screenshots/02-composer-require-aura.png" alt="iTerm showing Composer installing Aura v0.2.0"></a>
+                    <figcaption><div><strong>Composer installs the published package</strong><p>Packagist resolves <code>eminiarts/aura-cms v0.2.0</code> and its dependencies.</p></div><div class="figure-meta">Package / pass</div></figcaption>
+                </figure>
+                <figure data-step="03">
+                    <a href="screenshots/03-publish-configuration.png"><img src="screenshots/03-publish-configuration.png" alt="iTerm showing Aura configuration files being published"></a>
+                    <figcaption><div><strong>Configuration published</strong><p><code>aura.php</code> and <code>aura-settings.php</code> are copied into the host app.</p></div><div class="figure-meta">Config / pass</div></figcaption>
+                </figure>
+                <figure data-step="04">
+                    <a href="screenshots/04-configure-aura-prompts.png"><img src="screenshots/04-configure-aura-prompts.png" alt="iTerm showing the Aura teams configuration prompt"></a>
+                    <figcaption><div><strong>Interactive configuration begins</strong><p>The installer asks about teams, optional features, registration, and theme choices.</p></div><div class="figure-meta">Prompt / interactive</div></figcaption>
+                    <details><summary>More configuration evidence</summary>
+                        <p><a href="screenshots/04b-configure-aura-features-prompt.png">Feature-choice prompt</a> · <a href="screenshots/04c-configure-aura-registration.png">Registration prompt</a> · <a href="screenshots/04d-configuration-complete.png">Configuration completed</a></p>
+                    </details>
+                </figure>
+                <figure data-step="05">
+                    <a href="screenshots/05b-user-model-extended.png"><img src="screenshots/05b-user-model-extended.png" alt="iTerm showing the Aura User model extension command"></a>
+                    <figcaption><div><strong>User model transformed</strong><p>The command reports success and the resulting class passes PHP syntax validation.</p></div><div class="figure-meta">Model / latent defect</div></figcaption>
+                </figure>
+                <figure data-step="06">
+                    <a href="screenshots/06-publish-migrations.png"><img src="screenshots/06-publish-migrations.png" alt="iTerm showing Aura migration publication"></a>
+                    <figcaption><div><strong>Migration published</strong><p>The published release provides its consolidated Aura table migration.</p></div><div class="figure-meta">Database / pass</div></figcaption>
+                </figure>
+                <figure data-step="07">
+                    <a href="screenshots/07-run-migrations.png"><img src="screenshots/07-run-migrations.png" alt="iTerm showing the migration command"></a>
+                    <figcaption><div><strong>Migration command run</strong><p>This appeared successful, but later verification correctly showed the replay database was not actually clean.</p></div><div class="figure-meta">Database / investigate</div></figcaption>
+                </figure>
+                <figure data-step="08">
+                    <a href="screenshots/08-publish-assets.png"><img src="screenshots/08-publish-assets.png" alt="iTerm showing Aura asset publication"></a>
+                    <figcaption><div><strong>Frontend assets published</strong><p>Aura’s compiled application, library, and public asset directories are copied.</p></div><div class="figure-meta">Assets / pass</div></figcaption>
+                </figure>
+                <figure data-step="09">
+                    <a href="screenshots/09b-admin-created.png"><img src="screenshots/09b-admin-created.png" alt="iTerm showing successful Aura administrator creation with the password masked"></a>
+                    <figcaption><div><strong>Administrator created</strong><p>Name and email are shown; the local test password remains masked in the terminal evidence.</p></div><div class="figure-meta">Identity / pass</div></figcaption>
+                </figure>
+                <figure data-step="10">
+                    <a href="screenshots/10-verify-installation.png"><img src="screenshots/10-verify-installation.png" alt="iTerm showing a pending Aura migration during verification"></a>
+                    <figcaption><div><strong>Verification catches a dirty baseline</strong><p>64 routes and 237 assets exist, and <code>/admin</code> redirects to login—but the Aura migration is pending. This is why outcome checks matter.</p></div><div class="figure-meta">Audit / failed</div></figcaption>
+                </figure>
+                <figure data-step="11">
+                    <a href="screenshots/11-application-tests.png"><img src="screenshots/11-application-tests.png" alt="iTerm showing two passing Laravel starter tests"></a>
+                    <figcaption><div><strong>Starter tests still pass</strong><p>Two green tests did not detect the pending installation migration.</p></div><div class="figure-meta">Tests / insufficient</div></figcaption>
+                </figure>
+            </div>
+        </section>
+
+        <section id="attempt-two">
+            <div class="section-head">
+                <div class="section-kicker">03 / Attempt two</div>
+                <h2>Clean database, current branch, unified installer.</h2>
+            </div>
+            <div class="timeline">
+                <figure data-step="12">
+                    <a href="screenshots/12-clean-database-baseline.png"><img src="screenshots/12-clean-database-baseline.png" alt="iTerm showing the fresh database baseline"></a>
+                    <figcaption><div><strong>Files and database reset</strong><p>The corrected reset restores tracked files, removes generated files, reinstalls baseline dependencies, and runs <code>migrate:fresh</code>.</p></div><div class="figure-meta">Baseline / clean</div></figcaption>
+                </figure>
+                <figure data-step="13">
+                    <a href="screenshots/13-install-current-main.png"><img src="screenshots/13-install-current-main.png" alt="iTerm showing Composer symlinking the current Aura worktree"></a>
+                    <figcaption><div><strong>Current branch installed by path repository</strong><p>The fresh app consumes the exact worktree that will become the pull request.</p></div><div class="figure-meta">Package / current</div></figcaption>
+                </figure>
+                <figure data-step="14">
+                    <a href="screenshots/14-unified-installer-start.png"><img src="screenshots/14-unified-installer-start.png" alt="iTerm showing the Aura unified installer publishing resources"></a>
+                    <figcaption><div><strong>One-command installation starts</strong><p><code>php artisan aura:install</code> publishes configuration, assets, migrations, and reports the service-provider stage before prompting.</p></div><div class="figure-meta">Installer / guided</div></figcaption>
+                    <details><summary>Open the guided flow</summary>
+                        <p><a href="screenshots/14b-unified-installer-user-model.png">User-model prompt</a> · <a href="screenshots/14c-unified-installer-config-choice.png">Configuration choice</a> · <a href="screenshots/14d-unified-installer-configured.png">Configuration completed</a> · <a href="screenshots/14e-unified-installer-migrated.png">Migrations completed</a></p>
+                    </details>
+                </figure>
+                <figure data-step="15">
+                    <a href="screenshots/14f-unified-installer-complete.png"><img src="screenshots/14f-unified-installer-complete.png" alt="iTerm showing the successful completion of the Aura unified installer"></a>
+                    <figcaption><div><strong>Unified installer completes</strong><p>Three Aura migrations run and the first administrator is created. The full guided run completes without a runtime error.</p></div><div class="figure-meta">Installer / pass</div></figcaption>
+                </figure>
+                <figure data-step="16">
+                    <a href="screenshots/15-user-model-style-failure.png"><img src="screenshots/15-user-model-style-failure.png" alt="iTerm showing Pint failing on the installer-generated User model"></a>
+                    <figcaption><div><strong>Generated model fails style validation</strong><p>Pint reports <code>no_unused_imports</code>, <code>blank_line_after_namespace</code>, and <code>no_extra_blank_lines</code>. This is the package defect fixed by the pull request.</p></div><div class="figure-meta">Model / failed</div></figcaption>
+                </figure>
+                <figure data-step="17">
+                    <a href="screenshots/16-current-main-verification.png"><img src="screenshots/16-current-main-verification.png" alt="iTerm showing current-main installation verification"></a>
+                    <figcaption><div><strong>Runtime installation surface verified</strong><p>No pending migrations remain; Aura routes and assets exist; Herd returns the expected authentication redirect.</p></div><div class="figure-meta">Runtime / pass</div></figcaption>
+                </figure>
+                <figure data-step="18">
+                    <a href="screenshots/17-current-main-tests.png"><img src="screenshots/17-current-main-tests.png" alt="iTerm showing the fresh application tests passing"></a>
+                    <figcaption><div><strong>Host application tests pass</strong><p>The clean current-branch installation preserves the stock Laravel test suite.</p></div><div class="figure-meta">Tests / pass</div></figcaption>
+                </figure>
+                <figure data-step="19">
+                    <a href="screenshots/18-fixed-user-model-verification.png"><img src="screenshots/18-fixed-user-model-verification.png" alt="iTerm showing the fixed User model passing Pint and PHP syntax validation"></a>
+                    <figcaption><div><strong>Fix verified in the real application</strong><p>The worktree-linked package transforms a restored Laravel 13 User model; Pint and PHP syntax checks now pass.</p></div><div class="figure-meta">Fix / verified</div></figcaption>
+                </figure>
+            </div>
+        </section>
+
+        <section id="questions">
+            <div class="section-head">
+                <div class="section-kicker">04 / Decisions</div>
+                <h2>Four product questions worth answering next.</h2>
+            </div>
+            <div class="questions">
+                <article class="question"><span>Q-01 / Repository</span><h3>Should the star prompt point to the current GitHub repository?</h3><p>The installer currently asks to star <code>aura-cms/base</code>, while this package is published from <code>eminiarts/aura-cms</code>.</p></article>
+                <article class="question"><span>Q-02 / Automation</span><h3>Should <code>aura:install</code> have a first-class non-interactive mode?</h3><p>CI still uses individual commands to supply deterministic admin credentials. Installer options could make local and CI paths identical.</p></article>
+                <article class="question"><span>Q-03 / Privilege</span><h3>Should the first user default to Global Admin?</h3><p>The guided first-user flow defaults “Global Admin” to No. That may be intentional for team-scoped installations, but it deserves an explicit product decision.</p></article>
+                <article class="question"><span>Q-04 / Messaging</span><h3>Should “Publishing service provider…” remain?</h3><p>The unified installer prints that stage, but no additional provider appeared in the Laravel 13 host app. The message may be unnecessary or needs a clearer explanation.</p></article>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer shell">
+        Aura CMS installation audit · Worktree codex/aura-installation-process · Evidence captured from iTerm
+    </footer>
+</body>
+</html>

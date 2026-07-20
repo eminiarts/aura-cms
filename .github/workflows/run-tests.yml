@@ -135,4 +135,16 @@ jobs:
           php artisan migrate --force
           php artisan aura:publish
           php artisan aura:user --name="CI Admin" --email="ci@example.com" --password="CI-Test-Password-2026!"
-          php artisan about
+
+      - name: Verify installed application
+        working-directory: ${{ runner.temp }}/aura-app
+        run: |
+          if php artisan migrate:status --pending --no-ansi | grep -q Pending; then
+            echo "Aura installation left pending migrations."
+            exit 1
+          fi
+
+          php artisan route:list --name=aura --json | php -r '$routes = json_decode(stream_get_contents(STDIN), true, flags: JSON_THROW_ON_ERROR); exit(count($routes) > 0 ? 0 : 1);'
+          test -n "$(find public/vendor/aura/assets -type f -print -quit)"
+          vendor/bin/pint --test app/Models/User.php
+          php artisan test --compact

@@ -58,14 +58,8 @@ cd my-aura-project
 # Install Aura CMS
 composer require eminiarts/aura-cms
 
-# Publish and configure Aura
-php artisan vendor:publish --tag=aura-config
-php artisan aura:install-config
-php artisan aura:extend-user-model
-php artisan vendor:publish --tag=aura-migrations
-php artisan migrate
-php artisan aura:publish
-php artisan aura:user
+# Publish, configure, migrate, and create the first administrator
+php artisan aura:install
 
 # Start development server
 php artisan serve
@@ -143,6 +137,14 @@ COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms
 ```
 
 ### Step 4: Publish and Configure Aura
+
+For the guided path, run the interactive installer and skip to [Step 7](#step-7-verify-installation):
+
+```bash
+php artisan aura:install
+```
+
+The installer publishes the configuration, migrations, and assets; connects the User model; runs the migrations; and creates the first administrator. For a scripted or customized installation, run the underlying commands below instead.
 
 Publish the package configuration, then run Aura's interactive configuration command:
 
