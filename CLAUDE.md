@@ -50,7 +50,7 @@ npm run build       # Production build
 php artisan aura:resource {name}     # Create resource
 php artisan aura:field {name}        # Create custom field
 php artisan aura:plugin {name}       # Create plugin
-php artisan aura:permission          # Generate permissions
+php artisan aura:create-resource-permissions   # Generate permissions for all resources
 ```
 
 ## Architecture
