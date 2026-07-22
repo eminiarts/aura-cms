@@ -12,24 +12,29 @@ class InstallConfigCommand extends Command
 {
     public $description = 'Install Aura Configuration';
 
-    public $signature = 'aura:install-config';
+    public $signature = 'aura:install-config
+                        {--teams= : Enable teams: true or false}
+                        {--registration= : Allow public registration: true or false}';
 
     public function handle(): int
     {
-        // 1. Do you want to use teams?
-        $useTeams = confirm('Do you want to use teams?');
-
         // Get the config path
         $configPath = config_path('aura.php');
 
         // Include the config array
         $config = include $configPath;
 
+        // 1. Do you want to use teams?
+        $useTeams = $this->input->isInteractive()
+            ? confirm('Do you want to use teams?')
+            : $this->booleanOption('teams', (bool) $config['teams']);
+
         // Modify the 'teams' value
         $config['teams'] = $useTeams;
 
         // 2. Do you want to modify default features?
-        $modifyFeatures = confirm('Do you want to modify the default features?');
+        $modifyFeatures = $this->input->isInteractive()
+            && confirm('Do you want to modify the default features?');
 
         if ($modifyFeatures) {
             // For each feature, ask if they want to enable/disable it
@@ -44,13 +49,18 @@ class InstallConfigCommand extends Command
         }
 
         // 3. Do you want to allow registration?
-        $allowRegistration = confirm('Do you want to allow registration?');
+        $allowRegistration = $this->input->isInteractive()
+            ? confirm('Do you want to allow registration?')
+            : $this->booleanOption('registration', (bool) $config['auth']['registration']);
+
+        $config['auth']['registration'] = $allowRegistration;
 
         // Update the env variable AURA_REGISTRATION
         $this->setEnvValue('AURA_REGISTRATION', $allowRegistration ? 'true' : 'false');
 
         // 4. Do you want to modify the default theme?
-        $modifyTheme = confirm('Do you want to modify the default theme?');
+        $modifyTheme = $this->input->isInteractive()
+            && confirm('Do you want to modify the default theme?');
 
         if ($modifyTheme) {
             $theme = $config['theme'];
@@ -135,9 +145,24 @@ class InstallConfigCommand extends Command
         return self::SUCCESS;
     }
 
-    private function setEnvValue($key, $value)
+    private function booleanOption(string $name, bool $default): bool
     {
-        $envPath = base_path('.env');
+        $value = $this->option($name);
+
+        if ($value === null) {
+            return $default;
+        }
+
+        return match (strtolower((string) $value)) {
+            '1', 'true', 'yes', 'on' => true,
+            '0', 'false', 'no', 'off' => false,
+            default => throw new \InvalidArgumentException("The --{$name} option must be true or false."),
+        };
+    }
+
+    private function setEnvValue(string $key, string $value): void
+    {
+        $envPath = app()->environmentFilePath();
 
         if (file_exists($envPath)) {
             // Read the .env file

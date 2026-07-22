@@ -12,11 +12,20 @@ beforeEach(function () {
 
 namespace App\Models;
 
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
+#[Fillable(['name', 'email', 'password'])]
+#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    // Some content
+    /** @use HasFactory<UserFactory> */
+    use HasFactory, Notifiable;
 }
 PHP;
 
@@ -49,15 +58,17 @@ describe('model extension', function () {
             ->toContain('use Aura\Base\Resources\User as AuraUser');
     });
 
-    it('adds use statement after namespace', function () {
+    it('keeps a fresh Laravel user model formatted after extension', function () {
         $this->artisan('aura:extend-user-model')
             ->expectsConfirmation('Do you want to extend the User model with AuraUser?', 'yes')
             ->assertSuccessful();
 
         $updatedContent = File::get($this->userModelPath);
 
-        // Verify the use statement is placed correctly
-        expect($updatedContent)->toMatch('/namespace App\\\\Models;\s+use Aura\\\\Base\\\\Resources\\\\User as AuraUser;/');
+        expect($updatedContent)
+            ->toContain("namespace App\\Models;\n\nuse Aura\\Base\\Resources\\User as AuraUser;\n")
+            ->not->toContain('use Illuminate\\Foundation\\Auth\\User as Authenticatable;')
+            ->not->toContain("namespace App\\Models;\nuse ");
     });
 
     it('shows message when model already extends AuraUser', function () {
@@ -92,6 +103,6 @@ describe('error handling', function () {
 
         $this->artisan('aura:extend-user-model')
             ->expectsOutput('User model not found.')
-            ->assertSuccessful();
+            ->assertFailed();
     });
 });

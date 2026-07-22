@@ -54,25 +54,19 @@ DB_PASSWORD=
 
 ```bash
 # Install Aura CMS
-composer require eminiarts/aura-cms
+composer require eminiarts/aura-cms:1.0.0-beta.3
 
-# Publish, configure, and initialize Aura
-php artisan vendor:publish --tag=aura-config
-php artisan aura:install-config
-php artisan aura:extend-user-model
-php artisan vendor:publish --tag=aura-migrations
-php artisan migrate
-php artisan aura:publish
-php artisan aura:user
+# Publish, configure, and initialize Aura interactively
+php artisan aura:install
 ```
 
-The configuration command guides you through the main options:
+The installer guides you through the main options:
 
 1. **Teams**: Choose whether to enable multi-tenancy.
 2. **Features**: Enable or disable global search, bookmarks, notifications, and other optional features.
 3. **Registration and theme**: Choose the public registration and visual defaults.
 
-The remaining commands connect the application user model, migrate the database, publish assets, and create the first administrator.
+It also connects the application user model, migrates the database, publishes assets, and creates the first administrator as a Global Admin by default.
 
 ### Step 3: Start the Development Server
 

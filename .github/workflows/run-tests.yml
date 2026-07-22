@@ -128,11 +128,25 @@ jobs:
         run: |
           composer config repositories.aura path "$GITHUB_WORKSPACE"
           composer require eminiarts/aura-cms:@dev --with-all-dependencies --no-interaction
-          php artisan vendor:publish --tag=aura-config --force
-          php artisan aura:install-config --no-interaction
-          php artisan aura:extend-user-model --no-interaction
-          php artisan vendor:publish --tag=aura-migrations --force
-          php artisan migrate --force
-          php artisan aura:publish
-          php artisan aura:user --name="CI Admin" --email="ci@example.com" --password="CI-Test-Password-2026!"
-          php artisan about
+          php artisan aura:install --no-interaction \
+            --teams=true \
+            --registration=false \
+            --admin-name="CI Admin" \
+            --admin-email="ci@example.com" \
+            --admin-password="CI-Test-Password-2026!" | tee aura-install.log
+
+      - name: Verify installed application
+        working-directory: ${{ runner.temp }}/aura-app
+        run: |
+          if php artisan migrate:status --pending --no-ansi | grep -q Pending; then
+            echo "Aura installation left pending migrations."
+            exit 1
+          fi
+
+          php artisan route:list --name=aura --json | php -r '$routes = json_decode(stream_get_contents(STDIN), true, flags: JSON_THROW_ON_ERROR); exit(count($routes) > 0 ? 0 : 1);'
+          test -n "$(find public/vendor/aura/assets -type f -print -quit)"
+          ! grep -q "Publishing service provider" aura-install.log
+          test ! -f app/Providers/AuraServiceProvider.php
+          php artisan tinker --execute='exit(App\Models\User::query()->where("email", "ci@example.com")->where("global_admin", true)->exists() ? 0 : 1);'
+          vendor/bin/pint --test app/Models/User.php
+          php artisan test --compact

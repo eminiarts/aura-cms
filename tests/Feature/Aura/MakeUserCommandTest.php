@@ -129,6 +129,33 @@ describe('with teams enabled', function () {
         expect($user->global_admin)->toBeTrue();
     });
 
+    it('creates the first administrator as a Global Admin by default in automation', function () {
+        $this->artisan('aura:user', [
+            '--name' => 'Default Global Admin',
+            '--email' => 'default-global-admin@example.com',
+            '--password' => 'password',
+            '--no-interaction' => true,
+        ])->assertSuccessful();
+
+        $user = User::where('email', 'default-global-admin@example.com')->firstOrFail();
+
+        expect($user->global_admin)->toBeTrue();
+    });
+
+    it('allows automation to opt out of Global Admin', function () {
+        $this->artisan('aura:user', [
+            '--name' => 'Scoped Admin',
+            '--email' => 'scoped-admin@example.com',
+            '--password' => 'password',
+            '--no-global-admin' => true,
+            '--no-interaction' => true,
+        ])->assertSuccessful();
+
+        $user = User::where('email', 'scoped-admin@example.com')->firstOrFail();
+
+        expect($user->global_admin)->toBeFalse();
+    });
+
     it('does not grant Global Admin without the option', function () {
         $this->artisan('aura:user', [
             '--name' => 'Plain User',

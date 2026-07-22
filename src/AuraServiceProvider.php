@@ -73,6 +73,7 @@ use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Symfony\Component\Console\Input\InputOption;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -252,17 +253,58 @@ class AuraServiceProvider extends PackageServiceProvider
             ])
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
+                    ->addOption('teams', null, InputOption::VALUE_REQUIRED, 'Enable teams: true or false')
+                    ->addOption('registration', null, InputOption::VALUE_REQUIRED, 'Allow public registration: true or false')
+                    ->addOption('admin-name', null, InputOption::VALUE_REQUIRED, 'Name for the first administrator')
+                    ->addOption('admin-email', null, InputOption::VALUE_REQUIRED, 'Email for the first administrator')
+                    ->addOption('admin-password', null, InputOption::VALUE_REQUIRED, 'Password for the first administrator')
+                    ->addOption('no-admin', null, InputOption::VALUE_NONE, 'Skip creating the first administrator')
+                    ->addOption('no-global-admin', null, InputOption::VALUE_NONE, 'Do not grant Global Admin status to the first administrator')
                     ->startWith(function (InstallCommand $command) {
                         $command->info('Hello, thank you for installing Aura!');
                     })
                     ->publishConfigFile()
                     ->publishAssets()
                     ->publishMigrations()
-                    // ->askToRunMigrations()
-                    ->copyAndRegisterServiceProviderInApp()
-                    ->askToStarRepoOnGitHub('aura-cms/base')
+                    ->askToStarRepoOnGitHub('eminiarts/aura-cms')
                     ->endWith(function (InstallCommand $command) {
                         $command->call('aura:extend-user-model');
+
+                        if ($command->option('no-interaction')) {
+                            $configOptions = array_filter([
+                                '--teams' => $command->option('teams'),
+                                '--registration' => $command->option('registration'),
+                            ], fn ($value) => $value !== null);
+
+                            $command->call('aura:install-config', $configOptions);
+                            $command->call('migrate', ['--force' => true]);
+                            RoleCatalogSeeder::seed();
+
+                            if (! $command->option('no-admin')) {
+                                $adminOptions = [
+                                    '--name' => $command->option('admin-name'),
+                                    '--email' => $command->option('admin-email'),
+                                    '--password' => $command->option('admin-password'),
+                                ];
+                                $missingOptions = array_keys(array_filter($adminOptions, fn ($value) => blank($value)));
+
+                                if ($missingOptions !== []) {
+                                    throw new \InvalidArgumentException(
+                                        'A non-interactive install requires --admin-name, --admin-email, and --admin-password, or --no-admin.'
+                                    );
+                                }
+
+                                if ($command->option('no-global-admin')) {
+                                    $adminOptions['--no-global-admin'] = true;
+                                } else {
+                                    $adminOptions['--global-admin'] = true;
+                                }
+
+                                $command->call('aura:user', $adminOptions);
+                            }
+
+                            return;
+                        }
 
                         if ($command->confirm('Do you want to modify the aura configuration?', true)) {
                             $command->call('aura:install-config');
