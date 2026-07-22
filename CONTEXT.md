@@ -48,6 +48,10 @@ _Avoid_: association, assignment
 A single-use, expiring, role-carrying offer of team Membership addressed to an email. Accepting attaches the existing user with that email, or registers a new one, into the team with the carried role.
 _Avoid_: invite link, signup token
 
+**Admission Policy**:
+The rules determining whether a person may become an Aura User or gain Membership through public registration or an Invitation. Every sign-in method obeys this policy and cannot grant admission independently.
+_Avoid_: social registration setting, provider registration policy
+
 **Resource Editor**:
 A local-development tool for editing resource definitions from the browser. Not a production feature; it only exists in local environments.
 _Avoid_: admin builder, schema editor

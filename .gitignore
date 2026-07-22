@@ -22,3 +22,5 @@ logs/
 prompts/
 tests/Browser/Screenshots/
 /.claude/worktrees
+/.agents
+teamwork-skill.zip
