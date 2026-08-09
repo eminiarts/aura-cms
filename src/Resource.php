@@ -328,7 +328,7 @@ class Resource extends Model implements DefinesFields
         return collect();
     }
 
-    public function getMetaInContext($key, FieldValueContext $context)
+    public function getMetaInContext($key, FieldValueContext $context): mixed
     {
         $previousContext = $this->fieldValueContext;
         $this->fieldValueContext = $context;
@@ -480,7 +480,7 @@ class Resource extends Model implements DefinesFields
         string $slug,
         FieldValueContext $context,
         $meta = null,
-    ) {
+    ): mixed {
         $previousContext = $this->fieldValueContext;
         $this->fieldValueContext = $context;
 

@@ -96,7 +96,7 @@ trait InputFields
         $key,
         $value,
         FieldValueContext $context,
-    ) {
+    ): mixed {
         $previousContext = $this->fieldPresentationContext;
         $this->fieldPresentationContext = $context;
 

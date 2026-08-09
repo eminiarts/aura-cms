@@ -59,7 +59,7 @@ trait AuraResourceTableConfig
      * Display a field in an explicit UI context without changing the legacy
      * display($key) signature that host resources may override.
      */
-    public function displayInContext($key, FieldValueContext $context)
+    public function displayInContext($key, FieldValueContext $context): mixed
     {
         $previousContext = $this->fieldDisplayContext;
         $this->fieldDisplayContext = $context;
@@ -186,7 +186,7 @@ trait AuraResourceTableConfig
         return $value;
     }
 
-    protected function resolveDisplayFieldValue(string $key, FieldValueContext $context)
+    protected function resolveDisplayFieldValue(string $key, FieldValueContext $context): mixed
     {
         if (method_exists($this, 'resolveFieldValueInContext')) {
             return $this->resolveFieldValueInContext($key, $context);
