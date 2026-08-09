@@ -32,6 +32,32 @@ class AdversarialOptionUser extends User
     protected $table = 'adversarial_option_users';
 }
 
+class Laravel12CompatibleTransactionsManager extends DatabaseTransactionsManager
+{
+    /**
+     * Laravel 12.65 does not execute rollback callbacks from committed child
+     * records when the surrounding transaction rolls back.
+     */
+    protected function removeAllTransactionsForConnection($connection)
+    {
+        if ($this->currentTransaction) {
+            for ($current = $this->currentTransaction[$connection]; isset($current); $current = $current->parent) {
+                $current->executeCallbacksForRollback();
+            }
+        }
+
+        $this->currentTransaction[$connection] = null;
+
+        $this->pendingTransactions = $this->pendingTransactions->reject(
+            fn ($transaction) => $transaction->connection == $connection
+        )->values();
+
+        $this->committedTransactions = $this->committedTransactions->reject(
+            fn ($transaction) => $transaction->connection == $connection
+        )->values();
+    }
+}
+
 function serializedOptionCacheRepository(): Repository
 {
     return new Repository(new ArrayStore(serializesValues: true, serializableClasses: false));
@@ -112,6 +138,36 @@ test('canonical cache identities preserve typed segment boundaries', function ()
     foreach ($identities as $identity) {
         expect($identity)->toMatch('/\A[a-f0-9]{64}\z/');
     }
+});
+
+test('user option prefixes preserve typed ownership within the legacy name limit', function () {
+    $prefixes = [
+        User::optionNamePrefixFor(1),
+        User::optionNamePrefixFor('1'),
+        User::optionNamePrefixFor('customer'),
+        User::optionNamePrefixFor('customer.eu'),
+    ];
+
+    expect(array_unique($prefixes))->toHaveCount(count($prefixes));
+
+    foreach ($prefixes as $prefix) {
+        expect($prefix)->toMatch('/\Au[0123456789abcdefghjkmnpqrstvwxyz]{14}\z/')
+            ->and(strlen($prefix))->toBe(15)
+            ->and(strlen($prefix.str_repeat('x', 240)))->toBe(255);
+    }
+});
+
+test('a legacy-limit user option round trips within varchar 255 storage', function () {
+    $user = createSuperAdmin();
+    $option = str_repeat('x', 240);
+
+    $user->updateOption($option, ['stored' => true]);
+
+    $physicalName = Option::withoutGlobalScopes()->sole()->getRawOriginal('name');
+
+    expect($user->getOption($option))->toBe(['stored' => true])
+        ->and(strlen($physicalName))->toBeLessThanOrEqual(255)
+        ->and($physicalName)->toEndWith($option);
 });
 
 test('option physical identities are unique within their database scope', function () {
@@ -758,6 +814,73 @@ test('rolled back nested generation bumps leave the committed generation usable'
         ->toBe(['version' => 1]);
 });
 
+test('rollback cleanup survives an inner commit on Laravel 12 transaction records', function () {
+    config()->set('database.connections.laravel12_nested_rollback', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+    ]);
+
+    $connection = DB::connection('laravel12_nested_rollback');
+    $transactions = new Laravel12CompatibleTransactionsManager;
+    app()->instance('db.transactions', $transactions);
+    $connection->setTransactionManager($transactions);
+    $rollbacks = 0;
+
+    $connection->beginTransaction();
+    $connection->beginTransaction();
+
+    try {
+        VersionedCache::afterRollback($connection, function () use (&$rollbacks): void {
+            $rollbacks++;
+        });
+
+        $connection->commit();
+        $connection->rollBack();
+    } finally {
+        while ($connection->transactionLevel() > 0) {
+            $connection->rollBack();
+        }
+    }
+
+    expect($rollbacks)->toBe(1);
+});
+
+test('rollback cleanup runs once when an inner transaction rolls back before its outer transaction', function () {
+    config()->set('database.connections.nested_rollback_once', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+    ]);
+
+    $connection = DB::connection('nested_rollback_once');
+    $transactions = new DatabaseTransactionsManager;
+    app()->instance('db.transactions', $transactions);
+    $connection->setTransactionManager($transactions);
+    $rollbacks = 0;
+
+    $connection->beginTransaction();
+    $connection->beginTransaction();
+
+    VersionedCache::afterRollback($connection, function () use (&$rollbacks): void {
+        $rollbacks++;
+    });
+
+    try {
+        $connection->rollBack();
+
+        expect($rollbacks)->toBe(1);
+
+        $connection->rollBack();
+
+        expect($rollbacks)->toBe(1);
+    } finally {
+        while ($connection->transactionLevel() > 0) {
+            $connection->rollBack();
+        }
+    }
+});
+
 test('transactions on unmanaged connections still bypass persistent cache reads', function () {
     Cache::swap(serializedOptionCacheRepository());
     $connection = new SQLiteConnection(new PDO('sqlite::memory:'), 'unmanaged-cache-probe');
@@ -938,6 +1061,149 @@ test('membership pivot lifecycle invalidates team snapshots for direct attach an
     expect($member->getTeams()->pluck('id'))->not->toContain($team->id);
 })->skip(fn () => ! config('aura.teams'), 'Team list context requires teams enabled.');
 
+test('role-side user membership writes invalidate permission memos', function () {
+    $team = config('aura.teams') ? createSuperAdmin()->currentTeam : null;
+    $user = User::factory()->create(
+        config('aura.teams') ? ['current_team_id' => $team->id] : [],
+    );
+    $attributes = [
+        'name' => 'Role-side permission',
+        'slug' => 'role-side-permission',
+        'permissions' => ['core04-role-side' => true],
+        'super_admin' => false,
+    ];
+
+    if (config('aura.teams')) {
+        $attributes['team_id'] = $user->current_team_id;
+    }
+
+    $role = Role::withoutGlobalScopes()->create($attributes);
+    $pivot = config('aura.teams') ? ['team_id' => $user->current_team_id] : [];
+
+    expect($user->hasPermission('core04-role-side'))->toBeFalse();
+
+    $role->users()->attach($user->id, $pivot);
+    expect($user->hasPermission('core04-role-side'))->toBeTrue();
+
+    $role->users()->detach($user->id);
+    expect($user->hasPermission('core04-role-side'))->toBeFalse();
+
+    $role->users()->sync([$user->id => $pivot]);
+    expect($user->hasPermission('core04-role-side'))->toBeTrue();
+
+    $role->users()->sync([]);
+    expect($user->hasPermission('core04-role-side'))->toBeFalse();
+});
+
+test('role-side user membership rollback restores permission memos after an inner commit', function () {
+    $team = config('aura.teams') ? createSuperAdmin()->currentTeam : null;
+    $user = User::factory()->create(
+        config('aura.teams') ? ['current_team_id' => $team->id] : [],
+    );
+    $attributes = [
+        'name' => 'Role-side rollback',
+        'slug' => 'role-side-rollback',
+        'permissions' => ['core04-role-side-rollback' => true],
+        'super_admin' => false,
+    ];
+
+    if (config('aura.teams')) {
+        $attributes['team_id'] = $user->current_team_id;
+    }
+
+    $role = Role::withoutGlobalScopes()->create($attributes);
+    $pivot = config('aura.teams') ? ['team_id' => $user->current_team_id] : [];
+    $connection = $role->getConnection();
+    $baselineLevel = $connection->transactionLevel();
+
+    expect($user->hasPermission('core04-role-side-rollback'))->toBeFalse();
+
+    $connection->beginTransaction();
+    $connection->beginTransaction();
+
+    try {
+        $role->users()->attach($user->id, $pivot);
+
+        expect($user->hasPermission('core04-role-side-rollback'))->toBeTrue();
+
+        $connection->commit();
+    } finally {
+        while ($connection->transactionLevel() > $baselineLevel) {
+            $connection->rollBack();
+        }
+    }
+
+    expect($user->hasPermission('core04-role-side-rollback'))->toBeFalse();
+});
+
+test('role-side team membership writes invalidate team snapshots and roll back safely', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Role-to-team Memberships require teams enabled.');
+    }
+
+    Cache::swap(serializedOptionCacheRepository());
+    $actor = createSuperAdmin();
+    $team = $actor->currentTeam;
+    $user = User::factory()->create(['current_team_id' => $team->id]);
+    $role = Role::withoutGlobalScopes()->create([
+        'name' => 'Role-side team snapshot',
+        'slug' => 'role-side-team-snapshot',
+        'permissions' => [],
+        'super_admin' => false,
+        'team_id' => $team->id,
+    ]);
+
+    expect($user->getTeams())->toHaveCount(0);
+
+    $connection = $role->getConnection();
+    $baselineLevel = $connection->transactionLevel();
+    $connection->beginTransaction();
+
+    try {
+        $role->teams()->attach($team->id, ['user_id' => $user->id]);
+        expect($user->getTeams()->pluck('id'))->toContain($team->id);
+    } finally {
+        while ($connection->transactionLevel() > $baselineLevel) {
+            $connection->rollBack();
+        }
+    }
+
+    expect($user->getTeams()->pluck('id'))->not->toContain($team->id);
+});
+
+test('role-side team attach detach and sync invalidate warmed team snapshots', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Role-to-team Memberships require teams enabled.');
+    }
+
+    Cache::swap(serializedOptionCacheRepository());
+    $actor = createSuperAdmin();
+    $team = $actor->currentTeam;
+    $user = User::factory()->create(['current_team_id' => $team->id]);
+    $role = Role::withoutGlobalScopes()->create([
+        'name' => 'Role-side team lifecycle',
+        'slug' => 'role-side-team-lifecycle',
+        'permissions' => [],
+        'super_admin' => false,
+        'team_id' => $team->id,
+    ]);
+    $pivot = ['user_id' => $user->id];
+
+    expect($user->getTeams())->toHaveCount(0);
+
+    $role->teams()->attach($team->id, $pivot);
+    expect($user->getTeams()->pluck('id'))->toContain($team->id);
+
+    $role->teams()->detach($team->id);
+    expect($user->getTeams()->pluck('id'))->not->toContain($team->id);
+
+    $role->teams()->sync([$team->id => $pivot]);
+    expect($user->getTeams()->pluck('id'))->toContain($team->id);
+
+    $role->teams()->sync([]);
+    expect($user->getTeams()->pluck('id'))->not->toContain($team->id);
+});
+
 test('team snapshots are transaction-local and rollback keeps the prior cached list valid', function () {
     Cache::swap(serializedOptionCacheRepository());
     $user = createSuperAdmin();
@@ -1060,6 +1326,26 @@ test('wildcard option reads preserve every stored falsey value', function () {
         'false' => false,
         'null' => null,
         'zero' => 0,
+    ]);
+});
+
+test('wildcard option reads preserve numeric suffix keys across legacy and canonical rows', function () {
+    $user = createSuperAdmin();
+    $attributes = [
+        'name' => 'user.'.$user->id.'.numeric.10',
+        'value' => ['source' => 'legacy'],
+    ];
+
+    if (config('aura.teams')) {
+        $attributes['team_id'] = $user->current_team_id;
+    }
+
+    Option::withoutGlobalScopes()->create($attributes);
+    $user->updateOption('numeric.20', ['source' => 'canonical']);
+
+    expect($user->getOption('numeric.*')->all())->toBe([
+        10 => ['source' => 'legacy'],
+        20 => ['source' => 'canonical'],
     ]);
 });
 
@@ -1339,7 +1625,37 @@ test('numeric user options migrate legacy rows and invalidate legacy cache gener
         ))->toBe(['version' => 2])
         ->and(Option::withoutGlobalScopes()->where('name', $legacyName)->exists())->toBeFalse()
         ->and(Option::withoutGlobalScopes()->count())->toBe(1)
-        ->and(Option::withoutGlobalScopes()->value('name'))->toStartWith('aura-user-option-v2:');
+        ->and(Option::withoutGlobalScopes()->value('name'))->toStartWith(User::optionNamePrefixFor($user->id));
+});
+
+test('version two user option identities migrate safely to the compact canonical identity', function () {
+    $user = createSuperAdmin();
+    $option = 'legacy-v2';
+    $versionTwoName = 'aura-user-option-v2:'
+        .VersionedCache::identity('option.user.owner', $user->id)
+        .':'
+        .$option;
+    $attributes = [
+        'name' => $versionTwoName,
+        'value' => ['version' => 2],
+    ];
+
+    if (config('aura.teams')) {
+        $attributes['team_id'] = $user->current_team_id;
+    }
+
+    Option::withoutGlobalScopes()->create($attributes);
+
+    expect($user->getOption($option))->toBe(['version' => 2]);
+
+    $user->updateOption($option, ['version' => 3]);
+
+    $physicalName = Option::withoutGlobalScopes()->sole()->getRawOriginal('name');
+
+    expect($user->getOption($option))->toBe(['version' => 3])
+        ->and($physicalName)->toBe(User::optionNamePrefixFor($user->id).$option)
+        ->and(strlen($physicalName))->toBeLessThanOrEqual(255)
+        ->and(Option::withoutGlobalScopes()->withTrashed()->where('name', $versionTwoName)->exists())->toBeFalse();
 });
 
 test('canonical numeric user writes remove stale legacy aliases', function () {

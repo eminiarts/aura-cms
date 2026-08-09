@@ -7,6 +7,7 @@ use DateInterval;
 use DateTimeInterface;
 use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseTransactionRecord;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use RuntimeException;
 use Throwable;
@@ -20,9 +21,9 @@ final class VersionedCache
     private const VALUE_PREFIX = 'aura.cache.value.';
 
     /**
-     * Register process-local cleanup against the transaction record owned by
-     * the supplied connection. Laravel's manager-level callback registration
-     * is global across connections, so it cannot safely select this record.
+     * Register process-local cleanup against every active record owned by the
+     * supplied connection. The first rollback boundary executes it once, while
+     * Laravel's manager-level registration cannot safely select a connection.
      */
     public static function afterRollback(Connection $connection, Closure $callback): void
     {
@@ -30,8 +31,22 @@ final class VersionedCache
             return;
         }
 
-        if ($transaction = self::transactionRecord($connection)) {
-            $transaction->addCallbackForRollback($callback);
+        $transactions = self::transactionRecords($connection);
+
+        if ($transactions->isNotEmpty()) {
+            $executed = false;
+            $once = static function () use (&$executed, $callback): void {
+                if ($executed) {
+                    return;
+                }
+
+                $executed = true;
+                $callback();
+            };
+
+            foreach ($transactions as $transaction) {
+                $transaction->addCallbackForRollback($once);
+            }
 
             return;
         }
@@ -88,15 +103,38 @@ final class VersionedCache
         }
     }
 
-    public static function identity(string $domain, string|int ...$segments): string
+    /**
+     * Return a fixed-width, lowercase 70-bit identity for constrained storage keys.
+     */
+    public static function compactIdentity(string $domain, string|int ...$segments): string
     {
-        $payload = self::identitySegment($domain);
+        $digest = substr(hash('sha256', self::identityPayload($domain, ...$segments), true), 0, 9);
+        $alphabet = '0123456789abcdefghjkmnpqrstvwxyz';
+        $encoded = '';
+        $buffer = 0;
+        $bits = 0;
 
-        foreach ($segments as $segment) {
-            $payload .= self::identitySegment($segment);
+        foreach (unpack('C*', $digest) as $byte) {
+            $buffer = ($buffer << 8) | $byte;
+            $bits += 8;
+
+            while ($bits >= 5) {
+                $bits -= 5;
+                $encoded .= $alphabet[($buffer >> $bits) & 31];
+                $buffer &= (1 << $bits) - 1;
+            }
         }
 
-        return hash('sha256', $payload);
+        if ($bits > 0) {
+            $encoded .= $alphabet[($buffer << (5 - $bits)) & 31];
+        }
+
+        return substr($encoded, 0, 14);
+    }
+
+    public static function identity(string $domain, string|int ...$segments): string
+    {
+        return hash('sha256', self::identityPayload($domain, ...$segments));
     }
 
     public static function isSafe(mixed $value): bool
@@ -275,6 +313,17 @@ final class VersionedCache
         return ! $transactions->getPendingTransactions()->contains($matchesConnection);
     }
 
+    private static function identityPayload(string $domain, string|int ...$segments): string
+    {
+        $payload = self::identitySegment($domain);
+
+        foreach ($segments as $segment) {
+            $payload .= self::identitySegment($segment);
+        }
+
+        return $payload;
+    }
+
     private static function identitySegment(string|int $segment): string
     {
         $type = is_int($segment) ? 'integer' : 'string';
@@ -290,21 +339,31 @@ final class VersionedCache
 
     private static function transactionRecord(Connection $connection): ?DatabaseTransactionRecord
     {
+        $record = self::transactionRecords($connection)->last();
+
+        return $record instanceof DatabaseTransactionRecord ? $record : null;
+    }
+
+    /**
+     * @return Collection<int, DatabaseTransactionRecord>
+     */
+    private static function transactionRecords(Connection $connection): Collection
+    {
         if (! app()->bound('db.transactions')) {
-            return null;
+            return collect();
         }
 
         $transactions = app('db.transactions');
 
         if (! method_exists($transactions, 'callbackApplicableTransactions')) {
-            return null;
+            return collect();
         }
 
-        $record = $transactions->callbackApplicableTransactions()
-            ->filter(fn ($transaction): bool => $transaction->connection === $connection->getName())
-            ->last();
-
-        return $record instanceof DatabaseTransactionRecord ? $record : null;
+        return $transactions->callbackApplicableTransactions()
+            ->filter(fn ($transaction): bool => $transaction instanceof DatabaseTransactionRecord
+                && $transaction->connection === $connection->getName())
+            ->sortBy(fn (DatabaseTransactionRecord $transaction): mixed => $transaction->level)
+            ->values();
     }
 
     private static function valueKey(string $namespace, string $generation, string $variant): string

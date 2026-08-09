@@ -313,13 +313,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function deleteOption($option)
     {
-        $optionNames = [$this->optionName($option)];
-
-        if ($this->readsLegacyOptionNames()) {
-            $optionNames[] = $this->legacyOptionName($option);
-        }
-
-        $this->optionQuery()->whereIn('name', $optionNames)->delete();
+        $this->optionQuery()->whereIn('name', $this->optionNames((string) $option))->delete();
 
         $this->forgetOptionCache($option);
     }
@@ -552,19 +546,20 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function getOptionEntry($option): array
     {
         $option = (string) $option;
-        $optionName = $this->optionName($option);
 
         return VersionedCache::remember(
             $this->optionCacheNamespace(),
             $this->optionCacheVariant($option),
             now()->addHour(),
-            function () use ($option, $optionName): array {
-                $record = $this->optionQuery()->where('name', $optionName)->first(['value']);
+            function () use ($option): array {
+                $record = null;
 
-                if ($record === null && $this->readsLegacyOptionNames()) {
-                    $record = $this->optionQuery()
-                        ->where('name', $this->legacyOptionName($option))
-                        ->first(['value']);
+                foreach ($this->optionNames($option) as $name) {
+                    $record = $this->optionQuery()->where('name', $name)->first(['value']);
+
+                    if ($record !== null) {
+                        break;
+                    }
                 }
 
                 return [
@@ -818,12 +813,13 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public static function optionNameBelongsToUser(string $name, string|int $userId): bool
     {
         return str_starts_with($name, self::optionNamePrefixFor($userId))
-            || str_starts_with($name, 'user.'.$userId.'.');
+            || str_starts_with($name, self::versionTwoOptionNamePrefixFor($userId))
+            || (is_int($userId) && str_starts_with($name, 'user.'.$userId.'.'));
     }
 
     public static function optionNamePrefixFor(string|int $userId): string
     {
-        return 'aura-user-option-v2:'.VersionedCache::identity('option.user.owner', $userId).':';
+        return 'u'.VersionedCache::compactIdentity('option.user.owner', $userId);
     }
 
     /**
@@ -933,11 +929,17 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         $optionName = $this->optionName($option);
         $record = $this->optionQuery()->withTrashed()->where('name', $optionName)->first();
 
-        if ($record === null && $this->readsLegacyOptionNames()) {
-            $record = $this->optionQuery()
-                ->withTrashed()
-                ->where('name', $this->legacyOptionName($option))
-                ->first();
+        if ($record === null) {
+            foreach (array_slice($this->optionNames($option), 1) as $legacyName) {
+                $record = $this->optionQuery()
+                    ->withTrashed()
+                    ->where('name', $legacyName)
+                    ->first();
+
+                if ($record !== null) {
+                    break;
+                }
+            }
         }
 
         if ($record) {
@@ -959,13 +961,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             ], ['value' => $value]);
         }
 
-        if ($this->readsLegacyOptionNames()) {
-            $this->optionQuery()
-                ->withTrashed()
-                ->where('name', $this->legacyOptionName($option))
-                ->where($record->getKeyName(), '!=', $record->getKey())
-                ->forceDelete();
-        }
+        $this->optionQuery()
+            ->withTrashed()
+            ->whereIn('name', array_slice($this->optionNames($option), 1))
+            ->where($record->getKeyName(), '!=', $record->getKey())
+            ->forceDelete();
 
         $this->forgetOptionCache($option, $record->getConnection());
     }
@@ -1086,6 +1086,25 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     }
 
     /**
+     * Canonical name followed by every readable migration alias.
+     *
+     * @return array<int, string>
+     */
+    protected function optionNames(string $option): array
+    {
+        $names = [
+            $this->optionName($option),
+            self::versionTwoOptionNamePrefixFor($this->id).$option,
+        ];
+
+        if ($this->readsLegacyOptionNames()) {
+            $names[] = $this->legacyOptionName($option);
+        }
+
+        return array_values(array_unique($names));
+    }
+
+    /**
      * @return Builder<Option>
      */
     protected function optionQuery(): Builder
@@ -1167,34 +1186,16 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
         if ($this->readsLegacyOptionNames()) {
             $legacyPrefix = $this->legacyOptionName($optionPrefix);
-            $values = $this->optionQuery()
-                ->where('name', 'like', $legacyPrefix.'%')
-                ->get(['name', 'value'])
-                ->mapWithKeys(function (Option $record) use ($legacyPrefix): array {
-                    $name = (string) $record->getRawOriginal('name');
-
-                    return [
-                        substr($name, strlen($legacyPrefix)) => $record->getAttributeValue('value'),
-                    ];
-                })
-                ->all();
+            $values = $this->wildcardOptionValuesForPrefix($legacyPrefix);
         }
 
-        $optionPrefix = $this->optionName($optionPrefix);
+        $versionTwoPrefix = self::versionTwoOptionNamePrefixFor($this->id).$optionPrefix;
+        $values = array_replace($values, $this->wildcardOptionValuesForPrefix($versionTwoPrefix));
+        $canonicalPrefix = $this->optionName($optionPrefix);
 
-        return array_merge(
+        return array_replace(
             $values,
-            $this->optionQuery()
-                ->where('name', 'like', $optionPrefix.'%')
-                ->get(['name', 'value'])
-                ->mapWithKeys(function (Option $record) use ($optionPrefix): array {
-                    $name = (string) $record->getRawOriginal('name');
-
-                    return [
-                        substr($name, strlen($optionPrefix)) => $record->getAttributeValue('value'),
-                    ];
-                })
-                ->all(),
+            $this->wildcardOptionValuesForPrefix($canonicalPrefix),
         );
     }
 
@@ -1214,5 +1215,28 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     protected static function teamsCacheNamespace(string|int $userId): string
     {
         return 'teams.user.'.$userId;
+    }
+
+    protected static function versionTwoOptionNamePrefixFor(string|int $userId): string
+    {
+        return 'aura-user-option-v2:'.VersionedCache::identity('option.user.owner', $userId).':';
+    }
+
+    /**
+     * @return array<string|int, mixed>
+     */
+    protected function wildcardOptionValuesForPrefix(string $physicalPrefix): array
+    {
+        return $this->optionQuery()
+            ->where('name', 'like', $physicalPrefix.'%')
+            ->get(['name', 'value'])
+            ->mapWithKeys(function (Option $record) use ($physicalPrefix): array {
+                $name = (string) $record->getRawOriginal('name');
+
+                return [
+                    substr($name, strlen($physicalPrefix)) => $record->getAttributeValue('value'),
+                ];
+            })
+            ->all();
     }
 }

@@ -223,6 +223,49 @@ test('rolled back role permission changes do not poison rebuilt navigation', fun
     expect($navigationResources())->not->toContain(NavigationModel::class);
 });
 
+test('an inner role commit followed by an outer rollback does not poison permission or navigation memos', function () {
+    Cache::swap(serializedNavigationCacheRepository());
+    Aura::registerResources([NavigationModel::class]);
+    $limitedUser = createAdmin();
+    $this->actingAs($limitedUser);
+    $navigationResources = fn () => Aura::navigation()
+        ->flatMap(fn (Collection $items): Collection => $items)
+        ->pluck('resource');
+    $role = Role::withoutGlobalScopes()->findOrFail($limitedUser->roles()->firstOrFail()->id);
+    $connection = $role->getConnection();
+    $baselineLevel = $connection->transactionLevel();
+
+    expect($limitedUser->hasPermissionTo('viewAny', new NavigationModel))->toBeFalse()
+        ->and($navigationResources())->not->toContain(NavigationModel::class);
+
+    $connection->beginTransaction();
+    $connection->beginTransaction();
+
+    try {
+        $role->update([
+            'permissions' => array_replace($role->permissions ?? [], [
+                'viewAny-navmodel' => true,
+            ]),
+        ]);
+
+        expect($limitedUser->hasPermissionTo('viewAny', new NavigationModel))->toBeTrue()
+            ->and($navigationResources())->toContain(NavigationModel::class);
+
+        $connection->commit();
+
+        expect($limitedUser->hasPermissionTo('viewAny', new NavigationModel))->toBeTrue();
+    } finally {
+        while ($connection->transactionLevel() > $baselineLevel) {
+            $connection->rollBack();
+        }
+    }
+
+    Cache::flush();
+
+    expect($limitedUser->hasPermissionTo('viewAny', new NavigationModel))->toBeFalse()
+        ->and($navigationResources())->not->toContain(NavigationModel::class);
+});
+
 test('membership role changes invalidate warmed navigation', function () {
     Cache::swap(serializedNavigationCacheRepository());
     Aura::registerResources([NavigationModel::class]);

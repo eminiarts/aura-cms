@@ -4,6 +4,7 @@ namespace Aura\Base\Resources;
 
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
 use Aura\Base\Models\Meta;
+use Aura\Base\Models\TeamUser;
 use Aura\Base\Navigation\Navigation;
 use Aura\Base\Resource;
 use Aura\Base\Services\VersionedCache;
@@ -481,6 +482,7 @@ class Role extends Resource
     public function teams(): BelongsToMany
     {
         return $this->belongsToMany(Team::class, 'user_role')
+            ->using(TeamUser::class)
             ->withPivot('user_id')
             ->withTimestamps();
     }
@@ -500,11 +502,13 @@ class Role extends Resource
     {
         if (config('aura.teams')) {
             return $this->belongsToMany(User::class, 'user_role')
+                ->using(TeamUser::class)
                 ->withPivot('team_id')
                 ->withTimestamps();
         }
 
         return $this->belongsToMany(User::class, 'user_role')
+            ->using(TeamUser::class)
             ->withTimestamps();
     }
 
