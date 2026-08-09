@@ -51,6 +51,7 @@ class FieldProviderRegistry
 
     public function flushResolved(): void
     {
+        $this->providerManagedFieldSlugs = [];
         $this->providerVersions = [];
         $this->resolvedDefinitions = [];
         $this->resolvedProviderFields = [];
@@ -59,7 +60,6 @@ class FieldProviderRegistry
     public function flushState(): void
     {
         $this->providers = $this->baselineProviders;
-        $this->providerManagedFieldSlugs = [];
         $this->flushResolved();
     }
 
@@ -70,6 +70,7 @@ class FieldProviderRegistry
      */
     public function refreshVersions(): void
     {
+        $this->providerManagedFieldSlugs = [];
         $this->providerVersions = [];
         $this->resolvedDefinitions = [];
     }

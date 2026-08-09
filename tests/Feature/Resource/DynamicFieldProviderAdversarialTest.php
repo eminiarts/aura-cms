@@ -9,6 +9,8 @@ use Aura\Base\FieldProviderContext;
 use Aura\Base\Fields\Text;
 use Aura\Base\Resource;
 use Aura\Base\Traits\InputFields;
+use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\Auth;
@@ -300,6 +302,88 @@ class Core08AttributeBoundaryProvider implements ContextualFieldProvider
     }
 }
 
+class Core08DatabaseManifestProvider implements ContextualFieldProvider
+{
+    public function cacheContext(string $resourceClass): array
+    {
+        return ['team_id' => Core08AttributeBoundaryProviderState::$teamId];
+    }
+
+    public function cacheVersion(FieldProviderContext $context): string|int
+    {
+        return (int) DB::table('core08_provider_catalog')->max('version');
+    }
+
+    public function fields(FieldProviderContext $context): array
+    {
+        if ($context->value('team_id') !== 1) {
+            return [];
+        }
+
+        return DB::table('core08_provider_catalog')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (object $field): array => [
+                'name' => $field->name,
+                'slug' => $field->slug,
+                'type' => 'Aura\\Base\\Fields\\Text',
+            ])
+            ->all();
+    }
+
+    public function managedFieldSlugs(string $resourceClass): array
+    {
+        return DB::table('core08_provider_catalog')
+            ->orderBy('id')
+            ->pluck('slug')
+            ->all();
+    }
+}
+
+class Core08HostileCast implements CastsAttributes
+{
+    public static int $getCalls = 0;
+
+    public function get(Model $model, string $key, mixed $value, array $attributes): mixed
+    {
+        static::$getCalls++;
+
+        return 'hostile cast secret: '.$value;
+    }
+
+    public function set(Model $model, string $key, mixed $value, array $attributes): mixed
+    {
+        return $value;
+    }
+}
+
+class Core08AppendBoundaryResource extends Core08HydrationResource
+{
+    public static int $accessorCalls = 0;
+
+    protected $appends = ['old_secret'];
+
+    public function arrayableAppendsForTest(): array
+    {
+        return $this->getArrayableAppends();
+    }
+
+    public function getOldSecretAttribute(mixed $value): string
+    {
+        static::$accessorCalls++;
+
+        return 'hostile accessor secret: '.$value;
+    }
+
+    protected function casts(): array
+    {
+        return [
+            ...parent::casts(),
+            'old_count' => Core08HostileCast::class,
+        ];
+    }
+}
+
 class Core08BaseFillableProvider implements ContextualFieldProvider
 {
     public function cacheContext(string $resourceClass): array
@@ -326,6 +410,35 @@ class Core08BaseFillableProvider implements ContextualFieldProvider
     public function managedFieldSlugs(string $resourceClass): array
     {
         return ['title'];
+    }
+}
+
+class Core08TimestampProvider implements ContextualFieldProvider
+{
+    public function cacheContext(string $resourceClass): array
+    {
+        return ['team_id' => Core08AttributeBoundaryProviderState::$teamId];
+    }
+
+    public function cacheVersion(FieldProviderContext $context): string|int
+    {
+        return 1;
+    }
+
+    public function fields(FieldProviderContext $context): array
+    {
+        if ($context->value('team_id') !== 1) {
+            return [];
+        }
+
+        return [
+            ['name' => 'Managed update timestamp', 'slug' => 'updated_at', 'type' => 'Aura\\Base\\Fields\\Text'],
+        ];
+    }
+
+    public function managedFieldSlugs(string $resourceClass): array
+    {
+        return ['updated_at'];
     }
 }
 
@@ -472,12 +585,26 @@ function createCore08ProviderRecordsTable(): void
         $table->string('old_secret')->nullable();
         $table->integer('old_count')->nullable();
         $table->integer('order')->nullable();
+        $table->json('fields')->nullable();
+        $table->string('old_catalog_secret')->nullable();
+        $table->string('new_catalog_secret')->nullable();
         $table->unsignedBigInteger('parent_id')->nullable();
         $table->timestamps();
     });
 }
 
+function createCore08ProviderCatalogTable(): void
+{
+    Schema::create('core08_provider_catalog', function (Blueprint $table): void {
+        $table->id();
+        $table->string('name');
+        $table->string('slug');
+        $table->unsignedInteger('version');
+    });
+}
+
 afterEach(function () {
+    Schema::dropIfExists('core08_provider_catalog');
     Schema::dropIfExists('core08_provider_records');
 });
 
@@ -493,6 +620,8 @@ beforeEach(function () {
     Core08ConditionalProviderState::$teamId = 1;
     Core08RefreshProviderState::$teamId = 1;
     Core08AttributeBoundaryProviderState::reset();
+    Core08AppendBoundaryResource::$accessorCalls = 0;
+    Core08HostileCast::$getCalls = 0;
     Core08VersionProviderState::reset();
     Core08UserProviderState::$fieldsCalls = 0;
     Core08UserProviderState::$userId = 1;
@@ -901,6 +1030,9 @@ it('physically quarantines inactive loaded relations and meta across lifecycle o
     expect($resource->push())->toBeTrue()
         ->and($related->newQuery()->whereKey($related->getKey())->value('title'))->toBe('persisted relation')
         ->and($resource->meta()->where('key', 'old_secret')->value('value'))->toBe('persisted meta relation secret')
+        ->and($resource->pushQuietly())->toBeTrue()
+        ->and($related->newQuery()->whereKey($related->getKey())->value('title'))->toBe('persisted relation')
+        ->and($resource->meta()->where('key', 'old_secret')->value('value'))->toBe('persisted meta relation secret')
         ->and(fn () => $resource->refresh())->not->toThrow(Throwable::class)
         ->and($resource->getRelations())->not->toHaveKey('old_relation')
         ->and($resource->getRelation('meta')->pluck('key')->all())->toBe(['active_meta']);
@@ -1269,6 +1401,432 @@ it('uses cache versions at an explicit refresh boundary without repeated field q
     expect($resource->fieldBySlug('versioned')['name'])->toBe('Version two-1')
         ->and(Core08VersionProviderState::$versionCalls)->toBe(3)
         ->and(Core08VersionProviderState::$fieldsCalls)->toBe(2);
+});
+
+it('recomputes a growing database manifest across the :invalidation boundary', function (string $invalidation) {
+    createCore08ProviderRecordsTable();
+    createCore08ProviderCatalogTable();
+    DB::table('core08_provider_catalog')->insert([
+        'name' => 'Old catalog field',
+        'slug' => 'old_catalog_secret',
+        'version' => 1,
+    ]);
+    DB::table((new Core08HydrationResource)->getTable())->insert([
+        'id' => 1,
+        'title' => 'catalog owner',
+        'old_catalog_secret' => 'old catalog secret',
+        'new_catalog_secret' => 'new catalog secret',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    Aura::registerFieldProvider(
+        Core08DatabaseManifestProvider::class,
+        resources: [Core08HydrationResource::class],
+    );
+    Aura::captureBaselineState();
+
+    $firstWorkerModel = Core08HydrationResource::withoutGlobalScopes()->firstOrFail();
+    $secondWorkerModel = Core08HydrationResource::withoutGlobalScopes()->firstOrFail();
+
+    expect($firstWorkerModel->fieldsCollection()->pluck('slug')->all())
+        ->toBe(['old_catalog_secret']);
+
+    DB::table('core08_provider_catalog')->insert([
+        'name' => 'New catalog field',
+        'slug' => 'new_catalog_secret',
+        'version' => 2,
+    ]);
+
+    match ($invalidation) {
+        'version refresh' => Aura::refreshFieldProviderVersions(),
+        'full field flush' => Aura::flushFieldCache(),
+        'worker state flush' => Aura::flushState(),
+    };
+
+    expect($firstWorkerModel->fieldsCollection()->pluck('slug')->all())
+        ->toBe(['old_catalog_secret', 'new_catalog_secret'])
+        ->and($secondWorkerModel->fieldsCollection()->pluck('slug')->all())
+        ->toBe(['old_catalog_secret', 'new_catalog_secret']);
+
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+
+    foreach ([$firstWorkerModel, $secondWorkerModel] as $workerModel) {
+        expect($workerModel->getAttributes())
+            ->not->toHaveKey('old_catalog_secret')
+            ->not->toHaveKey('new_catalog_secret');
+    }
+
+    $freshInactiveModel = Core08HydrationResource::withoutGlobalScopes()->firstOrFail();
+
+    expect($freshInactiveModel->getAttributes())
+        ->not->toHaveKey('old_catalog_secret')
+        ->not->toHaveKey('new_catalog_secret');
+})->with([
+    'version refresh' => 'version refresh',
+    'full field flush' => 'full field flush',
+    'worker state flush' => 'worker state flush',
+]);
+
+it('filters static and dynamic inactive appends before hostile accessors and casts run', function () {
+    Aura::registerFieldProvider(
+        Core08AttributeBoundaryProvider::class,
+        resources: [Core08AppendBoundaryResource::class],
+    );
+
+    $resource = (new Core08AppendBoundaryResource)->newFromBuilder([
+        'id' => 1,
+        'title' => 'append owner',
+        'old_secret' => 'raw accessor value',
+        'old_count' => 7,
+    ]);
+    $resource->append('old_count');
+
+    expect($resource->getAppends())->toBe(['old_secret', 'old_count'])
+        ->and($resource->arrayableAppendsForTest())->toBe([
+            'old_secret' => 'old_secret',
+            'old_count' => 'old_count',
+        ])
+        ->and($resource->attributesToArray())
+        ->toHaveKey('old_secret', 'hostile accessor secret: raw accessor value')
+        ->toHaveKey('old_count', 'hostile cast secret: 7');
+
+    Core08AppendBoundaryResource::$accessorCalls = 0;
+    Core08HostileCast::$getCalls = 0;
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+
+    expect($resource->getAppends())->toBe([])
+        ->and($resource->arrayableAppendsForTest())->toBe([])
+        ->and($resource->attributesToArray())
+        ->not->toHaveKey('old_secret')
+        ->not->toHaveKey('old_count')
+        ->and($resource->toArray())
+        ->not->toHaveKey('old_secret')
+        ->not->toHaveKey('old_count')
+        ->and($resource->toJson())
+        ->not->toContain('hostile accessor secret')
+        ->not->toContain('hostile cast secret')
+        ->and(Core08AppendBoundaryResource::$accessorCalls)->toBe(0)
+        ->and(Core08HostileCast::$getCalls)->toBe(0);
+
+    Core08AttributeBoundaryProviderState::$teamId = 1;
+
+    expect($resource->getAppends())->toBe(['old_secret', 'old_count'])
+        ->and($resource->attributesToArray())
+        ->toHaveKey('old_secret', 'hostile accessor secret: raw accessor value')
+        ->toHaveKey('old_count', 'hostile cast secret: 7');
+});
+
+it('blocks inactive atomic primary writes through :method', function (string $method, array $parameters) {
+    createCore08ProviderRecordsTable();
+    DB::table((new Core08HydrationResource)->getTable())->insert([
+        'id' => 1,
+        'title' => 'atomic owner',
+        'old_secret' => 'persisted secret',
+        'old_count' => 10,
+        'order' => 2,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    Aura::registerFieldProvider(
+        Core08AttributeBoundaryProvider::class,
+        resources: [Core08HydrationResource::class],
+    );
+
+    $resource = Core08HydrationResource::withoutGlobalScopes()->firstOrFail();
+    $resource->old_secret = 'pending active secret';
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+
+    expect(fn () => $resource->{$method}(...$parameters))
+        ->toThrow(LogicException::class, 'inactive provider-managed field [old_count]')
+        ->and(DB::table($resource->getTable())->where('id', 1)->value('old_count'))->toBe(10)
+        ->and(DB::table($resource->getTable())->where('id', 1)->value('old_secret'))->toBe('persisted secret');
+
+    Core08AttributeBoundaryProviderState::$teamId = 1;
+
+    expect($resource->old_secret)->toBe('pending active secret')
+        ->and($resource->getRawOriginal('old_secret'))->toBe('persisted secret')
+        ->and($resource->isDirty('old_secret'))->toBeTrue()
+        ->and($resource->old_count)->toBe(10);
+})->with([
+    'increment' => ['increment', ['old_count', 2]],
+    'decrement' => ['decrement', ['old_count', 2]],
+    'increment quietly' => ['incrementQuietly', ['old_count', 2]],
+    'decrement quietly' => ['decrementQuietly', ['old_count', 2]],
+    'increment each' => ['incrementEach', [['old_count' => 2]]],
+    'decrement each' => ['decrementEach', [['old_count' => 2]]],
+    'increment each quietly' => ['incrementEachQuietly', [['old_count' => 2]]],
+    'decrement each quietly' => ['decrementEachQuietly', [['old_count' => 2]]],
+    'increment or fail' => ['incrementOrFail', ['old_count', 2]],
+    'decrement or fail' => ['decrementOrFail', ['old_count', 2]],
+]);
+
+it('blocks inactive atomic extra columns without disturbing active state', function (string $method, array $parameters) {
+    createCore08ProviderRecordsTable();
+    DB::table((new Core08HydrationResource)->getTable())->insert([
+        'id' => 1,
+        'title' => 'atomic extra owner',
+        'old_secret' => 'persisted secret',
+        'old_count' => 10,
+        'order' => 2,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    Aura::registerFieldProvider(
+        Core08AttributeBoundaryProvider::class,
+        resources: [Core08HydrationResource::class],
+    );
+
+    $resource = Core08HydrationResource::withoutGlobalScopes()->firstOrFail();
+    $resource->old_secret = 'pending active secret';
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+
+    expect(fn () => $resource->{$method}(...$parameters))
+        ->toThrow(LogicException::class, 'inactive provider-managed field')
+        ->and(DB::table($resource->getTable())->where('id', 1)->value('order'))->toBe(2)
+        ->and(DB::table($resource->getTable())->where('id', 1)->value('old_secret'))->toBe('persisted secret');
+
+    Core08AttributeBoundaryProviderState::$teamId = 1;
+
+    expect($resource->old_secret)->toBe('pending active secret')
+        ->and($resource->getRawOriginal('old_secret'))->toBe('persisted secret')
+        ->and($resource->isDirty('old_secret'))->toBeTrue();
+})->with([
+    'increment' => ['increment', ['order', 2, ['old_secret' => 'atomic extra attack']]],
+    'decrement' => ['decrement', ['order', 2, ['old_secret' => 'atomic extra attack']]],
+    'increment quietly' => ['incrementQuietly', ['order', 2, ['old_secret' => 'atomic extra attack']]],
+    'decrement quietly' => ['decrementQuietly', ['order', 2, ['old_secret' => 'atomic extra attack']]],
+    'increment each' => ['incrementEach', [['order' => 2], ['old_secret' => 'atomic extra attack']]],
+    'decrement each' => ['decrementEach', [['order' => 2], ['old_secret' => 'atomic extra attack']]],
+    'increment each quietly' => ['incrementEachQuietly', [['order' => 2], ['old_secret' => 'atomic extra attack']]],
+    'decrement each quietly' => ['decrementEachQuietly', [['order' => 2], ['old_secret' => 'atomic extra attack']]],
+    'nested fields extra' => ['increment', ['order', 2, ['fields' => ['old_secret' => 'nested atomic extra attack']]]],
+    'json selector extra' => ['increment', ['order', 2, ['fields->profile->secret' => 'selector atomic extra attack']]],
+    'increment or fail' => ['incrementOrFail', ['order', 2, ['old_secret' => 'atomic extra attack']]],
+    'decrement or fail' => ['decrementOrFail', ['order', 2, ['old_secret' => 'atomic extra attack']]],
+]);
+
+it('allows active and nonmanaged atomic updates while restoring hidden state exactly', function () {
+    createCore08ProviderRecordsTable();
+    DB::table((new Core08HydrationResource)->getTable())->insert([
+        'id' => 1,
+        'title' => 'allowed atomic owner',
+        'old_secret' => 'persisted secret',
+        'old_count' => 10,
+        'order' => 2,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    Aura::registerFieldProvider(
+        Core08AttributeBoundaryProvider::class,
+        resources: [Core08HydrationResource::class],
+    );
+
+    $resource = Core08HydrationResource::withoutGlobalScopes()->firstOrFail();
+
+    expect($resource->incrementOrFail('old_count', 2))->toBe(1)
+        ->and(DB::table($resource->getTable())->where('id', 1)->value('old_count'))->toBe(12);
+
+    $resource->old_secret = 'pending active secret';
+    $resource->syncChanges();
+    $hiddenState = [
+        'attribute' => $resource->getAttributes()['old_secret'],
+        'original' => $resource->getRawOriginal('old_secret'),
+        'change' => $resource->getChanges()['old_secret'],
+        'previous_present' => array_key_exists('old_secret', $resource->getPrevious()),
+        'previous' => $resource->getPrevious()['old_secret'] ?? null,
+        'dirty' => $resource->getDirty()['old_secret'],
+    ];
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+
+    expect($resource->increment('order', 3))->toBe(1)
+        ->and($resource->decrementQuietly('order', 1))->toBe(1)
+        ->and($resource->incrementEach(['order' => 2]))->toBe(1)
+        ->and($resource->incrementOrFail('order', 1))->toBe(1)
+        ->and($resource->decrementOrFail('order', 1))->toBe(1)
+        ->and(DB::table($resource->getTable())->where('id', 1)->value('order'))->toBe(6)
+        ->and(DB::table($resource->getTable())->where('id', 1)->value('old_secret'))->toBe('persisted secret');
+
+    Core08AttributeBoundaryProviderState::$teamId = 1;
+
+    expect($resource->old_secret)->toBe('pending active secret')
+        ->and($resource->getAttributes()['old_secret'])->toBe($hiddenState['attribute'])
+        ->and($resource->getRawOriginal('old_secret'))->toBe($hiddenState['original'])
+        ->and($resource->getChanges()['old_secret'])->toBe($hiddenState['change'])
+        ->and(array_key_exists('old_secret', $resource->getPrevious()))->toBe($hiddenState['previous_present'])
+        ->and($resource->getPrevious()['old_secret'] ?? null)->toBe($hiddenState['previous'])
+        ->and($resource->getDirty()['old_secret'])->toBe($hiddenState['dirty'])
+        ->and($resource->old_count)->toBe(12);
+});
+
+it('suppresses implicit timestamp extras when atomic nonmanaged writes run', function () {
+    createCore08ProviderRecordsTable();
+    $persistedTimestamp = now()->subDay()->startOfSecond();
+    DB::table((new Core08HydrationResource)->getTable())->insert([
+        'id' => 1,
+        'title' => 'timestamp owner',
+        'old_count' => 10,
+        'order' => 1,
+        'created_at' => $persistedTimestamp,
+        'updated_at' => $persistedTimestamp,
+    ]);
+    Aura::registerFieldProvider(
+        Core08TimestampProvider::class,
+        resources: [Core08HydrationResource::class],
+    );
+
+    $resource = Core08HydrationResource::withoutGlobalScopes()->firstOrFail();
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+
+    expect($resource->increment('order'))->toBe(1)
+        ->and($resource->upsert(
+            [['id' => 1, 'order' => 3]],
+            ['id'],
+            ['order'],
+        ))->toBe(1)
+        ->and(DB::table($resource->getTable())->where('id', 1)->value('order'))->toBe(3)
+        ->and(DB::table($resource->getTable())->where('id', 1)->value('updated_at'))
+        ->toBe($persistedTimestamp->format('Y-m-d H:i:s'));
+
+    Core08AttributeBoundaryProviderState::$teamId = 1;
+
+    expect($resource->getRawOriginal('updated_at'))
+        ->toBe($persistedTimestamp->format('Y-m-d H:i:s'));
+});
+
+it('guards direct query writes reached through a model instance via :method', function (string $method) {
+    createCore08ProviderRecordsTable();
+    DB::table((new Core08HydrationResource)->getTable())->insert([
+        'id' => 1,
+        'title' => 'direct write owner',
+        'old_secret' => 'persisted secret',
+        'old_count' => 10,
+        'order' => 2,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    Aura::registerFieldProvider(
+        Core08AttributeBoundaryProvider::class,
+        resources: [Core08HydrationResource::class],
+    );
+
+    $resource = Core08HydrationResource::withoutGlobalScopes()->firstOrFail();
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+
+    $write = match ($method) {
+        'upsert' => fn (): mixed => $resource->upsert(
+            [['id' => 1, 'old_secret' => 'upsert attack']],
+            ['id'],
+            ['old_secret'],
+        ),
+        'updateOrInsert' => fn (): mixed => $resource->updateOrInsert(
+            ['id' => 1],
+            ['old_secret' => 'update or insert attack'],
+        ),
+        'updateOrInsertClosure' => fn (): mixed => $resource->updateOrInsert(
+            ['id' => 1],
+            fn (): array => ['old_secret' => 'closure update or insert attack'],
+        ),
+        'insertOrIgnore' => fn (): mixed => $resource->insertOrIgnore([
+            'id' => 2,
+            'old_secret' => 'insert attack',
+        ]),
+        'nestedUpsert' => fn (): mixed => $resource->upsert(
+            [['id' => 1, 'fields' => ['old_secret' => 'nested upsert attack']]],
+            ['id'],
+            ['fields'],
+        ),
+        'selectorUpdateOrInsert' => fn (): mixed => $resource->updateOrInsert(
+            ['id' => 1],
+            ['fields->profile->secret' => 'selector update or insert attack'],
+        ),
+    };
+
+    expect($write)
+        ->toThrow(LogicException::class, 'inactive provider-managed field')
+        ->and(DB::table($resource->getTable())->where('id', 1)->value('old_secret'))->toBe('persisted secret')
+        ->and(DB::table($resource->getTable())->count())->toBe(1);
+})->with([
+    'upsert' => 'upsert',
+    'update or insert' => 'updateOrInsert',
+    'update or insert closure' => 'updateOrInsertClosure',
+    'insert or ignore' => 'insertOrIgnore',
+    'nested upsert' => 'nestedUpsert',
+    'selector update or insert' => 'selectorUpdateOrInsert',
+]);
+
+it('blocks explicit inactive touch columns without changing their pending state', function (string $method) {
+    createCore08ProviderRecordsTable();
+    DB::table((new Core08HydrationResource)->getTable())->insert([
+        'id' => 1,
+        'title' => 'touch owner',
+        'old_secret' => 'persisted secret',
+        'old_count' => 10,
+        'order' => 1,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    Aura::registerFieldProvider(
+        Core08AttributeBoundaryProvider::class,
+        resources: [Core08HydrationResource::class],
+    );
+
+    $resource = Core08HydrationResource::withoutGlobalScopes()->firstOrFail();
+    $resource->old_secret = 'pending active secret';
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+
+    expect(fn () => $resource->{$method}('old_secret'))
+        ->toThrow(LogicException::class, 'inactive provider-managed field [old_secret]')
+        ->and(DB::table($resource->getTable())->where('id', 1)->value('old_secret'))->toBe('persisted secret');
+
+    Core08AttributeBoundaryProviderState::$teamId = 1;
+
+    expect($resource->old_secret)->toBe('pending active secret')
+        ->and($resource->getRawOriginal('old_secret'))->toBe('persisted secret')
+        ->and($resource->isDirty('old_secret'))->toBeTrue();
+})->with([
+    'touch' => 'touch',
+    'touch quietly' => 'touchQuietly',
+]);
+
+it('keeps quiet save lifecycle paths isolated and permits nonmanaged instance upserts', function () {
+    createCore08ProviderRecordsTable();
+    DB::table((new Core08HydrationResource)->getTable())->insert([
+        'id' => 1,
+        'title' => 'quiet lifecycle owner',
+        'old_secret' => 'persisted secret',
+        'old_count' => 10,
+        'order' => 1,
+        'created_at' => now()->subMinute(),
+        'updated_at' => now()->subMinute(),
+    ]);
+    Aura::registerFieldProvider(
+        Core08AttributeBoundaryProvider::class,
+        resources: [Core08HydrationResource::class],
+    );
+
+    $resource = Core08HydrationResource::withoutGlobalScopes()->firstOrFail();
+    $resource->old_secret = 'pending active secret';
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+
+    expect($resource->updateQuietly(['order' => 2, 'old_secret' => 'quiet update attack']))->toBeTrue();
+
+    $resource->order = 3;
+
+    expect($resource->pushQuietly())->toBeTrue()
+        ->and($resource->touch())->toBeTrue()
+        ->and($resource->upsert(
+            [['id' => 1, 'order' => 4]],
+            ['id'],
+            ['order'],
+        ))->toBe(1)
+        ->and(DB::table($resource->getTable())->where('id', 1)->value('order'))->toBe(4)
+        ->and(DB::table($resource->getTable())->where('id', 1)->value('old_secret'))->toBe('persisted secret');
+
+    Core08AttributeBoundaryProviderState::$teamId = 1;
+
+    expect($resource->old_secret)->toBe('pending active secret')
+        ->and($resource->getRawOriginal('old_secret'))->toBe('persisted secret')
+        ->and($resource->isDirty('old_secret'))->toBeTrue();
 });
 
 it('rejects provider object registrations', function () {

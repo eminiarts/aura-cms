@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use LogicException;
 
 /**
  * Dynamic property access on a Resource resolves in a fixed precedence order,
@@ -54,6 +55,24 @@ class Resource extends Model implements DefinesFields
     use InteractsWithTable;
     use SaveFieldAttributes;
     use SaveMetaFields;
+
+    /**
+     * Query-builder writes that can be reached through Model::__call without
+     * passing through this model's save boundary.
+     *
+     * @var array<int, string>
+     */
+    private const GUARDED_FORWARDED_WRITE_METHODS = [
+        'insert',
+        'insertGetId',
+        'insertOrIgnore',
+        'insertOrIgnoreReturning',
+        'insertOrIgnoreUsing',
+        'insertUsing',
+        'updateFrom',
+        'updateOrInsert',
+        'upsert',
+    ];
 
     public $fieldsAttributeCache;
 
@@ -165,6 +184,9 @@ class Resource extends Model implements DefinesFields
 
     public function __call($method, $parameters)
     {
+        $isGuardedForwardedWrite = is_string($method)
+            && in_array($method, self::GUARDED_FORWARDED_WRITE_METHODS, true);
+
         if ($this->getFieldSlugs()->contains($method)) {
 
             $fieldClass = $this->fieldClassBySlug($method);
@@ -178,6 +200,17 @@ class Resource extends Model implements DefinesFields
         }
 
         // Default behavior for methods not handled dynamically
+        if ($isGuardedForwardedWrite) {
+            $parameters = $this->guardForwardedPersistenceCall($method, $parameters);
+
+            return $this->withoutInactiveAutomaticTimestamps(
+                fn (): mixed => parent::__call($method, $parameters),
+                $method === 'upsert'
+                    ? [$this->getCreatedAtColumn(), $this->getUpdatedAtColumn()]
+                    : [],
+            );
+        }
+
         return parent::__call($method, $parameters);
     }
 
@@ -283,6 +316,28 @@ class Resource extends Model implements DefinesFields
             $this->load('meta'); // This will refresh only the 'meta' relationship
         }
 
+    }
+
+    public function decrementOrFail(string $column, float|int $amount = 1, array $extra = []): int|false
+    {
+        return $this->getConnection()->transaction(
+            fn (): int|false => $this->incrementOrDecrement($column, $amount, $extra, 'decrement'),
+        );
+    }
+
+    /**
+     * Return only accessors that are visible in the active provider context.
+     *
+     * @return array<int, string>
+     */
+    public function getAppends(): array
+    {
+        return $this->readAfterSynchronizingFieldDefinition(
+            fn (): array => array_values(array_diff(
+                parent::getAppends(),
+                $this->inactiveProviderFieldSlugs,
+            )),
+        );
     }
 
     /**
@@ -579,6 +634,13 @@ class Resource extends Model implements DefinesFields
         return array_key_exists($slug, $this->tableDisplayCache);
     }
 
+    public function incrementOrFail(string $column, float|int $amount = 1, array $extra = []): int|false
+    {
+        return $this->getConnection()->transaction(
+            fn (): int|false => $this->incrementOrDecrement($column, $amount, $extra, 'increment'),
+        );
+    }
+
     public function isBaseFillable($key)
     {
         return in_array($key, $this->baseFillable);
@@ -862,6 +924,16 @@ class Resource extends Model implements DefinesFields
         return $this;
     }
 
+    public function touch($attribute = null): bool
+    {
+        $this->assertNoInactiveProviderFieldPersistence(
+            Arr::wrap($attribute),
+            'touch',
+        );
+
+        return parent::touch($attribute);
+    }
+
     public function unsetRelation($relation)
     {
         if ($relation === 'meta') {
@@ -955,6 +1027,39 @@ class Resource extends Model implements DefinesFields
     }
 
     /**
+     * @param  array<string, mixed>  $extra
+     */
+    protected function incrementOrDecrement($column, $amount, $extra, $method): int|false
+    {
+        $this->assertNoInactiveProviderFieldPersistence(
+            [$column, ...array_keys($extra)],
+            $method,
+        );
+
+        return $this->withoutInactiveAutomaticTimestamps(
+            fn (): int|false => parent::incrementOrDecrement($column, $amount, $extra, $method),
+            [$this->getUpdatedAtColumn()],
+        );
+    }
+
+    /**
+     * @param  array<string, float|int>  $columns
+     * @param  array<string, mixed>  $extra
+     */
+    protected function incrementOrDecrementEach(array $columns, array $extra, string $method): int|false
+    {
+        $this->assertNoInactiveProviderFieldPersistence(
+            [...array_keys($columns), ...array_keys($extra)],
+            $method,
+        );
+
+        return $this->withoutInactiveAutomaticTimestamps(
+            fn (): int|false => parent::incrementOrDecrementEach($columns, $extra, $method),
+            [$this->getUpdatedAtColumn()],
+        );
+    }
+
+    /**
      * Refresh per-instance state when a provider context/version or the global
      * field-cache generation changes. The resolution is committed only after
      * its parsed input slugs build successfully.
@@ -1009,6 +1114,50 @@ class Resource extends Model implements DefinesFields
     }
 
     /**
+     * @param  array<int, mixed>  $columns
+     */
+    private function assertNoInactiveProviderFieldPersistence(array $columns, string $operation): void
+    {
+        $this->ensureFieldDefinitionState();
+        $this->quarantineInactiveProviderFieldState();
+
+        foreach ($columns as $column) {
+            if (! is_string($column)) {
+                continue;
+            }
+
+            $inactiveSlug = $this->inactiveProviderFieldSlugForPersistenceColumn($column);
+
+            if ($inactiveSlug === null && $column === 'fields' && $this->inactiveProviderFieldSlugs !== []) {
+                $inactiveSlug = $this->inactiveProviderFieldSlugs[0];
+            }
+
+            if ($inactiveSlug !== null) {
+                throw new LogicException("Cannot {$operation} inactive provider-managed field [{$inactiveSlug}].");
+            }
+        }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function attributePayloadColumns(mixed $payload): array
+    {
+        if (! is_array($payload) || $payload === []) {
+            return [];
+        }
+
+        if (array_is_list($payload) && collect($payload)->every(fn (mixed $row): bool => is_array($row))) {
+            return array_values(array_unique(array_merge(...array_map(
+                fn (array $row): array => array_keys($row),
+                $payload,
+            ))));
+        }
+
+        return array_keys($payload);
+    }
+
+    /**
      * @return array<string, array{present: bool, value?: mixed}>
      */
     private function captureFieldContainerState(): array
@@ -1028,6 +1177,22 @@ class Resource extends Model implements DefinesFields
         return $snapshot;
     }
 
+    /**
+     * @return array<int, string>
+     */
+    private function columnList(mixed $columns): array
+    {
+        if (! is_array($columns)) {
+            return is_string($columns) ? [$columns] : [];
+        }
+
+        if (array_is_list($columns)) {
+            return array_values(array_filter($columns, is_string(...)));
+        }
+
+        return array_keys($columns);
+    }
+
     private function discardQuarantinedAttributeStateForRefresh(): void
     {
         foreach (['attributes', 'original', 'changes', 'previous', 'classCastCache', 'attributeCastCache'] as $stateName) {
@@ -1040,6 +1205,76 @@ class Resource extends Model implements DefinesFields
                 $this->quarantinedProviderFieldState['nestedTemplates'][$stateName],
             );
         }
+    }
+
+    /**
+     * @param  array<int, mixed>  $parameters
+     * @return array<int, mixed>
+     */
+    private function guardForwardedPersistenceCall(string $method, array $parameters): array
+    {
+        $columns = match ($method) {
+            'insertUsing', 'insertOrIgnoreUsing' => $this->columnList($parameters[0] ?? []),
+            'updateOrInsert' => [
+                ...$this->attributePayloadColumns($parameters[0] ?? []),
+                ...$this->attributePayloadColumns(
+                    ($parameters[1] ?? []) instanceof Closure ? [] : ($parameters[1] ?? []),
+                ),
+            ],
+            'upsert' => [
+                ...$this->attributePayloadColumns($parameters[0] ?? []),
+                ...$this->columnList($parameters[2] ?? []),
+                ...$this->columnList($this->uniqueIds()),
+            ],
+            'insertOrIgnoreReturning' => [
+                ...$this->attributePayloadColumns($parameters[0] ?? []),
+                ...$this->columnList($parameters[1] ?? []),
+            ],
+            default => $this->attributePayloadColumns($parameters[0] ?? []),
+        };
+
+        $this->assertNoInactiveProviderFieldPersistence($columns, $method);
+
+        if ($method === 'updateOrInsert' && ($parameters[1] ?? null) instanceof Closure) {
+            $values = $parameters[1];
+            $parameters[1] = function (bool $exists) use ($method, $values): array {
+                $resolvedValues = $values($exists);
+                $this->assertNoInactiveProviderFieldPersistence(
+                    $this->attributePayloadColumns($resolvedValues),
+                    $method,
+                );
+
+                return $resolvedValues;
+            };
+        }
+
+        return $parameters;
+    }
+
+    private function inactiveProviderFieldSlugForPersistenceColumn(string $column): ?string
+    {
+        if ($this->isInactiveProviderFieldSlug($column)) {
+            return $column;
+        }
+
+        $baseColumn = Str::before($column, '->');
+
+        if ($baseColumn !== $column && $this->isInactiveProviderFieldSlug($baseColumn)) {
+            return $baseColumn;
+        }
+
+        if (! Str::startsWith($column, ['fields->', 'fields.'])) {
+            return null;
+        }
+
+        $slug = Str::of($column)
+            ->after('fields')
+            ->ltrim('.->')
+            ->replace('->', '.')
+            ->replace(['"', "'"], '')
+            ->toString();
+
+        return $this->isInactiveProviderFieldSlug($slug) ? $slug : null;
     }
 
     private function isInactiveProviderFieldSlug(mixed $key): bool
@@ -1407,6 +1642,32 @@ class Resource extends Model implements DefinesFields
                 = $this->quarantinedProviderFieldState['nestedTemplates']['attributes'];
         } else {
             unset($this->quarantinedProviderFieldState['nestedTemplates']['original']);
+        }
+    }
+
+    /**
+     * @param  array<int, string|null>  $automaticTimestampColumns
+     */
+    private function withoutInactiveAutomaticTimestamps(
+        Closure $persist,
+        array $automaticTimestampColumns,
+    ): mixed {
+        $timestampColumns = array_filter($automaticTimestampColumns);
+
+        if (! $this->usesTimestamps()
+            || collect($timestampColumns)->doesntContain(
+                fn (string $column): bool => $this->isInactiveProviderFieldSlug($column),
+            )) {
+            return $persist();
+        }
+
+        $usesTimestamps = $this->timestamps;
+        $this->timestamps = false;
+
+        try {
+            return $persist();
+        } finally {
+            $this->timestamps = $usesTimestamps;
         }
     }
 
