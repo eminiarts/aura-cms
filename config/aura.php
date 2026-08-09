@@ -52,6 +52,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Component Slots
+    |--------------------------------------------------------------------------
+    |
+    | A non-null class is an explicit host choice. Leave a slot null to allow
+    | one plugin candidate to win, with Aura's component as the fallback.
+    |
+    */
+
+    'component-slots' => [
+        'global-search' => null,
+        'media-manager' => null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Components
     |--------------------------------------------------------------------------
     |

@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Livewire\ComponentSlots\ComponentSlotRegistry;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Livewire\Media\MediaSelectionBroker;
 use Aura\Base\Livewire\Media\MediaSelectionRejected;
@@ -215,3 +216,14 @@ test('manager rejects guests foreign selected ids and browser mutation of locked
         ->and(fn () => $manager->call('requestMediaSelection', ['999999']))
         ->toThrow(Exception::class);
 });
+
+test('media manager transport and compatibility aliases mount and hydrate the selected winner', function (string $identifier) {
+    Livewire::test($identifier, $this->arguments)
+        ->call('requestMediaSelection', [(string) $this->attachment->getKey()])
+        ->assertSet('pending', true)
+        ->assertNotDispatched('closeModal');
+})->with([
+    'transport' => ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID,
+    'blade alias' => 'aura::media-manager',
+    'dot alias' => 'aura.base.livewire.media-manager',
+]);

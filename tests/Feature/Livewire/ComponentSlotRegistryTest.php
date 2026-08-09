@@ -29,7 +29,7 @@ class FakeLivewireComponentSlotBridge implements LivewireComponentSlotBridge
     /** @var array<string, class-string<Component>> */
     public array $registrations = [];
 
-    public ?\Closure $resolver = null;
+    public ?Closure $resolver = null;
 
     /** @var list<string> */
     public array $unclaimedIdentifiers = [];
@@ -112,7 +112,9 @@ test('registry freezes exactly two default slots and keeps all compatibility ali
         ->and($registry->winner('media-manager'))->toBe(MediaManager::class)
         ->and($bridge->registrations)->toBe([
             ComponentSlotRegistry::GLOBAL_SEARCH_TRANSPORT_ID => GlobalSearch::class,
+            'aura.base.livewire.global-search' => GlobalSearch::class,
             ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID => MediaManager::class,
+            'aura.base.livewire.media-manager' => MediaManager::class,
         ])
         ->and($bridge->resolve('aura::global-search'))->toBe(['aura::global-search', GlobalSearch::class])
         ->and($bridge->resolve('aura.base.livewire.global-search'))->toBe(['aura.base.livewire.global-search', GlobalSearch::class])

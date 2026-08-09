@@ -3,6 +3,7 @@
 namespace Aura\Base;
 
 use Aura\Base\Fields\Field as AuraField;
+use Aura\Base\Livewire\ComponentSlots\ComponentSlotRegistry;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Livewire\Resource\Index;
@@ -457,6 +458,14 @@ class Aura
     public function options()
     {
         return config('aura');
+    }
+
+    /**
+     * @param  array<string, mixed>  $slots
+     */
+    public function registerComponentSlots(string $source, array $slots): void
+    {
+        app(ComponentSlotRegistry::class)->register($source, $slots);
     }
 
     public function registerFields(array $fields): void

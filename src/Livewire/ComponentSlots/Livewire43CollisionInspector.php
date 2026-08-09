@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Livewire\ComponentSlots;
 
+use Aura\Base\Livewire\GlobalSearch;
+use Aura\Base\Livewire\MediaManager;
 use Closure;
 use Livewire\Factory\Factory;
 use Livewire\Finder\Finder;
@@ -113,7 +115,7 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
 
             $class = $this->finder->resolveClassComponentClassName($normalized);
 
-            if ($class !== null) {
+            if ($class !== null && ! $this->isIntrinsicCompatibilityClass($identifier, $class)) {
                 $this->collision($identifier, 'conventional-class', $class);
             }
 
@@ -197,6 +199,15 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         throw new ComponentSlotCollision(
             "Livewire component identifier [{$identifier}] is already claimed by [{$kind}] target [{$description}]."
         );
+    }
+
+    private function isIntrinsicCompatibilityClass(string $identifier, string $class): bool
+    {
+        return match ($identifier) {
+            'aura.base.livewire.global-search' => $class === GlobalSearch::class,
+            'aura.base.livewire.media-manager' => $class === MediaManager::class,
+            default => false,
+        };
     }
 
     private function read(object $target, string $propertyName): mixed

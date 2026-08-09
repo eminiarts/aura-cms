@@ -115,6 +115,17 @@ test('inspector detects conventional class discovery', function () {
         ->toThrow(ComponentSlotCollision::class, 'conventional-class');
 });
 
+test('inspector recognizes Aura default dot aliases as the intrinsic compatibility baseline', function () {
+    [$inspector] = freshCollisionInspector();
+
+    $inspector->assertUnclaimed([
+        'aura.base.livewire.global-search',
+        'aura.base.livewire.media-manager',
+    ], static fn (): null => null);
+
+    expect(true)->toBeTrue();
+});
+
 test('inspector detects single and multi file discovery without compiling or mutating Finder state', function (string $kind) {
     $path = storage_path('framework/testing/core20-'.$kind.'-'.uniqid());
     mkdir($path, 0755, true);

@@ -80,6 +80,12 @@ class ComponentSlotRegistry
             $winner = $this->winners[$slot];
             $this->bridge->register($definition['transport'], $winner);
             $this->assertResolution($definition['transport'], $winner);
+
+            foreach ($definition['aliases'] as $alias) {
+                if (! str_contains($alias, '::')) {
+                    $this->bridge->register($alias, $winner);
+                }
+            }
         }
 
         $this->internalAliasResolution = true;
