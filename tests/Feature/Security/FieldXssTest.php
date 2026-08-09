@@ -10,6 +10,7 @@ use Aura\Base\Livewire\Resource\View as ResourceView;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 
 use function Pest\Livewire\livewire;
@@ -52,6 +53,21 @@ class XssResourceModel extends Resource
                 'slug' => 'nested',
                 'on_index' => true,
                 'on_view' => true,
+            ],
+            [
+                'name' => 'Legacy date',
+                'type' => 'Aura\\Base\\Fields\\Date',
+                'slug' => 'legacy_date',
+                'format' => 'Y-m-d',
+            ],
+            [
+                'name' => 'Legacy datetime',
+                'type' => 'Aura\\Base\\Fields\\Datetime',
+                'slug' => 'legacy_datetime',
+                'format' => 'Y-m-d H:i:s',
+                'input_timezone' => 'UTC',
+                'display_timezone' => 'UTC',
+                'storage_timezone' => 'UTC',
             ],
         ];
     }
@@ -161,6 +177,57 @@ describe('wysiwyg edit view rendering', function () {
         livewire(Edit::class, ['slug' => 'xssmodel', 'id' => $post->id])
             ->assertDontSee('onerror=alert', false)
             ->assertSee('<p>Hello</p>', false);
+    });
+});
+
+describe('temporal picker edit rendering', function () {
+    test('legacy date and datetime payloads are data rather than Alpine source', function () {
+        Aura::fake();
+        Aura::registerResources([XssResourceModel::class]);
+        Aura::setModel(new XssResourceModel);
+
+        $datePayload = "', [(window.__auraXss=1)]: '";
+        $datetimePayload = "Quotes '\"; </script>; &quot; &amp;; \\\\; Zürich 雪; {\"nested\":[\"</script>\",\"'\"]}";
+        $post = XssResourceModel::create([
+            'type' => 'XssModel',
+            'text' => 'ok',
+            'legacy_date' => '2026-08-09',
+            'legacy_datetime' => '2026-08-09 12:30:00',
+        ]);
+
+        DB::table('meta')
+            ->where('metable_id', $post->id)
+            ->where('key', 'legacy_date')
+            ->update(['value' => $datePayload]);
+        DB::table('meta')
+            ->where('metable_id', $post->id)
+            ->where('key', 'legacy_datetime')
+            ->update(['value' => $datetimePayload]);
+
+        $html = livewire(Edit::class, ['slug' => 'xssmodel', 'id' => $post->id])->html();
+        $document = new DOMDocument;
+        $previousErrors = libxml_use_internal_errors(true);
+        $document->loadHTML($html);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previousErrors);
+        $xpath = new DOMXPath($document);
+
+        foreach (['legacy_date' => $datePayload, 'legacy_datetime' => $datetimePayload] as $slug => $payload) {
+            $picker = $xpath->query('//*[@data-aura-datetime-picker="'.$slug.'"]')->item(0);
+
+            expect($picker)->not->toBeNull();
+
+            $alpineData = $picker->getAttribute('x-data');
+            $alpineInit = $picker->getAttribute('x-init');
+
+            expect($alpineData)
+                ->toContain('JSON.parse(')
+                ->not->toContain($payload)
+                ->not->toContain('</script>')
+                ->and($alpineInit)
+                ->not->toContain($payload)
+                ->not->toContain('window.__auraXss');
+        }
     });
 });
 

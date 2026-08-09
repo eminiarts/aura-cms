@@ -15,7 +15,6 @@
     const favicon = document.getElementById('favicon');
 
     function setFaviconBasedOnPreferredColorScheme(event) {
-        console.log('event', event.matches);
         favicon.href = event.matches ? '{{ $darkFavicon }}' : '{{ $favicon }}';
     }
 

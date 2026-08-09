@@ -465,6 +465,12 @@ class Core10ValueResource extends Resource
                 'scale' => 3,
             ],
             [
+                'name' => 'Meta date',
+                'slug' => 'meta_date',
+                'type' => Date::class,
+                'format' => 'd.m.Y',
+            ],
+            [
                 'name' => 'Meta boolean',
                 'slug' => 'meta_boolean',
                 'type' => Boolean::class,
@@ -756,6 +762,62 @@ test('physical-only custom tables normalize values before persistence', function
         ->toBe('2026-08-09 16:15:00');
 });
 
+test('invalid date creates are rejected before physical or meta persistence', function (string $field, mixed $value) {
+    $rowsBefore = DB::table('core_10_values')->count();
+    $metaBefore = DB::table('meta')->count();
+
+    expect(fn () => Core10ValueResource::create([$field => $value]))
+        ->toThrow(InvalidFieldValue::class)
+        ->and(DB::table('core_10_values')->count())->toBe($rowsBefore)
+        ->and(DB::table('meta')->count())->toBe($metaBefore);
+})->with([
+    'physical executable payload' => ['date_value', "', [(window.__auraXss=1)]: '"],
+    'meta executable payload' => ['meta_date', "', [(window.__auraXss=1)]: '"],
+    'physical impossible date' => ['date_value', '31.02.2026'],
+    'meta impossible date' => ['meta_date', '31.02.2026'],
+    'physical non-scalar value' => ['date_value', ['2026-08-09']],
+    'meta non-scalar value' => ['meta_date', ['2026-08-09']],
+]);
+
+test('invalid date edits are rejected without changing physical or meta values', function (string $field, mixed $value) {
+    $resource = Core10ValueResource::create([
+        'date_value' => '09.08.2026',
+        'meta_date' => '09.08.2026',
+    ]);
+
+    expect(fn () => $resource->update([$field => $value]))
+        ->toThrow(InvalidFieldValue::class)
+        ->and(DB::table('core_10_values')->where('id', $resource->id)->value('date_value'))
+        ->toBe('2026-08-09')
+        ->and(DB::table('meta')
+            ->where('metable_id', $resource->id)
+            ->where('key', 'meta_date')
+            ->value('value'))
+        ->toBe('2026-08-09');
+})->with([
+    'physical executable payload' => ['date_value', "', [(window.__auraXss=1)]: '"],
+    'meta executable payload' => ['meta_date', "', [(window.__auraXss=1)]: '"],
+    'physical inexact date' => ['date_value', ' 09.08.2026 '],
+    'meta inexact date' => ['meta_date', ' 09.08.2026 '],
+]);
+
+test('invalid date normalization is rejected before a database driver can handle it', function (string $driver) {
+    $originalDriver = config('database.default');
+
+    try {
+        config()->set('database.default', $driver);
+
+        expect(fn () => (new Date)->normalizeForStorage(
+            "', [(window.__auraXss=1)]: '",
+            ['slug' => 'date_value', 'format' => 'Y-m-d'],
+            null,
+            FieldValueStorage::Physical,
+        ))->toThrow(InvalidFieldValue::class);
+    } finally {
+        config()->set('database.default', $originalDriver);
+    }
+})->with(['sqlite', 'mysql', 'pgsql']);
+
 test('physical writes compose Aura normalization before Eloquent casts and mutators', function () {
     $resource = Core10EloquentPipelineResource::create([
         'cast_boolean' => 'false',
@@ -910,6 +972,7 @@ test('invalid legacy values remain inspectable instead of becoming fabricated va
         'date_value' => '09.08.2026',
         'datetime_value' => '09.08.2026 18:15',
         'meta_decimal' => '1.000',
+        'meta_date' => '09.08.2026',
     ]);
 
     DB::table('core_10_values')->where('id', $resource->id)->update([
@@ -921,13 +984,18 @@ test('invalid legacy values remain inspectable instead of becoming fabricated va
         ->where('metable_id', $resource->id)
         ->where('key', 'meta_decimal')
         ->update(['value' => 'legacy-value']);
+    DB::table('meta')
+        ->where('metable_id', $resource->id)
+        ->where('key', 'meta_date')
+        ->update(['value' => 'legacy-date']);
 
     $resource = $resource->fresh();
 
     expect($resource->integer_value)->toBe('not-a-number')
         ->and($resource->date_value)->toBe('not-a-date')
         ->and($resource->datetime_value)->toBe('not-a-datetime')
-        ->and($resource->meta_decimal)->toBe('legacy-value');
+        ->and($resource->meta_decimal)->toBe('legacy-value')
+        ->and($resource->meta_date)->toBe('legacy-date');
 });
 
 test('date rendering is null safe and date only values never shift timezones', function () {

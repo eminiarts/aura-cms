@@ -134,13 +134,23 @@ class TemporalValue
             return $value;
         }
 
-        $date = self::parse(
-            $value,
-            self::dateFormats($field),
-            self::timezone($field['input_timezone'] ?? null, self::applicationTimezone(), $field, 'input timezone'),
-        );
+        if ($value instanceof DateTimeInterface) {
+            $date = CarbonImmutable::instance($value);
+        } elseif (is_string($value)) {
+            $date = self::parseStrict(
+                $value,
+                self::dateFormats($field),
+                self::timezone($field['input_timezone'] ?? null, self::applicationTimezone(), $field, 'input timezone'),
+            );
+        } else {
+            throw InvalidFieldValue::forField($field['slug'] ?? null, 'expected a date string or DateTimeInterface instance');
+        }
 
-        return $date?->format('Y-m-d') ?? $value;
+        if (! $date) {
+            throw InvalidFieldValue::forField($field['slug'] ?? null, 'the date format is not recognized');
+        }
+
+        return $date->format('Y-m-d');
     }
 
     /**
