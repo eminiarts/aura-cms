@@ -48,12 +48,12 @@ test('owner tokens are opaque reusable for one mounted field and bind the full c
         ->and($context->slug)->toBe('gallery')
         ->and($context->fieldType)->toBe(Image::class)
         ->and($context->actorId)->toBe((string) $this->actor->getAuthIdentifier())
-        ->and($context->teamId)->toBe((string) $this->actor->current_team_id)
+        ->and($context->teamId)->toBe(config('aura.teams') ? (string) $this->actor->current_team_id : null)
         ->and($context->nonce)->toHaveLength(64)
         ->and($this->broker->digest($token))->toHaveLength(64);
 });
 
-test('owner tokens reject forgery actor changes team changes and expiry', function () {
+test('owner tokens reject forgery actor changes and expiry', function () {
     $token = $this->broker->issue(
         ownerComponentId: 'owner-component-2',
         modelClass: Post::class,
@@ -67,18 +67,11 @@ test('owner tokens reject forgery actor changes team changes and expiry', functi
     expect(fn () => $this->broker->resolve(substr_replace($token, 'x', -1), $this->actor))
         ->toThrow(InvalidMediaOwnerToken::class);
 
-    $otherActor = User::factory()->create(['current_team_id' => $this->actor->current_team_id]);
+    $otherActor = User::factory()->create(config('aura.teams') ? ['current_team_id' => $this->actor->current_team_id] : []);
 
     expect(fn () => $this->broker->resolve($token, $otherActor))
         ->toThrow(InvalidMediaOwnerToken::class);
 
-    $otherTeam = Team::factory()->createQuietly();
-    $this->actor->forceFill(['current_team_id' => $otherTeam->getKey()])->saveQuietly();
-
-    expect(fn () => $this->broker->resolve($token, $this->actor->refresh()))
-        ->toThrow(InvalidMediaOwnerToken::class);
-
-    $this->actor->forceFill(['current_team_id' => $this->actor->teams()->first()->getKey()])->saveQuietly();
     $freshToken = $this->broker->issue(
         ownerComponentId: 'owner-component-3',
         modelClass: Post::class,
@@ -94,6 +87,24 @@ test('owner tokens reject forgery actor changes team changes and expiry', functi
     expect(fn () => $this->broker->resolve($freshToken, $this->actor->refresh()))
         ->toThrow(InvalidMediaOwnerToken::class);
 });
+
+test('owner tokens reject team changes', function () {
+    $token = $this->broker->issue(
+        ownerComponentId: 'owner-component-2',
+        modelClass: Post::class,
+        modelKey: null,
+        action: 'create',
+        slug: 'image',
+        fieldType: Image::class,
+        actor: $this->actor,
+    );
+
+    $otherTeam = Team::factory()->createQuietly();
+    $this->actor->forceFill(['current_team_id' => $otherTeam->getKey()])->saveQuietly();
+
+    expect(fn () => $this->broker->resolve($token, $this->actor->refresh()))
+        ->toThrow(InvalidMediaOwnerToken::class);
+})->skip(fn () => ! config('aura.teams'), 'Team-bound owner tokens require teams enabled.');
 
 test('standalone media library tokens bind the configured attachment resource', function () {
     $token = $this->broker->issueLibrary('library-component', $this->actor);

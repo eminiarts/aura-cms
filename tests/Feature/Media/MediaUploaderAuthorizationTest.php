@@ -19,7 +19,7 @@ test('uploader requires authentication and attachment listing access on mount an
     auth()->logout();
     Livewire::test(MediaUploader::class)->assertForbidden();
 
-    $denied = User::factory()->create(['current_team_id' => $this->actor->current_team_id]);
+    $denied = User::factory()->create(config('aura.teams') ? ['current_team_id' => $this->actor->current_team_id] : []);
     $this->actingAs($denied);
     Livewire::test(MediaUploader::class)->assertForbidden();
 
@@ -54,7 +54,7 @@ test('uploader removes stored bytes when attachment persistence fails', function
         ->and(Storage::disk('public')->allFiles('media'))->toBe([]);
 });
 
-test('uploader rejects foreign preselected attachments and locks its owner token', function () {
+test('uploader rejects foreign preselected attachments', function () {
     $foreign = Attachment::withoutGlobalScopes()->create([
         'type' => Attachment::$type,
         'team_id' => Team::factory()->createQuietly()->getKey(),
@@ -63,7 +63,9 @@ test('uploader rejects foreign preselected attachments and locks its owner token
 
     expect(fn () => Livewire::test(MediaUploader::class, ['selected' => [(string) $foreign->getKey()]]))
         ->toThrow(Exception::class);
+})->skip(fn () => ! config('aura.teams'), 'Cross-team authorization requires teams enabled.');
 
+test('uploader locks its owner token', function () {
     $uploader = Livewire::test(MediaUploader::class);
 
     expect(fn () => $uploader->set('ownerToken', 'forged'))

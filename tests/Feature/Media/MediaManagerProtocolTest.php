@@ -14,7 +14,7 @@ use Livewire\Livewire;
 beforeEach(function () {
     $this->actingAs($this->actor = createSuperAdmin());
     app('aura')::registerResources([Post::class]);
-    $this->attachment = Attachment::factory()->create(['team_id' => $this->actor->current_team_id]);
+    $this->attachment = Attachment::factory()->create(config('aura.teams') ? ['team_id' => $this->actor->current_team_id] : []);
     $this->ownerToken = app(MediaOwnerTokenBroker::class)->issue(
         ownerComponentId: 'owner-component',
         modelClass: Post::class,

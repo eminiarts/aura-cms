@@ -47,7 +47,7 @@ test('selection requests bind both components actor team slug and normalized val
         ->and($record->managerComponentId)->toBe('manager-component')
         ->and($record->ownerComponentId)->toBe('owner-component')
         ->and($record->actorId)->toBe((string) $this->actor->getAuthIdentifier())
-        ->and($record->teamId)->toBe((string) $this->actor->current_team_id)
+        ->and($record->teamId)->toBe(config('aura.teams') ? (string) $this->actor->current_team_id : null)
         ->and($record->slug)->toBe('gallery')
         ->and($record->valueDigest)->toBe(hash('sha256', '["4","7"]'))
         ->and($record->state)->toBe('pending')
@@ -107,7 +107,7 @@ test('processing failures settle generically and a retry receives a new token', 
 
 test('forged owner request value manager and actor never alter the pending record', function () {
     $request = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
-    $otherActor = User::factory()->create(['current_team_id' => $this->actor->current_team_id]);
+    $otherActor = User::factory()->create(config('aura.teams') ? ['current_team_id' => $this->actor->current_team_id] : []);
 
     foreach ([
         fn () => $this->selections->processForOwner($request->token, $this->ownerToken.'x', 'owner-component', 'gallery', ['9'], $this->actor, fn () => null),

@@ -48,7 +48,7 @@ beforeEach(function () {
 test('media field owner keeps only a locked digest and applies a correlated request once', function () {
     $owner = Livewire::test(Core20MediaOwnerHarness::class);
     $ownerToken = $owner->get('ownerTokenForTest');
-    $attachment = Attachment::factory()->create(['team_id' => $this->actor->current_team_id]);
+    $attachment = Attachment::factory()->create(config('aura.teams') ? ['team_id' => $this->actor->current_team_id] : []);
     $value = [(string) $attachment->getKey()];
     $request = app(MediaSelectionBroker::class)->begin(
         ownerToken: $ownerToken,
@@ -144,7 +144,7 @@ test('simultaneous forms with the same slug route a selection only to its token 
     $secondOwner = Livewire::test(Core20MediaOwnerHarness::class);
     $firstToken = $firstOwner->get('ownerTokenForTest');
     $secondToken = $secondOwner->get('ownerTokenForTest');
-    $attachment = Attachment::factory()->create(['team_id' => $this->actor->current_team_id]);
+    $attachment = Attachment::factory()->create(config('aura.teams') ? ['team_id' => $this->actor->current_team_id] : []);
     $value = [(string) $attachment->getKey()];
     $request = app(MediaSelectionBroker::class)->begin($firstToken, 'manager', $value, $this->actor);
     $payload = [
