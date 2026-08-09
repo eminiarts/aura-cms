@@ -6,6 +6,7 @@ use Aura\Base\Contracts\PreloadsTableDisplay;
 use Aura\Base\Contracts\ProvidesTableEagerLoad;
 use Aura\Base\Contracts\TableResource;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\SignedModalRequest;
 use Aura\Base\Livewire\Table\Traits\BulkActions;
 use Aura\Base\Livewire\Table\Traits\Filters;
 use Aura\Base\Livewire\Table\Traits\Kanban;
@@ -349,13 +350,30 @@ class Table extends Component
         }
     }
 
-    public function openBulkActionModal($action, $data)
-    {
-        $this->dispatch('openModal', $data['modal'], [
-            'action' => $action,
-            'selected' => $this->getSelectedRowsQueryProperty()->pluck('id'),
-            'model' => get_class($this->model),
+    public function openBulkActionModal(
+        mixed $action,
+        TableMutationDispatcher $mutations,
+        SignedModalRequest $modalRequests,
+    ): void {
+        $validated = Validator::make(['action' => $action], [
+            'action' => ['required', 'string'],
+        ])->validate();
+        $model = $this->mutationModel();
+        $resolved = $mutations->authorizeBulkModal(
+            clone $this->mutationQuery(),
+            new TableMutationModelDescriptor($model),
+            $validated['action'],
+            (array) $model->getBulkActions(),
+            $this->selected,
+            (bool) $this->selectAll,
+        );
+        $request = $modalRequests->issue($resolved['component'], [
+            'action' => $validated['action'],
+            'selected' => $resolved['ids'],
+            'model' => $model::class,
         ]);
+
+        $this->dispatch('openModal', $request);
     }
 
     public function refreshRows()

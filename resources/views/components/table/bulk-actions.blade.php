@@ -27,7 +27,7 @@
                 @foreach($this->bulk_actions as $action => $data)
                     @if(is_array($data) && isset($data['modal']))
                     <!-- if it's an array and has a modal, then open the modal -->
-                    <a wire:click="openBulkActionModal('{{ $action }}', {{json_encode($data)}})"
+                    <a wire:click="openBulkActionModal('{{ $action }}')"
                     class="flex items-center px-3 py-1.5 text-sm text-gray-700 rounded-md transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
                     role="menuitem" tabindex="-1" id="menu-item-6">
                         {{ $data['label'] }}

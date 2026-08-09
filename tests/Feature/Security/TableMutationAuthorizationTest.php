@@ -4,6 +4,7 @@ use Aura\Base\BaseResource;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Facades\DynamicFunctions;
 use Aura\Base\Fields\HasMany;
+use Aura\Base\Livewire\Modals;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Livewire\Table\TableMutationDispatcher;
 use Aura\Base\Livewire\Table\TableMutationModelDescriptor;
@@ -20,7 +21,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Livewire\Component;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
+use Livewire\Livewire;
 
 use function Pest\Livewire\livewire;
 
@@ -103,6 +106,11 @@ class Core05MutationResource extends Resource
         'markBulkReviewed' => [
             'label' => 'Mark reviewed',
             'ability' => 'update',
+        ],
+        'openReviewModal' => [
+            'label' => 'Review',
+            'ability' => 'update',
+            'modal' => 'core05-authorized-bulk-modal',
         ],
     ];
 
@@ -380,6 +388,36 @@ class Core05MutationResource extends Resource
             'data' => $this->getAttribute('data'),
             'status' => $this->getAttribute('status'),
         ];
+    }
+}
+
+class Core05AuthorizedBulkModal extends Component
+{
+    public static int $mounts = 0;
+
+    public function mount(array $selected, string $model, string $action): void
+    {
+        static::$mounts++;
+    }
+
+    public function render(): string
+    {
+        return '<div>Authorized bulk modal</div>';
+    }
+}
+
+class Core05ForgedModal extends Component
+{
+    public static int $mounts = 0;
+
+    public function mount(): void
+    {
+        static::$mounts++;
+    }
+
+    public function render(): string
+    {
+        return '<div>Forged modal</div>';
     }
 }
 
@@ -706,6 +744,7 @@ class Core05NoKanbanFieldResource extends Resource
 }
 
 beforeEach(function () {
+    Core05AuthorizedBulkModal::$mounts = 0;
     Core05AuthoritativeCallbackPolicy::$attempts = 0;
     Core05AuthoritativeCallbackPolicy::$snapshots = [];
     Core05MorphMutationPolicy::$attempts = 0;
@@ -728,7 +767,10 @@ beforeEach(function () {
     Core05MutationResource::$externalEffects = 0;
     Core05MutationResource::$updateInvocations = 0;
     Core05MutationResource::$updateTransactionLevels = [];
+    Core05ForgedModal::$mounts = 0;
     Core05TransactionMutationPolicy::$transactionLevels = [];
+    Livewire::component('core05-authorized-bulk-modal', Core05AuthorizedBulkModal::class);
+    Livewire::component('core05-forged-modal', Core05ForgedModal::class);
     config()->set('database.connections.core05_mutation_secondary', [
         'driver' => 'sqlite',
         'database' => ':memory:',
@@ -815,6 +857,174 @@ beforeEach(function () {
     ]);
     Aura::setModel(new Core05MutationResource);
     Gate::policy(Core05UuidMutationResource::class, Core05UuidMutationPolicy::class);
+});
+
+test('bulk modal resolves its component from the declared action and authorizes the exact selection', function () {
+    $this->actingAs(createSuperAdmin());
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Authorized modal target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $request = null;
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('openBulkActionModal', 'openReviewModal')
+        ->assertDispatched('openModal', function (string $event, array $parameters) use (&$request): bool {
+            $request = $parameters[0] ?? null;
+
+            return is_string($request)
+                && ! str_contains($request, 'core05-authorized-bulk-modal');
+        });
+
+    expect($request)->toBeString();
+
+    livewire(Modals::class)
+        ->call('openModal', $request)
+        ->assertSee('Authorized bulk modal');
+
+    livewire(Modals::class)
+        ->call('openModal', substr($request, 0, -1).'x')
+        ->assertStatus(422);
+
+    $this->actingAs(createSuperAdmin());
+
+    livewire(Modals::class)
+        ->call('openModal', $request)
+        ->assertStatus(422);
+
+    expect(Core05AuthorizedBulkModal::$mounts)->toBe(1)
+        ->and(Core05ForgedModal::$mounts)->toBe(0);
+});
+
+test('bulk modal rejects forged action component parameters and records', function () {
+    $this->actingAs(createSuperAdmin());
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Forged modal target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('openBulkActionModal', 'forgedAction')
+        ->assertForbidden()
+        ->assertNotDispatched('openModal');
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [$resource->getKey(), PHP_INT_MAX])
+        ->call('openBulkActionModal', 'openReviewModal')
+        ->assertHasErrors(['selected'])
+        ->assertNotDispatched('openModal');
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('openBulkActionModal', 'openReviewModal', [
+            'modal' => 'core05-forged-modal',
+            'selected' => [PHP_INT_MAX],
+            'model' => Core05ForgedModal::class,
+        ])
+        ->assertDispatched('openModal', function (string $event, array $parameters): bool {
+            $request = $parameters[0] ?? null;
+
+            return is_string($request)
+                && ! str_contains($request, 'core05-forged-modal')
+                && ! str_contains($request, (string) PHP_INT_MAX);
+        });
+
+    expect(Core05ForgedModal::$mounts)->toBe(0);
+});
+
+test('bulk modal rejects denied and cross-team records before opening', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    $resource = Core05MutationResource::create([
+        'title' => 'Denied modal target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    Gate::policy(Core05MutationResource::class, Core05DenyingMutationPolicy::class);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('openBulkActionModal', 'openReviewModal')
+        ->assertForbidden()
+        ->assertNotDispatched('openModal');
+
+    if (! config('aura.teams')) {
+        return;
+    }
+
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+    $foreign = Core05MutationResource::withoutGlobalScopes()->create([
+        'title' => 'Foreign modal target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+        'team_id' => ((int) $actor->current_team_id) + 999,
+    ]);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [$foreign->getKey()])
+        ->call('openBulkActionModal', 'openReviewModal')
+        ->assertHasErrors(['selected'])
+        ->assertNotDispatched('openModal');
+});
+
+test('global modal manager rejects forged component names through calls and events', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    $resource = Core05MutationResource::create([
+        'title' => 'Global modal authorization target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    livewire(Modals::class)
+        ->call('openModal', 'core05-forged-modal')
+        ->assertStatus(422)
+        ->assertDontSee('Forged modal');
+
+    livewire(Modals::class)
+        ->dispatch('openModal', 'core05-forged-modal')
+        ->assertStatus(422)
+        ->assertDontSee('Forged modal');
+
+    livewire(Modals::class)
+        ->call('openModal', 'aura::resource-view-modal', [
+            'type' => Core05MutationResource::$slug,
+            'resource' => $resource->getKey(),
+            'component' => 'core05-forged-modal',
+        ])
+        ->assertStatus(422);
+
+    livewire(Modals::class)
+        ->dispatch('openModal', component: 'aura::resource-view-modal', arguments: [
+            'type' => Core05MutationResource::$slug,
+            'resource' => PHP_INT_MAX,
+        ])
+        ->assertNotFound();
+
+    if (config('aura.teams')) {
+        $foreign = Core05MutationResource::withoutGlobalScopes()->create([
+            'title' => 'Foreign global modal target',
+            'content' => 'unchanged',
+            'status' => 'draft',
+            'team_id' => ((int) $actor->current_team_id) + 999,
+        ]);
+
+        livewire(Modals::class)
+            ->call('openModal', 'aura::resource-view-modal', [
+                'type' => Core05MutationResource::$slug,
+                'resource' => $foreign->getKey(),
+            ])
+            ->assertNotFound();
+    }
+
+    expect(Core05ForgedModal::$mounts)->toBe(0);
 });
 
 /**
@@ -2296,7 +2506,7 @@ test('mutation selection authorization and handlers share one locked transaction
     'Kanban update' => 'Kanban update',
 ]);
 
-test('locking statements seal effective predicates directly on target rows', function (string $surface) {
+test('locking statements target only validated base rows before effective scope revalidation', function (string $surface) {
     $this->actingAs(createSuperAdmin());
 
     $resource = Core05MutationResource::create([
@@ -2322,15 +2532,13 @@ test('locking statements seal effective predicates directly on target rows', fun
     expect($mutationQueries)->toHaveCount(1)
         ->and($lockingSql)->toBeString()
         ->toContain('select "posts".* from "posts"')
-        ->toContain('"posts"."content" = ?')
-        ->toContain('"posts"."type" = ?')
+        ->toContain('where "posts"."id" in (?)')
         ->toContain('order by "posts"."id" asc')
         ->toContain('/* core05-lock-for-update */')
-        ->not->toContain(' in (select ');
-
-    if (config('aura.teams')) {
-        expect($lockingSql)->toContain('"posts"."team_id" = ?');
-    }
+        ->not->toContain(' in (select ')
+        ->not->toContain('distinct')
+        ->not->toContain('group by')
+        ->not->toContain('having');
 })->with([
     'single action' => 'single action',
     'bulk record' => 'bulk record',
@@ -2339,6 +2547,80 @@ test('locking statements seal effective predicates directly on target rows', fun
     'bulk collection select all' => 'bulk collection select all',
     'Kanban update' => 'Kanban update',
 ]);
+
+test('distinct and grouped effective scopes revalidate membership around a base-row lock', function (string $shape) {
+    $this->actingAs(createSuperAdmin());
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Complex lock shape target',
+        'content' => 'eligible-for-complex-lock',
+        'status' => 'draft',
+    ]);
+    $queryHash = DynamicFunctions::add(static function () use ($shape): Builder {
+        $query = Core05MutationResource::query()
+            ->where('posts.content', 'eligible-for-complex-lock');
+
+        if ($shape === 'distinct') {
+            return $query->distinct();
+        }
+
+        return $query
+            ->groupBy('posts.id')
+            ->havingRaw('count(*) >= ?', [1]);
+    });
+
+    $mutationQueries = core05CaptureLockedMutationQueries(
+        fn (): mixed => core05CallMutationSurface(
+            'single action',
+            $queryHash,
+            new Core05MutationResource,
+            $resource->getKey(),
+        )->assertHasNoErrors(),
+    );
+    $lockingSql = $mutationQueries[0]['query'] ?? null;
+
+    expect($resource->fresh()->content)->toBe('reviewed-by-action')
+        ->and($mutationQueries)->toHaveCount(1)
+        ->and($lockingSql)->toBeString()
+        ->toContain('select "posts".* from "posts"')
+        ->toContain('where "posts"."id" in')
+        ->toContain('/* core05-lock-for-update */')
+        ->not->toContain('distinct')
+        ->not->toContain('group by')
+        ->not->toContain('having');
+})->with([
+    'distinct' => 'distinct',
+    'group by and having' => 'group',
+]);
+
+test('aggregate effective scopes fail closed before authorization or handlers', function () {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Aggregate lock shape target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $queryHash = DynamicFunctions::add(static function (): Builder {
+        $query = Core05MutationResource::query();
+        $query->getQuery()->aggregate = ['function' => 'count', 'columns' => ['*']];
+
+        return $query;
+    });
+    $mutationTransactionLevel = DB::connection()->transactionLevel() + 1;
+
+    core05CallMutationSurface(
+        'single action',
+        $queryHash,
+        new Core05MutationResource,
+        $resource->getKey(),
+    )->assertStatus(422);
+
+    expect(Core05MutationBoundaryPolicy::$transactionLevels)->not->toContain($mutationTransactionLevel)
+        ->and(Core05MutationResource::$updateInvocations)->toBe(0)
+        ->and($resource->fresh()->content)->toBe('unchanged');
+});
 
 test('bulk mutation locks and dispatches records in deterministic primary-key order', function (bool $selectAll) {
     $this->actingAs(createSuperAdmin());

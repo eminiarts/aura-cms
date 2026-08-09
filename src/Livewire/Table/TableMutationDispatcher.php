@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Database\Query\Grammars\MariaDbGrammar;
+use Illuminate\Database\Query\Grammars\MySqlGrammar;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Validation\ValidationException;
 use ReflectionMethod;
@@ -104,6 +106,71 @@ final class TableMutationDispatcher
     public function authorize(Model $record, string $ability): void
     {
         $this->gate->authorize($ability, $record);
+    }
+
+    /**
+     * Resolve and authorize a declared modal action without invoking a model
+     * handler. The returned component and identifiers originate only from the
+     * server-side resource declaration and authoritative mutation scope.
+     *
+     * @param  array<string, mixed>  $declaredActions
+     * @return array{component: string, ids: array<int, int|string>}
+     */
+    public function authorizeBulkModal(
+        Builder $scope,
+        TableMutationModelDescriptor $modelDescriptor,
+        string $action,
+        array $declaredActions,
+        mixed $selected,
+        bool $selectAll,
+    ): array {
+        if (! array_key_exists($action, $declaredActions)) {
+            abort(403, 'This bulk action is not allowed.');
+        }
+
+        $definition = $declaredActions[$action];
+
+        if (
+            ! is_array($definition)
+            || ! is_string($definition['modal'] ?? null)
+            || preg_match('/\A[A-Za-z0-9][A-Za-z0-9._:-]*\z/', $definition['modal']) !== 1
+        ) {
+            abort(422, 'The declared bulk modal action is invalid.');
+        }
+
+        $descriptor = $this->descriptor($action, $declaredActions, bulk: true);
+        $this->assertConditionAvailable($descriptor);
+
+        return $this->transactionWithPreLockRetries($modelDescriptor->connectionInstance(), function (
+            Closure $markLockAcquired,
+        ) use (
+            $definition,
+            $descriptor,
+            $modelDescriptor,
+            $scope,
+            $selectAll,
+            $selected,
+        ): array {
+            $modelDescriptor->assertMatches($scope);
+            $records = $this->resolveExactSelection(
+                $scope,
+                $modelDescriptor,
+                $selected,
+                $selectAll,
+                $descriptor['trashed'],
+                $markLockAcquired,
+            );
+
+            $records->each(function (Model $record) use ($descriptor, $modelDescriptor): void {
+                $modelDescriptor->assertModelMatches($record);
+                $this->authorize($record, $descriptor['ability']);
+            });
+
+            return [
+                'component' => $definition['modal'],
+                'ids' => $records->map(fn (Model $record): mixed => $record->getKey())->all(),
+            ];
+        });
     }
 
     /**
@@ -648,11 +715,12 @@ final class TableMutationDispatcher
     }
 
     /**
-     * Select trusted base rows while proving effective-scope membership in the
-     * same statement that locks them. Trusted model scopes are merged into the
-     * effective query so all callbacks execute once. The locking statement
-     * retains every verified predicate on the target row so an MVCC recheck
-     * cannot return a row that left the effective scope while awaiting its lock.
+     * Resolve exact effective-scope membership, lock only trusted base rows,
+     * then revalidate membership after the lock and before authorization. This
+     * keeps PostgreSQL-prohibited DISTINCT/GROUP BY/HAVING/set shapes off the
+     * FOR UPDATE statement while closing the stale pre-lock snapshot window.
+     * MySQL/MariaDB use a shared locking recheck so repeatable-read transactions
+     * observe the committed row version that the base-row lock waited for.
      *
      * @param  array<string, int|string>|null  $expectedKeys
      * @return Collection<int, Model&TableResource>
@@ -676,34 +744,79 @@ final class TableMutationDispatcher
         $modelDescriptor->assertMatches($effectiveQuery);
         $eagerLoads = $effectiveQuery->getEagerLoads();
         $effectiveQuery->setEagerLoads([]);
+
+        if ($effectiveQuery->getQuery()->aggregate !== null) {
+            abort(422, 'Aggregate table mutation scopes cannot identify authoritative records.');
+        }
+
         $effectiveQuery->select($qualifiedKey.' as '.$keyAlias);
         $effectiveQuery->reorder($qualifiedKey);
-
-        if ($lockForUpdate) {
-            $effectiveQuery->lockForUpdate();
-        }
 
         $effectiveBaseQuery = $effectiveQuery->getQuery();
         $this->applyVerifiedBeforeQueryCallbacks($effectiveBaseQuery);
         $modelDescriptor->assertMatches($effectiveQuery);
-        $effectiveBaseQuery->select($modelDescriptor->table.'.*');
-        $effectiveBaseQuery->reorder($qualifiedKey);
-
-        if ($lockForUpdate) {
-            $effectiveBaseQuery->lockForUpdate();
-        }
-
-        $rows = $effectiveBaseQuery->getConnection()->select(
+        $candidateRows = $effectiveBaseQuery->getConnection()->select(
             $effectiveBaseQuery->toSql(),
             $effectiveBaseQuery->getBindings(),
             ! $effectiveBaseQuery->useWritePdo,
         );
+        $candidateKeys = $this->mutationKeysFromRows(
+            $candidateRows,
+            $keyAlias,
+            $modelDescriptor,
+            $expectedKeys,
+        );
+
+        if ($candidateKeys === []) {
+            return $model->newCollection();
+        }
+
+        $candidateIds = array_values($candidateKeys);
+        $lockQuery = $effectiveBaseQuery->getConnection()
+            ->table($modelDescriptor->table)
+            ->select($modelDescriptor->table.'.*')
+            ->whereIn($qualifiedKey, $candidateIds)
+            ->orderBy($qualifiedKey);
+
+        if ($lockForUpdate) {
+            $lockQuery->lockForUpdate();
+        }
+
+        $lockedRows = $lockQuery->get();
 
         $markLockAcquired?->__invoke();
 
-        $hydratedRecords = [];
+        $revalidationQuery = clone $effectiveBaseQuery;
+        $revalidationQuery->whereIn($qualifiedKey, $candidateIds);
+        $revalidationGrammar = $revalidationQuery->getGrammar();
 
-        foreach ($rows as $row) {
+        if ($revalidationGrammar instanceof MariaDbGrammar) {
+            $revalidationQuery->lock('lock in share mode');
+        } elseif ($revalidationGrammar instanceof MySqlGrammar) {
+            $revalidationQuery->lock('for share');
+        }
+
+        $revalidatedRows = $revalidationQuery->getConnection()->select(
+            $revalidationQuery->toSql(),
+            $revalidationQuery->getBindings(),
+            ! $revalidationQuery->useWritePdo,
+        );
+        $revalidatedKeys = $this->mutationKeysFromRows(
+            $revalidatedRows,
+            $keyAlias,
+            $modelDescriptor,
+            $expectedKeys,
+        );
+
+        if ($expectedKeys === null && array_keys($candidateKeys) !== array_keys($revalidatedKeys)) {
+            throw ValidationException::withMessages([
+                'selected' => 'The selected records are invalid.',
+            ]);
+        }
+
+        $lockedByIdentity = [];
+
+        foreach ($lockedRows as $row) {
             if (! is_object($row)) {
                 abort(422, 'The authoritative table mutation query returned an invalid record.');
             }
@@ -711,11 +824,21 @@ final class TableMutationDispatcher
             $record = $modelDescriptor->hydrate((array) $row);
             $identity = $modelDescriptor->canonicalIdentity($record->getKey());
 
-            if ($expectedKeys !== null && ! array_key_exists($identity, $expectedKeys)) {
+            if (! array_key_exists($identity, $candidateKeys)) {
                 abort(422, 'The authoritative table mutation query returned an invalid record.');
             }
 
-            $hydratedRecords[] = $record;
+            $lockedByIdentity[$identity] = $record;
+        }
+
+        $hydratedRecords = [];
+
+        foreach ($revalidatedKeys as $identity => $id) {
+            if (! array_key_exists($identity, $lockedByIdentity)) {
+                abort(422, 'The authoritative table mutation query returned an invalid record.');
+            }
+
+            $hydratedRecords[] = $lockedByIdentity[$identity];
         }
 
         $effectiveQuery->setEagerLoads($eagerLoads);
@@ -941,6 +1064,42 @@ final class TableMutationDispatcher
             'havings' => $this->normalizeMutationConstraintList($query->havings ?? [], $query),
             'having_bindings' => $this->normalizeMutationConstraintList($havingBindings, $query),
         ];
+    }
+
+    /**
+     * @param  array<int, object>  $rows
+     * @param  array<string, int|string>|null  $expectedKeys
+     * @return array<string, int|string>
+     */
+    private function mutationKeysFromRows(
+        array $rows,
+        string $keyAlias,
+        TableMutationModelDescriptor $modelDescriptor,
+        ?array $expectedKeys,
+    ): array {
+        $keys = [];
+
+        foreach ($rows as $row) {
+            if (! is_object($row) || ! property_exists($row, $keyAlias)) {
+                abort(422, 'The authoritative table mutation query returned an invalid identifier.');
+            }
+
+            $id = $row->{$keyAlias};
+
+            if (! is_int($id) && ! is_string($id)) {
+                abort(422, 'The authoritative table mutation query returned an invalid identifier.');
+            }
+
+            $identity = $modelDescriptor->canonicalIdentity($id);
+
+            if ($expectedKeys !== null && ! array_key_exists($identity, $expectedKeys)) {
+                abort(422, 'The authoritative table mutation query returned an invalid record.');
+            }
+
+            $keys[$identity] = $id;
+        }
+
+        return $keys;
     }
 
     private function mutationMethod(Model $receiver, string $action, string $mode): ReflectionMethod

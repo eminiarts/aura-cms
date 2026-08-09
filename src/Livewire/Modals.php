@@ -26,8 +26,25 @@ class Modals extends Component
     }
 
     #[On('openModal')]
-    public function openModal($component, $arguments = [], $modalAttributes = []): void
-    {
+    public function openModal(
+        mixed $component,
+        mixed $arguments = [],
+        mixed $modalAttributes = [],
+        ?ModalActionRegistry $actions = null,
+        ?SignedModalRequest $signedRequests = null,
+    ): void {
+        if (! is_string($component) || ! is_array($arguments) || ! is_array($modalAttributes)) {
+            abort(422, 'The modal request is invalid.');
+        }
+
+        $actions ??= app(ModalActionRegistry::class);
+        $signedRequests ??= app(SignedModalRequest::class);
+        $resolved = $signedRequests->supports($component)
+            ? $signedRequests->resolve($component)
+            : $actions->resolve($component, $arguments, $modalAttributes);
+        $component = $resolved['component'];
+        $arguments = $resolved['arguments'];
+        $modalAttributes = $resolved['modalAttributes'];
         $id = md5($component.serialize($arguments));
 
         // Resolve component class - handle both namespaced and non-namespaced components

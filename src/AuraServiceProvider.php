@@ -32,6 +32,7 @@ use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\InviteUser;
 use Aura\Base\Livewire\MediaManager;
 use Aura\Base\Livewire\MediaUploader;
+use Aura\Base\Livewire\ModalActionRegistry;
 use Aura\Base\Livewire\Modals;
 use Aura\Base\Livewire\Navigation;
 use Aura\Base\Livewire\Notifications;
@@ -61,6 +62,7 @@ use Aura\Base\Widgets\SparklineArea;
 use Aura\Base\Widgets\SparklineBar;
 use Aura\Base\Widgets\ValueWidget;
 use Aura\Base\Widgets\Widgets;
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
@@ -371,6 +373,8 @@ class AuraServiceProvider extends PackageServiceProvider
             return "<?php echo app('aura')::scripts(); ?>";
         });
 
+        $this->registerModalActions();
+
         $this
             ->bootGate()
             ->bootLivewireComponents();
@@ -395,6 +399,8 @@ class AuraServiceProvider extends PackageServiceProvider
         $this->app->singleton('navigation', function ($app) {
             return new AuraNavigation;
         });
+
+        $this->app->singleton(ModalActionRegistry::class);
 
         // Bind the concrete Aura instance as a process-persistent singleton so
         // its resource/field registrations and captured baseline survive across
@@ -447,5 +453,91 @@ class AuraServiceProvider extends PackageServiceProvider
     protected function getResources(): array
     {
         return config('aura.resources');
+    }
+
+    protected function registerModalActions(): void
+    {
+        $actions = app(ModalActionRegistry::class);
+        $resourceIdentifier = static function (string $attribute, mixed $value, Closure $fail): void {
+            if (! is_int($value) && ! is_string($value)) {
+                $fail('The '.$attribute.' must be a valid resource identifier.');
+            }
+        };
+        $resourceFor = static function (array $arguments): Resource {
+            $type = $arguments['type'] ?? null;
+            $resource = is_string($type) ? Aura::findResourceBySlug($type) : null;
+
+            if (! $resource instanceof Resource) {
+                abort(404);
+            }
+
+            return $resource;
+        };
+
+        foreach (['aura::resource-create-modal', 'resource.create-modal'] as $action) {
+            $actions->register(
+                $action,
+                'aura::resource-create-modal',
+                [
+                    'arguments.type' => ['required', 'string'],
+                    'arguments.params' => ['sometimes', 'array'],
+                    'arguments.params.for' => ['sometimes', 'string'],
+                    'arguments.params.id' => ['sometimes', $resourceIdentifier],
+                ],
+                static fn (array $arguments): mixed => Gate::authorize('create', $resourceFor($arguments)),
+            );
+        }
+
+        foreach ([
+            'aura::resource-edit-modal' => 'update',
+            'aura::resource-view-modal' => 'view',
+        ] as $action => $ability) {
+            $actions->register(
+                $action,
+                $action,
+                [
+                    'arguments.id' => ['sometimes', $resourceIdentifier],
+                    'arguments.resource' => ['required', $resourceIdentifier],
+                    'arguments.type' => ['required', 'string'],
+                ],
+                static function (array $arguments) use ($ability, $resourceFor): void {
+                    $record = $resourceFor($arguments)->newQuery()->find($arguments['resource']);
+
+                    abort_unless($record, 404);
+                    Gate::authorize($ability, $record);
+                },
+            );
+        }
+
+        $actions->register(
+            'aura::invite-user',
+            'aura::invite-user',
+            authorize: static function (): void {
+                abort_unless(config('aura.teams'), 404);
+                $team = data_get(auth()->user(), 'currentTeam');
+                abort_unless($team, 404);
+                Gate::authorize('invite-users', $team);
+            },
+        );
+        $actions->register(
+            'aura::create-resource',
+            'aura::create-resource',
+            authorize: static function (): void {
+                abort_if(app()->environment('production'), 403);
+                $user = auth()->user();
+                abort_unless($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin(), 403);
+            },
+        );
+        $actions->register(
+            'aura::media-manager',
+            'aura::media-manager',
+            [
+                'arguments.model' => ['required', 'string'],
+                'arguments.selected' => ['required', 'array'],
+                'arguments.selected.*' => [$resourceIdentifier],
+                'arguments.slug' => ['required', 'string'],
+            ],
+            static fn (): mixed => Gate::authorize('viewAny', config('aura.resources.attachment')),
+        );
     }
 }
