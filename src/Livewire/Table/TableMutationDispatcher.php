@@ -3,6 +3,8 @@
 namespace Aura\Base\Livewire\Table;
 
 use Aura\Base\Contracts\TableResource;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resource;
 use BackedEnum;
 use Closure;
 use DateTimeInterface;
@@ -114,7 +116,7 @@ final class TableMutationDispatcher
      * server-side resource declaration and authoritative mutation scope.
      *
      * @param  array<string, mixed>  $declaredActions
-     * @return array{component: string, ids: array<int, int|string>}
+     * @return array{component: string, ids: array<int, int|string>, request: array<string, mixed>}
      */
     public function authorizeBulkModal(
         Builder $scope,
@@ -144,6 +146,7 @@ final class TableMutationDispatcher
         return $this->transactionWithPreLockRetries($modelDescriptor->connectionInstance(), function (
             Closure $markLockAcquired,
         ) use (
+            $action,
             $definition,
             $descriptor,
             $modelDescriptor,
@@ -152,6 +155,7 @@ final class TableMutationDispatcher
             $selected,
         ): array {
             $modelDescriptor->assertMatches($scope);
+            $scopeSnapshot = null;
             $records = $this->resolveExactSelection(
                 $scope,
                 $modelDescriptor,
@@ -159,6 +163,9 @@ final class TableMutationDispatcher
                 $selectAll,
                 $descriptor['trashed'],
                 $markLockAcquired,
+                static function (array $snapshot) use (&$scopeSnapshot): void {
+                    $scopeSnapshot = $snapshot;
+                },
             );
 
             $records->each(function (Model $record) use ($descriptor, $modelDescriptor): void {
@@ -166,9 +173,28 @@ final class TableMutationDispatcher
                 $this->authorize($record, $descriptor['ability']);
             });
 
+            $ids = $records->map(fn (Model $record): mixed => $record->getKey())->all();
+
+            if (! is_array($scopeSnapshot)) {
+                abort(422, 'The bulk modal scope could not be captured.');
+            }
+
             return [
                 'component' => $definition['modal'],
-                'ids' => $records->map(fn (Model $record): mixed => $record->getKey())->all(),
+                'ids' => $ids,
+                'request' => [
+                    'action' => $action,
+                    'arguments' => [
+                        'action' => $action,
+                        'selected' => $ids,
+                        'model' => $modelDescriptor->class,
+                    ],
+                    'component' => $definition['modal'],
+                    'ids' => $ids,
+                    'model' => $modelDescriptor->state(),
+                    'resource' => $this->resourceSlug($modelDescriptor->model()),
+                    'scope' => $scopeSnapshot,
+                ],
             ];
         });
     }
@@ -353,6 +379,137 @@ final class TableMutationDispatcher
         }
 
         return $record;
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @return array{arguments: array<string, mixed>, component: string, modalAttributes: array<string, mixed>}
+     */
+    public function redeemBulkModal(array $context): array
+    {
+        if (
+            array_keys($context) !== ['action', 'arguments', 'component', 'ids', 'model', 'resource', 'scope']
+            || ! is_string($context['action'])
+            || ! is_array($context['arguments'])
+            || ! is_string($context['component'])
+            || ! is_array($context['ids'])
+            || ! is_array($context['model'])
+            || ! is_string($context['resource'])
+            || ! is_array($context['scope'])
+        ) {
+            abort(422, 'The stored bulk modal request is invalid.');
+        }
+
+        $modelDescriptor = TableMutationModelDescriptor::fromState($context['model']);
+        $model = $modelDescriptor->model();
+        $registeredResource = Aura::findResourceBySlug($context['resource']);
+
+        if (
+            ! $registeredResource instanceof TableResource
+            || ! $registeredResource instanceof Model
+            || ! $registeredResource instanceof Resource
+            || $registeredResource::class !== $model::class
+            || $registeredResource->getSlug() !== $context['resource']
+        ) {
+            abort(422, 'The bulk modal resource is no longer registered.');
+        }
+
+        $declaredActions = (array) $model->getBulkActions();
+
+        if (! array_key_exists($context['action'], $declaredActions)) {
+            abort(403, 'This bulk action is not allowed.');
+        }
+
+        $definition = $declaredActions[$context['action']];
+
+        if (
+            ! is_array($definition)
+            || ($definition['modal'] ?? null) !== $context['component']
+        ) {
+            abort(422, 'The declared bulk modal action changed.');
+        }
+
+        $descriptor = $this->descriptor($context['action'], $declaredActions, bulk: true);
+        $this->assertConditionAvailable($descriptor);
+        $expectedKeys = $this->normalizeSelectionKeys($context['ids'], $modelDescriptor);
+        $scope = $context['scope'];
+
+        if (
+            array_keys($scope) !== ['bindings', 'key_alias', 'sql']
+            || ! is_array($scope['bindings'])
+            || ! is_string($scope['key_alias'])
+            || $scope['key_alias'] !== '__aura_mutation_key'
+            || ! is_string($scope['sql'])
+            || $scope['sql'] === ''
+        ) {
+            abort(422, 'The stored bulk modal scope is invalid.');
+        }
+
+        return $this->transactionWithPreLockRetries(
+            $modelDescriptor->connectionInstance(),
+            function (Closure $markLockAcquired) use (
+                $context,
+                $descriptor,
+                $expectedKeys,
+                $modelDescriptor,
+                $scope,
+            ): array {
+                $qualifiedKey = $modelDescriptor->table.'.'.$modelDescriptor->keyName;
+                $ids = array_values($expectedKeys);
+                $lockedRows = $modelDescriptor->connectionInstance()
+                    ->table($modelDescriptor->table)
+                    ->select($modelDescriptor->table.'.*')
+                    ->whereIn($qualifiedKey, $ids)
+                    ->orderBy($qualifiedKey)
+                    ->lockForUpdate()
+                    ->get();
+
+                $markLockAcquired();
+
+                $revalidatedRows = $modelDescriptor->connectionInstance()->select(
+                    $scope['sql'],
+                    $scope['bindings'],
+                    false,
+                );
+                $revalidatedKeys = $this->mutationKeysFromRows(
+                    $revalidatedRows,
+                    $scope['key_alias'],
+                    $modelDescriptor,
+                    $expectedKeys,
+                );
+
+                if (array_keys($expectedKeys) !== array_keys($revalidatedKeys)) {
+                    abort(422, 'The bulk modal selection is no longer valid.');
+                }
+
+                $lockedByIdentity = [];
+
+                foreach ($lockedRows as $row) {
+                    if (! is_object($row)) {
+                        abort(422, 'The bulk modal selection returned an invalid record.');
+                    }
+
+                    $record = $modelDescriptor->hydrate((array) $row);
+                    $lockedByIdentity[$modelDescriptor->canonicalIdentity($record->getKey())] = $record;
+                }
+
+                foreach ($expectedKeys as $identity => $id) {
+                    $record = $lockedByIdentity[$identity] ?? null;
+
+                    if (! $record instanceof Model || (string) $record->getKey() !== (string) $id) {
+                        abort(422, 'The bulk modal selection is no longer valid.');
+                    }
+
+                    $this->authorize($record, $descriptor['ability']);
+                }
+
+                return [
+                    'arguments' => $context['arguments'],
+                    'component' => $context['component'],
+                    'modalAttributes' => [],
+                ];
+            },
+        );
     }
 
     public function updateField(Model&TableResource $record, string $fieldSlug, mixed $value): void
@@ -732,6 +889,7 @@ final class TableMutationDispatcher
         ?string $trashed,
         bool $lockForUpdate = false,
         ?Closure $markLockAcquired = null,
+        ?Closure $captureScope = null,
     ): Collection {
         $modelDescriptor->assertMatches($scope);
         $model = $modelDescriptor->model();
@@ -755,6 +913,18 @@ final class TableMutationDispatcher
         $effectiveBaseQuery = $effectiveQuery->getQuery();
         $this->applyVerifiedBeforeQueryCallbacks($effectiveBaseQuery);
         $modelDescriptor->assertMatches($effectiveQuery);
+        $maximumRecords = $this->maximumRecordCount();
+        $existingLimit = $effectiveBaseQuery->limit;
+
+        if (! is_int($existingLimit) || $existingLimit > $maximumRecords + 1) {
+            $effectiveBaseQuery->limit($maximumRecords + 1);
+        }
+
+        $captureScope?->__invoke([
+            'bindings' => $effectiveBaseQuery->getBindings(),
+            'key_alias' => $keyAlias,
+            'sql' => $effectiveBaseQuery->toSql(),
+        ]);
         $candidateRows = $effectiveBaseQuery->getConnection()->select(
             $effectiveBaseQuery->toSql(),
             $effectiveBaseQuery->getBindings(),
@@ -766,6 +936,12 @@ final class TableMutationDispatcher
             $modelDescriptor,
             $expectedKeys,
         );
+
+        if (count($candidateKeys) > $maximumRecords) {
+            throw ValidationException::withMessages([
+                'selected' => 'The selected records exceed the configured mutation limit.',
+            ]);
+        }
 
         if ($candidateKeys === []) {
             return $model->newCollection();
@@ -1011,6 +1187,17 @@ final class TableMutationDispatcher
         return array_slice($constraints, 0, count($mandatoryConstraints)) === $mandatoryConstraints;
     }
 
+    private function maximumRecordCount(): int
+    {
+        $maximum = config('aura.security.table_mutations.max_records', 500);
+
+        if (! is_int($maximum) || $maximum < 1 || $maximum > 10000) {
+            abort(422, 'The table mutation record limit is invalid.');
+        }
+
+        return $maximum;
+    }
+
     /**
      * @return array{
      *     fixed: mixed,
@@ -1213,6 +1400,37 @@ final class TableMutationDispatcher
     }
 
     /**
+     * @param  array<int, mixed>  $ids
+     * @return array<string, int|string>
+     */
+    private function normalizeSelectionKeys(
+        array $ids,
+        TableMutationModelDescriptor $modelDescriptor,
+    ): array {
+        if ($ids === [] || count($ids) > $this->maximumRecordCount()) {
+            abort(422, 'The bulk modal selection is invalid.');
+        }
+
+        $keys = [];
+
+        foreach ($ids as $id) {
+            if ((! is_int($id) && ! is_string($id)) || $id === '') {
+                abort(422, 'The bulk modal selection is invalid.');
+            }
+
+            $identity = $modelDescriptor->canonicalIdentity($id);
+
+            if (array_key_exists($identity, $keys)) {
+                abort(422, 'The bulk modal selection is invalid.');
+            }
+
+            $keys[$identity] = $id;
+        }
+
+        return $keys;
+    }
+
+    /**
      * @return Collection<int, Model&TableResource>
      */
     private function resolveExactSelection(
@@ -1222,6 +1440,7 @@ final class TableMutationDispatcher
         bool $selectAll,
         ?string $trashed,
         ?Closure $markLockAcquired = null,
+        ?Closure $captureScope = null,
     ): Collection {
         if ($selectAll) {
             $records = $this->authoritativeRecords(
@@ -1231,6 +1450,7 @@ final class TableMutationDispatcher
                 $trashed,
                 lockForUpdate: true,
                 markLockAcquired: $markLockAcquired,
+                captureScope: $captureScope,
             );
 
             if ($records->isEmpty()) {
@@ -1245,6 +1465,12 @@ final class TableMutationDispatcher
         if (! is_array($selected)) {
             throw ValidationException::withMessages([
                 'selected' => 'The selected records are invalid.',
+            ]);
+        }
+
+        if (count($selected) > $this->maximumRecordCount()) {
+            throw ValidationException::withMessages([
+                'selected' => 'The selected records exceed the configured mutation limit.',
             ]);
         }
 
@@ -1279,6 +1505,7 @@ final class TableMutationDispatcher
             $trashed,
             lockForUpdate: true,
             markLockAcquired: $markLockAcquired,
+            captureScope: $captureScope,
         );
         $resolvedIdentities = $this->canonicalIdentities($records, $modelDescriptor);
 
@@ -1292,6 +1519,21 @@ final class TableMutationDispatcher
         }
 
         return $records;
+    }
+
+    private function resourceSlug(Model&TableResource $model): string
+    {
+        if (! method_exists($model, 'getSlug')) {
+            abort(422, 'The table mutation resource slug is invalid.');
+        }
+
+        $slug = $model->getSlug();
+
+        if (! is_string($slug) || $slug === '') {
+            abort(422, 'The table mutation resource slug is invalid.');
+        }
+
+        return $slug;
     }
 
     /**

@@ -98,7 +98,7 @@
             :selected="$selected"
             :button="true"
             :model="app('Aura\Base\Resources\Attachment')"
-            :for="get_class($this->model)"
+            :for="$this->model->getSlug()"
                 
         />
     </x-aura::fields.wrapper>

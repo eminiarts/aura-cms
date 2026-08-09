@@ -367,11 +367,7 @@ class Table extends Component
             $this->selected,
             (bool) $this->selectAll,
         );
-        $request = $modalRequests->issue($resolved['component'], [
-            'action' => $validated['action'],
-            'selected' => $resolved['ids'],
-            'model' => $model::class,
-        ]);
+        $request = $modalRequests->issue($resolved['request']);
 
         $this->dispatch('openModal', $request);
     }

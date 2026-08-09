@@ -2,21 +2,29 @@
 
 namespace Aura\Base\Livewire;
 
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\Finder\Finder;
 
 class Modals extends Component
 {
-    public $modals = [];
+    /** @var array<string, bool> */
+    public array $activeModals = [];
+
+    /** @var array<string, array<string, mixed>> */
+    #[Locked]
+    public array $modals = [];
 
     #[On('closeModal')]
     public function closeModal($id = null): void
     {
         if ($id) {
             unset($this->modals[$id]);
+            unset($this->activeModals[$id]);
         } else {
             $this->modals = [];
+            $this->activeModals = [];
         }
     }
 
@@ -69,8 +77,8 @@ class Modals extends Component
                 'modalClasses' => $modalClasses,
                 'slideOver' => false,
             ], $modalAttributes),
-            'active' => true,
         ];
+        $this->activeModals[$id] = true;
     }
 
     public function render()

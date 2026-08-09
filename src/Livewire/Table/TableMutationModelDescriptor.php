@@ -98,6 +98,49 @@ final class TableMutationModelDescriptor
     }
 
     /**
+     * @param  array<string, mixed>  $state
+     */
+    public static function fromState(array $state): self
+    {
+        if (
+            array_keys($state) !== [
+                'class',
+                'connection',
+                'incrementing',
+                'key_name',
+                'key_type',
+                'morph_class',
+                'table',
+            ]
+            || ! is_string($state['class'])
+            || ! is_a($state['class'], Model::class, true)
+            || ! is_a($state['class'], TableResource::class, true)
+            || ! is_string($state['connection'])
+            || ! is_bool($state['incrementing'])
+            || ! is_string($state['key_name'])
+            || ! is_string($state['key_type'])
+            || ! is_string($state['morph_class'])
+            || ! is_string($state['table'])
+        ) {
+            abort(422, 'The stored table mutation model is invalid.');
+        }
+
+        $model = new $state['class'];
+        $model->setConnection($state['connection']);
+        $model->setTable($state['table']);
+        $model->setKeyName($state['key_name']);
+        $model->setKeyType($state['key_type']);
+        $model->setIncrementing($state['incrementing']);
+        $descriptor = new self($model);
+
+        if ($descriptor->state() !== $state) {
+            abort(422, 'The stored table mutation model no longer matches the resource.');
+        }
+
+        return $descriptor;
+    }
+
+    /**
      * @param  array<string, mixed>  $attributes
      */
     public function hydrate(array $attributes): Model&TableResource
@@ -121,6 +164,30 @@ final class TableMutationModelDescriptor
         $this->assertModelMatches($model);
 
         return $model;
+    }
+
+    /**
+     * @return array{
+     *     class: class-string<Model>,
+     *     connection: string,
+     *     incrementing: bool,
+     *     key_name: string,
+     *     key_type: string,
+     *     morph_class: string,
+     *     table: string
+     * }
+     */
+    public function state(): array
+    {
+        return [
+            'class' => $this->class,
+            'connection' => $this->connection,
+            'incrementing' => $this->incrementing,
+            'key_name' => $this->keyName,
+            'key_type' => $this->keyType,
+            'morph_class' => $this->morphClass,
+            'table' => $this->table,
+        ];
     }
 
     private function modelMatches(Model $model): bool

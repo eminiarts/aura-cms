@@ -4,7 +4,9 @@ use Aura\Base\BaseResource;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Facades\DynamicFunctions;
 use Aura\Base\Fields\HasMany;
+use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\Modals;
+use Aura\Base\Livewire\SignedModalRequest;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Livewire\Table\TableMutationDispatcher;
 use Aura\Base\Livewire\Table\TableMutationModelDescriptor;
@@ -24,6 +26,7 @@ use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 use function Pest\Livewire\livewire;
 
@@ -388,6 +391,42 @@ class Core05MutationResource extends Resource
             'data' => $this->getAttribute('data'),
             'status' => $this->getAttribute('status'),
         ];
+    }
+}
+
+class Core05MediaResource extends Resource
+{
+    public static ?string $slug = 'core05-media';
+
+    public static string $type = 'Core05Media';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Hero image',
+                'slug' => 'hero_image',
+                'type' => Image::class,
+            ],
+        ];
+    }
+}
+
+class Core05DangerousContainerBinding
+{
+    public static int $constructions = 0;
+
+    public function __construct()
+    {
+        static::$constructions++;
+    }
+}
+
+class Core05DenyMediaPolicy
+{
+    public function viewAny(User $user, Core05MediaResource $resource): bool
+    {
+        return false;
     }
 }
 
@@ -768,6 +807,7 @@ beforeEach(function () {
     Core05MutationResource::$updateInvocations = 0;
     Core05MutationResource::$updateTransactionLevels = [];
     Core05ForgedModal::$mounts = 0;
+    Core05DangerousContainerBinding::$constructions = 0;
     Core05TransactionMutationPolicy::$transactionLevels = [];
     Livewire::component('core05-authorized-bulk-modal', Core05AuthorizedBulkModal::class);
     Livewire::component('core05-forged-modal', Core05ForgedModal::class);
@@ -849,6 +889,7 @@ beforeEach(function () {
     Aura::fake();
     Aura::registerResources([
         Core05MorphMutationResource::class,
+        Core05MediaResource::class,
         Core05MutationResource::class,
         Core05MutationParentResource::class,
         Core05NoKanbanFieldResource::class,
@@ -898,6 +939,186 @@ test('bulk modal resolves its component from the declared action and authorizes 
     expect(Core05AuthorizedBulkModal::$mounts)->toBe(1)
         ->and(Core05ForgedModal::$mounts)->toBe(0);
 });
+
+test('bulk modal requests are single use for the same actor and team', function () {
+    $this->actingAs(createSuperAdmin());
+    $resource = Core05MutationResource::create([
+        'title' => 'Single-use modal target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $request = null;
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('openBulkActionModal', 'openReviewModal')
+        ->assertDispatched('openModal', function (string $event, array $parameters) use (&$request): bool {
+            $request = $parameters[0] ?? null;
+
+            return is_string($request);
+        });
+
+    $modals = livewire(Modals::class);
+    $modals->call('openModal', $request)->assertSee('Authorized bulk modal');
+    $modals->call('openModal', $request)->assertStatus(422);
+
+    expect(Core05AuthorizedBulkModal::$mounts)->toBe(1);
+});
+
+test('concurrent bulk modal redemption has exactly one atomic winner', function () {
+    if (! function_exists('pcntl_fork')) {
+        $this->markTestSkipped('pcntl is required for the concurrent modal redemption probe.');
+    }
+
+    $this->actingAs(createSuperAdmin());
+    $resource = Core05MutationResource::create([
+        'title' => 'Concurrent modal target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $request = null;
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('openBulkActionModal', 'openReviewModal')
+        ->assertDispatched('openModal', function (string $event, array $parameters) use (&$request): bool {
+            $request = $parameters[0] ?? null;
+
+            return is_string($request);
+        });
+
+    $children = [];
+
+    foreach (range(1, 2) as $index) {
+        $signals = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+
+        if ($signals === false) {
+            $this->fail('Unable to create a modal redemption signal channel.');
+        }
+
+        $child = pcntl_fork();
+
+        if ($child === -1) {
+            $this->fail('Unable to fork the modal redemption probe.');
+        }
+
+        if ($child === 0) {
+            fclose($signals[0]);
+            fread($signals[1], 1);
+
+            try {
+                app(SignedModalRequest::class)->resolve($request);
+                fwrite($signals[1], 'resolved');
+                exit(0);
+            } catch (Throwable $exception) {
+                fwrite($signals[1], $exception instanceof HttpExceptionInterface
+                    ? 'http:'.$exception->getStatusCode()
+                    : $exception::class);
+                exit(0);
+            }
+        }
+
+        fclose($signals[1]);
+        $children[] = ['pid' => $child, 'signal' => $signals[0]];
+    }
+
+    foreach ($children as $child) {
+        fwrite($child['signal'], '1');
+    }
+
+    $results = [];
+
+    foreach ($children as $child) {
+        pcntl_waitpid($child['pid'], $status);
+        $results[] = stream_get_contents($child['signal']);
+        fclose($child['signal']);
+
+        expect(pcntl_wifexited($status))->toBeTrue()
+            ->and(pcntl_wexitstatus($status))->toBe(0);
+    }
+
+    expect($results)->toHaveCount(2)
+        ->and(collect($results)->filter(fn (string $result): bool => $result === 'resolved'))->toHaveCount(1)
+        ->and(collect($results)->filter(fn (string $result): bool => $result === 'http:422'))->toHaveCount(1);
+});
+
+test('bulk modal requests reject a changed team before consuming the request', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team-bound modal requests apply only when teams are enabled.');
+    }
+
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    $resource = Core05MutationResource::create([
+        'title' => 'Team-bound modal target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $request = null;
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('openBulkActionModal', 'openReviewModal')
+        ->assertDispatched('openModal', function (string $event, array $parameters) use (&$request): bool {
+            $request = $parameters[0] ?? null;
+
+            return is_string($request);
+        });
+
+    $actor->forceFill(['current_team_id' => ((int) $actor->current_team_id) + 999]);
+
+    livewire(Modals::class)->call('openModal', $request)->assertStatus(422);
+
+    expect(Core05AuthorizedBulkModal::$mounts)->toBe(0);
+});
+
+test('bulk modal issuance rejects a process-local cache store', function () {
+    $this->actingAs(createSuperAdmin());
+    config()->set('aura.security.modal_requests.cache_store', 'array');
+    $resource = Core05MutationResource::create([
+        'title' => 'Unshared cache target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('openBulkActionModal', 'openReviewModal')
+        ->assertStatus(503)
+        ->assertNotDispatched('openModal');
+});
+
+test('bulk modal redemption rejects expiry and stale policy or scope membership', function (string $staleState) {
+    $this->actingAs(createSuperAdmin());
+    $resource = Core05MutationResource::create([
+        'title' => 'Fresh modal target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $request = null;
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('openBulkActionModal', 'openReviewModal')
+        ->assertDispatched('openModal', function (string $event, array $parameters) use (&$request): bool {
+            $request = $parameters[0] ?? null;
+
+            return is_string($request);
+        });
+
+    match ($staleState) {
+        'expiry' => $this->travel(2)->minutes(),
+        'policy' => Gate::policy(Core05MutationResource::class, Core05DenyingMutationPolicy::class),
+        'resource' => Aura::setModel(new Core05MediaResource),
+        'scope' => $resource->forceFill(['title' => 'Excluded by indexQuery'])->save(),
+    };
+
+    livewire(Modals::class)
+        ->call('openModal', $request)
+        ->assertStatus($staleState === 'policy' ? 403 : 422);
+
+    expect(Core05AuthorizedBulkModal::$mounts)->toBe(0);
+})->with(['expiry', 'policy', 'resource', 'scope']);
 
 test('bulk modal rejects forged action component parameters and records', function () {
     $this->actingAs(createSuperAdmin());
@@ -1025,6 +1246,120 @@ test('global modal manager rejects forged component names through calls and even
     }
 
     expect(Core05ForgedModal::$mounts)->toBe(0);
+});
+
+test('global modal state cannot be hydrated with component definitions or nested parameters', function () {
+    $this->actingAs(createSuperAdmin());
+    $payload = [
+        'forged' => [
+            'name' => 'core05-forged-modal',
+            'arguments' => [],
+            'modalAttributes' => [
+                'persistent' => false,
+                'modalClasses' => 'max-w-4xl',
+                'slideOver' => false,
+            ],
+        ],
+    ];
+
+    expect(fn () => livewire(Modals::class)->set('modals', $payload))
+        ->toThrow(CannotUpdateLockedPropertyException::class);
+    expect(fn () => livewire(Modals::class)->set('modals.forged.name', 'core05-forged-modal'))
+        ->toThrow(CannotUpdateLockedPropertyException::class);
+
+    livewire(Modals::class)
+        ->set('activeModals.forged', true)
+        ->assertDontSee('Forged modal');
+
+    expect(Core05ForgedModal::$mounts)->toBe(0);
+});
+
+test('media manager rejects arbitrary container bindings before resolving them', function () {
+    $this->actingAs(createSuperAdmin());
+
+    livewire(Modals::class)
+        ->call('openModal', 'aura::media-manager', [
+            'resource' => Core05DangerousContainerBinding::class,
+            'slug' => 'hero_image',
+            'selected' => [],
+        ])
+        ->assertStatus(422);
+
+    expect(Core05DangerousContainerBinding::$constructions)->toBe(0);
+});
+
+test('media manager resolves only an owned media field on an authorized registered resource', function () {
+    $this->actingAs(createSuperAdmin());
+    Aura::setModel(new Core05MediaResource);
+
+    livewire(Modals::class)
+        ->call('openModal', 'aura::media-manager', [
+            'resource' => Core05MediaResource::$slug,
+            'slug' => 'hero_image',
+            'selected' => [],
+        ])
+        ->assertSeeHtml('data-media-picker-root');
+
+    livewire(Modals::class)
+        ->call('openModal', 'aura::media-manager', [
+            'resource' => Core05MutationResource::$slug,
+            'slug' => 'status',
+            'selected' => [],
+        ])
+        ->assertStatus(422);
+});
+
+test('media manager authorizes the registered resource before mounting', function () {
+    $this->actingAs(createSuperAdmin());
+    Aura::setModel(new Core05MediaResource);
+    Gate::policy(Core05MediaResource::class, Core05DenyMediaPolicy::class);
+
+    livewire(Modals::class)
+        ->call('openModal', 'aura::media-manager', [
+            'resource' => Core05MediaResource::$slug,
+            'slug' => 'hero_image',
+            'selected' => [],
+        ])
+        ->assertForbidden();
+});
+
+test('bulk mutations fail closed before an explicit or select-all selection exceeds the configured bound', function (
+    bool $selectAll,
+) {
+    $this->actingAs(createSuperAdmin());
+    config()->set('aura.security.table_mutations.max_records', 2);
+    $resources = collect(range(1, 3))->map(fn (int $number) => Core05MutationResource::create([
+        'title' => 'Bounded target '.$number,
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]));
+    $component = livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource]);
+
+    if ($selectAll) {
+        $component->set('selectAll', true);
+    } else {
+        $component->set('selected', $resources->pluck('id')->all());
+    }
+
+    $component->call('bulkAction', 'markBulkReviewed')->assertHasErrors(['selected']);
+
+    expect($resources->map->fresh()->pluck('content')->all())->each->toBe('unchanged');
+})->with([
+    'explicit selection' => false,
+    'select all' => true,
+]);
+
+test('large client selections fail before creating an oversized parameter list', function () {
+    $this->actingAs(createSuperAdmin());
+    config()->set('aura.security.table_mutations.max_records', 500);
+    Core05MutationResource::$updateInvocations = 0;
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', range(1, 501))
+        ->call('bulkAction', 'markBulkReviewed')
+        ->assertHasErrors(['selected']);
+
+    expect(Core05MutationResource::$updateInvocations)->toBe(0);
 });
 
 /**

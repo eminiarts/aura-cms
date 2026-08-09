@@ -2,31 +2,44 @@
 
 namespace Aura\Base\Livewire;
 
+use Aura\Base\Livewire\Table\TableMutationDispatcher;
+use Illuminate\Cache\ArrayStore;
+use Illuminate\Cache\CacheManager;
+use Illuminate\Cache\NullStore;
+use Illuminate\Cache\Repository;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Contracts\Encryption\Encrypter;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 final class SignedModalRequest
 {
     private const PREFIX = 'aura-modal:';
 
-    public function __construct(private readonly Encrypter $encrypter) {}
+    public function __construct(
+        private readonly CacheManager $cacheManager,
+        private readonly Encrypter $encrypter,
+        private readonly TableMutationDispatcher $mutations,
+    ) {}
 
     /**
-     * @param  array<string, mixed>  $arguments
-     * @param  array<string, mixed>  $modalAttributes
+     * @param  array<string, mixed>  $context
      */
-    public function issue(string $component, array $arguments, array $modalAttributes = []): string
+    public function issue(array $context): string
     {
-        if (preg_match('/\A[A-Za-z0-9][A-Za-z0-9._:-]*\z/', $component) !== 1) {
-            abort(422, 'The declared modal component is invalid.');
+        $ttl = $this->ttl();
+        $nonce = Str::random(64);
+        $expiresAt = now()->addSeconds($ttl)->getTimestamp();
+        $cache = $this->cache();
+
+        if (! $cache->put($this->contextKey($nonce), $context, $ttl)) {
+            abort(503, 'The modal request could not be stored securely.');
         }
 
         return self::PREFIX.$this->encrypter->encrypt([
-            'arguments' => $arguments,
-            'component' => $component,
-            'expires_at' => now()->addMinutes(2)->getTimestamp(),
-            'modal_attributes' => $modalAttributes,
+            'expires_at' => $expiresAt,
+            'nonce' => $nonce,
             'team_id' => data_get(Auth::user(), 'current_team_id'),
             'user_id' => Auth::id(),
         ]);
@@ -50,33 +63,83 @@ final class SignedModalRequest
         if (
             ! is_array($payload)
             || array_keys($payload) !== [
-                'arguments',
-                'component',
                 'expires_at',
-                'modal_attributes',
+                'nonce',
                 'team_id',
                 'user_id',
             ]
-            || ! is_array($payload['arguments'])
-            || ! is_string($payload['component'])
             || ! is_int($payload['expires_at'])
-            || ! is_array($payload['modal_attributes'])
-            || $payload['expires_at'] < now()->getTimestamp()
+            || ! is_string($payload['nonce'])
+            || strlen($payload['nonce']) !== 64
+            || $payload['expires_at'] <= now()->getTimestamp()
             || (string) $payload['user_id'] !== (string) Auth::id()
             || (string) $payload['team_id'] !== (string) data_get(Auth::user(), 'current_team_id')
         ) {
             abort(422, 'The modal request is invalid.');
         }
 
-        return [
-            'arguments' => $payload['arguments'],
-            'component' => $payload['component'],
-            'modalAttributes' => $payload['modal_attributes'],
-        ];
+        $cache = $this->cache();
+        $remainingLifetime = max(1, $payload['expires_at'] - now()->getTimestamp());
+
+        if (! $cache->add($this->consumedKey($payload['nonce']), true, $remainingLifetime)) {
+            abort(422, 'The modal request was already consumed.');
+        }
+
+        $context = $cache->pull($this->contextKey($payload['nonce']));
+
+        if (! is_array($context)) {
+            abort(422, 'The modal request is invalid or expired.');
+        }
+
+        return $this->mutations->redeemBulkModal($context);
     }
 
     public function supports(string $request): bool
     {
         return str_starts_with($request, self::PREFIX);
+    }
+
+    private function cache(): CacheRepository
+    {
+        $storeName = config('aura.security.modal_requests.cache_store');
+
+        if (! is_string($storeName) || $storeName === '') {
+            abort(503, 'A shared modal request cache store is required.');
+        }
+
+        $cache = $this->cacheManager->store($storeName);
+
+        if (! $cache instanceof Repository) {
+            abort(503, 'The configured modal request cache repository is invalid.');
+        }
+
+        $store = $cache->getStore();
+
+        if ($store instanceof ArrayStore || $store instanceof NullStore) {
+            abort(503, 'The configured modal request cache store is not shared.');
+        }
+
+        return $cache;
+    }
+
+    private function consumedKey(string $nonce): string
+    {
+        return 'aura:modal-request:consumed:'.$nonce;
+    }
+
+    private function contextKey(string $nonce): string
+    {
+        return 'aura:modal-request:context:'.$nonce;
+    }
+
+    private function ttl(): int
+    {
+        $ttl = config('aura.security.modal_requests.ttl_seconds', 120);
+
+        if (! is_int($ttl) || $ttl < 1 || $ttl > 600) {
+            abort(503, 'The modal request lifetime is invalid.');
+        }
+
+        return $ttl;
     }
 }

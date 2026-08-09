@@ -2,21 +2,28 @@
 
 namespace Aura\Base\Livewire;
 
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 class MediaManager extends Component
 {
+    #[Locked]
     public $field;
 
+    #[Locked]
     public $fieldSlug;
 
     public $initialSelectionDone = false;
 
+    #[Locked]
     public $modalAttributes;
 
-    public $model;
+    #[Locked]
+    public string $resource;
 
     public $rowIds = []; // Add this line
 
@@ -27,12 +34,21 @@ class MediaManager extends Component
         return 'max-w-7xl';
     }
 
-    public function mount($slug, $selected, $modalAttributes)
+    public function mount(string $resource, string $slug, array $selected, array $modalAttributes): void
     {
+        $model = Aura::findResourceBySlug($resource);
+
+        abort_unless(
+            $model instanceof Resource && $model->getSlug() === $resource,
+            422,
+            'The media manager resource is invalid.',
+        );
+
+        $this->resource = $resource;
         $this->selected = $selected;
         $this->fieldSlug = $slug;
         $this->modalAttributes = $modalAttributes;
-        $this->field = app($this->model)->fieldBySlug($this->fieldSlug);
+        $this->field = $model->fieldBySlug($this->fieldSlug);
         $this->rowIds = Attachment::pluck('id')->toArray(); // Add this line to populate rowIds
     }
 
