@@ -1,4 +1,8 @@
-@props(['cols' => null])
+@props([
+    'canUpdateCurrentTeam' => false,
+    'cols' => null,
+    'currentTeam' => null,
+])
 
 @php
     $colSpan = match($cols) {
@@ -56,8 +60,8 @@
                 </div>
             </a>
 
-            @if (config('aura.teams'))
-                <a href="{{ route('aura.team.edit', ['id' => auth()->user()->current_team_id]) }}" wire:navigate class="flex gap-3 items-center px-3 py-2.5 rounded-lg transition group hover:bg-gray-50 dark:hover:bg-gray-700/50">
+            @if ($currentTeam && $canUpdateCurrentTeam)
+                <a href="{{ route('aura.team.edit', ['id' => $currentTeam->getKey()]) }}" wire:navigate class="flex gap-3 items-center px-3 py-2.5 rounded-lg transition group hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <div class="p-2 bg-blue-50 rounded-lg shrink-0 dark:bg-blue-900/50 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/70">
                         <svg class="text-blue-600 size-5 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" color="currentColor" fill="none">
                             <path d="M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7Z" stroke="currentColor" stroke-width="1.5" />

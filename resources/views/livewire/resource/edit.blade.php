@@ -1,5 +1,5 @@
 <div autocomplete="off">
-    @section('title', __('Edit :resource', ['resource' => __($model->singularName())]))
+    @section('title', $model->editHeaderTitle())
 
     {{ app('aura')::injectView('post_edit_breadcrumbs_before') }}
 
@@ -7,8 +7,8 @@
         <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
                 iconClass="text-gray-500 w-6 h-6 mr-0" />
-            @if (Route::has('aura.' . $model->getSlug() . '.index'))
-                <x-aura::breadcrumbs.li :href="route('aura.' . $model->getSlug() . '.index')" :title="__($model->getPluralName())" />
+            @if (Route::has($model->editReturnRoute()))
+                <x-aura::breadcrumbs.li :href="route($model->editReturnRoute())" :title="__($model->getPluralName())" />
             @else
                 <x-aura::breadcrumbs.li :title="__($model->getPluralName())" />
             @endif

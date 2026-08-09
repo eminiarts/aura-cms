@@ -10,8 +10,12 @@ class Dashboard extends Component
     public function render()
     {
         $resources = $this->accessibleAppResources();
+        $user = auth()->user();
+        $currentTeam = config('aura.teams') ? data_get($user, 'currentTeam') : null;
 
         return view('aura::livewire.dashboard', [
+            'canUpdateCurrentTeam' => $currentTeam !== null && $user->can('update', $currentTeam),
+            'currentTeam' => $currentTeam,
             'stats' => $this->stats($resources),
             'recentItems' => $this->recentItems($resources),
             'recentMedia' => $this->recentMedia(),

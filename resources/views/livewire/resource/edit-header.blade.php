@@ -2,7 +2,7 @@
 <div class="flex items-center justify-between my-8">
     <div>
         {{ app('aura')::injectView('post_edit_title_before') }}
-        <h1 class="text-2xl font-semibold">{{ __('Edit :resource', ['resource' => __($model->singularName())]) }}</h1>
+        <h1 class="text-2xl font-semibold">{{ $model->editHeaderTitle() }}</h1>
         {{ app('aura')::injectView('post_edit_title_after') }}
     </div>
 
@@ -32,5 +32,5 @@
     </div>
 </div>
 @else
-<x-aura::dialog.title>{{ __('Edit ' . $model->singularName()) }}</x-aura::dialog.title>
+<x-aura::dialog.title>{{ $model->editHeaderTitle() }}</x-aura::dialog.title>
 @endif

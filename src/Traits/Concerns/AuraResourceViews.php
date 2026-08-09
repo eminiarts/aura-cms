@@ -4,9 +4,25 @@ namespace Aura\Base\Traits\Concerns;
 
 trait AuraResourceViews
 {
+    /**
+     * @return string
+     */
+    public function createHeaderTitle()
+    {
+        return __('Create :resource', ['resource' => __($this->singularName())]);
+    }
+
     public function createView()
     {
         return 'aura::livewire.resource.create';
+    }
+
+    /**
+     * @return string
+     */
+    public function editHeaderTitle()
+    {
+        return __('Edit :resource', ['resource' => __($this->singularName())]);
     }
 
     public function editHeaderView()

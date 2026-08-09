@@ -6,6 +6,16 @@ use Illuminate\Support\Facades\Route;
 
 trait AuraResourceUrls
 {
+    /**
+     * Named route used by the create page's return link.
+     *
+     * @return string
+     */
+    public function createReturnRoute()
+    {
+        return 'aura.'.$this->getSlug().'.index';
+    }
+
     public function createUrl()
     {
         $name = 'aura.'.$this->getSlug().'.create';
@@ -15,6 +25,16 @@ trait AuraResourceUrls
         }
 
         return route($name);
+    }
+
+    /**
+     * Named route used by the edit page's return link.
+     *
+     * @return string
+     */
+    public function editReturnRoute()
+    {
+        return 'aura.'.$this->getSlug().'.index';
     }
 
     public function editUrl()

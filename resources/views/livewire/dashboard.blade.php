@@ -10,13 +10,13 @@
         <x-aura::dashboard.recent-activity :items="$recentItems" class="col-span-12 lg:col-span-7 xl:col-span-8" />
 
         <div class="flex flex-col col-span-12 gap-6 lg:col-span-5 xl:col-span-4">
-            <x-aura::dashboard.quick-actions />
+            <x-aura::dashboard.quick-actions :current-team="$currentTeam" :can-update-current-team="$canUpdateCurrentTeam" />
             <x-aura::dashboard.docs />
         </div>
     @else
         <x-aura::dashboard.onboarding cols="full" />
 
-        <x-aura::dashboard.quick-actions cols="6" />
+        <x-aura::dashboard.quick-actions cols="6" :current-team="$currentTeam" :can-update-current-team="$canUpdateCurrentTeam" />
         <x-aura::dashboard.docs cols="6" />
     @endif
 

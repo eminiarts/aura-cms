@@ -178,6 +178,37 @@ class Product extends Resource
 }
 ```
 
+### Editor Chrome Without Replacing a View
+
+For title copy or breadcrumb return destinations, override the resource hooks instead of publishing the create or edit Blade view:
+
+```php
+class Product extends Resource
+{
+    public function createHeaderTitle()
+    {
+        return __('Add product');
+    }
+
+    public function createReturnRoute()
+    {
+        return 'aura.catalog.index';
+    }
+
+    public function editHeaderTitle()
+    {
+        return __('Update product');
+    }
+
+    public function editReturnRoute()
+    {
+        return 'aura.catalog.index';
+    }
+}
+```
+
+The return hooks provide named route names, which Aura passes to Laravel's `route()` helper. By default, create and edit pages keep the existing `Create {Resource}` / `Edit {Resource}` copy and return to `aura.{resource}.index`. Component-level `create` and `update` authorization still runs before the page renders.
+
 ### Custom Index View
 
 ```blade
