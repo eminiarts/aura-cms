@@ -248,6 +248,91 @@ public function getFilterValues($model, $field)
 }
 ```
 
+#### `filterCapability($model, $field)`
+
+Table filters use a field-owned `FilterCapability` for both their input UI and
+their query behavior. The base `Field` returns a text capability, while choice,
+boolean, date, and relationship fields declare a more specific capability.
+Third-party fields extend filtering by overriding this method; the table does
+not inspect the field class name.
+
+```php
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Resource;
+
+public function filterCapability(Resource $model, array $field): FilterCapability
+{
+    return FilterCapability::option(
+        operators: $this->filterOptions(),
+        values: $this->getFilterValues($model, $field),
+    );
+}
+```
+
+The available factories are:
+
+- `text($operators)` for scalar text or number input.
+- `option($operators, $values)` for a fixed set of values.
+- `boolean($operators)` for a typed yes/no value.
+- `date($operators)` and `dateRange($operators)` for ISO date input.
+- `relationship(...)` for Aura's `post_relations` pivot.
+- `custom(...)` for a package-owned Blade component and query handler.
+
+Option capabilities accept both associative `value => label` maps and
+list-style rows such as `['key' => 'open', 'value' => 'Open']`. Aura converts
+them to canonical `value`, `wire_value`, and `label` rows. Empty or malformed
+options are omitted. The original scalar value is restored before the query is
+applied, so an integer option remains an integer even though HTML submits a
+string. `Select::getFilterValues()` remains available, and `Status` exposes the
+same method through this shared path.
+
+For a completely custom filter, register the package's anonymous Blade
+component in its service provider and declare a handler implementing
+`AppliesFieldFilter`:
+
+```php
+use Aura\Base\Contracts\AppliesFieldFilter;
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Resource;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Blade;
+
+Blade::anonymousComponentPath(__DIR__.'/../resources/views/components', 'acme');
+
+public function filterCapability(Resource $model, array $field): FilterCapability
+{
+    return FilterCapability::custom(
+        component: 'acme::priority-filter',
+        operators: ['is' => __('is')],
+        queryHandler: PriorityFilter::class,
+        values: ['urgent' => __('Urgent'), 'routine' => __('Routine')],
+    );
+}
+
+final class PriorityFilter implements AppliesFieldFilter
+{
+    public function apply(
+        Builder $query,
+        Resource $resource,
+        array $field,
+        array $filter,
+        FilterCapability $capability,
+    ): void {
+        $query->where(
+            $query->getModel()->qualifyColumn('priority'),
+            $filter['value'],
+        );
+    }
+}
+```
+
+The component receives `model`, `field`, `capability`, and `size` props. Query
+handlers receive only the server-resolved field and capability; client-provided
+field classes, SQL columns, and handler names are never executed. Unsupported
+operators and invalid fixed-option values fail closed. A null or blank value
+simply leaves that filter inactive, except for explicit empty/not-empty
+operators.
+
 ### Helper Methods
 
 #### `isDisabled($model, $field)`

@@ -527,7 +527,14 @@ The filtering system allows building complex queries with a visual interface.
 
 ### Filter Configuration
 
-Each field type provides its own filter operators via `filterOptions()`. The `QueryFilters` trait handles applying these filters to both regular table fields and meta fields.
+Each field type provides a `FilterCapability` that declares its operators,
+input component, normalized values, and query handler. The default handler
+applies filters to regular table fields or meta fields, while relationship and
+package-defined handlers can own their query behavior without adding a switch
+to the table. The older `filterOptions()` and `getFilterValues()` hooks remain
+the inputs used by the built-in capability factories. See
+[Creating Fields](creating-fields.md#filtercapabilitymodel-field) for the
+third-party extension contract.
 
 **Available Filter Operators** (from `QueryFilters` trait):
 
