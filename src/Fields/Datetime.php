@@ -168,6 +168,14 @@ class Datetime extends Field
         if ($storage === FieldValueStorage::Physical
             && $model
             && is_string($slug)
+            && $model->hasCast($slug, [
+                'date',
+                'datetime',
+                'immutable_date',
+                'immutable_datetime',
+                'custom_datetime',
+                'immutable_custom_datetime',
+            ])
             && array_key_exists($slug, $model->getAttributes())) {
             $value = $model->getAttributes()[$slug];
         }

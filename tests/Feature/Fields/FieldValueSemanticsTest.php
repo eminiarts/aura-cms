@@ -226,6 +226,22 @@ class Core10NativeDatetimeCastResource extends Resource
     }
 }
 
+class Core10NullDatetimeCastModel extends Model
+{
+    protected function casts(): array
+    {
+        return ['occurred_at' => Core10NullCast::class];
+    }
+}
+
+class Core10NullDatetimeAccessorModel extends Model
+{
+    protected function occurredAt(): Attribute
+    {
+        return Attribute::make(get: fn (mixed $value): mixed => null);
+    }
+}
+
 class Core10ExactNumberResource extends Resource
 {
     public static $customTable = true;
@@ -903,6 +919,27 @@ test('physical datetime hydration uses the declared storage timezone before nati
         ->and($resource->resolveFieldValue('occurred_at'))->toBe('2026-08-09 12:15:00')
         ->and(trim(strip_tags($resource->displayInContext('occurred_at', FieldValueContext::View))))
         ->toBe('2026-08-09 12:15');
+});
+
+test('custom datetime getters returning null remain authoritative over the raw column', function () {
+    $datetime = new Datetime;
+    $field = Core10NativeDatetimeCastResource::getFields()[0];
+
+    foreach ([Core10NullDatetimeCastModel::class, Core10NullDatetimeAccessorModel::class] as $modelClass) {
+        /** @var Model $model */
+        $model = new $modelClass;
+        $model->setRawAttributes(['occurred_at' => '2026-08-09 16:15:00'], true);
+
+        expect($model->getRawOriginal('occurred_at'))->toBe('2026-08-09 16:15:00')
+            ->and($model->getAttribute('occurred_at'))->toBeNull()
+            ->and($datetime->hydrateFromStorage(
+                $model->getAttribute('occurred_at'),
+                $field,
+                $model,
+                FieldValueStorage::Physical,
+                FieldValueContext::View,
+            ))->toBeNull();
+    }
 });
 
 test('invalid configured timezones fail clearly instead of falling back to utc', function () {
