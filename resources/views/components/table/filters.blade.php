@@ -30,8 +30,18 @@
 
     <p class="block mt-6 font-semibold">{{ __('Custom Filters') }}</p>
 
+    @php
+        $customFilterGroups = is_array($filters) && is_array($filters['custom'] ?? null)
+            ? $filters['custom']
+            : [];
+    @endphp
+
     <div wire:key="filters-custom-{{ $selectedFilter }}">
-        @foreach($filters['custom'] as $groupKey => $group)
+        @foreach($customFilterGroups as $groupKey => $group)
+            @continue(! is_array($group))
+            @php
+                $groupFilters = is_array($group['filters'] ?? null) ? $group['filters'] : [];
+            @endphp
             <div class="px-3 py-3 mt-4 bg-white rounded-lg ring-1 shadow-xs ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10">
                 <div class="flex justify-between items-center mb-2">
                     <div class="text-base font-semibold">
@@ -52,7 +62,8 @@
                     </div>
                 </div>
 
-                @foreach($group['filters'] as $filterKey => $filter)
+                @foreach($groupFilters as $filterKey => $filter)
+                @continue(! is_array($filter))
                 @php
                     $fieldSlug = $filter['name'] ?? null;
                     $filterDefinition = is_string($fieldSlug) && $fieldSlug !== ''

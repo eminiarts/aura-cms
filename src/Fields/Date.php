@@ -19,7 +19,7 @@ class Date extends Field
 
     public function filterCapability(Resource $model, array $field): FilterCapability
     {
-        return FilterCapability::date($this->filterOptions());
+        return FilterCapability::date($this->filterOptions(), $field['format'] ?? 'd.m.Y');
     }
 
     public function filterOptions()

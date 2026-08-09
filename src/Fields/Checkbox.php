@@ -2,6 +2,10 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Fields\Filters\JsonFieldFilter;
+use Aura\Base\Resource;
+
 class Checkbox extends Field
 {
     public $edit = 'aura::fields.checkbox';
@@ -9,6 +13,26 @@ class Checkbox extends Field
     public $optionGroup = 'Choice Fields';
 
     // public $view = 'components.fields.checkbox';
+
+    public function filterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::option(
+            operators: $this->filterOptions(),
+            values: $this->getFilterValues($model, $field),
+            queryHandler: JsonFieldFilter::class,
+            multiple: true,
+        );
+    }
+
+    public function filterOptions()
+    {
+        return [
+            'contains' => __('contains'),
+            'does_not_contain' => __('does not contain'),
+            'is_empty' => __('is empty'),
+            'is_not_empty' => __('is not empty'),
+        ];
+    }
 
     public function get($class, $value, $field = null)
     {
@@ -71,6 +95,11 @@ class Checkbox extends Field
                 'slug' => 'default',
             ],
         ]);
+    }
+
+    public function getFilterValues($model, $field)
+    {
+        return $this->options($model, $field);
     }
 
     public function options($model, $field)

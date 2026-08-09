@@ -477,8 +477,8 @@ describe('empty operators', function () {
 
         $component->call('addFilterGroup');
 
-        $component->set('filters.custom.0.filters.0.operator', 'is_empty');
         $component->set('filters.custom.0.filters.0.name', 'number');
+        $component->set('filters.custom.0.filters.0.operator', 'is_empty');
 
         expect($component->filters['custom'][0]['filters'][0]['value'])->toBeNull();
     });
@@ -506,8 +506,8 @@ describe('empty operators', function () {
 
         $component->call('addFilterGroup');
 
-        $component->set('filters.custom.0.filters.0.operator', 'is_not_empty');
         $component->set('filters.custom.0.filters.0.name', 'meta');
+        $component->set('filters.custom.0.filters.0.operator', 'is_not_empty');
 
         expect($component->filters['custom'][0]['filters'][0]['value'])->toBeNull();
         expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
@@ -517,7 +517,6 @@ describe('empty operators', function () {
 
         // Switch to is_empty - should find post1
         $component->set('filters.custom.0.filters.0.operator', 'is_empty');
-        $component->set('filters.custom.0.filters.0.name', 'meta');
 
         $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1);
     });

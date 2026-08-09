@@ -6,6 +6,7 @@ use Aura\Base\Contracts\AppliesFieldFilter;
 use Aura\Base\Resource;
 use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use InvalidArgumentException;
 use LogicException;
 
 final class FilterCapability
@@ -18,11 +19,15 @@ final class FilterCapability
 
     public const DATE_RANGE = 'date-range';
 
+    public const DATETIME = 'datetime';
+
     public const OPTION = 'option';
 
     public const RELATIONSHIP = 'relationship';
 
     public const TEXT = 'text';
+
+    private const WIRE_PREFIX = '__aura_filter:';
 
     /**
      * @param  array<string, string>  $operators
@@ -37,7 +42,21 @@ final class FilterCapability
         private readonly array $values = [],
         private readonly array $context = [],
         private readonly string $queryHandler = ResourceFieldFilter::class,
-    ) {}
+    ) {
+        if (trim($this->component) === '') {
+            throw new InvalidArgumentException('A filter capability component is required.');
+        }
+
+        foreach ($this->operators as $operator => $label) {
+            if (! is_string($operator) || trim($operator) === '' || ! is_string($label) || trim($label) === '') {
+                throw new InvalidArgumentException('Filter capability operators must use non-empty string keys and labels.');
+            }
+        }
+
+        if (! is_a($this->queryHandler, AppliesFieldFilter::class, true)) {
+            throw new InvalidArgumentException(sprintf('%s must implement %s.', $this->queryHandler, AppliesFieldFilter::class));
+        }
+    }
 
     /**
      * @param  array<string, mixed>  $field
@@ -54,7 +73,6 @@ final class FilterCapability
         }
 
         $filter['name'] = $field['slug'];
-
         $normalized = $this->normalizeFilter($filter);
 
         if ($normalized === null) {
@@ -99,22 +117,22 @@ final class FilterCapability
     /**
      * @param  array<string, string>  $operators
      * @param  class-string<AppliesFieldFilter>  $queryHandler
-     * @param  iterable<array-key, mixed>  $values
      * @param  array<string, mixed>  $context
      */
     public static function custom(
         string $component,
         array $operators,
         string $queryHandler,
-        iterable $values = [],
+        mixed $values = [],
         array $context = [],
+        bool $multiple = false,
     ): self {
         return new self(
             type: self::CUSTOM,
             component: $component,
             operators: $operators,
             values: (new FilterOptionNormalizer)->normalize($values),
-            context: $context,
+            context: $context + ['multiple' => $multiple],
             queryHandler: $queryHandler,
         );
     }
@@ -122,24 +140,42 @@ final class FilterCapability
     /**
      * @param  array<string, string>  $operators
      */
-    public static function date(array $operators): self
+    public static function date(array $operators, string $storageFormat = 'Y-m-d'): self
     {
         return new self(
             type: self::DATE,
             component: 'aura::fields.filters.date',
             operators: $operators,
+            context: ['storage_format' => $storageFormat, 'precision' => 'date'],
+            queryHandler: TemporalFieldFilter::class,
         );
     }
 
     /**
      * @param  array<string, string>  $operators
      */
-    public static function dateRange(array $operators): self
+    public static function dateRange(array $operators, string $storageFormat = 'Y-m-d'): self
     {
         return new self(
             type: self::DATE_RANGE,
             component: 'aura::fields.filters.date-range',
             operators: $operators,
+            context: ['storage_format' => $storageFormat, 'precision' => 'date'],
+            queryHandler: TemporalFieldFilter::class,
+        );
+    }
+
+    /**
+     * @param  array<string, string>  $operators
+     */
+    public static function datetime(array $operators, string $storageFormat = 'Y-m-d H:i:s'): self
+    {
+        return new self(
+            type: self::DATETIME,
+            component: 'aura::fields.filters.datetime',
+            operators: $operators,
+            context: ['storage_format' => $storageFormat, 'precision' => 'datetime'],
+            queryHandler: TemporalFieldFilter::class,
         );
     }
 
@@ -154,15 +190,23 @@ final class FilterCapability
 
     /**
      * @param  array<string, string>  $operators
-     * @param  iterable<array-key, mixed>  $values
+     * @param  class-string<AppliesFieldFilter>  $queryHandler
+     * @param  array<string, mixed>  $context
      */
-    public static function option(array $operators, iterable $values): self
-    {
+    public static function option(
+        array $operators,
+        mixed $values,
+        string $queryHandler = ResourceFieldFilter::class,
+        array $context = [],
+        bool $multiple = false,
+    ): self {
         return new self(
             type: self::OPTION,
             component: 'aura::fields.filters.option',
             operators: $operators,
             values: (new FilterOptionNormalizer)->normalize($values),
+            context: $context + ['multiple' => $multiple],
+            queryHandler: $queryHandler,
         );
     }
 
@@ -227,17 +271,6 @@ final class FilterCapability
         ];
     }
 
-    private function isDate(mixed $value): bool
-    {
-        if (! is_string($value)) {
-            return false;
-        }
-
-        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
-
-        return $date && $date->format('Y-m-d') === $value;
-    }
-
     private function matchNothing(Builder $query): void
     {
         $query->whereRaw('1 = 0');
@@ -255,26 +288,38 @@ final class FilterCapability
             return $filter;
         }
 
-        if ($this->type === self::DATE) {
-            $value = $filter['value'] ?? null;
+        if ($this->type === self::DATE || $this->type === self::DATETIME) {
+            $normalized = $this->normalizeTemporalValue(
+                $filter['value'] ?? null,
+                $this->type === self::DATETIME,
+            );
 
-            if (! is_string($value)) {
+            if ($normalized === null) {
                 return null;
             }
 
-            $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+            $filter['value'] = $normalized;
 
-            return $date && $date->format('Y-m-d') === $value ? $filter : null;
+            return $filter;
         }
 
         if ($this->type === self::DATE_RANGE) {
             $value = $filter['value'] ?? null;
 
-            if (! is_array($value) || ! $this->isDate($value['from'] ?? null) || ! $this->isDate($value['to'] ?? null)) {
+            if (! is_array($value)) {
                 return null;
             }
 
-            return $value['from'] <= $value['to'] ? $filter : null;
+            $from = $this->normalizeTemporalValue($value['from'] ?? null, false);
+            $to = $this->normalizeTemporalValue($value['to'] ?? null, false);
+
+            if ($from === null || $to === null || $from > $to) {
+                return null;
+            }
+
+            $filter['value'] = ['from' => $from, 'to' => $to];
+
+            return $filter;
         }
 
         if ($this->type === self::RELATIONSHIP) {
@@ -293,21 +338,98 @@ final class FilterCapability
             return $filter;
         }
 
+        if ($this->context['multiple'] ?? false) {
+            return $this->normalizeMultipleValue($filter);
+        }
+
         if (! in_array($this->type, [self::OPTION, self::BOOLEAN], true) && ! ($this->type === self::CUSTOM && $this->values !== [])) {
             return self::hasValue($filter['value'] ?? null) ? $filter : null;
         }
 
-        $value = $filter['value'] ?? null;
+        $option = $this->resolveOption($filter['value'] ?? null);
 
-        if (is_array($value)) {
+        if ($option === null) {
+            return null;
+        }
+
+        $filter['value'] = $option;
+
+        return $filter;
+    }
+
+    /**
+     * @param  array{name: string, operator: string, value?: mixed, options?: array<string, mixed>}  $filter
+     * @return array{name: string, operator: string, value?: mixed, options?: array<string, mixed>}|null
+     */
+    private function normalizeMultipleValue(array $filter): ?array
+    {
+        $values = is_array($filter['value'] ?? null) ? $filter['value'] : [$filter['value'] ?? null];
+        $normalized = [];
+
+        foreach ($values as $value) {
+            if (is_array($value) || is_object($value) || $value === null || (is_string($value) && trim($value) === '')) {
+                return null;
+            }
+
+            $resolved = $this->values === [] ? $value : $this->resolveOption($value);
+
+            if ($resolved === null) {
+                return null;
+            }
+
+            if (! in_array($resolved, $normalized, true)) {
+                $normalized[] = $resolved;
+            }
+        }
+
+        if ($normalized === []) {
+            return null;
+        }
+
+        $filter['value'] = $normalized;
+
+        return $filter;
+    }
+
+    private function normalizeTemporalValue(mixed $value, bool $includeTime): ?string
+    {
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        $formats = $includeTime
+            ? ['Y-m-d\\TH:i:s', 'Y-m-d\\TH:i', 'Y-m-d H:i:s', 'Y-m-d H:i', $this->context['storage_format'] ?? null]
+            : ['Y-m-d', $this->context['storage_format'] ?? null];
+
+        foreach (array_unique(array_filter($formats, 'is_string')) as $format) {
+            $date = DateTimeImmutable::createFromFormat('!'.$format, $value);
+            $errors = DateTimeImmutable::getLastErrors();
+
+            if ($date === false || ($errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0)) || $date->format($format) !== $value) {
+                continue;
+            }
+
+            return $date->format($includeTime ? 'Y-m-d H:i:s' : 'Y-m-d');
+        }
+
+        return null;
+    }
+
+    private function resolveOption(mixed $value): string|int|float|bool|null
+    {
+        if (is_array($value) || is_object($value) || $value === null) {
             return null;
         }
 
         foreach ($this->values as $option) {
-            if ($value === $option['value'] || (is_scalar($value) && (string) $value === $option['wire_value'])) {
-                $filter['value'] = $option['value'];
+            if (is_string($value) && hash_equals($option['wire_value'], $value)) {
+                return $option['value'];
+            }
+        }
 
-                return $filter;
+        foreach ($this->values as $option) {
+            if ($value === $option['value'] && (! is_string($value) || ! str_starts_with($value, self::WIRE_PREFIX))) {
+                return $option['value'];
             }
         }
 

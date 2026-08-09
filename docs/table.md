@@ -536,6 +536,12 @@ the inputs used by the built-in capability factories. See
 [Creating Fields](creating-fields.md#filtercapabilitymodel-field) for the
 third-party extension contract.
 
+Choice filters preserve scalar value types, dates and datetimes normalize the
+browser's ISO payload to the field's configured storage format, and
+JSON-backed multiple-value fields use exact database JSON membership. Invalid
+field, operator, handler, and AND/OR payloads fail closed. Saved flat filter
+lists remain supported and are normalized to a single group.
+
 **Available Filter Operators** (from `QueryFilters` trait):
 
 ```php
@@ -572,6 +578,14 @@ third-party extension contract.
 'date_on_or_after'  => 'DATE >= value'
 'date_is_empty'     => 'NULL OR empty'
 'date_is_not_empty' => 'NOT NULL AND not empty'
+
+// Datetime operators
+'is'           => 'DATETIME = value'
+'is_not'       => 'DATETIME != value'
+'before'       => 'DATETIME < value'
+'after'        => 'DATETIME > value'
+'on_or_before' => 'DATETIME <= value'
+'on_or_after'  => 'DATETIME >= value'
 ```
 
 ### Custom Filters

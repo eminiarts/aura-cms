@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Resource;
+
 class Radio extends Field
 {
     public $edit = 'aura::fields.radio';
@@ -9,6 +12,21 @@ class Radio extends Field
     public $optionGroup = 'Choice Fields';
 
     // public $view = 'components.fields.radio';
+
+    public function filterCapability(Resource $model, array $field): FilterCapability
+    {
+        return $this->optionFilterCapability($model, $field);
+    }
+
+    public function filterOptions()
+    {
+        return [
+            'is' => __('is'),
+            'is_not' => __('is not'),
+            'is_empty' => __('is empty'),
+            'is_not_empty' => __('is not empty'),
+        ];
+    }
 
     public function getFields()
     {
@@ -55,5 +73,19 @@ class Radio extends Field
                 'slug' => 'default',
             ],
         ]);
+    }
+
+    public function getFilterValues($model, $field)
+    {
+        return $this->options($model, $field);
+    }
+
+    public function options($model, $field)
+    {
+        if (method_exists($model, 'get'.ucfirst($field['slug']).'Options')) {
+            return $model->{'get'.ucfirst($field['slug']).'Options'}();
+        }
+
+        return $field['options'] ?? [];
     }
 }

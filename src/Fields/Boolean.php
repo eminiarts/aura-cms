@@ -30,6 +30,8 @@ class Boolean extends Field
     public function filterOptions()
     {
         return [
+            'equals' => __('equals'),
+            'not_equals' => __('does not equal'),
             'is' => __('is'),
             'is_not' => __('is not'),
             'is_empty' => __('is empty'),

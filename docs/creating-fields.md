@@ -272,19 +272,46 @@ public function filterCapability(Resource $model, array $field): FilterCapabilit
 The available factories are:
 
 - `text($operators)` for scalar text or number input.
-- `option($operators, $values)` for a fixed set of values.
+- `option($operators, $values)` for a fixed set of scalar values.
 - `boolean($operators)` for a typed yes/no value.
-- `date($operators)` and `dateRange($operators)` for ISO date input.
+- `date($operators, $storageFormat)`, `datetime($operators, $storageFormat)`,
+  and `dateRange($operators, $storageFormat)` for browser ISO input backed by a
+  fixed-width stored format.
 - `relationship(...)` for Aura's `post_relations` pivot.
 - `custom(...)` for a package-owned Blade component and query handler.
 
 Option capabilities accept both associative `value => label` maps and
 list-style rows such as `['key' => 'open', 'value' => 'Open']`. Aura converts
 them to canonical `value`, `wire_value`, and `label` rows. Empty or malformed
-options are omitted. The original scalar value is restored before the query is
-applied, so an integer option remains an integer even though HTML submits a
-string. `Select::getFilterValues()` remains available, and `Status` exposes the
-same method through this shared path.
+options are omitted. Null and scalar option containers are treated as empty.
+The original scalar value is restored before the query is applied, so an
+integer option remains an integer even though HTML submits a string. Legacy
+wire values remain unchanged when unambiguous; collisions such as `false`, `0`,
+and `'0'` receive stable typed wire values. `Select::getFilterValues()` remains
+available, and `Status`, `Radio`, and `Checkbox` expose the same method through
+this shared path.
+
+Date and datetime controls submit ISO values. Aura normalizes those values and
+compares them chronologically against the field's declared `format`, including
+the built-in `d.m.Y` and `d.m.Y H:i` defaults. Storage formats must be
+fixed-width combinations of `Y`, `m`, `d`, `H`, `i`, and optional `s`; an
+unsupported format fails closed.
+
+JSON-backed multiple values can opt into exact, portable membership queries:
+
+```php
+use Aura\Base\Fields\Filters\JsonFieldFilter;
+
+return FilterCapability::option(
+    operators: $this->filterOptions(),
+    values: $this->getFilterValues($model, $field),
+    queryHandler: JsonFieldFilter::class,
+    multiple: true,
+);
+```
+
+This uses the database JSON operators rather than substring `LIKE` matching,
+so value `1` does not match `10`.
 
 For a completely custom filter, register the package's anonymous Blade
 component in its service provider and declare a handler implementing
@@ -329,9 +356,10 @@ final class PriorityFilter implements AppliesFieldFilter
 The component receives `model`, `field`, `capability`, and `size` props. Query
 handlers receive only the server-resolved field and capability; client-provided
 field classes, SQL columns, and handler names are never executed. Unsupported
-operators and invalid fixed-option values fail closed. A null or blank value
-simply leaves that filter inactive, except for explicit empty/not-empty
-operators.
+operators and invalid fixed-option values fail closed. Handler classes are
+validated when the capability is declared and must implement
+`AppliesFieldFilter`. A null or blank value simply leaves an incomplete filter
+inactive, except for explicit empty/not-empty operators.
 
 ### Helper Methods
 

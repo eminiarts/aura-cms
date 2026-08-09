@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Resource;
+
 class Datetime extends Field
 {
     public $edit = 'aura::fields.datetime';
@@ -13,6 +16,11 @@ class Datetime extends Field
     public $tableColumnType = 'timestamp';
 
     public $view = 'aura::fields.view-value';
+
+    public function filterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::datetime($this->filterOptions(), $field['format'] ?? 'd.m.Y H:i');
+    }
 
     public function filterOptions()
     {

@@ -23,6 +23,8 @@ class Status extends Field
     public function filterOptions()
     {
         return [
+            'contains' => __('contains'),
+            'does_not_contain' => __('does not contain'),
             'is' => __('is'),
             'is_not' => __('is not'),
             'is_empty' => __('is empty'),

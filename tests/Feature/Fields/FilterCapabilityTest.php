@@ -4,9 +4,13 @@ use Aura\Base\Contracts\AppliesFieldFilter;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\AdvancedSelect;
 use Aura\Base\Fields\Boolean;
+use Aura\Base\Fields\Checkbox;
 use Aura\Base\Fields\Date;
+use Aura\Base\Fields\Datetime;
 use Aura\Base\Fields\Field;
 use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Fields\Filters\FilterOptionNormalizer;
+use Aura\Base\Fields\Radio;
 use Aura\Base\Fields\Select;
 use Aura\Base\Fields\Status;
 use Aura\Base\Fields\Tags;
@@ -15,6 +19,7 @@ use Aura\Base\Resource;
 use Aura\Base\Resources\Tag;
 use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Grammars\MySqlGrammar;
 
 use function Pest\Livewire\livewire;
 
@@ -61,6 +66,43 @@ class FilterCapabilityResource extends Resource
                 'name' => 'Published On',
                 'slug' => 'published_on',
                 'type' => Date::class,
+                'format' => 'd.m.Y',
+            ],
+            [
+                'name' => 'Occurred At',
+                'slug' => 'occurred_at',
+                'type' => Datetime::class,
+                'format' => 'd.m.Y H:i',
+                'on_index' => false,
+            ],
+            [
+                'name' => 'Contact Method',
+                'slug' => 'contact_method',
+                'type' => Radio::class,
+                'options' => [
+                    ['key' => 'email', 'value' => 'Email label'],
+                    ['key' => 'phone', 'value' => 'Phone label'],
+                ],
+                'on_index' => false,
+            ],
+            [
+                'name' => 'Segments',
+                'slug' => 'segments',
+                'type' => Checkbox::class,
+                'options' => [
+                    ['key' => 1, 'value' => 'One'],
+                    ['key' => 10, 'value' => 'Ten'],
+                ],
+                'on_index' => false,
+            ],
+            [
+                'name' => 'Stored People',
+                'slug' => 'stored_people',
+                'type' => AdvancedSelect::class,
+                'resource' => User::class,
+                'polymorphic_relation' => false,
+                'multiple' => true,
+                'on_index' => false,
             ],
             [
                 'name' => 'Topics',
@@ -209,6 +251,25 @@ test('table filter UI consumes field capabilities without class name dispatch', 
         ->assertSee('Draft');
 });
 
+test('dynamic Livewire field and operator updates reset stale filter values', function () {
+    $resource = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Hook test',
+        'stage' => 'draft',
+        'status_choice' => 'open',
+    ]);
+
+    livewire(Table::class, ['model' => $resource])
+        ->call('addFilterGroup')
+        ->set('filters.custom.0.filters.0.value', 'draft')
+        ->set('filters.custom.0.filters.0.operator', 'is_not')
+        ->assertSet('filters.custom.0.filters.0.value', null)
+        ->set('filters.custom.0.filters.0.value', 'draft')
+        ->set('filters.custom.0.filters.0.name', 'status_choice')
+        ->assertSet('filters.custom.0.filters.0.operator', 'contains')
+        ->assertSet('filters.custom.0.filters.0.value', null);
+});
+
 test('option capabilities validate and preserve values before applying generated queries', function () {
     $draft = FilterCapabilityResource::create([
         'type' => FilterCapabilityResource::$type,
@@ -272,13 +333,13 @@ test('boolean and date capabilities render typed controls and apply zero and dat
         'type' => FilterCapabilityResource::$type,
         'title' => 'Disabled record',
         'enabled' => false,
-        'published_on' => '2026-01-10',
+        'published_on' => '10.01.2026',
     ]);
     $enabled = FilterCapabilityResource::create([
         'type' => FilterCapabilityResource::$type,
         'title' => 'Enabled record',
         'enabled' => true,
-        'published_on' => '2026-03-20',
+        'published_on' => '20.03.2026',
     ]);
 
     $component = livewire(Table::class, ['model' => $disabled]);
@@ -309,6 +370,260 @@ test('boolean and date capabilities render typed controls and apply zero and dat
         ->assertViewHas('rows', fn ($rows) => $rows->isEmpty())
         ->set('filters.custom.0.filters.0.value', '')
         ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->sort()->values()->all() === [$disabled->id, $enabled->id]);
+});
+
+test('datetime capabilities implement chronological before and after semantics', function () {
+    $before = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Before midnight',
+        'occurred_at' => '31.12.2025 23:59',
+    ]);
+    $after = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'After midnight',
+        'occurred_at' => '01.01.2026 00:01',
+    ]);
+
+    $component = livewire(Table::class, ['model' => $before]);
+
+    expect($component->instance()->fieldsForFilter()['occurred_at'])
+        ->toHaveKey('filter.type', FilterCapability::DATETIME)
+        ->toHaveKey('filter.component', 'aura::fields.filters.datetime');
+
+    $component
+        ->set('filters.custom', [[
+            'filters' => [[
+                'name' => 'occurred_at',
+                'operator' => 'before',
+                'value' => '2026-01-01T00:00',
+            ]],
+        ]])
+        ->assertSeeHtml('type="datetime-local"')
+        ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->all() === [$before->id])
+        ->set('filters.custom.0.filters.0.operator', 'after')
+        ->set('filters.custom.0.filters.0.value', '2026-01-01T00:00')
+        ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->all() === [$after->id]);
+});
+
+test('radio and checkbox capabilities filter by stable option values', function () {
+    $one = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'One segment',
+        'contact_method' => 'email',
+        'segments' => [1],
+    ]);
+    $ten = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Ten segment',
+        'contact_method' => 'phone',
+        'segments' => [10],
+    ]);
+
+    $component = livewire(Table::class, ['model' => $one]);
+    $fields = $component->instance()->fieldsForFilter();
+
+    expect($fields['contact_method'])
+        ->toHaveKey('filter.type', FilterCapability::OPTION)
+        ->toHaveKey('filter.values.0.value', 'email')
+        ->toHaveKey('filter.values.0.label', 'Email label')
+        ->and($fields['segments'])
+        ->toHaveKey('filter.type', FilterCapability::OPTION)
+        ->toHaveKey('filter.values.0.value', 1)
+        ->toHaveKey('filter.values.1.value', 10);
+
+    $emailWireValue = $fields['contact_method']['filter']['values'][0]['wire_value'];
+    $oneWireValue = $fields['segments']['filter']['values'][0]['wire_value'];
+
+    $component
+        ->set('filters.custom', [[
+            'filters' => [[
+                'name' => 'contact_method',
+                'operator' => 'is',
+                'value' => $emailWireValue,
+            ]],
+        ]])
+        ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->all() === [$one->id])
+        ->set('filters.custom.0.filters.0.name', 'segments')
+        ->set('filters.custom.0.filters.0.operator', 'contains')
+        ->set('filters.custom.0.filters.0.value', $oneWireValue)
+        ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->all() === [$one->id]);
+
+    expect($ten->id)->not->toBe($one->id);
+});
+
+test('saved status contains and boolean equals operators remain compatible', function () {
+    $matching = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Matching saved filter',
+        'status_choice' => 'open',
+        'enabled' => false,
+    ]);
+    FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Other saved filter',
+        'status_choice' => 9,
+        'enabled' => true,
+    ]);
+
+    $component = livewire(Table::class, ['model' => $matching]);
+
+    $component
+        ->set('filters.custom', [[
+            'filters' => [[
+                'name' => 'status_choice',
+                'operator' => 'contains',
+                'value' => 'open',
+            ]],
+        ]])
+        ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->all() === [$matching->id])
+        ->set('filters.custom.0.filters.0.name', 'enabled')
+        ->set('filters.custom.0.filters.0.operator', 'equals')
+        ->set('filters.custom.0.filters.0.value', '0')
+        ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->all() === [$matching->id]);
+});
+
+test('option normalization safely preserves strict scalar identities', function () {
+    $normalizer = new FilterOptionNormalizer;
+    $mixed = [
+        ['value' => false, 'label' => 'False'],
+        ['value' => 0, 'label' => 'Integer zero'],
+        ['value' => '0', 'label' => 'String zero'],
+        null,
+        new stdClass,
+        ['unexpected' => 'shape'],
+    ];
+    $reservedWireValue = [
+        ...$mixed,
+        ['value' => '__aura_filter:Ym9vbDow', 'label' => 'Reserved-looking string'],
+    ];
+
+    expect($normalizer->normalize(null))->toBe([])
+        ->and($normalizer->normalize('invalid'))->toBe([])
+        ->and($normalizer->normalize(123))->toBe([])
+        ->and($normalizer->normalize($mixed))->toHaveCount(3)
+        ->and(array_column($normalizer->normalize($mixed), 'value'))->toBe([false, 0, '0'])
+        ->and(array_column($normalizer->normalize($mixed), 'wire_value'))->each->toBeString()
+        ->and(array_unique(array_column($normalizer->normalize($mixed), 'wire_value')))->toHaveCount(3)
+        ->and($normalizer->normalize($mixed))->toBe($normalizer->normalize($mixed))
+        ->and($normalizer->normalize($reservedWireValue))->toHaveCount(4)
+        ->and(array_unique(array_column($normalizer->normalize($reservedWireValue), 'wire_value')))->toHaveCount(4)
+        ->and($normalizer->normalize($reservedWireValue)[3]['wire_value'])->not->toBe('__aura_filter:Ym9vbDow');
+});
+
+test('stored AdvancedSelect filtering uses exact portable JSON membership', function () {
+    $one = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Stored one',
+        'stored_people' => [1],
+    ]);
+    FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Stored ten',
+        'stored_people' => [10],
+    ]);
+
+    $component = livewire(Table::class, ['model' => $one])
+        ->set('filters.custom', [[
+            'filters' => [[
+                'name' => 'stored_people',
+                'operator' => 'contains',
+                'value' => [1],
+            ]],
+        ]]);
+    $query = $component->instance()->rowsQuery();
+    $connection = $query->getConnection();
+    $originalGrammar = $connection->getQueryGrammar();
+
+    try {
+        $connection->setQueryGrammar(new MySqlGrammar($connection));
+        $mysqlSql = $component->instance()->rowsQuery()->toSql();
+    } finally {
+        $connection->setQueryGrammar($originalGrammar);
+    }
+
+    expect($query->pluck($query->getModel()->getQualifiedKeyName())->all())->toBe([$one->id])
+        ->and($query->toSql())->toContain('json_each')
+        ->and($query->toSql())->not->toContain(' like ')
+        ->and($mysqlSql)->toContain('json_contains');
+});
+
+test('legacy flat saved filter lists remain queryable', function () {
+    $matching = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Legacy saved filter',
+        'stage' => 'draft',
+    ]);
+    FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Legacy non-match',
+        'stage' => 7,
+    ]);
+
+    livewire(Table::class, ['model' => $matching])
+        ->set('filters.custom', [[
+            'name' => 'stage',
+            'operator' => 'is',
+            'value' => 'draft',
+        ]])
+        ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->all() === [$matching->id]);
+});
+
+test('invalid handlers operators and hostile group payloads fail closed', function () {
+    expect(fn () => FilterCapability::custom(
+        component: 'aura::fields.filters.text',
+        operators: ['is' => 'is'],
+        queryHandler: stdClass::class,
+    ))->toThrow(InvalidArgumentException::class);
+
+    $matching = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Must not be broadened',
+        'stage' => 'draft',
+    ]);
+    $component = livewire(Table::class, ['model' => $matching]);
+
+    $component
+        ->set('filters.custom', [
+            [
+                'filters' => [[
+                    'name' => 'stage',
+                    'operator' => 'is',
+                    'value' => 7,
+                ]],
+            ],
+            [
+                'operator' => 'or/**/1=1',
+                'filters' => [[
+                    'name' => 'stage',
+                    'operator' => 'is',
+                    'value' => 'draft',
+                ]],
+            ],
+        ])
+        ->assertViewHas('rows', fn ($rows) => $rows->isEmpty())
+        ->set('filters.custom', [[
+            'filters' => [[
+                'name' => 'stage',
+                'operator' => 'is',
+                'value' => 'draft',
+                'main_operator' => ['or'],
+            ], [
+                'name' => 'stage',
+                'operator' => 'is',
+                'value' => 'draft',
+            ]],
+        ]])
+        ->assertViewHas('rows', fn ($rows) => $rows->isEmpty())
+        ->set('filters.custom', 'hostile')
+        ->assertViewHas('rows', fn ($rows) => $rows->isEmpty())
+        ->set('filters.custom', [[
+            'filters' => [[
+                'name' => 'stage',
+                'operator' => null,
+                'value' => 'draft',
+            ]],
+        ]])
+        ->assertViewHas('rows', fn ($rows) => $rows->isEmpty());
 });
 
 test('relationship capabilities drive tags UI and pivot queries', function () {
@@ -348,6 +663,7 @@ test('relationship capabilities drive tags UI and pivot queries', function () {
 
     $component
         ->set('filters.custom.0.filters.0.operator', 'does_not_contain')
+        ->set('filters.custom.0.filters.0.value', [$secondTag->id])
         ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->all() === [$first->id])
         ->set('filters.custom.0.filters.0.operator', 'contains')
         ->set('filters.custom.0.filters.0.value', null)

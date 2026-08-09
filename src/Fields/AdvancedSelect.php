@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 use Aura\Base\Contracts\ProvidesTableEagerLoad;
 use Aura\Base\Fields\Filters\FilterCapability;
-use Aura\Base\Fields\Filters\ResourceFieldFilter;
+use Aura\Base\Fields\Filters\JsonFieldFilter;
 use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -62,7 +62,8 @@ class AdvancedSelect extends Field implements ProvidesTableEagerLoad
             return FilterCapability::custom(
                 component: $this->filter(),
                 operators: $this->filterOptions(),
-                queryHandler: ResourceFieldFilter::class,
+                queryHandler: JsonFieldFilter::class,
+                multiple: true,
             );
         }
 

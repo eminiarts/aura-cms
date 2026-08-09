@@ -224,22 +224,43 @@ trait Filters
         $this->clearFiltersCache();
     }
 
-    public function updatedFiltersCustom($value, $key)
+    /**
+     * Livewire invokes this trait hook with the full property path and value.
+     */
+    public function updatedFilters(mixed $path, mixed $value = null): void
     {
-        $parts = explode('.', $key);
-        if (count($parts) === 5 && $parts[4] === 'name') {
-            $groupKey = $parts[1];
-            $filterKey = $parts[3];
-
-            if (! is_string($value) || ! isset($this->fieldsForFilter[$value])) {
-                return;
-            }
-
-            // Reset the operator when the field changes
-            $this->filters['custom'][$groupKey]['filters'][$filterKey]['operator'] = $this->defaultOperatorFor($value);
-            // Also reset the value
-            $this->filters['custom'][$groupKey]['filters'][$filterKey]['value'] = null;
+        if (! is_string($path) || ! str_starts_with($path, 'filters.custom.')) {
+            return;
         }
+
+        $parts = explode('.', substr($path, strlen('filters.custom.')));
+
+        if (count($parts) !== 4 || $parts[1] !== 'filters' || ! ctype_digit($parts[0]) || ! ctype_digit($parts[2])) {
+            return;
+        }
+
+        [$groupKey, , $filterKey, $property] = $parts;
+
+        if (! isset($this->filters['custom'][(int) $groupKey]['filters'][(int) $filterKey])) {
+            return;
+        }
+
+        if ($property === 'operator') {
+            $this->filters['custom'][(int) $groupKey]['filters'][(int) $filterKey]['value'] = null;
+
+            return;
+        }
+
+        if ($property !== 'name') {
+            return;
+        }
+
+        $operator = is_string($value) && isset($this->fieldsForFilter[$value])
+            ? $this->defaultOperatorFor($value)
+            : null;
+
+        $this->filters['custom'][(int) $groupKey]['filters'][(int) $filterKey]['operator'] = $operator;
+        $this->filters['custom'][(int) $groupKey]['filters'][(int) $filterKey]['value'] = null;
     }
 
     /**
