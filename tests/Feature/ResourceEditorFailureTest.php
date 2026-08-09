@@ -1,6 +1,7 @@
 <?php
 
 use App\Aura\Resources\Core10ComputedFieldsResource;
+use App\Aura\Resources\Core10ConcurrentResource;
 use App\Aura\Resources\Core10RollbackResource;
 use Aura\Base\Events\SaveFields as SaveFieldsEvent;
 use Aura\Base\Fields\Text;
@@ -8,10 +9,13 @@ use Aura\Base\Listeners\CreateDatabaseMigration;
 use Aura\Base\Listeners\ModifyDatabaseMigration;
 use Aura\Base\Resource;
 use Aura\Base\Traits\SaveFields;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 
 class Core10SaveFieldsHarness
 {
@@ -139,6 +143,196 @@ PHP);
         File::delete($resourcePath);
     }
 });
+
+test('two resource editor processes cannot commit stale source over a newer schema', function () {
+    $resourceDirectory = app_path('Aura/Resources');
+    $resourcePath = $resourceDirectory.'/Core10ConcurrentResource.php';
+    $raceDirectory = storage_path('framework/testing/core-10-editor-race-'.getmypid());
+    $databasePath = $raceDirectory.'/database.sqlite';
+    $insideListener = $raceDirectory.'/inside-listener';
+    $releaseListener = $raceDirectory.'/release-listener';
+    $secondStarted = $raceDirectory.'/second-started';
+    $firstResult = $raceDirectory.'/first-result';
+    $secondResult = $raceDirectory.'/second-result';
+    $connection = 'core_10_editor_race';
+    $tableName = 'core_10_concurrent_values';
+    $originalDefault = config('database.default');
+    $firstPid = null;
+    $secondPid = null;
+    $waitForFile = static function (string $path): void {
+        $deadline = microtime(true) + 10;
+
+        while (! is_file($path) && microtime(true) < $deadline) {
+            usleep(10_000);
+        }
+
+        if (! is_file($path)) {
+            throw new RuntimeException("Timed out waiting for concurrency signal [{$path}].");
+        }
+    };
+
+    File::ensureDirectoryExists($resourceDirectory);
+    File::ensureDirectoryExists($raceDirectory);
+    File::put($databasePath, '');
+    File::put($resourcePath, <<<'PHP'
+<?php
+
+namespace App\Aura\Resources;
+
+use Aura\Base\Fields\Text;
+use Aura\Base\Resource;
+
+class Core10ConcurrentResource extends Resource
+{
+    public static $customTable = true;
+
+    protected $table = 'core_10_concurrent_values';
+
+    public static function getFields(): array
+    {
+        return [
+            ['name' => 'Name', 'slug' => 'name', 'type' => Text::class],
+        ];
+    }
+}
+PHP);
+    require_once $resourcePath;
+
+    config()->set("database.connections.{$connection}", [
+        'driver' => 'sqlite',
+        'database' => $databasePath,
+        'prefix' => '',
+        'foreign_key_constraints' => true,
+        'busy_timeout' => 5000,
+    ]);
+    config()->set('database.default', $connection);
+    DB::purge($connection);
+    Schema::create($tableName, function (Blueprint $table): void {
+        $table->id();
+        $table->string('name')->nullable();
+    });
+    DB::disconnect($connection);
+
+    Event::forget(SaveFieldsEvent::class);
+    Event::listen(SaveFieldsEvent::class, function (SaveFieldsEvent $event) use (
+        $connection,
+        $insideListener,
+        $releaseListener,
+        $tableName,
+        $waitForFile,
+    ): void {
+        $desiredColumns = collect($event->fields)->pluck('slug')->filter()->values()->all();
+
+        if (in_array('from_a', $desiredColumns, true)) {
+            File::put($insideListener, 'ready');
+            $waitForFile($releaseListener);
+        }
+
+        DB::purge($connection);
+        $existingColumns = Schema::getColumnListing($tableName);
+        $columnsToAdd = array_values(array_diff($desiredColumns, $existingColumns));
+        $columnsToDrop = array_values(array_diff($existingColumns, [...$desiredColumns, 'id']));
+
+        Schema::table($tableName, function (Blueprint $table) use ($columnsToAdd, $columnsToDrop): void {
+            foreach ($columnsToAdd as $column) {
+                $table->string($column)->nullable();
+            }
+
+            foreach ($columnsToDrop as $column) {
+                $table->dropColumn($column);
+            }
+        });
+    });
+
+    $harness = new Core10SaveFieldsHarness;
+    $harness->model = new Core10ConcurrentResource;
+    $harness->mappedFields = $harness->model->getFields();
+    $harness->initializeResourceFieldsVersion();
+
+    try {
+        $firstPid = pcntl_fork();
+
+        if ($firstPid === -1) {
+            throw new RuntimeException('Unable to fork the first resource editor process.');
+        }
+
+        if ($firstPid === 0) {
+            DB::purge($connection);
+
+            try {
+                $harness->saveFields([
+                    ['name' => 'From A', 'slug' => 'from_a', 'type' => Text::class],
+                ]);
+                File::put($firstResult, 'success');
+            } catch (Throwable $exception) {
+                File::put($firstResult, 'failure:'.$exception->getMessage());
+            }
+
+            DB::disconnect($connection);
+            exit(0);
+        }
+
+        $waitForFile($insideListener);
+        $secondPid = pcntl_fork();
+
+        if ($secondPid === -1) {
+            throw new RuntimeException('Unable to fork the second resource editor process.');
+        }
+
+        if ($secondPid === 0) {
+            File::put($secondStarted, 'ready');
+            DB::purge($connection);
+
+            try {
+                $harness->saveFields([
+                    ['name' => 'From B', 'slug' => 'from_b', 'type' => Text::class],
+                ]);
+                File::put($secondResult, 'success');
+            } catch (Throwable $exception) {
+                File::put($secondResult, 'failure:'.$exception->getMessage());
+            }
+
+            DB::disconnect($connection);
+            exit(0);
+        }
+
+        $waitForFile($secondStarted);
+        usleep(100_000);
+        File::put($releaseListener, 'continue');
+        pcntl_waitpid($firstPid, $firstStatus);
+        pcntl_waitpid($secondPid, $secondStatus);
+        $firstPid = null;
+        $secondPid = null;
+        DB::purge($connection);
+
+        expect(pcntl_wexitstatus($firstStatus))->toBe(0)
+            ->and(pcntl_wexitstatus($secondStatus))->toBe(0)
+            ->and(File::get($firstResult))->toBe('success')
+            ->and(File::get($secondResult))->toContain('Resource fields changed since this editor was opened')
+            ->and(File::get($resourcePath))->toContain("'slug' => 'from_a'")
+            ->and(File::get($resourcePath))->not->toContain("'slug' => 'from_b'")
+            ->and(Schema::hasColumn($tableName, 'from_a'))->toBeTrue()
+            ->and(Schema::hasColumn($tableName, 'from_b'))->toBeFalse()
+            ->and(Schema::hasColumn($tableName, 'name'))->toBeFalse();
+    } finally {
+        File::put($releaseListener, 'continue');
+
+        if (is_int($firstPid) && $firstPid > 0) {
+            pcntl_waitpid($firstPid, $status);
+        }
+
+        if (is_int($secondPid) && $secondPid > 0) {
+            pcntl_waitpid($secondPid, $status);
+        }
+
+        Event::forget(SaveFieldsEvent::class);
+        DB::disconnect($connection);
+        DB::purge($connection);
+        config()->set('database.default', $originalDefault);
+        File::delete($resourcePath);
+        File::deleteDirectory($raceDirectory);
+    }
+})->skip(! function_exists('pcntl_fork'), 'The pcntl extension is required for the two-process resource editor contract.');
 
 test('a generated migration is deleted and the failure is surfaced when formatting fails', function () {
     $before = collect(File::files(database_path('migrations')))->map->getPathname()->all();
