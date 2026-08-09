@@ -4,7 +4,6 @@ namespace Aura\Base\Livewire;
 
 use Livewire\Attributes\On;
 use Livewire\Component;
-use Livewire\Finder\Finder;
 
 class Modals extends Component
 {
@@ -33,7 +32,7 @@ class Modals extends Component
         // Resolve component class - handle both namespaced and non-namespaced components
         $componentClass = null;
         try {
-            $componentClass = app(Finder::class)->resolveClassComponentClassName($component);
+            [, $componentClass] = app('livewire.factory')->resolveComponentNameAndClass($component);
         } catch (\Exception $e) {
             // Component not found, use default modal classes
         }

@@ -1,4 +1,4 @@
-<div>
+<div data-aura-global-search>
     @if (config('aura.features.global_search'))
         <style>
             .search-list-icon svg {

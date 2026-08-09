@@ -5,6 +5,7 @@ use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 
 /**
@@ -115,4 +116,26 @@ test('global search filters each record even when viewAny is allowed', function 
     Livewire::test(GlobalSearch::class)
         ->set('search', 'Record-level secret')
         ->assertDontSee('Record-level secret');
+});
+
+test('global search reauthorizes every result on a second Livewire request', function () {
+    $this->actingAs(createSuperAdmin());
+    $denyRecord = false;
+    Gate::before(function ($user, string $ability, array $arguments) use (&$denyRecord): ?bool {
+        return $denyRecord
+            && $ability === 'view'
+            && ($arguments[0] ?? null) instanceof SecuritySearchModel
+                ? false
+                : null;
+    });
+    SecuritySearchModel::create(['title' => 'Fresh authorization needle']);
+
+    $search = Livewire::test(GlobalSearch::class)
+        ->set('search', 'Fresh authorization')
+        ->assertSee('Fresh authorization needle');
+
+    $denyRecord = true;
+
+    $search->set('search', 'Fresh authorization needle')
+        ->assertDontSee('Fresh authorization needle');
 });

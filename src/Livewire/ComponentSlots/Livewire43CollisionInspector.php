@@ -5,6 +5,7 @@ namespace Aura\Base\Livewire\ComponentSlots;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\MediaManager;
 use Closure;
+use Livewire\Compiler\Compiler;
 use Livewire\Factory\Factory;
 use Livewire\Finder\Finder;
 use ReflectionClass;
@@ -52,13 +53,13 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
 
         $this->assertProperties(Finder::class, self::FINDER_PROPERTIES);
         $this->assertProperties(Factory::class, self::FACTORY_PROPERTIES);
-        $this->assertMethod(Finder::class, 'normalizeName', 1, 1);
-        $this->assertMethod(Finder::class, 'parseNamespaceAndName', 1, 1);
-        $this->assertMethod(Finder::class, 'resolveClassComponentClassName', 1, 1);
-        $this->assertMethod(Finder::class, 'resolveMultiFileComponentPath', 1, 1);
-        $this->assertMethod(Finder::class, 'resolveSingleFileComponentPath', 1, 1);
-        $this->assertMethod(Factory::class, 'resolveComponentNameAndClass', 1, 1);
-        $this->assertMethod(Factory::class, 'resolveMissingComponent', 1, 1);
+        $this->assertMethod(Finder::class, 'normalizeName', 'nameComponentOrClass', '?string');
+        $this->assertMethod(Finder::class, 'parseNamespaceAndName', 'name', 'array');
+        $this->assertMethod(Finder::class, 'resolveClassComponentClassName', 'name', '?string');
+        $this->assertMethod(Finder::class, 'resolveMultiFileComponentPath', 'name', '?string');
+        $this->assertMethod(Finder::class, 'resolveSingleFileComponentPath', 'name', '?string');
+        $this->assertMethod(Factory::class, 'resolveComponentNameAndClass', 'name', 'array');
+        $this->assertMethod(Factory::class, 'resolveMissingComponent', 'resolver', 'void');
 
         foreach (array_merge(self::FINDER_PROPERTIES, ['missingComponentResolvers', 'resolvedComponentCache']) as $property) {
             $target = in_array($property, self::FINDER_PROPERTIES, true) ? $this->finder : $this->factory;
@@ -71,6 +72,12 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         if ($this->read($this->factory, 'finder') !== $this->finder) {
             throw new UnsupportedLivewireInternals('Livewire Factory must reference the inspected Finder instance.');
         }
+
+        if (! $this->read($this->factory, 'compiler') instanceof Compiler) {
+            throw new UnsupportedLivewireInternals('Livewire 4.3 internal [compiler] must contain a Livewire Compiler.');
+        }
+
+        $this->assertCollectionShapes();
     }
 
     public function assertUnclaimed(array $identifiers, Closure $auraResolver): void
@@ -149,8 +156,55 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         }
     }
 
+    private function assertCollectionShapes(): void
+    {
+        foreach (['classLocations', 'viewLocations'] as $property) {
+            $locations = $this->read($this->finder, $property);
+
+            if (! array_is_list($locations) || collect($locations)->contains(fn (mixed $location): bool => ! is_string($location))) {
+                $this->unsupportedShape($property);
+            }
+        }
+
+        $classNamespaces = $this->read($this->finder, 'classNamespaces');
+
+        foreach ($classNamespaces as $namespace => $definition) {
+            if (! is_string($namespace) || ! is_array($definition)
+                || array_keys($definition) !== ['classNamespace', 'classPath', 'classViewPath']
+                || ! is_string($definition['classNamespace'])
+                || (! is_string($definition['classPath']) && $definition['classPath'] !== null)
+                || (! is_string($definition['classViewPath']) && $definition['classViewPath'] !== null)) {
+                $this->unsupportedShape('classNamespaces');
+            }
+        }
+
+        foreach (['viewNamespaces', 'classComponents', 'viewComponents'] as $property) {
+            $map = $this->read($this->finder, $property);
+
+            foreach ($map as $name => $target) {
+                if (! is_string($name) || ! is_string($target)) {
+                    $this->unsupportedShape($property);
+                }
+            }
+        }
+
+        $resolvers = $this->read($this->factory, 'missingComponentResolvers');
+
+        if (! array_is_list($resolvers) || collect($resolvers)->contains(fn (mixed $resolver): bool => ! is_callable($resolver))) {
+            $this->unsupportedShape('missingComponentResolvers');
+        }
+
+        $cache = $this->read($this->factory, 'resolvedComponentCache');
+
+        foreach ($cache as $name => $class) {
+            if (! is_string($name) || ! is_string($class)) {
+                $this->unsupportedShape('resolvedComponentCache');
+            }
+        }
+    }
+
     /** @param class-string $class */
-    private function assertMethod(string $class, string $methodName, int $parameters, int $required): void
+    private function assertMethod(string $class, string $methodName, string $parameterName, string $returnType): void
     {
         $reflection = new ReflectionClass($class);
 
@@ -160,9 +214,18 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
 
         $method = $reflection->getMethod($methodName);
 
+        $parameters = $method->getParameters();
+        $parameter = $parameters[0] ?? null;
+
         if (! $method->isPublic() || $method->isStatic()
-            || $method->getNumberOfParameters() !== $parameters
-            || $method->getNumberOfRequiredParameters() !== $required) {
+            || count($parameters) !== 1
+            || $method->getNumberOfRequiredParameters() !== 1
+            || $parameter === null
+            || $parameter->getName() !== $parameterName
+            || $parameter->getType() !== null
+            || $parameter->isPassedByReference()
+            || $parameter->isVariadic()
+            || (string) $method->getReturnType() !== $returnType) {
             throw new UnsupportedLivewireInternals("Livewire 4.3 method [{$class}::{$methodName}] has an unsupported signature.");
         }
     }
@@ -215,5 +278,10 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         $property = new ReflectionProperty($target, $propertyName);
 
         return $property->getValue($target);
+    }
+
+    private function unsupportedShape(string $property): never
+    {
+        throw new UnsupportedLivewireInternals("Livewire 4.3 internal [{$property}] has an unsupported collection shape.");
     }
 }

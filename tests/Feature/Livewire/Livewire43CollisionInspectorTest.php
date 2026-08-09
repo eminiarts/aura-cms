@@ -24,6 +24,18 @@ function setLivewireInternal(object $target, string $property, mixed $value): vo
     })->call($target);
 }
 
+function protectedComponentSlotIdentifiers(): array
+{
+    return [
+        'aura-slot-5d08acbafc1799908d00c98ba128984f725d8bc43d13679c7689c9e24e2c107c',
+        'aura-slot-f16ee9c2b47b1df672e85903a69ffc98066ccd885e96e5f18536c737f00c5a88',
+        'aura::global-search',
+        'aura.base.livewire.global-search',
+        'aura::media-manager',
+        'aura.base.livewire.media-manager',
+    ];
+}
+
 test('4.3 inspector validates the exact supported Finder and Factory shape', function () {
     [$inspector] = freshCollisionInspector();
 
@@ -64,6 +76,24 @@ test('inspector fails closed when supported internals have an altered runtime sh
         ->toThrow(UnsupportedLivewireInternals::class, Finder::class);
 });
 
+test('inspector rejects malformed protected collection shapes before collision checks', function (string $target, string $property, mixed $value) {
+    [$inspector, $finder, $factory] = freshCollisionInspector();
+
+    setLivewireInternal($target === 'finder' ? $finder : $factory, $property, $value);
+
+    expect(fn () => $inspector->assertCompatible())
+        ->toThrow(UnsupportedLivewireInternals::class, $property);
+})->with([
+    'class locations must be strings' => ['finder', 'classLocations', [new stdClass]],
+    'view locations must be a list' => ['finder', 'viewLocations', ['named' => '/tmp']],
+    'class namespaces have exact records' => ['finder', 'classNamespaces', ['third' => 'invalid']],
+    'view namespace paths are strings' => ['finder', 'viewNamespaces', ['third' => 42]],
+    'class component maps have string keys' => ['finder', 'classComponents', [CollisionFixture::class]],
+    'view component paths are strings' => ['finder', 'viewComponents', ['claimed' => new stdClass]],
+    'missing resolvers are callable' => ['factory', 'missingComponentResolvers', ['not-callable']],
+    'resolved cache values are classes' => ['factory', 'resolvedComponentCache', ['claimed' => new stdClass]],
+]);
+
 test('inspector detects explicit class and view claims for every protected identifier', function (string $identifier, string $claim) {
     [$inspector, $finder] = freshCollisionInspector();
 
@@ -76,17 +106,9 @@ test('inspector detects explicit class and view claims for every protected ident
     expect(fn () => $inspector->assertUnclaimed([$identifier], static fn (): null => null))
         ->toThrow(ComponentSlotCollision::class, $identifier);
 })->with(function (): array {
-    $identifiers = [
-        'aura-slot-5d08acbafc1799908d00c98ba128984f725d8bc43d13679c7689c9e24e2c107c',
-        'aura-slot-f16ee9c2b47b1df672e85903a69ffc98066ccd885e96e5f18536c737f00c5a88',
-        'aura::global-search',
-        'aura.base.livewire.global-search',
-        'aura::media-manager',
-        'aura.base.livewire.media-manager',
-    ];
     $cases = [];
 
-    foreach ($identifiers as $identifier) {
+    foreach (protectedComponentSlotIdentifiers() as $identifier) {
         $cases[$identifier.' class'] = [$identifier, 'class'];
         $cases[$identifier.' view'] = [$identifier, 'view'];
     }
@@ -148,23 +170,33 @@ test('inspector detects single and multi file discovery without compiling or mut
     }
 })->with(['single-file', 'multi-file']);
 
-test('inspector invokes third party missing resolvers but excludes only the exact Aura resolver', function () {
+test('inspector invokes third party missing resolvers but excludes only the exact Aura resolver', function (string $identifier) {
     [$inspector, , $factory] = freshCollisionInspector();
     $auraResolver = static fn (): string => CollisionFixture::class;
     $factory->resolveMissingComponent($auraResolver);
 
-    $inspector->assertUnclaimed(['claimed'], $auraResolver);
+    $inspector->assertUnclaimed([$identifier], $auraResolver);
 
-    $factory->resolveMissingComponent(static fn (string $name): ?string => $name === 'claimed' ? CollisionFixture::class : null);
+    $factory->resolveMissingComponent(static fn (string $name): ?string => $name === $identifier ? CollisionFixture::class : null);
 
-    expect(fn () => $inspector->assertUnclaimed(['claimed'], $auraResolver))
+    expect(fn () => $inspector->assertUnclaimed([$identifier], $auraResolver))
         ->toThrow(ComponentSlotCollision::class, 'missing-resolver');
-});
+})->with(protectedComponentSlotIdentifiers());
 
-test('inspector detects existing Factory cache entries before normal resolution', function () {
+test('inspector detects existing Factory cache entries before normal resolution', function (string $identifier) {
     [$inspector, , $factory] = freshCollisionInspector();
-    setLivewireInternal($factory, 'resolvedComponentCache', ['claimed' => CollisionFixture::class]);
+    setLivewireInternal($factory, 'resolvedComponentCache', [$identifier => CollisionFixture::class]);
 
-    expect(fn () => $inspector->assertUnclaimed(['claimed'], static fn (): null => null))
+    expect(fn () => $inspector->assertUnclaimed([$identifier], static fn (): null => null))
         ->toThrow(ComponentSlotCollision::class, 'factory-cache');
+})->with(protectedComponentSlotIdentifiers());
+
+test('inspector converts errors from third party missing resolvers into collision diagnostics', function () {
+    [$inspector, , $factory] = freshCollisionInspector();
+    $factory->resolveMissingComponent(static fn () => throw new RuntimeException('resolver failed'));
+
+    expect(fn () => $inspector->assertUnclaimed(
+        ['aura::global-search'],
+        static fn (): null => null,
+    ))->toThrow(ComponentSlotCollision::class, 'missing-resolver-error');
 });

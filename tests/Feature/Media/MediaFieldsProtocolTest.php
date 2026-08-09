@@ -126,3 +126,31 @@ test('locked owner digest cannot be changed by a browser update', function () {
     expect(fn () => $owner->set('mediaOwnerTokenDigests.image', str_repeat('0', 64)))
         ->toThrow(Exception::class);
 });
+
+test('simultaneous forms with the same slug route a selection only to its token owner', function () {
+    $firstOwner = Livewire::test(Core20MediaOwnerHarness::class);
+    $secondOwner = Livewire::test(Core20MediaOwnerHarness::class);
+    $firstToken = $firstOwner->get('ownerTokenForTest');
+    $secondToken = $secondOwner->get('ownerTokenForTest');
+    $attachment = Attachment::factory()->create(['team_id' => $this->actor->current_team_id]);
+    $value = [(string) $attachment->getKey()];
+    $request = app(MediaSelectionBroker::class)->begin($firstToken, 'manager', $value, $this->actor);
+    $payload = [
+        'ownerToken' => $firstToken,
+        'requestToken' => $request->token,
+        'slug' => 'image',
+        'value' => $value,
+    ];
+
+    expect($firstToken)->not->toBe($secondToken);
+
+    $secondOwner->dispatch('aura-media-selection-requested', ...$payload)
+        ->assertSet('form.fields.image', [])
+        ->assertSet('applications', 0)
+        ->assertNotDispatched('aura-media-selection-acknowledged');
+
+    $firstOwner->dispatch('aura-media-selection-requested', ...$payload)
+        ->assertSet('form.fields.image', $value)
+        ->assertSet('applications', 1)
+        ->assertDispatched('aura-media-selection-acknowledged');
+});
