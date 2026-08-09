@@ -13,4 +13,6 @@ class BaseResource extends Model implements DefinesFields
     use AuraModelConfig;
     use InputFields;
     use InteractsWithTable;
+
+    public array $metaFields = [];
 }

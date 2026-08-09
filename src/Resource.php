@@ -40,6 +40,7 @@ use Illuminate\Support\Str;
  *
  * @property-read Collection $fields  Computed input-field map (getFieldsAttribute()).
  * @property-read mixed $meta  The meta relation / normalized meta map (see getMeta()).
+ * @property array<string, mixed> $metaFields Pending meta values awaiting persistence.
  */
 class Resource extends Model implements DefinesFields
 {
@@ -92,6 +93,8 @@ class Resource extends Model implements DefinesFields
      */
     protected array $managedProviderFieldSlugs = [];
 
+    protected array $metaFields = [];
+
     /**
      * Per-instance cache of the normalized meta map (see getMeta()).
      *
@@ -129,6 +132,14 @@ class Resource extends Model implements DefinesFields
     protected array $tableDisplayCache = [];
 
     protected $with = [];
+
+    /**
+     * Inactive provider state is kept off Eloquent's persistence and native
+     * serialization surfaces until its defining context becomes active again.
+     *
+     * @var array<string, mixed>
+     */
+    private array $quarantinedProviderFieldState = [];
 
     public function __construct(array $attributes = [])
     {
@@ -171,15 +182,6 @@ class Resource extends Model implements DefinesFields
     }
 
     /**
-     * @param  string  $key
-     * @return mixed
-     */
-    public function __get($key)
-    {
-        return $this->resolveDynamicAttribute($key);
-    }
-
-    /**
      * Mirror __get's resolution order for isset()/empty()/null-coalescing.
      *
      * Eloquent's native Model::__isset only inspects real attributes and
@@ -205,6 +207,53 @@ class Resource extends Model implements DefinesFields
     public function __isset($key)
     {
         return ! is_null($this->resolveDynamicAttribute($key));
+    }
+
+    public function __set($key, $value)
+    {
+        if ($key === 'metaFields') {
+            $this->ensureFieldDefinitionState();
+            $this->metaFields = $value;
+            $this->quarantineInactiveProviderFieldState(overwriteExisting: true);
+
+            return;
+        }
+
+        parent::__set($key, $value);
+    }
+
+    /**
+     * Prepare a secret-free native PHP representation.
+     *
+     * @return array<int, string>
+     */
+    public function __sleep()
+    {
+        $this->ensureFieldDefinitionState();
+        $this->quarantineInactiveProviderFieldState();
+
+        return array_values(array_diff(
+            parent::__sleep(),
+            ['quarantinedProviderFieldState'],
+        ));
+    }
+
+    /**
+     * @param  string  $key
+     * @return mixed
+     */
+    public function &__get($key)
+    {
+        if ($key === 'metaFields') {
+            $this->ensureFieldDefinitionState();
+            $this->quarantineInactiveProviderFieldState();
+
+            return $this->metaFields;
+        }
+
+        $value = $this->resolveDynamicAttribute($key);
+
+        return $value;
     }
 
     /**
@@ -365,6 +414,7 @@ class Resource extends Model implements DefinesFields
     public function getMeta($key = null)
     {
         $this->ensureFieldDefinitionState();
+        $this->quarantineInactiveProviderFieldState();
 
         if ($this->isInactiveProviderFieldSlug($key)) {
             return $key === null ? collect() : null;
@@ -463,6 +513,31 @@ class Resource extends Model implements DefinesFields
         });
     }
 
+    public function getRelation($relation)
+    {
+        return $this->readAfterSynchronizingFieldDefinition(
+            fn (): mixed => $this->isInactiveProviderFieldSlug($relation)
+                ? null
+                : parent::getRelation($relation),
+        );
+    }
+
+    public function getRelations()
+    {
+        return $this->readAfterSynchronizingFieldDefinition(
+            fn (): array => parent::getRelations(),
+        );
+    }
+
+    public function getRelationValue($key)
+    {
+        return $this->readAfterSynchronizingFieldDefinition(
+            fn (): mixed => $this->isInactiveProviderFieldSlug($key)
+                ? null
+                : parent::getRelationValue($key),
+        );
+    }
+
     public function getSearchableFields()
     {
         // get input fields and remove the ones that are not searchable
@@ -532,6 +607,33 @@ class Resource extends Model implements DefinesFields
     public function parent()
     {
         return $this->belongsTo(get_class($this), 'parent_id');
+    }
+
+    public function refresh()
+    {
+        $this->ensureFieldDefinitionState();
+        $this->quarantineInactiveProviderFieldState();
+
+        if (! $this->exists) {
+            return $this;
+        }
+
+        $this->discardQuarantinedAttributeStateForRefresh();
+
+        $model = parent::refresh();
+
+        $this->quarantineInactiveProviderFieldState();
+        $this->synchronizeQuarantinedOriginalAfterRefresh();
+
+        return $model;
+    }
+
+    public function relationLoaded($key)
+    {
+        return $this->readAfterSynchronizingFieldDefinition(
+            fn (): bool => ! $this->isInactiveProviderFieldSlug($key)
+                && parent::relationLoaded($key),
+        );
     }
 
     public function relationsToArray()
@@ -621,11 +723,38 @@ class Resource extends Model implements DefinesFields
         );
     }
 
+    public function saveMetaFields(array $metaFields): void
+    {
+        $this->ensureFieldDefinitionState();
+
+        foreach ($metaFields as $slug => $value) {
+            if ($this->isInactiveProviderFieldSlug($slug)) {
+                $this->quarantinedProviderFieldState['metaFields'][$slug] = $value;
+
+                continue;
+            }
+
+            $this->metaFields[$slug] = $value;
+        }
+    }
+
     public function saveOrIgnore(array $options = [], array|string|null $uniqueBy = null): bool
     {
         return $this->persistWithoutInactiveProviderFieldState(
             fn (): bool => parent::saveOrIgnore($options, $uniqueBy),
         );
+    }
+
+    public function setAttribute($key, $value)
+    {
+        $model = parent::setAttribute($key, $value);
+
+        if ($this->fieldDefinitionStateReady) {
+            $this->ensureFieldDefinitionState();
+            $this->quarantineInactiveProviderFieldState(overwriteExisting: true);
+        }
+
+        return $model;
     }
 
     public function setRawAttributes(array $attributes, $sync = false)
@@ -634,6 +763,11 @@ class Resource extends Model implements DefinesFields
 
         if ($sync) {
             $this->original = $this->attributes;
+        }
+
+        if ($this->fieldDefinitionStateReady) {
+            $this->ensureFieldDefinitionState();
+            $this->quarantineInactiveProviderFieldState();
         }
 
         return $this;
@@ -646,7 +780,26 @@ class Resource extends Model implements DefinesFields
             $this->fieldsAttributeCache = null;
         }
 
-        return parent::setRelation($relation, $value);
+        $model = parent::setRelation($relation, $value);
+
+        if ($this->fieldDefinitionStateReady) {
+            $this->ensureFieldDefinitionState();
+            $this->quarantineInactiveProviderFieldState();
+        }
+
+        return $model;
+    }
+
+    public function setRelations(array $relations)
+    {
+        $model = parent::setRelations($relations);
+
+        if ($this->fieldDefinitionStateReady) {
+            $this->ensureFieldDefinitionState();
+            $this->quarantineInactiveProviderFieldState();
+        }
+
+        return $model;
     }
 
     public function setTableDisplayValue(string $slug, mixed $value): void
@@ -659,13 +812,10 @@ class Resource extends Model implements DefinesFields
     public function syncChanges()
     {
         $this->ensureFieldDefinitionState();
-        $changes = $this->captureArrayEntries($this->changes, $this->inactiveProviderFieldSlugs);
-        $previous = $this->captureArrayEntries($this->previous, $this->inactiveProviderFieldSlugs);
+        $this->quarantineInactiveProviderFieldState();
 
         parent::syncChanges();
-
-        $this->restoreArrayEntries($this->changes, $this->inactiveProviderFieldSlugs, $changes);
-        $this->restoreArrayEntries($this->previous, $this->inactiveProviderFieldSlugs, $previous);
+        $this->quarantineInactiveProviderFieldState();
 
         return $this;
     }
@@ -673,6 +823,12 @@ class Resource extends Model implements DefinesFields
     public function syncOriginal()
     {
         $this->mergeAttributesFromCachedCasts();
+
+        if ($this->fieldDefinitionStateReady) {
+            $this->ensureFieldDefinitionState();
+            $this->quarantineInactiveProviderFieldState();
+        }
+
         $this->original = $this->attributes;
 
         return $this;
@@ -683,7 +839,23 @@ class Resource extends Model implements DefinesFields
         $attributes = is_array($attributes) ? $attributes : func_get_args();
         $this->mergeAttributesFromCachedCasts();
 
+        if ($this->fieldDefinitionStateReady) {
+            $this->ensureFieldDefinitionState();
+            $this->quarantineInactiveProviderFieldState();
+        }
+
         foreach ($attributes as $attribute) {
+            if ($this->isInactiveProviderFieldSlug($attribute)) {
+                if (array_key_exists($attribute, $this->quarantinedProviderFieldState['attributes'] ?? [])) {
+                    $this->quarantinedProviderFieldState['original'][$attribute]
+                        = $this->quarantinedProviderFieldState['attributes'][$attribute];
+                } else {
+                    unset($this->quarantinedProviderFieldState['original'][$attribute]);
+                }
+
+                continue;
+            }
+
             $this->original[$attribute] = $this->attributes[$attribute];
         }
 
@@ -695,9 +867,24 @@ class Resource extends Model implements DefinesFields
         if ($relation === 'meta') {
             $this->normalizedMetaCache = null;
             $this->fieldsAttributeCache = null;
+            unset($this->quarantinedProviderFieldState['metaRelation']);
+        }
+
+        if ($this->isInactiveProviderFieldSlug($relation)) {
+            unset($this->quarantinedProviderFieldState['relations'][$relation]);
         }
 
         return parent::unsetRelation($relation);
+    }
+
+    public function unsetRelations()
+    {
+        unset(
+            $this->quarantinedProviderFieldState['relations'],
+            $this->quarantinedProviderFieldState['metaRelation'],
+        );
+
+        return parent::unsetRelations();
     }
 
     /**
@@ -788,6 +975,8 @@ class Resource extends Model implements DefinesFields
         $this->synchronizingFieldDefinitionState = true;
 
         try {
+            $this->restoreQuarantinedProviderFieldState();
+
             $previousSlugs = $this->resolvedInputFieldSlugs;
             $preservedFillable = array_values(array_unique(array_merge(
                 array_diff(parent::getFillable(), $previousSlugs),
@@ -804,8 +993,9 @@ class Resource extends Model implements DefinesFields
             $this->inactiveProviderFieldSlugs = array_values(array_diff(
                 $this->managedProviderFieldSlugs,
                 $currentSlugs,
-                $this->baseFillable,
             ));
+
+            $this->quarantineInactiveProviderFieldState(overwriteExisting: true);
 
             $this->fillable($preservedFillable);
             $this->mergeFillable($currentSlugs);
@@ -819,59 +1009,37 @@ class Resource extends Model implements DefinesFields
     }
 
     /**
-     * @param  array<string, mixed>  $state
-     * @param  array<int, string>  $slugs
-     * @return array<string, mixed>
+     * @return array<string, array{present: bool, value?: mixed}>
      */
-    private function captureArrayEntries(array $state, array $slugs): array
+    private function captureFieldContainerState(): array
     {
-        return array_intersect_key($state, array_flip($slugs));
-    }
+        $snapshot = [];
 
-    /**
-     * @param  array<int, string>  $slugs
-     * @return array{containerExists: bool, entries: array<string, array<string, mixed>>}
-     */
-    private function captureNestedFieldEntries(array $slugs): array
-    {
-        $containerExists = array_key_exists('fields', $this->attributes)
-            && is_array($this->attributes['fields']);
-        $fields = $containerExists ? $this->attributes['fields'] : [];
-        $entries = [];
+        foreach (['attributes', 'original', 'changes', 'previous'] as $stateName) {
+            $state = $this->{$stateName};
+            $present = array_key_exists('fields', $state);
+            $snapshot[$stateName] = ['present' => $present];
 
-        foreach ($slugs as $slug) {
-            if (array_key_exists($slug, $fields)) {
-                $entries[$slug]['direct'] = $fields[$slug];
-            }
-
-            if (str_contains($slug, '.') && Arr::has($fields, $slug)) {
-                $entries[$slug]['nested'] = Arr::get($fields, $slug);
+            if ($present) {
+                $snapshot[$stateName]['value'] = $state['fields'];
             }
         }
 
-        return [
-            'containerExists' => $containerExists,
-            'entries' => $entries,
-        ];
+        return $snapshot;
     }
 
-    /**
-     * @param  array<int, string>  $slugs
-     * @return array<string, mixed>
-     */
-    private function capturePersistenceState(array $slugs): array
+    private function discardQuarantinedAttributeStateForRefresh(): void
     {
-        return [
-            'attributes' => $this->captureArrayEntries($this->attributes, $slugs),
-            'original' => $this->captureArrayEntries($this->original, $slugs),
-            'changes' => $this->captureArrayEntries($this->changes, $slugs),
-            'previous' => $this->captureArrayEntries($this->previous, $slugs),
-            'relations' => $this->captureArrayEntries($this->relations, $slugs),
-            'classCastCache' => $this->captureArrayEntries($this->classCastCache, $slugs),
-            'attributeCastCache' => $this->captureArrayEntries($this->attributeCastCache, $slugs),
-            'metaFields' => $this->captureArrayEntries($this->metaFields, $slugs),
-            'nestedFields' => $this->captureNestedFieldEntries($slugs),
-        ];
+        foreach (['attributes', 'original', 'changes', 'previous', 'classCastCache', 'attributeCastCache'] as $stateName) {
+            unset($this->quarantinedProviderFieldState[$stateName]);
+        }
+
+        foreach (['attributes', 'original', 'changes', 'previous'] as $stateName) {
+            unset(
+                $this->quarantinedProviderFieldState['nested'][$stateName],
+                $this->quarantinedProviderFieldState['nestedTemplates'][$stateName],
+            );
+        }
     }
 
     private function isInactiveProviderFieldSlug(mixed $key): bool
@@ -893,21 +1061,183 @@ class Resource extends Model implements DefinesFields
     private function persistWithoutInactiveProviderFieldState(Closure $persist): bool
     {
         $this->ensureFieldDefinitionState();
+        $this->quarantineInactiveProviderFieldState();
 
         if ($this->inactiveProviderFieldSlugs === []) {
             return $persist();
         }
 
-        $this->mergeAttributesFromCachedCasts();
-        $slugs = $this->inactiveProviderFieldSlugs;
-        $snapshot = $this->capturePersistenceState($slugs);
-
-        $this->suppressInactivePersistenceState($slugs);
+        $fieldContainerState = $this->captureFieldContainerState();
 
         try {
             return $persist();
         } finally {
-            $this->restorePersistenceState($slugs, $snapshot);
+            $this->restoreFieldContainerState($fieldContainerState);
+            $this->quarantineInactiveProviderFieldState();
+        }
+    }
+
+    private function providerMetaEntrySlug(mixed $entry): ?string
+    {
+        if ($entry instanceof Model) {
+            $slug = $entry->getAttribute('key');
+        } elseif (is_array($entry)) {
+            $slug = $entry['key'] ?? null;
+        } elseif (is_object($entry)) {
+            $slug = $entry->key ?? null;
+        } else {
+            $slug = null;
+        }
+
+        return is_int($slug) || is_string($slug) ? (string) $slug : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $state
+     * @param  array<int, string>  $slugs
+     */
+    private function quarantineArrayEntries(
+        array &$state,
+        string $stateName,
+        array $slugs,
+        bool $overwriteExisting,
+    ): void {
+        foreach ($slugs as $slug) {
+            if (! array_key_exists($slug, $state)) {
+                continue;
+            }
+
+            if ($overwriteExisting
+                || ! array_key_exists($slug, $this->quarantinedProviderFieldState[$stateName] ?? [])) {
+                $this->quarantinedProviderFieldState[$stateName][$slug] = $state[$slug];
+            }
+
+            unset($state[$slug]);
+        }
+    }
+
+    private function quarantineInactiveMetaRelation(bool $overwriteExisting): void
+    {
+        if (! array_key_exists('meta', $this->relations)) {
+            return;
+        }
+
+        $relation = $this->relations['meta'];
+
+        if ($relation instanceof Collection) {
+            $filtered = $relation->reject(
+                fn (mixed $entry): bool => $this->isInactiveProviderFieldSlug(
+                    $this->providerMetaEntrySlug($entry),
+                ),
+            );
+            $containsInactiveState = $filtered->count() !== $relation->count();
+        } elseif (is_array($relation)) {
+            $filtered = array_filter(
+                $relation,
+                fn (mixed $entry): bool => ! $this->isInactiveProviderFieldSlug(
+                    $this->providerMetaEntrySlug($entry),
+                ),
+            );
+            $containsInactiveState = count($filtered) !== count($relation);
+        } else {
+            $containsInactiveState = $this->isInactiveProviderFieldSlug(
+                $this->providerMetaEntrySlug($relation),
+            );
+            $filtered = $containsInactiveState ? null : $relation;
+        }
+
+        if (! $containsInactiveState) {
+            return;
+        }
+
+        if ($overwriteExisting || ! array_key_exists('metaRelation', $this->quarantinedProviderFieldState)) {
+            $this->quarantinedProviderFieldState['metaRelation'] = $relation;
+        }
+
+        $this->relations['meta'] = $filtered;
+        $this->normalizedMetaCache = null;
+        $this->fieldsAttributeCache = null;
+    }
+
+    private function quarantineInactiveProviderFieldState(bool $overwriteExisting = false): void
+    {
+        if ($this->inactiveProviderFieldSlugs === []) {
+            return;
+        }
+
+        foreach (['attributes', 'original', 'changes', 'previous'] as $stateName) {
+            $this->quarantineArrayEntries(
+                $this->{$stateName},
+                $stateName,
+                $this->inactiveProviderFieldSlugs,
+                $overwriteExisting,
+            );
+            $this->quarantineNestedFieldEntries(
+                $this->{$stateName},
+                $stateName,
+                $this->inactiveProviderFieldSlugs,
+                $overwriteExisting,
+            );
+        }
+
+        foreach (['relations', 'classCastCache', 'attributeCastCache', 'metaFields'] as $stateName) {
+            $this->quarantineArrayEntries(
+                $this->{$stateName},
+                $stateName,
+                $this->inactiveProviderFieldSlugs,
+                $overwriteExisting,
+            );
+        }
+
+        $this->quarantineInactiveMetaRelation($overwriteExisting);
+    }
+
+    /**
+     * @param  array<string, mixed>  $state
+     * @param  array<int, string>  $slugs
+     */
+    private function quarantineNestedFieldEntries(
+        array &$state,
+        string $stateName,
+        array $slugs,
+        bool $overwriteExisting,
+    ): void {
+        if (! isset($state['fields']) || ! is_array($state['fields'])) {
+            return;
+        }
+
+        $fieldTemplate = $state['fields'];
+        $capturedTemplate = false;
+
+        foreach ($slugs as $slug) {
+            $entry = [];
+
+            if (array_key_exists($slug, $state['fields'])) {
+                $entry['direct'] = $state['fields'][$slug];
+            }
+
+            if (str_contains($slug, '.') && Arr::has($state['fields'], $slug)) {
+                $entry['nested'] = Arr::get($state['fields'], $slug);
+            }
+
+            if ($entry === []) {
+                continue;
+            }
+
+            if (! $capturedTemplate
+                && ($overwriteExisting
+                    || ! array_key_exists($stateName, $this->quarantinedProviderFieldState['nestedTemplates'] ?? []))) {
+                $this->quarantinedProviderFieldState['nestedTemplates'][$stateName] = $fieldTemplate;
+                $capturedTemplate = true;
+            }
+
+            if ($overwriteExisting
+                || ! array_key_exists($slug, $this->quarantinedProviderFieldState['nested'][$stateName] ?? [])) {
+                $this->quarantinedProviderFieldState['nested'][$stateName][$slug] = $entry;
+            }
+
+            unset($state['fields'][$slug]);
+            Arr::forget($state['fields'], $slug);
         }
     }
 
@@ -921,6 +1251,7 @@ class Resource extends Model implements DefinesFields
 
         try {
             $this->ensureFieldDefinitionState();
+            $this->quarantineInactiveProviderFieldState();
 
             return $read();
         } finally {
@@ -942,6 +1273,13 @@ class Resource extends Model implements DefinesFields
      */
     private function resolveDynamicAttribute($key)
     {
+        if ($key === 'metaFields') {
+            $this->ensureFieldDefinitionState();
+            $this->quarantineInactiveProviderFieldState();
+
+            return $this->metaFields;
+        }
+
         return $this->readAfterSynchronizingFieldDefinition(
             fn (): mixed => $this->resolveSynchronizedDynamicAttribute($key),
         );
@@ -984,37 +1322,33 @@ class Resource extends Model implements DefinesFields
     }
 
     /**
-     * @param  array<string, mixed>  $state
-     * @param  array<int, string>  $slugs
-     * @param  array<string, mixed>  $entries
+     * @param  array<string, array{present: bool, value?: mixed}>  $snapshot
      */
-    private function restoreArrayEntries(array &$state, array $slugs, array $entries): void
+    private function restoreFieldContainerState(array $snapshot): void
     {
-        foreach ($slugs as $slug) {
-            unset($state[$slug]);
-        }
-
-        foreach ($entries as $slug => $value) {
-            $state[$slug] = $value;
+        foreach ($snapshot as $stateName => $fieldState) {
+            if ($fieldState['present']) {
+                $this->{$stateName}['fields'] = $fieldState['value'];
+            } else {
+                unset($this->{$stateName}['fields']);
+            }
         }
     }
 
     /**
-     * @param  array<int, string>  $slugs
-     * @param  array{containerExists: bool, entries: array<string, array<string, mixed>>}  $snapshot
+     * @param  array<string, mixed>  $state
+     * @param  array<string, array<string, mixed>>  $entries
      */
-    private function restoreNestedFieldEntries(array $slugs, array $snapshot): void
+    private function restoreNestedFieldEntries(array &$state, array $entries, mixed $template = null): void
     {
-        $fields = isset($this->attributes['fields']) && is_array($this->attributes['fields'])
-            ? $this->attributes['fields']
+        $currentFields = isset($state['fields']) && is_array($state['fields'])
+            ? $state['fields']
             : [];
+        $fields = is_array($template)
+            ? array_replace_recursive($template, $currentFields)
+            : $currentFields;
 
-        foreach ($slugs as $slug) {
-            unset($fields[$slug]);
-            Arr::forget($fields, $slug);
-        }
-
-        foreach ($snapshot['entries'] as $slug => $entry) {
+        foreach ($entries as $slug => $entry) {
             if (array_key_exists('direct', $entry)) {
                 $fields[$slug] = $entry['direct'];
             }
@@ -1024,47 +1358,55 @@ class Resource extends Model implements DefinesFields
             }
         }
 
-        if ($snapshot['containerExists'] || $fields !== []) {
-            $this->attributes['fields'] = $fields;
-        } else {
-            unset($this->attributes['fields']);
-        }
+        $state['fields'] = $fields;
     }
 
-    /**
-     * @param  array<int, string>  $slugs
-     * @param  array<string, mixed>  $snapshot
-     */
-    private function restorePersistenceState(array $slugs, array $snapshot): void
+    private function restoreQuarantinedProviderFieldState(): void
     {
-        $this->restoreArrayEntries($this->attributes, $slugs, $snapshot['attributes']);
-        $this->restoreArrayEntries($this->original, $slugs, $snapshot['original']);
-        $this->restoreArrayEntries($this->changes, $slugs, $snapshot['changes']);
-        $this->restoreArrayEntries($this->previous, $slugs, $snapshot['previous']);
-        $this->restoreArrayEntries($this->relations, $slugs, $snapshot['relations']);
-        $this->restoreArrayEntries($this->classCastCache, $slugs, $snapshot['classCastCache']);
-        $this->restoreArrayEntries($this->attributeCastCache, $slugs, $snapshot['attributeCastCache']);
-        $this->restoreArrayEntries($this->metaFields, $slugs, $snapshot['metaFields']);
-        $this->restoreNestedFieldEntries($slugs, $snapshot['nestedFields']);
-    }
-
-    /**
-     * @param  array<int, string>  $slugs
-     */
-    private function suppressInactivePersistenceState(array $slugs): void
-    {
-        foreach ($slugs as $slug) {
-            unset(
-                $this->attributes[$slug],
-                $this->classCastCache[$slug],
-                $this->attributeCastCache[$slug],
-                $this->metaFields[$slug],
-            );
-
-            if (isset($this->attributes['fields']) && is_array($this->attributes['fields'])) {
-                unset($this->attributes['fields'][$slug]);
-                Arr::forget($this->attributes['fields'], $slug);
+        foreach (['attributes', 'original', 'changes', 'previous', 'relations', 'classCastCache', 'attributeCastCache', 'metaFields'] as $stateName) {
+            foreach ($this->quarantinedProviderFieldState[$stateName] ?? [] as $slug => $value) {
+                $this->{$stateName}[$slug] = $value;
             }
+        }
+
+        foreach ($this->quarantinedProviderFieldState['nested'] ?? [] as $stateName => $entries) {
+            $this->restoreNestedFieldEntries(
+                $this->{$stateName},
+                $entries,
+                $this->quarantinedProviderFieldState['nestedTemplates'][$stateName] ?? null,
+            );
+        }
+
+        if (array_key_exists('metaRelation', $this->quarantinedProviderFieldState)) {
+            $this->relations['meta'] = $this->quarantinedProviderFieldState['metaRelation'];
+            $this->normalizedMetaCache = null;
+            $this->fieldsAttributeCache = null;
+        }
+
+        $this->quarantinedProviderFieldState = [];
+    }
+
+    private function synchronizeQuarantinedOriginalAfterRefresh(): void
+    {
+        if (isset($this->quarantinedProviderFieldState['attributes'])) {
+            $this->quarantinedProviderFieldState['original']
+                = $this->quarantinedProviderFieldState['attributes'];
+        } else {
+            unset($this->quarantinedProviderFieldState['original']);
+        }
+
+        if (isset($this->quarantinedProviderFieldState['nested']['attributes'])) {
+            $this->quarantinedProviderFieldState['nested']['original']
+                = $this->quarantinedProviderFieldState['nested']['attributes'];
+        } else {
+            unset($this->quarantinedProviderFieldState['nested']['original']);
+        }
+
+        if (isset($this->quarantinedProviderFieldState['nestedTemplates']['attributes'])) {
+            $this->quarantinedProviderFieldState['nestedTemplates']['original']
+                = $this->quarantinedProviderFieldState['nestedTemplates']['attributes'];
+        } else {
+            unset($this->quarantinedProviderFieldState['nestedTemplates']['original']);
         }
     }
 

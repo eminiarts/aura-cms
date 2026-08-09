@@ -8,8 +8,6 @@ trait AuraResourceMeta
 {
     public static $customTable = false;
 
-    public array $metaFields = [];
-
     public static bool $usesMeta = true;
 
     protected $baseFillable = [];

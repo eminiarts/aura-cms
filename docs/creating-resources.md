@@ -215,10 +215,10 @@ namespace App\Aura\Fields;
 
 use App\Aura\Resources\Contact;
 use App\Models\ContactProperty;
-use Aura\Base\Contracts\FieldProvider;
+use Aura\Base\Contracts\ContextualFieldProvider;
 use Aura\Base\FieldProviderContext;
 
-class ContactPropertyFieldProvider implements FieldProvider
+class ContactPropertyFieldProvider implements ContextualFieldProvider
 {
     public function cacheContext(string $resourceClass): array
     {
@@ -241,6 +241,19 @@ class ContactPropertyFieldProvider implements FieldProvider
             ->pluck('definition')
             ->all();
     }
+
+    public function managedFieldSlugs(string $resourceClass): array
+    {
+        return ContactProperty::query()
+            ->withoutGlobalScopes()
+            ->get('definition')
+            ->pluck('definition.slug')
+            ->filter(fn (mixed $slug): bool => is_string($slug) && $slug !== '')
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+    }
 }
 ```
 
@@ -260,7 +273,9 @@ Aura::registerFieldProvider(
 );
 ```
 
-Targets must be `Resource`/`BaseResource` classes. The default `['*']` target means every Aura resource; it does not apply providers to field classes or other classes that happen to use `InputFields`.
+Non-context providers may target `Resource`/`BaseResource` classes. Their default `['*']` target means every Aura resource; it does not apply providers to field classes or other classes that happen to use `InputFields`.
+
+Providers with a non-empty `cacheContext()` must implement `ContextualFieldProvider` and return the complete, context-independent union of their managed slugs from `managedFieldSlugs()`. The manifest is the security boundary that lets a model hydrated directly in an inactive context quarantine fields it has never observed as active. Contextual providers must explicitly target `Resource` subclasses; `BaseResource` and wildcard targets are rejected because `BaseResource` does not implement model-state isolation. The manifest query must therefore be independent of the active team/user context and should use a stable property catalog or equivalent source.
 
 `Append` adds fields after the declarative list and rejects duplicate slugs. `Replace` replaces matching slugs in place; a higher priority wins when several providers replace the same slug. Equal-priority replacements are rejected as ambiguous, and replacing a missing slug fails explicitly.
 
@@ -274,7 +289,7 @@ Aura::refreshFieldProviderVersions();
 
 Unchanged versions reuse their version-keyed field output; changed versions query `fields()` once and invalidate every derived field/conditional cache. Use `Aura::flushFieldCache()` for an unconditional reset, such as after changing provider registrations or when a source cannot expose a reliable version.
 
-A reset covers every active `InputFields` consumer, including resource and field classes, parsed trees, container bindings, conditional decisions, and existing `Resource` instances on their next field-related access. When a context switch removes a dynamic field, Aura drops that field's pending unsaved attribute/meta-queue value so it cannot be persisted in the new tenant or user context. Persisted database rows are not deleted.
+A reset covers every active `InputFields` consumer, including resource and field classes, parsed trees, container bindings, conditional decisions, and existing `Resource` instances on their next field-related access. When a context switch removes a managed field, Aura moves its attributes, nested field state, casts, loaded relations, and pending meta values into runtime-only quarantine. Inactive state is absent from Eloquent reads, array/JSON/native PHP serialization, and save/push operations, so it cannot leak or be persisted in another tenant or user context. Switching the same live model back restores the pending state exactly; persisted database rows are not deleted. A model serialized while inactive intentionally omits quarantined values, while an active-context serialize/unserialize round trip retains them.
 
 Aura resets provider instances and process-static state before and after queue jobs and at Octane request/task/tick boundaries. Providers registered during application boot are restored for the next lifecycle, while transient runtime registrations are discarded. Register or invalidate providers only during application boot or another quiescent lifecycle boundary. Standard process-isolated Octane workers are supported; custom overlapping coroutines that share one Laravel container and mutate Aura's static registries are not supported and must use isolated application containers or processes.
 

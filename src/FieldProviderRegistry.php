@@ -106,6 +106,21 @@ class FieldProviderRegistry
             throw new InvalidArgumentException('Field provider resources must be a non-empty array of Aura resource class names or [*].');
         }
 
+        if (is_a($provider, ContextualFieldProvider::class, true)) {
+            if (in_array('*', $resources, true)) {
+                throw new InvalidArgumentException('Contextual field providers cannot use the wildcard target; explicitly target Aura\\Base\\Resource subclasses.');
+            }
+
+            $baseResourceTarget = collect($resources)->first(
+                fn (string $resource): bool => is_a($resource, BaseResource::class, true)
+                    && ! is_a($resource, Resource::class, true),
+            );
+
+            if ($baseResourceTarget !== null) {
+                throw new InvalidArgumentException('Contextual field providers cannot target '.BaseResource::class.' subclasses because they do not provide contextual state isolation.');
+            }
+        }
+
         $this->providers[$id] = [
             'provider' => $provider,
             'resources' => array_values(array_unique($resources)),
