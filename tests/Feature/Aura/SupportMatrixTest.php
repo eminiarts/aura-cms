@@ -9,6 +9,6 @@ it('declares the V1 support matrix in Composer', function () {
     // the very matrix that proves the support range.
     expect($composer['require']['php'])->toBe('^8.4')
         ->and($composer['require']['illuminate/support'])->toBe('^12.0|^13.0')
-        ->and($composer['require']['livewire/livewire'])->toBe('^4.0')
+        ->and($composer['require']['livewire/livewire'])->toBe('~4.3.5')
         ->and($composer['minimum-stability'])->toBe('stable');
 });
