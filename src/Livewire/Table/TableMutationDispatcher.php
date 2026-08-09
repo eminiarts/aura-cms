@@ -7,7 +7,6 @@ use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Validation\ValidationException;
@@ -59,13 +58,15 @@ final class TableMutationDispatcher
      */
     public function dispatchAction(
         Builder $scope,
+        TableMutationModelDescriptor $modelDescriptor,
         int|string $id,
         string $action,
         array $declaredActions,
     ): mixed {
+        $modelDescriptor->assertMatches($scope);
         $descriptor = $this->descriptor($action, $declaredActions);
         $scope = $this->applyTrashedScope($scope, $descriptor);
-        $record = $this->findRecord($scope, $id, $descriptor['trashed']);
+        $record = $this->findRecord($scope, $modelDescriptor, $id, $descriptor['trashed']);
 
         if (! $record instanceof TableResource) {
             abort(422, 'Table mutations require an Aura table resource.');
@@ -89,12 +90,14 @@ final class TableMutationDispatcher
      */
     public function dispatchBulk(
         Builder $scope,
+        TableMutationModelDescriptor $modelDescriptor,
         string $action,
         array $declaredActions,
         mixed $selected,
         bool $selectAll,
         string $expectedMode,
     ): mixed {
+        $modelDescriptor->assertMatches($scope);
         $descriptor = $this->descriptor($action, $declaredActions, bulk: true);
 
         if ($descriptor['mode'] !== $expectedMode) {
@@ -104,6 +107,7 @@ final class TableMutationDispatcher
         $scope = $this->applyTrashedScope($scope, $descriptor);
         $records = $this->resolveExactSelection(
             $scope,
+            $modelDescriptor,
             $selected,
             $selectAll,
             $descriptor['trashed'],
@@ -147,17 +151,22 @@ final class TableMutationDispatcher
         });
     }
 
-    public function findRecord(Builder $scope, int|string $id, ?string $trashed = null): Model
-    {
-        $expectedIdentity = $this->canonicalIdentity($scope->getModel(), $id);
-        $effectiveKeys = $this->effectiveKeys($scope->whereKey($id));
+    public function findRecord(
+        Builder $scope,
+        TableMutationModelDescriptor $modelDescriptor,
+        int|string $id,
+        ?string $trashed = null,
+    ): Model {
+        $modelDescriptor->assertMatches($scope);
+        $expectedIdentity = $modelDescriptor->canonicalIdentity($id);
+        $effectiveKeys = $this->effectiveKeys($scope->whereKey($id), $modelDescriptor);
 
         if (count($effectiveKeys) !== 1 || ! array_key_exists($expectedIdentity, $effectiveKeys)) {
             abort(404);
         }
 
-        $records = $this->authoritativeRecords($scope, $effectiveKeys, $trashed);
-        $resolvedIdentities = $this->canonicalIdentities($records);
+        $records = $this->authoritativeRecords($modelDescriptor, $effectiveKeys, $trashed);
+        $resolvedIdentities = $this->canonicalIdentities($records, $modelDescriptor);
         $record = $records->first();
 
         if (
@@ -274,29 +283,37 @@ final class TableMutationDispatcher
      * Rehydrate trusted base-table attributes under the model's default scopes.
      *
      * @param  array<string, int|string>  $keys
-     * @return Collection<int, Model>
+     * @return Collection<int, Model&TableResource>
      */
-    private function authoritativeRecords(Builder $scope, array $keys, ?string $trashed): Collection
-    {
-        $model = clone $scope->getModel();
-        $model->setConnection($scope->getModel()->getConnection()->getName());
+    private function authoritativeRecords(
+        TableMutationModelDescriptor $modelDescriptor,
+        array $keys,
+        ?string $trashed,
+    ): Collection {
+        $model = $modelDescriptor->model();
 
         if ($keys === []) {
             return $model->newCollection();
         }
 
         $query = $model->newQuery();
-        $query->setEagerLoads($scope->getEagerLoads());
         $query = $this->applyTrashedMode($query, $trashed);
         $query->whereKey(array_values($keys));
         $query = $this->applyScopesOnce($query);
+        $modelDescriptor->assertMatches($query);
         $query->select($model->qualifyColumn('*'));
 
-        $records = $this->canonicalizeRecords($query->get());
+        $records = $query->get();
+
+        $records->each(function (Model $record) use ($modelDescriptor): void {
+            $modelDescriptor->configure($record);
+        });
+
+        $records = $this->canonicalizeRecords($records, $modelDescriptor);
         $recordsByIdentity = [];
 
         foreach ($records as $record) {
-            $recordsByIdentity[$this->canonicalIdentity($record, $record->getKey())] = $record;
+            $recordsByIdentity[$modelDescriptor->canonicalIdentity($record->getKey())] = $record;
         }
 
         $orderedRecords = [];
@@ -311,39 +328,31 @@ final class TableMutationDispatcher
     }
 
     /**
-     * @param  Collection<int, Model>  $records
+     * @param  Collection<int, Model&TableResource>  $records
      * @return array<string, true>
      */
-    private function canonicalIdentities(Collection $records): array
-    {
+    private function canonicalIdentities(
+        Collection $records,
+        TableMutationModelDescriptor $modelDescriptor,
+    ): array {
         return $records
-            ->mapWithKeys(fn (Model $record): array => [$this->canonicalIdentity($record, $record->getKey()) => true])
+            ->mapWithKeys(
+                fn (Model $record): array => [$modelDescriptor->canonicalIdentity($record->getKey()) => true]
+            )
             ->all();
     }
 
-    private function canonicalIdentity(Model $model, mixed $key): string
-    {
-        if ((! is_int($key) && ! is_string($key)) || (is_string($key) && $key === '')) {
-            abort(422, 'The resolved table record identity is invalid.');
-        }
-
-        return json_encode([
-            'class' => $model::class,
-            'connection' => $model->getConnection()->getName(),
-            'morph' => Relation::getMorphAlias($model::class),
-            'key' => (string) $key,
-        ], JSON_THROW_ON_ERROR);
-    }
-
     /**
-     * @param  Collection<int, Model>  $records
-     * @return Collection<int, Model>
+     * @param  Collection<int, Model&TableResource>  $records
+     * @return Collection<int, Model&TableResource>
      */
-    private function canonicalizeRecords(Collection $records): Collection
-    {
+    private function canonicalizeRecords(
+        Collection $records,
+        TableMutationModelDescriptor $modelDescriptor,
+    ): Collection {
         return $records
             ->unique(
-                fn (Model $record): string => $this->canonicalIdentity($record, $record->getKey()),
+                fn (Model $record): string => $modelDescriptor->canonicalIdentity($record->getKey()),
                 true,
             )
             ->values();
@@ -397,21 +406,35 @@ final class TableMutationDispatcher
      *
      * @return array<string, int|string>
      */
-    private function effectiveKeys(Builder $scope): array
-    {
-        $model = $scope->getModel();
+    private function effectiveKeys(
+        Builder $scope,
+        TableMutationModelDescriptor $modelDescriptor,
+    ): array {
+        $modelDescriptor->assertMatches($scope);
         $keyAlias = '__aura_mutation_key';
         $keyQuery = $this->applyScopesOnce($scope);
+        $modelDescriptor->assertMatches($keyQuery);
         $keyQuery->setEagerLoads([]);
-        $keyQuery->select($model->getQualifiedKeyName().' as '.$keyAlias);
+        $keyQuery->select($modelDescriptor->table.'.'.$modelDescriptor->keyName.' as '.$keyAlias);
+        $baseQuery = $keyQuery->toBase();
+
+        $baseQuery->applyBeforeQueryCallbacks();
+        $modelDescriptor->assertMatches($keyQuery);
+        $baseQuery->select($modelDescriptor->table.'.'.$modelDescriptor->keyName.' as '.$keyAlias);
+
+        $rows = $baseQuery->getConnection()->select(
+            $baseQuery->toSql(),
+            $baseQuery->getBindings(),
+            ! $baseQuery->useWritePdo,
+        );
 
         $keys = [];
 
-        foreach ($keyQuery->toBase()->get() as $row) {
+        foreach ($rows as $row) {
             $key = is_object($row) && property_exists($row, $keyAlias)
                 ? $row->{$keyAlias}
                 : null;
-            $identity = $this->canonicalIdentity($model, $key);
+            $identity = $modelDescriptor->canonicalIdentity($key);
 
             if (! array_key_exists($identity, $keys)) {
                 $keys[$identity] = $key;
@@ -440,16 +463,17 @@ final class TableMutationDispatcher
     }
 
     /**
-     * @return Collection<int, Model>
+     * @return Collection<int, Model&TableResource>
      */
     private function resolveExactSelection(
         Builder $scope,
+        TableMutationModelDescriptor $modelDescriptor,
         mixed $selected,
         bool $selectAll,
         ?string $trashed,
     ): Collection {
         if ($selectAll) {
-            $effectiveKeys = $this->effectiveKeys($scope);
+            $effectiveKeys = $this->effectiveKeys($scope, $modelDescriptor);
 
             if ($effectiveKeys === []) {
                 throw ValidationException::withMessages([
@@ -457,8 +481,8 @@ final class TableMutationDispatcher
                 ]);
             }
 
-            $records = $this->authoritativeRecords($scope, $effectiveKeys, $trashed);
-            $resolvedIdentities = $this->canonicalIdentities($records);
+            $records = $this->authoritativeRecords($modelDescriptor, $effectiveKeys, $trashed);
+            $resolvedIdentities = $this->canonicalIdentities($records, $modelDescriptor);
 
             if (
                 array_diff_key($effectiveKeys, $resolvedIdentities) !== []
@@ -496,9 +520,14 @@ final class TableMutationDispatcher
             ]);
         }
 
-        $effectiveKeys = $this->effectiveKeys($scope->whereKey(array_values($normalized)));
+        $effectiveKeys = $this->effectiveKeys(
+            $scope->whereKey(array_values($normalized)),
+            $modelDescriptor,
+        );
         $expectedIdentities = collect($normalized)
-            ->mapWithKeys(fn (int|string $id): array => [$this->canonicalIdentity($scope->getModel(), $id) => true])
+            ->mapWithKeys(
+                fn (int|string $id): array => [$modelDescriptor->canonicalIdentity($id) => true]
+            )
             ->all();
 
         if (
@@ -510,8 +539,8 @@ final class TableMutationDispatcher
             ]);
         }
 
-        $records = $this->authoritativeRecords($scope, $effectiveKeys, $trashed);
-        $resolvedIdentities = $this->canonicalIdentities($records);
+        $records = $this->authoritativeRecords($modelDescriptor, $effectiveKeys, $trashed);
+        $resolvedIdentities = $this->canonicalIdentities($records, $modelDescriptor);
 
         if (
             array_diff_key($expectedIdentities, $resolvedIdentities) !== []

@@ -145,33 +145,42 @@ class Table extends Component
             'action' => ['required', 'string'],
             'id' => $this->mutationIdentifierRules(),
         ])->validate();
+        $model = $this->mutationModel();
+        $trustedModel = new TableMutationModelDescriptor($model);
+
+        if (! method_exists($model, 'getSlug')) {
+            abort(422, 'Table mutations require an Aura resource slug.');
+        }
+
+        $resourceSlug = $model->getSlug();
+
+        if (! is_string($resourceSlug)) {
+            abort(422, 'Table mutations require an Aura resource slug.');
+        }
 
         // return redirect to post view
         if ($data['action'] == 'view') {
-            $record = $mutations->findRecord(clone $this->mutationQuery(), $data['id']);
+            $record = $mutations->findRecord(clone $this->mutationQuery(), $trustedModel, $data['id']);
             $mutations->authorize($record, 'view');
 
-            return redirect()->route('aura.'.$this->model()->getSlug().'.view', ['id' => $record->getKey()]);
+            return redirect()->route('aura.'.$resourceSlug.'.view', ['id' => $record->getKey()]);
         }
         // edit
         if ($data['action'] == 'edit') {
-            $record = $mutations->findRecord(clone $this->mutationQuery(), $data['id']);
+            $record = $mutations->findRecord(clone $this->mutationQuery(), $trustedModel, $data['id']);
             $mutations->authorize($record, 'update');
 
-            return redirect()->route('aura.'.$this->model()->getSlug().'.edit', ['id' => $record->getKey()]);
+            return redirect()->route('aura.'.$resourceSlug.'.edit', ['id' => $record->getKey()]);
         }
 
-        $model = $this->model();
-
-        if (! $model instanceof TableResource) {
-            abort(422, 'Table mutations require an Aura resource.');
-        }
+        $declaredActions = (array) $model->getActions();
 
         return $mutations->dispatchAction(
             clone $this->mutationQuery(),
+            $trustedModel,
             $data['id'],
             $data['action'],
-            (array) $model->getActions(),
+            $declaredActions,
         );
     }
 
@@ -508,8 +517,13 @@ class Table extends Component
                 },
             ],
         ])->validate();
+        $trustedModel = new TableMutationModelDescriptor($this->mutationModel());
 
-        $card = $mutations->findRecord(clone $this->mutationQuery(forKanban: true), $data['cardId']);
+        $card = $mutations->findRecord(
+            clone $this->mutationQuery(forKanban: true),
+            $trustedModel,
+            $data['cardId'],
+        );
 
         if (! $card instanceof TableResource) {
             abort(422, 'Kanban mutations require an Aura resource.');
@@ -567,6 +581,17 @@ class Table extends Component
                 }
             },
         ];
+    }
+
+    protected function mutationModel(): Model&TableResource
+    {
+        $model = $this->model();
+
+        if (! $model instanceof Model || ! $model instanceof TableResource) {
+            abort(422, 'Table mutations require an Aura resource.');
+        }
+
+        return $model;
     }
 
     /**

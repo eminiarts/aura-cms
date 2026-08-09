@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\BaseResource;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Facades\DynamicFunctions;
 use Aura\Base\Fields\HasMany;
@@ -12,6 +13,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 
 use function Pest\Livewire\livewire;
@@ -214,6 +216,147 @@ class Core05MutationResource extends Resource
     }
 }
 
+class Core05SubstitutionResource extends Core05MutationResource
+{
+    public static ?string $slug = 'core05-substitution';
+
+    public static string $type = 'Core05Substitution';
+}
+
+class Core05MorphMutationResource extends Core05MutationResource
+{
+    public static ?string $slug = 'core05-morph-mutation';
+
+    public static string $type = 'Core05MorphMutation';
+
+    private string $mutationMorphClass = 'core05-trusted-morph';
+
+    public function getMorphClass(): string
+    {
+        return $this->mutationMorphClass;
+    }
+
+    public function useMutationMorphClass(string $morphClass): static
+    {
+        $this->mutationMorphClass = $morphClass;
+
+        return $this;
+    }
+}
+
+class Core05UuidMutationResource extends BaseResource
+{
+    public array $actions = [
+        'markReviewed' => [
+            'label' => 'Mark reviewed',
+            'ability' => 'update',
+        ],
+    ];
+
+    public array $bulkActions = [
+        'captureCollectionAttributes' => [
+            'label' => 'Capture collection attributes',
+            'ability' => 'update',
+            'method' => 'collection',
+        ],
+        'markBulkReviewed' => [
+            'label' => 'Mark reviewed',
+            'ability' => 'update',
+        ],
+    ];
+
+    public static $customTable = true;
+
+    public $incrementing = false;
+
+    public static ?string $slug = 'core05-uuid-mutation';
+
+    public static string $type = 'Core05UuidMutation';
+
+    public static bool $usesMeta = false;
+
+    protected $baseFillable = ['id', 'title', 'content', 'status'];
+
+    protected $fillable = ['id', 'title', 'content', 'status'];
+
+    protected $keyType = 'string';
+
+    protected $table = 'core05_uuid_mutation_resources';
+
+    public function captureCollectionAttributes(array $ids): void
+    {
+        $this->content = json_encode($ids, JSON_THROW_ON_ERROR);
+        $this->save();
+    }
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Title',
+                'slug' => 'title',
+                'type' => 'Aura\\Base\\Fields\\Text',
+            ],
+            [
+                'name' => 'Status',
+                'slug' => 'status',
+                'type' => 'Aura\\Base\\Fields\\Status',
+                'options' => [
+                    [
+                        'key' => 'draft',
+                        'value' => 'Draft',
+                        'color' => 'gray',
+                    ],
+                    [
+                        'key' => 'reviewed',
+                        'value' => 'Reviewed',
+                        'color' => 'green',
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    public function markBulkReviewed(): void
+    {
+        $this->content = 'reviewed-by-bulk-action';
+        $this->save();
+    }
+
+    public function markReviewed(): void
+    {
+        $this->content = 'reviewed-by-action';
+        $this->save();
+    }
+
+    public function resolveFieldValue(string $slug, mixed $meta = null): mixed
+    {
+        return $this->getAttribute($slug);
+    }
+}
+
+class Core05MutationBoundaryPolicy
+{
+    public static int $attempts = 0;
+
+    public function update(User $user, Core05MutationResource $resource): bool
+    {
+        if ($resource->exists) {
+            static::$attempts++;
+        }
+
+        return $user->exists && $resource->exists;
+    }
+}
+
+class Core05UuidMutationPolicy
+{
+    public function update(User $user, Core05UuidMutationResource $resource): bool
+    {
+        return $user->exists && $resource->exists;
+    }
+}
+
 class Core05AuthoritativeCollisionPolicy
 {
     public function update(User $user, Core05MutationResource $resource): bool
@@ -280,11 +423,23 @@ class Core05NoKanbanFieldResource extends Resource
 }
 
 beforeEach(function () {
+    Core05MutationBoundaryPolicy::$attempts = 0;
     Core05MutationResource::$useCollidingIndexQuery = false;
     Core05MutationResource::$updateInvocations = 0;
+    config()->set('database.connections.core05_mutation_secondary', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+        'foreign_key_constraints' => true,
+    ]);
     if (! Schema::hasColumn('posts', 'data')) {
         Schema::table('posts', function (Blueprint $table): void {
             $table->text('data')->nullable();
+        });
+    }
+    if (! Schema::hasColumn('posts', 'alternate_id')) {
+        Schema::table('posts', function (Blueprint $table): void {
+            $table->unsignedBigInteger('alternate_id')->nullable()->unique();
         });
     }
     Schema::dropIfExists('core05_mutation_collisions');
@@ -298,14 +453,65 @@ beforeEach(function () {
         $table->text('data')->nullable();
         $table->string('status')->nullable();
     });
+    Schema::dropIfExists('core05_mutation_substitutions');
+    Schema::create('core05_mutation_substitutions', function (Blueprint $table): void {
+        $table->id();
+        $table->string('type')->nullable();
+        $table->string('title');
+        $table->text('content')->nullable();
+        $table->string('status')->nullable();
+        $table->string('slug')->nullable();
+        $table->unsignedBigInteger('user_id')->nullable();
+        $table->unsignedBigInteger('parent_id')->nullable();
+        $table->integer('order')->nullable();
+        $table->unsignedBigInteger('team_id')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+    Schema::dropIfExists('core05_uuid_mutation_resources');
+    Schema::create('core05_uuid_mutation_resources', function (Blueprint $table): void {
+        $table->uuid('id')->primary();
+        $table->string('title');
+        $table->text('content')->nullable();
+        $table->string('status')->nullable();
+        $table->timestamps();
+    });
+    Schema::connection('core05_mutation_secondary')->dropIfExists('posts');
+    Schema::connection('core05_mutation_secondary')->create('posts', function (Blueprint $table): void {
+        $table->id();
+        $table->string('type')->nullable();
+        $table->string('title');
+        $table->text('content')->nullable();
+        $table->string('status')->nullable();
+        $table->string('slug')->nullable();
+        $table->unsignedBigInteger('user_id')->nullable();
+        $table->unsignedBigInteger('parent_id')->nullable();
+        $table->integer('order')->nullable();
+        $table->unsignedBigInteger('team_id')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+    Schema::connection('core05_mutation_secondary')->dropIfExists('meta');
+    Schema::connection('core05_mutation_secondary')->create('meta', function (Blueprint $table): void {
+        $table->id();
+        $table->string('metable_type');
+        $table->unsignedBigInteger('metable_id');
+        $table->string('key');
+        $table->longText('value')->nullable();
+        $table->timestamps();
+    });
 
     Aura::fake();
     Aura::registerResources([
+        Core05MorphMutationResource::class,
         Core05MutationResource::class,
         Core05MutationParentResource::class,
         Core05NoKanbanFieldResource::class,
+        Core05SubstitutionResource::class,
+        Core05UuidMutationResource::class,
     ]);
     Aura::setModel(new Core05MutationResource);
+    Gate::policy(Core05UuidMutationResource::class, Core05UuidMutationPolicy::class);
 });
 
 /**
@@ -376,6 +582,159 @@ function core05FailingMutationQuery(string $failure): string
     }
 
     return 'core05-unregistered-mutation-query';
+}
+
+/**
+ * @return array{mounted: Core05MutationResource, target: Core05MutationResource, id: int|string, query: string}
+ */
+function core05IdentitySubstitution(string $substitution, User $actor): array
+{
+    $attributes = [
+        'title' => 'Identity substitution target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ];
+
+    if (config('aura.teams')) {
+        $attributes['team_id'] = $actor->getAttribute('current_team_id');
+    }
+
+    $mounted = new Core05MutationResource;
+
+    [$dynamicModel, $target, $id] = match ($substitution) {
+        'wrong class' => (function () use ($attributes): array {
+            $target = Core05SubstitutionResource::create($attributes);
+
+            return [new Core05SubstitutionResource, $target, $target->getKey()];
+        })(),
+        'same class different table' => (function () use ($attributes): array {
+            $model = (new Core05MutationResource)->setTable('core05_mutation_substitutions');
+            $target = $model->newQuery()->create($attributes);
+
+            return [$model, $target, $target->getKey()];
+        })(),
+        'connection switch' => (function () use ($attributes): array {
+            $model = (new Core05MutationResource)->setConnection('core05_mutation_secondary');
+            $target = $model->newQuery()->create($attributes);
+
+            return [$model, $target, $target->getKey()];
+        })(),
+        'key name switch' => (function () use ($attributes): array {
+            $target = Core05MutationResource::create($attributes);
+            $alternateId = ((int) $target->getKey()) + 100000;
+            $target->forceFill(['alternate_id' => $alternateId])->saveQuietly();
+            $model = (new Core05MutationResource)->setKeyName('alternate_id');
+
+            return [$model, $target->refresh(), $alternateId];
+        })(),
+        'key type switch' => (function () use ($attributes): array {
+            $target = Core05MutationResource::create($attributes);
+            $model = (new Core05MutationResource)->setKeyType('string');
+
+            return [$model, $target, $target->getKey()];
+        })(),
+        'morph switch' => (function () use ($attributes, &$mounted): array {
+            $mounted = new Core05MorphMutationResource;
+            $target = Core05MorphMutationResource::create($attributes);
+            $model = (new Core05MorphMutationResource)->useMutationMorphClass('core05-substituted-morph');
+
+            return [$model, $target, $target->getKey()];
+        })(),
+    };
+
+    $queryHash = DynamicFunctions::add(static function () use ($dynamicModel): Builder {
+        $query = $dynamicModel->newQuery();
+        $query->getQuery()->beforeQuery(static function ($query): void {
+            foreach ((array) $query->columns as $column) {
+                if (is_string($column) && str_contains($column, '__aura_mutation_key')) {
+                    throw new RuntimeException('An invalid mutation scope reached the database.');
+                }
+            }
+
+            $query->from = 'posts';
+            $query->orders = null;
+            $query->wheres = [];
+            $query->bindings['where'] = [];
+            $query->whereRaw('0 = 1');
+        });
+
+        return $query;
+    });
+
+    return [
+        'mounted' => $mounted,
+        'target' => $target,
+        'id' => $id,
+        'query' => $queryHash,
+    ];
+}
+
+function core05DeferredMutationSubstitution(string $substitution, int|string $id): string
+{
+    return DynamicFunctions::add(static function () use ($id, $substitution): Builder {
+        $query = Core05MutationResource::query();
+        $baseQuery = $query->getQuery();
+
+        if ($substitution === 'before-query table switch') {
+            $baseQuery->beforeQuery(static function ($query): void {
+                $isMutationKeyQuery = collect((array) $query->columns)->contains(
+                    fn (mixed $column): bool => is_string($column)
+                        && str_contains($column, '__aura_mutation_key'),
+                );
+
+                if ($isMutationKeyQuery) {
+                    $query->from = 'core05_mutation_substitutions as posts';
+
+                    return;
+                }
+
+                $query->from = 'posts';
+                $query->orders = null;
+                $query->wheres = [];
+                $query->bindings['where'] = [];
+                $query->whereRaw('0 = 1');
+            });
+        }
+
+        if ($substitution === 'after-query key injection') {
+            $queryState = (object) ['isMutationKeyQuery' => false];
+            $query->whereRaw('0 = 1');
+            $baseQuery->beforeQuery(static function ($query) use ($queryState): void {
+                $queryState->isMutationKeyQuery = collect((array) $query->columns)->contains(
+                    fn (mixed $column): bool => is_string($column)
+                        && str_contains($column, '__aura_mutation_key'),
+                );
+            });
+
+            $baseQuery->afterQuery(static function ($rows) use ($id, $queryState) {
+                return $queryState->isMutationKeyQuery
+                    ? collect([(object) ['__aura_mutation_key' => $id]])
+                    : $rows;
+            });
+        }
+
+        return $query;
+    });
+}
+
+function core05CallMutationSurface(
+    string $surface,
+    ?string $query,
+    Core05MutationResource|Core05UuidMutationResource $mounted,
+    int|string $id,
+): mixed {
+    return match ($surface) {
+        'single action' => livewire(Table::class, ['query' => $query, 'model' => $mounted])
+            ->call('action', ['action' => 'markReviewed', 'id' => $id]),
+        'bulk record' => livewire(Table::class, ['query' => $query, 'model' => $mounted])
+            ->set('selected', [$id])
+            ->call('bulkAction', 'markBulkReviewed'),
+        'bulk collection' => livewire(Table::class, ['query' => $query, 'model' => $mounted])
+            ->set('selected', [$id])
+            ->call('bulkCollectionAction', 'captureCollectionAttributes'),
+        'Kanban update' => livewire(Table::class, ['query' => $query, 'model' => $mounted])
+            ->call('updateCardStatus', $id, 'reviewed'),
+    };
 }
 
 test('table action rejects an undeclared model method', function () {
@@ -859,6 +1218,135 @@ test('declared dynamic mutation scope cannot be widened through Livewire state t
     expect($excluded->fresh()->content)->toBe('unchanged');
 });
 
+test('mutation scope identity substitutions fail before querying authorization or handlers', function (
+    string $surface,
+    string $substitution,
+) {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+    Gate::policy(Core05MorphMutationResource::class, Core05MutationBoundaryPolicy::class);
+    Gate::policy(Core05SubstitutionResource::class, Core05MutationBoundaryPolicy::class);
+
+    $case = core05IdentitySubstitution($substitution, $actor);
+    Core05MutationResource::$updateInvocations = 0;
+
+    core05CallMutationSurface($surface, $case['query'], $case['mounted'], $case['id'])
+        ->assertStatus(422);
+
+    $target = $case['target']->fresh();
+
+    expect(Core05MutationBoundaryPolicy::$attempts)->toBe(0)
+        ->and(Core05MutationResource::$updateInvocations)->toBe(0)
+        ->and($target->content)->toBe('unchanged')
+        ->and($target->status)->toBe('draft');
+})->with([
+    'single action' => 'single action',
+    'bulk record' => 'bulk record',
+    'bulk collection' => 'bulk collection',
+    'Kanban update' => 'Kanban update',
+])->with([
+    'wrong class' => 'wrong class',
+    'same class different table' => 'same class different table',
+    'connection switch' => 'connection switch',
+    'key name switch' => 'key name switch',
+    'key type switch' => 'key type switch',
+    'morph switch' => 'morph switch',
+]);
+
+test('deferred mutation scope identity substitutions fail before authorization or handlers', function (
+    string $surface,
+    string $substitution,
+) {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Deferred identity substitution target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    DB::table('core05_mutation_substitutions')->insert([
+        'id' => $resource->getKey(),
+        'type' => Core05MutationResource::$type,
+        'title' => $resource->title,
+        'content' => 'substituted',
+        'status' => $resource->status,
+        'user_id' => $resource->user_id,
+        'team_id' => $resource->team_id,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $queryHash = core05DeferredMutationSubstitution($substitution, $resource->getKey());
+
+    $result = core05CallMutationSurface(
+        $surface,
+        $queryHash,
+        new Core05MutationResource,
+        $resource->getKey(),
+    );
+
+    match (true) {
+        $substitution === 'before-query table switch' => $result->assertStatus(422),
+        in_array($surface, ['bulk record', 'bulk collection'], true) => $result->assertHasErrors(['selected']),
+        default => $result->assertNotFound(),
+    };
+
+    $freshResource = $resource->fresh();
+
+    expect(Core05MutationBoundaryPolicy::$attempts)->toBe(0)
+        ->and(Core05MutationResource::$updateInvocations)->toBe(0)
+        ->and($freshResource->content)->toBe('unchanged')
+        ->and($freshResource->status)->toBe('draft');
+})->with([
+    'single action' => 'single action',
+    'bulk record' => 'bulk record',
+    'bulk collection' => 'bulk collection',
+    'Kanban update' => 'Kanban update',
+])->with([
+    'before-query table switch' => 'before-query table switch',
+    'after-query key injection' => 'after-query key injection',
+]);
+
+test('matching UUID mutation identities remain exact on every mutation surface', function (string $surface) {
+    $this->actingAs(createSuperAdmin());
+
+    $id = (string) Str::uuid();
+    $resource = Core05UuidMutationResource::create([
+        'id' => $id,
+        'title' => 'UUID mutation target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $queryHash = DynamicFunctions::add(
+        fn (): Builder => Core05UuidMutationResource::query()->whereKey($id)
+    );
+
+    core05CallMutationSurface($surface, $queryHash, new Core05UuidMutationResource, $id)
+        ->assertHasNoErrors();
+
+    $freshResource = $resource->fresh();
+
+    expect($freshResource->getKey())->toBe($id);
+
+    match ($surface) {
+        'single action' => expect($freshResource->content)->toBe('reviewed-by-action'),
+        'bulk record' => expect($freshResource->content)->toBe('reviewed-by-bulk-action'),
+        'bulk collection' => expect(
+            json_decode($freshResource->content, true, flags: JSON_THROW_ON_ERROR)
+        )->toBe([$id]),
+        'Kanban update' => expect($freshResource->status)->toBe('reviewed'),
+    };
+})->with([
+    'single action' => 'single action',
+    'bulk record' => 'bulk record',
+    'bulk collection' => 'bulk collection',
+    'Kanban update' => 'Kanban update',
+]);
+
 test('joined index columns cannot poison a single action policy or handler model', function () {
     $actor = createSuperAdmin();
     $this->actingAs($actor);
@@ -1040,6 +1528,11 @@ test('declared dynamic query failures abort every mutation surface', function (s
             'model' => new Core05MutationResource,
         ])->set('selected', [$resource->getKey()])
             ->call('bulkAction', 'markBulkReviewed'),
+        'bulk collection' => fn () => livewire(Table::class, [
+            'query' => $queryHash,
+            'model' => new Core05MutationResource,
+        ])->set('selected', [$resource->getKey()])
+            ->call('bulkCollectionAction', 'captureCollectionAttributes'),
         'Kanban update' => fn () => livewire(Table::class, [
             'query' => $queryHash,
             'model' => new Core05MutationResource,
@@ -1055,6 +1548,7 @@ test('declared dynamic query failures abort every mutation surface', function (s
 })->with([
     'single action' => 'single action',
     'bulk action' => 'bulk action',
+    'bulk collection' => 'bulk collection',
     'Kanban update' => 'Kanban update',
 ])->with([
     'missing facade root' => 'missing facade root',

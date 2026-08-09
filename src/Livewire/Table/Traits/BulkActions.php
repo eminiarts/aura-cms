@@ -3,6 +3,7 @@
 namespace Aura\Base\Livewire\Table\Traits;
 
 use Aura\Base\Livewire\Table\TableMutationDispatcher;
+use Aura\Base\Livewire\Table\TableMutationModelDescriptor;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -17,10 +18,15 @@ trait BulkActions
      */
     public function bulkAction(string $action, TableMutationDispatcher $mutations): void
     {
+        $model = $this->mutationModel();
+        $trustedModel = new TableMutationModelDescriptor($model);
+        $declaredActions = (array) $model->getBulkActions();
+
         $mutations->dispatchBulk(
             clone $this->mutationQuery(),
+            $trustedModel,
             $action,
-            (array) $this->getBulkActionsProperty(),
+            $declaredActions,
             $this->selected,
             (bool) $this->selectAll,
             'record',
@@ -34,10 +40,15 @@ trait BulkActions
 
     public function bulkCollectionAction(string $action, TableMutationDispatcher $mutations): ?StreamedResponse
     {
+        $model = $this->mutationModel();
+        $trustedModel = new TableMutationModelDescriptor($model);
+        $declaredActions = (array) $model->getBulkActions();
+
         $response = $mutations->dispatchBulk(
             clone $this->mutationQuery(),
+            $trustedModel,
             $action,
-            (array) $this->getBulkActionsProperty(),
+            $declaredActions,
             $this->selected,
             (bool) $this->selectAll,
             'collection',
