@@ -186,6 +186,7 @@ return [
 
     'global_search' => [
         'adapter' => DatabaseGlobalSearchAdapter::class,
+        'execution_backend' => 'auto',
         'minimum_query_length' => 2,
         'maximum_query_length' => 64,
         'max_resources' => 25,
@@ -197,6 +198,10 @@ return [
         'max_title_dependencies' => 4,
         'max_queries_per_resource' => 4,
         'max_total_queries' => 100,
+        'per_resource_timeout_ms' => 150,
+        'total_timeout_ms' => 750,
+        'database_statement_timeout_ms' => 150,
+        'isolated_payload_bytes' => 1_048_576,
         'allowed_route_names' => ['aura.*'],
         'ranking' => [
             'exact' => 300,

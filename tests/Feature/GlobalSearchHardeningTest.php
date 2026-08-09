@@ -1,19 +1,26 @@
 <?php
 
 use Aura\Base\Contracts\GlobalSearchAdapter;
+use Aura\Base\Exceptions\GlobalSearchExecutionTimedOut;
+use Aura\Base\Exceptions\GlobalSearchExecutionUnavailable;
 use Aura\Base\Facades\Aura;
+use Aura\Base\GlobalSearch\DatabaseGlobalSearchAdapter;
+use Aura\Base\GlobalSearch\DatabaseStatementDeadline;
+use Aura\Base\GlobalSearch\ForkedGlobalSearchExecutor;
 use Aura\Base\GlobalSearch\GlobalSearchBudget;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Models\Meta;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use Symfony\Component\Process\Process;
@@ -293,6 +300,66 @@ class HardeningFailingAdapterResource extends HardeningSearchResource
     }
 }
 
+class HardeningSuccessfulAdapterResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-successful-query';
+
+    public static string $type = 'HardeningSuccessfulQuery';
+
+    public function globalSearchAdapter()
+    {
+        return HardeningSuccessfulAdapter::class;
+    }
+}
+
+class HardeningSleepingAdapterResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-sleeping-query';
+
+    public static string $type = 'HardeningSleepingQuery';
+
+    public function globalSearchAdapter()
+    {
+        return HardeningSleepingAdapter::class;
+    }
+}
+
+class HardeningSecondSleepingAdapterResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-second-sleeping-query';
+
+    public static string $type = 'HardeningSecondSleepingQuery';
+
+    public function globalSearchAdapter()
+    {
+        return HardeningSleepingAdapter::class;
+    }
+}
+
+class HardeningCpuAdapterResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-cpu-query';
+
+    public static string $type = 'HardeningCpuQuery';
+
+    public function globalSearchAdapter()
+    {
+        return HardeningCpuAdapter::class;
+    }
+}
+
+class HardeningBlockingAdapterResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-blocking-query';
+
+    public static string $type = 'HardeningBlockingQuery';
+
+    public function globalSearchAdapter()
+    {
+        return HardeningBlockingAdapter::class;
+    }
+}
+
 class HardeningFailingAdapter implements GlobalSearchAdapter
 {
     public function search(
@@ -304,6 +371,86 @@ class HardeningFailingAdapter implements GlobalSearchAdapter
         GlobalSearchBudget $budget,
     ): Collection {
         throw new RuntimeException('Simulated search backend failure.');
+    }
+}
+
+class HardeningSuccessfulAdapter implements GlobalSearchAdapter
+{
+    public function search(
+        Resource $resource,
+        Builder $query,
+        Collection $fields,
+        string $term,
+        int $candidateLimit,
+        GlobalSearchBudget $budget,
+    ): Collection {
+        return app(DatabaseGlobalSearchAdapter::class)->search(
+            $resource,
+            $query,
+            $fields,
+            $term,
+            $candidateLimit,
+            $budget,
+        );
+    }
+}
+
+class HardeningSleepingAdapter implements GlobalSearchAdapter
+{
+    public function search(
+        Resource $resource,
+        Builder $query,
+        Collection $fields,
+        string $term,
+        int $candidateLimit,
+        GlobalSearchBudget $budget,
+    ): Collection {
+        usleep(1_200_000);
+
+        throw new RuntimeException('Simulated blocked search backend.');
+    }
+}
+
+class HardeningCpuAdapter implements GlobalSearchAdapter
+{
+    public function search(
+        Resource $resource,
+        Builder $query,
+        Collection $fields,
+        string $term,
+        int $candidateLimit,
+        GlobalSearchBudget $budget,
+    ): Collection {
+        $deadline = hrtime(true) + 1_200_000_000;
+        $value = $term;
+
+        while (hrtime(true) < $deadline) {
+            $value = hash('sha256', $value);
+        }
+
+        throw new RuntimeException("Simulated CPU-bound search backend: {$value}");
+    }
+}
+
+class HardeningBlockingAdapter implements GlobalSearchAdapter
+{
+    public function search(
+        Resource $resource,
+        Builder $query,
+        Collection $fields,
+        string $term,
+        int $candidateLimit,
+        GlobalSearchBudget $budget,
+    ): Collection {
+        $sockets = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+
+        if ($sockets === false) {
+            throw new RuntimeException('Unable to construct a blocking adapter fixture.');
+        }
+
+        fread($sockets[0], 1);
+
+        throw new RuntimeException('Simulated blocking search backend returned unexpectedly.');
     }
 }
 
@@ -614,6 +761,19 @@ test('the total query budget stops later resources', function () {
         ->not->toHaveKey(HardeningDeniedResource::getType());
 });
 
+test('a successful custom adapter returns bounded results through isolation', function () {
+    if (! (new ForkedGlobalSearchExecutor)->isAvailable()) {
+        $this->markTestSkipped('Forked global-search execution is unavailable on this platform.');
+    }
+
+    registerHardeningSearchResources([HardeningSuccessfulAdapterResource::class]);
+    HardeningSuccessfulAdapterResource::create(['title' => 'Custom Adapter Needle']);
+
+    Livewire::test(GlobalSearch::class)
+        ->set('search', 'Custom Adapter Needle')
+        ->assertSee('Custom Adapter Needle');
+});
+
 test('a failing resource is isolated from later searchable resources', function () {
     registerHardeningSearchResources([
         HardeningFailingAdapterResource::class,
@@ -627,6 +787,269 @@ test('a failing resource is isolated from later searchable resources', function 
         ->set('search', 'Failure Isolation Needle')
         ->assertDontSee('Failure Isolation Needle Broken')
         ->assertSee('Failure Isolation Needle Healthy');
+});
+
+test('a sleeping adapter cannot delay a healthy later resource', function () {
+    if (! (new ForkedGlobalSearchExecutor)->isAvailable()) {
+        $this->markTestSkipped('Forked global-search execution is unavailable on this platform.');
+    }
+
+    config([
+        'aura.global_search.per_resource_timeout_ms' => 100,
+        'aura.global_search.total_timeout_ms' => 500,
+    ]);
+    registerHardeningSearchResources([
+        HardeningSleepingAdapterResource::class,
+        HardeningAllowedResource::class,
+    ]);
+
+    HardeningAllowedResource::create(['title' => 'Deadline Isolation Needle Healthy']);
+    Log::spy();
+    $startedAt = hrtime(true);
+
+    Livewire::test(GlobalSearch::class)
+        ->set('search', 'Deadline Isolation Needle')
+        ->assertSee('Deadline Isolation Needle Healthy');
+
+    expect((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(0.6);
+
+    Log::shouldHaveReceived('warning')->with(
+        'Aura global search skipped a resource.',
+        Mockery::on(fn (array $context): bool => $context['resource'] === HardeningSleepingAdapterResource::class
+            && $context['reason'] === 'deadline_exceeded'
+            && ! str_contains(json_encode($context, JSON_THROW_ON_ERROR), 'Deadline Isolation Needle')),
+    )->atLeast()->once();
+
+    $secondRequestStartedAt = hrtime(true);
+
+    Livewire::test(GlobalSearch::class)
+        ->set('search', 'Deadline Isolation Needle')
+        ->assertSee('Deadline Isolation Needle Healthy');
+
+    expect((hrtime(true) - $secondRequestStartedAt) / 1_000_000_000)->toBeLessThan(0.6);
+});
+
+test('a CPU-bound adapter cannot delay a healthy later resource', function () {
+    if (! (new ForkedGlobalSearchExecutor)->isAvailable()) {
+        $this->markTestSkipped('Forked global-search execution is unavailable on this platform.');
+    }
+
+    config([
+        'aura.global_search.per_resource_timeout_ms' => 100,
+        'aura.global_search.total_timeout_ms' => 500,
+    ]);
+    registerHardeningSearchResources([
+        HardeningCpuAdapterResource::class,
+        HardeningAllowedResource::class,
+    ]);
+    HardeningAllowedResource::create(['title' => 'CPU Isolation Needle Healthy']);
+    $startedAt = hrtime(true);
+
+    Livewire::test(GlobalSearch::class)
+        ->set('search', 'CPU Isolation Needle')
+        ->assertSee('CPU Isolation Needle Healthy');
+
+    expect((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(0.6);
+});
+
+test('a blocking adapter cannot delay a healthy later resource', function () {
+    if (! (new ForkedGlobalSearchExecutor)->isAvailable()) {
+        $this->markTestSkipped('Forked global-search execution is unavailable on this platform.');
+    }
+
+    config([
+        'aura.global_search.per_resource_timeout_ms' => 100,
+        'aura.global_search.total_timeout_ms' => 500,
+    ]);
+    registerHardeningSearchResources([
+        HardeningBlockingAdapterResource::class,
+        HardeningAllowedResource::class,
+    ]);
+    HardeningAllowedResource::create(['title' => 'Blocking Isolation Needle Healthy']);
+    $startedAt = hrtime(true);
+
+    Livewire::test(GlobalSearch::class)
+        ->set('search', 'Blocking Isolation Needle')
+        ->assertSee('Blocking Isolation Needle Healthy');
+
+    expect((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(0.6);
+});
+
+test('the total execution deadline stops later resources', function () {
+    if (! (new ForkedGlobalSearchExecutor)->isAvailable()) {
+        $this->markTestSkipped('Forked global-search execution is unavailable on this platform.');
+    }
+
+    config([
+        'aura.global_search.per_resource_timeout_ms' => 120,
+        'aura.global_search.total_timeout_ms' => 170,
+    ]);
+    registerHardeningSearchResources([
+        HardeningSleepingAdapterResource::class,
+        HardeningSecondSleepingAdapterResource::class,
+        HardeningAllowedResource::class,
+    ]);
+    HardeningAllowedResource::create(['title' => 'Total Deadline Needle Healthy']);
+    $component = app(GlobalSearch::class);
+    $component->search = 'Total Deadline Needle';
+    $startedAt = hrtime(true);
+    $results = $component->getSearchResultsProperty();
+
+    expect($results)->not->toHaveKey(HardeningAllowedResource::getType())
+        ->and((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(0.6);
+});
+
+test('custom adapters fail closed when process isolation is unavailable', function (string $backend) {
+    config(['aura.global_search.execution_backend' => $backend]);
+    registerHardeningSearchResources([
+        HardeningSleepingAdapterResource::class,
+        HardeningAllowedResource::class,
+    ]);
+    HardeningAllowedResource::create(['title' => 'Fallback Isolation Needle Healthy']);
+    $startedAt = hrtime(true);
+
+    Livewire::test(GlobalSearch::class)
+        ->set('search', 'Fallback Isolation Needle')
+        ->assertSee('Fallback Isolation Needle Healthy');
+
+    expect((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(0.4);
+})->with(['disabled backend' => 'none', 'invalid backend' => 'invalid']);
+
+test('custom adapters fail closed under an Octane runtime without state bleed', function () {
+    app()->instance('octane', new stdClass);
+
+    try {
+        registerHardeningSearchResources([
+            HardeningSleepingAdapterResource::class,
+            HardeningAllowedResource::class,
+        ]);
+        HardeningAllowedResource::create(['title' => 'Octane Isolation Needle Healthy']);
+        $startedAt = hrtime(true);
+
+        Livewire::test(GlobalSearch::class)
+            ->set('search', 'Octane Isolation Needle')
+            ->assertSee('Octane Isolation Needle Healthy');
+
+        expect((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(0.4);
+    } finally {
+        app()->forgetInstance('octane');
+    }
+});
+
+test('isolated execution rejects nesting and preserves parent signal state', function () {
+    $executor = new ForkedGlobalSearchExecutor;
+
+    if (! $executor->isAvailable()) {
+        $this->markTestSkipped('Forked global-search execution is unavailable on this platform.');
+    }
+
+    $signalHandler = function_exists('pcntl_signal_get_handler')
+        ? pcntl_signal_get_handler(SIGALRM)
+        : null;
+
+    expect($executor->run(
+        fn (): bool => (new ForkedGlobalSearchExecutor)->isAvailable(),
+        100,
+        1_024,
+    ))->toBeFalse()
+        ->and($executor->run(fn (): string => 'healthy', 100, 1_024))->toBe('healthy');
+
+    if (function_exists('pcntl_signal_get_handler')) {
+        expect(pcntl_signal_get_handler(SIGALRM))->toBe($signalHandler);
+    }
+});
+
+test('isolated execution enforces its deadline directly', function () {
+    $executor = new ForkedGlobalSearchExecutor;
+
+    if (! $executor->isAvailable()) {
+        $this->markTestSkipped('Forked global-search execution is unavailable on this platform.');
+    }
+
+    $startedAt = hrtime(true);
+
+    expect(fn () => $executor->run(function (): void {
+        usleep(1_200_000);
+    }, 100, 1_024))->toThrow(GlobalSearchExecutionTimedOut::class);
+
+    expect((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(0.5);
+});
+
+test('database statement deadlines restore nested sqlite session state after exceptions', function () {
+    $connection = DB::connection();
+    $readBusyTimeout = function () use ($connection): int {
+        $row = (array) $connection->selectOne('PRAGMA busy_timeout');
+
+        return (int) (reset($row) ?: 0);
+    };
+    $originalBusyTimeout = $readBusyTimeout();
+
+    try {
+        $connection->statement('PRAGMA busy_timeout = 0');
+        (new DatabaseStatementDeadline)->run($connection, 200, function () use ($readBusyTimeout): void {
+            expect($readBusyTimeout())->toBe(0);
+        });
+        expect($readBusyTimeout())->toBe(0);
+
+        $connection->statement('PRAGMA busy_timeout = 1234');
+        $deadline = new DatabaseStatementDeadline;
+
+        $deadline->run($connection, 200, function () use ($connection, $deadline, $readBusyTimeout): void {
+            expect($readBusyTimeout())->toBe(200);
+
+            expect(fn () => $deadline->run($connection, 50, function () use ($readBusyTimeout): void {
+                expect($readBusyTimeout())->toBe(50);
+
+                throw new RuntimeException('Simulated statement failure.');
+            }))->toThrow(RuntimeException::class, 'Simulated statement failure.');
+
+            expect($readBusyTimeout())->toBe(200);
+        });
+
+        expect($readBusyTimeout())->toBe(1234);
+    } finally {
+        $connection->statement("PRAGMA busy_timeout = {$originalBusyTimeout}");
+    }
+});
+
+test('database statement deadlines fail closed when a hard bound is unsupported', function (string $driver) {
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('getDriverName')->once()->andReturn($driver);
+    $callbackWasCalled = false;
+
+    expect(fn () => (new DatabaseStatementDeadline)->run(
+        $connection,
+        150,
+        function () use (&$callbackWasCalled): void {
+            $callbackWasCalled = true;
+        },
+    ))->toThrow(GlobalSearchExecutionUnavailable::class)
+        ->and($callbackWasCalled)->toBeFalse();
+})->with(['unknown driver' => 'odbc', 'sub-second SQL Server deadline' => 'sqlsrv']);
+
+test('a failed database deadline restoration disconnects the contaminated connection', function () {
+    Log::spy();
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('getDriverName')->twice()->andReturn('sqlite');
+    $connection->shouldReceive('selectOne')->once()->with('PRAGMA busy_timeout')->andReturn((object) [
+        'busy_timeout' => 1_000,
+    ]);
+    $connection->shouldReceive('statement')->twice()->andReturn(true, false);
+    $connection->shouldReceive('disconnect')->once();
+
+    expect((new DatabaseStatementDeadline)->run(
+        $connection,
+        150,
+        fn (): string => 'completed',
+    ))->toBe('completed');
+
+    Log::shouldHaveReceived('warning')->with(
+        'Aura global search disconnected a database connection after deadline restoration failed.',
+        [
+            'driver' => 'sqlite',
+            'exception' => GlobalSearchExecutionUnavailable::class,
+        ],
+    )->once();
 });
 
 test('abstract resources and malformed titles are rejected without breaking later resources', function () {
@@ -730,6 +1153,79 @@ test('unicode matching has the same semantics on mysql when a local service is a
             $table->timestamps();
             $table->softDeletes();
         });
+        $mysqlConnection = DB::connection('global_search_mysql');
+        $isMariaDb = str_contains(
+            strtolower((string) $mysqlConnection->getPdo()->getAttribute(PDO::ATTR_SERVER_VERSION)),
+            'mariadb',
+        );
+        $statementDeadline = new DatabaseStatementDeadline;
+
+        if ($isMariaDb) {
+            $originalTimeout = (float) data_get(
+                (array) $mysqlConnection->selectOne('SELECT @@SESSION.max_statement_time AS value'),
+                'value',
+                0,
+            );
+
+            try {
+                $mysqlConnection->statement('SET SESSION max_statement_time = 0.777');
+
+                expect(fn () => $statementDeadline->run($mysqlConnection, 50, function () use ($mysqlConnection): void {
+                    $activeTimeout = (float) data_get(
+                        (array) $mysqlConnection->selectOne('SELECT @@SESSION.max_statement_time AS value'),
+                        'value',
+                        0,
+                    );
+
+                    expect($activeTimeout)->toEqualWithDelta(0.05, 0.001);
+
+                    throw new RuntimeException('Simulated MariaDB statement failure.');
+                }))->toThrow(RuntimeException::class, 'Simulated MariaDB statement failure.');
+
+                $restoredTimeout = (float) data_get(
+                    (array) $mysqlConnection->selectOne('SELECT @@SESSION.max_statement_time AS value'),
+                    'value',
+                    0,
+                );
+                expect($restoredTimeout)->toEqualWithDelta(0.777, 0.001);
+            } finally {
+                $mysqlConnection->statement(
+                    'SET SESSION max_statement_time = '.number_format($originalTimeout, 3, '.', ''),
+                );
+            }
+        } else {
+            $originalTimeout = (int) data_get(
+                (array) $mysqlConnection->selectOne('SELECT @@SESSION.MAX_EXECUTION_TIME AS value'),
+                'value',
+                0,
+            );
+
+            try {
+                $mysqlConnection->statement('SET SESSION MAX_EXECUTION_TIME = 777');
+
+                expect(fn () => $statementDeadline->run($mysqlConnection, 50, function () use ($mysqlConnection): void {
+                    $activeTimeout = (int) data_get(
+                        (array) $mysqlConnection->selectOne('SELECT @@SESSION.MAX_EXECUTION_TIME AS value'),
+                        'value',
+                        0,
+                    );
+
+                    expect($activeTimeout)->toBe(50);
+
+                    throw new RuntimeException('Simulated MySQL statement failure.');
+                }))->toThrow(RuntimeException::class, 'Simulated MySQL statement failure.');
+
+                $restoredTimeout = (int) data_get(
+                    (array) $mysqlConnection->selectOne('SELECT @@SESSION.MAX_EXECUTION_TIME AS value'),
+                    'value',
+                    0,
+                );
+                expect($restoredTimeout)->toBe(777);
+            } finally {
+                $mysqlConnection->statement("SET SESSION MAX_EXECUTION_TIME = {$originalTimeout}");
+            }
+        }
+
         registerHardeningSearchResources([HardeningMysqlUnicodeResource::class]);
         HardeningMysqlUnicodeResource::create([
             'title' => 'Ärger MySQL Needle',

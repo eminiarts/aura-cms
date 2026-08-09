@@ -3,6 +3,12 @@
 namespace Aura\Base\Livewire;
 
 use Aura\Base\Contracts\GlobalSearchAdapter;
+use Aura\Base\Exceptions\GlobalSearchExecutionFailed;
+use Aura\Base\Exceptions\GlobalSearchExecutionTimedOut;
+use Aura\Base\Exceptions\GlobalSearchExecutionUnavailable;
+use Aura\Base\GlobalSearch\DatabaseGlobalSearchAdapter;
+use Aura\Base\GlobalSearch\DatabaseStatementDeadline;
+use Aura\Base\GlobalSearch\ForkedGlobalSearchExecutor;
 use Aura\Base\GlobalSearch\GlobalSearchBudget;
 use Aura\Base\GlobalSearch\GlobalSearchCandidate;
 use Aura\Base\GlobalSearch\GlobalSearchResult;
@@ -16,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Route as RoutingRoute;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
@@ -30,7 +37,11 @@ class GlobalSearch extends Component
 {
     private const DEFAULT_CANDIDATE_LIMIT = 100;
 
+    private const DEFAULT_DATABASE_STATEMENT_TIMEOUT_MILLISECONDS = 150;
+
     private const DEFAULT_GLOBAL_LIMIT = 15;
+
+    private const DEFAULT_ISOLATED_PAYLOAD_BYTES = 1_048_576;
 
     private const DEFAULT_MAX_FIELDS_PER_RESOURCE = 8;
 
@@ -50,13 +61,23 @@ class GlobalSearch extends Component
 
     private const DEFAULT_PER_RESOURCE_LIMIT = 5;
 
+    private const DEFAULT_PER_RESOURCE_TIMEOUT_MILLISECONDS = 150;
+
+    private const DEFAULT_TOTAL_TIMEOUT_MILLISECONDS = 750;
+
     private const HARD_MAX_CANDIDATE_LIMIT = 500;
+
+    private const HARD_MAX_DATABASE_STATEMENT_TIMEOUT_MILLISECONDS = 5_000;
 
     private const HARD_MAX_FIELDS_PER_RESOURCE = 32;
 
     private const HARD_MAX_GLOBAL_LIMIT = 100;
 
+    private const HARD_MAX_ISOLATED_PAYLOAD_BYTES = 4_194_304;
+
     private const HARD_MAX_PER_RESOURCE_LIMIT = 50;
+
+    private const HARD_MAX_PER_RESOURCE_TIMEOUT_MILLISECONDS = 5_000;
 
     private const HARD_MAX_QUERIES_PER_RESOURCE = 16;
 
@@ -69,6 +90,8 @@ class GlobalSearch extends Component
     private const HARD_MAX_TITLE_DEPENDENCIES = 8;
 
     private const HARD_MAX_TOTAL_QUERIES = 500;
+
+    private const HARD_MAX_TOTAL_TIMEOUT_MILLISECONDS = 10_000;
 
     public $bookmarks;
 
@@ -111,17 +134,46 @@ class GlobalSearch extends Component
             ),
         );
         $results = collect();
+        $startedAt = hrtime(true);
+        $totalTimeoutMilliseconds = $this->configuredLimit(
+            'total_timeout_ms',
+            self::DEFAULT_TOTAL_TIMEOUT_MILLISECONDS,
+            self::HARD_MAX_TOTAL_TIMEOUT_MILLISECONDS,
+        );
+        $perResourceTimeoutMilliseconds = $this->configuredLimit(
+            'per_resource_timeout_ms',
+            self::DEFAULT_PER_RESOURCE_TIMEOUT_MILLISECONDS,
+            self::HARD_MAX_PER_RESOURCE_TIMEOUT_MILLISECONDS,
+        );
 
         foreach ($this->searchableResources($user) as $resourceOrder => $resource) {
-            if ($budget->exhausted()) {
+            $remainingMilliseconds = $this->remainingMilliseconds($startedAt, $totalTimeoutMilliseconds);
+
+            if ($budget->exhausted() || $remainingMilliseconds < 1) {
+                if ($remainingMilliseconds < 1) {
+                    Log::warning('Aura global search exhausted its total execution deadline.', [
+                        'timeout_ms' => $totalTimeoutMilliseconds,
+                    ]);
+                }
+
                 break;
             }
 
             try {
                 $results = $results->concat(
-                    $this->searchResource($resource, $resourceOrder, $searchTerm, $globalLimit, $user, $budget),
+                    $this->searchResourceWithinDeadline(
+                        $resource,
+                        $resourceOrder,
+                        $searchTerm,
+                        $globalLimit,
+                        $user,
+                        $budget,
+                        min($perResourceTimeoutMilliseconds, $remainingMilliseconds),
+                    ),
                 );
-            } catch (Throwable) {
+            } catch (Throwable $exception) {
+                $this->logResourceFailure($resource, 'resource_failed', $exception);
+
                 continue;
             }
         }
@@ -197,6 +249,18 @@ class GlobalSearch extends Component
         return min(max($value, 1), $hardMaximum);
     }
 
+    private function databaseStatementTimeoutMilliseconds(int $executionTimeoutMilliseconds): int
+    {
+        return min(
+            $executionTimeoutMilliseconds,
+            $this->configuredLimit(
+                'database_statement_timeout_ms',
+                self::DEFAULT_DATABASE_STATEMENT_TIMEOUT_MILLISECONDS,
+                self::HARD_MAX_DATABASE_STATEMENT_TIMEOUT_MILLISECONDS,
+            ),
+        );
+    }
+
     private function destinationFor(Resource $result): ?string
     {
         if ($this->overridesResourceMethod($result, 'globalSearchDestination')) {
@@ -217,7 +281,9 @@ class GlobalSearch extends Component
         Resource $resource,
         Collection $authorized,
         GlobalSearchBudget $budget,
+        int $executionTimeoutMilliseconds,
     ): bool {
+        $startedAt = hrtime(true);
         $dependencies = $resource->globalSearchTitleDependencies();
 
         if (! is_array($dependencies)) {
@@ -244,12 +310,30 @@ class GlobalSearch extends Component
             }
         }
 
-        if ($metaFields->isNotEmpty() && ! $this->loadTitleMeta($resource, $models, $metaFields, $budget)) {
-            return false;
+        if ($metaFields->isNotEmpty()) {
+            $remainingMilliseconds = $this->remainingMilliseconds($startedAt, $executionTimeoutMilliseconds);
+
+            if ($remainingMilliseconds < 1 || ! $this->loadTitleMeta(
+                $resource,
+                $models,
+                $metaFields,
+                $budget,
+                $remainingMilliseconds,
+            )) {
+                return false;
+            }
         }
 
         foreach ($relations as $relationName) {
-            if (! $this->loadTitleRelation($resource, $models, $relationName, $budget)) {
+            $remainingMilliseconds = $this->remainingMilliseconds($startedAt, $executionTimeoutMilliseconds);
+
+            if ($remainingMilliseconds < 1 || ! $this->loadTitleRelation(
+                $resource,
+                $models,
+                $relationName,
+                $budget,
+                $remainingMilliseconds,
+            )) {
                 return false;
             }
         }
@@ -301,6 +385,7 @@ class GlobalSearch extends Component
         EloquentCollection $models,
         Collection $metaFields,
         GlobalSearchBudget $budget,
+        int $executionTimeoutMilliseconds,
     ): bool {
         if (! $resource->usesMeta() || ! $budget->claimQuery($resource)) {
             return false;
@@ -315,15 +400,20 @@ class GlobalSearch extends Component
         $maximumRows = max(1, count($keys) * $metaFields->count());
         $prototype = new Meta;
         $prototype->setConnection($resource->getConnectionName());
-        $metaRows = $resource->getConnection()
-            ->table($resource->getMetaTable())
-            ->where('metable_type', $resource->getMorphClass())
-            ->whereIn($resource->getMetaForeignKey(), $keys)
-            ->whereIn('key', $metaFields)
-            ->orderBy($resource->getMetaForeignKey())
-            ->orderBy('key')
-            ->limit($maximumRows)
-            ->get();
+        $connection = $resource->getConnection();
+        $metaRows = (new DatabaseStatementDeadline)->run(
+            $connection,
+            $this->databaseStatementTimeoutMilliseconds($executionTimeoutMilliseconds),
+            fn (): Collection => $connection
+                ->table($resource->getMetaTable())
+                ->where('metable_type', $resource->getMorphClass())
+                ->whereIn($resource->getMetaForeignKey(), $keys)
+                ->whereIn('key', $metaFields)
+                ->orderBy($resource->getMetaForeignKey())
+                ->orderBy('key')
+                ->limit($maximumRows)
+                ->get(),
+        );
         $grouped = $metaRows->groupBy(fn (object $row): string => (string) $row->{$resource->getMetaForeignKey()});
 
         foreach ($models as $model) {
@@ -347,6 +437,7 @@ class GlobalSearch extends Component
         EloquentCollection $models,
         string $relationName,
         GlobalSearchBudget $budget,
+        int $executionTimeoutMilliseconds,
     ): bool {
         $sample = $models->first();
 
@@ -360,9 +451,29 @@ class GlobalSearch extends Component
             return false;
         }
 
-        $models->load($relationName);
+        (new DatabaseStatementDeadline)->run(
+            $relation->getQuery()->getConnection(),
+            $this->databaseStatementTimeoutMilliseconds($executionTimeoutMilliseconds),
+            function () use ($models, $relationName): void {
+                $models->load($relationName);
+            },
+        );
 
         return true;
+    }
+
+    private function logResourceFailure(
+        Resource $resource,
+        string $reason,
+        ?Throwable $exception = null,
+        ?int $timeoutMilliseconds = null,
+    ): void {
+        Log::warning('Aura global search skipped a resource.', array_filter([
+            'resource' => $resource::class,
+            'reason' => $reason,
+            'exception' => $exception ? $exception::class : null,
+            'timeout_ms' => $timeoutMilliseconds,
+        ], fn (mixed $value): bool => $value !== null));
     }
 
     private function namedDestination(mixed $destination): ?string
@@ -461,6 +572,13 @@ class GlobalSearch extends Component
             : [];
     }
 
+    private function remainingMilliseconds(int $startedAt, int $totalMilliseconds): int
+    {
+        $elapsedMilliseconds = intdiv(hrtime(true) - $startedAt, 1_000_000);
+
+        return max(0, $totalMilliseconds - $elapsedMilliseconds);
+    }
+
     /**
      * @return Collection<int, \Aura\Base\Resource>
      */
@@ -523,6 +641,64 @@ class GlobalSearch extends Component
     }
 
     /**
+     * @param  Collection<int, array<string, mixed>>  $fields
+     * @return Collection<int, GlobalSearchCandidate>
+     */
+    private function searchCandidates(
+        Resource $resource,
+        Builder $query,
+        Collection $fields,
+        string $searchTerm,
+        int $candidateLimit,
+        GlobalSearchBudget $budget,
+        int $executionTimeoutMilliseconds,
+        bool $isolatedExecution,
+    ): Collection {
+        if ($this->usesDefaultDatabaseAdapter($resource)) {
+            $adapter = app(DatabaseGlobalSearchAdapter::class);
+            $statementTimeoutMilliseconds = $this->databaseStatementTimeoutMilliseconds($executionTimeoutMilliseconds);
+
+            return (new DatabaseStatementDeadline)->run(
+                $query->getConnection(),
+                $statementTimeoutMilliseconds,
+                fn (): Collection => $adapter->search(
+                    $resource,
+                    $query,
+                    $fields,
+                    $searchTerm,
+                    $candidateLimit,
+                    $budget,
+                )->take($candidateLimit)->values(),
+            );
+        }
+
+        if (! $isolatedExecution) {
+            throw new GlobalSearchExecutionUnavailable('A custom global search adapter requires isolated execution.');
+        }
+
+        $adapterClass = $resource->globalSearchAdapter();
+
+        if (! is_string($adapterClass) || ! is_a($adapterClass, GlobalSearchAdapter::class, true)) {
+            throw new GlobalSearchExecutionFailed('The global search adapter is invalid.');
+        }
+
+        $adapter = app($adapterClass);
+
+        if (! $adapter instanceof GlobalSearchAdapter) {
+            throw new GlobalSearchExecutionFailed('The global search adapter could not be resolved.');
+        }
+
+        return $adapter->search(
+            $resource,
+            $query,
+            $fields,
+            $searchTerm,
+            $candidateLimit,
+            $budget,
+        )->take($candidateLimit)->values();
+    }
+
+    /**
      * @return Collection<int, GlobalSearchResult>
      */
     private function searchResource(
@@ -532,7 +708,10 @@ class GlobalSearch extends Component
         int $globalLimit,
         Authenticatable $user,
         GlobalSearchBudget $budget,
+        int $executionTimeoutMilliseconds,
+        bool $isolatedExecution = false,
     ): Collection {
+        $startedAt = hrtime(true);
         $maximumFields = $this->configuredLimit(
             'max_fields_per_resource',
             self::DEFAULT_MAX_FIELDS_PER_RESOURCE,
@@ -560,34 +739,34 @@ class GlobalSearch extends Component
             return collect();
         }
 
-        $adapterClass = $resource->globalSearchAdapter();
-
-        if (! is_string($adapterClass) || ! is_a($adapterClass, GlobalSearchAdapter::class, true)) {
-            return collect();
-        }
-
-        $adapter = app($adapterClass);
-
-        if (! $adapter instanceof GlobalSearchAdapter) {
-            return collect();
-        }
-
         $candidateLimit = $this->configuredLimit(
             'candidate_limit',
             self::DEFAULT_CANDIDATE_LIMIT,
             self::HARD_MAX_CANDIDATE_LIMIT,
         );
-        $candidates = $adapter->search(
+        $remainingMilliseconds = $this->remainingMilliseconds($startedAt, $executionTimeoutMilliseconds);
+
+        if ($remainingMilliseconds < 1) {
+            return collect();
+        }
+
+        $candidates = $this->searchCandidates(
             $resource,
             $query,
             $fields,
             $searchTerm,
             $candidateLimit,
             $budget,
-        )->take($candidateLimit);
+            $remainingMilliseconds,
+            $isolatedExecution,
+        );
         $authorized = collect();
 
         foreach ($candidates as $candidate) {
+            if ($this->remainingMilliseconds($startedAt, $executionTimeoutMilliseconds) < 1) {
+                break;
+            }
+
             if (! $candidate instanceof GlobalSearchCandidate
                 || $resource::class !== $candidate->resource::class
                 || $candidate->rank < 1
@@ -602,7 +781,16 @@ class GlobalSearch extends Component
             }
         }
 
-        if ($authorized->isEmpty() || ! $this->hydrateTitleDependencies($resource, $authorized, $budget)) {
+        $remainingMilliseconds = $this->remainingMilliseconds($startedAt, $executionTimeoutMilliseconds);
+
+        if ($authorized->isEmpty()
+            || $remainingMilliseconds < 1
+            || ! $this->hydrateTitleDependencies(
+                $resource,
+                $authorized,
+                $budget,
+                $remainingMilliseconds,
+            )) {
             return collect();
         }
 
@@ -628,6 +816,88 @@ class GlobalSearch extends Component
             ->values();
     }
 
+    /**
+     * @return Collection<int, GlobalSearchResult>
+     */
+    private function searchResourceWithinDeadline(
+        Resource $resource,
+        int $resourceOrder,
+        string $searchTerm,
+        int $globalLimit,
+        Authenticatable $user,
+        GlobalSearchBudget $budget,
+        int $executionTimeoutMilliseconds,
+    ): Collection {
+        if ($this->usesDefaultDatabaseAdapter($resource)) {
+            return $this->searchResource(
+                $resource,
+                $resourceOrder,
+                $searchTerm,
+                $globalLimit,
+                $user,
+                $budget,
+                $executionTimeoutMilliseconds,
+            );
+        }
+
+        $executor = new ForkedGlobalSearchExecutor;
+
+        if (! $executor->isAvailable()) {
+            $budget->exhaustResource($resource);
+            $this->logResourceFailure($resource, 'isolation_unavailable');
+
+            return collect();
+        }
+
+        try {
+            $result = $executor->run(
+                fn (): array => [
+                    'results' => $this->searchResource(
+                        $resource,
+                        $resourceOrder,
+                        $searchTerm,
+                        $globalLimit,
+                        $user,
+                        $budget,
+                        $executionTimeoutMilliseconds,
+                        true,
+                    ),
+                    'query_count' => $budget->queryCountFor($resource),
+                ],
+                $executionTimeoutMilliseconds,
+                $this->configuredLimit(
+                    'isolated_payload_bytes',
+                    self::DEFAULT_ISOLATED_PAYLOAD_BYTES,
+                    self::HARD_MAX_ISOLATED_PAYLOAD_BYTES,
+                ),
+            );
+        } catch (GlobalSearchExecutionTimedOut $exception) {
+            $budget->exhaustResource($resource);
+            $this->logResourceFailure($resource, 'deadline_exceeded', $exception, $executionTimeoutMilliseconds);
+
+            return collect();
+        } catch (GlobalSearchExecutionFailed|GlobalSearchExecutionUnavailable $exception) {
+            $budget->exhaustResource($resource);
+            $this->logResourceFailure($resource, 'isolated_execution_failed', $exception);
+
+            return collect();
+        }
+
+        if (! is_array($result)
+            || ! $result['results'] instanceof Collection
+            || ! is_int($result['query_count'] ?? null)
+            || $result['results']->contains(fn (mixed $item): bool => ! $item instanceof GlobalSearchResult)) {
+            $budget->exhaustResource($resource);
+            $this->logResourceFailure($resource, 'invalid_isolated_result');
+
+            return collect();
+        }
+
+        $budget->synchronizeResourceQueries($resource, $result['query_count']);
+
+        return $result['results']->take($globalLimit)->values();
+    }
+
     /** @param  array<string, mixed>  $parts */
     private function urlPort(array $parts): int
     {
@@ -636,6 +906,12 @@ class GlobalSearch extends Component
         }
 
         return strtolower((string) ($parts['scheme'] ?? '')) === 'https' ? 443 : 80;
+    }
+
+    private function usesDefaultDatabaseAdapter(Resource $resource): bool
+    {
+        return ! $this->overridesResourceMethod($resource, 'globalSearchAdapter')
+            && config('aura.global_search.adapter', DatabaseGlobalSearchAdapter::class) === DatabaseGlobalSearchAdapter::class;
     }
 
     private function validatedLegacyDestination(mixed $destination): ?string

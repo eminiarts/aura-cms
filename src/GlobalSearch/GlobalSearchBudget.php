@@ -35,4 +35,27 @@ final class GlobalSearchBudget
     {
         return $this->totalQueries >= $this->maximumTotalQueries;
     }
+
+    public function exhaustResource(Resource $resource): void
+    {
+        $remainingClaims = max(0, $this->maximumQueriesPerResource - $this->queryCountFor($resource));
+
+        for ($claim = 0; $claim < $remainingClaims && ! $this->exhausted(); $claim++) {
+            $this->claimQuery($resource);
+        }
+    }
+
+    public function queryCountFor(Resource $resource): int
+    {
+        return $this->resourceQueries[$resource::class] ?? 0;
+    }
+
+    public function synchronizeResourceQueries(Resource $resource, int $queryCount): void
+    {
+        $missingClaims = max(0, $queryCount - $this->queryCountFor($resource));
+
+        while ($missingClaims > 0 && $this->claimQuery($resource)) {
+            $missingClaims--;
+        }
+    }
 }

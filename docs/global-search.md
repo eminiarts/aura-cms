@@ -45,6 +45,7 @@ The default search budget is configured separately from the feature toggle:
 ```php
 'global_search' => [
     'adapter' => Aura\Base\GlobalSearch\DatabaseGlobalSearchAdapter::class,
+    'execution_backend' => 'auto',
     'minimum_query_length' => 2,
     'maximum_query_length' => 64,
     'max_resources' => 25,
@@ -56,6 +57,10 @@ The default search budget is configured separately from the feature toggle:
     'max_title_dependencies' => 4,
     'max_queries_per_resource' => 4,
     'max_total_queries' => 100,
+    'per_resource_timeout_ms' => 150,
+    'total_timeout_ms' => 750,
+    'database_statement_timeout_ms' => 150,
+    'isolated_payload_bytes' => 1_048_576,
     'allowed_route_names' => ['aura.*'],
     'ranking' => [
         'exact' => 300,
@@ -65,9 +70,15 @@ The default search budget is configured separately from the feature toggle:
 ],
 ```
 
-The default database adapter selects a key-ordered window of at most `candidate_limit` visible rows per resource and ranks that window in PHP. It never runs an unbounded `%term%` table scan and never enables a resource's default eager loads. Aura also caps registered-resource inspection, authorized resources, searchable fields, title dependencies, per-resource queries, total queries, returned results, and query characters. Package hard caps still apply if published configuration is accidentally set much higher.
+The default database adapter selects a key-ordered window of at most `candidate_limit` visible rows per resource and ranks that window in PHP. It never runs an unbounded `%term%` table scan and never enables a resource's default eager loads. Aura also caps registered-resource inspection, authorized resources, searchable fields, title dependencies, per-resource queries, total queries, returned results, query characters, and elapsed search work. Package hard caps still apply if published configuration is accidentally set much higher.
 
-This bounded default has an intentional completeness tradeoff: a matching row beyond the key window is not returned. Applications requiring complete or relevance-indexed search should supply an indexed adapter (Scout, Meilisearch, a database full-text index, or equivalent) through `global_search.adapter` or the resource's `globalSearchAdapter()` hook. There is no portable way for Aura to cancel an already-running database query; custom adapters must use indexed queries and their backend's timeout/deadline controls.
+`database_statement_timeout_ms` is installed only around built-in candidate and title-dependency queries and is restored in a `finally` block, including after an exception or a nested deadline. A stricter pre-existing limit is left untouched. MySQL/MariaDB and PostgreSQL use session statement limits. SQLite uses its connection lock-wait limit in addition to the adapter's bounded indexed window. Microsoft SQL Server's PDO driver only exposes whole-second query timeouts, so an effective deadline below 1000 milliseconds (after applying the remaining resource and total budgets) fails closed on that driver. Unknown drivers fail closed rather than executing without a deadline.
+
+Custom adapters and their resource presentation work execute in a disposable child process. `per_resource_timeout_ms` kills the complete process group when the deadline expires; `total_timeout_ms` stops Aura from starting more resource work. `isolated_payload_bytes` bounds data returned to the parent. Exceptions and deadlines are logged using only the resource class, reason, exception class, and configured timeout; search terms and result data are never included.
+
+The `auto` and `fork` execution backends require a Unix CLI or CLI-server SAPI with `pcntl`, `posix`, and Unix socket support. Isolation is deliberately unavailable inside a nested isolated call or an Octane worker. On unsupported SAPIs, Windows, Octane, or when `execution_backend` is `none`, custom adapters fail closed and the remaining built-in resources continue. Keep the built-in database adapter when deploying to such a runtime, or move custom search to a separately supervised service with its own enforceable deadline.
+
+This bounded default has an intentional completeness tradeoff: a matching row beyond the key window is not returned. Applications requiring complete or relevance-indexed search should supply an indexed adapter (Scout, Meilisearch, a database full-text index, or equivalent) through `global_search.adapter` or the resource's `globalSearchAdapter()` hook, and must deploy on a runtime where Aura can isolate it.
 
 Ranking is deterministic inside the candidate window. A result's score is the configured match-quality score plus its field weight. Equal scores use resource registration order and then the model key in ascending order. Matching is exact, prefix, then contains using case-sensitive PHP string semantics. That gives SQLite, MySQL, PostgreSQL, and SQL Server the same codepoint/byte behavior regardless of database collation; composed and decomposed Unicode remain distinct. Query punctuation such as `%`, `_`, and `!` is literal because user input is never interpolated into a `LIKE` expression.
 
@@ -363,7 +374,7 @@ class Post extends Resource
    - Limit the number of searchable fields to essential ones
    - Lower `candidate_limit` for tighter latency; raise it only when the completeness tradeoff is acceptable
    - Use an indexed adapter when results must be complete across a large resource
-   - Configure backend-specific statement timeouts in custom adapters; Aura cannot portably interrupt a running query
+   - Verify that the deployment runtime supports Aura's isolated custom-adapter backend before enabling one
 
 2. **User Experience**
    - Choose searchable fields wisely - only fields users would search for
