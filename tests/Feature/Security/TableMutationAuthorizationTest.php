@@ -60,8 +60,13 @@ class Core05MutationResource extends Resource
 
     public static ?string $authoritativeQueryCallback = null;
 
+    public static ?Closure $authoritativeReadCallback = null;
+
     /** @var array<int, bool|string|null> */
     public static array $authoritativeReadLocks = [];
+
+    /** @var array<int, array<int, array<string, mixed>>|null> */
+    public static array $authoritativeReadOrders = [];
 
     /** @var array<int, int> */
     public static array $authoritativeReadTransactionLevels = [];
@@ -215,7 +220,7 @@ class Core05MutationResource extends Resource
         ): void {
             $callback = $resourceClass::$authoritativeQueryCallback;
 
-            if ($callback === null) {
+            if ($callback === null && ! $resourceClass::$authoritativeReadCallback instanceof Closure) {
                 return;
             }
 
@@ -236,7 +241,12 @@ class Core05MutationResource extends Resource
                 }
 
                 $resourceClass::$authoritativeReadLocks[] = $query->lock;
+                $resourceClass::$authoritativeReadOrders[] = $query->orders;
                 $resourceClass::$authoritativeReadTransactionLevels[] = $query->getConnection()->transactionLevel();
+
+                if ($resourceClass::$authoritativeReadCallback instanceof Closure) {
+                    ($resourceClass::$authoritativeReadCallback)($query);
+                }
 
                 if ($callback === 'before-query table switch') {
                     $query->from = 'core05_mutation_substitutions as posts';
@@ -409,10 +419,17 @@ class Core05MutationBoundaryPolicy
 {
     public static int $attempts = 0;
 
+    /** @var array<int, int> */
+    public static array $transactionLevels = [];
+
     public function update(User $user, Core05MutationResource $resource): bool
     {
         if ($resource->exists) {
             static::$attempts++;
+
+            if ($resource->getConnection()->transactionLevel() > 0) {
+                static::$transactionLevels[] = $resource->getConnection()->transactionLevel();
+            }
         }
 
         return $user->exists && $resource->exists;
@@ -488,6 +505,26 @@ class Core05TransactionMutationPolicy
         static::$transactionLevels[] = $resource->getConnection()->transactionLevel();
 
         return $user->exists && $resource->exists;
+    }
+}
+
+class Core05DeadlockRetryPolicy
+{
+    public static int $attempts = 0;
+
+    public function update(User $user, Core05MutationResource $resource): bool
+    {
+        if (! $resource->exists) {
+            return $user->exists;
+        }
+
+        static::$attempts++;
+
+        if (static::$attempts === 1) {
+            throw new PDOException('database is locked');
+        }
+
+        return $user->exists;
     }
 }
 
@@ -578,8 +615,12 @@ beforeEach(function () {
     Core05MorphMutationPolicy::$attempts = 0;
     Core05MorphMutationPolicy::$morphClasses = [];
     Core05MutationBoundaryPolicy::$attempts = 0;
+    Core05MutationBoundaryPolicy::$transactionLevels = [];
+    Core05DeadlockRetryPolicy::$attempts = 0;
     Core05MutationResource::$authoritativeQueryCallback = null;
+    Core05MutationResource::$authoritativeReadCallback = null;
     Core05MutationResource::$authoritativeReadLocks = [];
+    Core05MutationResource::$authoritativeReadOrders = [];
     Core05MutationResource::$authoritativeReadTransactionLevels = [];
     Core05MutationResource::$useCollidingIndexQuery = false;
     Core05MutationResource::$updateInvocations = 0;
@@ -890,6 +931,12 @@ function core05CallMutationSurface(
             ->call('bulkAction', 'markBulkReviewed'),
         'bulk collection' => livewire(Table::class, ['query' => $query, 'model' => $mounted])
             ->set('selected', [$id])
+            ->call('bulkCollectionAction', 'captureCollectionAttributes'),
+        'bulk record select all' => livewire(Table::class, ['query' => $query, 'model' => $mounted])
+            ->set('selectAll', true)
+            ->call('bulkAction', 'markBulkReviewed'),
+        'bulk collection select all' => livewire(Table::class, ['query' => $query, 'model' => $mounted])
+            ->set('selectAll', true)
             ->call('bulkCollectionAction', 'captureCollectionAttributes'),
         'Kanban update' => livewire(Table::class, ['query' => $query, 'model' => $mounted])
             ->call('updateCardStatus', $id, 'reviewed'),
@@ -1547,6 +1594,256 @@ test('authoritative query callbacks cannot substitute or poison mutation records
     'after-query model injection' => 'after-query model injection',
 ]);
 
+test('before-query callbacks cannot erase mandatory scope predicates', function (string $surface) {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+
+    $foreignType = Core05NoKanbanFieldResource::create([
+        'title' => 'Foreign callback target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $queryHash = DynamicFunctions::add(
+        fn (): Builder => Core05MutationResource::withoutGlobalScopes()->whereKey($foreignType->getKey())
+    );
+
+    Core05MutationResource::$authoritativeReadCallback = static function ($query) use ($foreignType): void {
+        $query->wheres = [];
+        $query->bindings['where'] = [];
+        $query->where('posts.id', '=', $foreignType->getKey());
+    };
+    $mutationTransactionLevel = DB::connection()->transactionLevel() + 1;
+
+    core05CallMutationSurface(
+        $surface,
+        $queryHash,
+        new Core05MutationResource,
+        $foreignType->getKey(),
+    )->assertStatus(422);
+
+    expect(Core05MutationBoundaryPolicy::$transactionLevels)->not->toContain($mutationTransactionLevel)
+        ->and(Core05MutationResource::$updateInvocations)->toBe(0)
+        ->and($foreignType->fresh()->content)->toBe('unchanged')
+        ->and($foreignType->fresh()->status)->toBe('draft');
+})->with([
+    'single action' => 'single action',
+    'bulk record' => 'bulk record',
+    'bulk collection' => 'bulk collection',
+    'bulk record select all' => 'bulk record select all',
+    'bulk collection select all' => 'bulk collection select all',
+    'Kanban update' => 'Kanban update',
+]);
+
+test('effective-scope callbacks cannot erase dynamic membership predicates', function () {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Dynamic callback target',
+        'content' => 'outside-callback-scope',
+        'status' => 'draft',
+    ]);
+    $queryHash = DynamicFunctions::add(static function () use ($resource): Builder {
+        $query = Core05MutationResource::query()
+            ->where('posts.content', 'inside-callback-scope');
+
+        $query->getQuery()->beforeQuery(static function ($query) use ($resource): void {
+            $isMutationKeyQuery = collect((array) $query->columns)->contains(
+                fn (mixed $column): bool => is_string($column)
+                    && str_contains($column, '__aura_mutation_key'),
+            );
+
+            if (! $isMutationKeyQuery) {
+                return;
+            }
+
+            $query->wheres = [];
+            $query->bindings['where'] = [];
+            $query->where('posts.id', '=', $resource->getKey());
+        });
+
+        return $query;
+    });
+    $mutationTransactionLevel = DB::connection()->transactionLevel() + 1;
+
+    core05CallMutationSurface(
+        'single action',
+        $queryHash,
+        new Core05MutationResource,
+        $resource->getKey(),
+    )->assertStatus(422);
+
+    expect(Core05MutationBoundaryPolicy::$transactionLevels)->not->toContain($mutationTransactionLevel)
+        ->and(Core05MutationResource::$updateInvocations)->toBe(0)
+        ->and($resource->fresh()->content)->toBe('outside-callback-scope');
+});
+
+test('before-query callbacks cannot detach mandatory where bindings', function () {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Binding integrity target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    Core05MutationResource::$authoritativeReadCallback = static function ($query): void {
+        $query->bindings['where'] = [];
+    };
+    $mutationTransactionLevel = DB::connection()->transactionLevel() + 1;
+
+    core05CallMutationSurface(
+        'single action',
+        null,
+        new Core05MutationResource,
+        $resource->getKey(),
+    )->assertStatus(422);
+
+    expect(Core05MutationBoundaryPolicy::$transactionLevels)->not->toContain($mutationTransactionLevel)
+        ->and(Core05MutationResource::$updateInvocations)->toBe(0)
+        ->and($resource->fresh()->content)->toBe('unchanged');
+});
+
+test('single action rejects a row that concurrently leaves its index scope before locking', function () {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Index scope race target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    Core05MutationResource::$authoritativeReadCallback = static function ($query) use ($resource): void {
+        $query->getConnection()->table('posts')
+            ->where('id', $resource->getKey())
+            ->update(['title' => 'Excluded by indexQuery']);
+    };
+    $mutationTransactionLevel = DB::connection()->transactionLevel() + 1;
+
+    core05CallMutationSurface(
+        'single action',
+        null,
+        new Core05MutationResource,
+        $resource->getKey(),
+    )->assertNotFound();
+
+    expect(Core05MutationBoundaryPolicy::$transactionLevels)->not->toContain($mutationTransactionLevel)
+        ->and($resource->fresh()->title)->toBe('Index scope race target')
+        ->and($resource->fresh()->content)->toBe('unchanged');
+});
+
+test('Kanban rejects a row that concurrently leaves its Kanban scope before locking', function () {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Kanban scope race target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    Core05MutationResource::$authoritativeReadCallback = static function ($query) use ($resource): void {
+        $query->getConnection()->table('posts')
+            ->where('id', $resource->getKey())
+            ->update(['title' => 'Excluded by kanbanQuery']);
+    };
+    $mutationTransactionLevel = DB::connection()->transactionLevel() + 1;
+
+    core05CallMutationSurface(
+        'Kanban update',
+        null,
+        new Core05MutationResource,
+        $resource->getKey(),
+    )->assertNotFound();
+
+    expect(Core05MutationBoundaryPolicy::$transactionLevels)->not->toContain($mutationTransactionLevel)
+        ->and($resource->fresh()->title)->toBe('Kanban scope race target')
+        ->and($resource->fresh()->status)->toBe('draft');
+});
+
+test('explicit bulk rejects a row that concurrently leaves its dynamic scope before locking', function (
+    string $surface,
+) {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Dynamic scope race target',
+        'content' => 'eligible-for-dynamic-mutation',
+        'status' => 'draft',
+    ]);
+    $queryHash = DynamicFunctions::add(
+        fn (): Builder => Core05MutationResource::query()
+            ->where('posts.content', 'eligible-for-dynamic-mutation')
+    );
+
+    Core05MutationResource::$authoritativeReadCallback = static function ($query) use ($resource): void {
+        $query->getConnection()->table('posts')
+            ->where('id', $resource->getKey())
+            ->update(['content' => 'left-dynamic-mutation-scope']);
+    };
+    $mutationTransactionLevel = DB::connection()->transactionLevel() + 1;
+
+    core05CallMutationSurface(
+        $surface,
+        $queryHash,
+        new Core05MutationResource,
+        $resource->getKey(),
+    )->assertHasErrors(['selected']);
+
+    expect(Core05MutationBoundaryPolicy::$transactionLevels)->not->toContain($mutationTransactionLevel)
+        ->and($resource->fresh()->content)->toBe('eligible-for-dynamic-mutation');
+})->with([
+    'bulk record' => 'bulk record',
+    'bulk collection' => 'bulk collection',
+]);
+
+test('select-all rejects a row that concurrently leaves its parent scope before locking', function (
+    string $surface,
+) {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+
+    $parent = Core05MutationParentResource::create(['title' => 'Mutation parent']);
+    $otherParent = Core05MutationParentResource::create(['title' => 'Other mutation parent']);
+    $resource = Core05MutationResource::create([
+        'title' => 'Parent scope race target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+        'parent_id' => $parent->getKey(),
+    ]);
+
+    Core05MutationResource::$authoritativeReadCallback = static function ($query) use ($otherParent, $resource): void {
+        $query->getConnection()->table('posts')
+            ->where('id', $resource->getKey())
+            ->update(['parent_id' => $otherParent->getKey()]);
+    };
+    $mutationTransactionLevel = DB::connection()->transactionLevel() + 1;
+
+    $component = livewire(Table::class, [
+        'query' => null,
+        'model' => new Core05MutationResource,
+        'parent' => $parent,
+        'field' => $parent->fieldBySlug('children'),
+    ])->set('selectAll', true);
+
+    $result = match ($surface) {
+        'bulk record select all' => $component->call('bulkAction', 'markBulkReviewed'),
+        'bulk collection select all' => $component->call('bulkCollectionAction', 'captureCollectionAttributes'),
+    };
+
+    $result->assertHasErrors(['selected']);
+
+    expect(Core05MutationBoundaryPolicy::$transactionLevels)->not->toContain($mutationTransactionLevel)
+        ->and($resource->fresh()->parent_id)->toBe($parent->getKey())
+        ->and($resource->fresh()->content)->toBe('unchanged');
+})->with([
+    'bulk record select all' => 'bulk record select all',
+    'bulk collection select all' => 'bulk collection select all',
+]);
+
 test('mutation records preserve the trusted mounted instance morph identity', function (string $surface) {
     $this->actingAs(createSuperAdmin());
     Gate::policy(Core05MorphMutationResource::class, Core05MorphMutationPolicy::class);
@@ -1644,6 +1941,81 @@ test('mutation selection authorization and handlers share one locked transaction
     'bulk collection' => 'bulk collection',
     'Kanban update' => 'Kanban update',
 ]);
+
+test('bulk mutation locks and dispatches records in deterministic primary-key order', function (bool $selectAll) {
+    $this->actingAs(createSuperAdmin());
+
+    $resources = collect([
+        Core05MutationResource::create([
+            'title' => 'First ordered lock target',
+            'content' => 'unchanged',
+            'status' => 'draft',
+        ]),
+        Core05MutationResource::create([
+            'title' => 'Second ordered lock target',
+            'content' => 'unchanged',
+            'status' => 'draft',
+        ]),
+        Core05MutationResource::create([
+            'title' => 'Third ordered lock target',
+            'content' => 'unchanged',
+            'status' => 'draft',
+        ]),
+    ]);
+    $expectedIds = $resources->pluck('id')->sort()->values()->all();
+    Core05MutationResource::$authoritativeQueryCallback = 'observe transaction';
+
+    $component = livewire(Table::class, [
+        'query' => null,
+        'model' => new Core05MutationResource,
+    ])->set('selected', $resources->pluck('id')->reverse()->values()->all());
+
+    if ($selectAll) {
+        $component->set('selectAll', true);
+    }
+
+    $component->call('bulkCollectionAction', 'captureCollectionAttributes')
+        ->assertHasNoErrors();
+
+    $receiver = Core05MutationResource::findOrFail($expectedIds[0]);
+    $snapshot = json_decode($receiver->content, true, flags: JSON_THROW_ON_ERROR);
+
+    expect($snapshot['ids'])->toBe($expectedIds)
+        ->and(Core05MutationResource::$authoritativeReadOrders)->not->toBeEmpty()
+        ->and(collect(Core05MutationResource::$authoritativeReadOrders)->last())->toBe([
+            [
+                'column' => 'posts.id',
+                'direction' => 'asc',
+            ],
+        ]);
+})->with([
+    'explicit selection' => false,
+    'select all' => true,
+]);
+
+test('mutation transactions retry the complete authorization unit after a deadlock', function () {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05DeadlockRetryPolicy::class);
+
+    $mounted = (new Core05MutationResource)->setConnection('core05_mutation_secondary');
+    $resource = $mounted->newQuery()->create([
+        'title' => 'Deadlock retry target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    app(TableMutationDispatcher::class)->dispatchAction(
+        $mounted->newQuery(),
+        new TableMutationModelDescriptor($mounted),
+        $resource->getKey(),
+        'markReviewed',
+        $mounted->getActions(),
+    );
+
+    expect(Core05DeadlockRetryPolicy::$attempts)->toBe(2)
+        ->and(Core05MutationResource::$updateInvocations)->toBe(1)
+        ->and($resource->fresh()->content)->toBe('reviewed-by-action');
+});
 
 test('a denied mutation rolls back row changes made during authorization', function (string $surface) {
     $this->actingAs(createSuperAdmin());

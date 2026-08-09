@@ -3,20 +3,38 @@
 namespace Aura\Base\Livewire\Table;
 
 use Aura\Base\Contracts\TableResource;
+use BackedEnum;
+use DateTimeInterface;
 use Illuminate\Contracts\Auth\Access\Gate;
+use Illuminate\Contracts\Database\Query\Expression as ExpressionContract;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Validation\ValidationException;
 use ReflectionMethod;
+use Stringable;
+use UnitEnum;
 
+/**
+ * Executes table mutations in one locked authorization transaction. Outermost
+ * deadlock retries repeat the complete policy and handler unit, so external
+ * effects must be idempotent; Laravel surfaces nested deadlocks to the caller.
+ */
 final class TableMutationDispatcher
 {
     private const BULK_MODE_COLLECTION = 'collection';
 
     private const BULK_MODE_RECORD = 'record';
+
+    /**
+     * Request up to three outermost deadlock attempts. Each retry repeats the
+     * complete policy and handler closure; nested deadlocks are not retried.
+     */
+    private const DEADLOCK_RETRY_ATTEMPTS = 3;
 
     /** @var array<string, string> */
     private const DEFAULT_ABILITIES = [
@@ -74,7 +92,6 @@ final class TableMutationDispatcher
             $scope,
         ): mixed {
             $modelDescriptor->assertMatches($scope);
-            $scope = $this->applyTrashedScope($scope, $descriptor);
             $record = $this->findRecord(
                 $scope,
                 $modelDescriptor,
@@ -91,15 +108,15 @@ final class TableMutationDispatcher
             $this->authorize($record, $descriptor['ability']);
 
             return $record->{$action}();
-        });
+        }, self::DEADLOCK_RETRY_ATTEMPTS);
     }
 
     /**
      * Resolve, authorize, and execute one declared bulk mutation atomically.
      *
-     * A dispatch is constrained to one Eloquent model query and therefore one
-     * database connection. External effects from custom handlers cannot be
-     * rolled back by the database transaction.
+     * A dispatch is constrained to one mounted model and connection; scope
+     * membership and row locking execute in one SQL statement. External effects
+     * from custom handlers cannot be rolled back by the database transaction.
      *
      * @param  array<string, mixed>  $declaredActions
      */
@@ -129,7 +146,6 @@ final class TableMutationDispatcher
             $selected,
         ): mixed {
             $modelDescriptor->assertMatches($scope);
-            $scope = $this->applyTrashedScope($scope, $descriptor);
             $records = $this->resolveExactSelection(
                 $scope,
                 $modelDescriptor,
@@ -163,7 +179,7 @@ final class TableMutationDispatcher
             }
 
             return $result;
-        });
+        }, self::DEADLOCK_RETRY_ATTEMPTS);
     }
 
     public function dispatchFieldUpdate(
@@ -193,7 +209,7 @@ final class TableMutationDispatcher
             }
 
             $this->updateField($record, $fieldSlug, $value);
-        });
+        }, self::DEADLOCK_RETRY_ATTEMPTS);
     }
 
     public function findRecord(
@@ -205,15 +221,10 @@ final class TableMutationDispatcher
     ): Model {
         $modelDescriptor->assertMatches($scope);
         $expectedIdentity = $modelDescriptor->canonicalIdentity($id);
-        $effectiveKeys = $this->effectiveKeys($scope->whereKey($id), $modelDescriptor);
-
-        if (count($effectiveKeys) !== 1 || ! array_key_exists($expectedIdentity, $effectiveKeys)) {
-            abort(404);
-        }
-
         $records = $this->authoritativeRecords(
+            (clone $scope)->whereKey($id),
             $modelDescriptor,
-            $effectiveKeys,
+            [$expectedIdentity => $id],
             $trashed,
             $lockForUpdate,
         );
@@ -310,12 +321,50 @@ final class TableMutationDispatcher
             : $scope;
     }
 
-    /**
-     * @param  array{ability: string, conditional_logic: mixed, mode: 'collection'|'record', trashed: 'only'|'with'|null}  $descriptor
-     */
-    private function applyTrashedScope(Builder $scope, array $descriptor): Builder
+    private function applyVerifiedBeforeQueryCallbacks(QueryBuilder $query): void
     {
-        return $this->applyTrashedMode($scope, $descriptor['trashed']);
+        $callbacks = $query->beforeQueryCallbacks;
+        $query->beforeQueryCallbacks = [];
+
+        foreach ($callbacks as $callback) {
+            if (! is_callable($callback)) {
+                abort(422, 'The table mutation query contains an invalid callback.');
+            }
+
+            $connection = $query->getConnection();
+            $grammar = $query->getGrammar();
+            $processor = $query->getProcessor();
+            $mandatoryConstraints = $this->mutationConstraintSnapshot($query);
+
+            $callback($query);
+
+            if (
+                $query->getConnection() !== $connection
+                || $query->getGrammar() !== $grammar
+                || $query->getProcessor() !== $processor
+                || $query->beforeQueryCallbacks !== []
+            ) {
+                abort(422, 'The table mutation query callback changed its trusted query context.');
+            }
+
+            $this->assertMandatoryConstraintsPreserved($query, $mandatoryConstraints);
+        }
+    }
+
+    /**
+     * @param  list<mixed>  $constraints
+     */
+    private function assertAppendedConstraintsAreConjunctive(array $constraints): void
+    {
+        foreach ($constraints as $constraint) {
+            if (
+                ! is_array($constraint)
+                || ! is_string($constraint['boolean'] ?? null)
+                || strtolower($constraint['boolean']) !== 'and'
+            ) {
+                abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
+            }
+        }
     }
 
     /**
@@ -331,47 +380,102 @@ final class TableMutationDispatcher
     }
 
     /**
-     * Rehydrate trusted base-table attributes under the model's default scopes.
+     * @param  array{
+     *     fixed: mixed,
+     *     wheres: list<mixed>,
+     *     where_bindings: list<mixed>,
+     *     havings: list<mixed>,
+     *     having_bindings: list<mixed>
+     * }  $mandatoryConstraints
+     */
+    private function assertMandatoryConstraintsPreserved(
+        QueryBuilder $query,
+        array $mandatoryConstraints,
+    ): void {
+        $currentConstraints = $this->mutationConstraintSnapshot($query);
+
+        if (
+            $currentConstraints['fixed'] !== $mandatoryConstraints['fixed']
+            || ! $this->hasConstraintPrefix($currentConstraints['wheres'], $mandatoryConstraints['wheres'])
+            || ! $this->hasConstraintPrefix(
+                $currentConstraints['where_bindings'],
+                $mandatoryConstraints['where_bindings'],
+            )
+            || ! $this->hasConstraintPrefix($currentConstraints['havings'], $mandatoryConstraints['havings'])
+            || ! $this->hasConstraintPrefix(
+                $currentConstraints['having_bindings'],
+                $mandatoryConstraints['having_bindings'],
+            )
+        ) {
+            abort(422, 'The table mutation query callback removed a mandatory scope constraint.');
+        }
+
+        $this->assertAppendedConstraintsAreConjunctive(
+            array_slice($query->wheres, count($mandatoryConstraints['wheres'])),
+        );
+        $this->assertAppendedConstraintsAreConjunctive(
+            array_slice($query->havings ?? [], count($mandatoryConstraints['havings'])),
+        );
+    }
+
+    /**
+     * Select trusted base rows while proving effective-scope membership in the
+     * same statement that locks them. The outer query reapplies mandatory model
+     * scopes; the key subquery retains index, parent, dynamic, and Kanban scope.
+     * Primary-key ordering gives competing bulk mutations a stable lock order.
      *
-     * @param  array<string, int|string>  $keys
+     * @param  array<string, int|string>|null  $expectedKeys
      * @return Collection<int, Model&TableResource>
      */
     private function authoritativeRecords(
+        Builder $scope,
         TableMutationModelDescriptor $modelDescriptor,
-        array $keys,
+        ?array $expectedKeys,
         ?string $trashed,
         bool $lockForUpdate = false,
     ): Collection {
+        $modelDescriptor->assertMatches($scope);
         $model = $modelDescriptor->model();
+        $keyAlias = '__aura_mutation_key';
+        $qualifiedKey = $modelDescriptor->table.'.'.$modelDescriptor->keyName;
 
-        if ($keys === []) {
-            return $model->newCollection();
-        }
+        $effectiveQuery = $this->applyTrashedMode(clone $scope, $trashed);
+        $effectiveQuery = $this->applyScopesOnce($effectiveQuery);
+        $modelDescriptor->assertMatches($effectiveQuery);
+        $effectiveQuery->setEagerLoads([]);
+        $effectiveQuery->select($qualifiedKey.' as '.$keyAlias);
+        $effectiveBaseQuery = $effectiveQuery->getQuery();
+        $this->applyVerifiedBeforeQueryCallbacks($effectiveBaseQuery);
+        $modelDescriptor->assertMatches($effectiveQuery);
+        $effectiveBaseQuery->select($qualifiedKey.' as '.$keyAlias);
 
-        $query = $model->newQuery();
-        $query = $this->applyTrashedMode($query, $trashed);
-        $query->whereKey(array_values($keys));
-        $query = $this->applyScopesOnce($query);
-        $modelDescriptor->assertMatches($query);
-        $query->select($model->qualifyColumn('*'));
+        $authoritativeQuery = $this->applyTrashedMode($model->newQuery(), $trashed);
+        $authoritativeQuery = $this->applyScopesOnce($authoritativeQuery);
+        $modelDescriptor->assertMatches($authoritativeQuery);
+        $eagerLoads = $authoritativeQuery->getEagerLoads();
+        $authoritativeQuery->setEagerLoads([]);
+        $authoritativeQuery->whereIn($qualifiedKey, $effectiveBaseQuery);
+        $authoritativeQuery->select($modelDescriptor->table.'.*');
+        $authoritativeQuery->reorder($qualifiedKey);
 
         if ($lockForUpdate) {
-            $query->lockForUpdate();
+            $authoritativeQuery->lockForUpdate();
         }
 
-        $baseQuery = $query->getQuery();
-        $baseQuery->applyBeforeQueryCallbacks();
-        $modelDescriptor->assertMatches($query);
-        $baseQuery->select($modelDescriptor->table.'.*');
+        $authoritativeBaseQuery = $authoritativeQuery->getQuery();
+        $this->applyVerifiedBeforeQueryCallbacks($authoritativeBaseQuery);
+        $modelDescriptor->assertMatches($authoritativeQuery);
+        $authoritativeBaseQuery->select($modelDescriptor->table.'.*');
+        $authoritativeBaseQuery->reorder($qualifiedKey);
 
         if ($lockForUpdate) {
-            $baseQuery->lockForUpdate();
+            $authoritativeBaseQuery->lockForUpdate();
         }
 
-        $rows = $baseQuery->getConnection()->select(
-            $baseQuery->toSql(),
-            $baseQuery->getBindings(),
-            ! $baseQuery->useWritePdo,
+        $rows = $authoritativeBaseQuery->getConnection()->select(
+            $authoritativeBaseQuery->toSql(),
+            $authoritativeBaseQuery->getBindings(),
+            ! $authoritativeBaseQuery->useWritePdo,
         );
 
         $hydratedRecords = [];
@@ -384,36 +488,22 @@ final class TableMutationDispatcher
             $record = $modelDescriptor->hydrate((array) $row);
             $identity = $modelDescriptor->canonicalIdentity($record->getKey());
 
-            if (! array_key_exists($identity, $keys)) {
+            if ($expectedKeys !== null && ! array_key_exists($identity, $expectedKeys)) {
                 abort(422, 'The authoritative table mutation query returned an invalid record.');
             }
 
             $hydratedRecords[] = $record;
         }
 
-        $hydratedRecords = $query->eagerLoadRelations($hydratedRecords);
+        $authoritativeQuery->setEagerLoads($eagerLoads);
+        $hydratedRecords = $authoritativeQuery->eagerLoadRelations($hydratedRecords);
         $records = $model->newCollection($hydratedRecords);
 
         $records->each(function (Model $record) use ($modelDescriptor): void {
             $modelDescriptor->assertModelMatches($record);
         });
 
-        $records = $this->canonicalizeRecords($records, $modelDescriptor);
-        $recordsByIdentity = [];
-
-        foreach ($records as $record) {
-            $recordsByIdentity[$modelDescriptor->canonicalIdentity($record->getKey())] = $record;
-        }
-
-        $orderedRecords = [];
-
-        foreach (array_keys($keys) as $identity) {
-            if (array_key_exists($identity, $recordsByIdentity)) {
-                $orderedRecords[] = $recordsByIdentity[$identity];
-            }
-        }
-
-        return $model->newCollection($orderedRecords);
+        return $this->canonicalizeRecords($records, $modelDescriptor);
     }
 
     /**
@@ -491,46 +581,67 @@ final class TableMutationDispatcher
     }
 
     /**
-     * Resolve only qualified base-table keys from the effective table scope.
-     *
-     * @return array<string, int|string>
+     * @param  list<mixed>  $constraints
+     * @param  list<mixed>  $mandatoryConstraints
      */
-    private function effectiveKeys(
-        Builder $scope,
-        TableMutationModelDescriptor $modelDescriptor,
-    ): array {
-        $modelDescriptor->assertMatches($scope);
-        $keyAlias = '__aura_mutation_key';
-        $keyQuery = $this->applyScopesOnce($scope);
-        $modelDescriptor->assertMatches($keyQuery);
-        $keyQuery->setEagerLoads([]);
-        $keyQuery->select($modelDescriptor->table.'.'.$modelDescriptor->keyName.' as '.$keyAlias);
-        $baseQuery = $keyQuery->toBase();
+    private function hasConstraintPrefix(array $constraints, array $mandatoryConstraints): bool
+    {
+        return array_slice($constraints, 0, count($mandatoryConstraints)) === $mandatoryConstraints;
+    }
 
-        $baseQuery->applyBeforeQueryCallbacks();
-        $modelDescriptor->assertMatches($keyQuery);
-        $baseQuery->select($modelDescriptor->table.'.'.$modelDescriptor->keyName.' as '.$keyAlias);
+    /**
+     * @return array{
+     *     fixed: mixed,
+     *     wheres: list<mixed>,
+     *     where_bindings: list<mixed>,
+     *     havings: list<mixed>,
+     *     having_bindings: list<mixed>
+     * }
+     */
+    private function mutationConstraintSnapshot(QueryBuilder $query): array
+    {
+        $whereBindings = $query->bindings['where'];
+        $havingBindings = $query->bindings['having'];
 
-        $rows = $baseQuery->getConnection()->select(
-            $baseQuery->toSql(),
-            $baseQuery->getBindings(),
-            ! $baseQuery->useWritePdo,
-        );
-
-        $keys = [];
-
-        foreach ($rows as $row) {
-            $key = is_object($row) && property_exists($row, $keyAlias)
-                ? $row->{$keyAlias}
-                : null;
-            $identity = $modelDescriptor->canonicalIdentity($key);
-
-            if (! array_key_exists($identity, $keys)) {
-                $keys[$identity] = $key;
-            }
+        if (
+            ! array_is_list($query->wheres)
+            || ! array_is_list($whereBindings)
+            || ($query->havings !== null && ! array_is_list($query->havings))
+            || ! array_is_list($havingBindings)
+        ) {
+            abort(422, 'The table mutation query contains ambiguous constraints.');
         }
 
-        return $keys;
+        return [
+            'fixed' => $this->normalizeMutationConstraint([
+                'aggregate' => $query->aggregate,
+                'distinct' => $query->distinct,
+                'from' => $query->from,
+                'index_hint' => $query->indexHint,
+                'joins' => $query->joins,
+                'groups' => $query->groups,
+                'orders' => $query->orders,
+                'limit' => $query->limit,
+                'group_limit' => $query->groupLimit,
+                'offset' => $query->offset,
+                'unions' => $query->unions,
+                'union_limit' => $query->unionLimit,
+                'union_offset' => $query->unionOffset,
+                'union_orders' => $query->unionOrders,
+                'bindings' => [
+                    'from' => $query->bindings['from'],
+                    'join' => $query->bindings['join'],
+                    'group_by' => $query->bindings['groupBy'],
+                    'order' => $query->bindings['order'],
+                    'union' => $query->bindings['union'],
+                    'union_order' => $query->bindings['unionOrder'],
+                ],
+            ], $query),
+            'wheres' => $this->normalizeMutationConstraintList($query->wheres, $query),
+            'where_bindings' => $this->normalizeMutationConstraintList($whereBindings, $query),
+            'havings' => $this->normalizeMutationConstraintList($query->havings ?? [], $query),
+            'having_bindings' => $this->normalizeMutationConstraintList($havingBindings, $query),
+        ];
     }
 
     private function mutationMethod(Model $receiver, string $action, string $mode): ReflectionMethod
@@ -551,6 +662,98 @@ final class TableMutationDispatcher
         return $method;
     }
 
+    private function normalizeMutationConstraint(mixed $value, QueryBuilder $query): mixed
+    {
+        if ($value instanceof JoinClause) {
+            return [
+                'class' => $value::class,
+                'type' => $this->normalizeMutationConstraint($value->type, $value),
+                'table' => $this->normalizeMutationConstraint($value->table, $value),
+                'query' => $this->mutationConstraintSnapshot($value),
+            ];
+        }
+
+        if ($value instanceof Builder) {
+            return [
+                'class' => $value::class,
+                'model' => $value->getModel()::class,
+                'query' => $this->mutationConstraintSnapshot($value->getQuery()),
+            ];
+        }
+
+        if ($value instanceof QueryBuilder) {
+            return [
+                'class' => $value::class,
+                'query' => $this->mutationConstraintSnapshot($value),
+            ];
+        }
+
+        if ($value instanceof ExpressionContract) {
+            return [
+                'expression' => $this->normalizeMutationConstraint(
+                    $value->getValue($query->getGrammar()),
+                    $query,
+                ),
+            ];
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            return [
+                'date' => $value->format('Y-m-d H:i:s.uP'),
+                'timezone' => $value->getTimezone()->getName(),
+            ];
+        }
+
+        if ($value instanceof BackedEnum) {
+            return [
+                'enum' => $value::class,
+                'value' => $value->value,
+            ];
+        }
+
+        if ($value instanceof UnitEnum) {
+            return [
+                'enum' => $value::class,
+                'name' => $value->name,
+            ];
+        }
+
+        if ($value instanceof Stringable) {
+            return [
+                'stringable' => $value::class,
+                'value' => (string) $value,
+            ];
+        }
+
+        if (is_array($value)) {
+            $normalized = [];
+
+            foreach ($value as $key => $item) {
+                $normalized[$key] = $this->normalizeMutationConstraint($item, $query);
+            }
+
+            return $normalized;
+        }
+
+        if (is_object($value) || is_resource($value)) {
+            abort(422, 'The table mutation query contains an ambiguous scope constraint.');
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param  array<mixed>  $values
+     * @return list<mixed>
+     */
+    private function normalizeMutationConstraintList(array $values, QueryBuilder $query): array
+    {
+        return array_values(array_map(
+            fn (mixed $value): mixed => $this->normalizeMutationConstraint($value, $query),
+            $values,
+        ));
+    }
+
     /**
      * @return Collection<int, Model&TableResource>
      */
@@ -562,28 +765,17 @@ final class TableMutationDispatcher
         ?string $trashed,
     ): Collection {
         if ($selectAll) {
-            $effectiveKeys = $this->effectiveKeys($scope, $modelDescriptor);
-
-            if ($effectiveKeys === []) {
-                throw ValidationException::withMessages([
-                    'selected' => 'Select at least one record.',
-                ]);
-            }
-
             $records = $this->authoritativeRecords(
+                $scope,
                 $modelDescriptor,
-                $effectiveKeys,
+                null,
                 $trashed,
                 lockForUpdate: true,
             );
-            $resolvedIdentities = $this->canonicalIdentities($records, $modelDescriptor);
 
-            if (
-                array_diff_key($effectiveKeys, $resolvedIdentities) !== []
-                || array_diff_key($resolvedIdentities, $effectiveKeys) !== []
-            ) {
+            if ($records->isEmpty()) {
                 throw ValidationException::withMessages([
-                    'selected' => 'The selected records are invalid.',
+                    'selected' => 'Select at least one record.',
                 ]);
             }
 
@@ -614,36 +806,24 @@ final class TableMutationDispatcher
             ]);
         }
 
-        $effectiveKeys = $this->effectiveKeys(
-            $scope->whereKey(array_values($normalized)),
-            $modelDescriptor,
-        );
-        $expectedIdentities = collect($normalized)
+        $expectedKeys = collect($normalized)
             ->mapWithKeys(
-                fn (int|string $id): array => [$modelDescriptor->canonicalIdentity($id) => true]
+                fn (int|string $id): array => [$modelDescriptor->canonicalIdentity($id) => $id]
             )
             ->all();
 
-        if (
-            array_diff_key($expectedIdentities, $effectiveKeys) !== []
-            || array_diff_key($effectiveKeys, $expectedIdentities) !== []
-        ) {
-            throw ValidationException::withMessages([
-                'selected' => 'The selected records are invalid.',
-            ]);
-        }
-
         $records = $this->authoritativeRecords(
+            (clone $scope)->whereKey(array_values($normalized)),
             $modelDescriptor,
-            $effectiveKeys,
+            $expectedKeys,
             $trashed,
             lockForUpdate: true,
         );
         $resolvedIdentities = $this->canonicalIdentities($records, $modelDescriptor);
 
         if (
-            array_diff_key($expectedIdentities, $resolvedIdentities) !== []
-            || array_diff_key($resolvedIdentities, $expectedIdentities) !== []
+            array_diff_key($expectedKeys, $resolvedIdentities) !== []
+            || array_diff_key($resolvedIdentities, $expectedKeys) !== []
         ) {
             throw ValidationException::withMessages([
                 'selected' => 'The selected records are invalid.',
