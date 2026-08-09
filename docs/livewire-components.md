@@ -1209,13 +1209,72 @@ resources may carry preassigned UUID/ULID keys and remain create contexts.
 
 Persisted contexts are signed from a scoped, canonical `table.*` reload rather
 than the caller's possibly partial model projection. They also contain a
-durable row-incarnation token stored in
-`aura_embedded_resource_incarnations`. Publish/run Aura's migrations when
-upgrading. Aura rotates an existing token on Eloquent `deleted` and `restored`
-events, so even a byte-identical delete/recreate with the same UUID is rejected.
-Secure resource deletion must preserve those Eloquent lifecycle events; raw or
-quiet deletion bypasses the incarnation contract. Ordinary owner changes also
-make the fingerprint stale and require a page refresh.
+durable row-incarnation token and version stored in
+`aura_embedded_resource_incarnations`. Publish and run Aura's create and upgrade
+migrations before deploying secure fields. The upgrade intentionally removes
+old incarnation rows, invalidating contexts issued under the previous contract.
+
+Every concrete persisted resource class used by a secure embedded field must
+also install its database guard in an application deployment migration:
+
+```php
+use App\Aura\Resources\Quote;
+use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
+use Illuminate\Database\Migrations\Migration;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        app(EmbeddedResourceIncarnationGuard::class)->install(Quote::class);
+    }
+
+    public function down(): void
+    {
+        app(EmbeddedResourceIncarnationGuard::class)->uninstall(Quote::class);
+    }
+};
+```
+
+Run this application migration after Aura's incarnation migrations. On
+rollback, uninstall the application guards before rolling back Aura's upgrade.
+The migration connection needs permission to create/drop triggers (and
+functions on PostgreSQL); the runtime connection needs permission for the
+trigger to update the incarnation table. Installation, uninstallation, and
+their migrations are idempotent. DDL failures are not suppressed.
+
+The guard contract supports SQLite, MySQL/MariaDB, and PostgreSQL. Its
+insert/delete/update triggers invalidate the old identity and, when a primary
+key changes, the destination identity. This covers normal, quiet, query-builder,
+bulk, raw, replace/upsert, and truncate-then-insert key reuse without relying on
+Eloquent events. A failed trigger update aborts the owner write. Aura never
+installs schema while rendering or issuing a context: a missing declared guard
+renders no persisted embedded component, and a missing guard during an action
+returns `403`. Other database failures remain visible. Ordinary owner changes
+also make the signed fingerprint and incarnation version stale and require a
+page refresh.
+
+Unsaved create contexts sign a bounded authorization snapshot and restore it
+before every `create` policy check. Aura `Resource` and `BaseResource` include
+present `team_id` and `user_id` attributes by default. Override the resource
+contract when a policy uses another tenant or owner attribute:
+
+```php
+/**
+ * @return list<string>
+ */
+public function embeddedAuthorizationAttributeNames(): array
+{
+    return ['team_id', 'owner_id'];
+}
+```
+
+Only declared, present scalar or null values are signed (at most 16 attributes;
+strings are length-limited). These values are integrity-protected, not
+encrypted, so never include secrets. A model with authorization state but no
+`ProvidesEmbeddedAuthorizationAttributes` contract fails closed. This keeps
+null-model create hosts and preassigned UUID/ULID create owners supported while
+ensuring later requests authorize the same bounded policy subject.
 
 Contexts expire after `aura.embedded_components.context_ttl` seconds (one hour
 by default). Increment `aura.embedded_components.context_revision` to revoke

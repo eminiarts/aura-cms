@@ -3,6 +3,7 @@
 namespace Aura\Base\Fields;
 
 use Aura\Base\Contracts\PreloadsTableDisplay;
+use Aura\Base\Exceptions\MissingEmbeddedResourceIncarnationGuard;
 use Aura\Base\Services\EmbeddedComponentContextStore;
 use Aura\Base\Services\EmbeddedComponentResolver;
 use Aura\Base\Services\EmbeddedComponentSurface;
@@ -83,7 +84,11 @@ class LivewireComponent extends Field implements PreloadsTableDisplay
             return;
         }
 
-        app(EmbeddedComponentContextStore::class)->prime($rows);
+        try {
+            app(EmbeddedComponentContextStore::class)->prime($rows);
+        } catch (MissingEmbeddedResourceIncarnationGuard) {
+            return;
+        }
     }
 
     public function rendersConfiguredFieldOnIndex(array $field): bool

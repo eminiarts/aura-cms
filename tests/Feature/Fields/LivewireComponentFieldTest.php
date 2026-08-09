@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Fields;
 
+use Aura\Base\Contracts\DefinesFields;
 use Aura\Base\Contracts\EmbeddedLivewireComponent;
 use Aura\Base\Contracts\MapsEmbeddedComponentParameters;
 use Aura\Base\Facades\Aura;
@@ -14,7 +15,13 @@ use Aura\Base\Resources\User;
 use Aura\Base\Services\EmbeddedComponentContext;
 use Aura\Base\Services\EmbeddedComponentResolver;
 use Aura\Base\Services\EmbeddedComponentSurface;
+use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
+use Aura\Base\Services\EmbeddedResourceIncarnationStore;
 use Aura\Base\Traits\AuthorizesEmbeddedComponent;
+use Closure;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -205,6 +212,50 @@ class Core12UuidEmbeddedResource extends Core12EmbeddedResource
     protected $table = 'core12_uuid_embedded_resources';
 }
 
+class Core12TeamBoundEmbeddedResource extends Core12UuidEmbeddedResource
+{
+    public static ?string $slug = 'core12-team-bound-embedded-resource';
+
+    public static string $type = 'Core12TeamBoundEmbeddedResource';
+}
+
+class Core12TeamBoundCreatePolicy
+{
+    public function create(User $user, Core12TeamBoundEmbeddedResource $resource): bool
+    {
+        return $resource->getAttribute('team_id') === null
+            || $resource->getAttribute('team_id') === $user->getAttribute('current_team_id');
+    }
+}
+
+class Core12OwnerBoundEmbeddedResource extends Core12UuidEmbeddedResource
+{
+    public static ?string $slug = 'core12-owner-bound-embedded-resource';
+
+    public static string $type = 'Core12OwnerBoundEmbeddedResource';
+
+    public function embeddedAuthorizationAttributeNames(): array
+    {
+        return ['account_owner_id'];
+    }
+}
+
+class Core12OwnerBoundCreatePolicy
+{
+    public function create(User $user, Core12OwnerBoundEmbeddedResource $resource): bool
+    {
+        return $resource->getAttribute('account_owner_id') === $user->getKey();
+    }
+}
+
+class Core12UncontractedEmbeddedResource extends Model implements DefinesFields
+{
+    public static function getFields(): array
+    {
+        return [];
+    }
+}
+
 beforeEach(function () {
     $this->actingAs($this->user = createGlobalAdmin());
 
@@ -214,6 +265,7 @@ beforeEach(function () {
     Livewire::component('core12.embedded.fallback', Core12FallbackEmbeddedComponent::class);
     Livewire::component('core12.missing-authorization-trait', Core12MissingAuthorizationTraitComponent::class);
     Livewire::component('core12.unbounded', Core12UnboundedComponent::class);
+    app(EmbeddedResourceIncarnationGuard::class)->install(Core12EmbeddedResource::class);
 
     Core12EmbeddedComponent::$mountCount = 0;
     Core12EmbeddedComponent::$pingActionCount = 0;
@@ -226,6 +278,19 @@ beforeEach(function () {
 function core12Field(array $overrides = []): array
 {
     return array_replace(Core12EmbeddedResource::getFields()[0], $overrides);
+}
+
+function createCore12UuidEmbeddedResourcesTable(): void
+{
+    Schema::create('core12_uuid_embedded_resources', function (Blueprint $table): void {
+        $table->uuid('id')->primary();
+        $table->string('title')->nullable();
+        $table->foreignId('user_id')->nullable();
+        $table->foreignId('team_id')->nullable();
+        $table->timestamps();
+    });
+
+    app(EmbeddedResourceIncarnationGuard::class)->install(Core12UuidEmbeddedResource::class);
 }
 
 describe('LivewireComponent field configuration', function () {
@@ -322,6 +387,7 @@ describe('embedded component resolution', function () {
             ->and($definition->parameters['auraEmbeddedContext'])->toMatchArray([
                 'resource_key' => null,
                 'persisted' => false,
+                'resource_authorization_attributes' => [],
             ]);
 
         Livewire::test($definition->alias, $definition->parameters)
@@ -578,14 +644,72 @@ describe('embedded component security and identity', function () {
             ->and($this->user->fresh()->global_admin)->toBeFalse();
     });
 
+    test('reauthorizes the same bounded unsaved owner after a team context change', function () {
+        if (! Schema::hasColumn('users', 'current_team_id')) {
+            $this->markTestSkipped('Team-bound create context requires the teams schema.');
+        }
+
+        Gate::policy(Core12TeamBoundEmbeddedResource::class, Core12TeamBoundCreatePolicy::class);
+
+        $user = User::factory()->create(['current_team_id' => 10]);
+        $this->actingAs($user);
+        $resource = new Core12TeamBoundEmbeddedResource(['team_id' => 10]);
+        $resource->setAttribute('private_create_draft', 'must-not-be-serialized');
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::Edit,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+
+        expect($definition->parameters['auraEmbeddedContext']['resource_authorization_attributes'])
+            ->toBe(['team_id' => 10])
+            ->not->toHaveKey('private_create_draft');
+
+        $user->forceFill(['current_team_id' => 20])->saveQuietly();
+        $this->actingAs($user->refresh());
+        app()->forgetScopedInstances();
+
+        $component->call('ping')->assertForbidden();
+    });
+
+    test('uses an explicit bounded owner attribute contract for create authorization', function () {
+        Gate::policy(Core12OwnerBoundEmbeddedResource::class, Core12OwnerBoundCreatePolicy::class);
+
+        $resource = new Core12OwnerBoundEmbeddedResource;
+        $resource->setAttribute('account_owner_id', $this->user->getKey());
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::Edit,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+
+        expect($definition->parameters['auraEmbeddedContext']['resource_authorization_attributes'])
+            ->toBe(['account_owner_id' => $this->user->getKey()]);
+
+        $this->actingAs(createGlobalAdmin());
+        app()->forgetScopedInstances();
+
+        $component->call('ping')->assertForbidden();
+    });
+
+    test('fails closed for attributed unsaved owners without an authorization attribute contract', function () {
+        Gate::define('create', fn (User $user, Core12UncontractedEmbeddedResource $resource): bool => true);
+        $resource = new Core12UncontractedEmbeddedResource;
+        $resource->setAttribute('team_id', 10);
+
+        expect(app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::Edit,
+        ))->toBeNull();
+    });
+
     test('hydrates an unsaved resource with a preassigned UUID as create context', function () {
-        Schema::create('core12_uuid_embedded_resources', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->string('title')->nullable();
-            $table->foreignId('user_id')->nullable();
-            $table->foreignId('team_id')->nullable();
-            $table->timestamps();
-        });
+        createCore12UuidEmbeddedResourcesTable();
 
         $resource = new Core12UuidEmbeddedResource;
         $resource->setAttribute($resource->getKeyName(), '00000000-0000-4000-8000-000000000012');
@@ -603,13 +727,7 @@ describe('embedded component security and identity', function () {
     });
 
     test('hydrates saved UUID resources and rejects delete-recreate identity reuse', function () {
-        Schema::create('core12_uuid_embedded_resources', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->string('title')->nullable();
-            $table->foreignId('user_id')->nullable();
-            $table->foreignId('team_id')->nullable();
-            $table->timestamps();
-        });
+        createCore12UuidEmbeddedResourcesTable();
 
         $key = '00000000-0000-4000-8000-000000000013';
         $resource = Core12UuidEmbeddedResource::create([
@@ -635,7 +753,7 @@ describe('embedded component security and identity', function () {
         $component->call('ping')->assertForbidden();
     });
 
-    test('signs the canonical fully-loaded row instead of a partial model projection', function () {
+    test('fails closed without installing schema during a persisted context request', function () {
         Schema::create('core12_uuid_embedded_resources', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('title')->nullable();
@@ -643,6 +761,212 @@ describe('embedded component security and identity', function () {
             $table->foreignId('team_id')->nullable();
             $table->timestamps();
         });
+        $resource = Core12UuidEmbeddedResource::create([
+            'id' => '00000000-0000-4000-8000-000000000016',
+            'title' => 'Missing guard',
+        ]);
+        $triggersBefore = DB::table('sqlite_master')
+            ->where('type', 'trigger')
+            ->where('tbl_name', $resource->getTable())
+            ->count();
+
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+
+        expect($definition)->toBeNull()
+            ->and(DB::table('sqlite_master')
+                ->where('type', 'trigger')
+                ->where('tbl_name', $resource->getTable())
+                ->count())->toBe($triggersBefore);
+    });
+
+    test('fails closed while preloading an index whose persisted owner has no guard', function () {
+        Schema::create('core12_uuid_embedded_resources', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->string('title')->nullable();
+            $table->foreignId('user_id')->nullable();
+            $table->foreignId('team_id')->nullable();
+            $table->timestamps();
+        });
+        $resource = Core12UuidEmbeddedResource::create([
+            'id' => '00000000-0000-4000-8000-000000000024',
+            'title' => 'Missing index guard',
+        ]);
+
+        (new LivewireComponent)->preloadTableDisplay(
+            new EloquentCollection([$resource]),
+            core12Field(),
+        );
+
+        expect(DB::table('sqlite_master')
+            ->where('type', 'trigger')
+            ->where('tbl_name', $resource->getTable())
+            ->count())->toBe(0);
+    });
+
+    test('fails closed when a deployed guard disappears before a component action', function () {
+        createCore12UuidEmbeddedResourcesTable();
+        $resource = Core12UuidEmbeddedResource::create([
+            'id' => '00000000-0000-4000-8000-000000000022',
+            'title' => 'Removed guard',
+        ]);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+
+        app(EmbeddedResourceIncarnationGuard::class)->uninstall($resource);
+        app()->forgetScopedInstances();
+
+        $component->call('ping')->assertForbidden();
+        expect(DB::table('sqlite_master')
+            ->where('type', 'trigger')
+            ->where('tbl_name', $resource->getTable())
+            ->count())->toBe(0);
+    });
+
+    test('rejects delete-recreate identity reuse when deletion bypasses Eloquent events', function (Closure $delete): void {
+        createCore12UuidEmbeddedResourcesTable();
+
+        $key = '00000000-0000-4000-8000-000000000015';
+        $resource = Core12UuidEmbeddedResource::create([
+            'id' => $key,
+            'title' => 'Bypassed lifecycle events',
+        ]);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+        $originalAttributes = $resource->getRawOriginal();
+
+        $delete($resource);
+        DB::table($resource->getTable())->insert($originalAttributes);
+        app()->forgetScopedInstances();
+
+        $component->call('ping')->assertForbidden();
+    })->with([
+        'quiet model delete' => fn (Core12UuidEmbeddedResource $resource): bool => $resource->deleteQuietly(),
+        'Eloquent bulk delete' => fn (Core12UuidEmbeddedResource $resource): int => $resource->newQuery()->whereKey($resource->getKey())->delete(),
+        'raw query delete' => fn (Core12UuidEmbeddedResource $resource): int => DB::table($resource->getTable())->where($resource->getKeyName(), $resource->getKey())->delete(),
+    ]);
+
+    test('rejects the original key after a raw primary-key update and reinsert', function (): void {
+        createCore12UuidEmbeddedResourcesTable();
+
+        $originalKey = '00000000-0000-4000-8000-000000000017';
+        $replacementKey = '00000000-0000-4000-8000-000000000018';
+        $resource = Core12UuidEmbeddedResource::create([
+            'id' => $originalKey,
+            'title' => 'Original key',
+        ]);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+        $originalAttributes = $resource->getRawOriginal();
+
+        DB::table($resource->getTable())
+            ->where($resource->getKeyName(), $originalKey)
+            ->update([$resource->getKeyName() => $replacementKey]);
+        DB::table($resource->getTable())->insert($originalAttributes);
+        app()->forgetScopedInstances();
+
+        $component->call('ping')->assertForbidden();
+    });
+
+    test('rejects every old context after one raw bulk delete and byte-identical reinsert', function (): void {
+        createCore12UuidEmbeddedResourcesTable();
+
+        $resources = collect([
+            '00000000-0000-4000-8000-000000000019',
+            '00000000-0000-4000-8000-000000000020',
+        ])->map(fn (string $key): Core12UuidEmbeddedResource => Core12UuidEmbeddedResource::create([
+            'id' => $key,
+            'title' => 'Bulk '.$key,
+        ]));
+        $components = $resources->map(function (Core12UuidEmbeddedResource $resource) {
+            $definition = app(EmbeddedComponentResolver::class)->resolve(
+                field: core12Field(),
+                resource: $resource,
+                surface: EmbeddedComponentSurface::View,
+            );
+
+            return Livewire::test($definition->alias, $definition->parameters)->assertOk();
+        });
+        $attributes = $resources->map->getRawOriginal()->all();
+
+        DB::table((new Core12UuidEmbeddedResource)->getTable())
+            ->whereIn('id', $resources->map->getKey()->all())
+            ->delete();
+        DB::table((new Core12UuidEmbeddedResource)->getTable())->insert($attributes);
+        app()->forgetScopedInstances();
+
+        $components->each(
+            fn ($component) => $component->call('ping')->assertForbidden(),
+        );
+    });
+
+    test('does not swallow an incarnation store query failure', function (): void {
+        createCore12UuidEmbeddedResourcesTable();
+        $resource = Core12UuidEmbeddedResource::create([
+            'id' => '00000000-0000-4000-8000-000000000021',
+            'title' => 'Store failure',
+        ]);
+        app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+
+        Schema::drop(EmbeddedResourceIncarnationStore::TABLE);
+
+        try {
+            expect(fn () => app(EmbeddedResourceIncarnationStore::class)->rotate($resource))
+                ->toThrow(QueryException::class);
+        } finally {
+            $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+            $migration->up();
+        }
+    });
+
+    test('does not swallow an incarnation read failure during component authorization', function (): void {
+        createCore12UuidEmbeddedResourcesTable();
+        $resource = Core12UuidEmbeddedResource::create([
+            'id' => '00000000-0000-4000-8000-000000000023',
+            'title' => 'Read failure',
+        ]);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+
+        Schema::drop(EmbeddedResourceIncarnationStore::TABLE);
+
+        try {
+            expect(fn () => $component->call('ping'))->toThrow(QueryException::class);
+        } finally {
+            $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+            $migration->up();
+        }
+    });
+
+    test('signs the canonical fully-loaded row instead of a partial model projection', function () {
+        createCore12UuidEmbeddedResourcesTable();
 
         $key = '00000000-0000-4000-8000-000000000014';
         Core12UuidEmbeddedResource::create([

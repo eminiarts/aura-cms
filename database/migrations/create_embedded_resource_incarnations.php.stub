@@ -16,12 +16,19 @@ return new class extends Migration
             $table->id();
             $table->string('resource_type');
             $table->char('resource_key_hash', 64);
+            $table->string('resource_key_type', 16);
+            $table->string('resource_key', 191);
             $table->uuid('incarnation');
+            $table->unsignedBigInteger('version')->default(1);
             $table->timestamps();
 
             $table->unique(
                 ['resource_type', 'resource_key_hash'],
                 'aura_embedded_incarnation_resource_unique',
+            );
+            $table->index(
+                ['resource_type', 'resource_key_type', 'resource_key'],
+                'aura_embedded_incarnation_guard_lookup',
             );
         });
     }

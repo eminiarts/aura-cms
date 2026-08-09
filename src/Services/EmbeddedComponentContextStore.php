@@ -63,6 +63,11 @@ final class EmbeddedComponentContextStore
         return $this->signatureResources[$signature] ?? null;
     }
 
+    public function flushIncarnations(): void
+    {
+        $this->incarnations->flush();
+    }
+
     public function forgetCanonical(Model $resource): void
     {
         $key = $resource->getKey();
@@ -165,6 +170,11 @@ final class EmbeddedComponentContextStore
     public function token(Model $resource): string
     {
         return $this->incarnations->token($resource);
+    }
+
+    public function version(Model $resource): int
+    {
+        return $this->incarnations->version($resource);
     }
 
     /**

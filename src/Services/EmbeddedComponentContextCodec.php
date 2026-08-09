@@ -3,14 +3,22 @@
 namespace Aura\Base\Services;
 
 use Aura\Base\Contracts\DefinesFields;
+use Aura\Base\Contracts\ProvidesEmbeddedAuthorizationAttributes;
+use Aura\Base\Exceptions\InvalidEmbeddedAuthorizationAttributes;
+use Aura\Base\Exceptions\MissingEmbeddedResourceIncarnationGuard;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use JsonException;
-use RuntimeException;
 
 final class EmbeddedComponentContextCodec
 {
     private const ABILITIES = ['create', 'update', 'view'];
+
+    private const MAX_AUTHORIZATION_ATTRIBUTE_LENGTH = 1024;
+
+    private const MAX_AUTHORIZATION_ATTRIBUTE_NAME_LENGTH = 191;
+
+    private const MAX_AUTHORIZATION_ATTRIBUTES = 16;
 
     private const MAX_PARAMETER_DEPTH = 10;
 
@@ -23,7 +31,9 @@ final class EmbeddedComponentContextCodec
         'resource_key',
         'persisted',
         'resource_incarnation',
+        'resource_incarnation_version',
         'resource_fingerprint',
+        'resource_authorization_attributes',
         'ability',
         'surface',
         'field_slug',
@@ -31,7 +41,7 @@ final class EmbeddedComponentContextCodec
         'parameters',
     ];
 
-    private const VERSION = 3;
+    private const VERSION = 4;
 
     public function __construct(
         private readonly EmbeddedComponentContextStore $store,
@@ -84,6 +94,9 @@ final class EmbeddedComponentContextCodec
             abort_unless($resource instanceof Model, 500);
         }
 
+        $resourceIncarnation = $persisted ? $this->store->token($resource) : null;
+        $resourceIncarnationVersion = $persisted ? $this->store->version($resource) : null;
+
         $issuedAt = now()->getTimestamp();
         $payload = [
             'version' => self::VERSION,
@@ -93,8 +106,12 @@ final class EmbeddedComponentContextCodec
             'resource_class' => $resource::class,
             'resource_key' => $resource->getKey(),
             'persisted' => $persisted,
-            'resource_incarnation' => $persisted ? $this->store->token($resource) : null,
+            'resource_incarnation' => $resourceIncarnation,
+            'resource_incarnation_version' => $resourceIncarnationVersion,
             'resource_fingerprint' => $persisted ? $this->resourceFingerprint($resource) : null,
+            'resource_authorization_attributes' => $persisted
+                ? []
+                : $this->authorizationAttributes($resource),
             'ability' => $ability,
             'surface' => $surface->value,
             'field_slug' => $fieldSlug,
@@ -161,7 +178,71 @@ final class EmbeddedComponentContextCodec
             ];
         }
 
-        $this->store->primeIdentities($identities);
+        try {
+            $this->store->primeIdentities($identities);
+        } catch (MissingEmbeddedResourceIncarnationGuard) {
+            abort(403);
+        }
+    }
+
+    /**
+     * @return array<string, bool|float|int|string|null>
+     */
+    private function authorizationAttributes(Model $resource): array
+    {
+        $attributes = $resource->getAttributes();
+        $keyName = $resource->getKeyName();
+
+        if (! $resource instanceof ProvidesEmbeddedAuthorizationAttributes) {
+            unset($attributes[$keyName]);
+
+            if ($attributes !== []) {
+                throw new InvalidEmbeddedAuthorizationAttributes(sprintf(
+                    '%s must declare bounded embedded authorization attributes.',
+                    $resource::class,
+                ));
+            }
+
+            return [];
+        }
+
+        $names = $resource->embeddedAuthorizationAttributeNames();
+
+        if (! array_is_list($names)
+            || count($names) > self::MAX_AUTHORIZATION_ATTRIBUTES
+            || count($names) !== count(array_unique($names))
+        ) {
+            throw new InvalidEmbeddedAuthorizationAttributes('Embedded authorization attribute names must be a bounded unique list.');
+        }
+
+        $authorizationAttributes = [];
+
+        foreach ($names as $name) {
+            if (! is_string($name)
+                || $name === ''
+                || mb_strlen($name) > self::MAX_AUTHORIZATION_ATTRIBUTE_NAME_LENGTH
+                || $name === $keyName
+            ) {
+                throw new InvalidEmbeddedAuthorizationAttributes('Embedded authorization attribute names must be non-key strings.');
+            }
+
+            if (! array_key_exists($name, $attributes)) {
+                continue;
+            }
+
+            $value = $attributes[$name];
+
+            if ((! is_null($value) && ! is_bool($value) && ! is_float($value) && ! is_int($value) && ! is_string($value))
+                || (is_float($value) && ! is_finite($value))
+                || (is_string($value) && mb_strlen($value) > self::MAX_AUTHORIZATION_ATTRIBUTE_LENGTH)
+            ) {
+                throw new InvalidEmbeddedAuthorizationAttributes('Embedded authorization attributes must contain bounded scalar values.');
+            }
+
+            $authorizationAttributes[$name] = $value;
+        }
+
+        return $authorizationAttributes;
     }
 
     private function configRevision(): string
@@ -232,6 +313,30 @@ final class EmbeddedComponentContextCodec
         return true;
     }
 
+    private function hasValidAuthorizationAttributes(mixed $attributes): bool
+    {
+        if (! is_array($attributes)
+            || array_is_list($attributes)
+            || count($attributes) > self::MAX_AUTHORIZATION_ATTRIBUTES
+        ) {
+            return $attributes === [];
+        }
+
+        foreach ($attributes as $name => $value) {
+            if (! is_string($name)
+                || $name === ''
+                || mb_strlen($name) > self::MAX_AUTHORIZATION_ATTRIBUTE_NAME_LENGTH
+                || (! is_null($value) && ! is_bool($value) && ! is_float($value) && ! is_int($value) && ! is_string($value))
+                || (is_float($value) && ! is_finite($value))
+                || (is_string($value) && mb_strlen($value) > self::MAX_AUTHORIZATION_ATTRIBUTE_LENGTH)
+            ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * @param  array<string, mixed>  $payload
      */
@@ -271,7 +376,9 @@ final class EmbeddedComponentContextCodec
         $resourceKey = $payload['resource_key'];
         $persisted = $payload['persisted'];
         $incarnation = $payload['resource_incarnation'];
+        $incarnationVersion = $payload['resource_incarnation_version'];
         $fingerprint = $payload['resource_fingerprint'];
+        $authorizationAttributes = $payload['resource_authorization_attributes'];
         $surface = EmbeddedComponentSurface::from($payload['surface']);
 
         if ((! is_int($resourceKey) && ! is_string($resourceKey) && $resourceKey !== null)
@@ -284,14 +391,19 @@ final class EmbeddedComponentContextCodec
             return $resourceKey !== null
                 && is_string($incarnation)
                 && preg_match('/^[a-f0-9-]{36}$/', $incarnation) === 1
+                && is_int($incarnationVersion)
+                && $incarnationVersion > 0
                 && is_string($fingerprint)
                 && preg_match('/^[a-f0-9]{64}$/', $fingerprint) === 1
+                && $authorizationAttributes === []
                 && (($surface === EmbeddedComponentSurface::Edit && $payload['ability'] === 'update')
                     || ($surface !== EmbeddedComponentSurface::Edit && $payload['ability'] === 'view'));
         }
 
         return $incarnation === null
+            && $incarnationVersion === null
             && $fingerprint === null
+            && $this->hasValidAuthorizationAttributes($authorizationAttributes)
             && $surface === EmbeddedComponentSurface::Edit
             && $payload['ability'] === 'create';
     }
@@ -322,14 +434,17 @@ final class EmbeddedComponentContextCodec
         }
 
         if (! $payload['persisted']) {
-            return ! $resource->exists && ! $resource->wasRecentlyCreated;
+            return ! $resource->exists
+                && ! $resource->wasRecentlyCreated
+                && $this->authorizationAttributes($resource) === $payload['resource_authorization_attributes'];
         }
 
         try {
             return ($resource->exists || $resource->wasRecentlyCreated)
                 && hash_equals($payload['resource_incarnation'], $this->store->token($resource))
+                && $payload['resource_incarnation_version'] === $this->store->version($resource)
                 && hash_equals($payload['resource_fingerprint'], $this->resourceFingerprint($resource));
-        } catch (JsonException|RuntimeException) {
+        } catch (JsonException|MissingEmbeddedResourceIncarnationGuard) {
             return false;
         }
     }
@@ -345,6 +460,8 @@ final class EmbeddedComponentContextCodec
         $resource = new $resourceClass;
 
         if (! $payload['persisted']) {
+            $resource->forceFill($payload['resource_authorization_attributes']);
+
             if ($payload['resource_key'] !== null) {
                 abort_if($resource->newQuery()->whereKey($payload['resource_key'])->exists(), 403);
                 $resource->setAttribute($resource->getKeyName(), $payload['resource_key']);

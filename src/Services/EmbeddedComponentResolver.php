@@ -5,6 +5,8 @@ namespace Aura\Base\Services;
 use Aura\Base\Contracts\DefinesFields;
 use Aura\Base\Contracts\EmbeddedLivewireComponent;
 use Aura\Base\Contracts\MapsEmbeddedComponentParameters;
+use Aura\Base\Exceptions\InvalidEmbeddedAuthorizationAttributes;
+use Aura\Base\Exceptions\MissingEmbeddedResourceIncarnationGuard;
 use Aura\Base\Traits\AuthorizesEmbeddedComponent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -44,7 +46,11 @@ final class EmbeddedComponentResolver
         }
 
         if ($resource->exists || $resource->wasRecentlyCreated) {
-            $resource = $this->contextStore->canonical($resource);
+            try {
+                $resource = $this->contextStore->canonical($resource);
+            } catch (MissingEmbeddedResourceIncarnationGuard) {
+                return null;
+            }
 
             if (! $resource) {
                 return null;
@@ -75,7 +81,7 @@ final class EmbeddedComponentResolver
             );
 
             $key = $this->componentKey($field, $resource, $surface, $alias);
-        } catch (JsonException) {
+        } catch (InvalidEmbeddedAuthorizationAttributes|JsonException|MissingEmbeddedResourceIncarnationGuard) {
             return null;
         }
 

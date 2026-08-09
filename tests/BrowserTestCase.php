@@ -6,6 +6,7 @@ use Aura\Base\ConditionalLogic;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
 use Illuminate\Contracts\Http\Kernel;
 use Livewire\Livewire;
 
@@ -48,6 +49,7 @@ class BrowserTestCase extends TestCase
             'aura-tests.embedded-field',
             Browser\Support\EmbeddedFieldComponent::class,
         );
+        app(EmbeddedResourceIncarnationGuard::class)->install(Resources\EmbeddedComponentPage::class);
 
         $this->serveBuiltAssets();
     }

@@ -20,7 +20,6 @@ use Aura\Base\Commands\PublishCommand;
 use Aura\Base\Commands\TransferFromPostsToCustomTable;
 use Aura\Base\Commands\TransformTableToResource;
 use Aura\Base\Commands\UpdateSchemaFromMigration;
-use Aura\Base\Contracts\DefinesFields;
 use Aura\Base\Database\Seeders\RoleCatalogSeeder;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
@@ -58,6 +57,7 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Services\EmbeddedComponentAuthorizer;
 use Aura\Base\Services\EmbeddedComponentContextStore;
+use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
 use Aura\Base\Services\EmbeddedResourceIncarnationStore;
 use Aura\Base\Widgets\Bar;
 use Aura\Base\Widgets\Donut;
@@ -67,6 +67,7 @@ use Aura\Base\Widgets\SparklineBar;
 use Aura\Base\Widgets\ValueWidget;
 use Aura\Base\Widgets\Widgets;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
@@ -239,6 +240,7 @@ class AuraServiceProvider extends PackageServiceProvider
                 'consolidate_per_team_admin_roles',
                 'add_global_admin_to_users',
                 'create_embedded_resource_incarnations',
+                'upgrade_embedded_resource_incarnations',
             ])
             ->runsMigrations()
             ->hasCommands([
@@ -300,15 +302,14 @@ class AuraServiceProvider extends PackageServiceProvider
     {
         app('aura')::registerFields(app('aura')::getAppFields());
 
-        Event::listen([
-            'eloquent.deleted: *',
-            'eloquent.restored: *',
-        ], function (string $event, array $models): void {
-            foreach ($models as $model) {
-                if ($model instanceof DefinesFields) {
-                    app(EmbeddedResourceIncarnationStore::class)->rotate($model);
-                }
+        Event::listen(QueryExecuted::class, function (QueryExecuted $event): void {
+            if (preg_match('/^\s*(select|pragma|show|describe|explain)\b/i', $event->sql) === 1
+                || ! $this->app->resolved(EmbeddedComponentContextStore::class)
+            ) {
+                return;
             }
+
+            $this->app->make(EmbeddedComponentContextStore::class)->flushIncarnations();
         });
 
         Queue::after(fn () => Aura::flushState());
@@ -442,6 +443,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
         $this->app->scoped(EmbeddedComponentAuthorizer::class);
         $this->app->scoped(EmbeddedComponentContextStore::class);
+        $this->app->scoped(EmbeddedResourceIncarnationGuard::class);
         $this->app->scoped(EmbeddedResourceIncarnationStore::class);
 
         $this->app->scoped('aura', function (): Aura {
