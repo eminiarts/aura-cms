@@ -221,12 +221,16 @@ describe('temporal picker edit rendering', function () {
             $alpineInit = $picker->getAttribute('x-init');
 
             expect($alpineData)
-                ->toContain('JSON.parse(')
+                ->toBe('auraDatetimePicker')
                 ->not->toContain($payload)
                 ->not->toContain('</script>')
                 ->and($alpineInit)
+                ->toBe('')
                 ->not->toContain($payload)
                 ->not->toContain('window.__auraXss');
+
+            expect(json_decode($picker->getAttribute('data-picker-options'), true, flags: JSON_THROW_ON_ERROR)['defaultDate'])
+                ->toBe($payload);
         }
     });
 });

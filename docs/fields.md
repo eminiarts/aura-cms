@@ -1363,7 +1363,7 @@ Role assignment with team support.
 | Number | ✓ | integer | input | - | ✓ |
 | Email | ✓ | string | input | - | ✓ |
 | Date | ✓ | date | input | - | ✓ |
-| Datetime | ✓ | timestamp | input | - | ✓ |
+| Datetime | ✓ | datetime | input | - | ✓ |
 | Time | ✓ | string | input | - | - |
 | Boolean | ✓ | string | input | - | - |
 | Select | ✓ | string | input | - | ✓ |

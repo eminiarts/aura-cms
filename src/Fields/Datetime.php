@@ -20,7 +20,7 @@ class Datetime extends Field
 
     // public $view = 'components.fields.datetime';
 
-    public $tableColumnType = 'timestamp';
+    public $tableColumnType = 'dateTime';
 
     public $view = 'aura::fields.view-value';
 
@@ -169,6 +169,8 @@ class Datetime extends Field
         if ($storage === FieldValueStorage::Physical
             && $model
             && is_string($slug)
+            && ! $model->hasGetMutator($slug)
+            && ! $model->hasAttributeGetMutator($slug)
             && $model->hasCast($slug, [
                 'date',
                 'datetime',

@@ -177,7 +177,7 @@ readonly class SchemaUpdatePlan
     }
 
     /**
-     * @return array{table: string, columns: array<string, array{type: string, arguments: array<int, int|float|string|bool|null>, nullable: bool, driver_types: array<string, string>}>, preserved_columns: array<int, string>}
+     * @return array{table: string, columns: array<string, array{type: string, arguments: array<int, int|float|string|bool|null>, nullable: bool, driver_types: array<string, string>, default: int|float|string|bool|null, unsigned: bool}>, preserved_columns: array<int, string>}
      */
     public function toArray(): array
     {

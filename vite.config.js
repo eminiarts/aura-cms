@@ -1,9 +1,17 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
+import { fileURLToPath } from 'node:url';
+
+const monacoThemesDirectory = fileURLToPath(new URL('./node_modules/monaco-themes/themes', import.meta.url));
 
 export default defineConfig(({ command, mode }) => {
     if (command === 'build' && mode === 'lib') {
         return {
+            resolve: {
+                alias: {
+                    'monaco-themes/themes': monacoThemesDirectory,
+                },
+            },
             build: {
                 sourcemap: true,
                 emptyOutDir: true,

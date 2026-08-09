@@ -2,9 +2,13 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Aura\Base\Contracts\FieldValueStorage;
 use Aura\Base\Fields\AdvancedSelect;
+use Aura\Base\Fields\Number;
 use Aura\Base\Fields\Tags;
+use Aura\Base\Support\ExactDecimal;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 trait QueryFilters
 {
@@ -134,6 +138,10 @@ trait QueryFilters
 
     protected function applyOperatorCondition(Builder $query, array $filter): void
     {
+        if ($this->applyExactSqliteNumberCondition($query, 'value', $filter)) {
+            return;
+        }
+
         switch ($filter['operator']) {
             case 'contains':
                 $query->where('value', 'like', '%'.$filter['value'].'%');
@@ -270,6 +278,11 @@ trait QueryFilters
         if (is_array($filter['value'])) {
             $filter['value'] = implode(',', $filter['value']);
         }
+
+        if ($this->applyExactSqliteNumberCondition($query, $filter['name'], $filter)) {
+            return $query;
+        }
+
         switch ($filter['operator']) {
             case 'contains':
                 $query->where($filter['name'], 'like', '%'.$filter['value'].'%');
@@ -383,5 +396,44 @@ trait QueryFilters
     {
         return ! empty($filter['name']) &&
                (! empty($filter['value']) || in_array($filter['operator'], ['is_empty', 'is_not_empty']));
+    }
+
+    private function applyExactSqliteNumberCondition(Builder $query, string $column, array $filter): bool
+    {
+        $operators = [
+            'is' => '=', 'equals' => '=', 'is_not' => '!=', 'not_equals' => '!=',
+            'greater_than' => '>', 'less_than' => '<',
+            'greater_than_or_equal' => '>=', 'less_than_or_equal' => '<=',
+        ];
+
+        if (! isset($operators[$filter['operator']])
+            || ! $this->model->isNumberField($filter['name'])
+            || DB::connection($this->model->getConnectionName())->getDriverName() !== 'sqlite') {
+            return false;
+        }
+
+        $field = $this->model->fieldBySlug($filter['name']);
+        $fieldClass = $this->model->fieldClassBySlug($filter['name']);
+
+        if (! $fieldClass instanceof Number) {
+            return false;
+        }
+
+        $value = $fieldClass->normalizeForStorage(
+            $filter['value'],
+            is_array($field) ? $field : [],
+            $this->model,
+            $this->model->isMetaField($filter['name'])
+                ? FieldValueStorage::Meta
+                : FieldValueStorage::Physical,
+        );
+        ExactDecimal::registerSqliteFunction(DB::connection($this->model->getConnectionName()));
+        $wrapped = $query->getQuery()->getGrammar()->wrap($column);
+        $query->whereRaw(
+            "aura_decimal_sort_key({$wrapped}) {$operators[$filter['operator']]} aura_decimal_sort_key(?)",
+            [(string) $value],
+        );
+
+        return true;
     }
 }

@@ -19,6 +19,7 @@ use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Livewire\Resource\View as ResourceView;
 use Aura\Base\Resource;
+use Aura\Base\Support\ExactDecimal;
 use DateTimeInterface;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -277,6 +278,11 @@ class Core10NullDatetimeCastModel extends Model
 
 class Core10NullDatetimeAccessorModel extends Model
 {
+    protected function casts(): array
+    {
+        return ['occurred_at' => 'datetime'];
+    }
+
     protected function occurredAt(): Attribute
     {
         return Attribute::make(get: fn (mixed $value): mixed => null);
@@ -600,7 +606,7 @@ beforeEach(function () {
     if (! Schema::hasTable('core_10_dst_values')) {
         Schema::create('core_10_dst_values', function (Blueprint $table) {
             $table->id();
-            $table->timestamp('occurred_at')->nullable();
+            $table->dateTime('occurred_at')->nullable();
             $table->foreignId('user_id')->nullable();
             $table->foreignId('team_id')->nullable();
             $table->timestamps();
@@ -1059,6 +1065,65 @@ test('custom datetime getters returning null remain authoritative over the raw c
                 FieldValueContext::View,
             ))->toBeNull();
     }
+});
+
+test('timezone-bearing configured datetime formats are parsed strictly', function (string $format, string $value, string $expected) {
+    $datetime = new Datetime;
+    $field = [
+        'slug' => 'occurred_at',
+        'format' => $format,
+        'storage_timezone' => 'UTC',
+        'input_timezone' => 'Europe/Zurich',
+    ];
+
+    expect($datetime->normalizeForStorage($value, $field, null, FieldValueStorage::Meta))->toBe($expected);
+})->with([
+    'timezone identifier' => ['Y-m-d H:i e', '2026-08-10 14:30 Europe/Zurich', '2026-08-10 12:30:00'],
+    'timezone abbreviation' => ['Y-m-d H:i T', '2026-08-10 14:30 CEST', '2026-08-10 12:30:00'],
+    'compact offset' => ['Y-m-d H:i O', '2026-08-10 14:30 +0200', '2026-08-10 12:30:00'],
+    'colon offset' => ['Y-m-d H:i P', '2026-08-10 14:30 +02:00', '2026-08-10 12:30:00'],
+    'seconds offset' => ['Y-m-d H:i Z', '2026-08-10 14:30 7200', '2026-08-10 12:30:00'],
+    'daylight-saving indicator' => ['Y-m-d H:i I', '2026-08-10 14:30 1', '2026-08-10 12:30:00'],
+]);
+
+test('sqlite exact decimals have mathematically correct comparison keys', function () {
+    $values = [
+        '-99999999999999999999999999999999999.000000000000000000000000000001',
+        '-10.25',
+        '-2',
+        '-0.0001',
+        '0',
+        '0.0001',
+        '2',
+        '10.25',
+        '99999999999999999999999999999999999.000000000000000000000000000001',
+    ];
+
+    $sorted = $values;
+    usort($sorted, fn (string $left, string $right): int => strcmp(
+        ExactDecimal::sortableKey($left),
+        ExactDecimal::sortableKey($right),
+    ));
+
+    expect($sorted)->toBe($values);
+
+    Schema::create('core_10_exact_decimal_sort', function (Blueprint $table) {
+        $table->id();
+        $table->text('amount');
+    });
+    DB::table('core_10_exact_decimal_sort')->insert(array_map(
+        fn (string $value): array => ['amount' => $value],
+        array_reverse($values),
+    ));
+    ExactDecimal::registerSqliteFunction(DB::connection());
+
+    expect(DB::table('core_10_exact_decimal_sort')
+        ->orderByRaw('aura_decimal_sort_key(amount)')
+        ->pluck('amount')->all())->toBe($values)
+        ->and(DB::table('core_10_exact_decimal_sort')
+            ->whereRaw('aura_decimal_sort_key(amount) > aura_decimal_sort_key(?)', ['2'])
+            ->orderByRaw('aura_decimal_sort_key(amount)')
+            ->pluck('amount')->all())->toBe(array_slice($values, 7));
 });
 
 test('invalid configured timezones fail clearly instead of falling back to utc', function () {

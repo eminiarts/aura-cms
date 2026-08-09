@@ -272,6 +272,48 @@ class TemporalValue
         );
     }
 
+    private static function formatCapturePattern(string $format, string $target, string $targetPattern): ?string
+    {
+        $patterns = [
+            'Y' => '\\d{4}', 'y' => '\\d{2}', 'm' => '\\d{2}', 'n' => '\\d{1,2}',
+            'd' => '\\d{2}', 'j' => '\\d{1,2}', 'H' => '\\d{2}', 'G' => '\\d{1,2}',
+            'h' => '\\d{2}', 'g' => '\\d{1,2}', 'i' => '\\d{2}', 's' => '\\d{2}',
+            'u' => '\\d{1,6}', 'v' => '\\d{1,3}', 'O' => '[+-]\\d{4}',
+            'P' => '[+-]\\d{2}:\\d{2}', 'T' => '[A-Za-z]{1,10}', 'e' => '[A-Za-z0-9_+\\/-]+',
+            'M' => '[A-Za-z]{3}', 'F' => '[A-Za-z]+', 'D' => '[A-Za-z]{3}', 'l' => '[A-Za-z]+',
+            'a' => '[ap]m', 'A' => '[AP]M',
+        ];
+        $regex = '';
+        $escaped = false;
+        $found = false;
+
+        foreach (str_split($format) as $character) {
+            if ($escaped) {
+                $regex .= preg_quote($character, '/');
+                $escaped = false;
+
+                continue;
+            }
+
+            if ($character === '\\') {
+                $escaped = true;
+
+                continue;
+            }
+
+            if ($character === $target && ! $found) {
+                $regex .= '(?<'.$target.'>'.$targetPattern.')';
+                $found = true;
+
+                continue;
+            }
+
+            $regex .= $patterns[$character] ?? preg_quote($character, '/');
+        }
+
+        return $found ? '/^'.$regex.'$/D' : null;
+    }
+
     private static function formatContainsTimezone(string $format): bool
     {
         $escaped = false;
@@ -421,20 +463,63 @@ class TemporalValue
      */
     private static function parseExplicitOffsetDatetime(string $value, array $field): ?CarbonImmutable
     {
-        if (preg_match('/(?:Z|[+-]\d{2}:?\d{2})$/i', $value) !== 1) {
-            return null;
-        }
-
-        if (str_ends_with(strtoupper($value), 'Z')) {
-            $value = substr($value, 0, -1).'+00:00';
-        }
-
         $formats = array_values(array_filter(
             self::datetimeFormats($field),
             self::formatContainsTimezone(...),
         ));
 
-        return self::parseStrict($value, $formats, self::inputTimezone($field));
+        foreach ($formats as $format) {
+            $parsed = self::parseStrict($value, [$format], self::inputTimezone($field))
+                ?? self::parseNumericTimezoneToken($value, $format, $field);
+
+            if ($parsed) {
+                return $parsed;
+            }
+        }
+
+        return null;
+    }
+
+    /** @param array<string, mixed> $field */
+    private static function parseNumericTimezoneToken(string $value, string $format, array $field): ?CarbonImmutable
+    {
+        foreach (['Z' => '-?\d{1,5}', 'I' => '[01]'] as $token => $pattern) {
+            $capturePattern = self::formatCapturePattern($format, $token, $pattern);
+
+            if ($capturePattern === null || preg_match($capturePattern, $value, $matches, PREG_OFFSET_CAPTURE) !== 1) {
+                continue;
+            }
+
+            $literal = '#';
+            $literalFormat = self::replaceFormatToken($format, $token, '\\'.$literal);
+            [$tokenValue, $tokenOffset] = $matches[$token];
+            $literalValue = substr_replace($value, $literal, $tokenOffset, strlen($tokenValue));
+            $wallClock = self::parseStrict($literalValue, [$literalFormat], new DateTimeZone('UTC'));
+
+            if (! $wallClock) {
+                continue;
+            }
+
+            if ($token === 'Z') {
+                $offset = (int) $tokenValue;
+
+                if ($offset < -43200 || $offset > 50400) {
+                    return null;
+                }
+
+                return CarbonImmutable::createFromTimestampUTC($wallClock->getTimestamp() - $offset);
+            }
+
+            $candidates = self::localDatetimeCandidates($wallClock, self::inputTimezone($field));
+
+            foreach ($candidates as $candidate) {
+                if ($candidate->format('I') === $tokenValue && $candidate->format($format) === $value) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -495,6 +580,39 @@ class TemporalValue
         }
 
         return null;
+    }
+
+    private static function replaceFormatToken(string $format, string $target, string $replacement): string
+    {
+        $result = '';
+        $escaped = false;
+        $replaced = false;
+
+        foreach (str_split($format) as $character) {
+            if ($escaped) {
+                $result .= '\\'.$character;
+                $escaped = false;
+
+                continue;
+            }
+
+            if ($character === '\\') {
+                $escaped = true;
+
+                continue;
+            }
+
+            if ($character === $target && ! $replaced) {
+                $result .= $replacement;
+                $replaced = true;
+
+                continue;
+            }
+
+            $result .= $character;
+        }
+
+        return $result;
     }
 
     /**

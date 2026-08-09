@@ -39,6 +39,20 @@ Before deploying, inspect values that exceed the new precision, decide how inval
 
 Meta-backed Number fields require no schema change because Aura meta values are stored as text. Their configured normalization is applied on hydration and on subsequent writes; it does not destructively rewrite all existing rows during the package upgrade.
 
+SQLite physical decimal columns remain `TEXT` so all 65 configured digits survive. Aura's table filters and sorting use an exact canonical comparison key for these columns and for legacy text meta values; existing exact plain-decimal strings need no rewrite. Before upgrading a customized query, remove float/`CAST(... AS NUMERIC)` comparisons and route it through the Aura table query contract or implement an equally exact decimal comparator.
+
+## Changing Datetime Columns from TIMESTAMP
+
+Aura Datetime fields store an offset-less wall clock and new generated schemas therefore use Laravel's `dateTime()` column (`DATETIME` on MySQL), not `timestamp()`. MySQL `TIMESTAMP` has a narrower range and applies connection-session timezone conversion, which violates this contract. Existing MySQL physical columns need an application migration after auditing their current timezone interpretation:
+
+```php
+Schema::table('events', function (Blueprint $table) {
+    $table->dateTime('occurred_at')->nullable()->change();
+});
+```
+
+Test the conversion with the production session timezone and values outside the 1970-2038 TIMESTAMP range before deployment. PostgreSQL and SQLite applications should still inspect the generated DDL, but Laravel's timezone-free `dateTime()` representation already matches Aura's wall-clock storage contract there.
+
 Older published Aura configuration files can keep working because temporal fields have runtime defaults. To customize the new defaults, merge this section into `config/aura.php`:
 
 ```php
@@ -56,6 +70,6 @@ Older published Aura configuration files can keep working because temporal field
 
 The application-timezone fallback preserves the interpretation of timestamps written by older Aura versions. Set `storage_timezone` to `UTC` only after confirming existing rows are already UTC or migrating them; otherwise the same stored clock time may display offset after the upgrade.
 
-Datetime persistence remains the portable, offset-less `Y-m-d H:i:s` contract. An exact instant is now rejected before physical or meta persistence when its wall clock is ambiguous in the configured storage timezone, because either DST fold would serialize to the same value. Configure `storage_timezone` as `UTC` or another fixed-offset timezone to accept every instant. This does not change the published configuration default or require a schema migration.
+Datetime persistence remains the portable, offset-less `Y-m-d H:i:s` contract. An exact instant is now rejected before physical or meta persistence when its wall clock is ambiguous in the configured storage timezone, because either DST fold would serialize to the same value. Configure `storage_timezone` as `UTC` or another fixed-offset timezone to accept every instant. PHP formats containing `T`, `e`, `I`, `O`, `P`, or `Z` are parsed as timezone-bearing input; DST gaps and unresolved overlaps remain rejected.
 
 Existing ambiguous or otherwise unparseable datetime rows remain inspectable: edit/model hydration preserves the raw value, and index, view, and export surfaces render it without guessing an offset. Before migrating a DST-observing storage timezone to UTC, disambiguate overlap rows from another authoritative source; the offset-less value alone cannot identify which instant was intended.

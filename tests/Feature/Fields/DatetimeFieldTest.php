@@ -49,8 +49,8 @@ describe('Datetime Field Configuration', function () {
             ->and($field->view())->toBe('aura::fields.view-value');
     });
 
-    test('uses timestamp column type', function () {
-        expect((new Datetime)->tableColumnType)->toBe('timestamp');
+    test('uses portable wall clock column type', function () {
+        expect((new Datetime)->tableColumnType)->toBe('dateTime');
     });
 
     test('has required configuration fields with defaults', function () {

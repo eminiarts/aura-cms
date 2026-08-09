@@ -4,6 +4,7 @@ namespace Aura\Base\Commands;
 
 use Aura\Base\Resource;
 use Aura\Base\Schema\FieldColumn;
+use Aura\Base\Support\PackageTool;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
@@ -59,17 +60,24 @@ class CreateResourceMigration extends Command
 
         $fields = method_exists($resource, 'inputFields') ? $resource->inputFields() : [];
 
-        $combined = $baseFields->merge($fields)->merge(collect([
+        $ownershipFields = [
             [
                 'name' => 'User Id',
                 'type' => 'Aura\\Base\\Fields\\BelongsTo',
                 'slug' => 'user_id',
             ],
-            [
+        ];
+
+        if (config('aura.teams')) {
+            $ownershipFields[] = [
                 'name' => 'Team Id',
                 'type' => 'Aura\\Base\\Fields\\BelongsTo',
                 'slug' => 'team_id',
-            ],
+            ];
+        }
+
+        $combined = $baseFields->merge($fields)->merge(collect([
+            ...$ownershipFields,
             [
                 'name' => 'created_at',
                 'type' => 'Aura\\Base\\Fields\\Datetime',
@@ -179,16 +187,21 @@ class CreateResourceMigration extends Command
 
     protected function runPint($migrationFile)
     {
-        return;
+        $pint = PackageTool::binary('pint');
+
+        if ($pint === null) {
+            return;
+        }
+
         $command = [
             (new ExecutableFinder)->find('php', 'php', [
                 '/usr/local/bin',
                 '/opt/homebrew/bin',
             ]),
 
-            'vendor/bin/pint', $migrationFile,
+            $pint, $migrationFile,
         ];
 
-        $result = Process::path(base_path())->run($command);
+        Process::path(dirname($migrationFile))->run($command)->throw();
     }
 }

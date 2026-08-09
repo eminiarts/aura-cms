@@ -28,8 +28,8 @@ class UpdateSchemaFromMigration extends Command
             $migrationFile = $this->resolveMigrationFile();
             $plan = SchemaUpdatePlan::fromMigrationFile($migrationFile);
 
-            SchemaMigrationLock::run(
-                'schema:'.Schema::getConnection()->getName().':'.$plan->table,
+            SchemaMigrationLock::runForTable(
+                $plan->table,
                 fn () => $this->synchronize($migrationFile, $plan),
             );
 
@@ -74,6 +74,8 @@ class UpdateSchemaFromMigration extends Command
         $this->info("Table '{$plan->table}' does not exist. Applying the validated schema plan...");
         $plan->assertMigrationCreatesOnlyPlannedTable($migrationFile);
 
+        $created = false;
+
         try {
             Schema::create($plan->table, function (Blueprint $table) use ($plan): void {
                 $table->id();
@@ -83,14 +85,17 @@ class UpdateSchemaFromMigration extends Command
                 }
 
                 $table->foreignId('user_id');
-                $table->foreignId('team_id');
+                if (config('aura.teams')) {
+                    $table->foreignId('team_id');
+                }
                 $table->timestamps();
                 $table->softDeletes();
             });
+            $created = true;
 
             $this->recordMigration($migrationFile);
         } catch (Throwable $exception) {
-            if (Schema::hasTable($plan->table)) {
+            if ($created && Schema::hasTable($plan->table)) {
                 Schema::drop($plan->table);
             }
 
@@ -183,7 +188,14 @@ class UpdateSchemaFromMigration extends Command
         $existingColumns = Schema::getColumnListing($plan->table);
         $desiredColumns = array_keys($plan->columns);
         $newColumns = array_values(array_diff($desiredColumns, $existingColumns));
-        $changedColumns = array_values(array_intersect($desiredColumns, $existingColumns));
+        $columnMetadata = collect(Schema::getColumns($plan->table))->keyBy('name');
+        $changedColumns = array_values(array_filter(
+            array_intersect($desiredColumns, $existingColumns),
+            fn (string $column): bool => ! $plan->columns[$column]->matchesDatabaseColumn(
+                (array) $columnMetadata->get($column, []),
+                Schema::getConnection()->getDriverName(),
+            ),
+        ));
         $dropColumns = array_values(array_diff(
             $existingColumns,
             [...$desiredColumns, ...$plan->preservedColumns],

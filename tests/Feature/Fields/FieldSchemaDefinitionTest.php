@@ -1,10 +1,12 @@
 <?php
 
 use Aura\Base\Commands\CreateResourceMigration;
+use Aura\Base\Fields\Datetime;
 use Aura\Base\Fields\Number;
 use Aura\Base\Listeners\CreateDatabaseMigration;
 use Aura\Base\Listeners\ModifyDatabaseMigration;
 use Aura\Base\Schema\FieldColumn;
+use Aura\Base\Schema\SchemaMigrationLock;
 use Aura\Base\Schema\SchemaUpdatePlan;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
@@ -48,6 +50,47 @@ test('number fields declare portable integer and decimal schema columns', functi
 
     expect(DB::table('core_10_schema_values')->value('quantity'))->toBe(-2)
         ->and((string) DB::table('core_10_schema_values')->value('amount'))->toBe('1234.5678');
+});
+
+test('datetime fields declare portable wall clock columns', function () {
+    $datetime = new Datetime;
+    $definition = $datetime->columnDefinition(['slug' => 'occurred_at']);
+
+    expect($definition->type)->toBe('dateTime')
+        ->and($definition->toMigration('occurred_at'))->toContain("\$table->dateTime('occurred_at')");
+});
+
+test('schema lock domains include driver database connection and table', function () {
+    $connection = DB::connection();
+
+    expect(SchemaMigrationLock::domain($connection, 'orders'))
+        ->toContain($connection->getDriverName())
+        ->toContain($connection->getDatabaseName())
+        ->toContain($connection->getName())
+        ->toEndWith(':orders');
+});
+
+test('schema definitions compare canonical types defaults nullability and attributes', function () {
+    $definition = new FieldColumn('dateTime', nullable: false, default: 'CURRENT_TIMESTAMP');
+
+    expect($definition->matchesDatabaseColumn([
+        'type_name' => 'datetime',
+        'type' => 'datetime',
+        'nullable' => false,
+        'default' => '(current_timestamp)',
+    ], 'mysql'))->toBeTrue()
+        ->and($definition->matchesDatabaseColumn([
+            'type_name' => 'timestamp',
+            'type' => 'timestamp',
+            'nullable' => false,
+            'default' => '(current_timestamp)',
+        ], 'mysql'))->toBeFalse()
+        ->and((new FieldColumn('integer'))->matchesDatabaseColumn([
+            'type_name' => 'int',
+            'type' => 'int unsigned',
+            'nullable' => true,
+            'default' => null,
+        ], 'mysql'))->toBeFalse();
 });
 
 test('structured schema plans preserve driver-specific decimal precision and scale', function () {
@@ -100,6 +143,69 @@ test('schema update preflights every conversion before additions and drops', fun
     } finally {
         File::delete($path);
         Schema::dropIfExists($tableName);
+    }
+});
+
+test('schema update only preflights columns whose canonical definition changed', function () {
+    $tableName = 'core_10_true_diff_values';
+    Schema::create($tableName, function (Blueprint $table) {
+        $table->id();
+        $table->date('legacy_date')->nullable();
+    });
+    DB::table($tableName)->insert(['legacy_date' => 'not-a-date']);
+
+    $path = tempnam(sys_get_temp_dir(), 'aura-core10-true-diff-');
+    $plan = new SchemaUpdatePlan($tableName, [
+        'legacy_date' => new FieldColumn('date'),
+        'new_value' => new FieldColumn('string'),
+    ]);
+    File::put($path, $plan->embedIn("<?php\n\nreturn new class {};\n"));
+
+    try {
+        expect(Artisan::call('aura:schema-update', [
+            'migration' => $path,
+            '--no-interaction' => true,
+        ]))->toBe(0, Artisan::output())
+            ->and(Schema::hasColumn($tableName, 'new_value'))->toBeTrue()
+            ->and(DB::table($tableName)->value('legacy_date'))->toBe('not-a-date');
+    } finally {
+        File::delete($path);
+        Schema::dropIfExists($tableName);
+    }
+});
+
+test('teams disabled schema plans omit team ownership and persist normal resources', function () {
+    config()->set('aura.teams', false);
+    $tableName = 'core_10_without_teams_values';
+    $path = tempnam(sys_get_temp_dir(), 'aura-core10-without-teams-').'.php';
+    $plan = new SchemaUpdatePlan($tableName, ['name' => new FieldColumn('string')]);
+    $migration = str_replace('__TABLE__', $tableName, <<<'PHP'
+<?php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+return new class extends Migration {
+    public function up(): void { Schema::create('__TABLE__', function (Blueprint $table) { $table->id(); }); }
+    public function down(): void { Schema::dropIfExists('__TABLE__'); }
+};
+PHP);
+    File::put($path, $plan->embedIn($migration));
+
+    try {
+        expect(Artisan::call('aura:schema-update', ['migration' => $path, '--no-interaction' => true]))
+            ->toBe(0, Artisan::output())
+            ->and(Schema::hasColumn($tableName, 'team_id'))->toBeFalse();
+
+        $id = DB::table($tableName)->insertGetId([
+            'name' => 'Normal resource',
+            'user_id' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        expect($id)->toBeInt();
+    } finally {
+        Schema::dropIfExists($tableName);
+        File::delete($path);
     }
 });
 

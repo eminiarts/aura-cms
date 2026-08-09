@@ -2,7 +2,9 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Aura\Base\Support\ExactDecimal;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -96,7 +98,14 @@ trait Sorting
                 })
                     ->select($table.'.*')
                     ->when($this->model->isNumberField($field), function ($query) use ($direction) {
-                        $query->orderByRaw('CAST(meta.value AS DECIMAL(10,2)) '.$direction);
+                        if (DB::connection($this->model->getConnectionName())->getDriverName() === 'sqlite') {
+                            ExactDecimal::registerSqliteFunction(DB::connection($this->model->getConnectionName()));
+                            $query->orderByRaw('aura_decimal_sort_key(meta.value) '.$direction);
+
+                            return;
+                        }
+
+                        $query->orderByRaw('CAST(meta.value AS DECIMAL(65,30)) '.$direction);
                     })
                     ->when(! $this->model->isNumberField($field), function ($query) use ($direction) {
                         $query->orderByRaw('CAST(meta.value AS CHAR) '.$direction);
@@ -105,6 +114,14 @@ trait Sorting
 
                 return $query;
             } else {
+                if ($this->model->isNumberField($field) && DB::connection($this->model->getConnectionName())->getDriverName() === 'sqlite') {
+                    ExactDecimal::registerSqliteFunction(DB::connection($this->model->getConnectionName()));
+                    $column = $query->getQuery()->getGrammar()->wrap($field);
+                    $query->orderByRaw("aura_decimal_sort_key({$column}) {$direction}");
+
+                    return $query;
+                }
+
                 $query->orderBy($field, $direction);
 
                 return $query;

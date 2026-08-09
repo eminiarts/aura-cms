@@ -5,6 +5,7 @@ namespace Aura\Base\Listeners;
 use Aura\Base\Events\SaveFields;
 use Aura\Base\Schema\FieldColumn;
 use Aura\Base\Schema\SchemaMigrationLock;
+use Aura\Base\Support\PackageTool;
 use Illuminate\Database\Migrations\MigrationCreator;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
@@ -33,8 +34,8 @@ class CreateDatabaseMigration
             return;
         }
 
-        SchemaMigrationLock::run(
-            'schema:'.Schema::getConnection()->getName().':'.$tableName,
+        SchemaMigrationLock::runForTable(
+            $tableName,
             fn () => $this->createAndRunMigration($event, $tableName),
         );
     }
@@ -293,16 +294,22 @@ class CreateDatabaseMigration
 
     protected function runPint($migrationFile): void
     {
+        $pint = PackageTool::binary('pint');
+
+        if ($pint === null) {
+            return;
+        }
+
         $command = [
             (new ExecutableFinder)->find('php', 'php', [
                 '/usr/local/bin',
                 '/opt/homebrew/bin',
             ]),
 
-            'vendor/bin/pint', $migrationFile,
+            $pint, $migrationFile,
         ];
 
-        Process::path(base_path())->run($command)->throw();
+        Process::path(dirname($migrationFile))->run($command)->throw();
     }
 
     protected function updateMigrationContent(

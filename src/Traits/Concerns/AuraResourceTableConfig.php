@@ -105,11 +105,7 @@ trait AuraResourceTableConfig
 
     public function isNumberField($key)
     {
-        if ($this->fieldBySlug($key)['type'] == 'Aura\\Base\\Fields\\Number') {
-            return true;
-        }
-
-        return false;
+        return data_get($this->fieldBySlug($key), 'type') === 'Aura\\Base\\Fields\\Number';
     }
 
     /**

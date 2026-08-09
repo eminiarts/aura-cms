@@ -8,6 +8,7 @@ use Aura\Base\Fields\Text;
 use Aura\Base\Listeners\CreateDatabaseMigration;
 use Aura\Base\Listeners\ModifyDatabaseMigration;
 use Aura\Base\Resource;
+use Aura\Base\Support\PackageTool;
 use Aura\Base\Traits\SaveFields;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
@@ -353,6 +354,18 @@ test('a generated migration is deleted and the failure is surfaced when formatti
     $after = collect(File::files(database_path('migrations')))->map->getPathname()->all();
 
     expect($after)->toBe($before);
+});
+
+test('package tools resolve outside the testbench temporary base path and may be absent safely', function () {
+    $pint = PackageTool::binary('pint');
+
+    expect($pint)->not->toBe(base_path('vendor/bin/pint'));
+
+    if ($pint !== null) {
+        expect(is_file($pint))->toBeTrue();
+    }
+
+    expect(PackageTool::binary('definitely-not-an-installed-composer-binary'))->toBeNull();
 });
 
 test('a generated migration is deleted and the failure is surfaced when migration execution fails', function () {

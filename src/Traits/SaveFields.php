@@ -5,7 +5,6 @@ namespace Aura\Base\Traits;
 use Aura\Base\Events\SaveFields as SaveFieldsEvent;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Schema\SchemaMigrationLock;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Locked;
 use RuntimeException;
@@ -41,9 +40,7 @@ trait SaveFields
         }
 
         $filePath = $this->resourceFieldsFilePath();
-        $lockKey = 'schema:'.Schema::getConnection()->getName().':'.$this->model->getTable();
-
-        SchemaMigrationLock::run($lockKey, function () use ($fields, $fieldsWithIds, $filePath): void {
+        SchemaMigrationLock::runForTable($this->model->getTable(), function () use ($fields, $fieldsWithIds, $filePath): void {
             $this->saveFieldsWhileLocked($fields, $fieldsWithIds, $filePath);
         });
 

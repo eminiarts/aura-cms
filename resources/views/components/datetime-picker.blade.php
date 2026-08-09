@@ -79,10 +79,10 @@
         @endphp
 
 
-        <div x-data="{ pickerOptions: @js($pickerOptions) }"
-            x-init="window.flatpickr($refs.input, pickerOptions)"
+        <div x-data="auraDatetimePicker"
+            data-picker-options="{{ json_encode($pickerOptions, JSON_THROW_ON_ERROR) }}"
             data-aura-datetime-picker="{{ $fieldSlug }}"
-            @change="$dispatch('input', { value: $event.target.value })" wire:ignore
+            @change="changed" wire:ignore
             class="flex relative rounded-md shadow-sm">
             <span
                 class="pointer-events-none h-full absolute right-0 inline-flex items-center px-3 text-gray-700 dark:text-gray-400 sm:text-sm

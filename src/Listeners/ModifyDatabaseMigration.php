@@ -6,11 +6,11 @@ use Aura\Base\Events\SaveFields;
 use Aura\Base\Schema\FieldColumn;
 use Aura\Base\Schema\SchemaMigrationLock;
 use Aura\Base\Schema\SchemaUpdatePlan;
+use Aura\Base\Support\PackageTool;
 use Illuminate\Database\Migrations\MigrationCreator;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use RuntimeException;
 use Symfony\Component\Process\ExecutableFinder;
@@ -39,8 +39,8 @@ class ModifyDatabaseMigration
 
         $tableName = $model->getTable();
 
-        SchemaMigrationLock::run(
-            'schema:'.Schema::getConnection()->getName().':'.$tableName,
+        SchemaMigrationLock::runForTable(
+            $tableName,
             fn () => $this->synchronize($newFields, $tableName),
         );
     }
@@ -76,7 +76,9 @@ class ModifyDatabaseMigration
         }
 
         $schema .= '$table->foreignId("user_id");'."\n";
-        $schema .= '$table->foreignId("team_id");'."\n";
+        if (config('aura.teams')) {
+            $schema .= '$table->foreignId("team_id");'."\n";
+        }
         $schema .= '$table->timestamps();'."\n";
         $schema .= '$table->softDeletes();'."\n";
 
@@ -125,16 +127,22 @@ class ModifyDatabaseMigration
 
     protected function runPint($migrationFile): void
     {
+        $pint = PackageTool::binary('pint');
+
+        if ($pint === null) {
+            return;
+        }
+
         $command = [
             (new ExecutableFinder)->find('php', 'php', [
                 '/usr/local/bin',
                 '/opt/homebrew/bin',
             ]),
 
-            'vendor/bin/pint', $migrationFile,
+            $pint, $migrationFile,
         ];
 
-        Process::path(base_path())->run($command)->throw();
+        Process::path(dirname($migrationFile))->run($command)->throw();
     }
 
     protected function runSchemaUpdate(string $migrationFile): void
