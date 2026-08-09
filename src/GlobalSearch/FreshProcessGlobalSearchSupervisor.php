@@ -6,6 +6,8 @@ use Throwable;
 
 final class FreshProcessGlobalSearchSupervisor
 {
+    public const CONFIGURATION_EXIT_CODE = 78;
+
     private const MAXIMUM_PROTOCOL_BYTES = 512;
 
     private const REQUIRED_FUNCTIONS = [
@@ -13,6 +15,8 @@ final class FreshProcessGlobalSearchSupervisor
         'feof',
         'fread',
         'fwrite',
+        'getenv',
+        'ini_get',
         'pcntl_async_signals',
         'pcntl_exec',
         'pcntl_fork',
@@ -24,6 +28,7 @@ final class FreshProcessGlobalSearchSupervisor
         'pcntl_wifexited',
         'pcntl_wifsignaled',
         'pcntl_wtermsig',
+        'php_ini_scanned_files',
         'posix_getppid',
         'posix_kill',
         'random_bytes',
@@ -213,6 +218,50 @@ final class FreshProcessGlobalSearchSupervisor
         );
     }
 
+    /** @param array<int, string> $arguments */
+    public static function runWorker(array $arguments): int
+    {
+        if (count($arguments) !== 2) {
+            return self::CONFIGURATION_EXIT_CODE;
+        }
+
+        [$artisanPath, $disabledFunctions] = $arguments;
+        $functions = self::normalizedFunctionList($disabledFunctions);
+
+        if ($artisanPath === '' || $functions === null || $functions === []) {
+            return self::CONFIGURATION_EXIT_CODE;
+        }
+
+        $availableFunctions = array_values(array_filter(
+            $functions,
+            fn (string $function): bool => function_exists($function),
+        ));
+        $ffiEnabled = ! in_array(
+            strtolower(trim((string) ini_get('ffi.enable'))),
+            ['', '0', 'off', 'false'],
+            true,
+        );
+
+        if ($availableFunctions !== [] || $ffiEnabled) {
+            fwrite(
+                STDERR,
+                'Unable to apply the inherited global search worker PHP restrictions. '
+                ."Verify the worker PHP INI scan configuration.\n",
+            );
+
+            return self::CONFIGURATION_EXIT_CODE;
+        }
+
+        $_SERVER['argv'] = [$artisanPath, 'aura:global-search-worker', '--no-interaction'];
+        $_SERVER['argc'] = count($_SERVER['argv']);
+        $GLOBALS['argv'] = $_SERVER['argv'];
+        $GLOBALS['argc'] = $_SERVER['argc'];
+
+        require $artisanPath;
+
+        return 127;
+    }
+
     /** @return array{0: resource, 1: resource}|null */
     private static function channelPair(): ?array
     {
@@ -285,6 +334,29 @@ final class FreshProcessGlobalSearchSupervisor
     private static function messageHasKeys(?array $message, array $keys): bool
     {
         return is_array($message) && array_keys($message) === $keys;
+    }
+
+    /** @return array<int, string>|null */
+    private static function normalizedFunctionList(string $functions): ?array
+    {
+        $normalized = [];
+
+        foreach (explode(',', $functions) as $function) {
+            $function = strtolower(trim($function));
+
+            if ($function === '') {
+                continue;
+            }
+
+            if (strlen($function) > 128
+                || preg_match('/^[a-z_][a-z0-9_]*$/', $function) !== 1) {
+                return null;
+            }
+
+            $normalized[$function] = true;
+        }
+
+        return count($normalized) <= 256 ? array_keys($normalized) : null;
     }
 
     /** @return array<string, mixed>|null */
@@ -429,15 +501,26 @@ final class FreshProcessGlobalSearchSupervisor
             return 127;
         }
 
+        $workerEnvironment = self::workerEnvironment($disabledFunctions);
+        $supervisorPath = realpath(__FILE__);
+
+        if ($workerEnvironment === null || ! is_string($supervisorPath)) {
+            fwrite(
+                STDERR,
+                "Unable to prepare the inherited global search worker PHP restrictions.\n",
+            );
+
+            return self::CONFIGURATION_EXIT_CODE;
+        }
+
         pcntl_exec($phpBinary, [
-            '-d',
-            'ffi.enable=0',
-            '-d',
-            'disable_functions='.$disabledFunctions,
+            '-r',
+            'require $argv[1]; exit(\Aura\Base\GlobalSearch\FreshProcessGlobalSearchSupervisor::runWorker(array_slice($argv, 2)));',
+            '--',
+            $supervisorPath,
             $artisanPath,
-            'aura:global-search-worker',
-            '--no-interaction',
-        ]);
+            $disabledFunctions,
+        ], $workerEnvironment);
 
         fwrite(STDERR, "Unable to execute the global search worker.\n");
 
@@ -636,6 +719,57 @@ final class FreshProcessGlobalSearchSupervisor
 
             usleep(10_000);
         }
+    }
+
+    /** @return array<string, string>|null */
+    private static function workerEnvironment(string $requiredDisabledFunctions): ?array
+    {
+        $required = self::normalizedFunctionList($requiredDisabledFunctions);
+        $inherited = self::normalizedFunctionList((string) ini_get('disable_functions'));
+        $environment = getenv();
+        $workerIniPath = realpath(__DIR__.'/global-search-worker.ini');
+
+        if ($required === null
+            || $inherited === null
+            || ! is_array($environment)
+            || ! is_string($workerIniPath)) {
+            return null;
+        }
+
+        $disabledFunctions = array_values(array_unique([...$inherited, ...$required]));
+        $scanDirectories = self::workerIniScanDirectories();
+
+        if ($disabledFunctions === [] || $scanDirectories === null) {
+            return null;
+        }
+
+        $environment['AURA_GLOBAL_SEARCH_DISABLED_FUNCTIONS'] = implode(',', $disabledFunctions);
+        $environment['PHP_INI_SCAN_DIR'] = $scanDirectories === ''
+            ? dirname($workerIniPath)
+            : $scanDirectories.PATH_SEPARATOR.dirname($workerIniPath);
+
+        return $environment;
+    }
+
+    private static function workerIniScanDirectories(): ?string
+    {
+        $scannedFiles = php_ini_scanned_files();
+
+        if ($scannedFiles === false || trim($scannedFiles) === '') {
+            return '';
+        }
+
+        $directories = [];
+
+        foreach (preg_split('/,\s*/', trim($scannedFiles)) ?: [] as $file) {
+            $file = trim($file);
+
+            if ($file !== '') {
+                $directories[dirname($file)] = true;
+            }
+        }
+
+        return implode(PATH_SEPARATOR, array_keys($directories));
     }
 
     /** @param array<string, int|string> $message */

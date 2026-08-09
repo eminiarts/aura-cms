@@ -107,6 +107,16 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
                 GlobalSearchProcessResource::class,
             ],
             'before-query-mutation' => [GlobalSearchProcessBeforeQueryMutationResource::class],
+            'before-query-union' => [GlobalSearchProcessUnionMutationResource::class],
+            'auth-before-construction' => [
+                GlobalSearchProcessDeniedConstructionResource::class,
+                GlobalSearchProcessResource::class,
+            ],
+            'host-restriction' => [GlobalSearchProcessHostRestrictionResource::class],
+            'query-churn' => [
+                GlobalSearchProcessConnectionChurnResource::class,
+                GlobalSearchProcessResource::class,
+            ],
             'raw-pdo' => [
                 GlobalSearchProcessRawPdoAdapterResource::class,
                 GlobalSearchProcessResource::class,
@@ -124,6 +134,9 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
             }
         }
 
-        Aura::setModel(new $resources[0]);
+        $modelResource = $fixtureMode === 'auth-before-construction'
+            ? GlobalSearchProcessResource::class
+            : $resources[0];
+        Aura::setModel(new $modelResource);
     }
 }

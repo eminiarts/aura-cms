@@ -7,6 +7,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Events\ConnectionEstablished;
 use Illuminate\Events\Dispatcher;
+use WeakMap;
 
 /**
  * Meters statements executed through Laravel-managed database connections.
@@ -17,12 +18,15 @@ use Illuminate\Events\Dispatcher;
  */
 final class GlobalSearchQueryGuard
 {
-    /** @var array<int, true> */
-    private array $guardedConnections = [];
+    /** @var WeakMap<Connection, true> */
+    private WeakMap $guardedConnections;
 
     private int $queryCount = 0;
 
-    public function __construct(private readonly int $maximumQueries) {}
+    public function __construct(private readonly int $maximumQueries)
+    {
+        $this->guardedConnections = new WeakMap;
+    }
 
     public function install(): void
     {
@@ -47,13 +51,11 @@ final class GlobalSearchQueryGuard
 
     private function guard(Connection $connection): void
     {
-        $connectionId = spl_object_id($connection);
-
-        if (isset($this->guardedConnections[$connectionId])) {
+        if (isset($this->guardedConnections[$connection])) {
             return;
         }
 
-        $this->guardedConnections[$connectionId] = true;
+        $this->guardedConnections[$connection] = true;
         $connection->beforeExecuting(function (): void {
             if ($this->queryCount >= $this->maximumQueries) {
                 throw new GlobalSearchExecutionFailed('The global search query budget was exhausted.');

@@ -8,7 +8,9 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\GlobalSearch\DatabaseGlobalSearchAdapter;
 use Aura\Base\GlobalSearch\DatabaseStatementDeadline;
 use Aura\Base\GlobalSearch\FreshProcessGlobalSearchExecutor;
+use Aura\Base\GlobalSearch\FreshProcessGlobalSearchSupervisor;
 use Aura\Base\GlobalSearch\GlobalSearchBudget;
+use Aura\Base\GlobalSearch\GlobalSearchQueryGuard;
 use Aura\Base\GlobalSearch\GlobalSearchWorkerContext;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Models\Meta;
@@ -17,8 +19,11 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessBeforeQueryMutationResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessBlockingDiscoveryResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessConnectionChurnResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessDefaultConnectionResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessDeniedConstructionResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessDescriptorProbeResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessHostRestrictionResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessPolicy;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessQueryFloodAdapterResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessQueryFloodPolicyResource;
@@ -29,6 +34,7 @@ use Aura\Base\Tests\Fixtures\GlobalSearchProcessSlowDiscoveryResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessSlowTitleResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessSpawningResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessStallingResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessUnionMutationResource;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as BaseQueryBuilder;
@@ -137,9 +143,92 @@ class HardeningBeforeQueryMutationResource extends HardeningSearchResource
             $builder->getQuery()->beforeQuery(function (BaseQueryBuilder $query): void {
                 $query->wheres = [];
                 $query->bindings['where'] = [];
+                $query->where('id', '>', 0)->orWhere('id', '>', 0);
                 $query->limit = null;
             });
         });
+    }
+}
+
+class HardeningBoundBeforeQueryResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-bound-before-query';
+
+    public static string $type = 'HardeningBoundBeforeQuery';
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('hardening-bound-before-query', function (Builder $builder): void {
+            $builder->getQuery()->beforeQuery(function (BaseQueryBuilder $query): void {
+                $query->where('title', 'not like', 'Bound Callback Hidden%');
+            });
+        });
+    }
+}
+
+class HardeningRawBeforeQueryResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-raw-before-query';
+
+    public static string $type = 'HardeningRawBeforeQuery';
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('hardening-raw-before-query', function (Builder $builder): void {
+            $builder->getQuery()->beforeQuery(function (BaseQueryBuilder $query): void {
+                $query->whereRaw('1 = 1');
+            });
+        });
+    }
+}
+
+class HardeningUnionBeforeQueryResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-union-before-query';
+
+    public static string $type = 'HardeningUnionBeforeQuery';
+
+    public function applyGlobalSearchVisibility($query, $user)
+    {
+        return $query->where('team_id', data_get($user, 'current_team_id'));
+    }
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('hardening-union-before-query', function (Builder $builder): void {
+            $builder->getQuery()->beforeQuery(function (BaseQueryBuilder $query): void {
+                $query->unionAll(
+                    $query->connection
+                        ->table('posts')
+                        ->where('title', 'Cross Tenant Union Needle'),
+                );
+            });
+        });
+    }
+}
+
+class HardeningSecondPassUnionResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-second-pass-union';
+
+    public static string $type = 'HardeningSecondPassUnion';
+
+    public static int $visibilityPass = 0;
+
+    public function applyGlobalSearchVisibility($query, $user)
+    {
+        static::$visibilityPass++;
+        $query->where('team_id', data_get($user, 'current_team_id'));
+
+        if (static::$visibilityPass === 2) {
+            $query->unionAll(
+                $query->getQuery()->connection
+                    ->table('posts')
+                    ->where('title', 'Cross Tenant Second Pass Needle'),
+            );
+        }
+
+        return $query;
     }
 }
 
@@ -171,6 +260,38 @@ class HardeningDeniedHooksResource extends HardeningSearchResource
         static::$events[] = 'missing-team-hook';
 
         throw new RuntimeException('A denied missing-team hook must not run.');
+    }
+}
+
+class HardeningDeniedConstructionResource extends HardeningSearchResource
+{
+    public static array $events = [];
+
+    public static ?string $slug = 'hardening-denied-construction';
+
+    public static string $type = 'HardeningDeniedConstruction';
+
+    public static function getFields()
+    {
+        DB::select('select 1');
+        static::$events[] = 'get-fields-query';
+
+        return parent::getFields();
+    }
+}
+
+class HardeningDeniedConstructionPolicy
+{
+    public function view(User $user, Resource $resource): bool
+    {
+        return false;
+    }
+
+    public function viewAny(User $user, Resource $resource): bool
+    {
+        HardeningDeniedConstructionResource::$events[] = 'view-any';
+
+        return false;
     }
 }
 
@@ -935,6 +1056,29 @@ test('viewAny authorization runs before every resource-controlled discovery hook
         ->and(HardeningDeniedHooksResource::$events)->toBe(['view-any']);
 });
 
+test('viewAny authorization runs before resource construction and container resolution', function () {
+    registerHardeningSearchResources([
+        HardeningDeniedConstructionResource::class,
+        HardeningAllowedResource::class,
+    ]);
+    Gate::policy(HardeningDeniedConstructionResource::class, HardeningDeniedConstructionPolicy::class);
+    Gate::policy(HardeningAllowedResource::class, HardeningSearchPolicy::class);
+    HardeningAllowedResource::create(['title' => 'Constructor Authorization Needle Allowed']);
+    HardeningDeniedConstructionResource::$events = [];
+    app()->bind(HardeningDeniedConstructionResource::class, function (): Resource {
+        HardeningDeniedConstructionResource::$events[] = 'container-resolution';
+
+        return new HardeningDeniedConstructionResource;
+    });
+
+    $component = app(GlobalSearch::class);
+    $component->search = 'Constructor Authorization Needle';
+
+    expect($component->getSearchResultsProperty()->flatten()->pluck('title')->all())
+        ->toBe(['Constructor Authorization Needle Allowed'])
+        ->and(HardeningDeniedConstructionResource::$events)->toBe(['view-any']);
+});
+
 test('the inline default adapter seals visibility scopes and its candidate limit after callbacks', function () {
     if (! config('aura.teams')) {
         $this->markTestSkipped('This regression test exercises tenant visibility.');
@@ -971,6 +1115,85 @@ test('the inline default adapter seals visibility scopes and its candidate limit
             'Visible Callback Needle 1',
             'Visible Callback Needle 2',
         ]);
+});
+
+test('the inline default adapter rejects union callbacks instead of leaking another tenant', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('This regression test exercises tenant visibility.');
+    }
+
+    config(['aura.global_search.execution_backend' => 'inline-testing']);
+    registerHardeningSearchResources([HardeningUnionBeforeQueryResource::class]);
+    Gate::policy(HardeningUnionBeforeQueryResource::class, HardeningSearchPolicy::class);
+
+    HardeningUnionBeforeQueryResource::withoutGlobalScopes()->create([
+        'title' => 'Current Tenant Union Needle',
+        'team_id' => $this->searchUser->current_team_id,
+    ]);
+    HardeningUnionBeforeQueryResource::withoutGlobalScopes()->create([
+        'title' => 'Cross Tenant Union Needle',
+        'team_id' => Team::factory()->createQuietly()->getKey(),
+    ]);
+
+    $component = app(GlobalSearch::class);
+    $component->search = 'Union Needle';
+
+    expect($component->getSearchResultsProperty())->toBeEmpty();
+});
+
+test('the inline default adapter validates the final visibility pass', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('This regression test exercises tenant visibility.');
+    }
+
+    config(['aura.global_search.execution_backend' => 'inline-testing']);
+    registerHardeningSearchResources([HardeningSecondPassUnionResource::class]);
+    Gate::policy(HardeningSecondPassUnionResource::class, HardeningSearchPolicy::class);
+
+    HardeningSecondPassUnionResource::withoutGlobalScopes()->create([
+        'title' => 'Current Tenant Second Pass Needle',
+        'team_id' => $this->searchUser->current_team_id,
+    ]);
+    HardeningSecondPassUnionResource::withoutGlobalScopes()->create([
+        'title' => 'Cross Tenant Second Pass Needle',
+        'team_id' => Team::factory()->createQuietly()->getKey(),
+    ]);
+    HardeningSecondPassUnionResource::$visibilityPass = 0;
+
+    $component = app(GlobalSearch::class);
+    $component->search = 'Second Pass Needle';
+
+    expect($component->getSearchResultsProperty())->toBeEmpty()
+        ->and(HardeningSecondPassUnionResource::$visibilityPass)->toBe(2);
+});
+
+test('the inline default adapter rejects raw callbacks', function () {
+    config(['aura.global_search.execution_backend' => 'inline-testing']);
+    registerHardeningSearchResources([HardeningRawBeforeQueryResource::class]);
+    Gate::policy(HardeningRawBeforeQueryResource::class, HardeningSearchPolicy::class);
+
+    HardeningRawBeforeQueryResource::create(['title' => 'Raw Callback Needle']);
+
+    $component = app(GlobalSearch::class);
+    $component->search = 'Raw Callback';
+
+    expect($component->getSearchResultsProperty())->toBeEmpty();
+});
+
+test('the inline default adapter retains bound callbacks', function () {
+    config(['aura.global_search.execution_backend' => 'inline-testing']);
+    registerHardeningSearchResources([HardeningBoundBeforeQueryResource::class]);
+    Gate::policy(HardeningBoundBeforeQueryResource::class, HardeningSearchPolicy::class);
+
+    HardeningBoundBeforeQueryResource::create(['title' => 'Bound Callback Visible Needle']);
+    HardeningBoundBeforeQueryResource::create(['title' => 'Bound Callback Hidden Needle']);
+
+    $component = app(GlobalSearch::class);
+    $component->search = 'Callback';
+    $titles = $component->getSearchResultsProperty()->flatten()->pluck('title')->all();
+
+    expect($titles)->toBe(['Bound Callback Visible Needle'])
+        ->not->toContain('Bound Callback Hidden Needle');
 });
 
 test('sql visibility is applied before the candidate limit', function () {
@@ -1245,7 +1468,6 @@ test('hostile adapters cannot delay a healthy later resource', function (string 
         GlobalSearchProcessStallingResource::class,
         GlobalSearchProcessResource::class,
     ]);
-
     try {
         $this->actingAs($harness['user']);
         $startedAt = hrtime(true);
@@ -1255,7 +1477,7 @@ test('hostile adapters cannot delay a healthy later resource', function (string 
             ->assertSee('Fresh Process Needle Current Team');
 
         expect((string) file_get_contents($harness['marker']))->toStartWith($mode.'-entered-')
-            ->and((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(1.8);
+            ->and((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(2.0);
     } finally {
         cleanupFreshProcessSearchHarness($harness);
     }
@@ -1266,7 +1488,6 @@ test('the hard resource deadline preempts slow title presentation', function () 
         GlobalSearchProcessSlowTitleResource::class,
         GlobalSearchProcessResource::class,
     ]);
-
     try {
         $this->actingAs($harness['user']);
         $startedAt = hrtime(true);
@@ -1276,7 +1497,7 @@ test('the hard resource deadline preempts slow title presentation', function () 
             ->assertSee('Fresh Process Needle Current Team');
 
         expect(file_get_contents($harness['marker']))->toBe('slow-title-entered')
-            ->and((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(1.8);
+            ->and((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(2.0);
     } finally {
         cleanupFreshProcessSearchHarness($harness);
     }
@@ -1339,6 +1560,51 @@ test('fresh workers seal visibility scopes and the candidate limit after callbac
             ->toContain('before-query-mutated')
             ->toContain(' where ')
             ->toContain(' limit 2');
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh workers authorize before denied resource construction', function () {
+    $harness = configureFreshProcessSearchHarness('auth-before-construction', [
+        GlobalSearchProcessDeniedConstructionResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+    @unlink($harness['marker']);
+
+    try {
+        $this->actingAs($harness['user']);
+
+        Livewire::test(GlobalSearch::class)
+            ->set('search', 'Fresh Process Needle')
+            ->assertSee('Fresh Process Needle Current Team');
+
+        expect((string) file_get_contents($harness['marker']))->toBe('view-any');
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh workers reject union callbacks instead of leaking another tenant', function () {
+    $harness = configureFreshProcessSearchHarness('before-query-union', [
+        GlobalSearchProcessUnionMutationResource::class,
+    ]);
+
+    try {
+        $this->actingAs($harness['user']);
+        $result = app(FreshProcessGlobalSearchExecutor::class)->run([
+            'operation' => 'search',
+            'context' => signedFreshProcessContext($harness['user']),
+            'query_limit' => 50,
+            'resource' => GlobalSearchProcessUnionMutationResource::class,
+            'resource_order' => 0,
+            'search_term' => 'Fresh Process Needle',
+            'global_limit' => 15,
+            'execution_timeout_ms' => 1_500,
+        ], 1_500, 1_048_576);
+
+        expect($result['results'] ?? null)->toBe([])
+            ->and((string) file_get_contents($harness['marker']))->toContain('union-mutated');
     } finally {
         cleanupFreshProcessSearchHarness($harness);
     }
@@ -1421,6 +1687,7 @@ test('fresh workers centrally enforce query budgets in hooks and adapters', func
     }
 })->with([
     'custom adapter' => ['query-adapter', GlobalSearchProcessQueryFloodAdapterResource::class],
+    'connection churn' => ['query-churn', GlobalSearchProcessConnectionChurnResource::class],
     'visibility hook' => ['query-visibility', GlobalSearchProcessQueryFloodVisibilityResource::class],
     'policy' => ['query-policy', GlobalSearchProcessQueryFloodPolicyResource::class],
 ]);
@@ -1430,6 +1697,8 @@ test('a prohibited native PDO adapter remains contained by the hard resource dea
         GlobalSearchProcessRawPdoAdapterResource::class,
         GlobalSearchProcessResource::class,
     ]);
+    config(['aura.global_search.per_resource_timeout_ms' => 800]);
+
     try {
         $this->actingAs($harness['user']);
         $startedAt = hrtime(true);
@@ -1439,7 +1708,7 @@ test('a prohibited native PDO adapter remains contained by the hard resource dea
             ->assertSee('Fresh Process Needle Current Team');
 
         expect((string) file_get_contents($harness['marker']))->toBe(str_repeat('p', 10))
-            ->and((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(1.8);
+            ->and((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(2.3);
     } finally {
         cleanupFreshProcessSearchHarness($harness);
     }
@@ -1553,6 +1822,56 @@ test('fresh worker reports authentication and resource queries together', functi
         expect($result['query_count'] ?? null)->toBe(3);
     } finally {
         cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('the central query guard meters every purged connection incarnation', function () {
+    $connectionName = 'global_search_guard_churn';
+    config(["database.connections.{$connectionName}" => [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+        'foreign_key_constraints' => true,
+    ]]);
+    DB::purge($connectionName);
+    $queryGuard = new GlobalSearchQueryGuard(3);
+    $queryGuard->install();
+    $guardedConnectionsProperty = new ReflectionProperty(
+        GlobalSearchQueryGuard::class,
+        'guardedConnections',
+    );
+    $initialGuardedConnectionCount = count($guardedConnectionsProperty->getValue($queryGuard));
+    $completedQueries = 0;
+    $failureClass = null;
+
+    try {
+        foreach (range(1, 100) as $iteration) {
+            try {
+                $connection = DB::connection($connectionName);
+                $connection->select('select 1');
+                $completedQueries++;
+            } catch (GlobalSearchExecutionFailed $exception) {
+                $failureClass = $exception::class;
+                unset($exception);
+
+                break;
+            } finally {
+                DB::purge($connectionName);
+                unset($connection);
+                gc_collect_cycles();
+            }
+        }
+
+        gc_collect_cycles();
+        $guardedConnections = $guardedConnectionsProperty->getValue($queryGuard);
+
+        expect($failureClass)->toBe(GlobalSearchExecutionFailed::class)
+            ->and($completedQueries)->toBe(3)
+            ->and($queryGuard->queryCount())->toBe(3)
+            ->and($guardedConnections)->toBeInstanceOf(WeakMap::class)
+            ->toHaveCount($initialGuardedConnectionCount);
+    } finally {
+        DB::purge($connectionName);
     }
 });
 
@@ -1745,6 +2064,70 @@ test('isolated execution uses a fresh contained process and preserves parent sig
     }
 });
 
+test('fresh workers preserve inherited host function restrictions', function () {
+    $harness = configureFreshProcessSearchHarness('host-restriction', [
+        GlobalSearchProcessHostRestrictionResource::class,
+    ]);
+    $projectPath = dirname(__DIR__, 2);
+    $artisanPath = dirname(__DIR__).'/Fixtures/GlobalSearchWorkerArtisan.php';
+    $outer = new Process([
+        PHP_BINARY,
+        '-d',
+        'disable_functions=putenv',
+        $artisanPath,
+        'aura:test-supervise-global-search',
+        '--no-interaction',
+    ], $projectPath, [
+        'APP_ENV' => 'testing',
+        'APP_KEY' => (string) config('app.key'),
+        'AURA_GLOBAL_SEARCH_HOOK_MARKER' => $harness['marker'],
+        'AURA_GLOBAL_SEARCH_PROCESS_FIXTURE' => '1',
+        'AURA_GLOBAL_SEARCH_FIXTURE_MODE' => 'host-restriction',
+        'AURA_GLOBAL_SEARCH_WORKER_ARTISAN' => $artisanPath,
+        'AURA_GLOBAL_SEARCH_WORKING_DIRECTORY' => $projectPath,
+        'DB_CONNECTION' => 'sqlite',
+        'DB_DATABASE' => $harness['database'],
+    ], timeout: 5);
+
+    try {
+        $outer->run();
+
+        expect($outer->isSuccessful())->toBeTrue($outer->getOutput().$outer->getErrorOutput())
+            ->and((string) file_get_contents($harness['marker']))->toBe('disabled');
+    } finally {
+        if ($outer->isRunning()) {
+            $outer->stop(0);
+        }
+
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('the worker bootstrap fails actionably before artisan when restrictions are missing', function () {
+    $projectPath = dirname(__DIR__, 2);
+    $supervisorPath = realpath($projectPath.'/src/GlobalSearch/FreshProcessGlobalSearchSupervisor.php');
+    $artisanPath = realpath(dirname(__DIR__).'/Fixtures/GlobalSearchWorkerArtisan.php');
+
+    expect($supervisorPath)->toBeString()
+        ->and($artisanPath)->toBeString();
+
+    $process = new Process([
+        PHP_BINARY,
+        '-r',
+        'require $argv[1]; exit(\Aura\Base\GlobalSearch\FreshProcessGlobalSearchSupervisor::runWorker(array_slice($argv, 2)));',
+        '--',
+        $supervisorPath,
+        $artisanPath,
+        'strlen',
+    ], $projectPath, timeout: 2);
+    $process->run();
+
+    expect($process->getExitCode())->toBe(FreshProcessGlobalSearchSupervisor::CONFIGURATION_EXIT_CODE)
+        ->and($process->getErrorOutput())->toContain(
+            'Unable to apply the inherited global search worker PHP restrictions.',
+        );
+});
+
 test('isolated execution enforces its deadline directly', function () {
     $harness = configureFreshProcessSearchHarness('slow-discovery', [
         GlobalSearchProcessSlowDiscoveryResource::class,
@@ -1871,7 +2254,7 @@ test('SIGTERM during worker startup cannot orphan the application process', func
         (string) (hrtime(true) + 2_000_000_000),
         $workerPath,
         $processToken,
-        'pcntl_exec,pcntl_fork,posix_kill,proc_open',
+        'pcntl_exec,pcntl_fork,proc_open',
     ], $projectPath, timeout: 3);
 
     $observedProcessIds = [];

@@ -271,16 +271,28 @@ class GlobalSearch extends Component
     protected function resolveSearchableResource(string $resourceClass, Authenticatable $user): ?Resource
     {
         try {
-            if (! is_subclass_of($resourceClass, Resource::class)
-                || ! (new ReflectionClass($resourceClass))->isInstantiable()) {
+            if (! is_subclass_of($resourceClass, Resource::class)) {
+                return null;
+            }
+
+            $reflection = new ReflectionClass($resourceClass);
+
+            if (! $reflection->isInstantiable()) {
+                return null;
+            }
+
+            $authorizationSubject = $reflection->newInstanceWithoutConstructor();
+
+            if (! $authorizationSubject instanceof Resource
+                || ! Gate::forUser($user)->allows('viewAny', $authorizationSubject)
+                || $resourceClass::getGlobalSearch() !== true) {
                 return null;
             }
 
             $resource = app($resourceClass);
 
             if (! $resource instanceof Resource
-                || ! Gate::forUser($user)->allows('viewAny', $resource)
-                || $resourceClass::getGlobalSearch() !== true
+                || $resource::class !== $resourceClass
                 || (config('aura.teams')
                     && data_get($user, 'current_team_id') === null
                     && $resource->globalSearchAllowsMissingTeamContext($user) !== true)) {

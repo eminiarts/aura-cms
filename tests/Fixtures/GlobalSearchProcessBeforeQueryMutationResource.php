@@ -28,6 +28,7 @@ class GlobalSearchProcessBeforeQueryMutationResource extends GlobalSearchProcess
                 );
                 $query->wheres = [];
                 $query->bindings['where'] = [];
+                $query->where('id', '>', 0)->orWhere('id', '>', 0);
                 $query->limit = null;
                 $query->connection->listen(function ($event): void {
                     file_put_contents(

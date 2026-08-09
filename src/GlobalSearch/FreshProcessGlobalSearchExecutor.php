@@ -102,7 +102,8 @@ SH;
             && is_string($this->resolvedPhpBinary())
             && is_string($this->resolvedArtisanPath())
             && is_string($this->resolvedSupervisorPath())
-            && is_string($this->resolvedDescriptorDirectory());
+            && is_string($this->resolvedDescriptorDirectory())
+            && is_string($this->workerDisabledFunctions());
     }
 
     /**
@@ -116,6 +117,7 @@ SH;
         $shellPath = $this->resolvedShellPath();
         $supervisorPath = $this->resolvedSupervisorPath();
         $descriptorDirectory = $this->resolvedDescriptorDirectory();
+        $disabledFunctions = $this->workerDisabledFunctions();
 
         if (config('aura.global_search.execution_backend', 'process') !== 'process'
             || ! function_exists('proc_open')
@@ -124,7 +126,8 @@ SH;
             || $phpBinary === null
             || $artisanPath === null
             || $supervisorPath === null
-            || $descriptorDirectory === null) {
+            || $descriptorDirectory === null
+            || $disabledFunctions === null) {
             throw new GlobalSearchExecutionUnavailable('Fresh global search execution is unavailable.');
         }
 
@@ -149,6 +152,7 @@ SH;
                 $supervisorPath,
                 $descriptorDirectory,
                 hrtime(true) + ($timeoutMilliseconds * 1_000_000),
+                $disabledFunctions,
             ),
             $this->resolvedWorkingDirectory(),
             $this->environment === [] ? null : $this->environment,
@@ -204,6 +208,12 @@ SH;
 
         if ($exitCode === 126) {
             throw new GlobalSearchExecutionUnavailable('Fresh global search supervision is unavailable.');
+        }
+
+        if ($exitCode === FreshProcessGlobalSearchSupervisor::CONFIGURATION_EXIT_CODE) {
+            throw new GlobalSearchExecutionUnavailable(
+                'The worker PHP could not apply Aura and host disable_functions restrictions.',
+            );
         }
 
         if ($exitCode !== 0) {
@@ -267,6 +277,7 @@ SH;
         string $supervisorPath,
         string $descriptorDirectory,
         int $deadlineNanoseconds,
+        string $disabledFunctions,
     ): array {
         return [
             $shellPath,
@@ -285,7 +296,7 @@ SH;
             (string) $deadlineNanoseconds,
             $phpBinary,
             $artisanPath,
-            implode(',', self::FORBIDDEN_WORKER_FUNCTIONS),
+            $disabledFunctions,
         ];
     }
 
@@ -475,5 +486,38 @@ SH;
         if ($process->isRunning()) {
             $process->stop(0, defined('SIGKILL') ? SIGKILL : 9);
         }
+    }
+
+    private function workerDisabledFunctions(): ?string
+    {
+        $inherited = ini_get('disable_functions');
+
+        if (! is_string($inherited)) {
+            return null;
+        }
+
+        $functions = array_merge(explode(',', $inherited), self::FORBIDDEN_WORKER_FUNCTIONS);
+        $normalized = [];
+
+        foreach ($functions as $function) {
+            $function = strtolower(trim($function));
+
+            if ($function === '') {
+                continue;
+            }
+
+            if (strlen($function) > 128
+                || preg_match('/^[a-z_][a-z0-9_]*$/', $function) !== 1) {
+                return null;
+            }
+
+            $normalized[$function] = true;
+        }
+
+        if ($normalized === [] || count($normalized) > 256) {
+            return null;
+        }
+
+        return implode(',', array_keys($normalized));
     }
 }

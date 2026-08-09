@@ -8,7 +8,8 @@ class GlobalSearchProcessPolicy
 {
     public function view(mixed $user, Resource $resource): bool
     {
-        if ($resource instanceof GlobalSearchProcessBeforeQueryMutationResource) {
+        if ($resource instanceof GlobalSearchProcessBeforeQueryMutationResource
+            || $resource instanceof GlobalSearchProcessUnionMutationResource) {
             return true;
         }
 
@@ -17,6 +18,16 @@ class GlobalSearchProcessPolicy
 
     public function viewAny(mixed $user, Resource $resource): bool
     {
+        if ($resource instanceof GlobalSearchProcessDeniedConstructionResource) {
+            file_put_contents(
+                (string) getenv('AURA_GLOBAL_SEARCH_HOOK_MARKER'),
+                'view-any',
+                FILE_APPEND,
+            );
+
+            return false;
+        }
+
         if ($resource instanceof GlobalSearchProcessDefaultConnectionResource) {
             return data_get($user, 'email') === 'tenant-a@example.test';
         }
