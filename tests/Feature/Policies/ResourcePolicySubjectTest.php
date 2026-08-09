@@ -1,6 +1,8 @@
 <?php
 
+use Aura\Base\BaseResource;
 use Aura\Base\Policies\ResourcePolicy;
+use Aura\Base\Policies\TeamPolicy;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
@@ -50,6 +52,99 @@ class Core05InheritedResourcePolicyWithBefore extends ResourcePolicy
     }
 }
 
+class Core05PolicySubjectBaseResource extends BaseResource
+{
+    public static ?string $slug = 'core05-policy-subject-base';
+
+    public static string $type = 'Core05PolicySubjectBase';
+
+    public static function getFields(): array
+    {
+        return [];
+    }
+}
+
+class Core05OverriddenResourcePolicy extends ResourcePolicy
+{
+    public function create($user, $resource): bool
+    {
+        return $user->exists && $resource instanceof Core05PolicySubjectResource;
+    }
+
+    public function viewAny($user, $resource): bool
+    {
+        return $user->exists && $resource instanceof Core05PolicySubjectResource;
+    }
+}
+
+class Core05ContextResourcePolicy extends ResourcePolicy
+{
+    public function create($user, $resource, string $context = ''): bool
+    {
+        return $user->exists
+            && $resource instanceof Core05PolicySubjectResource
+            && $context === 'expected-context';
+    }
+
+    public function viewAny($user, $resource, string $context = ''): bool
+    {
+        return $user->exists
+            && $resource instanceof Core05PolicySubjectResource
+            && $context === 'expected-context';
+    }
+}
+
+trait Core05ResourcePolicyMethods
+{
+    public function create($user, $resource): bool
+    {
+        return $user->exists && $resource instanceof Core05PolicySubjectResource;
+    }
+
+    public function viewAny($user, $resource): bool
+    {
+        return $user->exists && $resource instanceof Core05PolicySubjectResource;
+    }
+}
+
+class Core05TraitResourcePolicy extends ResourcePolicy
+{
+    use Core05ResourcePolicyMethods;
+}
+
+class Core05DelegatingResourcePolicy extends ResourcePolicy
+{
+    public function create($user, $resource): bool
+    {
+        return $this->authorizeAuraSubject($user, $resource);
+    }
+
+    public function viewAny($user, $resource): bool
+    {
+        return $this->authorizeAuraSubject($user, $resource);
+    }
+
+    protected function authorizeAuraSubject($user, $resource): bool
+    {
+        return $user->exists && $resource instanceof Core05PolicySubjectResource;
+    }
+}
+
+class Core05ProxiedResourcePolicy extends Core05DelegatingResourcePolicy {}
+
+class Core05OverriddenTeamPolicy extends TeamPolicy
+{
+    public function create(User $user, $team): bool
+    {
+        return $user->exists && $team instanceof Team;
+    }
+
+    public function viewAny(User $user, Team $team): bool
+    {
+        return $user->exists;
+    }
+}
+
 test('viewAny accepts a resource class string as its policy subject', function () {
     $user = createSuperAdmin();
 
@@ -73,6 +168,41 @@ test('resource class strings and instances retain the same permission semantics'
         ->and(Gate::forUser($user)->allows('create', new Core05PolicySubjectResource))->toBeFalse();
 });
 
+test('overridden inherited trait and proxied Aura policy methods receive resource subjects', function (string $policy) {
+    $user = createSuperAdmin();
+    Gate::policy(Core05PolicySubjectResource::class, $policy);
+
+    expect(Gate::forUser($user)->allows('viewAny', Core05PolicySubjectResource::class))->toBeTrue()
+        ->and(Gate::forUser($user)->allows('viewAny', new Core05PolicySubjectResource))->toBeTrue()
+        ->and(Gate::forUser($user)->allows('create', Core05PolicySubjectResource::class))->toBeTrue()
+        ->and(Gate::forUser($user)->allows('create', new Core05PolicySubjectResource))->toBeTrue();
+})->with([
+    'overridden methods' => Core05OverriddenResourcePolicy::class,
+    'trait methods' => Core05TraitResourcePolicy::class,
+    'proxied inherited methods' => Core05ProxiedResourcePolicy::class,
+]);
+
+test('overridden Aura policy methods retain trailing context after class and instance subjects', function () {
+    $user = createSuperAdmin();
+    Gate::policy(Core05PolicySubjectResource::class, Core05ContextResourcePolicy::class);
+    $resource = new Core05PolicySubjectResource;
+
+    expect(Gate::forUser($user)->allows('viewAny', [Core05PolicySubjectResource::class, 'expected-context']))->toBeTrue()
+        ->and(Gate::forUser($user)->allows('viewAny', [$resource, 'expected-context']))->toBeTrue()
+        ->and(Gate::forUser($user)->allows('create', [Core05PolicySubjectResource::class, 'expected-context']))->toBeTrue()
+        ->and(Gate::forUser($user)->allows('create', [$resource, 'expected-context']))->toBeTrue();
+});
+
+test('BaseResource class strings use an explicitly mapped Aura resource policy', function () {
+    $user = createSuperAdmin();
+    Gate::policy(Core05PolicySubjectBaseResource::class, ResourcePolicy::class);
+
+    expect(Gate::forUser($user)->allows('viewAny', Core05PolicySubjectBaseResource::class))->toBeTrue()
+        ->and(Gate::forUser($user)->allows('viewAny', new Core05PolicySubjectBaseResource))->toBeTrue()
+        ->and(Gate::forUser($user)->allows('create', Core05PolicySubjectBaseResource::class))->toBeTrue()
+        ->and(Gate::forUser($user)->allows('create', new Core05PolicySubjectBaseResource))->toBeTrue();
+});
+
 test('team resource class strings use their package policy without an argument error', function () {
     if (! config('aura.teams')) {
         $this->markTestSkipped('The Team policy is only registered when teams are enabled.');
@@ -82,6 +212,16 @@ test('team resource class strings use their package policy without an argument e
 
     expect(Gate::forUser($user)->allows('viewAny', Team::class))->toBeTrue()
         ->and(Gate::forUser($user)->allows('create', Team::class))->toBeTrue();
+});
+
+test('overridden team policy methods receive class and instance subjects in every team mode', function () {
+    $user = createGlobalAdmin();
+    Gate::policy(Team::class, Core05OverriddenTeamPolicy::class);
+
+    expect(Gate::forUser($user)->allows('viewAny', Team::class))->toBeTrue()
+        ->and(Gate::forUser($user)->allows('viewAny', new Team))->toBeTrue()
+        ->and(Gate::forUser($user)->allows('create', Team::class))->toBeTrue()
+        ->and(Gate::forUser($user)->allows('create', new Team))->toBeTrue();
 });
 
 test('class subject normalization preserves explicit policy arguments and resolution', function () {
@@ -100,35 +240,49 @@ test('class subject normalization preserves explicit policy arguments and resolu
 test('class subject normalization evaluates gate after callbacks once', function () {
     $user = createSuperAdmin();
     $evaluations = 0;
+    $evaluatedSubject = null;
+    Gate::policy(Core05PolicySubjectResource::class, Core05OverriddenResourcePolicy::class);
 
-    Gate::after(function () use (&$evaluations): void {
+    Gate::after(function ($user, string $ability, mixed $result, array $arguments) use (&$evaluations, &$evaluatedSubject): void {
         $evaluations++;
+        $evaluatedSubject = $arguments[0];
     });
 
     expect(Gate::forUser($user)->allows('viewAny', Core05PolicySubjectResource::class))->toBeTrue()
-        ->and($evaluations)->toBe(1);
+        ->and($evaluations)->toBe(1)
+        ->and($evaluatedSubject)->toBe(Core05PolicySubjectResource::class);
 });
 
 test('class subject normalization dispatches one gate evaluated event', function () {
     $user = createSuperAdmin();
+    Gate::policy(Core05PolicySubjectResource::class, Core05OverriddenResourcePolicy::class);
     Event::fake([GateEvaluated::class]);
 
     expect(Gate::forUser($user)->allows('viewAny', Core05PolicySubjectResource::class))->toBeTrue();
 
     Event::assertDispatchedTimes(GateEvaluated::class, 1);
+    Event::assertDispatched(
+        GateEvaluated::class,
+        fn (GateEvaluated $event): bool => $event->arguments[0] === Core05PolicySubjectResource::class,
+    );
 });
 
 test('a later host gate before callback can deny a normalized class subject', function () {
     $user = createSuperAdmin();
     $evaluations = [];
+    Gate::policy(Core05PolicySubjectResource::class, Core05OverriddenResourcePolicy::class);
 
-    Gate::before(function () use (&$evaluations): null {
+    Gate::before(function ($user, string $ability, array $arguments) use (&$evaluations): null {
         $evaluations[] = 'early-null';
+
+        expect($arguments[0])->toBe(Core05PolicySubjectResource::class);
 
         return null;
     });
-    Gate::before(function () use (&$evaluations): bool {
+    Gate::before(function ($user, string $ability, array $arguments) use (&$evaluations): bool {
         $evaluations[] = 'late-deny';
+
+        expect($arguments[0])->toBe(Core05PolicySubjectResource::class);
 
         return false;
     });

@@ -7,9 +7,9 @@ use Illuminate\Auth\Access\Gate;
 final class ResourcePolicyGate extends Gate
 {
     /**
-     * Normalize Aura's class-string subject only for the inherited Aura
-     * policy method. Global and policy before callbacks receive Laravel's
-     * original arguments and retain their native ordering semantics.
+     * Normalize Aura's class-string subject only for Aura's instance-oriented
+     * type-policy methods. Global and policy before callbacks receive
+     * Laravel's original arguments and retain their native ordering semantics.
      *
      * @param  mixed  $policy
      * @param  mixed  $method
@@ -25,7 +25,6 @@ final class ResourcePolicyGate extends Gate
             && is_string($subject)
             && ($policy instanceof ResourcePolicy || $policy instanceof TeamPolicy)
             && ResourcePolicySubject::supports($method, $subject)
-            && ResourcePolicySubject::usesAuraSubject($policy, $method)
         ) {
             $arguments[0] = ResourcePolicySubject::normalize($subject);
         }
