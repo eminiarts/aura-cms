@@ -212,6 +212,12 @@ return [
         'max_file_size' => 10000,
 
         'generate_thumbnails' => true,
+        'security' => [
+            'cache_store' => null,
+            'owner_token_ttl' => 900,
+            'selection_ttl' => 15,
+            'selection_retention' => 60,
+        ],
         'dimensions' => [
             [
                 'name' => 'xs',
