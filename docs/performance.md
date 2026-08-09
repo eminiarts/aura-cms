@@ -42,7 +42,7 @@ auth()->user()->updateOption('columns.Article', ['title', 'status']);
 auth()->user()->deleteOption('columns.Article');
 ```
 
-Each namespace has a persistent generation token. `updateOption()`, `deleteOption()`, and `clearCachedOption()` bump it after the database write, invalidating exact and wildcard reads together. Readers compare the generation before and after filling the cache and retry if a write interleaves, so an older reader cannot publish stale data after invalidation. Team option queries use the `Team` instance as their context, independent of whichever team the authenticated user is currently visiting.
+Each namespace has a persistent generation token. `updateOption()`, `deleteOption()`, and `clearCachedOption()` bump it after the database write, invalidating exact and wildcard reads together. Inside a database transaction, reads bypass persistent cache lookup and publication, and invalidation waits for the outer commit on that connection. A rollback therefore retains the previously committed generation and value. Outside transactions, readers compare the generation before and after filling the cache and retry if a write interleaves; continuous churn falls back to an uncached resolution after three attempts. If a cache store cannot persist or verify a generation, the call resolves uncached instead of sharing a fallback value key. Team option queries use the `Team` instance as their context, independent of whichever team the authenticated user is currently visiting.
 
 Exact entries use `['found' => bool, 'value' => mixed]`. This keeps a missing option distinct from stored `false`, `0`, `''`, and logical `null`; `Aura::getOption()` returns `[]` only for a missing row.
 
@@ -70,7 +70,7 @@ String/static callables and scalar `Navigation::add()` configurations receive st
 
 ### Team and Template Catalog Caching
 
-`User::getTeams()` stores scalar snapshots of team attributes and meta rows. It rehydrates the configured Team model and an Eloquent Collection at the public boundary, including on a cache hit where object unserialization is disabled. Membership and team lifecycle writes bump persistent per-user or Global Admin generations. The template catalog follows the same pattern: cached arrays internally, Support Collection externally.
+`User::getTeams()` stores scalar snapshots of team attributes, meta rows, and Membership pivot attributes. It rehydrates the configured Team model, the relationship's current pivot class, and an Eloquent Collection at the public boundary, including on a cache hit where object unserialization is disabled. The `TeamUser` pivot lifecycle invalidates direct attach, detach, sync, and role changes; team rename, create, restore, and delete invalidate the affected per-user and Global Admin generations. These invalidations wait for commit, and list reads inside transactions stay transaction-local. Global Admin resolution removes `TeamScope` only, so Laravel's `SoftDeletingScope` still excludes deleted teams. The template catalog follows the same scalar-payload pattern: cached arrays internally, Support Collection externally.
 
 ### Field Caching
 
@@ -156,39 +156,32 @@ private function getCurrentTeamId()
     }
 
     $userId = Auth::id();
-    $cacheKey = "user_{$userId}_current_team_id";
+    $cacheKey = User::currentTeamCacheKey($userId);
 
-    return Cache::rememberForever($cacheKey, function () use ($userId) {
-        return DB::table('users')->where('id', $userId)->value('current_team_id');
-    });
+    if (Cache::has($cacheKey)) {
+        return Cache::get($cacheKey);
+    }
+
+    $currentTeamId = DB::table('users')->where('id', $userId)->value('current_team_id');
+
+    if ($currentTeamId !== null) {
+        Cache::forever($cacheKey, $currentTeamId);
+    }
+
+    return $currentTeamId;
 }
 ```
 
 ### User Data Caching
 
-User-specific data is cached for 1 hour:
+Effective roles are memoized on the User instance for the current request. The memo key combines the team context with the Role Catalog version, so Shadow changes force recomputation without serializing Role models. User preferences use the scalar option cache described above:
 
 ```php
 // In User.php - src/Resources/User.php
-public function getCacheKeyForRoles()
-{
-    return auth()->user()->current_team_id . '.user.' . $this->id . '.roles';
-}
-
-public function getRolesAttribute()
-{
-    return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
-        return $this->roles()->get();
-    });
-}
-
-// Cache bookmarks, sidebar state, columns, etc.
-public function getBookmarks()
-{
-    return Cache::remember('user.' . $this->id . '.bookmarks', now()->addHour(), function () {
-        return $this->getUserOption('bookmarks') ?? [];
-    });
-}
+$roles = $user->cachedRoles();
+$bookmarks = $user->getOptionBookmarks();
+$columns = $user->getOptionColumns('Article');
+$sidebar = $user->getOptionSidebar();
 ```
 
 ### Resource Caching Example

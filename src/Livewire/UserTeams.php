@@ -279,13 +279,11 @@ class UserTeams extends Component
     }
 
     /**
-     * Refresh the viewed user's cached team list after a Membership change so the
-     * tab and the user's permission checks reflect the new state immediately, and
-     * re-seed the per-row role selects from the new Memberships.
+     * Clear loaded relations after the Membership pivot advances the persistent
+     * team-list generation, then re-seed the per-row role selects.
      */
     protected function afterMembershipChange(User $user): void
     {
-        User::clearTeamsCache($user->id);
         $user->unsetRelation('teams');
         $user->unsetRelation('roles');
 

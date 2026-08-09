@@ -1,6 +1,7 @@
 <?php
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Services\VersionedCache;
@@ -8,6 +9,7 @@ use Illuminate\Cache\ArrayStore;
 use Illuminate\Cache\NullStore;
 use Illuminate\Cache\Repository;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\SQLiteConnection;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -118,6 +120,378 @@ class LengthLimitedArrayStore extends ArrayStore
     }
 }
 
+class GenerationRejectingArrayStore extends ArrayStore
+{
+    public function put($key, $value, $seconds)
+    {
+        if (str_starts_with($key, 'aura.cache.generation.')) {
+            return false;
+        }
+
+        return parent::put($key, $value, $seconds);
+    }
+}
+
+class GenerationReadFailingArrayStore extends ArrayStore
+{
+    public function get($key)
+    {
+        if (str_starts_with($key, 'aura.cache.generation.')) {
+            throw new RuntimeException('Generation reads are unavailable.');
+        }
+
+        return parent::get($key);
+    }
+}
+
+class GenerationBumpFailingArrayStore extends ArrayStore
+{
+    private bool $rejectGenerationWrites = false;
+
+    public function put($key, $value, $seconds)
+    {
+        if ($this->rejectGenerationWrites && str_starts_with($key, 'aura.cache.generation.')) {
+            return false;
+        }
+
+        return parent::put($key, $value, $seconds);
+    }
+
+    public function rejectGenerationWrites(): void
+    {
+        $this->rejectGenerationWrites = true;
+    }
+}
+
+class GenerationWriteMisreportingArrayStore extends ArrayStore
+{
+    private bool $misreportGenerationWrites = false;
+
+    public function misreportGenerationWrites(): void
+    {
+        $this->misreportGenerationWrites = true;
+    }
+
+    public function put($key, $value, $seconds)
+    {
+        if ($this->misreportGenerationWrites && str_starts_with($key, 'aura.cache.generation.')) {
+            return true;
+        }
+
+        return parent::put($key, $value, $seconds);
+    }
+}
+
+class IncrementRejectingArrayStore extends ArrayStore
+{
+    public function increment($key, $value = 1)
+    {
+        return false;
+    }
+}
+
+class ChurningGenerationArrayStore extends ArrayStore
+{
+    private int $remainingBumps = 0;
+
+    public function churnForValueWrites(int $writes): void
+    {
+        $this->remainingBumps = $writes;
+    }
+
+    public function put($key, $value, $seconds)
+    {
+        $written = parent::put($key, $value, $seconds);
+
+        if ($this->remainingBumps > 0 && str_starts_with($key, 'aura.cache.value.')) {
+            $this->remainingBumps--;
+            VersionedCache::bump('bounded-churn');
+        }
+
+        return $written;
+    }
+}
+
+class FinalGenerationReadFailingArrayStore extends ArrayStore
+{
+    private int $generationReads = 0;
+
+    public function get($key)
+    {
+        if (str_starts_with($key, 'aura.cache.generation.')) {
+            $this->generationReads++;
+
+            if ($this->generationReads >= 4) {
+                throw new RuntimeException('Final generation verification failed.');
+            }
+        }
+
+        return parent::get($key);
+    }
+}
+
+test('versioned cache never stores values under a fallback generation when generation persistence fails', function () {
+    $store = new GenerationRejectingArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+    $source = ['version' => 1];
+    $resolutions = 0;
+
+    $read = function () use (&$source, &$resolutions): array {
+        return VersionedCache::remember('partial-store', 'value', 60, function () use (&$source, &$resolutions): array {
+            $resolutions++;
+
+            return $source;
+        });
+    };
+
+    expect($read())->toBe(['version' => 1]);
+
+    $source = ['version' => 2];
+    VersionedCache::bump('partial-store');
+
+    expect($read())->toBe(['version' => 2])
+        ->and($resolutions)->toBe(2)
+        ->and(array_filter(
+            array_keys($store->all(false)),
+            fn (string $key): bool => str_starts_with($key, 'aura.cache.value.'),
+        ))->toBe([]);
+});
+
+test('versioned cache bypasses persistent values when generation reads fail', function () {
+    $store = new GenerationReadFailingArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+    $resolutions = 0;
+
+    $read = function () use (&$resolutions): array {
+        return VersionedCache::remember('generation-read-failure', 'value', 60, function () use (&$resolutions): array {
+            $resolutions++;
+
+            return ['resolution' => $resolutions];
+        });
+    };
+
+    expect($read())->toBe(['resolution' => 1])
+        ->and($read())->toBe(['resolution' => 2])
+        ->and(array_filter(
+            array_keys($store->all(false)),
+            fn (string $key): bool => str_starts_with($key, 'aura.cache.value.'),
+        ))->toBe([]);
+});
+
+test('failed generation bumps make the namespace uncached instead of retaining stale values', function () {
+    $store = new GenerationBumpFailingArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+    $source = ['version' => 1];
+
+    $read = function () use (&$source): array {
+        return VersionedCache::remember('failed-bump', 'value', 60, fn (): array => $source);
+    };
+
+    expect($read())->toBe(['version' => 1]);
+
+    $source = ['version' => 2];
+    $store->rejectGenerationWrites();
+    VersionedCache::bump('failed-bump');
+
+    expect($read())->toBe(['version' => 2])
+        ->and(array_filter(
+            array_keys($store->all(false)),
+            fn (string $key): bool => str_starts_with($key, 'aura.cache.generation.'),
+        ))->toBe([]);
+});
+
+test('generation bumps verify persisted writes before retaining cached values', function () {
+    $store = new GenerationWriteMisreportingArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+    $source = ['version' => 1];
+    $read = function () use (&$source): array {
+        return VersionedCache::remember('misreported-bump', 'value', 60, fn (): array => $source);
+    };
+
+    expect($read())->toBe(['version' => 1]);
+
+    $source = ['version' => 2];
+    $store->misreportGenerationWrites();
+    VersionedCache::bump('misreported-bump');
+
+    expect($read())->toBe(['version' => 2]);
+});
+
+test('versioned cache does not depend on unsupported generation increments', function () {
+    $store = new IncrementRejectingArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+    $source = ['version' => 1];
+    $read = function () use (&$source): array {
+        return VersionedCache::remember('unsupported-increment', 'value', 60, fn (): array => $source);
+    };
+
+    expect($read())->toBe(['version' => 1]);
+
+    $source = ['version' => 2];
+    VersionedCache::bump('unsupported-increment');
+
+    expect($read())->toBe(['version' => 2]);
+});
+
+test('continuous generation churn falls back to a bounded uncached resolution', function () {
+    $store = new ChurningGenerationArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+    $store->churnForValueWrites(10);
+    $resolutions = 0;
+
+    $value = VersionedCache::remember('bounded-churn', 'value', 60, function () use (&$resolutions): array {
+        $resolutions++;
+
+        return ['fresh' => true];
+    });
+
+    expect($value)->toBe(['fresh' => true])
+        ->and($resolutions)->toBe(4);
+});
+
+test('a failed final generation check returns the uncached resolution without resolving twice', function () {
+    $store = new FinalGenerationReadFailingArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+    $resolutions = 0;
+
+    $value = VersionedCache::remember('final-generation-failure', 'value', 60, function () use (&$resolutions): array {
+        $resolutions++;
+
+        return ['resolution' => $resolutions];
+    });
+
+    expect($value)->toBe(['resolution' => 1])
+        ->and($resolutions)->toBe(1)
+        ->and(array_filter(
+            array_keys($store->all(false)),
+            fn (string $key): bool => str_starts_with($key, 'aura.cache.value.'),
+        ))->toBe([]);
+});
+
+test('generation bumps wait for the outer commit while other connections retain the committed snapshot', function () {
+    $store = new ArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+    config()->set('database.connections.cache_probe', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+    ]);
+    $writer = DB::connection();
+    $reader = DB::connection('cache_probe');
+    $baselineLevel = $writer->transactionLevel();
+    $generation = function () use ($store): ?string {
+        $item = collect($store->all())->first(
+            fn (array $item, string $key): bool => str_starts_with($key, 'aura.cache.generation.')
+        );
+
+        return $item['value'] ?? null;
+    };
+
+    expect(VersionedCache::remember('commit-race', 'value', 60, fn (): array => ['version' => 1]))
+        ->toBe(['version' => 1]);
+    $committedGeneration = $generation();
+
+    $writer->beginTransaction();
+
+    try {
+        VersionedCache::bump('commit-race', $writer);
+
+        expect($generation())->toBe($committedGeneration)
+            ->and(VersionedCache::remember(
+                'commit-race',
+                'value',
+                60,
+                fn (): array => ['version' => 2],
+                $writer,
+            ))->toBe(['version' => 2])
+            ->and(VersionedCache::remember(
+                'commit-race',
+                'value',
+                60,
+                fn (): array => ['version' => 1],
+                $reader,
+            ))->toBe(['version' => 1]);
+
+        $writer->beginTransaction();
+        VersionedCache::bump('commit-race', $writer);
+        $writer->commit();
+
+        expect($generation())->toBe($committedGeneration);
+
+        $writer->commit();
+    } finally {
+        while ($writer->transactionLevel() > $baselineLevel) {
+            $writer->rollBack();
+        }
+    }
+
+    expect($generation())->not->toBe($committedGeneration)
+        ->and(VersionedCache::remember(
+            'commit-race',
+            'value',
+            60,
+            fn (): array => ['version' => 2],
+            $reader,
+        ))->toBe(['version' => 2]);
+});
+
+test('rolled back nested generation bumps leave the committed generation usable', function () {
+    $store = new ArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+    $connection = DB::connection();
+    $baselineLevel = $connection->transactionLevel();
+    $generation = function () use ($store): ?string {
+        $item = collect($store->all())->first(
+            fn (array $item, string $key): bool => str_starts_with($key, 'aura.cache.generation.')
+        );
+
+        return $item['value'] ?? null;
+    };
+
+    expect(VersionedCache::remember('nested-rollback', 'value', 60, fn (): array => ['version' => 1]))
+        ->toBe(['version' => 1]);
+    $committedGeneration = $generation();
+
+    $connection->beginTransaction();
+    $connection->beginTransaction();
+
+    try {
+        VersionedCache::bump('nested-rollback', $connection);
+        $connection->rollBack();
+        $connection->commit();
+    } finally {
+        while ($connection->transactionLevel() > $baselineLevel) {
+            $connection->rollBack();
+        }
+    }
+
+    expect($generation())->toBe($committedGeneration)
+        ->and(VersionedCache::remember('nested-rollback', 'value', 60, fn (): array => ['version' => 2]))
+        ->toBe(['version' => 1]);
+});
+
+test('transactions on unmanaged connections still bypass persistent cache reads', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $connection = new SQLiteConnection(new PDO('sqlite::memory:'), 'unmanaged-cache-probe');
+
+    expect(VersionedCache::remember('unmanaged-transaction', 'value', 60, fn (): array => ['version' => 1]))
+        ->toBe(['version' => 1]);
+
+    $connection->beginTransaction();
+
+    try {
+        expect(VersionedCache::remember(
+            'unmanaged-transaction',
+            'value',
+            60,
+            fn (): array => ['version' => 2],
+            $connection,
+        ))->toBe(['version' => 2]);
+    } finally {
+        $connection->rollBack();
+    }
+});
+
 test('user option cache retries when a write races its first read', function () {
     $store = new InterleavingOptionArrayStore(serializesValues: true, serializableClasses: false);
     Cache::swap(new Repository($store));
@@ -129,6 +503,26 @@ test('user option cache retries when a write races its first read', function () 
 
     expect($user->getOption('race'))->toBe(['version' => 2])
         ->and($user->getOption('race'))->toBe(['version' => 2]);
+});
+
+test('user option reads inside a rolled back transaction never publish uncommitted values', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+    $user->updateOption('transaction', ['version' => 1]);
+
+    expect($user->getOption('transaction'))->toBe(['version' => 1]);
+
+    DB::beginTransaction();
+
+    try {
+        $user->updateOption('transaction', ['version' => 2]);
+
+        expect($user->getOption('transaction'))->toBe(['version' => 2]);
+    } finally {
+        DB::rollBack();
+    }
+
+    expect($user->getOption('transaction'))->toBe(['version' => 1]);
 });
 
 test('team option cache retries when a write races its first read', function () {
@@ -155,6 +549,25 @@ test('global option cache retries when a write races its first read', function (
 
     expect(Aura::getOption('race'))->toBe(['version' => 2])
         ->and(Aura::getOption('race'))->toBe(['version' => 2]);
+})->skip(fn () => config('aura.teams'), 'Global option context requires teams-off mode.');
+
+test('global option reads inside a rolled back transaction never publish uncommitted values', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    Aura::updateOption('transaction', ['version' => 1]);
+
+    expect(Aura::getOption('transaction'))->toBe(['version' => 1]);
+
+    DB::beginTransaction();
+
+    try {
+        Aura::updateOption('transaction', ['version' => 2]);
+
+        expect(Aura::getOption('transaction'))->toBe(['version' => 2]);
+    } finally {
+        DB::rollBack();
+    }
+
+    expect(Aura::getOption('transaction'))->toBe(['version' => 1]);
 })->skip(fn () => config('aura.teams'), 'Global option context requires teams-off mode.');
 
 test('long option names use backend-safe fixed-length cache keys', function () {
@@ -189,6 +602,58 @@ test('regular user team cache retries when team creation races its first read', 
 
     expect($user->getTeams()->pluck('id'))->toContain($newTeam->id)
         ->and($user->getTeams()->pluck('id'))->toContain($newTeam->id);
+})->skip(fn () => ! config('aura.teams'), 'Team list context requires teams enabled.');
+
+test('renaming a team invalidates every current member team snapshot', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+    $team = $user->currentTeam;
+    $team->update(['name' => 'Before rename']);
+
+    expect($user->getTeams()->firstWhere('id', $team->id)->name)->toBe('Before rename');
+
+    $team->update(['name' => 'After rename']);
+
+    expect($user->getTeams()->firstWhere('id', $team->id)->name)->toBe('After rename');
+})->skip(fn () => ! config('aura.teams'), 'Team list context requires teams enabled.');
+
+test('membership pivot lifecycle invalidates team snapshots for direct attach and detach writes', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $actor = createSuperAdmin();
+    $team = $actor->currentTeam;
+    $role = Role::factory()->create(['team_id' => $team->id]);
+    $member = User::factory()->create(['current_team_id' => $team->id]);
+
+    expect($member->getTeams())->toHaveCount(0);
+
+    $member->roles()->attach($role->id, ['team_id' => $team->id]);
+
+    expect($member->getTeams()->pluck('id'))->toContain($team->id);
+
+    $member->roles()->wherePivot('team_id', $team->id)->detach($role->id);
+
+    expect($member->getTeams()->pluck('id'))->not->toContain($team->id);
+})->skip(fn () => ! config('aura.teams'), 'Team list context requires teams enabled.');
+
+test('team snapshots are transaction-local and rollback keeps the prior cached list valid', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+    $team = $user->currentTeam;
+    $team->update(['name' => 'Committed name']);
+
+    expect($user->getTeams()->firstWhere('id', $team->id)->name)->toBe('Committed name');
+
+    DB::beginTransaction();
+
+    try {
+        $team->update(['name' => 'Uncommitted name']);
+
+        expect($user->getTeams()->firstWhere('id', $team->id)->name)->toBe('Uncommitted name');
+    } finally {
+        DB::rollBack();
+    }
+
+    expect($user->getTeams()->firstWhere('id', $team->id)->name)->toBe('Committed name');
 })->skip(fn () => ! config('aura.teams'), 'Team list context requires teams enabled.');
 
 test('global admin team cache retries when team creation races its first read', function () {
@@ -319,6 +784,24 @@ test('regular user teams survive a serialized cache read in a fresh application 
         ->and($queries)->toBeEmpty();
 })->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
 
+test('regular user team snapshots preserve membership pivot class and attributes', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+    $relationshipTeam = $user->teams()->firstOrFail();
+    $expectedPivotClass = $relationshipTeam->pivot::class;
+    $expectedPivotAttributes = $relationshipTeam->pivot->getAttributes();
+
+    $assertMembership = function (Team $team) use ($expectedPivotClass, $expectedPivotAttributes): void {
+        expect($team->relationLoaded('pivot'))->toBeTrue()
+            ->and($team->pivot)->toBeInstanceOf($expectedPivotClass)
+            ->and($team->pivot->getAttributes())->toBe($expectedPivotAttributes)
+            ->and($team->pivot->role_id)->toBe($expectedPivotAttributes['role_id']);
+    };
+
+    $assertMembership($user->getTeams()->firstWhere('id', $relationshipTeam->id));
+    $assertMembership($user->getTeams()->firstWhere('id', $relationshipTeam->id));
+})->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
+
 test('global admin teams survive a serialized cache read in a fresh application container', function () {
     $cache = serializedOptionCacheRepository();
     Cache::swap($cache);
@@ -343,6 +826,24 @@ test('global admin teams survive a serialized cache read in a fresh application 
         ->toBeInstanceOf(EloquentCollection::class)
         ->each->toBeInstanceOf(Team::class)
         ->and($queries)->toBeEmpty();
+})->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
+
+test('global admin team snapshots retain soft delete filtering', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $globalAdmin = createGlobalAdmin();
+    $this->actingAs($globalAdmin);
+    $team = foreignTeam();
+
+    expect($globalAdmin->getTeams()->pluck('id'))->toContain($team->id);
+
+    $team->delete();
+
+    expect(Team::withTrashed()->findOrFail($team->id)->trashed())->toBeTrue()
+        ->and($globalAdmin->getTeams()->pluck('id'))->not->toContain($team->id);
+
+    $team->restore();
+
+    expect($globalAdmin->getTeams()->pluck('id'))->toContain($team->id);
 })->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
 
 test('user option survives a serialized cache read in a fresh application container', function () {

@@ -43,7 +43,6 @@ class TeamInvitationController extends Controller
                 ->firstOrFail();
 
             $user->roles()->attach($role->id, ['team_id' => $team->id]);
-            User::clearTeamsCache($user->id);
             $user->unsetRelation('teams');
         }
 

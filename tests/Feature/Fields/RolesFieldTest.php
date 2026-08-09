@@ -7,6 +7,9 @@ use Aura\Base\Fields\Roles;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
+use Illuminate\Cache\ArrayStore;
+use Illuminate\Cache\Repository;
+use Illuminate\Support\Facades\Cache;
 
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
@@ -89,5 +92,37 @@ describe('Roles Field Attach', function () {
         (new Roles)->saved($target, rolesFieldDefinition(), [$role->id]);
 
         expect($target->fresh()->roles()->pluck('roles.id'))->toContain($role->id);
+    });
+
+    test('saved invalidates team snapshots after membership attach and detach', function () {
+        if (! config('aura.teams')) {
+            $this->markTestSkipped('Membership snapshots require teams enabled.');
+        }
+
+        Cache::swap(new Repository(new ArrayStore(serializesValues: true, serializableClasses: false)));
+        $teamId = $this->user->current_team_id;
+        $role = Role::withoutGlobalScope(TeamScope::class)->create([
+            'type' => 'Role',
+            'title' => 'Snapshot Member',
+            'slug' => 'snapshot-member',
+            'name' => 'Snapshot Member',
+            'description' => 'Limited role.',
+            'super_admin' => false,
+            'permissions' => [],
+            'user_id' => $this->user->id,
+            'team_id' => $teamId,
+        ]);
+        $target = User::factory()->create(['current_team_id' => $teamId]);
+        $field = new Roles;
+
+        expect($target->getTeams())->toHaveCount(0);
+
+        $field->saved($target, rolesFieldDefinition(), [$role->id]);
+
+        expect($target->getTeams()->pluck('id'))->toContain($teamId);
+
+        $field->saved($target, rolesFieldDefinition(), []);
+
+        expect($target->getTeams()->pluck('id'))->not->toContain($teamId);
     });
 });

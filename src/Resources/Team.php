@@ -5,15 +5,17 @@ namespace Aura\Base\Resources;
 use Aura\Base\Database\Factories\TeamFactory;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
 use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Models\TeamUser;
 use Aura\Base\Resource;
 use Aura\Base\Services\VersionedCache;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class Team extends Resource
 {
@@ -58,9 +60,9 @@ class Team extends Resource
         $this->forgetOptionCache($option);
     }
 
-    public static function clearOptionCacheForTeam(string|int $teamId): void
+    public static function clearOptionCacheForTeam(string|int $teamId, ?Connection $connection = null): void
     {
-        VersionedCache::bump(self::optionCacheNamespaceFor($teamId));
+        VersionedCache::bump(self::optionCacheNamespaceFor($teamId), $connection);
     }
 
     public function customPermissions()
@@ -221,6 +223,7 @@ class Team extends Resource
                         })
                         ->all(),
                 ],
+                $this->optionConnection(),
             );
 
             return collect($payload['values']);
@@ -251,6 +254,7 @@ class Team extends Resource
                     'value' => $record?->getAttributeValue('value'),
                 ];
             },
+            $this->optionConnection(),
         );
     }
 
@@ -278,12 +282,12 @@ class Team extends Resource
     {
         $optionName = $this->optionName($option);
 
-        Option::withoutGlobalScope(TeamScope::class)->updateOrCreate([
+        $record = Option::withoutGlobalScope(TeamScope::class)->updateOrCreate([
             'name' => $optionName,
             'team_id' => $this->id,
         ], ['value' => $value]);
 
-        $this->forgetOptionCache($option);
+        $this->forgetOptionCache($option, $record->getConnection());
     }
 
     // public function users()
@@ -299,6 +303,7 @@ class Team extends Resource
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_role')
+            ->using(TeamUser::class)
             ->withPivot('role_id')
             ->withTimestamps();
     }
@@ -307,10 +312,18 @@ class Team extends Resource
     {
         parent::booted();
 
-        // Any team write (create, rename, restore) can change what a Global
-        // Admin's switcher should show, so advance the shared generation.
+        // Team writes can change both member snapshots and the shared Global
+        // Admin switcher, including rename and restore operations.
         static::saved(function ($team) {
-            User::clearGlobalAdminTeamsCache();
+            $connection = $team->getConnection();
+
+            $connection->table('user_role')
+                ->where('team_id', $team->id)
+                ->pluck('user_id')
+                ->unique()
+                ->each(fn ($userId) => User::clearTeamsCache($userId, $connection));
+
+            User::clearGlobalAdminTeamsCache($connection);
         });
 
         static::saving(function ($team) {
@@ -347,21 +360,15 @@ class Team extends Resource
             // Attach the current user to the team via the global admin role.
             if ($user) {
                 $team->users()->attach($user->id, ['role_id' => $globalAdmin->id]);
-
-                // Clear cache of Cache('user.'.$user->id.'.teams')
-                User::clearTeamsCache($user->id);
             }
-
-            // A Global Admin's switcher lists every team from one shared cache
-            // namespace; advance it after the Membership is attached.
-            User::clearGlobalAdminTeamsCache();
 
             // Create all permissions for the team
             GenerateAllResourcePermissions::dispatch($team->id);
         });
 
         static::deleted(function ($team) {
-            $affectedMemberIds = DB::table('user_role')
+            $connection = $team->getConnection();
+            $affectedMemberIds = $connection->table('user_role')
                 ->where('team_id', $team->id)
                 ->pluck('user_id');
 
@@ -369,13 +376,13 @@ class Team extends Resource
                 ->where('team_id', $team->id)
                 ->pluck('name');
 
-            $optionUserIds = $optionNames
-                ->map(function (string $name): ?int {
-                    return preg_match('/^user\.(\d+)\./', $name, $matches) === 1
-                        ? (int) $matches[1]
-                        : null;
-                })
-                ->filter();
+            $userClass = config('aura.resources.user', User::class);
+            $userModel = new $userClass;
+            $optionUserIds = $userClass::withoutGlobalScopes()
+                ->pluck($userModel->getKeyName())
+                ->filter(fn (string|int $userId): bool => $optionNames->contains(
+                    fn (string $name): bool => Str::startsWith($name, 'user.'.$userId.'.')
+                ));
 
             // Get all users who had the deleted team as their current team
             $users = User::withoutGlobalScopes()
@@ -398,7 +405,7 @@ class Team extends Resource
             // A team's Memberships and its own Team Roles (including Shadows) die
             // with the team; the shared Global Roles (team_id = null) are never
             // touched. Remove the pivot rows first, then the team-owned roles.
-            DB::table('user_role')->where('team_id', $team->id)->delete();
+            $connection->table('user_role')->where('team_id', $team->id)->delete();
 
             // Bypass TeamScope: by this point the affected users' current team has
             // already been reassigned above, so a scoped query would filter to the
@@ -421,13 +428,13 @@ class Team extends Resource
             // complete ownership boundary and the query must bypass TeamScope.
             Option::withoutGlobalScopes()->where('team_id', $team->id)->delete();
 
-            static::clearOptionCacheForTeam($team->id);
+            static::clearOptionCacheForTeam($team->id, $connection);
 
             $affectedMemberIds
                 ->merge($reassignedUserIds)
                 ->merge($optionUserIds)
                 ->unique()
-                ->each(fn ($userId) => User::clearOptionCacheForTeam($userId, $team->id));
+                ->each(fn ($userId) => User::clearOptionCacheForTeam($userId, $team->id, $connection));
 
             $reassignedUserIds->each(function ($userId) {
                 User::clearCurrentTeamCache($userId);
@@ -436,20 +443,20 @@ class Team extends Resource
             $affectedMemberIds
                 ->merge($reassignedUserIds)
                 ->unique()
-                ->each(function ($userId) {
-                    User::clearTeamsCache($userId);
+                ->each(function ($userId) use ($connection) {
+                    User::clearTeamsCache($userId, $connection);
                 });
 
             // Drop the shared Global Admin switcher cache so the deleted team
             // no longer shows up for Global Admins.
-            User::clearGlobalAdminTeamsCache();
+            User::clearGlobalAdminTeamsCache($connection);
         });
 
     }
 
-    protected function forgetOptionCache(string $option): void
+    protected function forgetOptionCache(string $option, ?Connection $connection = null): void
     {
-        VersionedCache::bump($this->optionCacheNamespace());
+        VersionedCache::bump($this->optionCacheNamespace(), $connection ?? $this->optionConnection());
     }
 
     /**
@@ -470,6 +477,11 @@ class Team extends Resource
     protected static function optionCacheNamespaceFor(string|int $teamId): string
     {
         return 'option.team.'.$teamId;
+    }
+
+    protected function optionConnection(): Connection
+    {
+        return (new Option)->getConnection();
     }
 
     protected function optionName(string $option): string

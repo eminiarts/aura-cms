@@ -5,6 +5,7 @@ namespace Aura\Base\Resources;
 use Aura\Base\Database\Factories\UserFactory;
 use Aura\Base\Models\Meta;
 use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Models\TeamUser;
 use Aura\Base\Resource;
 use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
 use Aura\Base\Services\VersionedCache;
@@ -15,6 +16,7 @@ use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -232,31 +234,34 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public static function clearCurrentTeamCache(string|int|null $userId): void
     {
-        if (! $userId) {
+        if ($userId === null || $userId === '') {
             return;
         }
 
         Cache::forget(static::currentTeamCacheKey($userId));
     }
 
-    public static function clearGlobalAdminTeamsCache(): void
+    public static function clearGlobalAdminTeamsCache(?Connection $connection = null): void
     {
-        VersionedCache::bump(self::globalAdminTeamsCacheNamespace());
+        VersionedCache::bump(self::globalAdminTeamsCacheNamespace(), $connection);
         Cache::forget(self::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
     }
 
-    public static function clearOptionCacheForTeam(string|int $userId, string|int $teamId): void
-    {
-        VersionedCache::bump(self::optionCacheNamespaceFor($userId, $teamId));
+    public static function clearOptionCacheForTeam(
+        string|int $userId,
+        string|int $teamId,
+        ?Connection $connection = null,
+    ): void {
+        VersionedCache::bump(self::optionCacheNamespaceFor($userId, $teamId), $connection);
     }
 
-    public static function clearTeamsCache(string|int|null $userId): void
+    public static function clearTeamsCache(string|int|null $userId, ?Connection $connection = null): void
     {
-        if (! $userId) {
+        if ($userId === null || $userId === '') {
             return;
         }
 
-        VersionedCache::bump(self::teamsCacheNamespace($userId));
+        VersionedCache::bump(self::teamsCacheNamespace($userId), $connection);
         Cache::forget('user.'.$userId.'.teams');
     }
 
@@ -514,6 +519,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                         })
                         ->all(),
                 ],
+                $this->optionConnection(),
             );
 
             return collect($payload['values']);
@@ -551,6 +557,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                     'value' => $record?->getAttributeValue('value'),
                 ];
             },
+            $this->optionConnection(),
         );
     }
 
@@ -596,7 +603,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         // namespace that Team writes invalidate (see Team::booted).
         if ($this->isAuraGlobalAdmin()) {
             return $this->rememberTeams(self::globalAdminTeamsCacheNamespace(), function () {
-                return app(config('aura.resources.team'))::withoutGlobalScopes()->with('meta')->get();
+                return app(config('aura.resources.team'))::withoutGlobalScope(TeamScope::class)->with('meta')->get();
             });
         }
 
@@ -837,13 +844,13 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         if (config('aura.teams')) {
             return $this->belongsToMany(Role::class, 'user_role')
+                ->using(TeamUser::class)
                 ->withPivot('team_id')
                 ->withTimestamps();
         }
 
         return $this->belongsToMany(Role::class, 'user_role')
-            // ->using(TeamUser::class)
-            // ->withPivot('team_id')
+            ->using(TeamUser::class)
             ->withTimestamps();
     }
 
@@ -884,6 +891,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function teams(): BelongsToMany
     {
         return $this->belongsToMany(Team::class, 'user_role')
+            ->using(TeamUser::class)
             ->withPivot('role_id')
             ->withTimestamps();
     }
@@ -898,17 +906,17 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         $optionName = $this->optionName($option);
 
         if (config('aura.teams')) {
-            $this->optionQuery()->updateOrCreate([
+            $record = $this->optionQuery()->updateOrCreate([
                 'name' => $optionName,
                 'team_id' => $this->current_team_id,
             ], ['value' => $value]);
         } else {
-            Option::updateOrCreate([
+            $record = Option::updateOrCreate([
                 'name' => $optionName,
             ], ['value' => $value]);
         }
 
-        $this->forgetOptionCache($option);
+        $this->forgetOptionCache($option, $record->getConnection());
     }
 
     public function widgets()
@@ -938,9 +946,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         // });
     }
 
-    protected function forgetOptionCache(string $option): void
+    protected function forgetOptionCache(string $option, ?Connection $connection = null): void
     {
-        VersionedCache::bump($this->optionCacheNamespace());
+        VersionedCache::bump($this->optionCacheNamespace(), $connection ?? $this->optionConnection());
     }
 
     protected function getCacheKeyForRoles(): string
@@ -991,6 +999,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return 'option.user.'.$userId.'.team.'.$teamId;
     }
 
+    protected function optionConnection(): Connection
+    {
+        return $this->optionQuery()->getModel()->getConnection();
+    }
+
     protected function optionName(string $option): string
     {
         return 'user.'.$this->id.'.'.$option;
@@ -1023,6 +1036,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     protected function rememberTeams(string $namespace, callable $resolver): Collection
     {
+        $teamClass = config('aura.resources.team');
+        $teamPrototype = new $teamClass;
         $payload = VersionedCache::remember(
             $namespace,
             'teams',
@@ -1030,13 +1045,13 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             function () use ($resolver): array {
                 return ['teams' => $this->serializeTeams($resolver())];
             },
+            $teamPrototype->getConnection(),
         );
 
-        $teamClass = config('aura.resources.team');
-        $teamPrototype = new $teamClass;
         $metaPrototype = new Meta;
+        $teamsRelation = $this->teams();
 
-        $teams = collect($payload['teams'])->map(function (array $snapshot) use ($teamPrototype, $metaPrototype) {
+        $teams = collect($payload['teams'])->map(function (array $snapshot) use ($teamPrototype, $metaPrototype, $teamsRelation) {
             $team = $teamPrototype->newFromBuilder(
                 $snapshot['attributes'],
                 $snapshot['connection'] ?? null,
@@ -1049,6 +1064,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
             $team->setRelation('meta', $metaPrototype->newCollection($meta->all()));
 
+            if (is_array($snapshot['pivot'] ?? null)) {
+                $team->setRelation('pivot', $teamsRelation->newExistingPivot($snapshot['pivot']));
+            }
+
             return $team;
         });
 
@@ -1056,7 +1075,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     }
 
     /**
-     * @return array<int, array{attributes: array<string, mixed>, connection: string|null, meta: array<int, array<string, mixed>>}>
+     * @return array<int, array{attributes: array<string, mixed>, connection: string|null, meta: array<int, array<string, mixed>>, pivot: array<string, mixed>|null}>
      */
     protected function serializeTeams(Collection $teams): array
     {
@@ -1064,6 +1083,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             'attributes' => $team->getAttributes(),
             'connection' => $team->getConnectionName(),
             'meta' => $team->meta->map(fn (Meta $meta): array => $meta->getAttributes())->all(),
+            'pivot' => $team->relationLoaded('pivot') ? $team->pivot->getAttributes() : null,
         ])->all();
     }
 

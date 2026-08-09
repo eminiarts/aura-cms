@@ -5,23 +5,57 @@ namespace Aura\Base\Services;
 use Closure;
 use DateInterval;
 use DateTimeInterface;
+use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Cache;
+use RuntimeException;
+use Throwable;
 
 final class VersionedCache
 {
     private const GENERATION_PREFIX = 'aura.cache.generation.';
 
-    private const UNCACHED_GENERATION = 'uncached';
+    private const MAX_RESOLUTION_ATTEMPTS = 3;
 
     private const VALUE_PREFIX = 'aura.cache.value.';
 
     /**
      * Move future reads to a fresh key without relying on a non-atomic
-     * forget-then-put sequence.
+     * forget-then-put sequence. Transactional writes defer this until the
+     * outer commit and discard it on rollback.
      */
-    public static function bump(string $namespace): void
+    public static function bump(string $namespace, ?Connection $connection = null): void
     {
-        Cache::forever(self::generationKey($namespace), self::token());
+        if ($connection && self::hasActiveTransaction($connection)) {
+            $connection->afterCommit(fn () => self::bump($namespace));
+
+            return;
+        }
+
+        $key = self::generationKey($namespace);
+
+        try {
+            $candidate = self::token();
+            $written = Cache::forever($key, $candidate);
+            $generation = Cache::get($key);
+
+            if ($written && is_string($generation) && hash_equals($candidate, $generation)) {
+                return;
+            }
+        } catch (Throwable) {
+            // The namespace is disabled below if the store cannot persist or
+            // verify a fresh generation.
+        }
+
+        try {
+            Cache::forget($key);
+            $generation = Cache::get($key);
+        } catch (Throwable $exception) {
+            throw new RuntimeException('Unable to invalidate the cache namespace.', previous: $exception);
+        }
+
+        if (is_string($generation) && $generation !== '') {
+            throw new RuntimeException('Unable to invalidate the cache namespace.');
+        }
     }
 
     public static function isSafe(mixed $value): bool
@@ -50,67 +84,135 @@ final class VersionedCache
     /**
      * Resolve a cache value against a persistent namespace generation.
      *
-     * If a writer bumps the generation while the value is being read or
-     * resolved, the read is retried under the new generation. Values containing
-     * objects, closures, or resources are returned without being cached.
+     * Active database transactions resolve without persistent cache access. If
+     * a writer bumps the generation while a value is resolved, the read retries
+     * under the new generation before falling back to an uncached resolution.
+     * Objects, closures, and resources are returned without being cached.
      */
     public static function remember(
         string $namespace,
         string $variant,
         Closure|DateInterval|DateTimeInterface|int|null $ttl,
         Closure $resolver,
+        ?Connection $connection = null,
     ): mixed {
-        while (true) {
+        if ($connection && self::hasActiveTransaction($connection)) {
+            return $resolver();
+        }
+
+        for ($attempt = 0; $attempt < self::MAX_RESOLUTION_ATTEMPTS; $attempt++) {
             $generation = self::generation($namespace);
+
+            if ($generation === null) {
+                return $resolver();
+            }
+
             $key = self::valueKey($namespace, $generation, $variant);
-            $value = Cache::get($key);
+            $resolved = false;
+
+            try {
+                $value = Cache::get($key);
+            } catch (Throwable) {
+                return $resolver();
+            }
 
             if (! is_array($value) || ! self::isSafe($value)) {
                 if ($value !== null) {
-                    Cache::forget($key);
+                    try {
+                        Cache::forget($key);
+                    } catch (Throwable) {
+                        return $resolver();
+                    }
                 }
 
                 $value = $resolver();
+                $resolved = true;
 
                 if (is_array($value) && self::isSafe($value)) {
-                    Cache::put($key, $value, $ttl);
+                    try {
+                        Cache::put($key, $value, $ttl);
+                    } catch (Throwable) {
+                        return $value;
+                    }
                 }
             }
 
-            if (hash_equals($generation, self::generation($namespace))) {
+            $currentGeneration = self::generation($namespace);
+
+            if ($currentGeneration === null) {
+                try {
+                    Cache::forget($key);
+                } catch (Throwable) {
+                    // A failed generation check already makes this read uncached.
+                }
+
+                return $resolved ? $value : $resolver();
+            }
+
+            if (hash_equals($generation, $currentGeneration)) {
                 return $value;
             }
         }
+
+        return $resolver();
     }
 
-    private static function generation(string $namespace): string
+    private static function generation(string $namespace): ?string
     {
-        $key = self::generationKey($namespace);
-        $generation = Cache::get($key);
+        try {
+            $key = self::generationKey($namespace);
+            $generation = Cache::get($key);
 
-        if (is_string($generation) && $generation !== '') {
-            return $generation;
+            if (is_string($generation) && $generation !== '') {
+                return $generation;
+            }
+
+            $candidate = self::token();
+            Cache::add($key, $candidate, now()->addYears(10));
+            $generation = Cache::get($key);
+
+            if (is_string($generation) && $generation !== '') {
+                return $generation;
+            }
+
+            Cache::forever($key, $candidate);
+            $generation = Cache::get($key);
+
+            return is_string($generation) && $generation !== '' ? $generation : null;
+        } catch (Throwable) {
+            return null;
         }
-
-        $candidate = self::token();
-        Cache::add($key, $candidate, now()->addYears(10));
-        $generation = Cache::get($key);
-
-        if (is_string($generation) && $generation !== '') {
-            return $generation;
-        }
-
-        Cache::forever($key, $candidate);
-        $generation = Cache::get($key);
-
-        return is_string($generation) && $generation !== ''
-            ? $generation
-            : self::UNCACHED_GENERATION;
     }
 
     private static function generationKey(string $namespace): string
     {
         return self::GENERATION_PREFIX.hash('sha256', $namespace);
+    }
+
+    private static function hasActiveTransaction(Connection $connection): bool
+    {
+        if ($connection->transactionLevel() === 0) {
+            return false;
+        }
+
+        if (! app()->bound('db.transactions')) {
+            return true;
+        }
+
+        $transactions = app('db.transactions');
+
+        if (! method_exists($transactions, 'callbackApplicableTransactions')
+            || ! method_exists($transactions, 'getPendingTransactions')) {
+            return true;
+        }
+
+        $matchesConnection = fn ($transaction): bool => $transaction->connection === $connection->getName();
+
+        if ($transactions->callbackApplicableTransactions()->contains($matchesConnection)) {
+            return true;
+        }
+
+        return ! $transactions->getPendingTransactions()->contains($matchesConnection);
     }
 
     private static function token(): string

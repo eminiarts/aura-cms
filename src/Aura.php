@@ -15,6 +15,7 @@ use Aura\Base\Services\VersionedCache;
 use Aura\Base\Traits\DefaultFields;
 use Closure;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Connection;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
@@ -272,6 +273,7 @@ class Aura
                     'value' => $record?->getAttributeValue('value'),
                 ];
             },
+            $this->optionConnection(),
         );
 
         return $entry['found'] ? $entry['value'] : [];
@@ -412,8 +414,9 @@ class Aura
         if (config('aura.teams')) {
             auth()->user()->currentTeam->updateOption($key, $value);
         } else {
-            Option::withoutGlobalScopes([app(TeamScope::class)])->updateOrCreate(['name' => $key], ['value' => $value]);
-            VersionedCache::bump($this->globalOptionCacheNamespace());
+            $record = Option::withoutGlobalScopes([app(TeamScope::class)])
+                ->updateOrCreate(['name' => $key], ['value' => $value]);
+            VersionedCache::bump($this->globalOptionCacheNamespace(), $record->getConnection());
         }
     }
 
@@ -550,5 +553,10 @@ class Aura
             'resources' => $this->getResources(),
             'hooks' => $hookFingerprint,
         ]));
+    }
+
+    protected function optionConnection(): Connection
+    {
+        return (new Option)->getConnection();
     }
 }
