@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Exceptions\OptionOwnerIdentityException;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resources\Option;
@@ -30,6 +31,14 @@ class AdversarialOptionUser extends User
     protected $keyType = 'string';
 
     protected $table = 'adversarial_option_users';
+}
+
+class CollidingOptionUser extends AdversarialOptionUser
+{
+    protected function optionNamePrefix(): string
+    {
+        return 'u00000000000000';
+    }
 }
 
 class Laravel12CompatibleTransactionsManager extends DatabaseTransactionsManager
@@ -84,6 +93,36 @@ function overlappingCacheConnections(string $first, string $second): array
     $secondConnection->setTransactionManager($transactions);
 
     return [$firstConnection, $secondConnection];
+}
+
+/**
+ * @return array{CollidingOptionUser, CollidingOptionUser}
+ */
+function collidingOptionUsers(): array
+{
+    $teamId = config('aura.teams') ? createSuperAdmin()->current_team_id : null;
+
+    Schema::create('adversarial_option_users', function (Blueprint $table): void {
+        $table->string('id')->primary();
+        $table->unsignedBigInteger('current_team_id')->nullable();
+        $table->timestamps();
+    });
+
+    config()->set('aura.resources.user', CollidingOptionUser::class);
+
+    foreach (['tenant-token-alpha.9f3a', 'tenant-token-beta.4c8b'] as $userId) {
+        DB::table('adversarial_option_users')->insert([
+            'id' => $userId,
+            'current_team_id' => $teamId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    return [
+        CollidingOptionUser::withoutGlobalScopes()->findOrFail('tenant-token-alpha.9f3a'),
+        CollidingOptionUser::withoutGlobalScopes()->findOrFail('tenant-token-beta.4c8b'),
+    ];
 }
 
 test('template catalog survives a serialized cache read in a fresh application container', function () {
@@ -163,12 +202,136 @@ test('a legacy-limit user option round trips within varchar 255 storage', functi
 
     $user->updateOption($option, ['stored' => true]);
 
-    $physicalName = Option::withoutGlobalScopes()->sole()->getRawOriginal('name');
+    $record = Option::withoutGlobalScopes()->sole();
+    $physicalName = $record->getRawOriginal('name');
 
     expect($user->getOption($option))->toBe(['stored' => true])
         ->and(strlen($physicalName))->toBeLessThanOrEqual(255)
-        ->and($physicalName)->toEndWith($option);
+        ->and($physicalName)->toEndWith($option)
+        ->and($record->getRawOriginal('owner_identity'))->toBe(
+            VersionedCache::identity('option.user.owner', $user->getKey()),
+        );
 });
+
+test('colliding compact owner identities fail closed without claiming or mutating rows', function (string $operation) {
+    [$firstUser, $secondUser] = collidingOptionUsers();
+    $firstUser->updateOption('private.setting', ['owner' => 'first']);
+
+    expect($firstUser->getOption('private.setting'))->toBe(['owner' => 'first']);
+
+    $attempt = match ($operation) {
+        'read' => fn () => $secondUser->getOption('private.setting'),
+        'wildcard read' => fn () => $secondUser->getOption('private.*'),
+        'update' => fn () => $secondUser->updateOption('private.setting', ['owner' => 'second']),
+        'delete' => fn () => $secondUser->deleteOption('private.setting'),
+    };
+
+    expect($attempt)->toThrow(OptionOwnerIdentityException::class);
+
+    $record = Option::withoutGlobalScopes()->withTrashed()->sole();
+
+    expect($record->trashed())->toBeFalse()
+        ->and($record->getAttributeValue('value'))->toBe(['owner' => 'first'])
+        ->and($record->getRawOriginal('owner_identity'))->toBe(
+            VersionedCache::identity('option.user.owner', $firstUser->getKey()),
+        );
+})->with(['read', 'wildcard read', 'update', 'delete']);
+
+test('a colliding owner creation race becomes an actionable ownership failure', function () {
+    [$firstUser, $secondUser] = collidingOptionUsers();
+    $insertedCompetingRow = false;
+
+    Option::creating(function (Option $option) use ($firstUser, &$insertedCompetingRow): void {
+        if ($insertedCompetingRow) {
+            return;
+        }
+
+        $insertedCompetingRow = true;
+        $attributes = [
+            'name' => $option->getAttribute('name'),
+            'owner_identity' => VersionedCache::identity('option.user.owner', $firstUser->getKey()),
+            'value' => json_encode(['owner' => 'first']),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        if (config('aura.teams')) {
+            $attributes['team_id'] = $option->getAttribute('team_id');
+        }
+
+        DB::table($option->getTable())->insert($attributes);
+    });
+
+    expect(fn () => $secondUser->updateOption('private.race', ['owner' => 'second']))
+        ->toThrow(OptionOwnerIdentityException::class)
+        ->and($insertedCompetingRow)->toBeTrue()
+        ->and(Option::withoutGlobalScopes()->count())->toBe(0);
+});
+
+test('a same-owner creation race converges on one verified row', function () {
+    [$user] = collidingOptionUsers();
+    $insertedCompetingRow = false;
+
+    Option::creating(function (Option $option) use ($user, &$insertedCompetingRow): void {
+        if ($insertedCompetingRow) {
+            return;
+        }
+
+        $insertedCompetingRow = true;
+        $attributes = [
+            'name' => $option->getAttribute('name'),
+            'owner_identity' => VersionedCache::identity('option.user.owner', $user->getKey()),
+            'value' => json_encode(['version' => 1]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        if (config('aura.teams')) {
+            $attributes['team_id'] = $option->getAttribute('team_id');
+        }
+
+        DB::table($option->getTable())->insert($attributes);
+    });
+
+    $user->updateOption('private.same-owner-race', ['version' => 2]);
+
+    expect($insertedCompetingRow)->toBeTrue()
+        ->and(Option::withoutGlobalScopes()->count())->toBe(1)
+        ->and($user->getOption('private.same-owner-race'))->toBe(['version' => 2]);
+});
+
+test('ambiguous pre-verifier canonical rows stay unclaimed without leaking owner identifiers', function (string $operation) {
+    [$firstUser] = collidingOptionUsers();
+    $attributes = [
+        'name' => 'u00000000000000private.ambiguous',
+        'owner_identity' => null,
+        'value' => ['preserved' => true],
+    ];
+
+    if (config('aura.teams')) {
+        $attributes['team_id'] = $firstUser->current_team_id;
+    }
+
+    $record = Option::withoutGlobalScopes()->create($attributes);
+
+    $attempt = match ($operation) {
+        'read' => fn () => $firstUser->getOption('private.ambiguous'),
+        'update' => fn () => $firstUser->updateOption('private.ambiguous', ['preserved' => false]),
+        'delete' => fn () => $firstUser->deleteOption('private.ambiguous'),
+    };
+
+    try {
+        $attempt();
+        $this->fail('Expected an unverifiable owner identity to fail closed.');
+    } catch (OptionOwnerIdentityException $exception) {
+        expect($exception->getMessage())->toContain('option row ['.$record->id.']')
+            ->not->toContain((string) $firstUser->getKey())
+            ->not->toContain('private.ambiguous');
+    }
+
+    expect($record->fresh()->getRawOriginal('owner_identity'))->toBeNull()
+        ->and($record->fresh()->getAttributeValue('value'))->toBe(['preserved' => true]);
+})->with(['read', 'update', 'delete']);
 
 test('option physical identities are unique within their database scope', function () {
     $attributes = [
@@ -1340,7 +1503,12 @@ test('wildcard option reads preserve numeric suffix keys across legacy and canon
         $attributes['team_id'] = $user->current_team_id;
     }
 
-    Option::withoutGlobalScopes()->create($attributes);
+    $option = Option::withoutGlobalScopes()->newModelInstance($attributes);
+    $option->setAttribute(
+        'owner_identity',
+        VersionedCache::identity('option.user.owner', $user->getKey()),
+    );
+    $option->save();
     $user->updateOption('numeric.20', ['source' => 'canonical']);
 
     expect($user->getOption('numeric.*')->all())->toBe([
@@ -1606,7 +1774,10 @@ test('numeric user options migrate legacy rows and invalidate legacy cache gener
 
     Option::withoutGlobalScopes()->create($attributes);
 
+    $ownerIdentity = VersionedCache::identity('option.user.owner', $user->getKey());
+
     expect($user->getOption('legacy.setting'))->toBe(['version' => 1])
+        ->and(Option::withoutGlobalScopes()->where('name', $legacyName)->value('owner_identity'))->toBe($ownerIdentity)
         ->and(VersionedCache::remember(
             $legacyNamespace,
             $legacyName,
@@ -1625,7 +1796,39 @@ test('numeric user options migrate legacy rows and invalidate legacy cache gener
         ))->toBe(['version' => 2])
         ->and(Option::withoutGlobalScopes()->where('name', $legacyName)->exists())->toBeFalse()
         ->and(Option::withoutGlobalScopes()->count())->toBe(1)
-        ->and(Option::withoutGlobalScopes()->value('name'))->toStartWith(User::optionNamePrefixFor($user->id));
+        ->and(Option::withoutGlobalScopes()->value('name'))->toStartWith(User::optionNamePrefixFor($user->id))
+        ->and(Option::withoutGlobalScopes()->value('owner_identity'))->toBe($ownerIdentity);
+});
+
+test('legacy verifier adoption rolls back with its surrounding transaction', function () {
+    $user = createSuperAdmin();
+    $legacyName = 'user.'.$user->id.'.transactional-legacy';
+    $attributes = [
+        'name' => $legacyName,
+        'value' => ['preserved' => true],
+    ];
+
+    if (config('aura.teams')) {
+        $attributes['team_id'] = $user->current_team_id;
+    }
+
+    Option::withoutGlobalScopes()->create($attributes);
+    $connection = Option::withoutGlobalScopes()->getModel()->getConnection();
+    $baselineLevel = $connection->transactionLevel();
+    $connection->beginTransaction();
+
+    try {
+        expect($user->getOption('transactional-legacy'))->toBe(['preserved' => true])
+            ->and(Option::withoutGlobalScopes()->value('owner_identity'))->toBe(
+                VersionedCache::identity('option.user.owner', $user->getKey()),
+            );
+    } finally {
+        while ($connection->transactionLevel() > $baselineLevel) {
+            $connection->rollBack();
+        }
+    }
+
+    expect(Option::withoutGlobalScopes()->value('owner_identity'))->toBeNull();
 });
 
 test('version two user option identities migrate safely to the compact canonical identity', function () {
@@ -1646,7 +1849,10 @@ test('version two user option identities migrate safely to the compact canonical
 
     Option::withoutGlobalScopes()->create($attributes);
 
-    expect($user->getOption($option))->toBe(['version' => 2]);
+    $ownerIdentity = VersionedCache::identity('option.user.owner', $user->getKey());
+
+    expect($user->getOption($option))->toBe(['version' => 2])
+        ->and(Option::withoutGlobalScopes()->where('name', $versionTwoName)->value('owner_identity'))->toBe($ownerIdentity);
 
     $user->updateOption($option, ['version' => 3]);
 
@@ -1655,8 +1861,67 @@ test('version two user option identities migrate safely to the compact canonical
     expect($user->getOption($option))->toBe(['version' => 3])
         ->and($physicalName)->toBe(User::optionNamePrefixFor($user->id).$option)
         ->and(strlen($physicalName))->toBeLessThanOrEqual(255)
+        ->and(Option::withoutGlobalScopes()->value('owner_identity'))->toBe($ownerIdentity)
         ->and(Option::withoutGlobalScopes()->withTrashed()->where('name', $versionTwoName)->exists())->toBeFalse();
 });
+
+test('a compact collision blocks legacy migration before either row is claimed or mutated', function () {
+    [$firstUser, $secondUser] = collidingOptionUsers();
+    $option = 'private.migration-collision';
+    $versionTwoName = 'aura-user-option-v2:'
+        .VersionedCache::identity('option.user.owner', $firstUser->getKey())
+        .':'
+        .$option;
+    $attributes = [
+        'name' => $versionTwoName,
+        'value' => ['owner' => 'first'],
+    ];
+
+    if (config('aura.teams')) {
+        $attributes['team_id'] = $firstUser->current_team_id;
+    }
+
+    Option::withoutGlobalScopes()->create($attributes);
+    $secondUser->updateOption($option, ['owner' => 'second']);
+
+    expect(fn () => $firstUser->updateOption($option, ['owner' => 'first-updated']))
+        ->toThrow(OptionOwnerIdentityException::class)
+        ->and(Option::withoutGlobalScopes()->where('name', $versionTwoName)->value('owner_identity'))->toBeNull()
+        ->and(Option::withoutGlobalScopes()->where('name', $versionTwoName)->value('value'))->toBe(['owner' => 'first'])
+        ->and($secondUser->getOption($option))->toBe(['owner' => 'second']);
+});
+
+test('a mismatched alias blocks canonical update and delete cleanup atomically', function (string $operation) {
+    $user = createSuperAdmin();
+    $option = 'conflicting-alias';
+    $user->updateOption($option, ['version' => 1]);
+    $alias = Option::withoutGlobalScopes()->newModelInstance([
+        'name' => 'aura-user-option-v2:'
+            .VersionedCache::identity('option.user.owner', $user->getKey())
+            .':'
+            .$option,
+        'value' => ['version' => 0],
+    ]);
+
+    if (config('aura.teams')) {
+        $alias->setAttribute('team_id', $user->current_team_id);
+    }
+
+    $alias->setAttribute(
+        'owner_identity',
+        VersionedCache::identity('option.user.owner', 'different-owner-secret'),
+    );
+    $alias->save();
+
+    $attempt = match ($operation) {
+        'update' => fn () => $user->updateOption($option, ['version' => 2]),
+        'delete' => fn () => $user->deleteOption($option),
+    };
+
+    expect($attempt)->toThrow(OptionOwnerIdentityException::class)
+        ->and(Option::withoutGlobalScopes()->withTrashed()->count())->toBe(2)
+        ->and($user->getOption($option))->toBe(['version' => 1]);
+})->with(['update', 'delete']);
 
 test('canonical numeric user writes remove stale legacy aliases', function () {
     Cache::swap(serializedOptionCacheRepository());
@@ -1747,7 +2012,12 @@ test('direct option model creation invalidates a cached user option miss', funct
         $attributes['team_id'] = $user->current_team_id;
     }
 
-    Option::withoutGlobalScopes()->create($attributes);
+    $option = Option::withoutGlobalScopes()->newModelInstance($attributes);
+    $option->setAttribute(
+        'owner_identity',
+        VersionedCache::identity('option.user.owner', $user->getKey()),
+    );
+    $option->save();
 
     expect($user->getOption('direct-create'))->toBe(['created' => true]);
 });
@@ -1764,10 +2034,11 @@ test('direct option name and user changes invalidate old and new cached identiti
         ->and($secondUser->getOption('direct-owner-change'))->toBeNull();
 
     $option = Option::withoutGlobalScopes()->sole();
-    $option->update([
+    $option->forceFill([
         'name' => User::optionNamePrefixFor($secondUser->id).'direct-owner-change',
+        'owner_identity' => VersionedCache::identity('option.user.owner', $secondUser->getKey()),
         'value' => ['owner' => 'second'],
-    ]);
+    ])->save();
 
     expect($firstUser->getOption('direct-owner-change'))->toBeNull()
         ->and($secondUser->getOption('direct-owner-change'))->toBe(['owner' => 'second']);

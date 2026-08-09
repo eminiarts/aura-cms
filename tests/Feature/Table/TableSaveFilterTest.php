@@ -4,6 +4,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Aura\Base\Services\VersionedCache;
 use Aura\Base\Tests\Resources\Tag;
 use Illuminate\Support\Facades\DB;
 
@@ -147,6 +148,7 @@ describe('deleting filters', function () {
         // Insert a filter directly into the database
         DB::table('options')->insert([
             'name' => User::optionNamePrefixFor($this->user->id).'Post.filters.test-filter',
+            'owner_identity' => VersionedCache::identity('option.user.owner', $this->user->getKey()),
             'value' => '{"custom":[{"filters":[{"name":"tags","operator":"contains","value":[303],"options":{"resource_type":"Aura\\\\Base\\\\Resources\\\\Tag"}}]}],"name":"Test Filter","public":false,"global":false,"slug":"test-filter"}',
             ...config('aura.teams') ? ['team_id' => $this->user->currentTeam->id] : [],
         ]);
@@ -206,6 +208,7 @@ describe('filter selection', function () {
         // Insert a filter that matches only resource (metafield = 'B')
         DB::table('options')->insert([
             'name' => User::optionNamePrefixFor($this->user->id).'Post.filters.meta-b-filter',
+            'owner_identity' => VersionedCache::identity('option.user.owner', $this->user->getKey()),
             'value' => '{"custom":[{"filters":[{"name":"metafield","operator":"is","value":"B","options":{}}]}],"name":"Meta B Filter","public":false,"global":false,"slug":"meta-b-filter"}',
             ...config('aura.teams') ? ['team_id' => $this->user->currentTeam->id] : [],
         ]);

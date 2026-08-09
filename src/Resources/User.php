@@ -3,6 +3,7 @@
 namespace Aura\Base\Resources;
 
 use Aura\Base\Database\Factories\UserFactory;
+use Aura\Base\Exceptions\OptionOwnerIdentityException;
 use Aura\Base\Models\Meta;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\TeamUser;
@@ -21,6 +22,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
@@ -313,9 +315,23 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function deleteOption($option)
     {
-        $this->optionQuery()->whereIn('name', $this->optionNames((string) $option))->delete();
+        $option = (string) $option;
+        $connection = $this->optionConnection();
 
-        $this->forgetOptionCache($option);
+        $connection->transaction(function () use ($option): void {
+            $records = $this->optionQuery()
+                ->whereIn('name', $this->optionNames($option))
+                ->lockForUpdate()
+                ->get();
+
+            $records = $records->map(fn (Option $record): Option => $this->verifiedOptionRecord($record));
+
+            foreach ($records as $record) {
+                $record->delete();
+            }
+        });
+
+        $this->forgetOptionCache($option, $connection);
     }
 
     public function getAvatarUrlAttribute()
@@ -520,7 +536,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 $this->optionCacheNamespace(),
                 $this->optionCacheVariant($option),
                 now()->addHour(),
-                fn (): array => ['values' => $this->resolveWildcardOptionValues($wildcardPrefix)],
+                fn (): array => [
+                    'values' => $this->optionConnection()->transaction(
+                        fn (): array => $this->resolveWildcardOptionValues($wildcardPrefix),
+                    ),
+                ],
                 $this->optionConnection(),
             );
 
@@ -547,28 +567,40 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         $option = (string) $option;
 
-        return VersionedCache::remember(
+        $payload = VersionedCache::remember(
             $this->optionCacheNamespace(),
             $this->optionCacheVariant($option),
             now()->addHour(),
             function () use ($option): array {
-                $record = null;
+                return $this->optionConnection()->transaction(function () use ($option): array {
+                    $record = null;
 
-                foreach ($this->optionNames($option) as $name) {
-                    $record = $this->optionQuery()->where('name', $name)->first(['value']);
+                    foreach ($this->optionNames($option) as $name) {
+                        $record = $this->optionQuery()
+                            ->where('name', $name)
+                            ->lockForUpdate()
+                            ->first();
 
-                    if ($record !== null) {
-                        break;
+                        if ($record !== null) {
+                            $record = $this->verifiedOptionRecord($record);
+
+                            break;
+                        }
                     }
-                }
 
-                return [
-                    'found' => $record !== null,
-                    'value' => $record?->getAttributeValue('value'),
-                ];
+                    return [
+                        'found' => $record !== null,
+                        'value' => $record?->getAttributeValue('value'),
+                    ];
+                });
             },
             $this->optionConnection(),
         );
+
+        return [
+            'found' => $payload['found'],
+            'value' => $payload['value'],
+        ];
     }
 
     public function getOptionSidebar()
@@ -926,46 +958,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function updateOption($option, $value)
     {
         $option = (string) $option;
-        $optionName = $this->optionName($option);
-        $record = $this->optionQuery()->withTrashed()->where('name', $optionName)->first();
-
-        if ($record === null) {
-            foreach (array_slice($this->optionNames($option), 1) as $legacyName) {
-                $record = $this->optionQuery()
-                    ->withTrashed()
-                    ->where('name', $legacyName)
-                    ->first();
-
-                if ($record !== null) {
-                    break;
-                }
-            }
-        }
-
-        if ($record) {
-            $record->fill(['name' => $optionName, 'value' => $value]);
-
-            if ($record->trashed()) {
-                $record->restore();
-            } else {
-                $record->save();
-            }
-        } elseif (config('aura.teams')) {
-            $record = $this->optionQuery()->updateOrCreate([
-                'name' => $optionName,
-                'team_id' => $this->current_team_id,
-            ], ['value' => $value]);
-        } else {
-            $record = Option::updateOrCreate([
-                'name' => $optionName,
-            ], ['value' => $value]);
-        }
-
-        $this->optionQuery()
-            ->withTrashed()
-            ->whereIn('name', array_slice($this->optionNames($option), 1))
-            ->where($record->getKeyName(), '!=', $record->getKey())
-            ->forceDelete();
+        $connection = $this->optionConnection();
+        $record = $connection->transaction(fn (): Option => $this->persistOption($option, $value));
 
         $this->forgetOptionCache($option, $record->getConnection());
     }
@@ -975,6 +969,13 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return collect($this->getWidgets())->map(function ($item) {
             return $item;
         });
+    }
+
+    protected function assertOptionOwnerIdentity(mixed $ownerIdentity, string|int|null $optionId = null): void
+    {
+        if (! is_string($ownerIdentity) || ! hash_equals($this->optionOwnerIdentity(), $ownerIdentity)) {
+            throw OptionOwnerIdentityException::forOption($optionId);
+        }
     }
 
     protected static function booted()
@@ -1072,7 +1073,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     protected function optionCacheVariant(string $option): string
     {
-        return VersionedCache::identity('option.user.key', $this->id, $option);
+        return VersionedCache::identity('option.user.key.v3', $this->getKey(), $option);
     }
 
     protected function optionConnection(): Connection
@@ -1082,7 +1083,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     protected function optionName(string $option): string
     {
-        return self::optionNamePrefixFor($this->id).$option;
+        return $this->optionNamePrefix().$option;
+    }
+
+    protected function optionNamePrefix(): string
+    {
+        return static::optionNamePrefixFor($this->getKey());
     }
 
     /**
@@ -1094,7 +1100,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         $names = [
             $this->optionName($option),
-            self::versionTwoOptionNamePrefixFor($this->id).$option,
+            static::versionTwoOptionNamePrefixFor($this->getKey()).$option,
         ];
 
         if ($this->readsLegacyOptionNames()) {
@@ -1102,6 +1108,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         return array_values(array_unique($names));
+    }
+
+    protected function optionOwnerIdentity(): string
+    {
+        return VersionedCache::identity('option.user.owner', $this->getKey());
     }
 
     /**
@@ -1125,6 +1136,95 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         $entry = $this->getOptionEntry($option);
 
         return $entry['found'] ? $entry['value'] : $default;
+    }
+
+    protected function persistOption(string $option, mixed $value): Option
+    {
+        $optionName = $this->optionName($option);
+        $record = $this->optionQuery()
+            ->withTrashed()
+            ->where('name', $optionName)
+            ->lockForUpdate()
+            ->first();
+
+        if ($record === null) {
+            foreach (array_slice($this->optionNames($option), 1) as $legacyName) {
+                $record = $this->optionQuery()
+                    ->withTrashed()
+                    ->where('name', $legacyName)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($record !== null) {
+                    break;
+                }
+            }
+        }
+
+        if ($record !== null) {
+            $record = $this->verifiedOptionRecord($record);
+            $isCreatingOrRenaming = $record->getRawOriginal('name') !== $optionName;
+            $record->fill(['name' => $optionName, 'value' => $value]);
+        } else {
+            $isCreatingOrRenaming = true;
+            $record = $this->optionQuery()->newModelInstance([
+                'name' => $optionName,
+                'value' => $value,
+            ]);
+
+            if (config('aura.teams')) {
+                $record->setAttribute('team_id', $this->current_team_id);
+            }
+        }
+
+        $record->setAttribute('owner_identity', $this->optionOwnerIdentity());
+
+        try {
+            if ($record->trashed()) {
+                $record->restore();
+            } else {
+                $record->save();
+            }
+        } catch (UniqueConstraintViolationException $exception) {
+            if (! $isCreatingOrRenaming) {
+                throw $exception;
+            }
+
+            $conflict = $this->optionQuery()
+                ->withTrashed()
+                ->where('name', $optionName)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $conflict instanceof Option) {
+                throw $exception;
+            }
+
+            $record = $this->verifiedOptionRecord($conflict);
+            $record->fill(['value' => $value]);
+            $record->setAttribute('owner_identity', $this->optionOwnerIdentity());
+
+            if ($record->trashed()) {
+                $record->restore();
+            } else {
+                $record->save();
+            }
+        }
+
+        $aliases = $this->optionQuery()
+            ->withTrashed()
+            ->whereIn('name', array_slice($this->optionNames($option), 1))
+            ->where($record->getKeyName(), '!=', $record->getKey())
+            ->lockForUpdate()
+            ->get();
+
+        $aliases = $aliases->map(fn (Option $alias): Option => $this->verifiedOptionRecord($alias));
+
+        foreach ($aliases as $alias) {
+            $alias->forceDelete();
+        }
+
+        return $record;
     }
 
     protected function readsLegacyOptionNames(): bool
@@ -1189,7 +1289,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             $values = $this->wildcardOptionValuesForPrefix($legacyPrefix);
         }
 
-        $versionTwoPrefix = self::versionTwoOptionNamePrefixFor($this->id).$optionPrefix;
+        $versionTwoPrefix = static::versionTwoOptionNamePrefixFor($this->getKey()).$optionPrefix;
         $values = array_replace($values, $this->wildcardOptionValuesForPrefix($versionTwoPrefix));
         $canonicalPrefix = $this->optionName($optionPrefix);
 
@@ -1217,6 +1317,46 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return 'teams.user.'.$userId;
     }
 
+    protected function verifiedOptionRecord(Option $record): Option
+    {
+        $ownerIdentity = $record->getRawOriginal('owner_identity');
+
+        if ($ownerIdentity !== null) {
+            $this->assertOptionOwnerIdentity($ownerIdentity, $record->getKey());
+
+            return $record;
+        }
+
+        $name = (string) $record->getRawOriginal('name');
+        $isVerifiableAlias = str_starts_with(
+            $name,
+            static::versionTwoOptionNamePrefixFor($this->getKey()),
+        ) || ($this->readsLegacyOptionNames() && str_starts_with($name, $this->legacyOptionName('')));
+
+        if (! $isVerifiableAlias) {
+            throw OptionOwnerIdentityException::forOption($record->getKey());
+        }
+
+        $this->optionQuery()
+            ->withTrashed()
+            ->whereKey($record->getKey())
+            ->whereNull('owner_identity')
+            ->update(['owner_identity' => $this->optionOwnerIdentity()]);
+
+        $record = $this->optionQuery()
+            ->withTrashed()
+            ->whereKey($record->getKey())
+            ->first();
+
+        if (! $record instanceof Option) {
+            throw OptionOwnerIdentityException::forOption(null);
+        }
+
+        $this->assertOptionOwnerIdentity($record->getRawOriginal('owner_identity'), $record->getKey());
+
+        return $record;
+    }
+
     protected static function versionTwoOptionNamePrefixFor(string|int $userId): string
     {
         return 'aura-user-option-v2:'.VersionedCache::identity('option.user.owner', $userId).':';
@@ -1229,8 +1369,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         return $this->optionQuery()
             ->where('name', 'like', $physicalPrefix.'%')
-            ->get(['name', 'value'])
+            ->lockForUpdate()
+            ->get()
             ->mapWithKeys(function (Option $record) use ($physicalPrefix): array {
+                $record = $this->verifiedOptionRecord($record);
                 $name = (string) $record->getRawOriginal('name');
 
                 return [

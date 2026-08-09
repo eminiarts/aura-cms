@@ -325,6 +325,7 @@ return new class extends Migration
         Schema::create('options', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->char('owner_identity', 64)->nullable();
             $table->longText('value');
             if (config('aura.teams')) {
                 $table->foreignId('team_id');
