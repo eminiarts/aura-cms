@@ -672,6 +672,35 @@ function signedFreshProcessContext(User $user): array
     return $context;
 }
 
+/** @return array<int, array{pid: int, parent_pid: int, state: string}> */
+function processEntriesContaining(string $needle): array
+{
+    $process = new Process(['/bin/ps', '-axo', 'pid=,ppid=,state=,command=']);
+    $process->run();
+
+    if (! $process->isSuccessful()) {
+        throw new RuntimeException('Unable to inspect the process table.');
+    }
+
+    $entries = [];
+
+    foreach (preg_split('/\R/', $process->getOutput()) ?: [] as $line) {
+        if (! str_contains($line, $needle)) {
+            continue;
+        }
+
+        if (preg_match('/^\s*(\d+)\s+(\d+)\s+(\S+)\s+/', $line, $matches) === 1) {
+            $entries[] = [
+                'pid' => (int) $matches[1],
+                'parent_pid' => (int) $matches[2],
+                'state' => $matches[3],
+            ];
+        }
+    }
+
+    return $entries;
+}
+
 /**
  * @return array{databases: array<int, string>, marker: string, user: User, previous_default: string}
  */
@@ -1486,6 +1515,42 @@ test('fresh execution fails before launch without required parent supervision pr
     }
 });
 
+test('fresh execution fails before launch without signal masking', function () {
+    $harness = configureFreshProcessSearchHarness('slow-discovery', [
+        GlobalSearchProcessSlowDiscoveryResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+    $projectPath = dirname(__DIR__, 2);
+    $artisanPath = dirname(__DIR__).'/Fixtures/GlobalSearchWorkerArtisan.php';
+    $outer = new Process([
+        PHP_BINARY,
+        '-d',
+        'disable_functions=pcntl_sigprocmask',
+        $artisanPath,
+        'aura:test-supervise-global-search',
+        '--no-interaction',
+    ], $projectPath, [
+        'APP_ENV' => 'testing',
+        'APP_KEY' => (string) config('app.key'),
+        'AURA_GLOBAL_SEARCH_HOOK_MARKER' => $harness['marker'],
+        'AURA_GLOBAL_SEARCH_PROCESS_FIXTURE' => '1',
+        'AURA_GLOBAL_SEARCH_FIXTURE_MODE' => 'slow-discovery',
+        'AURA_GLOBAL_SEARCH_WORKER_ARTISAN' => $artisanPath,
+        'AURA_GLOBAL_SEARCH_WORKING_DIRECTORY' => $projectPath,
+        'DB_CONNECTION' => 'sqlite',
+        'DB_DATABASE' => $harness['database'],
+    ], timeout: 3);
+
+    try {
+        $outer->run();
+
+        expect($outer->isSuccessful())->toBeFalse($outer->getOutput().$outer->getErrorOutput())
+            ->and(file_exists($harness['marker']))->toBeFalse();
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
 test('isolated execution uses a fresh contained process and preserves parent signal state', function () {
     $harness = configureFreshProcessSearchHarness('normal', [GlobalSearchProcessResource::class]);
     $executor = app(FreshProcessGlobalSearchExecutor::class);
@@ -1618,6 +1683,99 @@ test('parent SIGTERM cleanup kills and reaps the active fresh worker', function 
         cleanupFreshProcessSearchHarness($harness);
     }
 });
+
+test('SIGTERM during worker startup cannot orphan the application process', function () {
+    if (! function_exists('posix_kill')
+        || ! defined('SIGKILL')
+        || ! defined('SIGCONT')
+        || ! defined('SIGSTOP')
+        || ! defined('SIGTERM')) {
+        $this->markTestSkipped('POSIX signals are unavailable on this platform.');
+    }
+
+    $projectPath = dirname(__DIR__, 2);
+    $supervisorPath = realpath($projectPath.'/src/GlobalSearch/FreshProcessGlobalSearchSupervisor.php');
+    $workerPath = realpath(dirname(__DIR__).'/Fixtures/GlobalSearchEarlySignalWorker.php');
+    $processToken = 'aura-global-search-early-signal-'.getmypid().'-'.bin2hex(random_bytes(8));
+
+    expect($supervisorPath)->toBeString()
+        ->and($workerPath)->toBeString();
+
+    $outer = new Process([
+        PHP_BINARY,
+        '-r',
+        'require $argv[1]; exit(\Aura\Base\GlobalSearch\FreshProcessGlobalSearchSupervisor::run(array_slice($argv, 2)));',
+        '--',
+        $supervisorPath,
+        (string) getmypid(),
+        (string) (hrtime(true) + 2_000_000_000),
+        $workerPath,
+        $processToken,
+        'pcntl_exec,pcntl_fork,posix_kill,proc_open',
+    ], $projectPath, timeout: 3);
+
+    $observedProcessIds = [];
+
+    try {
+        $outer->start();
+        $startupDeadline = hrtime(true) + 1_000_000_000;
+        $workerProcessId = null;
+
+        while (! is_int($workerProcessId) && hrtime(true) < $startupDeadline) {
+            $entries = processEntriesContaining($processToken);
+
+            foreach ($entries as $entry) {
+                $observedProcessIds[$entry['pid']] = $entry['pid'];
+            }
+
+            foreach ($entries as $entry) {
+                $parent = collect($entries)->firstWhere('pid', $entry['parent_pid']);
+
+                if (str_starts_with($entry['state'], 'T')
+                    && is_array($parent)
+                    && str_starts_with($parent['state'], 'T')) {
+                    $workerProcessId = $entry['pid'];
+                    break;
+                }
+            }
+
+            usleep(1_000);
+        }
+
+        expect($workerProcessId)->toBeInt($outer->getErrorOutput());
+        posix_kill($workerProcessId, SIGCONT);
+        $outer->wait();
+
+        foreach (processEntriesContaining($processToken) as $entry) {
+            $observedProcessIds[$entry['pid']] = $entry['pid'];
+        }
+
+        $cleanupDeadline = hrtime(true) + 500_000_000;
+        $remainingProcessIds = array_values(array_filter(
+            $observedProcessIds,
+            fn (int $processId): bool => @posix_kill($processId, 0),
+        ));
+
+        while ($remainingProcessIds !== [] && hrtime(true) < $cleanupDeadline) {
+            usleep(10_000);
+            $remainingProcessIds = array_values(array_filter(
+                $observedProcessIds,
+                fn (int $processId): bool => @posix_kill($processId, 0),
+            ));
+        }
+
+        expect($remainingProcessIds)->toBe([]);
+    } finally {
+        if ($outer->isRunning()) {
+            $outer->stop(0);
+        }
+
+        foreach (processEntriesContaining($processToken) as $entry) {
+            @posix_kill($entry['pid'], SIGCONT);
+            @posix_kill($entry['pid'], SIGKILL);
+        }
+    }
+})->repeat(20);
 
 test('a blocking fresh worker cannot outlive a SIGKILLed request parent', function () {
     if (! function_exists('posix_kill') || ! defined('SIGKILL')) {

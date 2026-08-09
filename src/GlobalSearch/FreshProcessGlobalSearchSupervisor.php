@@ -8,7 +8,9 @@ final class FreshProcessGlobalSearchSupervisor
         'pcntl_async_signals',
         'pcntl_exec',
         'pcntl_fork',
+        'pcntl_get_last_error',
         'pcntl_signal',
+        'pcntl_sigprocmask',
         'pcntl_waitpid',
         'pcntl_wexitstatus',
         'pcntl_wifexited',
@@ -43,9 +45,35 @@ final class FreshProcessGlobalSearchSupervisor
             return 126;
         }
 
+        $terminationSignals = [SIGTERM, SIGINT, SIGHUP];
+        $previousSignalMask = [];
+
+        if (! pcntl_sigprocmask(SIG_BLOCK, $terminationSignals, $previousSignalMask)) {
+            return 126;
+        }
+
+        pcntl_async_signals(true);
+        $terminationSignal = null;
+        $watcherProcessId = 0;
+        $captureSignal = function (int $signal) use (&$terminationSignal, &$watcherProcessId): void {
+            $terminationSignal = $signal;
+
+            if ($watcherProcessId > 1) {
+                @posix_kill($watcherProcessId, $signal);
+            }
+        };
+
+        if (! self::installSignalHandlers($terminationSignals, $captureSignal)) {
+            self::restoreSignalMask($previousSignalMask);
+
+            return 126;
+        }
+
         $watcherProcessId = pcntl_fork();
 
         if ($watcherProcessId === -1) {
+            self::restoreSignalMask($previousSignalMask);
+
             return 126;
         }
 
@@ -57,18 +85,16 @@ final class FreshProcessGlobalSearchSupervisor
                 $phpBinary,
                 $artisanPath,
                 $disabledFunctions,
+                $previousSignalMask,
             );
         }
 
-        pcntl_async_signals(true);
-        $terminationSignal = null;
-        $captureSignal = function (int $signal) use (&$terminationSignal, $watcherProcessId): void {
-            $terminationSignal = $signal;
-            @posix_kill($watcherProcessId, $signal);
-        };
-        pcntl_signal(SIGTERM, $captureSignal);
-        pcntl_signal(SIGINT, $captureSignal);
-        pcntl_signal(SIGHUP, $captureSignal);
+        if (! self::restoreSignalMask($previousSignalMask)) {
+            @posix_kill($watcherProcessId, SIGTERM);
+            self::reap($watcherProcessId);
+
+            return 126;
+        }
 
         while (true) {
             $status = 0;
@@ -106,6 +132,46 @@ final class FreshProcessGlobalSearchSupervisor
         return 126;
     }
 
+    /**
+     * @param  array<int, int>  $signals
+     * @param  (callable(int): void)|int  $handler
+     */
+    private static function installSignalHandlers(array $signals, callable|int $handler): bool
+    {
+        foreach ($signals as $signal) {
+            if (! pcntl_signal($signal, $handler)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static function killAndReap(int $processId): void
+    {
+        @posix_kill($processId, SIGKILL);
+        self::reap($processId);
+    }
+
+    private static function reap(int $processId): void
+    {
+        while (true) {
+            $status = 0;
+            $waitedProcessId = pcntl_waitpid($processId, $status);
+
+            if ($waitedProcessId === $processId
+                || ($waitedProcessId === -1 && pcntl_get_last_error() !== PCNTL_EINTR)) {
+                return;
+            }
+        }
+    }
+
+    /** @param array<int, int> $signalMask */
+    private static function restoreSignalMask(array $signalMask): bool
+    {
+        return pcntl_sigprocmask(SIG_SETMASK, $signalMask);
+    }
+
     private static function runtimeIsSupported(): bool
     {
         foreach (self::REQUIRED_FUNCTIONS as $function) {
@@ -118,6 +184,9 @@ final class FreshProcessGlobalSearchSupervisor
             && defined('SIGINT')
             && defined('SIGHUP')
             && defined('SIGKILL')
+            && defined('SIG_BLOCK')
+            && defined('SIG_SETMASK')
+            && defined('PCNTL_EINTR')
             && defined('WNOHANG');
     }
 
@@ -128,8 +197,17 @@ final class FreshProcessGlobalSearchSupervisor
         string $phpBinary,
         string $artisanPath,
         string $disabledFunctions,
+        array $previousSignalMask,
     ): int {
         $terminationSignal = null;
+        $terminationSignals = [SIGTERM, SIGINT, SIGHUP];
+        $captureSignal = function (int $signal) use (&$terminationSignal): void {
+            $terminationSignal = $signal;
+        };
+
+        if (! self::installSignalHandlers($terminationSignals, $captureSignal)) {
+            return 126;
+        }
 
         if (posix_getppid() !== $supervisorProcessId
             || ! @posix_kill($parentProcessId, 0)
@@ -144,6 +222,13 @@ final class FreshProcessGlobalSearchSupervisor
         }
 
         if ($workerProcessId === 0) {
+            if (! self::installSignalHandlers($terminationSignals, SIG_DFL)
+                || ! self::restoreSignalMask($previousSignalMask)) {
+                fwrite(STDERR, "Unable to prepare the global search worker process.\n");
+
+                return 127;
+            }
+
             pcntl_exec($phpBinary, [
                 '-d',
                 'ffi.enable=0',
@@ -159,13 +244,11 @@ final class FreshProcessGlobalSearchSupervisor
             return 127;
         }
 
-        pcntl_async_signals(true);
-        $captureSignal = function (int $signal) use (&$terminationSignal): void {
-            $terminationSignal = $signal;
-        };
-        pcntl_signal(SIGTERM, $captureSignal);
-        pcntl_signal(SIGINT, $captureSignal);
-        pcntl_signal(SIGHUP, $captureSignal);
+        if (! self::restoreSignalMask($previousSignalMask)) {
+            self::killAndReap($workerProcessId);
+
+            return 126;
+        }
 
         while (true) {
             $status = 0;
@@ -184,8 +267,7 @@ final class FreshProcessGlobalSearchSupervisor
             $deadlineExpired = hrtime(true) >= $deadlineNanoseconds;
 
             if (is_int($terminationSignal) || $supervisorDied || $parentDied || $deadlineExpired) {
-                @posix_kill($workerProcessId, SIGKILL);
-                pcntl_waitpid($workerProcessId, $status);
+                self::killAndReap($workerProcessId);
 
                 if ($deadlineExpired) {
                     return 124;

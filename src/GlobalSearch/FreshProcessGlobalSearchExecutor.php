@@ -67,6 +67,7 @@ SH;
         'pcntl_async_signals',
         'pcntl_signal',
         'pcntl_signal_get_handler',
+        'pcntl_sigprocmask',
         'posix_kill',
     ];
 
