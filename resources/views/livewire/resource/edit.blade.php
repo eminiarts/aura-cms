@@ -1,14 +1,15 @@
 <div autocomplete="off">
-    @section('title', $model->editHeaderTitle())
+    @section('title', e($model->editHeaderTitle()))
 
     {{ app('aura')::injectView('post_edit_breadcrumbs_before') }}
 
     @if (!$inModal)
+        @php($returnUrl = $model->editReturnUrl())
         <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
                 iconClass="text-gray-500 w-6 h-6 mr-0" />
-            @if (Route::has($model->editReturnRoute()))
-                <x-aura::breadcrumbs.li :href="route($model->editReturnRoute())" :title="__($model->getPluralName())" />
+            @if ($returnUrl)
+                <x-aura::breadcrumbs.li :href="$returnUrl" :title="__($model->getPluralName())" />
             @else
                 <x-aura::breadcrumbs.li :title="__($model->getPluralName())" />
             @endif

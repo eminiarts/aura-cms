@@ -2,18 +2,23 @@
 
 namespace Aura\Base\Traits\Concerns;
 
+use Aura\Base\RouteTarget;
+use Illuminate\Routing\Exceptions\UrlGenerationException;
 use Illuminate\Support\Facades\Route;
 
 trait AuraResourceUrls
 {
     /**
      * Named route used by the create page's return link.
-     *
-     * @return string
      */
-    public function createReturnRoute()
+    public function createReturnRoute(): RouteTarget|string
     {
         return 'aura.'.$this->getSlug().'.index';
+    }
+
+    public function createReturnUrl(): ?string
+    {
+        return $this->resolveRouteTarget($this->createReturnRoute());
     }
 
     public function createUrl()
@@ -29,12 +34,15 @@ trait AuraResourceUrls
 
     /**
      * Named route used by the edit page's return link.
-     *
-     * @return string
      */
-    public function editReturnRoute()
+    public function editReturnRoute(): RouteTarget|string
     {
         return 'aura.'.$this->getSlug().'.index';
+    }
+
+    public function editReturnUrl(): ?string
+    {
+        return $this->resolveRouteTarget($this->editReturnRoute());
     }
 
     public function editUrl()
@@ -81,5 +89,21 @@ trait AuraResourceUrls
         }
 
         return route($name, ['id' => $this->id]);
+    }
+
+    protected function resolveRouteTarget(RouteTarget|string $target): ?string
+    {
+        $name = $target instanceof RouteTarget ? $target->name : $target;
+        $parameters = $target instanceof RouteTarget ? $target->parameters : [];
+
+        if ($name === '' || ! Route::has($name)) {
+            return null;
+        }
+
+        try {
+            return route($name, $parameters);
+        } catch (UrlGenerationException) {
+            return null;
+        }
     }
 }

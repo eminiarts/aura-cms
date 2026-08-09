@@ -4,10 +4,7 @@ namespace Aura\Base\Traits\Concerns;
 
 trait AuraResourceViews
 {
-    /**
-     * @return string
-     */
-    public function createHeaderTitle()
+    public function createHeaderTitle(): string
     {
         return __('Create :resource', ['resource' => __($this->singularName())]);
     }
@@ -17,10 +14,7 @@ trait AuraResourceViews
         return 'aura::livewire.resource.create';
     }
 
-    /**
-     * @return string
-     */
-    public function editHeaderTitle()
+    public function editHeaderTitle(): string
     {
         return __('Edit :resource', ['resource' => __($this->singularName())]);
     }

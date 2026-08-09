@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Per-resource editor chrome hooks (`createHeaderTitle()`, `editHeaderTitle()`, `createReturnRoute()`, `editReturnRoute()`) for changing create/edit copy and named return destinations without publishing package views.
+- Typed per-resource editor chrome hooks (`createHeaderTitle()`, `editHeaderTitle()`, `createReturnRoute()`, `editReturnRoute()`) plus `RouteTarget` for changing escaped create/edit copy and named return destinations with path parameters or query state without publishing package views.
 - Per-resource page component hooks (`indexComponent()`, `createComponent()`, `editComponent()`, `viewComponent()`): a resource can swap in a custom Livewire component for any of its admin pages while keeping the default URI and `aura.{slug}.*` route name, so all generated links keep working.
 - `aura:customize` command: customize a resource page by copying its Blade view into `resources/views/aura/{slug}/`, generating a custom Livewire component in `app/Livewire/`, or both (`--mode=view|component|full`). Wires the resource to the generated files automatically and scaffolds an app-level subclass for package resources (User, Team, …).
 
@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Dashboard team quick actions no longer generate an invalid edit URL when the authenticated user has no current team, and now respect the team update policy.
+- Dashboard team quick actions derive the edit route from the configured Team resource, disappear when the resource, route, current team, or policy is unavailable, and remain safe with teams disabled.
+- Create and edit return breadcrumbs now fall back to unlinked copy when their named route cannot be generated; plain breadcrumb titles are escaped while explicit `Htmlable` content remains supported.
 
 ## [1.0.0](https://github.com/eminiarts/aura-cms/compare/v0.2.0...v1.0.0) - 2026-07-18
 

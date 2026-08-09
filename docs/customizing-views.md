@@ -183,31 +183,37 @@ class Product extends Resource
 For title copy or breadcrumb return destinations, override the resource hooks instead of publishing the create or edit Blade view:
 
 ```php
+use Aura\Base\RouteTarget;
+
 class Product extends Resource
 {
-    public function createHeaderTitle()
+    public function createHeaderTitle(): string
     {
         return __('Add product');
     }
 
-    public function createReturnRoute()
+    public function createReturnRoute(): RouteTarget|string
     {
-        return 'aura.catalog.index';
+        return new RouteTarget('aura.catalog.section', [
+            'section' => 'products',
+            'view' => 'compact',
+            'page' => 2,
+        ]);
     }
 
-    public function editHeaderTitle()
+    public function editHeaderTitle(): string
     {
         return __('Update product');
     }
 
-    public function editReturnRoute()
+    public function editReturnRoute(): RouteTarget|string
     {
         return 'aura.catalog.index';
     }
 }
 ```
 
-The return hooks provide named route names, which Aura passes to Laravel's `route()` helper. By default, create and edit pages keep the existing `Create {Resource}` / `Edit {Resource}` copy and return to `aura.{resource}.index`. Component-level `create` and `update` authorization still runs before the page renders.
+Return hooks accept the existing named-route string or a `RouteTarget` when the destination needs path parameters or query state. Laravel consumes required parameters first and appends extras as a query string. Aura never treats a string as an external URL; a missing route or missing required parameter renders the plural breadcrumb without a link instead of failing the editor page. By default, create and edit pages keep the existing `Create {Resource}` / `Edit {Resource}` copy and return to `aura.{resource}.index`. Header-title strings are escaped when rendered, and component-level `create` and `update` authorization still runs before the page renders.
 
 ### Custom Index View
 

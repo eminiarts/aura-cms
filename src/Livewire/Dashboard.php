@@ -3,6 +3,10 @@
 namespace Aura\Base\Livewire;
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Resource;
+use Aura\Base\Resources\User;
+use Illuminate\Routing\Exceptions\UrlGenerationException;
+use Illuminate\Support\Facades\Route;
 use Livewire\Component;
 
 class Dashboard extends Component
@@ -10,12 +14,9 @@ class Dashboard extends Component
     public function render()
     {
         $resources = $this->accessibleAppResources();
-        $user = auth()->user();
-        $currentTeam = config('aura.teams') ? data_get($user, 'currentTeam') : null;
 
         return view('aura::livewire.dashboard', [
-            'canUpdateCurrentTeam' => $currentTeam !== null && $user->can('update', $currentTeam),
-            'currentTeam' => $currentTeam,
+            'currentTeamEditUrl' => $this->currentTeamEditUrl(),
             'stats' => $this->stats($resources),
             'recentItems' => $this->recentItems($resources),
             'recentMedia' => $this->recentMedia(),
@@ -34,6 +35,37 @@ class Dashboard extends Component
             ->reverse()
             ->sortBy(fn ($resource) => $resource::getSort())
             ->values();
+    }
+
+    protected function currentTeamEditUrl(): ?string
+    {
+        $user = auth()->user();
+        $teamResourceClass = config('aura.resources.team');
+
+        if (! config('aura.teams')
+            || ! $user instanceof User
+            || ! is_string($teamResourceClass)
+            || ! is_a($teamResourceClass, Resource::class, true)) {
+            return null;
+        }
+
+        $routeName = 'aura.'.$teamResourceClass::getSlug().'.edit';
+
+        if (! Route::has($routeName)) {
+            return null;
+        }
+
+        $currentTeam = $user->getRelationValue('currentTeam');
+
+        if (! $currentTeam instanceof Resource || ! $user->can('update', $currentTeam)) {
+            return null;
+        }
+
+        try {
+            return route($routeName, ['id' => $currentTeam->getKey()]);
+        } catch (UrlGenerationException) {
+            return null;
+        }
     }
 
     protected function recentItems($resources)
