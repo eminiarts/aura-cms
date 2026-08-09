@@ -220,6 +220,18 @@ big-endian integers. The manifest schema permits only `path` and `classes`, so
 no accepted metadata remains outside the digest. Source line endings are not
 normalized.
 
+The baseline and source manifest are decoded as strict UTF-8 and parsed by a
+recursive JSON parser that rejects duplicate decoded member names before an
+object is constructed, including duplicates inside nested objects and arrays.
+All accepted string fields must be well-formed Unicode; lone high or low
+surrogates fail before UTF-8 digest encoding.
+
+Every selected path must equal its canonical repository-relative realpath and
+remain inside the real source root. Case-folded canonical paths and filesystem
+device/inode identities must both be unique, preventing case variants,
+symlinks, and hardlinks from adding aliases. The exact authenticated buffers
+are written to the compiler workspaces and compared byte-for-byte after write.
+
 Before either compiler runs, the gate compares the selected real-source digest
 to that committed baseline and checks this documented value for consistency.
 Each compiler lane repeats the fixed-baseline check. A self-test mutates a
@@ -227,7 +239,9 @@ temporary copy of a selected source and proves the same check rejects drift.
 Additional regressions reproduce the old record-boundary ambiguity and prove
 the v2 digest separates it, then reject class value, count, and order mutations
 using otherwise valid real-source expectations. Unexpected manifest fields are
-rejected outright.
+rejected outright. Input regressions also cover ordinary and escaped duplicate
+JSON members, nested duplicates, U+D800/U+D801 replacement-byte collisions,
+and case, symlink, hardlink, and root-escape aliases.
 Intentional selected-source content changes therefore require a reviewed
 baseline and documentation update; changing the selection also requires a
 manifest update.
