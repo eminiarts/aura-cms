@@ -39,6 +39,18 @@ plugin participation: a plugin calling `Livewire::component()` or adding another
 missing resolver competes through provider/resolver order, has no provenance or
 conflict diagnostics, and can be masked by the Factory's first-resolution cache.
 
+Both existing names for each surface are compatibility aliases:
+
+| Slot | Blade-style alias | Existing dot alias |
+|---|---|---|
+| `global-search` | `aura::global-search` | `aura.base.livewire.global-search` |
+| `media-manager` | `aura::media-manager` | `aura.base.livewire.media-manager` |
+
+All four aliases track the final host/plugin/default winner through the major
+following CORE-20. Keeping the dot aliases on Aura's default would let
+FQCN-derived or saved callers bypass the selected winner, so default-only
+behavior is rejected.
+
 ## Why the boundary is this small
 
 - Global search is the requested package-level replacement surface and has no
@@ -91,12 +103,21 @@ For each candidate, boot-time validation must prove all of the following:
    valid for that declaration.
 5. Reject any other required `mount()` parameter that is builtin, enum,
    `UrlRoutable`, union/intersection, or otherwise expects caller data. For an
-   extra named non-builtin dependency, mirror Laravel's `BoundMethod`: use its
-   default only when available and the type is not container-bound; otherwise
-   require `Container::make()` to succeed during validation. An unbound required
-   interface or failed construction fails boot. Other extra parameters must be
-   optional or variadic, so Aura never invents caller data.
-6. If `modalClasses` exists for `media-manager`, require exactly a public static
+   extra named non-builtin dependency, reflect that exact parameter and mirror
+   Laravel's `BoundMethod`: use its default only when available and the reflected
+   type is not container-bound; otherwise call `Container::make()` for the
+   reflected FQCN. Resolution succeeds only when the returned object is an
+   instance of that declared class or interface. An unbound interface, wrong
+   interface binding, scalar/null result, or thrown construction fails boot.
+   Other extra parameters must be optional or variadic, so Aura never invents
+   caller data.
+6. For `media-manager`, require these public, non-static, declared-`void`
+   methods with the exact parameter names, order, types, and defaults shown in
+   the correlated protocol: `requestMediaSelection`,
+   `acknowledgeMediaSelection`, and `expireMediaSelection`.
+   `acknowledgeMediaSelection` must carry Livewire's
+   `#[On('aura-media-selection-acknowledged')]` attribute.
+7. If `modalClasses` exists for `media-manager`, require exactly a public static
    method with zero parameters and declared return type `string`. Invoke it
    once during validation and require a non-empty value of at most 512 bytes with
    no ASCII control characters. Absence uses Aura's default modal width.
@@ -151,13 +172,18 @@ bookmarks, DOM, CSS, or Alpine implementation as part of this slot.
   - `ownerToken`: Aura's authenticated opaque owner token described below; and
   - `modalAttributes`: at least `persistent: bool`, `modalClasses: string`, and
     `slideOver: bool`, supplied by Aura's modal host.
-- **Required outbound event:** after successful validation and authorization,
-  dispatch `updateField` with named argument
-  `data: ['ownerToken' => string, 'slug' => string, 'value' => list<string>]`.
+- **Required actions:** expose
+  `requestMediaSelection(array $value): void`,
+  `acknowledgeMediaSelection(string $ownerToken, string $requestToken, string $outcome, ?string $errorCode = null): void`, and
+  `expireMediaSelection(string $requestToken): void` with the behavior below.
+- **Required events:** dispatch `aura-media-selection-requested` and consume
+  `aura-media-selection-acknowledged` with the exact named payloads below. The
+  former slug-only `updateField` broadcast is not part of the new protocol.
 - **Other events:** `selectedRows`, `tableMounted`, `selection-changed`,
   `media-uploaded`, and `media-manager-selected` remain implementation details.
-- **Layout:** render one inline root inside Aura's modal panel. Confirmation must
-  complete the targeted `updateField` round trip before closing.
+- **Layout:** render one inline root inside Aura's modal panel. Confirmation
+  enters an observable pending state, disables duplicate submission, and closes
+  only after the correlated success acknowledgement has been verified.
 - **Authorization:** treat every mount/event value as untrusted. Resolve the token
   to fresh server state, require `model` and `slug` to match it, authorize the
   owner action, enforce current-team attachment visibility, and authorize every
@@ -184,11 +210,15 @@ the component reloads and authorizes the represented state.
   state. For `update`, reload the exact owner through current-team visibility and
   authorize `update` on the record.
 - The owner keeps a digest of its expected token in a Livewire `#[Locked]`
-  property. Its `updateField` listener compares the presented token digest in
-  constant time, verifies the matching slug, re-resolves the owner context,
-  reauthorizes, validates the attachment ID list, and ignores every event for
-  another token. The locked property is tamper-resistant component state, not a
-  substitute for verifying and authorizing the token again.
+  property. Its `applyMediaSelection` listener compares the presented token
+  digest in constant time, verifies the matching slug, re-resolves the owner
+  context, reauthorizes, validates the attachment ID list, and ignores every
+  event for another token. The locked property is tamper-resistant component
+  state, not a substitute for verifying and authorizing the token again.
+- The manager retains the mounted `ownerToken` only in `#[Locked]` state and
+  verifies it again when confirmation, acknowledgement, or timeout actions run.
+  A client mutation of the mounted model, slug, selection, or token cannot change
+  the owner context recorded by the broker.
 - Media manager requires `viewAny` for Attachment, scopes the listing to the
   current team, authorizes `view` on every displayed, preselected, and confirmed
   attachment, and rejects foreign/missing IDs rather than filtering silently.
@@ -197,12 +227,74 @@ the component reloads and authorizes the represented state.
   action; denial leaves no stored file and no database row. Standalone library
   upload receives an Aura-issued library token with the same actor/team binding.
 
-The token broker and locked owner-listener behavior are Aura infrastructure, not
-optional responsibilities that a replacement may bypass. A legacy custom media
-manager must accept/echo `ownerToken` and pass the new conformance suite. A class
-that cannot accept `ownerToken` fails structural boot validation; a class that
-accepts it but still emits the former slug-only event fails conformance. Both
-produce an actionable migration failure, and no insecure fallback is retained.
+## Correlated media selection acknowledgement
+
+A Livewire server dispatch is returned to the browser as an effect. A listener on
+another component runs in a later HTTP request; the manager's confirmation action
+cannot synchronously await the owner listener. CORE-20 therefore defines this
+three-request protocol and forbids closing from the first request:
+
+1. The manager action `requestMediaSelection(array $value): void` normalizes and
+   authorizes the selected Attachment IDs, asks Aura's server-side selection
+   broker for an opaque 256-bit `requestToken`, stores only its digest and pending
+   timestamp in `#[Locked]` state, and dispatches
+   `aura-media-selection-requested` with the named payload
+   `ownerToken: string`, `requestToken: string`, `slug: string`, and
+   `value: list<string>`. The returned browser effect launches the owner request;
+   the manager remains open and visibly pending.
+2. Aura's owner infrastructure listens with
+   `#[On('aura-media-selection-requested')]` on
+   `applyMediaSelection(string $ownerToken, string $requestToken, string $slug, array $value): void`.
+   Non-matching owner components ignore the global event. The matching owner
+   atomically claims the pending request, verifies both tokens and the value
+   digest, reloads and authorizes the owner and attachments, and commits the new
+   value to its authoritative Livewire field state. If that owner uses an
+   immediate durable write, its transaction must also commit before success; the
+   protocol does not otherwise save a create/edit form prematurely.
+3. The owner atomically records `succeeded` or `failed` in the broker, then
+   dispatches `aura-media-selection-acknowledged` with named payload
+   `ownerToken: string`, `requestToken: string`, `outcome: 'succeeded'|'failed'`,
+   and `errorCode: string|null`. This browser effect launches a third request to
+   the manager's `acknowledgeMediaSelection(...)` listener. Event fields are
+   untrusted hints: the manager compares both token digests and reads the
+   authoritative broker outcome before changing UI state. Success requires a
+   null error code; failure uses a non-sensitive machine code recorded by the
+   broker.
+4. On authoritative success, the acknowledgement action marks the local request
+   settled and only then emits the local dialog-close effect. On failure it keeps
+   the modal open, clears pending state, shows a non-sensitive error, and permits
+   a retry with a new request token. It ignores unrelated, forged, stale, and
+   duplicate acknowledgements.
+
+The broker record binds the request token digest, owner token digest, manager and
+owner Livewire component IDs, actor/team, slug, normalized value digest, issued
+time, deadline, and state (`pending`, `processing`, `succeeded`, `failed`, or
+`expired`). It lives in server-backed shared storage with atomic transitions and
+a short TTL so separate PHP workers observe the same state. Knowing either token
+cannot manufacture success because only the owner-side mutation may transition a
+request to `succeeded`.
+
+While pending, the Aura-owned client timer invokes
+`expireMediaSelection(string $requestToken): void` in a separate manager request.
+The broker resolves the timeout/success race atomically: an expired request keeps
+the modal open with a retryable error, while an already-succeeded request follows
+the normal success path. A late owner request cannot mutate an expired request.
+Repeated request effects, owner handlers, acknowledgements, and timeout actions
+are idempotent; a settled request never applies the value or closes twice.
+Expected validation/authorization/persistence failures return a generic failed
+acknowledgement. If transport or process failure prevents that effect, timeout is
+the required recovery path. Timeout duration and presentation are private V1
+details, but pending, success, failure, and retry behavior are contractual.
+
+The owner-token broker, selection broker, and locked owner-listener behavior are
+Aura infrastructure, not optional responsibilities that a replacement may
+bypass. A legacy custom media manager must implement the three required actions,
+accept the owner token, use Aura's broker plus the request/acknowledgement events,
+and pass the new conformance suite. A class that cannot accept `ownerToken` or
+lacks an action fails structural boot validation; a class that accepts the
+signatures but still emits the former slug-only event, bypasses the broker, or
+closes after its first request fails conformance. Both produce an actionable
+migration failure, and no insecure fallback is retained.
 
 ## Default-component release prerequisite
 
@@ -213,9 +305,13 @@ prove:
 - Aura `GlobalSearch`: authenticated mount/hydration, `viewAny` before querying,
   current-team isolation, per-record `view`, and authorized destinations.
 - Aura `MediaManager`: verified owner token/context, owner `create` or `update`,
-  Attachment `viewAny`/`view`, scoped selected IDs, and targeted confirmation.
+  Attachment `viewAny`/`view`, scoped selected IDs, pending/error UI, correlated
+  acknowledgement, timeout, retry, and close-after-success behavior.
 - Aura `MediaUploader`: the same owner/read checks plus Attachment `create` before
   storage or persistence, with no denied/orphaned side effects.
+- Aura's media-field owner infrastructure: locked owner-token digest, atomic
+  request claiming, fresh authorization, authoritative state mutation, broker
+  settlement, and idempotent success/failure acknowledgement.
 
 This prerequisite applies even when no host or plugin replacement is configured.
 
@@ -287,7 +383,7 @@ Aura must finalize in this order:
 1. Transition from collecting to finalizing, resolve and structurally validate
    every declaration, select each winner, and freeze that provisional winner map.
 2. Before registering anything, inspect Livewire's current Finder and Factory for
-   each transport ID and the two compatibility aliases. Snapshot the raw explicit
+   each transport ID and all four compatibility aliases. Snapshot the raw explicit
    class/view registrations, class/view namespaces, locations, resolver list, and
    Factory cache; run Finder's non-mutating conventional and single-/multi-file
    discovery; and invoke each pre-existing non-Aura missing resolver directly for
@@ -301,32 +397,58 @@ Aura must finalize in this order:
    normalized name and canonical class equal the expected pair. A mismatch fails
    boot; the successful resolution intentionally pins the Factory cache.
 5. While finalizing, allow only Aura's own missing resolver to read the frozen
-   provisional map. Prime `aura::global-search` and `aura::media-manager` through
-   normal Factory resolution and assert each resolves to the same final winner.
+   provisional map. Prime both Blade-style and dot aliases for each slot through
+   normal Factory resolution and assert all four resolve to the same final winner.
    Then transition to finalized. Any exception aborts application boot; there is
    no partially usable registry. Neither preflight nor assertion may delete,
    overwrite, or reorder a third-party registration or resolver.
 
+### Supported Livewire-internals adapter
+
 Livewire 4.3 has no public API that exposes all Finder registrations and Factory
-cache entries. The implementation therefore needs one narrow, read-only,
-version-tested collision inspector. If the installed Livewire version cannot be
-inspected completely, Aura fails boot rather than attempting best-effort
-registration. Normal resolution is still exercised after the complete preflight
-to assert the post-registration result; it is not the collision detector.
+cache entries. CORE-20 therefore introduces one internal
+`Livewire43CollisionInspector`; no registry code outside that adapter may reflect
+Livewire's protected state. The first implementation supports
+`livewire/livewire: ~4.3.5` and changes Aura's Composer constraint from `^4.0` to
+that range in the same release. Unsupported minor versions fail dependency
+resolution during install/update, rather than first breaking an application at
+ordinary boot after a nominally allowed upgrade.
+
+An adapter factory reads the installed version through Composer's
+`InstalledVersions`, selects only an adapter whose declared range contains that
+version, and has no generic reflection fallback. Absence of an adapter is the
+dedicated compatibility failure.
+
+The adapter owns a version/shape compatibility check for the exact Finder and
+Factory classes, properties, collection shapes, and method signatures it reads.
+That check runs before Aura installs its resolver or begins finalization and
+throws a dedicated unsupported-internals exception, never a generic reflection
+error or a false slot-collision diagnostic. A supported-but-modified vendor build
+therefore fails intentionally before registry mutation. Normal component
+resolution after the complete collision preflight remains an assertion, not the
+collision detector.
+
+CI tests the lowest supported version (`4.3.5`) and the latest resolvable `4.3.x`
+patch, with the adapter shape test plus every collision category on both. Before
+widening the Composer constraint to another Livewire minor, Aura must inspect that
+minor, add or affirm an explicit adapter, and pass the same lowest/latest matrix.
+If Livewire later exposes a public collision API, a new adapter should use it
+instead of protected-state reflection.
 
 Aura must continue to register **no** Livewire namespace named `aura`. Its missing
-resolver becomes dynamic for the two slot aliases: while collecting it rejects
+resolver becomes dynamic for the four slot aliases: while collecting it rejects
 early resolution, while finalizing it serves only the internal assertion from the
 frozen provisional map, and after finalization it returns the frozen winner. All
 other existing map entries retain current behavior.
 
-Aura-owned layouts and modal emitters switch to the transport IDs. Both old
-aliases remain supported through the next major and track the **final winner**—
-host, plugin, or Aura default—on initial mount and hydration. This is the safest
-compatibility rule because published views and existing callers keep addressing
-the same semantic surface. The aliases are compatibility names, not plugin
-registration hooks; direct `Livewire::component('aura::*', ...)` remains
-unsupported and a detected pre-finalization claim fails boot.
+Aura-owned layouts and modal emitters switch to the transport IDs. All four old
+aliases remain supported through the major following CORE-20 and track the
+**final winner**—host, plugin, or Aura default—on initial mount and hydration.
+This is the safest compatibility rule because published views, FQCN-derived
+names, saved snapshots, and existing callers keep addressing the same semantic
+surface. The aliases are compatibility names, not plugin registration hooks;
+direct registration under either alias form remains unsupported and a detected
+pre-finalization claim fails boot.
 
 The high-entropy IDs and pinned Factory cache make an accidental post-finalize
 overwrite ineffective in the running container. Calls through Aura's registry
@@ -348,9 +470,9 @@ adapts and deprecates it without changing its precedence:
 - every legacy custom class must pass the new structural, owner-token, event, and
   authorization conformance contract. There is no slug-only security fallback.
 
-The legacy key and both `aura::*` aliases may be removed only in the next major.
-Dashboard, profile, and settings remain under `aura.components` because their
-direct route resolution is already deterministic.
+The legacy key and all four compatibility aliases may be removed only in the next
+major after CORE-20. Dashboard, profile, and settings remain under
+`aura.components` because their direct route resolution is already deterministic.
 
 ## Config cache, workers, and multiple containers
 
@@ -369,18 +491,29 @@ direct route resolution is already deterministic.
 
 Once approved and released, stable slot names, config keys, registration
 signature, precedence/conflict behavior, accepted candidate structure, named
-mount inputs, owner-token/event payloads, and authorization/layout ownership are
-public semver commitments.
+mount inputs, required media actions/events, owner/request token payloads, and
+authorization/layout ownership are public semver commitments.
 
-- Adding an independent optional slot is a minor release.
-- Tightening validation or fixing a security defect without weakening this
-  contract is a patch release.
-- Removing/renaming a slot, changing candidate categories, precedence, required
-  mount/event data, or authorization ownership is a major release.
+- Adding an independent optional slot is a minor release when it does not narrow
+  existing dependency or candidate support.
+- Enforcing an invariant already stated by the released contract is a patch only
+  when it does not reject a previously documented valid candidate or payload.
+- Newly rejecting a previously accepted candidate/configuration, narrowing the
+  supported Livewire range, or changing required mount/action/event data is a
+  major release, including when the motivation is security hardening.
+- Removing/renaming a slot or changing precedence or authorization ownership is
+  also a major release.
 - Default DOM/CSS/internal events and private transport IDs are not public API.
 - The existing media config key and old aliases have the explicit next-major
   deprecation window above; the owner-token hardening is a security prerequisite,
   not an optional legacy mode.
+
+The existing legacy media-manager seam accepts slug-only replacements today.
+Requiring the owner/request-token handshake therefore cannot ship as a patch or
+minor under this policy. The safest release vehicle for CORE-20 is the next Aura
+major, with an upgrade error that names the incompatible custom class and links
+to the migration contract. The aliases then remain available until the following
+major as promised above.
 
 ## Tests as design
 
@@ -390,16 +523,18 @@ CORE-20 implementation is not complete until focused tests prove this matrix:
 |---|---|
 | Baseline | Aura registers no `aura` Livewire namespace; the current missing resolver honors a custom legacy media config before migration. |
 | Selection | Defaults; host only; plugin only with provider before/after Aura; host over one/many plugins; duplicate collapse; ambiguous plugins; invalid shadowed declaration. |
-| Compatibility | Both `aura::*` aliases resolve to the final default/host/plugin winner and hydrate under the same alias through the next major; existing dashboard/profile/settings routes remain unchanged. |
-| Collision protocol | Before any registration, separate boot failures for preclaimed explicit class, explicit view, conventional class, class/view namespace, single-file, multi-file, third-party missing resolver, already-resolved Finder entry, and Factory-cache entry for every transport ID/compatibility alias; registration followed by exact Factory assertion; no overwrite or fallback. |
+| Compatibility | Both `aura::*` aliases and both `aura.base.livewire.*` dot aliases resolve to the same final default/host/plugin winner and hydrate under that alias through the major following CORE-20; FQCN normalization and existing dashboard/profile/settings routes remain unchanged. |
+| Collision protocol | Before any registration, separate boot failures for preclaimed explicit class, explicit view, conventional class, class/view namespace, single-file, multi-file, third-party missing resolver, already-resolved Finder entry, and Factory-cache entry for every transport ID and all four aliases; registration followed by exact Factory assertion; no overwrite or fallback. |
+| Livewire adapter | Composer accepts `4.3.5` and latest `4.3.x` but rejects unsupported minors; both supported endpoints pass the adapter shape and full collision matrix; a deliberately altered supported shape raises the dedicated compatibility exception before resolver/registry mutation. |
 | Lifecycle | Unknown slot/source, same-source conflict, pre-finalization resolution, late registry registration, config cache, Octane reuse, and two independent containers. |
-| Structural pass | Property-only, mount-only, mixed property/mount inputs, optional extras, resolvable concrete/interface DI, and valid optional `modalClasses`. |
-| Structural fail | Noncanonical/missing/non-component/abstract class, required constructor, readonly/static/private or incompatible property, non-public/static `mount`, incompatible or extra required mount scalar, UrlRoutable/enum/union caller dependency, unresolvable DI, and non-public/non-static/parameterized/untyped/non-string/throwing `modalClasses`. |
+| Structural pass | Property-only, mount-only, mixed property/mount inputs, optional extras, correctly bound concrete/interface DI, all required manager actions, and valid optional `modalClasses`. |
+| Structural fail | Noncanonical/missing/non-component/abstract class, required constructor, readonly/static/private or incompatible property, non-public/static `mount`, incompatible or extra required mount scalar, UrlRoutable/enum/union caller dependency, unresolvable or wrong-type DI binding, missing/mistyped manager action or acknowledgement listener, and non-public/non-static/parameterized/untyped/non-string/throwing `modalClasses`. |
 | Global-search security | Guest and forged hydration fail; feature flag; `viewAny` precedes queries; record `view`, destination, and current-team isolation hold for every result and for a second request. |
-| Owner routing | Two simultaneous forms with the same slug receive distinct tokens; confirmation updates only the matching owner; missing, swapped, tampered, cross-user, and cross-team tokens fail closed. |
+| Owner routing | Two simultaneous forms with the same slug receive distinct tokens; confirmation updates only the matching owner; missing, swapped, tampered, cross-user, and cross-team owner/request tokens fail closed. |
+| Acknowledgement lifecycle | Prove three independent Livewire requests (manager request, owner mutation, manager acknowledgement); no close after request one or two; success closes only after broker verification; a client-forged success while the broker is pending cannot close; known failure and transport timeout keep the modal open; retry gets a new token; duplicate/reordered/late request, acknowledgement, and timeout effects are idempotent. |
 | Media read/update | Invalid owner class/field/action/key fails; create owner requires `create`; persisted owner requires fresh current-team load plus `update`; attachment listing/selection requires `viewAny` and per-record `view`; foreign IDs fail. |
 | Upload | Attachment `create` and owner action are checked before storage; denied/failed uploads leave no file or row; standalone library token is actor/team bound; second requests reauthorize. |
-| Browser | Default and one replacement per slot render in the real shell/modal, aliases remain hydratable, targeted confirmation closes only after update, and authorization denials produce no console/JavaScript errors. |
+| Browser | Default and one replacement per slot render in the real shell/modal, all aliases remain hydratable, pending state is observable, success closes only after the acknowledgement request, failure/timeout remains retryable, and authorization denials produce no console/JavaScript errors. |
 
 The normal full non-browser suite, relevant browser suite, Pint, and PHPStan
 remain required by the project verify loop.
@@ -415,11 +550,18 @@ remain required by the project verify loop.
   provider/cache-order dependent and cannot report conflicts.
 - **Keep old aliases tied to Aura defaults:** published callers would bypass a
   selected host/plugin winner. Tracking the final winner is more compatible.
+- **Keep the dot aliases default-only:** FQCN-derived and saved callers could
+  silently bypass the selected winner. They follow the same compatibility rule.
 - **Use readable internal IDs without collision checks:** risks conventional,
   discoverable, explicit, or cached collisions and Livewire silently overwrites
   explicit Finder entries.
 - **Retain slug-only media events:** one form can consume another form's broadcast
   and the payload carries no authenticated owner/action context.
+- **Close when the manager dispatch returns:** that request has only queued a
+  browser effect; the owner mutation and acknowledgement have not run yet.
+- **Keep `^4.0` with best-effort reflection:** permits an untested minor update to
+  alter protected internals and turn a dependency update into an application boot
+  outage or silent collision miss.
 - **Expose every `aura::*` component:** freezes internal contracts and overlaps
   dedicated record-region/widget work.
 - **Make slots mergeable:** conflates replacement with ordered composition.
@@ -428,7 +570,10 @@ remain required by the project verify loop.
 
 1. Approve exactly `global-search` and `media-manager`, class-string candidates,
    host > unique plugin > Aura default precedence, fail-closed collision checks,
-   and both old aliases tracking the final winner through the next major?
-2. Approve owner-token/default-component authorization hardening as a CORE-20
-   release prerequisite, including migration rejection of legacy custom media
-   managers that cannot satisfy the owner-token/event contract?
+   and all four existing aliases tracking the final winner through the major
+   following CORE-20?
+2. Approve the owner/request-token acknowledgement protocol and default-component
+   authorization hardening as a CORE-20 release prerequisite, with CORE-20 shipped
+   in the next Aura major because incompatible legacy managers are rejected?
+3. Approve `livewire/livewire: ~4.3.5` for the first protected-internals adapter,
+   with lowest/latest `4.3.x` CI required before that range may be widened?
