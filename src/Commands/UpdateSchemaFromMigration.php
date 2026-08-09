@@ -28,7 +28,7 @@ class UpdateSchemaFromMigration extends Command
             $plan = SchemaUpdatePlan::fromMigrationFile($migrationFile);
 
             SchemaMigrationLock::run(
-                'schema-update:'.Schema::getConnection()->getName().':'.$plan->table,
+                'schema:'.Schema::getConnection()->getName().':'.$plan->table,
                 fn () => $this->synchronize($migrationFile, $plan),
             );
 

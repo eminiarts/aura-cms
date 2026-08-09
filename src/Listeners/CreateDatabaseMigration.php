@@ -9,6 +9,7 @@ use Illuminate\Database\Migrations\MigrationCreator;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use RuntimeException;
 use Symfony\Component\Process\ExecutableFinder;
@@ -33,7 +34,7 @@ class CreateDatabaseMigration
         }
 
         SchemaMigrationLock::run(
-            'migration-editor:'.$tableName,
+            'schema:'.Schema::getConnection()->getName().':'.$tableName,
             fn () => $this->createAndRunMigration($event, $tableName),
         );
     }

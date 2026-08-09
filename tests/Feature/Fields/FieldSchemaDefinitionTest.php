@@ -106,7 +106,21 @@ test('schema update preflights every conversion before additions and drops', fun
 test('schema update reports missing and unparseable migration plans as failures', function () {
     $missing = sys_get_temp_dir().'/aura-core10-missing-'.uniqid().'.php';
     $invalid = tempnam(sys_get_temp_dir(), 'aura-core10-invalid-');
+    $nested = tempnam(sys_get_temp_dir(), 'aura-core10-nested-');
     File::put($invalid, "<?php\n\nreturn new class { public function broken( };\n");
+    File::put($nested, <<<'PHP'
+<?php
+
+return new class
+{
+    public function up(): void
+    {
+        if (true) {
+            // A syntactically valid nested migration without a structured plan.
+        }
+    }
+};
+PHP);
 
     try {
         expect(Artisan::call('aura:schema-update', [
@@ -116,9 +130,13 @@ test('schema update reports missing and unparseable migration plans as failures'
             ->and(Artisan::call('aura:schema-update', [
                 'migration' => $invalid,
                 '--no-interaction' => true,
+            ]))->not->toBe(0)
+            ->and(Artisan::call('aura:schema-update', [
+                'migration' => $nested,
+                '--no-interaction' => true,
             ]))->not->toBe(0);
     } finally {
-        File::delete($invalid);
+        File::delete([$invalid, $nested]);
     }
 });
 
@@ -258,6 +276,94 @@ PHP);
         config()->set('database.default', $originalDefault);
     }
 });
+
+test('structured schema updates retain decimals and preflight every mutation on real databases', function (string $driver) {
+    $prefix = $driver === 'pgsql' ? 'POSTGRES' : 'MYSQL';
+    $database = getenv("AURA_TEST_{$prefix}_DATABASE") ?: null;
+
+    if (! $database) {
+        $this->markTestSkipped("Set AURA_TEST_{$prefix}_DATABASE to run the {$driver} schema-update contract.");
+    }
+
+    $connection = 'core_10_schema_update_'.$driver;
+    $originalDefault = config('database.default');
+    $tableName = 'aura_c10_update_'.$driver.'_'.getmypid();
+    $failureTable = 'aura_c10_failure_'.$driver.'_'.getmypid();
+    $path = tempnam(sys_get_temp_dir(), 'aura-core10-schema-update-');
+    $failurePath = tempnam(sys_get_temp_dir(), 'aura-core10-schema-failure-');
+    $configuration = [
+        'driver' => $driver,
+        'host' => getenv("AURA_TEST_{$prefix}_HOST") ?: '127.0.0.1',
+        'port' => getenv("AURA_TEST_{$prefix}_PORT") ?: ($driver === 'mysql' ? '3306' : '5432'),
+        'database' => $database,
+        'username' => getenv("AURA_TEST_{$prefix}_USERNAME") ?: ($driver === 'mysql' ? 'root' : getenv('USER')),
+        'password' => getenv("AURA_TEST_{$prefix}_PASSWORD") ?: '',
+        'prefix' => '',
+    ];
+
+    if ($driver === 'mysql') {
+        $configuration += [
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'strict' => true,
+        ];
+    } else {
+        $configuration += ['search_path' => 'public'];
+    }
+
+    config()->set("database.connections.{$connection}", $configuration);
+    config()->set('database.default', $connection);
+    DB::purge($connection);
+
+    try {
+        Schema::create($tableName, function (Blueprint $table) {
+            $table->id();
+            $table->decimal('amount', 12, 4)->nullable();
+        });
+        DB::table($tableName)->insert(['amount' => '12345678.9012']);
+        $plan = new SchemaUpdatePlan($tableName, [
+            'amount' => new FieldColumn('decimal', [12, 4], driverTypes: ['sqlite' => 'text']),
+            'added_after_preflight' => new FieldColumn('string'),
+        ]);
+        File::put($path, $plan->embedIn("<?php\n\nreturn new class {};\n"));
+
+        expect(Artisan::call('aura:schema-update', [
+            'migration' => $path,
+            '--no-interaction' => true,
+        ]))->toBe(0)
+            ->and(Schema::hasColumn($tableName, 'added_after_preflight'))->toBeTrue()
+            ->and(DB::table($tableName)->value('amount'))->toBe('12345678.9012');
+
+        $amount = collect(Schema::getColumns($tableName))->firstWhere('name', 'amount');
+
+        expect(strtolower($amount['type'] ?? ''))->toContain($driver === 'mysql' ? 'decimal(12,4)' : 'numeric(12,4)');
+
+        Schema::create($failureTable, function (Blueprint $table) {
+            $table->id();
+            $table->string('amount')->nullable();
+            $table->string('drop_after_failure')->nullable();
+        });
+        DB::table($failureTable)->insert(['amount' => 'not-an-integer']);
+        $failurePlan = new SchemaUpdatePlan($failureTable, [
+            'amount' => new FieldColumn('integer'),
+            'added_before_failure' => new FieldColumn('string'),
+        ]);
+        File::put($failurePath, $failurePlan->embedIn("<?php\n\nreturn new class {};\n"));
+
+        expect(Artisan::call('aura:schema-update', [
+            'migration' => $failurePath,
+            '--no-interaction' => true,
+        ]))->not->toBe(0)
+            ->and(Schema::hasColumn($failureTable, 'added_before_failure'))->toBeFalse()
+            ->and(Schema::hasColumn($failureTable, 'drop_after_failure'))->toBeTrue();
+    } finally {
+        Schema::dropIfExists($failureTable);
+        Schema::dropIfExists($tableName);
+        File::delete([$path, $failurePath]);
+        DB::disconnect($connection);
+        config()->set('database.default', $originalDefault);
+    }
+})->with(['mysql', 'pgsql']);
 
 test('every migration generator includes decimal precision and scale', function (string $generatorClass) {
     $generator = new $generatorClass(app(Filesystem::class));
