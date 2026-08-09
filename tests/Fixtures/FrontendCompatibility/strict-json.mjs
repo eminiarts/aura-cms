@@ -1,7 +1,11 @@
+import { Buffer } from 'node:buffer';
 import fs from 'node:fs/promises';
 import { TextDecoder } from 'node:util';
 
 const utf8Decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
+
+export const STRICT_JSON_MAX_BYTES = 1024 * 1024;
+export const STRICT_JSON_MAX_DEPTH = 64;
 
 export function assertWellFormedUnicode(value, label = 'String') {
     if (typeof value !== 'string') {
@@ -46,15 +50,15 @@ class StrictJsonParser {
         return value;
     }
 
-    parseValue() {
+    parseValue(depth = 0) {
         const character = this.text[this.position];
 
         if (character === '{') {
-            return this.parseObject();
+            return this.parseObject(depth + 1);
         }
 
         if (character === '[') {
-            return this.parseArray();
+            return this.parseArray(depth + 1);
         }
 
         if (character === '"') {
@@ -80,7 +84,8 @@ class StrictJsonParser {
         this.fail('Expected a JSON value');
     }
 
-    parseObject() {
+    parseObject(depth) {
+        this.assertNestingDepth(depth);
         const value = Object.create(null);
         const memberNames = new Set();
 
@@ -108,7 +113,7 @@ class StrictJsonParser {
             this.skipWhitespace();
             this.expect(':');
             this.skipWhitespace();
-            const memberValue = this.parseValue();
+            const memberValue = this.parseValue(depth);
             Object.defineProperty(value, memberName, {
                 configurable: true,
                 enumerable: true,
@@ -132,7 +137,8 @@ class StrictJsonParser {
         this.fail('Unterminated object');
     }
 
-    parseArray() {
+    parseArray(depth) {
+        this.assertNestingDepth(depth);
         const value = [];
 
         this.position += 1;
@@ -145,7 +151,7 @@ class StrictJsonParser {
         }
 
         while (this.position < this.text.length) {
-            value.push(this.parseValue());
+            value.push(this.parseValue(depth));
             this.skipWhitespace();
 
             const character = this.text[this.position];
@@ -320,6 +326,12 @@ class StrictJsonParser {
         return -1;
     }
 
+    assertNestingDepth(depth) {
+        if (depth > STRICT_JSON_MAX_DEPTH) {
+            this.fail(`Maximum nesting depth of ${STRICT_JSON_MAX_DEPTH} exceeded`);
+        }
+    }
+
     expect(character) {
         if (this.text[this.position] !== character) {
             this.fail(`Expected ${JSON.stringify(character)}`);
@@ -345,14 +357,61 @@ class StrictJsonParser {
 }
 
 export function parseStrictJson(text, label = 'JSON') {
+    if (typeof text === 'string' && text.length > STRICT_JSON_MAX_BYTES) {
+        throw new SyntaxError(`${label} exceeds maximum byte length of ${STRICT_JSON_MAX_BYTES} bytes`);
+    }
+
     assertWellFormedUnicode(text, `${label} text`);
+
+    if (Buffer.byteLength(text, 'utf8') > STRICT_JSON_MAX_BYTES) {
+        throw new SyntaxError(`${label} exceeds maximum byte length of ${STRICT_JSON_MAX_BYTES} bytes`);
+    }
 
     return new StrictJsonParser(text, label).parse();
 }
 
 export async function readStrictJsonFile(filePath, label) {
-    const bytes = await fs.readFile(filePath);
+    const handle = await fs.open(filePath, 'r');
     let text;
+    let bytes;
+
+    try {
+        const stats = await handle.stat();
+
+        if (! stats.isFile()) {
+            throw new SyntaxError(`${label} must be a regular file`);
+        }
+
+        if (stats.size > STRICT_JSON_MAX_BYTES) {
+            throw new SyntaxError(`${label} exceeds maximum byte length of ${STRICT_JSON_MAX_BYTES} bytes`);
+        }
+
+        const readBuffer = Buffer.allocUnsafe(STRICT_JSON_MAX_BYTES + 1);
+        let byteLength = 0;
+
+        while (byteLength < readBuffer.length) {
+            const { bytesRead } = await handle.read(
+                readBuffer,
+                byteLength,
+                readBuffer.length - byteLength,
+                null,
+            );
+
+            if (bytesRead === 0) {
+                break;
+            }
+
+            byteLength += bytesRead;
+        }
+
+        if (byteLength > STRICT_JSON_MAX_BYTES) {
+            throw new SyntaxError(`${label} exceeds maximum byte length of ${STRICT_JSON_MAX_BYTES} bytes`);
+        }
+
+        bytes = readBuffer.subarray(0, byteLength);
+    } finally {
+        await handle.close();
+    }
 
     try {
         text = utf8Decoder.decode(bytes);

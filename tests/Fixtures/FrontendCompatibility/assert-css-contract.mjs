@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import postcss from 'postcss';
 
@@ -26,7 +27,8 @@ function declarations(root, selector, property) {
 export function assertCssContract(outputPath, major) {
     assert.ok([3, 4].includes(major), `Unsupported fixture major: ${major}`);
 
-    const css = fs.readFileSync(outputPath, 'utf8');
+    const output = fs.readFileSync(outputPath);
+    const css = output.toString('utf8');
     const root = postcss.parse(css, { from: outputPath });
     let assertionCount = 0;
 
@@ -202,6 +204,7 @@ export function assertCssContract(outputPath, major) {
 
     return {
         assertionCount,
-        bytes: Buffer.byteLength(css),
+        bytes: output.length,
+        sha256: crypto.createHash('sha256').update(output).digest('hex'),
     };
 }

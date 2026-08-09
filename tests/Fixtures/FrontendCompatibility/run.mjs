@@ -7,12 +7,19 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { execFile } from 'node:child_process';
 import { assertCssContract } from './assert-css-contract.mjs';
-import { assertWellFormedUnicode, parseStrictJson, readStrictJsonFile } from './strict-json.mjs';
+import {
+    assertWellFormedUnicode,
+    parseStrictJson,
+    readStrictJsonFile,
+    STRICT_JSON_MAX_BYTES,
+    STRICT_JSON_MAX_DEPTH,
+} from './strict-json.mjs';
 
 const execFileAsync = promisify(execFile);
 const fixtureDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(fixtureDirectory, '../../..');
 const documentationPath = path.join(repositoryRoot, 'docs/frontend-compatibility.md');
+const outputBaselinePath = path.join(fixtureDirectory, 'output-baseline.json');
 const sourceBaselinePath = path.join(fixtureDirectory, 'source-baseline.json');
 const sourceManifestPath = path.join(fixtureDirectory, 'source-files.json');
 const sourceDigestCanonicalization = 'aura-source-records-v2-length-prefixed';
@@ -25,10 +32,13 @@ const tailwindCliPath = path.join(
     'cli.js',
 );
 const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'aura-frontend-compatibility-'));
+const outputBaseline = await readStrictJsonFile(outputBaselinePath, 'Frontend output baseline');
 const sourceBaseline = await readStrictJsonFile(sourceBaselinePath, 'Frontend source baseline');
 const sourceManifest = await readStrictJsonFile(sourceManifestPath, 'Frontend source manifest');
+const protectedSourceCaptures = [];
 
 assert.ok(npmCliPath, 'Run this fixture through npm run test:frontend-compatibility.');
+validateOutputBaseline(outputBaseline);
 validateSourceBaseline(sourceBaseline);
 
 async function copyFile(source, destination) {
@@ -92,6 +102,68 @@ async function resolveSelectedSources(sourceRoot, manifest) {
     return resolvedSources;
 }
 
+async function resolveGeneratedOutput(outputRoot, outputPath, label) {
+    assert.ok(typeof outputPath === 'string' && outputPath.length > 0, `${label} must be a non-empty string`);
+    assert.match(outputPath, /^[A-Za-z0-9._/-]+$/, `${label} must use portable ASCII characters`);
+    assert.equal(path.posix.normalize(outputPath), outputPath, `${label} must be canonical`);
+    assert.equal(path.posix.isAbsolute(outputPath), false, `${label} must be relative`);
+    assert.equal(outputPath.split('/').includes('..'), false, `${label} cannot traverse upward`);
+
+    const realOutputRoot = await fs.realpath(outputRoot);
+    const requestedPath = path.resolve(realOutputRoot, ...outputPath.split('/'));
+
+    assert.ok(isWithinRoot(realOutputRoot, requestedPath), `${label} escapes its output root`);
+
+    const realOutputPath = await fs.realpath(requestedPath);
+
+    assert.ok(isWithinRoot(realOutputRoot, realOutputPath), `${label} resolves outside its output root`);
+    assert.equal(
+        toRepositoryRelativePath(realOutputRoot, realOutputPath),
+        outputPath,
+        `${label} must equal its canonical output-relative realpath`,
+    );
+
+    const stats = await fs.stat(realOutputPath);
+
+    assert.ok(stats.isFile(), `${label} must resolve to a regular file`);
+
+    return realOutputPath;
+}
+
+function validateOutputBaseline(baseline) {
+    assert.ok(baseline && typeof baseline === 'object' && ! Array.isArray(baseline), 'Output baseline must be an object');
+    assert.deepEqual(
+        Object.keys(baseline).sort(),
+        ['algorithm', 'tailwind3', 'tailwind4'],
+        'Output baseline must contain only supported contract settings',
+    );
+    assert.equal(baseline.algorithm, 'sha256', 'Output baseline must use SHA-256');
+
+    for (const lane of ['tailwind3', 'tailwind4']) {
+        const expectation = baseline[lane];
+
+        assert.ok(expectation && typeof expectation === 'object' && ! Array.isArray(expectation), `${lane} output baseline must be an object`);
+        assert.deepEqual(
+            Object.keys(expectation).sort(),
+            ['assertionCount', 'bytes', 'sha256'],
+            `${lane} output baseline must contain exactly assertionCount, bytes, and sha256`,
+        );
+        assert.ok(Number.isSafeInteger(expectation.assertionCount) && expectation.assertionCount > 0, `${lane} assertion count must be a positive safe integer`);
+        assert.ok(Number.isSafeInteger(expectation.bytes) && expectation.bytes > 0, `${lane} byte count must be a positive safe integer`);
+        assert.match(expectation.sha256, /^[a-f0-9]{64}$/, `${lane} output baseline must contain a SHA-256 digest`);
+    }
+}
+
+function enforceOutputBaseline(result, lane, label) {
+    const expectation = outputBaseline[lane];
+
+    assert.deepEqual(
+        Object.entries(result).sort(([left], [right]) => left.localeCompare(right)),
+        Object.entries(expectation).sort(([left], [right]) => left.localeCompare(right)),
+        `${label}: compiler output drifted. Review the generated CSS, then update output-baseline.json intentionally.`,
+    );
+}
+
 function validateSourceBaseline(baseline) {
     assert.ok(baseline && typeof baseline === 'object' && ! Array.isArray(baseline), 'Source baseline must be an object');
     assert.deepEqual(
@@ -129,6 +201,21 @@ function validateSourceManifest(manifest) {
         assert.equal(path.posix.normalize(entry.path), entry.path, `Source manifest path must be canonical: ${entry.path}`);
         assert.equal(path.posix.isAbsolute(entry.path), false, `Source manifest path must be relative: ${entry.path}`);
         assert.equal(entry.path.split('/').includes('..'), false, `Source manifest path cannot traverse upward: ${entry.path}`);
+        assert.match(
+            entry.path,
+            /^[A-Za-z0-9._/-]+$/,
+            `Source manifest path must use portable ASCII characters: ${entry.path}`,
+        );
+
+        for (const segment of entry.path.split('/')) {
+            assert.doesNotMatch(segment, /\.$/, `Source manifest path segment cannot end with a dot: ${entry.path}`);
+            assert.doesNotMatch(
+                segment.split('.')[0],
+                /^(?:aux|com[1-9]|con|lpt[1-9]|nul|prn)$/i,
+                `Source manifest path cannot use a reserved portable filename: ${entry.path}`,
+            );
+        }
+
         assert.equal(selectedPaths.has(entry.path), false, `Source manifest path must be unique: ${entry.path}`);
         assert.ok(Array.isArray(entry.classes) && entry.classes.length > 0, `${entry.path} must declare expected classes`);
         assert.ok(
@@ -144,6 +231,24 @@ function validateSourceManifest(manifest) {
 
         selectedPaths.add(entry.path);
     }
+}
+
+function compilerSourceManifest() {
+    return [
+        ...cloneSourceManifest(),
+        {
+            path: 'fixtures/semantic-probe.blade.php',
+            classes: [
+                'font-sans',
+                'bg-aura-background',
+                'bg-aura-panel/80',
+                'text-aura-muted',
+                'text-aura-success',
+                'text-aura-warning',
+                'text-aura-danger',
+            ],
+        },
+    ];
 }
 
 function unsigned64(value) {
@@ -240,16 +345,102 @@ async function writeSourceSnapshot(snapshot, destination) {
     }
 }
 
+function immutableManifestFromSnapshot(snapshot) {
+    const manifest = snapshot.records.map((record) => Object.freeze({
+        path: record.path,
+        classes: Object.freeze([...record.classes]),
+    }));
+
+    return Object.freeze(manifest);
+}
+
+function sourceCaptureDirectories(sourceRoot, manifest) {
+    const directories = new Set([sourceRoot]);
+
+    for (const entry of manifest) {
+        let directory = path.dirname(path.join(sourceRoot, entry.path));
+
+        while (directory !== sourceRoot) {
+            directories.add(directory);
+            directory = path.dirname(directory);
+        }
+    }
+
+    return [...directories];
+}
+
+async function protectSourceCapture(capture) {
+    protectedSourceCaptures.push(capture);
+
+    for (const entry of capture.manifest) {
+        await fs.chmod(path.join(capture.sourceRoot, entry.path), 0o444);
+    }
+
+    for (const directory of [...capture.directories].sort((left, right) => right.length - left.length)) {
+        await fs.chmod(directory, 0o555);
+    }
+
+    if (process.platform !== 'win32') {
+        for (const entry of capture.manifest) {
+            const stats = await fs.stat(path.join(capture.sourceRoot, entry.path));
+
+            assert.equal(stats.mode & 0o222, 0, `Captured compiler source must be read-only: ${entry.path}`);
+        }
+
+        for (const directory of capture.directories) {
+            const stats = await fs.stat(directory);
+
+            assert.equal(stats.mode & 0o222, 0, `Captured compiler source directory must be read-only: ${directory}`);
+        }
+    }
+}
+
+async function releaseSourceCapture(capture) {
+    for (const directory of [...capture.directories].sort((left, right) => left.length - right.length)) {
+        await fs.chmod(directory, 0o755).catch((error) => {
+            if (error.code !== 'ENOENT') {
+                throw error;
+            }
+        });
+    }
+
+    for (const entry of capture.manifest) {
+        await fs.chmod(path.join(capture.sourceRoot, entry.path), 0o644).catch((error) => {
+            if (error.code !== 'ENOENT') {
+                throw error;
+            }
+        });
+    }
+}
+
+async function assertSourceCaptureUnchanged(capture, label) {
+    const currentSnapshot = await inspectAuraSources(capture.sourceRoot, capture.manifest);
+
+    assert.equal(currentSnapshot.count, capture.count, `${label}: compiler source record count changed after capture`);
+    assert.equal(currentSnapshot.digest, capture.digest, `${label}: compiler source bytes or metadata changed after capture`);
+}
+
 async function copyAuraSources(destination, label) {
-    const snapshot = await inspectAuraSources(repositoryRoot);
-    enforceSourceBaseline(snapshot, label);
-    await writeSourceSnapshot(snapshot, destination);
+    const authenticatedSnapshot = await inspectAuraSources(repositoryRoot);
+    enforceSourceBaseline(authenticatedSnapshot, label);
+    await writeSourceSnapshot(authenticatedSnapshot, destination);
     await copyFile(
         path.join(fixtureDirectory, 'semantic-probe.blade.php'),
         path.join(destination, 'fixtures/semantic-probe.blade.php'),
     );
+    const compilerSnapshot = await inspectAuraSources(destination, compilerSourceManifest());
+    const manifest = immutableManifestFromSnapshot(compilerSnapshot);
+    const capture = Object.freeze({
+        count: compilerSnapshot.count,
+        digest: compilerSnapshot.digest,
+        directories: Object.freeze(sourceCaptureDirectories(destination, manifest)),
+        manifest,
+        sourceRoot: destination,
+    });
 
-    return snapshot;
+    await protectSourceCapture(capture);
+
+    return capture;
 }
 
 async function assertDocumentedSourceBaseline() {
@@ -293,6 +484,68 @@ function assertDuplicateJsonMembersAreRejected() {
     }
 
     console.log('PASS strict JSON rejects duplicate path, algorithm, escaped, and nested members');
+}
+
+async function assertStrictJsonLimitsAreEnforced() {
+    const deepDuplicate = `${'['.repeat(STRICT_JSON_MAX_DEPTH - 1)}{"member":1,"member":2}${']'.repeat(STRICT_JSON_MAX_DEPTH - 1)}`;
+
+    assert.throws(
+        () => parseStrictJson(deepDuplicate, 'Deep duplicate self-test'),
+        /Duplicate JSON member name "member"/,
+        'Duplicate detection must remain active at the deepest accepted nesting level',
+    );
+
+    const hostileDepth = `${'['.repeat(5000)}{"member":1,"member":2}${']'.repeat(5000)}`;
+    assert.throws(
+        () => parseStrictJson(hostileDepth, 'Hostile depth self-test'),
+        (error) => {
+            assert.equal(error?.constructor, SyntaxError, 'Excessive nesting must fail with SyntaxError, not RangeError');
+            assert.equal(
+                error.message,
+                `Hostile depth self-test at character ${STRICT_JSON_MAX_DEPTH}: Maximum nesting depth of ${STRICT_JSON_MAX_DEPTH} exceeded`,
+                'Excessive nesting must have a deterministic error',
+            );
+
+            return true;
+        },
+    );
+
+    const maximumJson = JSON.stringify('x'.repeat(STRICT_JSON_MAX_BYTES - 2));
+    assert.equal(
+        parseStrictJson(maximumJson, 'Maximum byte boundary self-test').length,
+        STRICT_JSON_MAX_BYTES - 2,
+        'A JSON document exactly at the byte limit must remain accepted',
+    );
+
+    const oversizedJson = JSON.stringify('x'.repeat(STRICT_JSON_MAX_BYTES));
+    const expectedByteError = `exceeds maximum byte length of ${STRICT_JSON_MAX_BYTES} bytes`;
+
+    assert.throws(
+        () => parseStrictJson(oversizedJson, 'Oversized string self-test'),
+        new RegExp(expectedByteError),
+        'Direct strict JSON parsing must enforce the byte limit',
+    );
+    assert.throws(
+        () => parseStrictJson(JSON.stringify('\u00e9'.repeat((STRICT_JSON_MAX_BYTES / 2) + 1)), 'UTF-8 byte self-test'),
+        new RegExp(expectedByteError),
+        'The limit must count encoded UTF-8 bytes rather than JavaScript code units',
+    );
+
+    const oversizedPath = path.join(temporaryRoot, 'strict-json-byte-boundary-self-test.json');
+    await fs.writeFile(oversizedPath, maximumJson);
+    assert.equal(
+        (await readStrictJsonFile(oversizedPath, 'Maximum file boundary self-test')).length,
+        STRICT_JSON_MAX_BYTES - 2,
+        'A strict JSON file exactly at the byte limit must remain accepted',
+    );
+    await fs.writeFile(oversizedPath, oversizedJson);
+    await assert.rejects(
+        readStrictJsonFile(oversizedPath, 'Oversized file self-test'),
+        new RegExp(expectedByteError),
+        'Strict JSON files must enforce the byte limit before decoding',
+    );
+
+    console.log(`PASS strict JSON enforces ${STRICT_JSON_MAX_BYTES} byte and ${STRICT_JSON_MAX_DEPTH} level limits`);
 }
 
 function assertMalformedUnicodeIsRejected() {
@@ -350,6 +603,20 @@ async function assertCanonicalSourcePathsAreEnforced() {
         path: sourcePath,
         classes: ['fixture'],
     }));
+
+    for (const unicodePath of ['resources/caf\u00e9.blade.php', 'resources/cafe\u0301.blade.php']) {
+        assert.throws(
+            () => validateSourceManifest(fixtureManifest(unicodePath)),
+            /portable ASCII characters/,
+            'Unicode normalization variants must not enter manifest path identity',
+        );
+    }
+
+    assert.throws(
+        () => validateSourceManifest(fixtureManifest('resources/CON.blade.php')),
+        /reserved portable filename/,
+        'Windows device names must not enter cross-platform manifest identity',
+    );
 
     const aliasRoot = path.join(temporaryRoot, 'source-path-alias');
     await fs.mkdir(aliasRoot, { recursive: true });
@@ -421,7 +688,7 @@ async function assertCanonicalSourcePathsAreEnforced() {
         'Lexical source escapes must be rejected before resolution',
     );
 
-    console.log('PASS canonical realpaths reject symlink, hardlink, case, and escape aliases');
+    console.log('PASS portable canonical paths reject Unicode, symlink, hardlink, case, and escape aliases');
 }
 
 function legacyAmbiguousDigest(records) {
@@ -539,6 +806,49 @@ async function assertSourceDriftIsRejected() {
     console.log('PASS fixed source baseline rejects a modified selected source');
 }
 
+function assertOutputContractIsPinned() {
+    enforceOutputBaseline({ ...outputBaseline.tailwind3 }, 'tailwind3', 'Output baseline self-test');
+
+    for (const [field, value] of [
+        ['assertionCount', outputBaseline.tailwind3.assertionCount + 1],
+        ['bytes', outputBaseline.tailwind3.bytes + 1],
+        [
+            'sha256',
+            `${outputBaseline.tailwind3.sha256.startsWith('0') ? '1' : '0'}${outputBaseline.tailwind3.sha256.slice(1)}`,
+        ],
+    ]) {
+        assert.throws(
+            () => enforceOutputBaseline(
+                { ...outputBaseline.tailwind3, [field]: value },
+                'tailwind3',
+                `${field} mutation self-test`,
+            ),
+            /compiler output drifted/,
+            `${field} output drift must be rejected`,
+        );
+    }
+
+    console.log('PASS compiler output baseline pins semantic assertion, byte, and SHA-256 counts');
+}
+
+async function assertCapturedSourceMutationIsRejected() {
+    const sourceRoot = path.join(temporaryRoot, 'post-compiler-mutation-self-test');
+    const capture = await copyAuraSources(sourceRoot, 'Post-compiler mutation self-test');
+
+    await releaseSourceCapture(capture);
+    await fs.appendFile(
+        path.join(sourceRoot, capture.manifest[0].path),
+        '\n<div class="unauthenticated-compiler-input"></div>\n',
+    );
+    await assert.rejects(
+        assertSourceCaptureUnchanged(capture, 'Post-compiler mutation self-test'),
+        /compiler source bytes or metadata changed after capture/,
+        'Mutation after the copy verification must fail the post-compiler rehash',
+    );
+
+    console.log('PASS post-compiler rehash rejects mutation after source capture');
+}
+
 async function execute(command, args, cwd) {
     return execFileAsync(command, args, {
         cwd,
@@ -568,7 +878,7 @@ async function buildTailwind3() {
     await copyFile(path.join(fixtureDirectory, 'tailwind-v3.config.cjs'), path.join(directory, 'tailwind.config.cjs'));
     await copyFile(path.join(fixtureDirectory, 'tailwind-v3.css'), path.join(directory, 'input.css'));
     await copyFile(path.join(fixtureDirectory, 'token-contract.css'), path.join(directory, 'token-contract.css'));
-    await copyAuraSources(path.join(directory, 'aura-source'), 'Tailwind 3 source lane');
+    const sourceCapture = await copyAuraSources(path.join(directory, 'aura-source'), 'Tailwind 3 source lane');
 
     const outputPath = path.join(directory, 'output.css');
     await execute(
@@ -576,9 +886,11 @@ async function buildTailwind3() {
         [tailwindCliPath, '-c', 'tailwind.config.cjs', '-i', 'input.css', '-o', outputPath, '--minify'],
         directory,
     );
+    await assertSourceCaptureUnchanged(sourceCapture, 'Tailwind 3 post-compiler source check');
     const result = assertCssContract(outputPath, 3);
+    enforceOutputBaseline(result, 'tailwind3', 'Tailwind 3 output check');
 
-    console.log(`PASS Tailwind 3.4.19: ${result.assertionCount} parsed assertions (${result.bytes} bytes)`);
+    console.log(`PASS Tailwind 3.4.19: ${result.assertionCount} parsed assertions (${result.bytes} bytes, sha256 ${result.sha256})`);
 }
 
 async function prepareTailwind4() {
@@ -586,36 +898,41 @@ async function prepareTailwind4() {
 
     await fs.cp(path.join(fixtureDirectory, 'v4'), directory, { recursive: true });
     await copyFile(path.join(fixtureDirectory, 'token-contract.css'), path.join(directory, 'resources/css/token-contract.css'));
-    await copyAuraSources(path.join(directory, 'aura-source'), 'Tailwind 4 source lane');
+    const sourceCapture = await copyAuraSources(path.join(directory, 'aura-source'), 'Tailwind 4 source lane');
 
     await execute(process.execPath, [npmCliPath, 'ci', '--ignore-scripts', '--no-audit', '--no-fund'], directory);
 
-    return directory;
+    return { directory, sourceCapture };
 }
 
-async function buildTailwind4(directory) {
+async function buildTailwind4({ directory, sourceCapture }) {
     await execute(process.execPath, [npmCliPath, 'run', 'build'], directory);
+    await assertSourceCaptureUnchanged(sourceCapture, 'Tailwind 4 post-compiler source check');
 
-    const manifest = JSON.parse(await fs.readFile(path.join(directory, 'dist/manifest.json'), 'utf8'));
+    const manifest = await readStrictJsonFile(path.join(directory, 'dist/manifest.json'), 'Tailwind 4 Vite manifest');
     const entrypoint = manifest['index.html'];
     const cssFile = entrypoint?.css?.[0]
         ?? (entrypoint?.file?.endsWith('.css') ? entrypoint.file : null);
     assert.ok(cssFile, 'Vite manifest must expose the host CSS entrypoint');
 
-    const outputPath = path.join(directory, 'dist', cssFile);
+    const outputPath = await resolveGeneratedOutput(path.join(directory, 'dist'), cssFile, 'Vite CSS output');
     const result = assertCssContract(outputPath, 4);
+    enforceOutputBaseline(result, 'tailwind4', 'Tailwind 4 output check');
 
-    console.log(`PASS Tailwind 4.3.3 + Vite 8.2.1: ${result.assertionCount} parsed assertions (${result.bytes} bytes)`);
+    console.log(`PASS Tailwind 4.3.3 + Vite 8.2.1: ${result.assertionCount} parsed assertions (${result.bytes} bytes, sha256 ${result.sha256})`);
 }
 
-async function checkNegativeBoundaries(tailwind4Directory) {
+async function checkNegativeBoundaries({ directory: tailwind4Directory, sourceCapture: tailwind4SourceCapture }) {
     const v3AgainstV4 = path.join(temporaryRoot, 'v3-against-v4');
 
     await fs.mkdir(path.join(v3AgainstV4, 'resources/css'), { recursive: true });
     await copyFile(path.join(fixtureDirectory, 'v4/resources/css/app.css'), path.join(v3AgainstV4, 'resources/css/app.css'));
     await copyFile(path.join(fixtureDirectory, 'token-contract.css'), path.join(v3AgainstV4, 'resources/css/token-contract.css'));
     await copyFile(path.join(fixtureDirectory, 'tailwind-v3.config.cjs'), path.join(v3AgainstV4, 'tailwind.config.cjs'));
-    await copyAuraSources(path.join(v3AgainstV4, 'aura-source'), 'Tailwind 3 negative source lane');
+    const tailwind3SourceCapture = await copyAuraSources(
+        path.join(v3AgainstV4, 'aura-source'),
+        'Tailwind 3 negative source lane',
+    );
 
     await expectFailure(
         process.execPath,
@@ -624,6 +941,7 @@ async function checkNegativeBoundaries(tailwind4Directory) {
         /Failed to find ['"]tailwindcss['"]/,
         'Tailwind 3 rejects the v4 CSS entrypoint',
     );
+    await assertSourceCaptureUnchanged(tailwind3SourceCapture, 'Tailwind 3 negative post-compiler source check');
 
     const auraCss = await fs.readFile(path.join(repositoryRoot, 'resources/css/app.css'), 'utf8');
     const legacyExtract = await fs.readFile(path.join(fixtureDirectory, 'tailwind-v3-source-under-v4.css'), 'utf8');
@@ -649,6 +967,7 @@ async function checkNegativeBoundaries(tailwind4Directory) {
         /["']\.\/(?:base|components|utilities)["'] is not exported under the conditions? .*?["']style["']/s,
         'Tailwind 4 Vite rejects Aura\'s v3 CSS entrypoint',
     );
+    await assertSourceCaptureUnchanged(tailwind4SourceCapture, 'Tailwind 4 negative post-compiler source check');
 }
 
 try {
@@ -656,19 +975,26 @@ try {
     enforceSourceBaseline(sourceSnapshot, 'Pre-build source check');
     await assertDocumentedSourceBaseline();
     assertDuplicateJsonMembersAreRejected();
+    await assertStrictJsonLimitsAreEnforced();
     assertMalformedUnicodeIsRejected();
     await assertCanonicalSourcePathsAreEnforced();
     assertCanonicalRecordFraming();
     assertExactSourceBytesAreAuthenticated();
     await assertClassMetadataDriftIsRejected();
     await assertSourceDriftIsRejected();
+    assertOutputContractIsPinned();
+    await assertCapturedSourceMutationIsRejected();
     console.log(`Aura source baseline: ${sourceSnapshot.count} files, sha256 ${sourceBaseline.expectedDigest}`);
 
     await buildTailwind3();
-    const tailwind4Directory = await prepareTailwind4();
-    await buildTailwind4(tailwind4Directory);
-    await checkNegativeBoundaries(tailwind4Directory);
+    const tailwind4Fixture = await prepareTailwind4();
+    await buildTailwind4(tailwind4Fixture);
+    await checkNegativeBoundaries(tailwind4Fixture);
 } finally {
+    for (const capture of [...protectedSourceCaptures].reverse()) {
+        await releaseSourceCapture(capture);
+    }
+
     if (process.env.AURA_KEEP_FRONTEND_FIXTURE === '1') {
         console.log(`Kept fixture workspace: ${temporaryRoot}`);
     } else {

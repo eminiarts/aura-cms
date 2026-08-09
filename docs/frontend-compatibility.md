@@ -220,17 +220,31 @@ big-endian integers. The manifest schema permits only `path` and `classes`, so
 no accepted metadata remains outside the digest. Source line endings are not
 normalized.
 
-The baseline and source manifest are decoded as strict UTF-8 and parsed by a
-recursive JSON parser that rejects duplicate decoded member names before an
-object is constructed, including duplicates inside nested objects and arrays.
-All accepted string fields must be well-formed Unicode; lone high or low
-surrogates fail before UTF-8 digest encoding.
+The baseline, source manifest, output baseline, and generated Vite manifest are
+decoded as strict UTF-8 and parsed by a JSON parser that rejects duplicate
+decoded member names before an object is constructed. The parser accepts at
+most 1,048,576 bytes and 64 container levels; its file reader never buffers
+more than the limit plus one byte. Regressions cover a duplicate at the deepest
+accepted level and a 5,000-level input, which must fail deterministically with
+`SyntaxError` instead of exhausting the JavaScript stack. All accepted string
+fields must be well-formed Unicode; lone high or low surrogates fail before
+UTF-8 digest encoding.
 
 Every selected path must equal its canonical repository-relative realpath and
-remain inside the real source root. Case-folded canonical paths and filesystem
-device/inode identities must both be unique, preventing case variants,
-symlinks, and hardlinks from adding aliases. The exact authenticated buffers
-are written to the compiler workspaces and compared byte-for-byte after write.
+remain inside the real source root. Manifest paths are restricted to portable
+ASCII before filesystem resolution, removing Unicode normalization identities
+that vary by platform. Case-folded canonical paths and filesystem device/inode
+identities must both be unique, preventing case variants, symlinks, and
+hardlinks from adding aliases.
+
+The exact authenticated buffers and semantic probe are captured after copying.
+Their files and containing directories are made read-only while each compiler
+runs, and the six-record compiler snapshot is rehashed after every positive and
+negative invocation. A self-test mutates a captured copy after its initial
+write check and proves the post-compiler rehash rejects it. Read-only modes are
+defence in depth; each positive lane also has an exact committed output
+baseline, so a mutation that is reverted before the source rehash still fails
+if it changed generated CSS.
 
 Before either compiler runs, the gate compares the selected real-source digest
 to that committed baseline and checks this documented value for consistency.
@@ -241,7 +255,7 @@ the v2 digest separates it, then reject class value, count, and order mutations
 using otherwise valid real-source expectations. Unexpected manifest fields are
 rejected outright. Input regressions also cover ordinary and escaped duplicate
 JSON members, nested duplicates, U+D800/U+D801 replacement-byte collisions,
-and case, symlink, hardlink, and root-escape aliases.
+portable-path violations, and case, symlink, hardlink, and root-escape aliases.
 Intentional selected-source content changes therefore require a reviewed
 baseline and documentation update; changing the selection also requires a
 manifest update.
@@ -256,11 +270,18 @@ normalized values rather than checking output substrings. Coverage includes:
 - utilities found in the real Blade and PHP sources; and
 - absence of remote stylesheet and asset URLs.
 
+`output-baseline.json` pins the semantic assertion count, exact byte count, and
+SHA-256 digest for both positive lanes. The CSS contract reads each output once
+and derives all three values from that same buffer. Any intentional compiler or
+fixture change must therefore review and update the output baseline explicitly.
+
 Results on the audit snapshot:
 
-- Tailwind `3.4.19`: pass, 486 parsed assertions, 17,433 output bytes.
+- Tailwind `3.4.19`: pass, 486 parsed assertions, 17,433 output bytes,
+  SHA-256 `04ad45cb8cf839010413da6049443347669ab1782aeb83c91ed5aae2b3b221cd`.
 - Tailwind `4.3.3` through Vite `8.2.1`: pass, 460 parsed assertions,
-  20,497 output bytes.
+  20,497 output bytes, SHA-256
+  `b5c57e47318b92d36d276c48b394fbdbb3aa5c83a21fd73d3dc9d2c529a39dfc`.
 
 The v4 lane copies only the committed isolated fixture and shared contract into
 the temporary workspace, runs `npm ci` against its lockfile, and builds its
