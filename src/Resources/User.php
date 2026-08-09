@@ -179,7 +179,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         $connection = $this->getConnection();
         $connectionName = $connection->getName();
         $teamId = config('aura.teams')
-            ? (TeamScope::currentContextTeamId() ?? $this->current_team_id)
+            ? (TeamScope::currentContextTeamId($connection) ?? $this->current_team_id)
             : null;
         $cacheKey = static::connectionCacheIdentity($connection)
             .':'.($teamId ?? 'global')
@@ -314,14 +314,25 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         );
     }
 
+    public static function currentTeamCacheGeneration(
+        string|int $userId,
+        ?Connection $connection = null,
+    ): int {
+        $generationKey = self::currentTeamCacheGenerationKey($userId, $connection);
+        Cache::add($generationKey, 1, now()->addYears(10));
+
+        return (int) Cache::get($generationKey, 1);
+    }
+
     public static function currentTeamCacheKey(
         string|int $userId,
         ?Connection $connection = null,
     ): string {
         $connection ??= DB::connection();
         $connectionIdentity = static::connectionCacheIdentity($connection);
+        $generation = static::currentTeamCacheGeneration($userId, $connection);
 
-        return "aura_current_team_{$connectionIdentity}_user_{$userId}";
+        return "aura_current_team_{$connectionIdentity}_user_{$userId}_generation_{$generation}";
     }
 
     public function deleteOption($option)
@@ -791,6 +802,16 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         app(ImpersonateManager::class)->take($impersonator, $this);
     }
 
+    public static function incrementCurrentTeamCacheGeneration(
+        string|int $userId,
+        ?Connection $connection = null,
+    ): int {
+        $generationKey = self::currentTeamCacheGenerationKey($userId, $connection);
+        Cache::add($generationKey, 1, now()->addYears(10));
+
+        return (int) Cache::increment($generationKey);
+    }
+
     public function indexQuery($query)
     {
         if (config('aura.teams')) {
@@ -1082,6 +1103,16 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         return is_array($permissions) ? $permissions : [];
+    }
+
+    private static function currentTeamCacheGenerationKey(
+        string|int $userId,
+        ?Connection $connection = null,
+    ): string {
+        return static::connectionScopedCacheKey(
+            "current_team_generation_user_{$userId}",
+            $connection,
+        );
     }
 
     private function isTeamOnOwnConnection(mixed $team): bool

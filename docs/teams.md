@@ -160,16 +160,16 @@ $post = Post::create(['title' => 'My Post']);
 // $post->team_id is automatically set to auth()->user()->current_team_id
 ```
 
-Ordinary authenticated creates also treat explicit `null` as an unset ownership
-value. This prevents a controller or mass-assigned payload from turning a team
-row into a global or unowned row:
+Ordinary authenticated creates distinguish omission from explicit `null`.
+Omitted ownership receives actor defaults. Explicit `null` is preserved as
+caller intent and then rejected by the ordinary non-global write invariant:
 
 ```php
 // Defaults team_id and user_id from the authenticated user.
 $omittedOwnership = Post::create(['title' => 'Team Post']);
 
-// Explicit nulls are defaulted back to the authenticated actor.
-$explicitNullOwnership = Post::create([
+// Rejected: explicit null is never rewritten into an actor/team id.
+Post::create([
     'title' => 'Team Post',
     'team_id' => null,
     'user_id' => null,
@@ -194,6 +194,13 @@ uses `createForTeamForSystem($teamId, $attributes)` or
 uses `createForOwnerForSystem($ownerId, $attributes)` or
 `$resource->assignOwnerForSystem($ownerId, $attributes)`.
 
+Tenant and owner contexts are connection-qualified. An authenticated actor on
+connection A cannot authorize a same-id read or write on connection B. For
+intentional cross-connection system work, pass the target `Connection` to the
+named static system API; `TeamScope::forTeam()` likewise accepts the connection
+as its third argument. Ordinary Livewire creates fail authorization when the
+resource and actor connections differ.
+
 An ordinary non-null `team_id` must match the active `TeamScope::forTeam()`
 context, when present, or the authenticated actor's current team. An ordinary
 non-null `user_id` must match the authenticated actor. This invariant runs on
@@ -205,6 +212,14 @@ row throws a `LogicException`. Aura's ordinary create/edit forms persist only
 the input slugs in that path's actual `createFields()` or `editFields()` tree,
 including `on_forms`, `on_create`, and `on_edit`; hidden fields and ownership,
 tenancy, or system columns are never accepted from the client.
+
+Invitation mail adds a signed connection name and connection fingerprint to
+both guest-registration and existing-user acceptance URLs. Only connections in
+`aura.auth.invitation_connections` (plus the configured Team and
+TeamInvitation resource connections) resolve. Older links remain valid only on
+`aura.auth.invitation_legacy_connection`, which defaults to the configured
+TeamInvitation resource connection; legacy resolution never probes multiple
+databases by colliding numeric IDs.
 
 ### Accessing Team Resources
 

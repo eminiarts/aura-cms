@@ -71,28 +71,21 @@ afterEach(function () {
     Schema::dropIfExists('explicit_null_shared_custom_resources');
 });
 
-it('defaults explicitly null team and creator values in ordinary creates', function () {
+it('rejects explicitly null team and creator values in ordinary creates', function () {
     $actor = createSuperAdmin();
     $this->actingAs($actor);
 
-    $post = Post::withoutGlobalScopes()->create([
+    expect(fn () => Post::withoutGlobalScopes()->create([
         'title' => 'Unowned global candidate',
         'team_id' => null,
         'user_id' => null,
-    ]);
+    ]))->toThrow(LogicException::class);
 
-    $post = Post::withoutGlobalScopes()->findOrFail($post->id);
-
-    $custom = ExplicitNullSharedCustomResource::withoutGlobalScopes()->create([
+    expect(fn () => ExplicitNullSharedCustomResource::withoutGlobalScopes()->create([
         'name' => 'Ordinary custom create',
         'team_id' => null,
         'user_id' => null,
-    ])->refresh();
-
-    expect($post->getAttribute('team_id'))->toBe($actor->current_team_id)
-        ->and($post->getAttribute('user_id'))->toBe($actor->id)
-        ->and($custom->getAttribute('team_id'))->toBe($actor->current_team_id)
-        ->and($custom->getAttribute('user_id'))->toBe($actor->id);
+    ]))->toThrow(LogicException::class);
 });
 
 it('defaults omitted team and creator values from the authenticated user', function () {

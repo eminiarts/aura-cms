@@ -7,6 +7,7 @@ use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Database\Eloquent\Model;
 
 class ResourcePolicy
 {
@@ -19,6 +20,10 @@ class ResourcePolicy
      */
     public function create($user, $resource)
     {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($resource::$createEnabled === false) {
             return false;
         }
@@ -39,6 +44,10 @@ class ResourcePolicy
      */
     public function createGlobal($user, $resource): bool
     {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if (! config('aura.teams') || $resource::$createEnabled === false) {
             return false;
         }
@@ -253,5 +262,13 @@ class ResourcePolicy
     protected function hasBlanketAccess($user): bool
     {
         return $user->isSuperAdmin() || $user->isAuraGlobalAdmin();
+    }
+
+    private function usesSameConnection(mixed $user, mixed $resource): bool
+    {
+        return $user instanceof Model
+            && $resource instanceof Model
+            && User::connectionCacheIdentity($user->getConnection())
+                === User::connectionCacheIdentity($resource->getConnection());
     }
 }

@@ -24,7 +24,7 @@ class TeamScope implements Scope
     /** @var array<string, int|string|null> */
     private static array $currentTeamIds = [];
 
-    /** @var list<int|string> */
+    /** @var list<array{connection: string, team_id: int|string}> */
     private static array $trustedTeamContexts = [];
 
     /**
@@ -43,6 +43,12 @@ class TeamScope implements Scope
         self::$applying = true;
 
         try {
+            if (! $this->contextUsesModelConnection($model)) {
+                $builder->whereRaw('1 = 0');
+
+                return;
+            }
+
             $currentTeamId = $this->getCurrentTeamId($model);
             $authUser = Auth::user();
             $hasTenantContext = self::$trustedTeamContexts !== [];
@@ -120,13 +126,20 @@ class TeamScope implements Scope
         }
     }
 
-    public static function currentContextTeamId(): int|string|null
+    public static function currentContextTeamId(?Connection $connection = null): int|string|null
     {
         if (self::$trustedTeamContexts === []) {
             return null;
         }
 
-        return self::$trustedTeamContexts[array_key_last(self::$trustedTeamContexts)];
+        $context = self::$trustedTeamContexts[array_key_last(self::$trustedTeamContexts)];
+
+        if ($connection !== null
+            && $context['connection'] !== User::connectionCacheIdentity($connection)) {
+            return null;
+        }
+
+        return $context['team_id'];
     }
 
     public static function flushState(): void
@@ -158,15 +171,33 @@ class TeamScope implements Scope
      * @param  callable(): TValue  $callback
      * @return TValue
      */
-    public static function forTeam(int|string $teamId, callable $callback): mixed
-    {
-        self::$trustedTeamContexts[] = $teamId;
+    public static function forTeam(
+        int|string $teamId,
+        callable $callback,
+        ?Connection $connection = null,
+    ): mixed {
+        $connection ??= self::resolveConnection();
+        self::$trustedTeamContexts[] = [
+            'connection' => User::connectionCacheIdentity($connection),
+            'team_id' => $teamId,
+        ];
 
         try {
             return $callback();
         } finally {
             array_pop(self::$trustedTeamContexts);
         }
+    }
+
+    public static function hasContextForConnection(Connection $connection): bool
+    {
+        if (self::$trustedTeamContexts === []) {
+            return false;
+        }
+
+        $context = self::$trustedTeamContexts[array_key_last(self::$trustedTeamContexts)];
+
+        return $context['connection'] === User::connectionCacheIdentity($connection);
     }
 
     /**
@@ -186,8 +217,9 @@ class TeamScope implements Scope
 
         unset(self::$currentTeamIds[$cacheKey]);
 
-        self::afterApplicationCommit($connection, function () use ($cacheKey): void {
+        self::afterApplicationCommit($connection, function () use ($cacheKey, $connection, $userId): void {
             unset(self::$currentTeamIds[$cacheKey]);
+            User::incrementCurrentTeamCacheGeneration($userId, $connection);
             Cache::forget($cacheKey);
         });
     }
@@ -251,13 +283,30 @@ class TeamScope implements Scope
             ->first(fn (DatabaseTransactionRecord $transaction): bool => $transaction->connection === $connection->getName());
     }
 
+    private function contextUsesModelConnection(Model $model): bool
+    {
+        $modelIdentity = User::connectionCacheIdentity($model->getConnection());
+
+        if (self::$trustedTeamContexts !== []) {
+            $context = self::$trustedTeamContexts[array_key_last(self::$trustedTeamContexts)];
+
+            return $context['connection'] === $modelIdentity;
+        }
+
+        $authenticatedUser = Auth::user();
+
+        return $authenticatedUser === null
+            || ($authenticatedUser instanceof Model
+                && User::connectionCacheIdentity($authenticatedUser->getConnection()) === $modelIdentity);
+    }
+
     /**
      * Get the current team ID without triggering the scope again.
      */
     private function getCurrentTeamId(Model $model): int|string|null
     {
         if (self::$trustedTeamContexts !== []) {
-            return self::$trustedTeamContexts[array_key_last(self::$trustedTeamContexts)];
+            return self::currentContextTeamId($model->getConnection());
         }
 
         $authenticatedUser = Auth::user();

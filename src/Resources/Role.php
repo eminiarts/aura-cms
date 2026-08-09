@@ -147,7 +147,11 @@ class Role extends Resource
      */
     public static function currentTeamIdForResolution(): ?int
     {
-        $contextTeamId = TeamScope::currentContextTeamId();
+        $authenticatedUser = auth()->user();
+        $connection = $authenticatedUser instanceof Model
+            ? $authenticatedUser->getConnection()
+            : app(static::class)->getConnection();
+        $contextTeamId = TeamScope::currentContextTeamId($connection);
 
         if ($contextTeamId !== null) {
             return (int) $contextTeamId;

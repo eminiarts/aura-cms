@@ -7,6 +7,7 @@ use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\TeamInvitation;
 use Aura\Base\Resources\User;
+use Aura\Base\Services\InvitationConnectionResolver;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Model;
@@ -29,7 +30,7 @@ class InvitationRegisterUserController extends Controller
         // If team registration is disabled, we show a 404 page.
         abort_if(! config('aura.auth.user_invitations'), 404);
 
-        [$team, $teamInvitation] = $this->resolveInvitation($team, $teamInvitation);
+        [$team, $teamInvitation] = $this->resolveInvitation($request, $team, $teamInvitation);
 
         // An email that already has an account must accept the invitation, not
         // register a second one — refuse the register form outright (the mail
@@ -53,7 +54,7 @@ class InvitationRegisterUserController extends Controller
     {
         abort_if(! config('aura.auth.user_invitations'), 404);
 
-        [$team, $teamInvitation] = $this->resolveInvitation($team, $teamInvitation);
+        [$team, $teamInvitation] = $this->resolveInvitation($request, $team, $teamInvitation);
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -130,28 +131,34 @@ class InvitationRegisterUserController extends Controller
             ->exists();
     }
 
-    protected function invitationConnection(mixed $team, mixed $teamInvitation): Connection
-    {
+    protected function invitationConnection(
+        Request $request,
+        mixed $team,
+        mixed $teamInvitation,
+    ): Connection {
         $modelParameters = collect([$team, $teamInvitation])
             ->filter(fn (mixed $parameter): bool => $parameter instanceof Model)
             ->values();
 
-        if ($modelParameters->count() === 2) {
+        if ($modelParameters->isNotEmpty()) {
+            $candidate = $modelParameters[0]->getConnection();
+        } else {
+            /** @var Team $configuredTeam */
+            $configuredTeam = app(config('aura.resources.team'));
+            $candidate = $configuredTeam->getConnection();
+        }
+
+        $connection = app(InvitationConnectionResolver::class)->resolve($request, $candidate);
+
+        foreach ($modelParameters as $parameter) {
             abort_unless(
-                User::connectionCacheIdentity($modelParameters[0]->getConnection())
-                    === User::connectionCacheIdentity($modelParameters[1]->getConnection()),
+                User::connectionCacheIdentity($parameter->getConnection())
+                    === User::connectionCacheIdentity($connection),
                 404,
             );
         }
 
-        if ($modelParameters->isNotEmpty()) {
-            return $modelParameters[0]->getConnection();
-        }
-
-        /** @var Team $configuredTeam */
-        $configuredTeam = app(config('aura.resources.team'));
-
-        return $configuredTeam->getConnection();
+        return $connection;
     }
 
     /**
@@ -161,9 +168,12 @@ class InvitationRegisterUserController extends Controller
      *
      * @return array{0: Team, 1: TeamInvitation}
      */
-    protected function resolveInvitation(mixed $team, mixed $teamInvitation): array
-    {
-        $connection = $this->invitationConnection($team, $teamInvitation);
+    protected function resolveInvitation(
+        Request $request,
+        mixed $team,
+        mixed $teamInvitation,
+    ): array {
+        $connection = $this->invitationConnection($request, $team, $teamInvitation);
         $teamId = $team instanceof Team ? $team->getRouteKey() : $team;
         $invitationId = $teamInvitation instanceof TeamInvitation
             ? $teamInvitation->getRouteKey()

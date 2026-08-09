@@ -91,7 +91,7 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
             // not the role row's team_id. Filtering on roles.team_id would drop
             // Global Roles (team_id = null) the user holds via a Membership, e.g.
             // the shared global admin role. Filter on the pivot's team_id instead.
-            $teamId = TeamScope::currentContextTeamId() ?? $model->current_team_id;
+            $teamId = TeamScope::currentContextTeamId($model->getConnection()) ?? $model->current_team_id;
 
             return $model->roles()->wherePivot('team_id', $teamId);
         }
@@ -117,7 +117,7 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
         $assignableRoles = Role::on($post->getConnectionName());
 
         if (config('aura.teams')) {
-            $teamId = TeamScope::currentContextTeamId()
+            $teamId = TeamScope::currentContextTeamId($post->getConnection())
                 ?? $post->current_team_id
                 ?? optional(auth()->user())->current_team_id;
             $currentRoles->wherePivot('team_id', $teamId);
@@ -135,7 +135,7 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
         ];
 
         [$requestedRoles, $existingRoles] = config('aura.teams') && $teamId !== null
-            ? TeamScope::forTeam($teamId, $resolveRoles)
+            ? TeamScope::forTeam($teamId, $resolveRoles, $post->getConnection())
             : $resolveRoles();
 
         abort_unless($requestedRoles->count() === count(array_unique($roleIds)), 403);
@@ -187,7 +187,7 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
         // Add new roles
         foreach ($rolesToAdd as $roleId) {
             if (config('aura.teams')) {
-                $currentTeamId = TeamScope::currentContextTeamId()
+                $currentTeamId = TeamScope::currentContextTeamId($post->getConnection())
                     ?? $post->current_team_id
                     ?? optional(auth()->user())->current_team_id;
 

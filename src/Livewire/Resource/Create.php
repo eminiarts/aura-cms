@@ -176,6 +176,8 @@ class Create extends Component
 
     public function save()
     {
+        $this->authorize('create', $this->model);
+
         $attributes = $this->validatedFormFields($this->validate(), $this->model->createFields());
         $globalIntent = $this->pullGlobalFormIntent($attributes);
 

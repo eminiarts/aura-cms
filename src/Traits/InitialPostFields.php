@@ -5,6 +5,7 @@ namespace Aura\Base\Traits;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 trait InitialPostFields
@@ -30,14 +31,30 @@ trait InitialPostFields
         $attributes = $post->getAttributes();
         $user = auth()->user();
         $globalWrite = $post::isGlobalWriteInProgress();
+        $connection = $post->getConnection();
+        $hasTeamContext = TeamScope::hasContextForConnection($connection);
+        $hasOwnerContext = $post::hasTrustedOwnerContextForConnection($connection);
+        $actorUsesConnection = $user instanceof Model
+            && User::connectionCacheIdentity($user->getConnection())
+                === User::connectionCacheIdentity($connection);
+
+        if ($user !== null
+            && (! $user instanceof Model
+                || User::connectionCacheIdentity($user->getConnection())
+                    !== User::connectionCacheIdentity($connection))
+            && ! $globalWrite
+            && ! $hasTeamContext
+            && ! $hasOwnerContext) {
+            throw new \LogicException('The authenticated actor and resource must use the same database connection.');
+        }
 
         if (! $post->content && ! $post::usesCustomTable()) {
             $post->content = '';
         }
 
         if (! $post->exists
-            && $user
-            && (! array_key_exists('user_id', $attributes) || ($attributes['user_id'] === null && ! $globalWrite))) {
+            && $actorUsesConnection
+            && ! array_key_exists('user_id', $attributes)) {
             $post->user_id = $user->id;
         }
 
@@ -53,27 +70,41 @@ trait InitialPostFields
 
         if (config('aura.teams')
             && ! $post->exists
-            && $user
-            && (! array_key_exists('team_id', $attributes) || ($attributes['team_id'] === null && ! $globalWrite))) {
+            && $actorUsesConnection
+            && ! array_key_exists('team_id', $attributes)) {
             $post->team_id = $user->current_team_id;
         }
 
         if (config('aura.teams')
             && ! $post->exists
-            && $post::sharesRecordsAcrossTeams()
             && $post->getAttribute('team_id') === null
-            && ! $globalWrite) {
-            throw new \LogicException('Use createGlobal() or createGlobalForSystem() to create a global shared resource.');
+            && ! $globalWrite
+            && ! $hasTeamContext) {
+            $message = $post::sharesRecordsAcrossTeams()
+                ? 'Use createGlobal() or createGlobalForSystem() to create a global shared resource.'
+                : 'An ordinary resource create requires a non-null team assignment.';
+
+            throw new \LogicException($message);
         }
 
         $attributes = $post->getAttributes();
         $hasTenantAttribute = config('aura.teams') && array_key_exists('team_id', $attributes);
         $hasOwnerAttribute = array_key_exists('user_id', $attributes);
 
+        if (config('aura.teams')
+            && ! $post->exists
+            && $post->isFillable('user_id')
+            && $post->getAttribute('user_id') === null
+            && ! $globalWrite
+            && ! $hasTeamContext
+            && ! $hasOwnerContext) {
+            throw new \LogicException('An ordinary resource create requires a non-null owner assignment.');
+        }
+
         if ($hasTenantAttribute
             && (! $post->exists || $post->isDirty('team_id'))
             && $attributes['team_id'] !== null) {
-            $authorizedTeamId = TeamScope::currentContextTeamId() ?? data_get($user, 'current_team_id');
+            $authorizedTeamId = TeamScope::currentContextTeamId($connection) ?? data_get($user, 'current_team_id');
 
             if ($authorizedTeamId === null || (string) $authorizedTeamId !== (string) $attributes['team_id']) {
                 throw new \LogicException('Use createForTeamForSystem() or moveToTeamForSystem() for a foreign team assignment.');
@@ -83,7 +114,7 @@ trait InitialPostFields
         if ($hasOwnerAttribute
             && $attributes['user_id'] !== null
             && (! $post->exists || $post->isDirty('user_id'))
-            && ! $post::isOwnerWriteAuthorized($attributes['user_id'])) {
+            && ! $post::isOwnerWriteAuthorized($attributes['user_id'], $connection)) {
             throw new \LogicException('A resource owner must match the authenticated actor or an explicit trusted owner context.');
         }
 

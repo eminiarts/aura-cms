@@ -7,6 +7,7 @@ use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\TeamInvitation;
 use Aura\Base\Resources\User;
+use Aura\Base\Services\InvitationConnectionResolver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,7 +27,13 @@ class TeamInvitationController extends Controller
         $authenticatedUser = $request->user();
         abort_unless($authenticatedUser instanceof Model, 403);
 
-        $connection = $authenticatedUser->getConnection();
+        $connection = app(InvitationConnectionResolver::class)
+            ->resolve($request, $authenticatedUser->getConnection());
+        abort_unless(
+            User::connectionCacheIdentity($authenticatedUser->getConnection())
+                === User::connectionCacheIdentity($connection),
+            404,
+        );
         /** @var TeamInvitation $invitationResource */
         $invitationResource = app(config('aura.resources.team-invitation'));
         $invitationResource = $invitationResource->newInstance();

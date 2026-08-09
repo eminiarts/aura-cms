@@ -119,6 +119,7 @@ class GenerateAllResourcePermissions
                             ['slug' => $slug, 'team_id' => $this->teamId],
                             $values
                         ),
+                        DB::connection($this->connectionName),
                     );
                 }
             } catch (QueryException $e) {

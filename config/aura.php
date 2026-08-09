@@ -187,6 +187,8 @@ return [
         '2fa' => true,
         'user_invitations' => true,
         'invitation_expiry' => 7,
+        'invitation_connections' => [],
+        'invitation_legacy_connection' => null,
         'create_teams' => env('AURA_CREATE_TEAMS', true),
     ],
 

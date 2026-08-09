@@ -169,9 +169,16 @@ public function clearFieldsAttributeCache()
 `TeamScope` uses two cache layers for the authenticated user's current team:
 
 1. A process-local snapshot keyed by user ID keeps every scoped query in one request or job on the same tenant.
-2. The shared cache stores the database value indefinitely. A `false` sentinel represents a missing current team, so null values are cached as deliberately as team IDs.
+2. The shared cache stores the database value in a connection-qualified generation namespace. A `false` sentinel represents a missing current team, so null values are cached as deliberately as team IDs.
 
-`User::clearCurrentTeamCache($userId)` invalidates both layers. Aura calls it for model-based current-team changes, and `Aura::flushState()` clears the process-local snapshots after queue jobs and at each Octane request, task, and tick boundary. Query-builder or raw-SQL updates must call the invalidation method explicitly.
+`User::clearCurrentTeamCache($userId)` invalidates both layers. After commit it
+atomically advances the shared generation before retiring the prior value key.
+A cold read that overlaps the update can finish only in its old, unreachable
+namespace, so it cannot permanently re-poison the current value in another
+worker. Aura calls invalidation for model-based current-team changes, and
+`Aura::flushState()` clears process-local snapshots after queue jobs and at each
+Octane request, task, and tick boundary. Query-builder or raw-SQL updates must
+call the invalidation method explicitly.
 
 TeamScope never publishes values read inside an open database transaction. It
 bypasses both cache layers for the transactional read, defers shared-cache

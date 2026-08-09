@@ -6,6 +6,7 @@ use Aura\Base\Contracts\DefinesFields;
 use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\TypeScope;
+use Aura\Base\Resources\User;
 use Aura\Base\Traits\AuraModelConfig;
 use Aura\Base\Traits\InitialPostFields;
 use Aura\Base\Traits\InputFields;
@@ -106,7 +107,7 @@ class Resource extends Model implements DefinesFields
      */
     private static int $globalWriteDepth = 0;
 
-    /** @var list<int|string|null> */
+    /** @var list<array{connection: string, owner_id: int|string|null}> */
     private static array $trustedOwnerContexts = [];
 
     public function __construct(array $attributes = [])
@@ -198,6 +199,7 @@ class Resource extends Model implements DefinesFields
         return static::withinTrustedOwnerFromAttributes(
             $attributes,
             fn (): bool => $this->update($attributes),
+            $this->getConnection(),
         );
     }
 
@@ -234,13 +236,20 @@ class Resource extends Model implements DefinesFields
      *
      * @param  array<string, mixed>  $attributes
      */
-    public static function createForOwnerForSystem(int|string $ownerId, array $attributes = []): static
-    {
+    public static function createForOwnerForSystem(
+        int|string $ownerId,
+        array $attributes = [],
+        ?Connection $connection = null,
+    ): static {
         $attributes['user_id'] = $ownerId;
+        $resource = static::resourceModelOnConnection($connection);
 
         return static::withinTrustedOwnerFromAttributes(
             $attributes,
-            fn (): static => app(static::class)->newQueryWithoutScopes()->create($attributes),
+            fn (): static => static::ensureStaticResource(
+                $resource->newQueryWithoutScopes()->create($attributes),
+            ),
+            $resource->getConnection(),
         );
     }
 
@@ -249,18 +258,26 @@ class Resource extends Model implements DefinesFields
      *
      * @param  array<string, mixed>  $attributes
      */
-    public static function createForTeamForSystem(int|string $teamId, array $attributes = []): static
-    {
+    public static function createForTeamForSystem(
+        int|string $teamId,
+        array $attributes = [],
+        ?Connection $connection = null,
+    ): static {
         static::ensureTeamWriteIsSupported();
 
         $attributes['team_id'] = $teamId;
+        $resource = static::resourceModelOnConnection($connection);
 
         return static::withinTrustedOwnerFromAttributes(
             $attributes,
             fn (): static => TeamScope::forTeam(
                 $teamId,
-                fn (): static => app(static::class)->newQueryWithoutScopes()->create($attributes),
+                fn (): static => static::ensureStaticResource(
+                    $resource->newQueryWithoutScopes()->create($attributes),
+                ),
+                $resource->getConnection(),
             ),
+            $resource->getConnection(),
         );
     }
 
@@ -300,6 +317,7 @@ class Resource extends Model implements DefinesFields
         return static::withinTrustedOwnerFromAttributes(
             $attributes,
             fn (): static => static::createGlobalRecord($attributes, $resource->getConnection()),
+            $resource->getConnection(),
         );
     }
 
@@ -316,20 +334,19 @@ class Resource extends Model implements DefinesFields
     ): static {
         static::ensureGlobalWriteIsSupported();
 
+        $resource = static::resourceModelOnConnection($connection);
+
         return static::withinTrustedOwnerFromAttributes(
             array_merge($attributes, $values),
-            fn (): static => static::withinGlobalWrite(function () use ($attributes, $connection, $values): static {
+            fn (): static => static::withinGlobalWrite(function () use ($attributes, $resource, $values): static {
                 $attributes['team_id'] = null;
                 unset($values['team_id']);
 
-                $model = clone app(static::class);
-
-                if ($connection) {
-                    $model->setConnection($connection->getName());
-                }
-
-                return $model->newQueryWithoutScopes()->firstOrCreate($attributes, $values);
+                return static::ensureStaticResource(
+                    $resource->newQueryWithoutScopes()->firstOrCreate($attributes, $values),
+                );
             }),
+            $resource->getConnection(),
         );
     }
 
@@ -515,7 +532,7 @@ class Resource extends Model implements DefinesFields
             $this->setAttribute('team_id', $teamId);
 
             return $this->save();
-        });
+        }, $this->getConnection());
     }
 
     /**
@@ -534,7 +551,8 @@ class Resource extends Model implements DefinesFields
                 $this->setAttribute('team_id', $teamId);
 
                 return $this->save();
-            }),
+            }, $this->getConnection()),
+            $this->getConnection(),
         );
     }
 
@@ -683,20 +701,19 @@ class Resource extends Model implements DefinesFields
     ): static {
         static::ensureGlobalWriteIsSupported();
 
+        $resource = static::resourceModelOnConnection($connection);
+
         return static::withinTrustedOwnerFromAttributes(
             array_merge($attributes, $values),
-            fn (): static => static::withinGlobalWrite(function () use ($attributes, $connection, $values): static {
+            fn (): static => static::withinGlobalWrite(function () use ($attributes, $resource, $values): static {
                 $attributes['team_id'] = null;
                 unset($values['team_id']);
 
-                $model = clone app(static::class);
-
-                if ($connection) {
-                    $model->setConnection($connection->getName());
-                }
-
-                return $model->newQueryWithoutScopes()->updateOrCreate($attributes, $values);
+                return static::ensureStaticResource(
+                    $resource->newQueryWithoutScopes()->updateOrCreate($attributes, $values),
+                );
             }),
+            $resource->getConnection(),
         );
     }
 
@@ -774,6 +791,15 @@ class Resource extends Model implements DefinesFields
         }
     }
 
+    protected static function ensureStaticResource(Model $resource): static
+    {
+        if (! $resource instanceof static) {
+            throw new \LogicException('The configured resource query returned an unexpected model type.');
+        }
+
+        return $resource;
+    }
+
     protected static function ensureTeamWriteIsSupported(): void
     {
         if (! config('aura.teams')) {
@@ -781,17 +807,34 @@ class Resource extends Model implements DefinesFields
         }
     }
 
-    protected static function isOwnerWriteAuthorized(int|string $ownerId): bool
+    protected static function hasTrustedOwnerContextForConnection(Connection $connection): bool
     {
-        if (self::$trustedOwnerContexts !== []) {
-            $trustedOwnerId = self::$trustedOwnerContexts[array_key_last(self::$trustedOwnerContexts)];
-
-            return $trustedOwnerId !== null && (string) $trustedOwnerId === (string) $ownerId;
+        if (self::$trustedOwnerContexts === []) {
+            return false;
         }
 
-        $actorId = auth()->id();
+        $context = self::$trustedOwnerContexts[array_key_last(self::$trustedOwnerContexts)];
 
-        return $actorId !== null && (string) $actorId === (string) $ownerId;
+        return $context['connection'] === User::connectionCacheIdentity($connection);
+    }
+
+    protected static function isOwnerWriteAuthorized(
+        int|string $ownerId,
+        Connection $connection,
+    ): bool {
+        if (self::$trustedOwnerContexts !== []) {
+            $context = self::$trustedOwnerContexts[array_key_last(self::$trustedOwnerContexts)];
+
+            return $context['connection'] === User::connectionCacheIdentity($connection)
+                && $context['owner_id'] !== null
+                && (string) $context['owner_id'] === (string) $ownerId;
+        }
+
+        $actor = auth()->user();
+
+        return $actor instanceof Model
+            && User::connectionCacheIdentity($actor->getConnection()) === User::connectionCacheIdentity($connection)
+            && (string) $actor->getAuthIdentifier() === (string) $ownerId;
     }
 
     protected static function resourceModelOnConnection(?Connection $connection = null): static
@@ -831,13 +874,20 @@ class Resource extends Model implements DefinesFields
      * @param  callable(): TValue  $callback
      * @return TValue
      */
-    final protected static function withinTrustedOwnerFromAttributes(array $attributes, callable $callback): mixed
-    {
+    final protected static function withinTrustedOwnerFromAttributes(
+        array $attributes,
+        callable $callback,
+        ?Connection $connection = null,
+    ): mixed {
         if (! array_key_exists('user_id', $attributes)) {
             return $callback();
         }
 
-        self::$trustedOwnerContexts[] = $attributes['user_id'];
+        $connection ??= static::resourceModelOnConnection()->getConnection();
+        self::$trustedOwnerContexts[] = [
+            'connection' => User::connectionCacheIdentity($connection),
+            'owner_id' => $attributes['user_id'],
+        ];
 
         try {
             return $callback();

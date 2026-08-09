@@ -36,11 +36,6 @@ class GlobalSearch extends Component
                 return false;
             }
 
-            // Skip any resource the current user is not allowed to view.
-            if (! Gate::allows('viewAny', app($resource))) {
-                return false;
-            }
-
             return $resource::getSlug() !== 'resource' && $resource::getSlug() !== 'flow' && $resource::getSlug() !== 'flowlog' && $resource::getSlug() !== 'operation' && $resource::getSlug() !== 'flowoperation' && $resource::getSlug() !== 'operationlog' && $resource::getSlug() !== 'option' && $resource::getSlug() !== 'team' && $resource::getSlug() !== 'user' && $resource::getSlug() !== 'product';
         });
 
@@ -54,6 +49,15 @@ class GlobalSearch extends Component
             }
 
             $model = app($resource);
+            $authenticatedUser = auth()->user();
+
+            if (! $authenticatedUser instanceof Model
+                || User::connectionCacheIdentity($authenticatedUser->getConnection())
+                    !== User::connectionCacheIdentity($model->getConnection())
+                || ! Gate::allows('viewAny', $model)) {
+                continue;
+            }
+
             $searchableFields = $model->getSearchableFields()->pluck('slug');
 
             if ($searchableFields->isEmpty()) {

@@ -4,7 +4,10 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Roles as RolesField;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
 use Aura\Base\Livewire\GlobalSearch;
+use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\UserTeams;
+use Aura\Base\Mail\TeamInvitation as TeamInvitationMail;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Permission;
 use Aura\Base\Resources\Role;
@@ -13,6 +16,7 @@ use Aura\Base\Resources\TeamInvitation;
 use Aura\Base\Resources\User;
 use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
 use Aura\Base\Tests\Resources\Post;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -31,6 +35,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
+
+use function Pest\Livewire\livewire;
 
 class AuthenticateQueueWorkerJob implements ShouldQueue
 {
@@ -524,6 +530,23 @@ it('isolates current team snapshots and cache keys by the authenticated model co
         ->and(Cache::get($tenantCacheKey))->toBe(910020);
 });
 
+it('fails closed when an actor or explicit team context queries another connection with colliding ids', function () {
+    $userId = 911000;
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $defaultUser = seedCurrentTeamConnection($defaultConnection, $userId, 911010, 911011, 'Default Bound');
+    seedCurrentTeamConnection($tenantConnection, $userId, 911010, 911011, 'Tenant Bound');
+
+    Auth::setUser($defaultUser);
+
+    expect(Post::on($tenantConnection->getName())->count())->toBe(0)
+        ->and(TeamScope::forTeam(
+            911010,
+            fn (): int => Post::on($tenantConnection->getName())->count(),
+            $defaultConnection,
+        ))->toBe(0);
+});
+
 it('invalidates the current team cache when a persisted user has id zero', function () {
     $tenantConnection = currentTeamTenantConnection();
     $tenantUser = seedCurrentTeamConnection($tenantConnection, 0, 915000, 915001, 'Zero');
@@ -666,6 +689,81 @@ it('resolves guest invitation scalar ids through the configured resource connect
         ->assertSee('Tenant Team');
 });
 
+it('binds mailed guest invitation links to an allowed signed connection identity', function () {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedTeamListConnection($defaultConnection, 'Default Mail');
+    $tenant = seedTeamListConnection($tenantConnection, 'Tenant Mail');
+    $invitationId = 961030;
+    $timestamp = now();
+
+    foreach ([
+        [$defaultConnection, $default['member']->getAttribute('email')],
+        [$tenantConnection, 'tenant-mailed-guest@example.test'],
+    ] as [$connection, $email]) {
+        $connection->table('posts')->insert([
+            'id' => $invitationId,
+            'title' => null,
+            'type' => TeamInvitation::$type,
+            'status' => 'publish',
+            'user_id' => $default['global_admin']->getKey(),
+            'team_id' => $default['team']->getKey(),
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ]);
+        $connection->table('meta')->insert([
+            [
+                'metable_type' => TeamInvitation::class,
+                'metable_id' => $invitationId,
+                'key' => 'email',
+                'value' => $email,
+            ],
+            [
+                'metable_type' => TeamInvitation::class,
+                'metable_id' => $invitationId,
+                'key' => 'role',
+                'value' => $default['role']->getKey(),
+            ],
+        ]);
+    }
+
+    config([
+        'aura.auth.user_invitations' => true,
+        'aura.auth.invitation_connections' => [$defaultConnection->getName(), $tenantConnection->getName()],
+    ]);
+    Auth::logout();
+
+    $invitation = TeamInvitation::on($tenantConnection->getName())
+        ->withoutGlobalScopes()
+        ->findOrFail($invitationId);
+    $mail = (new TeamInvitationMail($invitation))->build();
+    $url = $mail->viewData['registerUrl'];
+    $acceptUrl = $mail->viewData['acceptUrl'];
+
+    $this->get($url)
+        ->assertOk()
+        ->assertSee('Tenant Mail Team');
+
+    $tenantConnection->table('users')
+        ->where('id', $tenant['member']->getKey())
+        ->update(['email' => 'tenant-mailed-guest@example.test']);
+
+    $this->actingAs($tenant['member'])
+        ->get($acceptUrl)
+        ->assertRedirect(route('aura.dashboard'));
+
+    expect($tenantConnection->table('posts')->where('id', $invitationId)->exists())->toBeFalse()
+        ->and($defaultConnection->table('posts')->where('id', $invitationId)->exists())->toBeTrue();
+
+    Auth::logout();
+    $tamperedUrl = str_replace(
+        'invitation_connection=current_team_tenant',
+        'invitation_connection=sqlite',
+        $url,
+    );
+    $this->get($tamperedUrl)->assertForbidden();
+});
+
 it('creates an authorized global permission only on the supplied resource connection', function () {
     $defaultConnection = DB::connection();
     $tenantConnection = currentTeamTenantConnection();
@@ -693,6 +791,32 @@ it('creates an authorized global permission only on the supplied resource connec
         ->and($defaultConnection->table('permissions')->where('slug', $slug)->exists())->toBeFalse()
         ->and($defaultConnection->table('permissions')->where('slug', 'tenant-request-global')->exists())->toBeFalse()
         ->and($default['team']->getKey())->toBe($tenant['team']->getKey());
+});
+
+it('rejects global and ordinary Livewire creates when authorization and writes use different connections', function () {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedTeamListConnection($defaultConnection, 'Default Write');
+    seedTeamListConnection($tenantConnection, 'Tenant Write');
+
+    Auth::setUser($default['global_admin']);
+
+    expect(fn () => Permission::createGlobal([
+        'name' => 'Cross connection global',
+        'slug' => 'cross-connection-global',
+        'group' => 'Security',
+    ], $tenantConnection))->toThrow(AuthorizationException::class);
+
+    Aura::fake();
+    Aura::registerResources([CurrentTeamConnectionSearchResource::class]);
+    $tenantResource = new CurrentTeamConnectionSearchResource;
+    $tenantResource->setConnection($tenantConnection->getName());
+    app()->instance(CurrentTeamConnectionSearchResource::class, $tenantResource);
+
+    livewire(Create::class, ['slug' => 'post'])->assertForbidden();
+
+    expect($tenantConnection->table('permissions')->where('slug', 'cross-connection-global')->exists())
+        ->toBeFalse();
 });
 
 it('keeps container-connected non-user global search queries on that database', function () {
@@ -741,6 +865,25 @@ it('keeps container-connected non-user global search queries on that database', 
         ->and($default['team']->getKey())->toBe($tenant['team']->getKey());
 });
 
+it('fails closed for non-user global search on a different connection', function () {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedTeamListConnection($defaultConnection, 'Default Search Bound');
+    seedTeamListConnection($tenantConnection, 'Tenant Search Bound');
+
+    Aura::fake();
+    Aura::registerResources([CurrentTeamConnectionSearchResource::class]);
+    $searchResource = new CurrentTeamConnectionSearchResource;
+    $searchResource->setConnection($tenantConnection->getName());
+    app()->instance(CurrentTeamConnectionSearchResource::class, $searchResource);
+    Auth::setUser($default['global_admin']);
+
+    $globalSearch = new GlobalSearch;
+    $globalSearch->search = 'Needle';
+
+    expect($globalSearch->getSearchResultsProperty())->toBeEmpty();
+});
+
 it('isolates global and member team lists and rename invalidation by connection', function () {
     $defaultConnection = DB::connection();
     $tenantConnection = currentTeamTenantConnection();
@@ -784,16 +927,23 @@ it('isolates global and member team lists and rename invalidation by connection'
     Auth::setUser($tenant['member']);
     $tenantAuraOption = Aura::getOption('connection-check');
 
+    Auth::setUser($default['member']);
+    $defaultUserOption = $default['member']->getOption('connection-check');
+    $defaultTeamOption = $default['team']->getOption('connection-check');
+    Auth::setUser($tenant['member']);
+    $tenantUserOption = $tenant['member']->getOption('connection-check');
+    $tenantTeamOption = $tenant['team']->getOption('connection-check');
+
     expect($defaultGlobalTeams->pluck('name')->all())->toBe(['Default Team'])
         ->and($defaultMemberTeams->pluck('name')->all())->toBe(['Default Team'])
         ->and($tenantGlobalTeams->pluck('name')->all())->toBe(['Tenant Team'])
         ->and($tenantMemberTeams->pluck('name')->all())->toBe(['Tenant Team'])
         ->and($tenantGlobalTeams->first()->getConnection()->getName())->toBe($tenantConnection->getName())
         ->and($tenantMemberTeams->first()->getConnection()->getName())->toBe($tenantConnection->getName())
-        ->and($default['member']->getOption('connection-check'))->toBe(['Default User Option'])
-        ->and($tenant['member']->getOption('connection-check'))->toBe(['Tenant User Option'])
-        ->and($default['team']->getOption('connection-check'))->toBe(['Default Team Option'])
-        ->and($tenant['team']->getOption('connection-check'))->toBe(['Tenant Team Option'])
+        ->and($defaultUserOption)->toBe(['Default User Option'])
+        ->and($tenantUserOption)->toBe(['Tenant User Option'])
+        ->and($defaultTeamOption)->toBe(['Default Team Option'])
+        ->and($tenantTeamOption)->toBe(['Tenant Team Option'])
         ->and($defaultAuraOption)->toBe(['Default Team Option'])
         ->and($tenantAuraOption)->toBe(['Tenant Team Option'])
         ->and(User::connectionScopedCacheKey($userOptionName, $defaultConnection))
@@ -1161,7 +1311,7 @@ it('keeps nested tenant transaction invalidation on its own connection until the
     expect(Cache::has($tenantCacheKey))->toBeFalse()
         ->and(Cache::get($defaultCacheKey))->toBe(920010)
         ->and(Post::on($tenantConnection->getName())->pluck('title')->all())->toBe(['Tenant Tx Other'])
-        ->and(Cache::get($tenantCacheKey))->toBe(920021);
+        ->and(Cache::get(User::currentTeamCacheKey($userId, $tenantConnection)))->toBe(920021);
 });
 
 beforeEach(function () {
@@ -1204,7 +1354,7 @@ it('uses the new current team after switching with a warmed team scope cache', f
 
     expect(Post::whereKey($firstTeamPost->id)->exists())->toBeFalse();
     expect(Post::whereKey($secondTeamPost->id)->exists())->toBeTrue();
-    expect(Cache::get($cacheKey))->toBe($secondTeam->id);
+    expect(Cache::get(User::currentTeamCacheKey($user->id)))->toBe($secondTeam->id);
 });
 
 it('clears current team and team list caches for affected users when deleting a team', function () {
@@ -1309,8 +1459,62 @@ it('caches a missing current team until a later model assignment invalidates it'
 
     expect($user->fresh()->current_team_id)->toBe($team->id);
     expect(Post::whereKey($post->id)->exists())->toBeTrue();
-    expect(Cache::get($cacheKey))->toBe($team->id);
+    expect(Cache::get(User::currentTeamCacheKey($user->id)))->toBe($team->id);
 });
+
+it('prevents a cold read from republishing stale null or non-null state after invalidation', function (string $transition) {
+    $owner = User::factory()->create();
+    $teamA = Team::factory()->createQuietly(['user_id' => $owner->id]);
+    $teamB = Team::factory()->createQuietly(['user_id' => $owner->id]);
+    $startsNull = $transition === 'null-to-team';
+    $endsNull = $transition === 'team-to-null';
+    $user = User::factory()->create([
+        'current_team_id' => $startsNull ? null : $teamA->id,
+    ]);
+    $postA = createPost(['title' => 'Race A', 'team_id' => $teamA->id, 'user_id' => $owner->id]);
+    $postB = createPost(['title' => 'Race B', 'team_id' => $teamB->id, 'user_id' => $owner->id]);
+    $targetTeamId = $endsNull ? null : $teamB->id;
+
+    $this->actingAs($user);
+    Aura::flushState();
+    $oldCacheKey = User::currentTeamCacheKey($user->id);
+    Cache::forget($oldCacheKey);
+    $interleaved = false;
+
+    DB::listen(function ($query) use (&$interleaved, $targetTeamId, $user): void {
+        if ($interleaved
+            || ! str_contains($query->sql, 'current_team_id')
+            || ! str_contains($query->sql, 'from "users"')) {
+            return;
+        }
+
+        $interleaved = true;
+        DB::table('users')->where('id', $user->id)->update(['current_team_id' => $targetTeamId]);
+        User::clearCurrentTeamCache($user->id, $user->getConnection());
+    });
+
+    Post::count();
+
+    $newCacheKey = User::currentTeamCacheKey($user->id);
+
+    expect($interleaved)->toBeTrue()
+        ->and($newCacheKey)->not->toBe($oldCacheKey);
+
+    Aura::flushState();
+
+    if ($endsNull) {
+        expect(Post::count())->toBe(0)
+            ->and(Cache::get($newCacheKey))->toBeFalse();
+    } else {
+        expect(Post::whereKey($postA->id)->exists())->toBeFalse()
+            ->and(Post::whereKey($postB->id)->exists())->toBeTrue()
+            ->and(Cache::get($newCacheKey))->toBe($teamB->id);
+    }
+})->with([
+    'null to team' => 'null-to-team',
+    'team to team' => 'team-to-team',
+    'team to null after delete-like invalidation' => 'team-to-null',
+]);
 
 it('keeps a request-local team snapshot and resets it at a worker boundary', function () {
     $user = createSuperAdmin();
@@ -1437,7 +1641,7 @@ it('keeps a cold shared cache empty before commit and invalidates process state 
         ->and($cacheWasPublishedBeforeCommit)->toBeFalse()
         ->and(Cache::has($cacheKey))->toBeFalse()
         ->and(Post::whereKey($postB->id)->exists())->toBeTrue()
-        ->and(Cache::get($cacheKey))->toBe($teamB->id)
+        ->and(Cache::get(User::currentTeamCacheKey($user->id)))->toBe($teamB->id)
         ->and($teamA->id)->not->toBe($teamB->id);
 });
 
@@ -1480,5 +1684,5 @@ it('survives an inner commit followed by outer rollback and a later committed sw
     expect(Cache::has($cacheKey))->toBeFalse()
         ->and(Post::whereKey($postA->id)->exists())->toBeFalse()
         ->and(Post::whereKey($postB->id)->exists())->toBeTrue()
-        ->and(Cache::get($cacheKey))->toBe($teamB->id);
+        ->and(Cache::get(User::currentTeamCacheKey($user->id)))->toBe($teamB->id);
 });
