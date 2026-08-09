@@ -63,20 +63,35 @@ final class TableMutationDispatcher
         string $action,
         array $declaredActions,
     ): mixed {
-        $modelDescriptor->assertMatches($scope);
         $descriptor = $this->descriptor($action, $declaredActions);
-        $scope = $this->applyTrashedScope($scope, $descriptor);
-        $record = $this->findRecord($scope, $modelDescriptor, $id, $descriptor['trashed']);
-
-        if (! $record instanceof TableResource) {
-            abort(422, 'Table mutations require an Aura table resource.');
-        }
-
         $this->assertConditionAvailable($descriptor);
-        $this->mutationMethod($record, $action, self::BULK_MODE_RECORD);
-        $this->authorize($record, $descriptor['ability']);
 
-        return $record->getConnection()->transaction(fn (): mixed => $record->{$action}());
+        return $modelDescriptor->connectionInstance()->transaction(function () use (
+            $action,
+            $descriptor,
+            $id,
+            $modelDescriptor,
+            $scope,
+        ): mixed {
+            $modelDescriptor->assertMatches($scope);
+            $scope = $this->applyTrashedScope($scope, $descriptor);
+            $record = $this->findRecord(
+                $scope,
+                $modelDescriptor,
+                $id,
+                $descriptor['trashed'],
+                lockForUpdate: true,
+            );
+
+            if (! $record instanceof TableResource) {
+                abort(422, 'Table mutations require an Aura table resource.');
+            }
+
+            $this->mutationMethod($record, $action, self::BULK_MODE_RECORD);
+            $this->authorize($record, $descriptor['ability']);
+
+            return $record->{$action}();
+        });
     }
 
     /**
@@ -97,46 +112,46 @@ final class TableMutationDispatcher
         bool $selectAll,
         string $expectedMode,
     ): mixed {
-        $modelDescriptor->assertMatches($scope);
         $descriptor = $this->descriptor($action, $declaredActions, bulk: true);
 
         if ($descriptor['mode'] !== $expectedMode) {
             abort(422, 'The declared bulk action execution mode is invalid.');
         }
 
-        $scope = $this->applyTrashedScope($scope, $descriptor);
-        $records = $this->resolveExactSelection(
-            $scope,
-            $modelDescriptor,
-            $selected,
-            $selectAll,
-            $descriptor['trashed'],
-        );
-        $receiver = $records->first();
-
-        if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
-            abort(422, 'Bulk mutations require an Aura table resource.');
-        }
-
         $this->assertConditionAvailable($descriptor);
-        $this->mutationMethod($receiver, $action, $descriptor['mode']);
 
-        $records->each(function (Model $record) use ($descriptor): void {
-            $this->authorize($record, $descriptor['ability']);
-        });
+        return $modelDescriptor->connectionInstance()->transaction(function () use (
+            $action,
+            $descriptor,
+            $modelDescriptor,
+            $scope,
+            $selectAll,
+            $selected,
+        ): mixed {
+            $modelDescriptor->assertMatches($scope);
+            $scope = $this->applyTrashedScope($scope, $descriptor);
+            $records = $this->resolveExactSelection(
+                $scope,
+                $modelDescriptor,
+                $selected,
+                $selectAll,
+                $descriptor['trashed'],
+            );
+            $receiver = $records->first();
 
-        $connection = $receiver->getConnection();
-        $connectionName = $connection->getName();
-
-        $records->each(function (Model $record) use ($connectionName): void {
-            if ($record->getConnection()->getName() !== $connectionName) {
-                abort(422, 'Bulk mutations must use one database connection.');
+            if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
+                abort(422, 'Bulk mutations require an Aura table resource.');
             }
-        });
 
-        $ids = $records->map(fn (Model $record): mixed => $record->getKey())->all();
+            $this->mutationMethod($receiver, $action, $descriptor['mode']);
 
-        return $connection->transaction(function () use ($action, $descriptor, $ids, $records, $receiver): mixed {
+            $records->each(function (Model $record) use ($descriptor, $modelDescriptor): void {
+                $modelDescriptor->assertModelMatches($record);
+                $this->authorize($record, $descriptor['ability']);
+            });
+
+            $ids = $records->map(fn (Model $record): mixed => $record->getKey())->all();
+
             if ($descriptor['mode'] === self::BULK_MODE_COLLECTION) {
                 return $receiver->{$action}($ids);
             }
@@ -151,11 +166,42 @@ final class TableMutationDispatcher
         });
     }
 
+    public function dispatchFieldUpdate(
+        Builder $scope,
+        TableMutationModelDescriptor $modelDescriptor,
+        int|string $id,
+        string $fieldSlug,
+        mixed $value,
+    ): void {
+        $modelDescriptor->connectionInstance()->transaction(function () use (
+            $fieldSlug,
+            $id,
+            $modelDescriptor,
+            $scope,
+            $value,
+        ): void {
+            $modelDescriptor->assertMatches($scope);
+            $record = $this->findRecord(
+                $scope,
+                $modelDescriptor,
+                $id,
+                lockForUpdate: true,
+            );
+
+            if (! $record instanceof TableResource) {
+                abort(422, 'Kanban mutations require an Aura resource.');
+            }
+
+            $this->updateField($record, $fieldSlug, $value);
+        });
+    }
+
     public function findRecord(
         Builder $scope,
         TableMutationModelDescriptor $modelDescriptor,
         int|string $id,
         ?string $trashed = null,
+        bool $lockForUpdate = false,
     ): Model {
         $modelDescriptor->assertMatches($scope);
         $expectedIdentity = $modelDescriptor->canonicalIdentity($id);
@@ -165,7 +211,12 @@ final class TableMutationDispatcher
             abort(404);
         }
 
-        $records = $this->authoritativeRecords($modelDescriptor, $effectiveKeys, $trashed);
+        $records = $this->authoritativeRecords(
+            $modelDescriptor,
+            $effectiveKeys,
+            $trashed,
+            $lockForUpdate,
+        );
         $resolvedIdentities = $this->canonicalIdentities($records, $modelDescriptor);
         $record = $records->first();
 
@@ -289,6 +340,7 @@ final class TableMutationDispatcher
         TableMutationModelDescriptor $modelDescriptor,
         array $keys,
         ?string $trashed,
+        bool $lockForUpdate = false,
     ): Collection {
         $model = $modelDescriptor->model();
 
@@ -303,10 +355,47 @@ final class TableMutationDispatcher
         $modelDescriptor->assertMatches($query);
         $query->select($model->qualifyColumn('*'));
 
-        $records = $query->get();
+        if ($lockForUpdate) {
+            $query->lockForUpdate();
+        }
+
+        $baseQuery = $query->getQuery();
+        $baseQuery->applyBeforeQueryCallbacks();
+        $modelDescriptor->assertMatches($query);
+        $baseQuery->select($modelDescriptor->table.'.*');
+
+        if ($lockForUpdate) {
+            $baseQuery->lockForUpdate();
+        }
+
+        $rows = $baseQuery->getConnection()->select(
+            $baseQuery->toSql(),
+            $baseQuery->getBindings(),
+            ! $baseQuery->useWritePdo,
+        );
+
+        $hydratedRecords = [];
+
+        foreach ($rows as $row) {
+            if (! is_object($row)) {
+                abort(422, 'The authoritative table mutation query returned an invalid record.');
+            }
+
+            $record = $modelDescriptor->hydrate((array) $row);
+            $identity = $modelDescriptor->canonicalIdentity($record->getKey());
+
+            if (! array_key_exists($identity, $keys)) {
+                abort(422, 'The authoritative table mutation query returned an invalid record.');
+            }
+
+            $hydratedRecords[] = $record;
+        }
+
+        $hydratedRecords = $query->eagerLoadRelations($hydratedRecords);
+        $records = $model->newCollection($hydratedRecords);
 
         $records->each(function (Model $record) use ($modelDescriptor): void {
-            $modelDescriptor->configure($record);
+            $modelDescriptor->assertModelMatches($record);
         });
 
         $records = $this->canonicalizeRecords($records, $modelDescriptor);
@@ -481,7 +570,12 @@ final class TableMutationDispatcher
                 ]);
             }
 
-            $records = $this->authoritativeRecords($modelDescriptor, $effectiveKeys, $trashed);
+            $records = $this->authoritativeRecords(
+                $modelDescriptor,
+                $effectiveKeys,
+                $trashed,
+                lockForUpdate: true,
+            );
             $resolvedIdentities = $this->canonicalIdentities($records, $modelDescriptor);
 
             if (
@@ -539,7 +633,12 @@ final class TableMutationDispatcher
             ]);
         }
 
-        $records = $this->authoritativeRecords($modelDescriptor, $effectiveKeys, $trashed);
+        $records = $this->authoritativeRecords(
+            $modelDescriptor,
+            $effectiveKeys,
+            $trashed,
+            lockForUpdate: true,
+        );
         $resolvedIdentities = $this->canonicalIdentities($records, $modelDescriptor);
 
         if (

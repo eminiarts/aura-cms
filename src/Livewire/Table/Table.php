@@ -519,17 +519,13 @@ class Table extends Component
         ])->validate();
         $trustedModel = new TableMutationModelDescriptor($this->mutationModel());
 
-        $card = $mutations->findRecord(
+        $mutations->dispatchFieldUpdate(
             clone $this->mutationQuery(forKanban: true),
             $trustedModel,
             $data['cardId'],
+            'status',
+            $data['kanbanStatus'],
         );
-
-        if (! $card instanceof TableResource) {
-            abort(422, 'Kanban mutations require an Aura resource.');
-        }
-
-        $mutations->updateField($card, 'status', $data['kanbanStatus']);
         $this->notify('Card status updated successfully');
     }
 

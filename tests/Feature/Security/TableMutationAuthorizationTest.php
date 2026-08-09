@@ -5,8 +5,11 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Facades\DynamicFunctions;
 use Aura\Base\Fields\HasMany;
 use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Livewire\Table\TableMutationDispatcher;
+use Aura\Base\Livewire\Table\TableMutationModelDescriptor;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Schema\Blueprint;
@@ -55,6 +58,14 @@ class Core05MutationResource extends Resource
         ],
     ];
 
+    public static ?string $authoritativeQueryCallback = null;
+
+    /** @var array<int, bool|string|null> */
+    public static array $authoritativeReadLocks = [];
+
+    /** @var array<int, int> */
+    public static array $authoritativeReadTransactionLevels = [];
+
     public array $bulkActions = [
         'captureAuthoritativeAttributes' => [
             'label' => 'Capture authoritative attributes',
@@ -76,6 +87,9 @@ class Core05MutationResource extends Resource
     public static string $type = 'Core05Mutation';
 
     public static int $updateInvocations = 0;
+
+    /** @var array<int, int> */
+    public static array $updateTransactionLevels = [];
 
     public static bool $useCollidingIndexQuery = false;
 
@@ -194,8 +208,64 @@ class Core05MutationResource extends Resource
     {
         parent::booted();
 
-        static::updating(function (): void {
+        $resourceClass = static::class;
+
+        static::addGlobalScope('core05-authoritative-query-callback', static function (Builder $builder) use (
+            $resourceClass,
+        ): void {
+            $callback = $resourceClass::$authoritativeQueryCallback;
+
+            if ($callback === null) {
+                return;
+            }
+
+            $baseQuery = $builder->getQuery();
+            $queryState = (object) ['isAuthoritativeRead' => false];
+            $qualifiedWildcard = $builder->getModel()->qualifyColumn('*');
+
+            $baseQuery->beforeQuery(static function ($query) use (
+                $callback,
+                $qualifiedWildcard,
+                $queryState,
+                $resourceClass,
+            ): void {
+                $queryState->isAuthoritativeRead = in_array($qualifiedWildcard, (array) $query->columns, true);
+
+                if (! $queryState->isAuthoritativeRead) {
+                    return;
+                }
+
+                $resourceClass::$authoritativeReadLocks[] = $query->lock;
+                $resourceClass::$authoritativeReadTransactionLevels[] = $query->getConnection()->transactionLevel();
+
+                if ($callback === 'before-query table switch') {
+                    $query->from = 'core05_mutation_substitutions as posts';
+                }
+            });
+
+            if ($callback === 'after-query model injection') {
+                $builder->afterQuery(static function ($records) use ($queryState) {
+                    if (! $queryState->isAuthoritativeRead) {
+                        return $records;
+                    }
+
+                    return $records->map(static function (Core05MutationResource $record) {
+                        $poisonedRecord = clone $record;
+                        $poisonedRecord->forceFill([
+                            'title' => 'Poisoned callback title',
+                            'content' => 'poisoned-callback-content',
+                            'status' => 'draft',
+                        ]);
+
+                        return $poisonedRecord;
+                    });
+                });
+            }
+        });
+
+        static::updating(function (Core05MutationResource $resource): void {
             static::$updateInvocations++;
+            static::$updateTransactionLevels[] = $resource->getConnection()->transactionLevel();
         });
     }
 
@@ -357,6 +427,86 @@ class Core05UuidMutationPolicy
     }
 }
 
+class Core05AuthoritativeCallbackPolicy
+{
+    public static int $attempts = 0;
+
+    /** @var array<int, array{title: mixed, content: mixed, status: mixed}> */
+    public static array $snapshots = [];
+
+    public function update(User $user, Core05MutationResource $resource): bool
+    {
+        if (! $resource->exists) {
+            return $user->exists;
+        }
+
+        static::$attempts++;
+        static::$snapshots[] = [
+            'title' => $resource->getAttribute('title'),
+            'content' => $resource->getAttribute('content'),
+            'status' => $resource->getAttribute('status'),
+        ];
+
+        return $user->exists
+            && $resource->getAttribute('title') === 'Authoritative callback target'
+            && $resource->getAttribute('content') === 'authoritative-callback-content'
+            && $resource->getAttribute('status') === 'draft';
+    }
+}
+
+class Core05MorphMutationPolicy
+{
+    public static int $attempts = 0;
+
+    /** @var array<int, string> */
+    public static array $morphClasses = [];
+
+    public function update(User $user, Core05MorphMutationResource $resource): bool
+    {
+        if (! $resource->exists) {
+            return $user->exists;
+        }
+
+        static::$attempts++;
+        static::$morphClasses[] = $resource->getMorphClass();
+
+        return $user->exists && $resource->getMorphClass() === 'core05-instance-morph';
+    }
+}
+
+class Core05TransactionMutationPolicy
+{
+    /** @var array<int, int> */
+    public static array $transactionLevels = [];
+
+    public function update(User $user, Core05MutationResource $resource): bool
+    {
+        if (! $resource->exists) {
+            return $user->exists;
+        }
+
+        static::$transactionLevels[] = $resource->getConnection()->transactionLevel();
+
+        return $user->exists && $resource->exists;
+    }
+}
+
+class Core05DenyingMutationPolicy
+{
+    public function update(User $user, Core05MutationResource $resource): bool
+    {
+        if (! $resource->exists) {
+            return $user->exists;
+        }
+
+        $resource->getConnection()->table($resource->getTable())
+            ->where($resource->getKeyName(), $resource->getKey())
+            ->update(['content' => 'changed-during-authorization']);
+
+        return false;
+    }
+}
+
 class Core05AuthoritativeCollisionPolicy
 {
     public function update(User $user, Core05MutationResource $resource): bool
@@ -423,9 +573,18 @@ class Core05NoKanbanFieldResource extends Resource
 }
 
 beforeEach(function () {
+    Core05AuthoritativeCallbackPolicy::$attempts = 0;
+    Core05AuthoritativeCallbackPolicy::$snapshots = [];
+    Core05MorphMutationPolicy::$attempts = 0;
+    Core05MorphMutationPolicy::$morphClasses = [];
     Core05MutationBoundaryPolicy::$attempts = 0;
+    Core05MutationResource::$authoritativeQueryCallback = null;
+    Core05MutationResource::$authoritativeReadLocks = [];
+    Core05MutationResource::$authoritativeReadTransactionLevels = [];
     Core05MutationResource::$useCollidingIndexQuery = false;
     Core05MutationResource::$updateInvocations = 0;
+    Core05MutationResource::$updateTransactionLevels = [];
+    Core05TransactionMutationPolicy::$transactionLevels = [];
     config()->set('database.connections.core05_mutation_secondary', [
         'driver' => 'sqlite',
         'database' => ':memory:',
@@ -1309,6 +1468,240 @@ test('deferred mutation scope identity substitutions fail before authorization o
 ])->with([
     'before-query table switch' => 'before-query table switch',
     'after-query key injection' => 'after-query key injection',
+]);
+
+test('authoritative query callbacks cannot substitute or poison mutation records', function (
+    string $surface,
+    string $callback,
+) {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05AuthoritativeCallbackPolicy::class);
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Authoritative callback target',
+        'content' => 'authoritative-callback-content',
+        'status' => 'draft',
+    ]);
+
+    DB::table('core05_mutation_substitutions')->insert([
+        'id' => $resource->getKey(),
+        'type' => Core05MutationResource::$type,
+        'title' => 'Poisoned callback title',
+        'content' => 'poisoned-callback-content',
+        'status' => 'draft',
+        'user_id' => $resource->user_id,
+        'team_id' => $resource->team_id,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    Core05MutationResource::$authoritativeQueryCallback = $callback;
+    $result = core05CallMutationSurface(
+        $surface,
+        null,
+        new Core05MutationResource,
+        $resource->getKey(),
+    );
+
+    if ($callback === 'before-query table switch') {
+        $result->assertStatus(422);
+
+        expect(Core05MutationResource::$updateInvocations)->toBe(0)
+            ->and($resource->fresh()->content)->toBe('authoritative-callback-content')
+            ->and($resource->fresh()->status)->toBe('draft');
+
+        return;
+    }
+
+    $result->assertHasNoErrors();
+
+    expect(Core05AuthoritativeCallbackPolicy::$attempts)->toBeGreaterThanOrEqual(1)
+        ->and(collect(Core05AuthoritativeCallbackPolicy::$snapshots)->contains(
+            fn (array $snapshot): bool => $snapshot['title'] === 'Poisoned callback title'
+                || $snapshot['content'] === 'poisoned-callback-content',
+        ))->toBeFalse();
+
+    $freshResource = $resource->fresh();
+
+    match ($surface) {
+        'single action' => expect($freshResource->content)->toBe('reviewed-by-action'),
+        'bulk record' => expect($freshResource->content)->toBe('reviewed-by-bulk-action'),
+        'bulk collection' => expect(
+            json_decode($freshResource->content, true, flags: JSON_THROW_ON_ERROR)
+        )->toMatchArray([
+            'title' => 'Authoritative callback target',
+            'content' => 'authoritative-callback-content',
+            'status' => 'draft',
+            'ids' => [$resource->getKey()],
+        ]),
+        'Kanban update' => expect($freshResource->status)->toBe('reviewed')
+            ->and($freshResource->content)->toBe('authoritative-callback-content'),
+    };
+})->with([
+    'single action' => 'single action',
+    'bulk record' => 'bulk record',
+    'bulk collection' => 'bulk collection',
+    'Kanban update' => 'Kanban update',
+])->with([
+    'before-query table switch' => 'before-query table switch',
+    'after-query model injection' => 'after-query model injection',
+]);
+
+test('mutation records preserve the trusted mounted instance morph identity', function (string $surface) {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MorphMutationResource::class, Core05MorphMutationPolicy::class);
+
+    $resource = Core05MorphMutationResource::create([
+        'title' => 'Instance morph mutation target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $mounted = (new Core05MorphMutationResource)->useMutationMorphClass('core05-instance-morph');
+    $mutations = app(TableMutationDispatcher::class);
+    $descriptor = new TableMutationModelDescriptor($mounted);
+    $scope = $mounted->newQuery()->whereKey($resource->getKey());
+
+    match ($surface) {
+        'single action' => $mutations->dispatchAction(
+            $scope,
+            $descriptor,
+            $resource->getKey(),
+            'markReviewed',
+            $mounted->getActions(),
+        ),
+        'bulk record' => $mutations->dispatchBulk(
+            $scope,
+            $descriptor,
+            'markBulkReviewed',
+            $mounted->getBulkActions(),
+            [$resource->getKey()],
+            false,
+            'record',
+        ),
+        'bulk collection' => $mutations->dispatchBulk(
+            $scope,
+            $descriptor,
+            'captureCollectionAttributes',
+            $mounted->getBulkActions(),
+            [$resource->getKey()],
+            false,
+            'collection',
+        ),
+        'Kanban update' => $mutations->dispatchFieldUpdate(
+            $scope,
+            $descriptor,
+            $resource->getKey(),
+            'status',
+            'reviewed',
+        ),
+    };
+
+    expect(Core05MorphMutationPolicy::$attempts)->toBeGreaterThanOrEqual(1)
+        ->and(Core05MorphMutationPolicy::$morphClasses)->each->toBe('core05-instance-morph');
+
+    $freshResource = $resource->fresh();
+
+    match ($surface) {
+        'single action' => expect($freshResource->content)->toBe('reviewed-by-action'),
+        'bulk record' => expect($freshResource->content)->toBe('reviewed-by-bulk-action'),
+        'bulk collection' => expect(
+            json_decode($freshResource->content, true, flags: JSON_THROW_ON_ERROR)['ids']
+        )->toBe([$resource->getKey()]),
+        'Kanban update' => expect($freshResource->status)->toBe('reviewed'),
+    };
+})->with([
+    'single action' => 'single action',
+    'bulk record' => 'bulk record',
+    'bulk collection' => 'bulk collection',
+    'Kanban update' => 'Kanban update',
+]);
+
+test('mutation selection authorization and handlers share one locked transaction', function (string $surface) {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05TransactionMutationPolicy::class);
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Transactional mutation target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    Core05MutationResource::$authoritativeQueryCallback = 'observe transaction';
+    $expectedTransactionLevel = DB::connection()->transactionLevel() + 1;
+
+    core05CallMutationSurface($surface, null, new Core05MutationResource, $resource->getKey())
+        ->assertHasNoErrors();
+
+    expect(Core05MutationResource::$authoritativeReadLocks)->not->toBeEmpty()
+        ->and(Core05MutationResource::$authoritativeReadLocks)->each->toBeTrue()
+        ->and(Core05MutationResource::$authoritativeReadTransactionLevels)->each->toBe($expectedTransactionLevel)
+        ->and(Core05TransactionMutationPolicy::$transactionLevels)->not->toBeEmpty()
+        ->and(Core05TransactionMutationPolicy::$transactionLevels)->toContain($expectedTransactionLevel)
+        ->and(Core05MutationResource::$updateTransactionLevels)->not->toBeEmpty()
+        ->and(Core05MutationResource::$updateTransactionLevels)->each->toBe($expectedTransactionLevel);
+})->with([
+    'single action' => 'single action',
+    'bulk record' => 'bulk record',
+    'bulk collection' => 'bulk collection',
+    'Kanban update' => 'Kanban update',
+]);
+
+test('a denied mutation rolls back row changes made during authorization', function (string $surface) {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05DenyingMutationPolicy::class);
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Authorization rollback target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $mounted = new Core05MutationResource;
+    $mutations = app(TableMutationDispatcher::class);
+    $descriptor = new TableMutationModelDescriptor($mounted);
+    $scope = $mounted->newQuery()->whereKey($resource->getKey());
+
+    expect(fn () => match ($surface) {
+        'single action' => $mutations->dispatchAction(
+            $scope,
+            $descriptor,
+            $resource->getKey(),
+            'markReviewed',
+            $mounted->getActions(),
+        ),
+        'bulk record' => $mutations->dispatchBulk(
+            $scope,
+            $descriptor,
+            'markBulkReviewed',
+            $mounted->getBulkActions(),
+            [$resource->getKey()],
+            false,
+            'record',
+        ),
+        'bulk collection' => $mutations->dispatchBulk(
+            $scope,
+            $descriptor,
+            'captureCollectionAttributes',
+            $mounted->getBulkActions(),
+            [$resource->getKey()],
+            false,
+            'collection',
+        ),
+        'Kanban update' => $mutations->dispatchFieldUpdate(
+            $scope,
+            $descriptor,
+            $resource->getKey(),
+            'status',
+            'reviewed',
+        ),
+    })->toThrow(AuthorizationException::class);
+
+    expect($resource->fresh()->content)->toBe('unchanged')
+        ->and($resource->fresh()->status)->toBe('draft')
+        ->and(Core05MutationResource::$updateInvocations)->toBe(0);
+})->with([
+    'single action' => 'single action',
+    'bulk record' => 'bulk record',
+    'bulk collection' => 'bulk collection',
+    'Kanban update' => 'Kanban update',
 ]);
 
 test('matching UUID mutation identities remain exact on every mutation surface', function (string $surface) {

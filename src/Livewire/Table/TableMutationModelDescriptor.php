@@ -41,6 +41,7 @@ final class TableMutationModelDescriptor
         $this->table = $model->getTable();
 
         $this->configure($this->model);
+        $this->assertModelMatches($this->model);
     }
 
     public function assertMatches(Builder $scope): void
@@ -49,17 +50,18 @@ final class TableMutationModelDescriptor
         $query = $scope->getQuery();
 
         if (
-            $model::class !== $this->class
-            || $model->getTable() !== $this->table
-            || $model->getConnection()->getName() !== $this->connection
-            || $model->getKeyName() !== $this->keyName
-            || $model->getKeyType() !== $this->keyType
-            || $model->getIncrementing() !== $this->incrementing
-            || $model->getMorphClass() !== $this->morphClass
+            ! $this->modelMatches($model)
             || $query->getConnection() !== $this->connectionInstance
             || $query->from !== $this->table
         ) {
             abort(422, 'The table mutation scope does not match the mounted resource.');
+        }
+    }
+
+    public function assertModelMatches(Model $model): void
+    {
+        if (! $this->modelMatches($model)) {
+            abort(422, 'The table mutation model does not match the mounted resource.');
         }
     }
 
@@ -90,11 +92,47 @@ final class TableMutationModelDescriptor
         $model->setIncrementing($this->incrementing);
     }
 
+    public function connectionInstance(): ConnectionInterface
+    {
+        return $this->connectionInstance;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    public function hydrate(array $attributes): Model&TableResource
+    {
+        $model = $this->model();
+        $model->setRawAttributes($attributes, true);
+        $model->setRelations([]);
+        $model->exists = true;
+        $model->wasRecentlyCreated = false;
+        $model->syncChanges();
+
+        $this->assertModelMatches($model);
+
+        return $model;
+    }
+
     public function model(): Model&TableResource
     {
         $model = clone $this->model;
         $this->configure($model);
+        $this->assertModelMatches($model);
 
         return $model;
+    }
+
+    private function modelMatches(Model $model): bool
+    {
+        return $model instanceof TableResource
+            && $model::class === $this->class
+            && $model->getTable() === $this->table
+            && $model->getConnection()->getName() === $this->connection
+            && $model->getConnection() === $this->connectionInstance
+            && $model->getKeyName() === $this->keyName
+            && $model->getKeyType() === $this->keyType
+            && $model->getIncrementing() === $this->incrementing
+            && $model->getMorphClass() === $this->morphClass;
     }
 }
