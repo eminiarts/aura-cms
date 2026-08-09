@@ -9,6 +9,7 @@ use Aura\Base\Listeners\ModifyDatabaseMigration;
 use Aura\Base\Resource;
 use Aura\Base\Traits\SaveFields;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
 
@@ -181,6 +182,41 @@ test('a generated migration is deleted and the failure is surfaced when migratio
     $after = collect(File::files(database_path('migrations')))->map->getPathname()->all();
 
     expect($after)->toBe($before);
+});
+
+test('multiple migration creation returns a unique exact path in the same second', function () {
+    $before = collect(File::files(database_path('migrations')))->map->getPathname()->all();
+    $listener = new class(app(Filesystem::class)) extends CreateDatabaseMigration
+    {
+        public array $executedPaths = [];
+
+        protected function runMigration(string $migrationFile): void
+        {
+            $this->executedPaths[] = $migrationFile;
+        }
+
+        protected function runPint($migrationFile): void {}
+    };
+    $event = new SaveFieldsEvent([
+        ['name' => 'Description', 'slug' => 'description', 'type' => Text::class],
+    ], [], new Core10MigrationFailureResource);
+    Date::setTestNow('2026-08-09 20:00:00');
+
+    try {
+        $listener->handle($event);
+        $listener->handle($event);
+
+        expect($listener->executedPaths)->toHaveCount(2)
+            ->and($listener->executedPaths[0])->not->toBe($listener->executedPaths[1])
+            ->and(File::exists($listener->executedPaths[0]))->toBeTrue()
+            ->and(File::exists($listener->executedPaths[1]))->toBeTrue();
+    } finally {
+        Date::setTestNow();
+
+        collect(File::files(database_path('migrations')))
+            ->reject(fn ($file): bool => in_array($file->getPathname(), $before, true))
+            ->each(fn ($file) => File::delete($file->getPathname()));
+    }
 });
 
 test('the single migration file is restored when schema synchronization fails', function () {

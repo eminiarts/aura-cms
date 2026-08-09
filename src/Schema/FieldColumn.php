@@ -3,8 +3,8 @@
 namespace Aura\Base\Schema;
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Schema\ColumnDefinition;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Fluent;
 
 readonly class FieldColumn
 {
@@ -19,17 +19,53 @@ readonly class FieldColumn
         public array $driverTypes = [],
     ) {}
 
-    public function addTo(Blueprint $table, string $slug): Fluent
+    public function addTo(Blueprint $table, string $slug): ColumnDefinition
     {
-        $type = $this->driverTypes[Schema::getConnection()->getDriverName()] ?? $this->type;
-        $arguments = $type === $this->type ? $this->arguments : [];
-        $column = $table->{$type}($slug, ...$arguments);
+        $definition = $this->forDriver(Schema::getConnection()->getDriverName());
+        $column = $table->{$definition->type}($slug, ...$definition->arguments);
 
-        if ($this->nullable) {
+        if ($definition->nullable) {
             $column->nullable();
         }
 
         return $column;
+    }
+
+    public function forDriver(string $driver): self
+    {
+        $type = $this->driverTypes[$driver] ?? $this->type;
+
+        return new self(
+            type: $type,
+            arguments: $type === $this->type ? $this->arguments : [],
+            nullable: $this->nullable,
+        );
+    }
+
+    /**
+     * @param  array{type: string, arguments?: array<int, int|float|string|bool|null>, nullable?: bool, driver_types?: array<string, string>}  $definition
+     */
+    public static function fromArray(array $definition): self
+    {
+        return new self(
+            type: $definition['type'],
+            arguments: $definition['arguments'] ?? [],
+            nullable: $definition['nullable'] ?? true,
+            driverTypes: $definition['driver_types'] ?? [],
+        );
+    }
+
+    /**
+     * @return array{type: string, arguments: array<int, int|float|string|bool|null>, nullable: bool, driver_types: array<string, string>}
+     */
+    public function toArray(): array
+    {
+        return [
+            'type' => $this->type,
+            'arguments' => $this->arguments,
+            'nullable' => $this->nullable,
+            'driver_types' => $this->driverTypes,
+        ];
     }
 
     public function toMigration(string $slug, bool $change = false): string

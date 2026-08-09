@@ -4,6 +4,8 @@ namespace Aura\Base\Listeners;
 
 use Aura\Base\Events\SaveFields;
 use Aura\Base\Schema\FieldColumn;
+use Aura\Base\Schema\SchemaMigrationLock;
+use Illuminate\Database\Migrations\MigrationCreator;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
@@ -23,14 +25,23 @@ class CreateDatabaseMigration
 
     public function handle(SaveFields $event)
     {
-        $newFields = collect($event->fields);
-        $existingFields = collect($event->oldFields);
         $model = $event->model;
         $tableName = $model->getTable();
 
         if (! $model::$customTable) {
             return;
         }
+
+        SchemaMigrationLock::run(
+            'migration-editor:'.$tableName,
+            fn () => $this->createAndRunMigration($event, $tableName),
+        );
+    }
+
+    protected function createAndRunMigration(SaveFields $event, string $tableName): void
+    {
+        $newFields = collect($event->fields);
+        $existingFields = collect($event->oldFields);
 
         // Detect fields to add
         $fieldsToAdd = $newFields->filter(function ($field) {
@@ -61,14 +72,12 @@ class CreateDatabaseMigration
         }
 
         // Generate migration name
-        $timestamp = date('Y_m_d_His');
-        $migrationName = "update_{$tableName}_table_{$timestamp}";
+        $migrationName = 'update_'.$tableName.'_table_'.now()->format('Y_m_d_His_u').'_'.Str::lower(Str::random(8));
 
         $migrationFile = null;
 
         try {
-            $this->createMigration($migrationName, $tableName);
-            $migrationFile = $this->getMigrationPath($migrationName);
+            $migrationFile = $this->createMigration($migrationName, $tableName);
 
             if ($migrationFile === null) {
                 throw new RuntimeException("Unable to find migration file '{$migrationName}'.");
@@ -83,6 +92,7 @@ class CreateDatabaseMigration
             $schemaAdditionsDown = $this->generateDownSchema($fieldsToAdd, 'add');
             $schemaUpdatesDown = $this->generateDownSchema($fieldsToUpdate, 'update');
             $schemaDeletionsDown = $this->generateDownSchema($fieldsToDelete, 'delete');
+            $upPreflight = $this->generateUpPreflight($fieldsToUpdate, 'update', $tableName);
             $downPreflight = $this->generateDownPreflight($fieldsToUpdate, 'update', $tableName);
 
             $content = $this->files->get($migrationFile);
@@ -95,6 +105,7 @@ class CreateDatabaseMigration
                 $schemaUpdatesDown,
                 $schemaDeletionsDown,
                 $downPreflight,
+                $upPreflight,
             );
 
             if ($this->files->put($migrationFile, $updatedContent) === false) {
@@ -116,17 +127,17 @@ class CreateDatabaseMigration
 
     }
 
-    protected function createMigration(string $migrationName, string $tableName): void
+    protected function createMigration(string $migrationName, string $tableName): string
     {
-        $exitCode = Artisan::call('make:migration', [
-            'name' => $migrationName,
-            '--table' => $tableName,
-            '--no-interaction' => true,
-        ]);
+        /** @var MigrationCreator $creator */
+        $creator = app('migration.creator');
 
-        if ($exitCode !== 0) {
-            throw new RuntimeException(trim(Artisan::output()) ?: 'Unable to generate migration.');
-        }
+        return $creator->create(
+            Str::snake($migrationName),
+            database_path('migrations'),
+            $tableName,
+            false,
+        );
     }
 
     protected function generateColumn($field)
@@ -136,7 +147,7 @@ class CreateDatabaseMigration
         return $definition->toMigration($field['slug']).";\n";
     }
 
-    protected function generateDownPreflight($fields, $action, string $tableName): string
+    protected function generateConversionPreflight($fields, string $action, string $tableName, bool $rollingBack): string
     {
         if ($action !== 'update') {
             return '';
@@ -145,27 +156,33 @@ class CreateDatabaseMigration
         $preflight = '';
 
         foreach ($fields as $field) {
-            $oldDefinition = $this->getColumnDefinition($field['old']);
-            $newDefinition = $this->getColumnDefinition($field['new']);
+            $source = $rollingBack ? $field['new'] : $field['old'];
+            $target = $rollingBack ? $field['old'] : $field['new'];
+            $sourceDefinition = $this->getColumnDefinition($source);
+            $targetDefinition = $this->getColumnDefinition($target);
 
-            if (! $this->requiresIntegerRollbackPreflight($oldDefinition, $newDefinition)) {
+            if ($sourceDefinition == $targetDefinition) {
                 continue;
             }
 
-            $column = (string) $field['new']['slug'];
+            $column = (string) $source['slug'];
             $tableLiteral = var_export($tableName, true);
             $columnLiteral = var_export($column, true);
-            $message = var_export("Refusing lossy rollback of {$tableName}.{$column} from decimal to integer.", true);
+            $definitionLiteral = var_export($targetDefinition->toArray(), true);
 
-            $preflight .= "foreach (\\Illuminate\\Support\\Facades\\DB::table({$tableLiteral})->whereNotNull({$columnLiteral})->select({$columnLiteral})->cursor() as \$row) {\n";
-            $preflight .= '    $value = (string) $row->{'.$columnLiteral."};\n";
-            $preflight .= "    if (preg_match('/^[+-]?\\d+(?:\\.0+)?$/D', \$value) !== 1) {\n";
-            $preflight .= "        throw new \\RuntimeException({$message});\n";
-            $preflight .= "    }\n";
-            $preflight .= "}\n";
+            $preflight .= "\\Aura\\Base\\Schema\\ColumnValuePreflight::assertTableColumnCanConvert(\n";
+            $preflight .= "    {$tableLiteral},\n";
+            $preflight .= "    {$columnLiteral},\n";
+            $preflight .= "    \\Aura\\Base\\Schema\\FieldColumn::fromArray({$definitionLiteral}),\n";
+            $preflight .= ");\n";
         }
 
         return $preflight;
+    }
+
+    protected function generateDownPreflight($fields, $action, string $tableName): string
+    {
+        return $this->generateConversionPreflight($fields, $action, $tableName, rollingBack: true);
     }
 
     protected function generateDownSchema($fields, $action)
@@ -241,6 +258,11 @@ class CreateDatabaseMigration
         return $schema;
     }
 
+    protected function generateUpPreflight($fields, $action, string $tableName): string
+    {
+        return $this->generateConversionPreflight($fields, $action, $tableName, rollingBack: false);
+    }
+
     protected function getColumnDefinition(array $field): FieldColumn
     {
         $fieldInstance = app($field['type']);
@@ -253,38 +275,6 @@ class CreateDatabaseMigration
             type: $fieldInstance->tableColumnType,
             nullable: $fieldInstance->tableNullable ?? true,
         );
-    }
-
-    protected function getMigrationPath($name)
-    {
-        $migrationFiles = $this->files->glob(database_path('migrations/*.php'));
-        $name = Str::snake($name);
-
-        foreach ($migrationFiles as $file) {
-            if (strpos($file, $name) !== false) {
-                return $file;
-            }
-        }
-
-    }
-
-    protected function requiresIntegerRollbackPreflight(FieldColumn $old, FieldColumn $new): bool
-    {
-        $newScale = $new->type === 'decimal' ? (int) ($new->arguments[1] ?? 0) : 0;
-        $oldIsInteger = in_array($old->type, [
-            'bigInteger',
-            'integer',
-            'mediumInteger',
-            'smallInteger',
-            'tinyInteger',
-            'unsignedBigInteger',
-            'unsignedInteger',
-            'unsignedMediumInteger',
-            'unsignedSmallInteger',
-            'unsignedTinyInteger',
-        ], true) || ($old->type === 'decimal' && (int) ($old->arguments[1] ?? 0) === 0);
-
-        return $oldIsInteger && $new->type === 'decimal' && $newScale > 0;
     }
 
     protected function runMigration(string $migrationFile): void
@@ -323,6 +313,7 @@ class CreateDatabaseMigration
         $updatesDown,
         $deletionsDown,
         string $downPreflight = '',
+        string $upPreflight = '',
     ) {
         // Up method
         $pattern = '/(public function up\(\): void[\s\S]*?Schema::table\(.*?\{)([\s\S]*?)(\}\);[\s\S]*?\})/';
@@ -331,6 +322,20 @@ class CreateDatabaseMigration
 
         if ($updatedContent === null || $upReplacementCount !== 1) {
             throw new RuntimeException('Unable to update the generated migration up method.');
+        }
+
+        if ($upPreflight !== '') {
+            $updatedContent = preg_replace(
+                '/(public function up\(\): void\s*\{)/',
+                '${1}'.PHP_EOL.$upPreflight,
+                $updatedContent,
+                1,
+                $preflightReplacementCount,
+            );
+
+            if ($updatedContent === null || $preflightReplacementCount !== 1) {
+                throw new RuntimeException('Unable to add the generated migration preflight.');
+            }
         }
 
         // Down method

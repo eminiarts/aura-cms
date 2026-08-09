@@ -4,8 +4,11 @@ use Aura\Base\Commands\CreateResourceMigration;
 use Aura\Base\Fields\Number;
 use Aura\Base\Listeners\CreateDatabaseMigration;
 use Aura\Base\Listeners\ModifyDatabaseMigration;
+use Aura\Base\Schema\FieldColumn;
+use Aura\Base\Schema\SchemaUpdatePlan;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
@@ -45,6 +48,78 @@ test('number fields declare portable integer and decimal schema columns', functi
 
     expect(DB::table('core_10_schema_values')->value('quantity'))->toBe(-2)
         ->and((string) DB::table('core_10_schema_values')->value('amount'))->toBe('1234.5678');
+});
+
+test('structured schema plans preserve driver-specific decimal precision and scale', function () {
+    $path = tempnam(sys_get_temp_dir(), 'aura-core10-plan-');
+    $definition = new FieldColumn('decimal', [12, 4], driverTypes: ['sqlite' => 'text']);
+    $plan = new SchemaUpdatePlan('core_10_plan_values', ['amount' => $definition]);
+
+    File::put($path, $plan->embedIn("<?php\n\nreturn new class {};\n"));
+
+    try {
+        $restored = SchemaUpdatePlan::fromMigrationFile($path);
+
+        expect($restored->columns['amount']->forDriver('mysql')->type)->toBe('decimal')
+            ->and($restored->columns['amount']->forDriver('mysql')->arguments)->toBe([12, 4])
+            ->and($restored->columns['amount']->forDriver('pgsql')->arguments)->toBe([12, 4])
+            ->and($restored->columns['amount']->forDriver('sqlite')->type)->toBe('text')
+            ->and($restored->columns['amount']->forDriver('sqlite')->arguments)->toBe([]);
+    } finally {
+        File::delete($path);
+    }
+});
+
+test('schema update preflights every conversion before additions and drops', function () {
+    $tableName = 'core_10_preflight_values';
+    Schema::create($tableName, function (Blueprint $table) {
+        $table->id();
+        $table->string('amount')->nullable();
+        $table->string('drop_after_failure')->nullable();
+    });
+    DB::table($tableName)->insert(['amount' => 'not-an-integer']);
+
+    $path = tempnam(sys_get_temp_dir(), 'aura-core10-preflight-');
+    $plan = new SchemaUpdatePlan($tableName, [
+        'amount' => new FieldColumn('integer'),
+        'added_before_failure' => new FieldColumn('string'),
+    ]);
+    File::put($path, $plan->embedIn("<?php\n\nreturn new class {};\n"));
+
+    try {
+        $exitCode = Artisan::call('aura:schema-update', [
+            'migration' => $path,
+            '--no-interaction' => true,
+        ]);
+
+        expect($exitCode)->not->toBe(0)
+            ->and(Artisan::output())->toContain('Refusing lossy conversion')
+            ->and(Schema::hasColumn($tableName, 'added_before_failure'))->toBeFalse()
+            ->and(Schema::hasColumn($tableName, 'drop_after_failure'))->toBeTrue()
+            ->and(DB::table($tableName)->value('amount'))->toBe('not-an-integer');
+    } finally {
+        File::delete($path);
+        Schema::dropIfExists($tableName);
+    }
+});
+
+test('schema update reports missing and unparseable migration plans as failures', function () {
+    $missing = sys_get_temp_dir().'/aura-core10-missing-'.uniqid().'.php';
+    $invalid = tempnam(sys_get_temp_dir(), 'aura-core10-invalid-');
+    File::put($invalid, "<?php\n\nreturn new class { public function broken( };\n");
+
+    try {
+        expect(Artisan::call('aura:schema-update', [
+            'migration' => $missing,
+            '--no-interaction' => true,
+        ]))->not->toBe(0)
+            ->and(Artisan::call('aura:schema-update', [
+                'migration' => $invalid,
+                '--no-interaction' => true,
+            ]))->not->toBe(0);
+    } finally {
+        File::delete($invalid);
+    }
 });
 
 test('configured large numbers use exact storage on sqlite', function () {
@@ -357,6 +432,78 @@ PHP);
 
         expect(fn () => $migration->down())->toThrow(RuntimeException::class, 'lossy')
             ->and(DB::table($tableName)->value('amount'))->toBe('1.50')
+            ->and(Schema::getColumnType($tableName, 'amount'))->toBe('text');
+    } finally {
+        File::delete($path);
+        Schema::dropIfExists($tableName);
+    }
+});
+
+test('generated decimal rollback refuses exact integers outside database integer bounds', function () {
+    $tableName = 'core_10_out_of_range_rollback_values';
+    Schema::create($tableName, function (Blueprint $table) {
+        $table->id();
+        $table->integer('amount')->nullable();
+    });
+
+    $generator = new CreateDatabaseMigration(app(Filesystem::class));
+    $generate = new ReflectionMethod(CreateDatabaseMigration::class, 'generateSchema');
+    $generateDown = new ReflectionMethod(CreateDatabaseMigration::class, 'generateDownSchema');
+    $generatePreflight = new ReflectionMethod(CreateDatabaseMigration::class, 'generateDownPreflight');
+    $update = new ReflectionMethod(CreateDatabaseMigration::class, 'updateMigrationContent');
+    $fields = collect([[
+        'old' => [
+            'slug' => 'amount',
+            'type' => Number::class,
+            'number_type' => 'integer',
+        ],
+        'new' => [
+            'slug' => 'amount',
+            'type' => Number::class,
+            'number_type' => 'decimal',
+            'precision' => 65,
+            'scale' => 2,
+        ],
+    ]]);
+    $up = $generate->invoke($generator, $fields, 'update');
+    $down = $generateDown->invoke($generator, $fields, 'update');
+    $preflight = $generatePreflight->invoke($generator, $fields, 'update', $tableName);
+    $template = str_replace('__TABLE__', $tableName, <<<'PHP'
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('__TABLE__', function (Blueprint $table) {
+            //
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('__TABLE__', function (Blueprint $table) {
+            //
+        });
+    }
+};
+PHP);
+    $content = $update->invoke($generator, $template, '', $up, '', '', $down, '', $preflight);
+    $path = tempnam(sys_get_temp_dir(), 'aura-core10-bounds-');
+    File::put($path, $content);
+    $migration = require $path;
+
+    try {
+        $migration->up();
+        $value = '1234567890123456789012345678901234567890.00';
+        DB::table($tableName)->insert(['amount' => $value]);
+
+        expect(fn () => $migration->down())->toThrow(RuntimeException::class, 'outside integer bounds')
+            ->and(DB::table($tableName)->value('amount'))->toBe($value)
             ->and(Schema::getColumnType($tableName, 'amount'))->toBe('text');
     } finally {
         File::delete($path);
