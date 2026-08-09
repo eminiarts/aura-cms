@@ -140,6 +140,102 @@ PHP);
     }
 });
 
+test('schema update never executes migration effects that disagree with the structured plan', function () {
+    $plannedTable = 'core_10_planned_schema_values';
+    $unexpectedTable = 'core_10_unexpected_schema_values';
+    $path = tempnam(sys_get_temp_dir(), 'aura-core10-mismatched-plan-').'.php';
+    $plan = new SchemaUpdatePlan($plannedTable, [
+        'name' => new FieldColumn('string'),
+    ]);
+    $migration = str_replace('__UNEXPECTED_TABLE__', $unexpectedTable, <<<'PHP'
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('__UNEXPECTED_TABLE__', function (Blueprint $table) {
+            $table->id();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('__UNEXPECTED_TABLE__');
+    }
+};
+PHP);
+    File::put($path, $plan->embedIn($migration));
+
+    try {
+        expect(Artisan::call('aura:schema-update', [
+            'migration' => $path,
+            '--no-interaction' => true,
+        ]))->not->toBe(0)
+            ->and(Artisan::output())->toContain('does not match')
+            ->and(Schema::hasTable($plannedTable))->toBeFalse()
+            ->and(Schema::hasTable($unexpectedTable))->toBeFalse();
+    } finally {
+        Schema::dropIfExists($unexpectedTable);
+        Schema::dropIfExists($plannedTable);
+        DB::table('migrations')->where('migration', pathinfo($path, PATHINFO_FILENAME))->delete();
+        File::delete($path);
+    }
+});
+
+test('the structured plan is the only executable source for a missing table', function () {
+    $tableName = 'core_10_plan_created_values';
+    $path = tempnam(sys_get_temp_dir(), 'aura-core10-plan-create-').'.php';
+    $migrationName = pathinfo($path, PATHINFO_FILENAME);
+    $plan = new SchemaUpdatePlan($tableName, [
+        'from_plan' => new FieldColumn('integer'),
+    ]);
+    $migration = str_replace('__TABLE__', $tableName, <<<'PHP'
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('__TABLE__', function (Blueprint $table) {
+            $table->id();
+            $table->string('from_php');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('__TABLE__');
+    }
+};
+PHP);
+    File::put($path, $plan->embedIn($migration));
+
+    try {
+        $exitCode = Artisan::call('aura:schema-update', [
+            'migration' => $path,
+            '--no-interaction' => true,
+        ]);
+
+        expect($exitCode)->toBe(0, Artisan::output())
+            ->and(Schema::hasColumn($tableName, 'from_plan'))->toBeTrue()
+            ->and(Schema::hasColumn($tableName, 'from_php'))->toBeFalse()
+            ->and(DB::table('migrations')->where('migration', $migrationName)->exists())->toBeTrue();
+    } finally {
+        Schema::dropIfExists($tableName);
+        DB::table('migrations')->where('migration', $migrationName)->delete();
+        File::delete($path);
+    }
+});
+
 test('configured large numbers use exact storage on sqlite', function () {
     $number = new Number;
     $integer = $number->columnDefinition([
@@ -291,6 +387,8 @@ test('structured schema updates retain decimals and preflight every mutation on 
     $failureTable = 'aura_c10_failure_'.$driver.'_'.getmypid();
     $path = tempnam(sys_get_temp_dir(), 'aura-core10-schema-update-');
     $failurePath = tempnam(sys_get_temp_dir(), 'aura-core10-schema-failure-');
+    $hostileTable = 'aura_c10_hostile_'.$driver.'_'.getmypid();
+    $hostilePath = tempnam(sys_get_temp_dir(), 'aura-core10-schema-hostile-');
     $configuration = [
         'driver' => $driver,
         'host' => getenv("AURA_TEST_{$prefix}_HOST") ?: '127.0.0.1',
@@ -314,6 +412,15 @@ test('structured schema updates retain decimals and preflight every mutation on 
     config()->set("database.connections.{$connection}", $configuration);
     config()->set('database.default', $connection);
     DB::purge($connection);
+    $captureDdl = false;
+    $executedDdl = [];
+    DB::listen(function ($query) use (&$captureDdl, &$executedDdl): void {
+        if ($captureDdl
+            && ! $query->connection->pretending()
+            && preg_match('/^\s*(?:alter|create|drop|rename)\b/i', $query->sql) === 1) {
+            $executedDdl[] = $query->sql;
+        }
+    });
 
     try {
         Schema::create($tableName, function (Blueprint $table) {
@@ -327,12 +434,22 @@ test('structured schema updates retain decimals and preflight every mutation on 
         ]);
         File::put($path, $plan->embedIn("<?php\n\nreturn new class {};\n"));
 
-        expect(Artisan::call('aura:schema-update', [
+        $captureDdl = true;
+        $successExitCode = Artisan::call('aura:schema-update', [
             'migration' => $path,
             '--no-interaction' => true,
-        ]))->toBe(0)
+        ]);
+        $captureDdl = false;
+
+        expect($successExitCode)->toBe(0)
             ->and(Schema::hasColumn($tableName, 'added_after_preflight'))->toBeTrue()
             ->and(DB::table($tableName)->value('amount'))->toBe('12345678.9012');
+
+        if ($driver === 'mysql') {
+            expect($executedDdl)->toHaveCount(1)
+                ->and(strtolower($executedDdl[0]))->toContain('modify `amount`')
+                ->and(strtolower($executedDdl[0]))->toContain('add `added_after_preflight`');
+        }
 
         $amount = collect(Schema::getColumns($tableName))->firstWhere('name', 'amount');
 
@@ -356,10 +473,46 @@ test('structured schema updates retain decimals and preflight every mutation on 
         ]))->not->toBe(0)
             ->and(Schema::hasColumn($failureTable, 'added_before_failure'))->toBeFalse()
             ->and(Schema::hasColumn($failureTable, 'drop_after_failure'))->toBeTrue();
+
+        Schema::create($hostileTable, function (Blueprint $table) {
+            $table->id();
+            $table->string('safe_value', 20)->nullable();
+            $table->string('unsupported_date')->nullable();
+        });
+        DB::table($hostileTable)->insert([
+            'safe_value' => 'unchanged',
+            'unsupported_date' => 'not-a-date',
+        ]);
+        $hostilePlan = new SchemaUpdatePlan($hostileTable, [
+            'safe_value' => new FieldColumn('string', [255]),
+            'unsupported_date' => new FieldColumn('date'),
+        ]);
+        File::put($hostilePath, $hostilePlan->embedIn("<?php\n\nreturn new class {};\n"));
+
+        $executedDdl = [];
+        $captureDdl = true;
+        $hostileExitCode = Artisan::call('aura:schema-update', [
+            'migration' => $hostilePath,
+            '--no-interaction' => true,
+        ]);
+        $captureDdl = false;
+
+        expect($hostileExitCode)->not->toBe(0)
+            ->and(Artisan::output())->toContain('Refusing lossy conversion')
+            ->and($executedDdl)->toBe([])
+            ->and(DB::table($hostileTable)->value('safe_value'))->toBe('unchanged')
+            ->and(DB::table($hostileTable)->value('unsupported_date'))->toBe('not-a-date');
+
+        $safeColumn = collect(Schema::getColumns($hostileTable))->firstWhere('name', 'safe_value');
+
+        expect(strtolower($safeColumn['type'] ?? ''))->toContain(
+            $driver === 'mysql' ? 'varchar(20)' : 'character varying(20)',
+        );
     } finally {
+        Schema::dropIfExists($hostileTable);
         Schema::dropIfExists($failureTable);
         Schema::dropIfExists($tableName);
-        File::delete([$path, $failurePath]);
+        File::delete([$path, $failurePath, $hostilePath]);
         DB::disconnect($connection);
         config()->set('database.default', $originalDefault);
     }
@@ -460,6 +613,8 @@ PHP);
     $value = '12345678901234567890123456789012345.123456789012345678901234567890';
 
     try {
+        expect($content)->toContain('\\Aura\\Base\\Schema\\AtomicSchemaUpdate::table(');
+
         $migration->up();
         DB::table($tableName)->insert(['amount' => $value]);
 

@@ -362,6 +362,12 @@ class CreateDatabaseMigration
             }
         }
 
+        $updatedContent = str_replace(
+            'Schema::table(',
+            '\\Aura\\Base\\Schema\\AtomicSchemaUpdate::table(',
+            $updatedContent,
+        );
+
         return $updatedContent;
     }
 }

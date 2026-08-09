@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Schema;
 
+use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
@@ -73,6 +74,29 @@ final class ColumnValuePreflight
             if (mb_strlen((string) $value) > $limit) {
                 throw new RuntimeException("Refusing lossy conversion of {$label}: value exceeds {$limit} characters.");
             }
+
+            return;
+        }
+
+        if ($target->type === 'date') {
+            self::assertMatchesDateFormat($value, 'Y-m-d', $label, 'date');
+
+            return;
+        }
+
+        if (in_array($target->type, ['dateTime', 'dateTimeTz', 'timestamp', 'timestampTz'], true)) {
+            self::assertMatchesAnyDateFormat(
+                $value,
+                ['Y-m-d H:i:s', 'Y-m-d H:i:s.u', 'Y-m-d H:i:sP', 'Y-m-d H:i:s.uP'],
+                $label,
+                'datetime',
+            );
+
+            return;
+        }
+
+        if (in_array($target->type, ['time', 'timeTz'], true)) {
+            self::assertMatchesAnyDateFormat($value, ['H:i:s', 'H:i:s.u', 'H:i:sP', 'H:i:s.uP'], $label, 'time');
         }
     }
 
@@ -97,6 +121,33 @@ final class ColumnValuePreflight
             || (strlen($fraction) > $scale && trim(substr($fraction, $scale), '0') !== '')) {
             throw new RuntimeException("Refusing lossy conversion of {$label}: value [{$string}] does not fit decimal({$precision}, {$scale}).");
         }
+    }
+
+    /**
+     * @param  array<int, string>  $formats
+     */
+    private static function assertMatchesAnyDateFormat(mixed $value, array $formats, string $label, string $type): void
+    {
+        foreach ($formats as $format) {
+            if (self::matchesDateFormat($value, $format)) {
+                return;
+            }
+        }
+
+        $displayValue = is_scalar($value) ? (string) $value : get_debug_type($value);
+
+        throw new RuntimeException("Refusing lossy conversion of {$label}: value [{$displayValue}] is not a valid {$type}.");
+    }
+
+    private static function assertMatchesDateFormat(mixed $value, string $format, string $label, string $type): void
+    {
+        if (self::matchesDateFormat($value, $format)) {
+            return;
+        }
+
+        $displayValue = is_scalar($value) ? (string) $value : get_debug_type($value);
+
+        throw new RuntimeException("Refusing lossy conversion of {$label}: value [{$displayValue}] is not a valid {$type}.");
     }
 
     private static function compareIntegers(string $left, string $right): int
@@ -132,6 +183,20 @@ final class ColumnValuePreflight
         $integer = $integer === '' ? '0' : $integer;
 
         return ($matches['sign'] ?? '') === '-' && $integer !== '0' ? '-'.$integer : $integer;
+    }
+
+    private static function matchesDateFormat(mixed $value, string $format): bool
+    {
+        if (! is_string($value)) {
+            return false;
+        }
+
+        $date = DateTimeImmutable::createFromFormat('!'.$format, $value);
+        $errors = DateTimeImmutable::getLastErrors();
+
+        return $date !== false
+            && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))
+            && $date->format($format) === $value;
     }
 
     private static function plainNumber(mixed $value, string $label): string

@@ -2,12 +2,13 @@
 
 namespace Aura\Base\Commands;
 
+use Aura\Base\Schema\AtomicSchemaUpdate;
 use Aura\Base\Schema\ColumnValuePreflight;
 use Aura\Base\Schema\SchemaMigrationLock;
 use Aura\Base\Schema\SchemaUpdatePlan;
 use Illuminate\Console\Command;
+use Illuminate\Database\Migrations\MigrationRepositoryInterface;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
@@ -47,6 +48,61 @@ class UpdateSchemaFromMigration extends Command
      * @param  array<int, string>  $changedColumns
      * @param  array<int, string>  $dropColumns
      */
+    protected function applyBlueprint(
+        SchemaUpdatePlan $plan,
+        array $newColumns,
+        array $changedColumns,
+        array $dropColumns,
+    ): void {
+        Schema::table($plan->table, function (Blueprint $table) use ($plan, $newColumns, $changedColumns, $dropColumns): void {
+            foreach ($changedColumns as $column) {
+                $plan->columns[$column]->addTo($table, $column)->change();
+            }
+
+            foreach ($newColumns as $column) {
+                $plan->columns[$column]->addTo($table, $column);
+            }
+
+            foreach ($dropColumns as $column) {
+                $table->dropColumn($column);
+            }
+        });
+    }
+
+    protected function createTableFromPlan(string $migrationFile, SchemaUpdatePlan $plan): void
+    {
+        $this->info("Table '{$plan->table}' does not exist. Applying the validated schema plan...");
+        $plan->assertMigrationCreatesOnlyPlannedTable($migrationFile);
+
+        try {
+            Schema::create($plan->table, function (Blueprint $table) use ($plan): void {
+                $table->id();
+
+                foreach ($plan->columns as $slug => $column) {
+                    $column->addTo($table, $slug);
+                }
+
+                $table->foreignId('user_id');
+                $table->foreignId('team_id');
+                $table->timestamps();
+                $table->softDeletes();
+            });
+
+            $this->recordMigration($migrationFile);
+        } catch (Throwable $exception) {
+            if (Schema::hasTable($plan->table)) {
+                Schema::drop($plan->table);
+            }
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * @param  array<int, string>  $newColumns
+     * @param  array<int, string>  $changedColumns
+     * @param  array<int, string>  $dropColumns
+     */
     protected function preflight(
         SchemaUpdatePlan $plan,
         array $newColumns,
@@ -69,21 +125,25 @@ class UpdateSchemaFromMigration extends Command
             }
         }
 
-        DB::connection()->pretend(function () use ($plan, $newColumns, $changedColumns, $dropColumns): void {
-            Schema::table($plan->table, function (Blueprint $table) use ($plan, $newColumns, $changedColumns, $dropColumns): void {
-                foreach ($changedColumns as $column) {
-                    $plan->columns[$column]->addTo($table, $column)->change();
-                }
+        DB::connection()->pretend(
+            fn () => $this->applyBlueprint($plan, $newColumns, $changedColumns, $dropColumns),
+        );
+    }
 
-                foreach ($newColumns as $column) {
-                    $plan->columns[$column]->addTo($table, $column);
-                }
+    protected function recordMigration(string $migrationFile): void
+    {
+        /** @var MigrationRepositoryInterface $repository */
+        $repository = app('migration.repository');
 
-                foreach ($dropColumns as $column) {
-                    $table->dropColumn($column);
-                }
-            });
-        });
+        if (! $repository->repositoryExists()) {
+            $repository->createRepository();
+        }
+
+        $migration = pathinfo($migrationFile, PATHINFO_FILENAME);
+
+        if (! in_array($migration, $repository->getRan(), true)) {
+            $repository->log($migration, $repository->getNextBatchNumber());
+        }
     }
 
     protected function resolveMigrationFile(): string
@@ -112,27 +172,10 @@ class UpdateSchemaFromMigration extends Command
         return $resolved;
     }
 
-    protected function runExactMigration(string $migrationFile, string $table): void
-    {
-        $this->info("Table '{$table}' does not exist. Running the selected migration...");
-
-        $exitCode = Artisan::call('migrate', [
-            '--path' => [$migrationFile],
-            '--realpath' => true,
-            '--no-interaction' => true,
-        ]);
-
-        if ($exitCode !== self::SUCCESS || ! Schema::hasTable($table)) {
-            $output = trim(Artisan::output());
-
-            throw new RuntimeException($output !== '' ? $output : "Migration did not create expected table [{$table}].");
-        }
-    }
-
     protected function synchronize(string $migrationFile, SchemaUpdatePlan $plan): void
     {
         if (! Schema::hasTable($plan->table)) {
-            $this->runExactMigration($migrationFile, $plan->table);
+            $this->createTableFromPlan($migrationFile, $plan);
 
             return;
         }
@@ -152,22 +195,21 @@ class UpdateSchemaFromMigration extends Command
             return;
         }
 
-        // MySQL DDL is not transactionally reversible. All conversions and the
-        // complete Blueprint compile before this first statement. Changes run
-        // before additions and destructive drops, so a conversion failure can
-        // never leave an unrelated add/drop behind.
-        Schema::table($plan->table, function (Blueprint $table) use ($plan, $newColumns, $changedColumns, $dropColumns): void {
-            foreach ($changedColumns as $column) {
-                $plan->columns[$column]->addTo($table, $column)->change();
-            }
+        AtomicSchemaUpdate::table(
+            $plan->table,
+            function (Blueprint $table) use ($plan, $newColumns, $changedColumns, $dropColumns): void {
+                foreach ($changedColumns as $column) {
+                    $plan->columns[$column]->addTo($table, $column)->change();
+                }
 
-            foreach ($newColumns as $column) {
-                $plan->columns[$column]->addTo($table, $column);
-            }
+                foreach ($newColumns as $column) {
+                    $plan->columns[$column]->addTo($table, $column);
+                }
 
-            foreach ($dropColumns as $column) {
-                $table->dropColumn($column);
-            }
-        });
+                foreach ($dropColumns as $column) {
+                    $table->dropColumn($column);
+                }
+            },
+        );
     }
 }

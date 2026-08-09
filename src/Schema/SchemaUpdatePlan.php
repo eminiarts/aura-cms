@@ -29,6 +29,76 @@ readonly class SchemaUpdatePlan
         }
     }
 
+    public function assertMigrationCreatesOnlyPlannedTable(string $path): void
+    {
+        $content = file_get_contents($path);
+
+        if ($content === false) {
+            throw new RuntimeException("Unable to read migration [{$path}].");
+        }
+
+        $tokens = token_get_all($content);
+        $effects = [];
+        $mutationMethods = ['create', 'drop', 'dropIfExists', 'rename', 'table'];
+
+        foreach ($tokens as $index => $token) {
+            if (! is_array($token) || $token[0] !== T_STRING || strcasecmp($token[1], 'Schema') !== 0) {
+                continue;
+            }
+
+            $doubleColon = self::nextMeaningfulToken($tokens, $index + 1);
+
+            if ($doubleColon === null
+                || ! is_array($doubleColon['token'])
+                || $doubleColon['token'][0] !== T_DOUBLE_COLON) {
+                continue;
+            }
+
+            $method = self::nextMeaningfulToken($tokens, $doubleColon['index'] + 1);
+
+            if ($method === null || ! is_array($method['token']) || $method['token'][0] !== T_STRING) {
+                continue;
+            }
+
+            $methodName = $method['token'][1];
+
+            if (! in_array($methodName, $mutationMethods, true)) {
+                continue;
+            }
+
+            $openingParenthesis = self::nextMeaningfulToken($tokens, $method['index'] + 1);
+            $table = $openingParenthesis === null
+                ? null
+                : self::nextMeaningfulToken($tokens, $openingParenthesis['index'] + 1);
+
+            if ($openingParenthesis === null
+                || $openingParenthesis['token'] !== '('
+                || $table === null
+                || ! is_array($table['token'])
+                || $table['token'][0] !== T_CONSTANT_ENCAPSED_STRING) {
+                throw new RuntimeException("Migration [{$path}] uses a dynamic Schema::{$methodName} target that does not match its Aura schema plan.");
+            }
+
+            $effects[] = [
+                'method' => $methodName,
+                'table' => self::unquotePhpString($table['token'][1]),
+            ];
+        }
+
+        $creates = array_values(array_filter(
+            $effects,
+            static fn (array $effect): bool => $effect['method'] === 'create',
+        ));
+        $unexpected = array_values(array_filter(
+            $effects,
+            fn (array $effect): bool => $effect['table'] !== $this->table,
+        ));
+
+        if (count($creates) !== 1 || $creates[0]['table'] !== $this->table || $unexpected !== []) {
+            throw new RuntimeException("Migration [{$path}] does not match its Aura schema plan for table [{$this->table}].");
+        }
+    }
+
     public function embedIn(string $content): string
     {
         $lines = array_values(array_filter(
@@ -119,5 +189,34 @@ readonly class SchemaUpdatePlan
             ),
             'preserved_columns' => $this->preservedColumns,
         ];
+    }
+
+    /**
+     * @param  array<int, array{0: int, 1: string, 2: int}|string>  $tokens
+     * @return array{index: int, token: array{0: int, 1: string, 2: int}|string}|null
+     */
+    private static function nextMeaningfulToken(array $tokens, int $offset): ?array
+    {
+        for ($index = $offset, $count = count($tokens); $index < $count; $index++) {
+            $token = $tokens[$index];
+
+            if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                continue;
+            }
+
+            return ['index' => $index, 'token' => $token];
+        }
+
+        return null;
+    }
+
+    private static function unquotePhpString(string $literal): string
+    {
+        $quote = $literal[0] ?? '';
+        $value = substr($literal, 1, -1);
+
+        return $quote === "'"
+            ? str_replace(['\\\\', "\\'"], ['\\', "'"], $value)
+            : stripcslashes($value);
     }
 }
