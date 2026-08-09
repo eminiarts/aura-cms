@@ -65,8 +65,10 @@ test('owner processing is atomic successful and idempotent', function () {
         slug: 'gallery',
         value: ['9'],
         actor: $this->actor,
-        mutation: function () use (&$applications): void {
-            $applications++;
+        mutation: function () use (&$applications): Closure {
+            return function () use (&$applications): void {
+                $applications++;
+            };
         },
     );
     $duplicate = $this->selections->processForOwner(
@@ -76,8 +78,10 @@ test('owner processing is atomic successful and idempotent', function () {
         slug: 'gallery',
         value: ['9'],
         actor: $this->actor,
-        mutation: function () use (&$applications): void {
-            $applications++;
+        mutation: function () use (&$applications): Closure {
+            return function () use (&$applications): void {
+                $applications++;
+            };
         },
     );
 
@@ -96,7 +100,7 @@ test('processing failures settle generically and a retry receives a new token', 
         slug: 'gallery',
         value: ['9'],
         actor: $this->actor,
-        mutation: fn () => throw new MediaSelectionRejected('selection_rejected'),
+        mutation: fn (): Closure => throw new MediaSelectionRejected('selection_rejected'),
     );
     $retry = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
 
@@ -133,7 +137,7 @@ test('timeout and success ordering is authoritative and late owner work cannot m
         'gallery',
         ['1'],
         $this->actor,
-        fn () => null,
+        fn (): Closure => static fn (): null => null,
     );
 
     Carbon::setTestNow(now()->addSeconds(16));
@@ -155,9 +159,36 @@ test('timeout and success ordering is authoritative and late owner work cannot m
             'gallery',
             ['2'],
             $this->actor,
-            function () use (&$applications): void {
+            fn (): Closure => function () use (&$applications): void {
                 $applications++;
             },
         )->state)->toBe('expired')
         ->and($applications)->toBe(0);
+});
+
+test('a request expiring during preparation never commits and cannot be settled by the stale claim', function () {
+    $request = $this->selections->begin($this->ownerToken, 'manager', ['3'], $this->actor);
+    $applications = 0;
+
+    $record = $this->selections->processForOwner(
+        $request->token,
+        $this->ownerToken,
+        'owner-component',
+        'gallery',
+        ['3'],
+        $this->actor,
+        function () use (&$applications): Closure {
+            Carbon::setTestNow(now()->addSeconds(16));
+
+            return function () use (&$applications): void {
+                $applications++;
+            };
+        },
+    );
+
+    expect($record->state)->toBe('expired')
+        ->and($record->errorCode)->toBe('selection_timeout')
+        ->and($applications)->toBe(0)
+        ->and($this->selections->forManager($request->token, $this->ownerToken, 'manager', $this->actor)->state)
+        ->toBe('expired');
 });

@@ -17,6 +17,7 @@ final readonly class MediaSelectionRecord
         public int $deadline,
         public string $state,
         public ?string $errorCode,
+        public ?string $claimId,
     ) {}
 
     /** @param array<string, mixed> $record */
@@ -35,6 +36,7 @@ final readonly class MediaSelectionRecord
             deadline: $record['deadline'],
             state: $record['state'],
             errorCode: $record['error_code'],
+            claimId: $record['claim_id'],
         );
     }
 
@@ -54,10 +56,11 @@ final readonly class MediaSelectionRecord
             'deadline' => $this->deadline,
             'state' => $this->state,
             'error_code' => $this->errorCode,
+            'claim_id' => $this->claimId,
         ];
     }
 
-    public function withState(string $state, ?string $errorCode = null): self
+    public function withState(string $state, ?string $errorCode = null, ?string $claimId = null): self
     {
         return new self(
             requestDigest: $this->requestDigest,
@@ -72,6 +75,7 @@ final readonly class MediaSelectionRecord
             deadline: $this->deadline,
             state: $state,
             errorCode: $errorCode,
+            claimId: $claimId,
         );
     }
 }

@@ -5,7 +5,6 @@ namespace Aura\Base\Livewire\Media;
 use Closure;
 use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use InvalidArgumentException;
@@ -20,18 +19,12 @@ class MediaSelectionBroker
     private readonly LockProvider $locks;
 
     public function __construct(
-        CacheFactory $cache,
+        MediaSecurityStore $store,
         private readonly ConfigRepository $config,
         private readonly MediaOwnerTokenBroker $owners,
     ) {
-        $store = $cache->store($this->config->get('aura.media.security.cache_store'));
-
-        if (! $store instanceof CacheRepository || ! $store->getStore() instanceof LockProvider) {
-            throw new InvalidArgumentException('Aura media security requires a cache store with atomic lock support.');
-        }
-
-        $this->cache = $store;
-        $this->locks = $store->getStore();
+        $this->cache = $store->cache;
+        $this->locks = $store->locks;
     }
 
     /** @param list<int|string> $value */
@@ -64,6 +57,7 @@ class MediaSelectionBroker
             deadline: $deadline,
             state: 'pending',
             errorCode: null,
+            claimId: null,
         );
 
         if (! $this->cache->add($this->recordKey($token), $record->toArray(), $this->ttl() + $this->retention())) {
@@ -104,8 +98,12 @@ class MediaSelectionBroker
     }
 
     /**
+     * The first closure prepares an authorized mutation but must not change
+     * authoritative state. Its returned closure is committed only after the
+     * broker rechecks the claim fence and deadline.
+     *
      * @param  list<int|string>  $value
-     * @param  Closure(): void  $mutation
+     * @param  Closure(): Closure  $mutation
      */
     public function processForOwner(
         string $requestToken,
@@ -116,14 +114,15 @@ class MediaSelectionBroker
         Authenticatable $actor,
         Closure $mutation,
     ): MediaSelectionRecord {
-        return $this->withLock($requestToken, function () use (
+        $claimId = bin2hex(random_bytes(32));
+        $claimed = $this->withLock($requestToken, function () use (
             $requestToken,
             $ownerToken,
             $ownerComponentId,
             $slug,
             $value,
             $actor,
-            $mutation,
+            $claimId,
         ): MediaSelectionRecord {
             $record = $this->validatedForOwner(
                 $requestToken,
@@ -149,16 +148,82 @@ class MediaSelectionBroker
                 throw new InvalidMediaSelectionRequest('The media selection request is not claimable.');
             }
 
-            $processing = $record->withState('processing');
+            $processing = $record->withState('processing', claimId: $claimId);
             $this->store($requestToken, $processing);
 
+            return $processing;
+        });
+
+        if ($claimed->state !== 'processing' || ! is_string($claimed->claimId)
+            || ! hash_equals($claimed->claimId, $claimId)) {
+            return $claimed;
+        }
+
+        $commit = null;
+        $errorCode = null;
+
+        try {
+            $commit = $mutation();
+
+            if (! $commit instanceof Closure) {
+                $errorCode = 'processing_failed';
+            }
+        } catch (MediaSelectionRejected $exception) {
+            $errorCode = $this->errorCode($exception->errorCode);
+        } catch (Throwable) {
+            $errorCode = 'processing_failed';
+        }
+
+        return $this->withLock($requestToken, function () use (
+            $requestToken,
+            $ownerToken,
+            $ownerComponentId,
+            $slug,
+            $value,
+            $actor,
+            $claimId,
+            $commit,
+            $errorCode,
+        ): MediaSelectionRecord {
+            $record = $this->validatedForOwner(
+                $requestToken,
+                $ownerToken,
+                $ownerComponentId,
+                $slug,
+                $value,
+                $actor,
+            );
+
+            if (in_array($record->state, ['succeeded', 'failed', 'expired'], true)) {
+                return $record;
+            }
+
+            if ($record->state !== 'processing' || ! is_string($record->claimId)
+                || ! hash_equals($record->claimId, $claimId)) {
+                throw new InvalidMediaSelectionRequest('The media selection request claim is stale.');
+            }
+
+            if (now()->getTimestamp() >= $record->deadline) {
+                $expired = $record->withState('expired', 'selection_timeout');
+                $this->store($requestToken, $expired);
+
+                return $expired;
+            }
+
+            if ($errorCode !== null || ! $commit instanceof Closure) {
+                $failed = $record->withState('failed', $errorCode ?? 'processing_failed');
+                $this->store($requestToken, $failed);
+
+                return $failed;
+            }
+
             try {
-                $mutation();
-                $settled = $processing->withState('succeeded');
+                $commit();
+                $settled = $record->withState('succeeded');
             } catch (MediaSelectionRejected $exception) {
-                $settled = $processing->withState('failed', $this->errorCode($exception->errorCode));
+                $settled = $record->withState('failed', $this->errorCode($exception->errorCode));
             } catch (Throwable) {
-                $settled = $processing->withState('failed', 'processing_failed');
+                $settled = $record->withState('failed', 'processing_failed');
             }
 
             $this->store($requestToken, $settled);

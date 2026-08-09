@@ -46,7 +46,7 @@ trait MediaFields
                 slug: $slug,
                 value: $value,
                 actor: $actor,
-                mutation: function () use ($ownerToken, $slug, $value, $actor): void {
+                mutation: function () use ($ownerToken, $slug, $value, $actor): \Closure {
                     if (! isset($this->model) || ! $this->model instanceof Resource) {
                         throw new InvalidArgumentException('The media owner component has no Resource model.');
                     }
@@ -62,12 +62,16 @@ trait MediaFields
                     );
                     $attachments = $authorization->authorizeAttachments($value, $actor);
 
-                    $this->updateField([
-                        'slug' => $slug,
-                        'value' => $attachments
-                            ->map(fn (Resource $attachment): string => (string) $attachment->getKey())
-                            ->all(),
-                    ]);
+                    $authorizedValue = $attachments
+                        ->map(fn (Resource $attachment): string => (string) $attachment->getKey())
+                        ->all();
+
+                    return function () use ($slug, $authorizedValue): void {
+                        $this->updateField([
+                            'slug' => $slug,
+                            'value' => $authorizedValue,
+                        ]);
+                    };
                 },
             );
         } catch (InvalidArgumentException|InvalidMediaSelectionRequest) {
@@ -127,6 +131,7 @@ trait MediaFields
             slug: $slug,
             fieldType: $field['type'],
             actor: $actor,
+            ownerComponentClass: $this::class,
         );
 
         app(MediaAuthorization::class)->authorizeOwner($token, $actor, $modelClass, $slug, $field['type']);
@@ -137,29 +142,38 @@ trait MediaFields
 
     public function removeMediaFromField($slug, $id)
     {
+        $this->mediaOwnerToken((string) $slug);
         $field = $this->getField($slug);
 
         $field = collect($field)->filter(function ($value) use ($id) {
             return $value != $id;
         })->values()->toArray();
 
+        $authorized = $this->authorizedMediaForField($field)
+            ->map(fn (Resource $attachment): string => (string) $attachment->getKey())
+            ->all();
+
         $this->updateField([
             'slug' => $slug,
-            'value' => $field,
+            'value' => $authorized,
         ]);
 
         // Emit Event selectedMediaUpdated
         $this->dispatch('selectedMediaUpdated', [
             'slug' => $slug,
-            'value' => $field,
+            'value' => $authorized,
         ]);
     }
 
     public function reorderMedia($slug, $ids)
     {
+        $this->mediaOwnerToken((string) $slug);
         $ids = collect($ids)->map(function ($id) {
             return Str::after($id, '_file_');
         })->toArray();
+        $ids = $this->authorizedMediaForField($ids)
+            ->map(fn (Resource $attachment): string => (string) $attachment->getKey())
+            ->all();
 
         // emit update Field
         $this->updateField([
@@ -168,8 +182,7 @@ trait MediaFields
         ]);
     }
 
-    #[On('updateField')]
-    public function updateField($data)
+    protected function updateField($data)
     {
         $this->form['fields'][$data['slug']] = $data['value'];
 

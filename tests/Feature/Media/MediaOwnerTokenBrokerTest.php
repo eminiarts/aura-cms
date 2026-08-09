@@ -163,3 +163,42 @@ test('owner token issue rejects malformed context before creating a token', func
         'fieldType' => Text::class,
     ]],
 ]);
+
+test('media token brokers reject process-local cache stores even when they expose locks', function () {
+    config()->set('aura.media.security.cache_store', 'array');
+
+    expect(fn () => app(MediaOwnerTokenBroker::class))
+        ->toThrow(InvalidArgumentException::class, 'process-local stores are unsafe');
+});
+
+test('owner tokens resolve in a separate php worker through the configured shared store', function () {
+    if (! function_exists('pcntl_fork')) {
+        $this->markTestSkipped('pcntl is required for the cross-process cache proof.');
+    }
+
+    $token = $this->broker->issue(
+        ownerComponentId: 'cross-process-owner',
+        modelClass: Post::class,
+        modelKey: null,
+        action: 'create',
+        slug: 'image',
+        fieldType: Image::class,
+        actor: $this->actor,
+    );
+    $processId = pcntl_fork();
+
+    if ($processId === 0) {
+        try {
+            $context = app(MediaOwnerTokenBroker::class)->resolve($token, $this->actor);
+            exit($context->ownerComponentId === 'cross-process-owner' ? 0 : 1);
+        } catch (Throwable) {
+            exit(1);
+        }
+    }
+
+    expect($processId)->toBeGreaterThan(0);
+    pcntl_waitpid($processId, $status);
+
+    expect(pcntl_wifexited($status))->toBeTrue()
+        ->and(pcntl_wexitstatus($status))->toBe(0);
+});

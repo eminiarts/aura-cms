@@ -9,9 +9,49 @@ use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
+use Aura\Base\Traits\InputFields;
+use Aura\Base\Traits\MediaFields;
 use Illuminate\Auth\Access\AuthorizationException;
+use Livewire\Component;
+use Livewire\Livewire;
+
+class Core20DynamicMediaFieldOwner extends Component
+{
+    use InputFields;
+    use MediaFields;
+
+    public array $form = ['fields' => ['dynamic-image' => []]];
+
+    public static bool $includeDynamicImage = true;
+
+    public Post $model;
+
+    public string $ownerTokenForTest = '';
+
+    public static function getFields(): array
+    {
+        return self::$includeDynamicImage ? [[
+            'name' => 'Dynamic image',
+            'slug' => 'dynamic-image',
+            'type' => Image::class,
+        ]] : [];
+    }
+
+    public function mount(): void
+    {
+        $this->model = new Post;
+    }
+
+    public function render(): string
+    {
+        $this->ownerTokenForTest = $this->mediaOwnerToken('dynamic-image');
+
+        return '<div>dynamic owner</div>';
+    }
+}
 
 beforeEach(function () {
+    Core20DynamicMediaFieldOwner::$includeDynamicImage = true;
     $this->actor = createSuperAdmin();
     app('aura')::registerResources([Post::class]);
     $this->tokens = app(MediaOwnerTokenBroker::class);
@@ -115,3 +155,19 @@ test('attachment authorization rejects foreign team ids', function () {
     expect(fn () => $this->authorization->authorizeAttachments([(string) $foreign->getKey()], $this->actor))
         ->toThrow(InvalidMediaOwnerContext::class);
 })->skip(fn () => ! config('aura.teams'), 'Cross-team authorization requires teams enabled.');
+
+test('owner authorization requires the attested component field to still exist', function () {
+    $this->actingAs($this->actor);
+    $owner = Livewire::test(Core20DynamicMediaFieldOwner::class);
+    $token = $owner->get('ownerTokenForTest');
+
+    Core20DynamicMediaFieldOwner::$includeDynamicImage = false;
+
+    expect(fn () => $this->authorization->authorizeOwner(
+        $token,
+        $this->actor,
+        Post::class,
+        'dynamic-image',
+        Image::class,
+    ))->toThrow(InvalidMediaOwnerContext::class);
+});

@@ -91,8 +91,7 @@ class View extends Component
 
     }
 
-    #[On('updateField')]
-    public function updateField($field, $value)
+    protected function updateField($field, $value)
     {
         // Implementation is in InteractsWithFields trait
     }

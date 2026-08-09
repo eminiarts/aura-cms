@@ -4,6 +4,7 @@ namespace Aura\Base\Livewire\Media;
 
 use Aura\Base\Fields\Field;
 use Aura\Base\Resource;
+use Livewire\Component;
 
 final readonly class MediaOwnerContext
 {
@@ -13,6 +14,7 @@ final readonly class MediaOwnerContext
      */
     public function __construct(
         public string $ownerComponentId,
+        public ?string $ownerComponentClass,
         public string $modelClass,
         public ?string $modelKey,
         public string $action,
@@ -28,6 +30,7 @@ final readonly class MediaOwnerContext
     /**
      * @param  array{
      *     owner_component_id: string,
+     *     owner_component_class: class-string<Component>|null,
      *     model_class: class-string<resource>,
      *     model_key: string|null,
      *     action: string,
@@ -44,6 +47,7 @@ final readonly class MediaOwnerContext
     {
         return new self(
             ownerComponentId: $payload['owner_component_id'],
+            ownerComponentClass: $payload['owner_component_class'],
             modelClass: $payload['model_class'],
             modelKey: $payload['model_key'],
             action: $payload['action'],
@@ -60,6 +64,7 @@ final readonly class MediaOwnerContext
     /**
      * @return array{
      *     owner_component_id: string,
+     *     owner_component_class: class-string<Component>|null,
      *     model_class: class-string<resource>,
      *     model_key: string|null,
      *     action: string,
@@ -76,6 +81,7 @@ final readonly class MediaOwnerContext
     {
         return [
             'owner_component_id' => $this->ownerComponentId,
+            'owner_component_class' => $this->ownerComponentClass,
             'model_class' => $this->modelClass,
             'model_key' => $this->modelKey,
             'action' => $this->action,

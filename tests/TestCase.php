@@ -51,6 +51,7 @@ class TestCase extends Orchestra
         // Add this before the Factory setup
         config()->set('app.env', 'testing');
         config()->set('filesystems.default', 'local');
+        $this->app['cache']->store('aura-media-security')->clear();
 
         Factory::guessFactoryNamesUsing(
             fn (string $modelName) => 'Aura\\Base\\Database\\Factories\\'.class_basename($modelName).'Factory'
@@ -84,6 +85,12 @@ class TestCase extends Orchestra
         // Prevent actual file upload handling
         $app['config']->set('livewire.temporary_file_upload.disk', 'local');
         $app['config']->set('livewire.temporary_file_upload.middleware', null);
+        $app['config']->set('cache.stores.aura-media-security', [
+            'driver' => 'file',
+            'path' => $app->storagePath('framework/cache/data/media-security'),
+            'lock_path' => $app->storagePath('framework/cache/data/media-security-locks'),
+        ]);
+        $app['config']->set('aura.media.security.cache_store', 'aura-media-security');
     }
 
     // protected function tearDown(): void

@@ -10,9 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
-use Livewire\Attributes\On;
 use Livewire\Component;
 
 class Profile extends Component
@@ -119,18 +117,6 @@ class Profile extends Component
         return view('aura::livewire.user.profile')->layout('aura::components.layout.app');
     }
 
-    public function reorderMedia($slug, $ids)
-    {
-        $ids = collect($ids)->map(function ($id) {
-            return Str::after($id, '_file_');
-        })->toArray();
-
-        $this->updateField([
-            'slug' => $slug,
-            'value' => $ids,
-        ]);
-    }
-
     public function rules()
     {
         return $this->resourceFieldValidationRules();
@@ -167,8 +153,7 @@ class Profile extends Component
         return $this->notify(__('Successfully updated'));
     }
 
-    #[On('updateField')]
-    public function updateField($data)
+    protected function updateField($data)
     {
         $this->form['fields'][$data['slug']] = $data['value'];
 

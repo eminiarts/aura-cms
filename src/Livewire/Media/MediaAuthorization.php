@@ -3,6 +3,7 @@
 namespace Aura\Base\Livewire\Media;
 
 use Aura\Base\Aura;
+use Aura\Base\Fields\Field;
 use Aura\Base\Fields\File;
 use Aura\Base\Fields\Image;
 use Aura\Base\Resource;
@@ -12,7 +13,9 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Database\Eloquent\Collection;
 use InvalidArgumentException;
+use Livewire\Component;
 use ReflectionClass;
+use ReflectionMethod;
 
 class MediaAuthorization
 {
@@ -110,38 +113,46 @@ class MediaAuthorization
             return new AuthorizedMediaOwner($context, $prototype, ['slug' => '__library__']);
         }
 
-        if (! $this->isMediaFieldType($context->fieldType)) {
-            throw new InvalidMediaOwnerContext('The media owner field is unavailable.');
-        }
-
-        $field = $prototype->fieldBySlug($context->slug);
-
-        if ($field !== null && (! is_array($field)
-            || ($field['slug'] ?? null) !== $context->slug
-            || ! is_string($field['type'] ?? null)
-            || ! hash_equals($context->fieldType, $field['type']))) {
-            throw new InvalidMediaOwnerContext('The media owner field is unavailable.');
-        }
-
-        $field ??= ['slug' => $context->slug, 'type' => $context->fieldType];
-
         $actorGate = $this->gate->forUser($actor);
 
         if ($context->action === 'create') {
             $actorGate->authorize('create', $prototype);
+            $resource = $prototype;
+        } else {
+            $resource = $context->modelClass::query()->find($context->modelKey);
 
-            return new AuthorizedMediaOwner($context, $prototype, $field);
+            if (! $resource instanceof Resource) {
+                throw new InvalidMediaOwnerContext('The media owner record is unavailable.');
+            }
+
+            $actorGate->authorize('update', $resource);
         }
 
-        $resource = $context->modelClass::query()->find($context->modelKey);
-
-        if (! $resource instanceof Resource) {
-            throw new InvalidMediaOwnerContext('The media owner record is unavailable.');
-        }
-
-        $actorGate->authorize('update', $resource);
+        $field = $this->resolveFreshOwnerField($context, $resource);
 
         return new AuthorizedMediaOwner($context, $resource, $field);
+    }
+
+    /**
+     * @param  Collection<int, resource>  $attachments
+     * @return Collection<int, resource>
+     */
+    public function visibleAttachments(Collection $attachments, Authenticatable $actor): Collection
+    {
+        $this->assertCurrentActor($actor);
+        $prototype = $this->attachmentPrototype();
+        $actorGate = $this->gate->forUser($actor);
+        $actorGate->authorize('viewAny', $prototype);
+
+        return $attachments
+            ->filter(function ($attachment) use ($actorGate, $prototype): bool {
+                if (! $attachment instanceof Resource || $attachment::class !== $prototype::class) {
+                    throw new InvalidMediaOwnerContext('The media attachment listing is invalid.');
+                }
+
+                return $actorGate->allows('view', $attachment);
+            })
+            ->values();
     }
 
     private function assertCurrentActor(Authenticatable $actor): void
@@ -224,5 +235,51 @@ class MediaAuthorization
         }
 
         return $normalized;
+    }
+
+    /** @return array{slug: string, type: class-string<Field>} */
+    private function resolveFreshOwnerField(MediaOwnerContext $context, Resource $resource): array
+    {
+        if (! $this->isMediaFieldType($context->fieldType)) {
+            throw new InvalidMediaOwnerContext('The media owner field is unavailable.');
+        }
+
+        $resource::flushFieldCache();
+        $field = $resource->fieldBySlug($context->slug);
+
+        if ($field === null && is_string($context->ownerComponentClass)) {
+            $componentClass = $context->ownerComponentClass;
+
+            if (! class_exists($componentClass)
+                || ! is_subclass_of($componentClass, Component::class)
+                || (new ReflectionClass($componentClass))->getName() !== $componentClass) {
+                throw new InvalidMediaOwnerContext('The media owner component is unavailable.');
+            }
+
+            $component = app($componentClass);
+
+            if (! $component instanceof Component
+                || ! property_exists($component, 'model')
+                || ! method_exists($component, 'fieldBySlug')) {
+                throw new InvalidMediaOwnerContext('The media owner component field is unavailable.');
+            }
+
+            $component->model = $resource;
+
+            if (method_exists($component, 'flushFieldCache')) {
+                (new ReflectionMethod($component, 'flushFieldCache'))->invoke(null);
+            }
+
+            $field = $component->fieldBySlug($context->slug);
+        }
+
+        if (! is_array($field)
+            || ($field['slug'] ?? null) !== $context->slug
+            || ! is_string($field['type'] ?? null)
+            || ! hash_equals($context->fieldType, $field['type'])) {
+            throw new InvalidMediaOwnerContext('The media owner field is unavailable.');
+        }
+
+        return ['slug' => $context->slug, 'type' => $context->fieldType];
     }
 }

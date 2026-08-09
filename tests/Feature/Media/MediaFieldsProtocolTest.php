@@ -6,6 +6,7 @@ use Aura\Base\Livewire\Media\MediaSelectionBroker;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Traits\MediaFields;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\Livewire;
 
@@ -37,6 +38,25 @@ class Core20MediaOwnerHarness extends Component
     {
         $this->applications++;
         $this->form['fields'][$data['slug']] = $data['value'];
+    }
+}
+
+class Core20ProductionMediaOwnerHarness extends Component
+{
+    use MediaFields;
+
+    public array $form = ['fields' => ['image' => []]];
+
+    public Post $model;
+
+    public function mount(): void
+    {
+        $this->model = new Post;
+    }
+
+    public function render(): string
+    {
+        return '<div>owner</div>';
     }
 }
 
@@ -165,4 +185,11 @@ test('simultaneous forms with the same slug route a selection only to its token 
         ->assertSet('form.fields.image', $value)
         ->assertSet('applications', 1)
         ->assertDispatched('aura-media-selection-acknowledged');
+});
+
+test('the production media field mutation method is not a slug-only global listener', function () {
+    $method = new ReflectionMethod(Core20ProductionMediaOwnerHarness::class, 'updateField');
+
+    expect($method->getAttributes(On::class))->toBe([])
+        ->and($method->isProtected())->toBeTrue();
 });

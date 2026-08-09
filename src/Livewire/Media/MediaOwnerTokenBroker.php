@@ -9,12 +9,12 @@ use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
 use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\Encryption\StringEncrypter;
 use InvalidArgumentException;
 use JsonException;
+use Livewire\Component;
 use ReflectionClass;
 use Throwable;
 
@@ -27,18 +27,12 @@ class MediaOwnerTokenBroker
     private readonly LockProvider $locks;
 
     public function __construct(
-        CacheFactory $cache,
+        MediaSecurityStore $store,
         private readonly ConfigRepository $config,
         private readonly StringEncrypter $encrypter,
     ) {
-        $store = $cache->store($this->config->get('aura.media.security.cache_store'));
-
-        if (! $store instanceof CacheRepository || ! $store->getStore() instanceof LockProvider) {
-            throw new InvalidArgumentException('Aura media security requires a cache store with atomic lock support.');
-        }
-
-        $this->cache = $store;
-        $this->locks = $store->getStore();
+        $this->cache = $store->cache;
+        $this->locks = $store->locks;
     }
 
     public function digest(string $token): string
@@ -58,13 +52,23 @@ class MediaOwnerTokenBroker
         string $slug,
         ?string $fieldType,
         Authenticatable $actor,
+        ?string $ownerComponentClass = null,
     ): string {
         $actorId = $this->actorId($actor);
         $teamId = $this->teamId($actor);
-        $this->validateIssueContext($ownerComponentId, $modelClass, $modelKey, $action, $slug, $fieldType);
+        $this->validateIssueContext(
+            $ownerComponentId,
+            $ownerComponentClass,
+            $modelClass,
+            $modelKey,
+            $action,
+            $slug,
+            $fieldType,
+        );
 
         $fingerprint = hash('sha256', json_encode([
             $ownerComponentId,
+            $ownerComponentClass,
             $modelClass,
             $modelKey,
             $action,
@@ -78,6 +82,7 @@ class MediaOwnerTokenBroker
         return $this->locks->lock($indexKey.':lock', 5)->block(5, function () use (
             $indexKey,
             $ownerComponentId,
+            $ownerComponentClass,
             $modelClass,
             $modelKey,
             $action,
@@ -103,6 +108,7 @@ class MediaOwnerTokenBroker
             $ttl = $this->ttl();
             $context = new MediaOwnerContext(
                 ownerComponentId: $ownerComponentId,
+                ownerComponentClass: $ownerComponentClass,
                 modelClass: $modelClass,
                 modelKey: $modelKey,
                 action: $action,
@@ -139,6 +145,7 @@ class MediaOwnerTokenBroker
             slug: '__library__',
             fieldType: null,
             actor: $actor,
+            ownerComponentClass: null,
         );
     }
 
@@ -257,6 +264,7 @@ class MediaOwnerTokenBroker
      */
     private function validateIssueContext(
         string $ownerComponentId,
+        ?string $ownerComponentClass,
         string $modelClass,
         ?string $modelKey,
         string $action,
@@ -265,6 +273,13 @@ class MediaOwnerTokenBroker
     ): void {
         if ($ownerComponentId === '' || strlen($ownerComponentId) > 255) {
             throw new InvalidArgumentException('Media owner component ID must be non-empty and at most 255 bytes.');
+        }
+
+        if ($ownerComponentClass !== null
+            && (! class_exists($ownerComponentClass)
+                || ! is_subclass_of($ownerComponentClass, Component::class)
+                || (new ReflectionClass($ownerComponentClass))->getName() !== $ownerComponentClass)) {
+            throw new InvalidArgumentException('Media owner component class must be a canonical Livewire component class.');
         }
 
         if (! class_exists($modelClass) || ! is_subclass_of($modelClass, Resource::class)
@@ -304,6 +319,7 @@ class MediaOwnerTokenBroker
     {
         $expected = [
             'owner_component_id',
+            'owner_component_class',
             'model_class',
             'model_key',
             'action',
@@ -321,6 +337,7 @@ class MediaOwnerTokenBroker
         }
 
         return is_string($payload['owner_component_id'])
+            && ($payload['owner_component_class'] === null || is_string($payload['owner_component_class']))
             && is_string($payload['model_class'])
             && ($payload['model_key'] === null || is_string($payload['model_key']))
             && in_array($payload['action'], ['create', 'update', 'library'], true)
