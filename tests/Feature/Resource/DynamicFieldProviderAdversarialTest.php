@@ -1,15 +1,18 @@
 <?php
 
 use Aura\Base\ConditionalLogic;
+use Aura\Base\Contracts\ContextualFieldProvider;
 use Aura\Base\Contracts\FieldProvider;
 use Aura\Base\Facades\Aura;
 use Aura\Base\FieldProviderContext;
 use Aura\Base\Fields\Text;
 use Aura\Base\Resource;
 use Aura\Base\Traits\InputFields;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class Core08AdversarialResource extends Resource
 {
@@ -103,7 +106,7 @@ class Core08ConditionalProviderState
     public static int $teamId = 1;
 }
 
-class Core08ConditionalProvider implements FieldProvider
+class Core08ConditionalProvider implements ContextualFieldProvider
 {
     public function cacheContext(string $resourceClass): array
     {
@@ -127,6 +130,11 @@ class Core08ConditionalProvider implements FieldProvider
                 'conditional_logic' => static fn (): bool => $visible,
             ],
         ];
+    }
+
+    public function managedFieldSlugs(string $resourceClass): array
+    {
+        return ['context_visibility'];
     }
 }
 
@@ -158,7 +166,7 @@ class Core08RefreshResource extends Resource
     }
 }
 
-class Core08RefreshProvider implements FieldProvider
+class Core08RefreshProvider implements ContextualFieldProvider
 {
     public function cacheContext(string $resourceClass): array
     {
@@ -183,6 +191,11 @@ class Core08RefreshProvider implements FieldProvider
             ['name' => 'New', 'slug' => 'new_slug', 'type' => 'Aura\\Base\\Fields\\Text'],
             ['name' => 'Cast', 'slug' => 'cast_value', 'type' => 'Aura\\Base\\Fields\\Text'],
         ];
+    }
+
+    public function managedFieldSlugs(string $resourceClass): array
+    {
+        return ['old_slug', 'new_slug', 'cast_value'];
     }
 }
 
@@ -212,12 +225,37 @@ class Core08AttributeBoundaryResource extends Resource
     protected function casts(): array
     {
         return [
+            'old_count' => 'integer',
             'order' => 'integer',
         ];
     }
 }
 
-class Core08AttributeBoundaryProvider implements FieldProvider
+class Core08HydrationResource extends Resource
+{
+    public static $customTable = true;
+
+    public static bool $usesMeta = false;
+
+    protected $fillable = ['title', 'order', 'parent_id'];
+
+    protected $table = 'core08_provider_records';
+
+    public static function getFields(): array
+    {
+        return [];
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'old_count' => 'integer',
+            'order' => 'integer',
+        ];
+    }
+}
+
+class Core08AttributeBoundaryProvider implements ContextualFieldProvider
 {
     public function cacheContext(string $resourceClass): array
     {
@@ -241,7 +279,57 @@ class Core08AttributeBoundaryProvider implements FieldProvider
 
         return [
             ['name' => 'Old secret', 'slug' => 'old_secret', 'type' => 'Aura\\Base\\Fields\\Text'],
+            ['name' => 'Old count', 'slug' => 'old_count', 'type' => 'Aura\\Base\\Fields\\Number'],
+            ['name' => 'Old relation', 'slug' => 'old_relation', 'type' => 'Aura\\Base\\Fields\\Text'],
         ];
+    }
+
+    public function managedFieldSlugs(string $resourceClass): array
+    {
+        return ['old_secret', 'old_count', 'old_relation'];
+    }
+}
+
+class Core08UnsafeContextProvider implements FieldProvider
+{
+    public function cacheContext(string $resourceClass): array
+    {
+        return ['team_id' => Core08AttributeBoundaryProviderState::$teamId];
+    }
+
+    public function cacheVersion(FieldProviderContext $context): string|int
+    {
+        return 1;
+    }
+
+    public function fields(FieldProviderContext $context): array
+    {
+        return [];
+    }
+}
+
+class Core08IncompleteManifestProvider implements ContextualFieldProvider
+{
+    public function cacheContext(string $resourceClass): array
+    {
+        return ['team_id' => Core08AttributeBoundaryProviderState::$teamId];
+    }
+
+    public function cacheVersion(FieldProviderContext $context): string|int
+    {
+        return 1;
+    }
+
+    public function fields(FieldProviderContext $context): array
+    {
+        return [
+            ['name' => 'Undeclared', 'slug' => 'undeclared', 'type' => 'Aura\\Base\\Fields\\Text'],
+        ];
+    }
+
+    public function managedFieldSlugs(string $resourceClass): array
+    {
+        return [];
     }
 }
 
@@ -306,7 +394,7 @@ class Core08UserProviderState
     public static int $userId = 1;
 }
 
-class Core08UserProvider implements FieldProvider
+class Core08UserProvider implements ContextualFieldProvider
 {
     public function cacheContext(string $resourceClass): array
     {
@@ -330,7 +418,29 @@ class Core08UserProvider implements FieldProvider
             ],
         ];
     }
+
+    public function managedFieldSlugs(string $resourceClass): array
+    {
+        return ['user_specific'];
+    }
 }
+
+function createCore08ProviderRecordsTable(): void
+{
+    Schema::create('core08_provider_records', function (Blueprint $table): void {
+        $table->id();
+        $table->string('title')->nullable();
+        $table->string('old_secret')->nullable();
+        $table->integer('old_count')->nullable();
+        $table->integer('order')->nullable();
+        $table->unsignedBigInteger('parent_id')->nullable();
+        $table->timestamps();
+    });
+}
+
+afterEach(function () {
+    Schema::dropIfExists('core08_provider_records');
+});
 
 beforeEach(function () {
     Core08MutableInputFieldsConsumer::$definition = [
@@ -377,8 +487,18 @@ it('prunes a context field before :dataset reads it on the same instance', funct
     expect($resource->old_secret)->toBeNull()
         ->and($resource->getAttribute('old_secret'))->toBeNull()
         ->and($resource->getAttributeValue('old_secret'))->toBeNull()
+        ->and($resource->getAttributeValue('old_count'))->toBeNull()
+        ->and((array) $resource->getAttributeValue('fields'))->not->toHaveKey('old_secret')
         ->and($resource->hasAttribute('old_secret'))->toBeFalse()
-        ->and($resource->getAttributes())->not->toHaveKey('old_secret');
+        ->and($resource->getAttributes())->not->toHaveKey('old_secret')
+        ->and($resource->getAttributes())->not->toHaveKey('old_count')
+        ->and($resource->getRawOriginal())->not->toHaveKey('old_secret')
+        ->and($resource->getOriginal())->not->toHaveKey('old_secret');
+
+    Core08AttributeBoundaryProviderState::$teamId = 1;
+
+    expect($resource->old_secret)->toBe('team A secret')
+        ->and($resource->getAttribute('old_secret'))->toBe('team A secret');
 })->with([
     'magic without flush' => [false, fn (Core08AttributeBoundaryResource $resource): mixed => $resource->old_secret],
     'magic after flush' => [true, fn (Core08AttributeBoundaryResource $resource): mixed => $resource->old_secret],
@@ -433,8 +553,9 @@ it('preserves physical model state across provider context changes', function (b
     Core08AttributeBoundaryProviderState::$teamId = 1;
 
     expect($resource->fieldBySlug('old_secret'))->not->toBeNull()
-        ->and($resource->old_secret)->toBeNull()
-        ->and($resource->getAttribute('old_secret'))->toBeNull()
+        ->and($resource->old_secret)->toBe('team A secret')
+        ->and($resource->getAttribute('old_secret'))->toBe('team A secret')
+        ->and($resource->getRawOriginal('old_secret'))->toBe('team A secret')
         ->and($resource->title)->toBe('Changed title')
         ->and($resource->parent)->toBe($parent)
         ->and(Core08AttributeBoundaryProviderState::$fieldsCalls)->toBe($flush ? 3 : 2);
@@ -442,6 +563,259 @@ it('preserves physical model state across provider context changes', function (b
     'without flush' => false,
     'after flush' => true,
 ]);
+
+it('requires contextual providers to declare a stable managed slug manifest', function () {
+    Aura::registerFieldProvider(
+        Core08UnsafeContextProvider::class,
+        resources: [Core08AttributeBoundaryResource::class],
+    );
+
+    expect(fn () => new Core08AttributeBoundaryResource)
+        ->toThrow(InvalidArgumentException::class, ContextualFieldProvider::class);
+});
+
+it('rejects contextual fields outside the declared managed slug manifest', function () {
+    Aura::registerFieldProvider(
+        Core08IncompleteManifestProvider::class,
+        resources: [Core08AttributeBoundaryResource::class],
+    );
+
+    expect(fn () => new Core08AttributeBoundaryResource)
+        ->toThrow(InvalidArgumentException::class, 'undeclared');
+});
+
+it('hides provider-managed columns on models first hydrated in an inactive context', function (Closure $hydrate) {
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+    Aura::registerFieldProvider(
+        Core08AttributeBoundaryProvider::class,
+        resources: [Core08HydrationResource::class],
+    );
+
+    $resource = $hydrate();
+
+    expect($resource->exists)->toBeTrue()
+        ->and($resource->old_secret)->toBeNull()
+        ->and($resource->getAttribute('old_secret'))->toBeNull()
+        ->and($resource->getAttributeValue('old_secret'))->toBeNull()
+        ->and($resource->hasAttribute('old_secret'))->toBeFalse()
+        ->and($resource->getAttributes())->not->toHaveKey('old_secret')
+        ->and($resource->getRawOriginal('old_secret'))->toBeNull()
+        ->and($resource->getRawOriginal())->not->toHaveKey('old_secret')
+        ->and((array) $resource->getRawOriginal('fields'))->not->toHaveKey('old_secret')
+        ->and($resource->getOriginal('old_secret'))->toBeNull()
+        ->and($resource->getOriginal())->not->toHaveKey('old_secret')
+        ->and((array) $resource->getOriginal('fields'))->not->toHaveKey('old_secret')
+        ->and($resource->toArray())->not->toHaveKey('old_secret')
+        ->and(json_decode($resource->toJson(), true, flags: JSON_THROW_ON_ERROR))->not->toHaveKey('old_secret');
+
+    Core08AttributeBoundaryProviderState::$teamId = 1;
+
+    expect($resource->old_secret)->toBe('persisted A secret')
+        ->and($resource->getAttributeValue('old_secret'))->toBe('persisted A secret')
+        ->and($resource->getAttributeValue('old_count'))->toBe(9)
+        ->and($resource->hasAttribute('old_secret'))->toBeTrue()
+        ->and($resource->getAttributes())->toHaveKey('old_secret', 'persisted A secret')
+        ->and($resource->getRawOriginal('old_secret'))->toBe('persisted A secret')
+        ->and($resource->getOriginal('old_secret'))->toBe('persisted A secret')
+        ->and($resource->toArray())->toHaveKey('old_secret', 'persisted A secret');
+})->with([
+    'newFromBuilder' => function (): Core08HydrationResource {
+        return (new Core08HydrationResource)->newFromBuilder([
+            'id' => 10,
+            'title' => 'Hydrated directly',
+            'old_secret' => 'persisted A secret',
+            'old_count' => 9,
+            'fields' => ['old_secret' => 'nested A secret'],
+            'order' => 7,
+        ]);
+    },
+    'database query' => function (): Core08HydrationResource {
+        createCore08ProviderRecordsTable();
+        DB::table((new Core08HydrationResource)->getTable())->insert([
+            'title' => 'Hydrated from database',
+            'old_secret' => 'persisted A secret',
+            'old_count' => 9,
+            'order' => 7,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return Core08HydrationResource::withoutGlobalScopes()->firstOrFail();
+    },
+]);
+
+it('restores physical state exactly after saving another field in an inactive context', function () {
+    createCore08ProviderRecordsTable();
+    DB::table((new Core08HydrationResource)->getTable())->insert([
+        [
+            'id' => 1,
+            'title' => 'Parent',
+            'old_secret' => 'parent secret',
+            'old_count' => 3,
+            'order' => 3,
+            'parent_id' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'id' => 2,
+            'title' => 'Original title',
+            'old_secret' => 'persisted A secret',
+            'old_count' => 9,
+            'order' => 7,
+            'parent_id' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+    ]);
+    Aura::registerFieldProvider(
+        Core08AttributeBoundaryProvider::class,
+        resources: [Core08HydrationResource::class],
+    );
+
+    $parent = Core08HydrationResource::withoutGlobalScopes()->findOrFail(1);
+    $resource = Core08HydrationResource::withoutGlobalScopes()->findOrFail(2);
+    $resource->setRelation('parent', $parent);
+    $resource->setRelation('old_relation', $parent);
+    $resource->forceFill([
+        'title' => 'Saved in B',
+        'old_secret' => 'pending A secret',
+    ]);
+    $resource->syncChanges();
+
+    expect($resource->getDirty())->toHaveKey('old_secret', 'pending A secret')
+        ->and($resource->getChanges())->toHaveKey('old_secret', 'pending A secret')
+        ->and($resource->getPrevious())->toHaveKey('old_secret', 'persisted A secret');
+
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+
+    expect($resource->old_secret)->toBeNull()
+        ->and($resource->getAttributes())->not->toHaveKey('old_secret')
+        ->and($resource->getRawOriginal())->not->toHaveKey('old_secret')
+        ->and($resource->getDirty())->not->toHaveKey('old_secret')
+        ->and($resource->getChanges())->not->toHaveKey('old_secret')
+        ->and($resource->getPrevious())->not->toHaveKey('old_secret')
+        ->and($resource->parent)->toBe($parent)
+        ->and($resource->old_relation)->toBeNull()
+        ->and($parent->old_secret)->toBeNull()
+        ->and($resource->getAttribute('old_count'))->toBeNull()
+        ->and($resource->getAttribute('order'))->toBe(7)
+        ->and($resource->toArray())->not->toHaveKey('old_relation');
+
+    expect($resource->save())->toBeTrue()
+        ->and(DB::table($resource->getTable())->where('id', 2)->value('old_secret'))->toBe('persisted A secret')
+        ->and(DB::table($resource->getTable())->where('id', 2)->value('title'))->toBe('Saved in B');
+
+    Core08AttributeBoundaryProviderState::$teamId = 1;
+
+    expect($resource->old_secret)->toBe('pending A secret')
+        ->and($resource->getRawOriginal('old_secret'))->toBe('persisted A secret')
+        ->and($resource->getOriginal('old_secret'))->toBe('persisted A secret')
+        ->and($resource->getDirty())->toHaveKey('old_secret', 'pending A secret')
+        ->and($resource->getChanges())->toHaveKey('old_secret', 'pending A secret')
+        ->and($resource->getPrevious())->toHaveKey('old_secret', 'persisted A secret')
+        ->and($resource->getAttribute('old_count'))->toBe(9)
+        ->and($resource->getAttribute('order'))->toBe(7)
+        ->and($resource->parent)->toBe($parent)
+        ->and($resource->old_relation)->toBe($parent)
+        ->and($parent->old_secret)->toBe('parent secret')
+        ->and($resource->toArray())->toHaveKey('old_secret', 'pending A secret')
+        ->and(json_decode($resource->toJson(), true, flags: JSON_THROW_ON_ERROR))->toHaveKey('old_secret', 'pending A secret');
+});
+
+it('keeps inactive meta values hidden and does not persist queued A changes while saving in B', function () {
+    Aura::registerFieldProvider(
+        Core08AttributeBoundaryProvider::class,
+        resources: [Core08AttributeBoundaryResource::class],
+    );
+
+    $resource = Core08AttributeBoundaryResource::create(['title' => 'Meta resource']);
+    $resource->meta()->create(['key' => 'old_secret', 'value' => 'persisted meta secret']);
+    $resource->load('meta');
+
+    expect($resource->old_secret)->toBe('persisted meta secret')
+        ->and($resource->getMeta('old_secret'))->toBe('persisted meta secret');
+
+    $resource->saveMetaField(['old_secret' => 'queued A secret']);
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+
+    expect($resource->old_secret)->toBeNull()
+        ->and($resource->getMeta('old_secret'))->toBeNull()
+        ->and($resource->toArray())->not->toHaveKey('old_secret')
+        ->and(json_decode($resource->toJson(), true, flags: JSON_THROW_ON_ERROR))->not->toHaveKey('old_secret');
+
+    $resource->title = 'Saved in B';
+
+    expect($resource->save())->toBeTrue()
+        ->and($resource->meta()->where('key', 'old_secret')->value('value'))->toBe('persisted meta secret');
+
+    Core08AttributeBoundaryProviderState::$teamId = 1;
+
+    expect($resource->old_secret)->toBe('persisted meta secret')
+        ->and($resource->getMeta('old_secret'))->toBe('persisted meta secret')
+        ->and($resource->metaFields)->toHaveKey('old_secret', 'queued A secret');
+});
+
+it('keeps new refresh delete and clone lifecycle operations isolated', function () {
+    createCore08ProviderRecordsTable();
+    DB::table((new Core08HydrationResource)->getTable())->insert([
+        [
+            'id' => 1,
+            'title' => 'Clone source',
+            'old_secret' => 'source secret',
+            'old_count' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'id' => 2,
+            'title' => 'Delete target',
+            'old_secret' => 'delete secret',
+            'old_count' => 2,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+    ]);
+    Aura::registerFieldProvider(
+        Core08AttributeBoundaryProvider::class,
+        resources: [Core08HydrationResource::class],
+    );
+
+    $source = Core08HydrationResource::withoutGlobalScopes()->findOrFail(1);
+    $clone = clone $source;
+    $clone->old_secret = 'clone-only secret';
+
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+
+    expect($source->old_secret)->toBeNull()
+        ->and($clone->old_secret)->toBeNull();
+
+    $replica = $source->replicate();
+
+    expect($replica->exists)->toBeFalse()
+        ->and($replica->old_secret)->toBeNull();
+
+    $new = new Core08HydrationResource;
+    $new->forceFill(['title' => 'Created in B', 'old_secret' => 'never persisted']);
+
+    expect($new->old_secret)->toBeNull()
+        ->and($new->save())->toBeTrue()
+        ->and(DB::table($new->getTable())->where('id', $new->getKey())->value('old_secret'))->toBeNull();
+
+    $delete = Core08HydrationResource::withoutGlobalScopes()->findOrFail(2);
+
+    expect($delete->delete())->toBeTrue()
+        ->and(DB::table($delete->getTable())->where('id', 2)->exists())->toBeFalse();
+
+    $new->refresh();
+    Core08AttributeBoundaryProviderState::$teamId = 1;
+
+    expect($source->old_secret)->toBe('source secret')
+        ->and($clone->old_secret)->toBe('clone-only secret')
+        ->and($replica->old_secret)->toBeNull()
+        ->and($new->old_secret)->toBeNull()
+        ->and($new->isDirty('old_secret'))->toBeFalse();
+});
 
 it('keeps no-provider attribute reads query-free and declarative', function () {
     config(['aura.features.legacy_fields_append' => false]);
@@ -460,6 +834,9 @@ it('keeps no-provider attribute reads query-free and declarative', function () {
         ->and($resource->getAttribute('order'))->toBe(3)
         ->and($resource->parent)->toBe($parent)
         ->and($resource->isDirty('title'))->toBeTrue()
+        ->and($resource->getRawOriginal('title'))->toBe('Original title')
+        ->and($resource->getOriginal('title'))->toBe('Original title')
+        ->and($resource->getDirty())->toHaveKey('title', 'Changed title')
         ->and($resource->toArray())->toMatchArray(['title' => 'Changed title', 'order' => 3])
         ->and(json_decode($resource->toJson(), true, flags: JSON_THROW_ON_ERROR))->toMatchArray(['title' => 'Changed title', 'order' => 3])
         ->and(Core08UnrelatedResource::$declarationCalls)->toBe(1)
@@ -593,10 +970,15 @@ it('refreshes all definition-derived state on an existing Resource instance', fu
     expect($resource->getFillable())->toContain('new_slug', 'cast_value')
         ->and($resource->getFillable())->not->toContain('old_slug')
         ->and($resource->getAttributes())->not->toHaveKey('old_slug')
-        ->and($resource->metaFields)->not->toHaveKey('old_slug')
+        ->and($resource->metaFields)->toHaveKey('old_slug', 'queued old value')
         ->and($resource->fields->keys()->all())->toBe(['new_slug', 'cast_value'])
         ->and($resource->getMeta('cast_value'))->toBe('0')
         ->and($resource->hasTableDisplayValue('old_slug'))->toBeFalse();
+
+    Core08RefreshProviderState::$teamId = 1;
+
+    expect($resource->old_slug)->toBe('pending old value')
+        ->and($resource->metaFields)->toHaveKey('old_slug', 'queued old value');
 });
 
 it('uses cache versions at an explicit refresh boundary without repeated field queries', function () {

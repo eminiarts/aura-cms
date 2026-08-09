@@ -2,6 +2,7 @@
 
 namespace Aura\Base;
 
+use Aura\Base\Contracts\ContextualFieldProvider;
 use Aura\Base\Contracts\DefinesFields;
 use Aura\Base\Contracts\FieldProvider;
 use Aura\Base\Exceptions\FieldProviderConflictException;
@@ -17,6 +18,11 @@ class FieldProviderRegistry
      * @var array<string, array{provider: class-string<FieldProvider>, resources: array<int, class-string<DefinesFields>|string>, mode: FieldProviderMode, priority: int}>
      */
     protected array $baselineProviders = [];
+
+    /**
+     * @var array<string, array<int, string>>
+     */
+    protected array $providerManagedFieldSlugs = [];
 
     /**
      * @var array<string, array{provider: class-string<FieldProvider>, resources: array<int, class-string<DefinesFields>|string>, mode: FieldProviderMode, priority: int}>
@@ -53,6 +59,7 @@ class FieldProviderRegistry
     public function flushState(): void
     {
         $this->providers = $this->baselineProviders;
+        $this->providerManagedFieldSlugs = [];
         $this->flushResolved();
     }
 
@@ -138,7 +145,13 @@ class FieldProviderRegistry
             ->map(function (array $registration) use ($resourceClass): array {
                 $id = $registration['id'];
                 $provider = $this->buildProvider($registration['provider']);
-                $context = new FieldProviderContext($resourceClass, $provider->cacheContext($resourceClass));
+                $contextValues = $provider->cacheContext($resourceClass);
+
+                if ($contextValues !== [] && ! $provider instanceof ContextualFieldProvider) {
+                    throw new InvalidArgumentException("Context-dependent field provider [{$id}] must implement ".ContextualFieldProvider::class.' and declare its complete managed field slug manifest.');
+                }
+
+                $context = new FieldProviderContext($resourceClass, $contextValues);
                 $contextFingerprint = $context->fingerprint();
                 $versionCacheKey = $this->cacheKey($id, $contextFingerprint);
 
@@ -156,11 +169,27 @@ class FieldProviderRegistry
                     );
                 }
 
+                $managedFieldSlugs = $provider instanceof ContextualFieldProvider
+                    ? $this->managedFieldSlugs($id, $resourceClass, $provider)
+                    : array_values(array_unique(array_column(
+                        $this->resolvedProviderFields[$providerFieldsCacheKey],
+                        'slug',
+                    )));
+                $undeclaredFieldSlugs = array_values(array_diff(
+                    array_column($this->resolvedProviderFields[$providerFieldsCacheKey], 'slug'),
+                    $managedFieldSlugs,
+                ));
+
+                if ($undeclaredFieldSlugs !== []) {
+                    throw new InvalidArgumentException("Context-dependent field provider [{$id}] returned undeclared field slug [{$undeclaredFieldSlugs[0]}].");
+                }
+
                 return [
                     'id' => $id,
                     'context' => $contextFingerprint,
                     'fields' => $this->resolvedProviderFields[$providerFieldsCacheKey],
                     'mode' => $registration['mode'],
+                    'managedFieldSlugs' => $managedFieldSlugs,
                     'priority' => $registration['priority'],
                     'version' => $serializedVersion,
                 ];
@@ -183,6 +212,10 @@ class FieldProviderRegistry
             $this->resolvedDefinitions[$resourceClass][$cacheKey] = new FieldProviderResolution(
                 $cacheKey,
                 $this->applyProviders($fields, $providers),
+                array_values(array_unique(array_merge(...array_map(
+                    fn (array $provider): array => $provider['managedFieldSlugs'],
+                    $providers,
+                )))),
             );
         }
 
@@ -282,6 +315,32 @@ class FieldProviderRegistry
         }
 
         return $this->isAuraResource($target);
+    }
+
+    /**
+     * @param  class-string<DefinesFields>  $resourceClass
+     * @return array<int, string>
+     */
+    protected function managedFieldSlugs(
+        string $providerId,
+        string $resourceClass,
+        ContextualFieldProvider $provider,
+    ): array {
+        $cacheKey = $this->cacheKey($providerId, $resourceClass);
+
+        if (! array_key_exists($cacheKey, $this->providerManagedFieldSlugs)) {
+            $managedFieldSlugs = $provider->managedFieldSlugs($resourceClass);
+
+            foreach ($managedFieldSlugs as $slug) {
+                if (! is_string($slug) || $slug === '') {
+                    throw new InvalidArgumentException("Context-dependent field provider [{$providerId}] returned an invalid managed field slug manifest.");
+                }
+            }
+
+            $this->providerManagedFieldSlugs[$cacheKey] = array_values(array_unique($managedFieldSlugs));
+        }
+
+        return $this->providerManagedFieldSlugs[$cacheKey];
     }
 
     /**

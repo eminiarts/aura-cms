@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Contracts\ContextualFieldProvider;
 use Aura\Base\Contracts\FieldProvider;
 use Aura\Base\Exceptions\FieldProviderConflictException;
 use Aura\Base\Facades\Aura;
@@ -138,7 +139,7 @@ class TeamFieldProviderState
     }
 }
 
-class TeamFieldProvider implements FieldProvider
+class TeamFieldProvider implements ContextualFieldProvider
 {
     public function cacheContext(string $resourceClass): array
     {
@@ -163,6 +164,11 @@ class TeamFieldProvider implements FieldProvider
                 'type' => 'Aura\\Base\\Fields\\Text',
             ],
         ];
+    }
+
+    public function managedFieldSlugs(string $resourceClass): array
+    {
+        return ['team_field'];
     }
 }
 
