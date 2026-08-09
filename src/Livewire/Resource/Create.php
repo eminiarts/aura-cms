@@ -123,15 +123,10 @@ class Create extends Component
         foreach ($urlParameters as $key => $value) {
             // Check if this parameter corresponds to a form field
             if (array_key_exists($key, $this->form['fields'])) {
-                // If the value is already an array, use it directly
-                if (is_array($value)) {
-                    $this->form['fields'][$key] = array_map(function ($v) {
-                        return is_numeric($v) ? (int) $v : $v;
-                    }, $value);
-                } else {
-                    // If it's a single value, convert to integer if numeric
-                    $this->form['fields'][$key] = is_numeric($value) ? (int) $value : $value;
-                }
+                // Form values stay in their submitted representation. The
+                // field value contract normalizes them immediately before
+                // persistence, so decimal strings must not be cast to int here.
+                $this->form['fields'][$key] = $value;
             }
         }
 
@@ -140,15 +135,7 @@ class Create extends Component
             foreach ($this->params as $key => $value) {
                 // Check if this parameter corresponds to a form field
                 if (array_key_exists($key, $this->form['fields'])) {
-                    // If the value is already an array, use it directly
-                    if (is_array($value)) {
-                        $this->form['fields'][$key] = array_map(function ($v) {
-                            return is_numeric($v) ? (int) $v : $v;
-                        }, $value);
-                    } else {
-                        // If it's a single value, convert to integer if numeric
-                        $this->form['fields'][$key] = is_numeric($value) ? (int) $value : $value;
-                    }
+                    $this->form['fields'][$key] = $value;
                 }
             }
         }

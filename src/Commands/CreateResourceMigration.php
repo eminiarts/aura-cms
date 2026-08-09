@@ -3,6 +3,7 @@
 namespace Aura\Base\Commands;
 
 use Aura\Base\Resource;
+use Aura\Base\Schema\FieldColumn;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
@@ -126,15 +127,14 @@ class CreateResourceMigration extends Command
     protected function generateColumn($field)
     {
         $fieldInstance = app($field['type']);
-        $columnType = $fieldInstance->tableColumnType;
+        $definition = method_exists($fieldInstance, 'columnDefinition')
+            ? $fieldInstance->columnDefinition($field)
+            : new FieldColumn(
+                type: $fieldInstance->tableColumnType,
+                nullable: $fieldInstance->tableNullable ?? true,
+            );
 
-        $column = "\$table->{$columnType}('{$field['slug']}')";
-
-        if ($fieldInstance->tableNullable) {
-            $column .= '->nullable()';
-        }
-
-        return $column.";\n";
+        return $definition->toMigration($field['slug']).";\n";
     }
 
     protected function generateSchema($fields)

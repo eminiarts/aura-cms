@@ -3,6 +3,7 @@
 namespace Aura\Base\Listeners;
 
 use Aura\Base\Events\SaveFields;
+use Aura\Base\Schema\FieldColumn;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
@@ -112,10 +113,9 @@ class CreateDatabaseMigration
 
     protected function generateColumn($field)
     {
-        $fieldInstance = app($field['type']);
-        $columnType = $fieldInstance->tableColumnType;
+        $definition = $this->getColumnDefinition($field);
 
-        return "\$table->{$columnType}('{$field['slug']}')->nullable();\n";
+        return $definition->toMigration($field['slug']).";\n";
     }
 
     protected function generateDownSchema($fields, $action)
@@ -132,11 +132,11 @@ class CreateDatabaseMigration
                 case 'update':
                     $oldSlug = $field['old']['slug'];
                     $newSlug = $field['new']['slug'];
-                    $oldType = app($field['old']['type'])->tableColumnType;
-                    $newType = app($field['new']['type'])->tableColumnType;
+                    $oldDefinition = $this->getColumnDefinition($field['old']);
+                    $newDefinition = $this->getColumnDefinition($field['new']);
 
-                    if ($oldType !== $newType) {
-                        $downSchema .= "\$table->{$oldType}('{$newSlug}')->nullable()->change();\n";
+                    if ($oldDefinition != $newDefinition) {
+                        $downSchema .= $oldDefinition->toMigration($newSlug, change: true).";\n";
                     }
 
                     if ($oldSlug !== $newSlug) {
@@ -166,15 +166,15 @@ class CreateDatabaseMigration
                 case 'update':
                     $oldSlug = $field['old']['slug'];
                     $newSlug = $field['new']['slug'];
-                    $oldType = app($field['old']['type'])->tableColumnType;
-                    $newType = app($field['new']['type'])->tableColumnType;
+                    $oldDefinition = $this->getColumnDefinition($field['old']);
+                    $newDefinition = $this->getColumnDefinition($field['new']);
 
                     if ($oldSlug !== $newSlug) {
                         $schema .= "\$table->renameColumn('{$oldSlug}', '{$newSlug}');\n";
                     }
 
-                    if ($oldType !== $newType) {
-                        $schema .= "\$table->{$newType}('{$newSlug}')->nullable()->change();\n";
+                    if ($oldDefinition != $newDefinition) {
+                        $schema .= $newDefinition->toMigration($newSlug, change: true).";\n";
                     }
                     break;
                 case 'delete':
@@ -189,6 +189,20 @@ class CreateDatabaseMigration
         }
 
         return $schema;
+    }
+
+    protected function getColumnDefinition(array $field): FieldColumn
+    {
+        $fieldInstance = app($field['type']);
+
+        if (method_exists($fieldInstance, 'columnDefinition')) {
+            return $fieldInstance->columnDefinition($field);
+        }
+
+        return new FieldColumn(
+            type: $fieldInstance->tableColumnType,
+            nullable: $fieldInstance->tableNullable ?? true,
+        );
     }
 
     protected function getMigrationPath($name)

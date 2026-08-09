@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\Contracts\FieldValueContract;
+use Aura\Base\Contracts\FieldValueStorage;
 use Aura\Base\Fields\ID;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Str;
@@ -74,13 +76,6 @@ trait SaveMetaFields
 
         if (isset($post->attributes['fields'])) {
 
-            // Dont save Meta Fields if it is uses customTable
-            if ($post->usesCustomTable() && ! $post->usesMeta()) {
-                unset($post->attributes['fields']);
-
-                return;
-            }
-
             foreach ($post->attributes['fields'] as $key => $value) {
                 $key = (string) $key;
 
@@ -116,7 +111,14 @@ trait SaveMetaFields
                     $value = call_user_func($field['set'], $post, $field, $value);
                 }
 
-                if (method_exists($class, 'set')) {
+                if ($class instanceof FieldValueContract) {
+                    $value = $class->normalizeForStorage(
+                        $value,
+                        is_array($field) ? $field : [],
+                        $post,
+                        $post->isTableField($key) ? FieldValueStorage::Physical : FieldValueStorage::Meta,
+                    );
+                } elseif (method_exists($class, 'set')) {
                     $value = $class->set($post, $field, $value);
                 }
 
@@ -143,8 +145,10 @@ trait SaveMetaFields
                     continue;
                 }
 
-                // If the field exists in the $post->getBaseFillable(), it should be safed in the table instead of the meta table
-                if (in_array($key, $post->getBaseFillable())) {
+                // Persist every declared physical field back to its model
+                // attribute. This includes custom-table resources without meta,
+                // whose fields used to bypass normalization entirely.
+                if ($post->isTableField($key)) {
                     $post->attributes[$key] = $value;
 
                     continue;

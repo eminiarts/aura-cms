@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Livewire\Resource;
 
+use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Facades\Aura;
 use Livewire\Attributes\On;
 
@@ -109,8 +110,15 @@ class ViewModal extends View
 
     protected function initializeModelFields()
     {
-        if (method_exists($this->model, 'inputFields')) {
+        if (method_exists($this->model, 'inputFields') && method_exists($this->model, 'resolveFieldValueInContext')) {
             foreach ($this->model->inputFields() as $field) {
+                if (isset($this->form['fields']) && array_key_exists($field['slug'], $this->form['fields'])) {
+                    $this->form['fields'][$field['slug']] = $this->model->resolveFieldValueInContext(
+                        $field['slug'],
+                        FieldValueContext::View,
+                    );
+                }
+
                 // If the method exists in the field type, call it directly.
                 if (method_exists($field['field'], 'hydrate') && isset($this->form['fields'][$field['slug']])) {
                     $this->form['fields'][$field['slug']] = $field['field']->hydrate($this->form['fields'][$field['slug']], $field);

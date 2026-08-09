@@ -3,6 +3,7 @@
 namespace Aura\Base\Listeners;
 
 use Aura\Base\Events\SaveFields;
+use Aura\Base\Schema\FieldColumn;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
@@ -79,9 +80,14 @@ class ModifyDatabaseMigration
     protected function generateColumn($field)
     {
         $fieldInstance = app($field['type']);
-        $columnType = $fieldInstance->tableColumnType;
+        $definition = method_exists($fieldInstance, 'columnDefinition')
+            ? $fieldInstance->columnDefinition($field)
+            : new FieldColumn(
+                type: $fieldInstance->tableColumnType,
+                nullable: $fieldInstance->tableNullable ?? true,
+            );
 
-        return "\$table->{$columnType}('{$field['slug']}')->nullable();\n";
+        return $definition->toMigration($field['slug']).";\n";
     }
 
     protected function generateSchema($fields)

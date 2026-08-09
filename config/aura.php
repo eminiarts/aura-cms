@@ -174,6 +174,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Field Value Defaults
+    |--------------------------------------------------------------------------
+    |
+    | Date-only values are never timezone shifted. Datetime values are stored
+    | in one timezone and rendered in the configured display timezone. Null
+    | timezone defaults follow the host application's timezone.
+    |
+    */
+
+    'fields' => [
+        'date' => [
+            'display_format' => 'd.m.Y',
+        ],
+        'datetime' => [
+            'display_format' => 'd.m.Y H:i',
+            'storage_timezone' => null,
+            'display_timezone' => null,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Auth
     |--------------------------------------------------------------------------
     |

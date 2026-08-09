@@ -2,13 +2,18 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\FieldValueContext;
+use Aura\Base\Contracts\FieldValueContract;
+use Aura\Base\Contracts\FieldValueStorage;
+use Aura\Base\Schema\FieldColumn;
 use Aura\Base\Traits\InputFields;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Traits\Macroable;
 use Illuminate\Support\Traits\Tappable;
 use Livewire\Wireable;
 
-abstract class Field implements Wireable
+abstract class Field implements FieldValueContract, Wireable
 {
     use InputFields;
     use Macroable;
@@ -52,6 +57,19 @@ abstract class Field implements Wireable
 
     public $wrapper = null;
 
+    /**
+     * Describe the Laravel Blueprint column used by generated custom-table migrations.
+     *
+     * @param  array<string, mixed>  $field
+     */
+    public function columnDefinition(array $field): FieldColumn
+    {
+        return new FieldColumn(
+            type: $this->tableColumnType,
+            nullable: $this->tableNullable,
+        );
+    }
+
     public function display($field, $value, $model)
     {
 
@@ -83,6 +101,15 @@ abstract class Field implements Wireable
         // Default scalar path: HTML-escape to prevent stored XSS. Non-scalar
         // values (arrays, objects, null) are returned unchanged.
         return is_scalar($value) ? e($value) : $value;
+    }
+
+    public function displayValue(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueContext $context = FieldValueContext::Index,
+    ): mixed {
+        return $this->display($field, $value, $model);
     }
 
     public function edit()
@@ -301,6 +328,16 @@ abstract class Field implements Wireable
         return [];
     }
 
+    public function hydrateFromStorage(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueStorage $storage,
+        FieldValueContext $context = FieldValueContext::Model,
+    ): mixed {
+        return $this->get($this, $value, $field);
+    }
+
     public function isDisabled($model, $field)
     {
         if (optional($field)['disabled'] instanceof \Closure) {
@@ -323,6 +360,19 @@ abstract class Field implements Wireable
     public function isTaxonomyField()
     {
         return $this->taxonomy;
+    }
+
+    public function normalizeForStorage(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueStorage $storage,
+    ): mixed {
+        if (method_exists($this, 'set')) {
+            return $this->set($model, $field, $value);
+        }
+
+        return $value;
     }
 
     public function toLivewire()

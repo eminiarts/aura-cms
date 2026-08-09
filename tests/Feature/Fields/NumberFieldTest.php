@@ -42,6 +42,9 @@ describe('Number Field Configuration', function () {
         $fields = collect($numberField->getFields());
 
         expect($fields->firstWhere('slug', 'placeholder'))->not->toBeNull()
+            ->and($fields->firstWhere('slug', 'number_type')['default'])->toBe('integer')
+            ->and($fields->firstWhere('slug', 'precision')['default'])->toBe(Number::DEFAULT_PRECISION)
+            ->and($fields->firstWhere('slug', 'scale')['default'])->toBe(Number::DEFAULT_SCALE)
             ->and($fields->firstWhere('slug', 'prefix'))->not->toBeNull()
             ->and($fields->firstWhere('slug', 'suffix'))->not->toBeNull()
             ->and($fields->firstWhere('slug', 'default'))->not->toBeNull();
@@ -151,8 +154,8 @@ describe('Number Field in Livewire', function () {
             ->assertHasNoErrors();
 
         $model = NumberFieldModel::orderBy('id', 'desc')->first();
-        expect($model->fields['number'])->toBe('42')
-            ->and($model->number)->toBe('42');
+        expect($model->fields['number'])->toBe(42)
+            ->and($model->number)->toBe(42);
     });
 
     test('saves zero value', function () {
@@ -162,7 +165,7 @@ describe('Number Field in Livewire', function () {
             ->assertHasNoErrors();
 
         $model = NumberFieldModel::orderBy('id', 'desc')->first();
-        expect($model->fields['number'])->toBe('0');
+        expect($model->fields['number'])->toBe(0);
     });
 
     test('saves negative number', function () {
@@ -172,7 +175,7 @@ describe('Number Field in Livewire', function () {
             ->assertHasNoErrors();
 
         $model = NumberFieldModel::orderBy('id', 'desc')->first();
-        expect($model->fields['number'])->toBe('-10');
+        expect($model->fields['number'])->toBe(-10);
     });
 
     test('saves decimal number', function () {
@@ -187,21 +190,37 @@ describe('Number Field in Livewire', function () {
 });
 
 describe('Number Field Value Handling', function () {
-    test('set method returns value unchanged', function () {
+    test('set method normalizes configured integer values without losing empty states', function () {
         $numberField = new Number;
 
-        expect($numberField->set(null, [], '42'))->toBe('42')
-            ->and($numberField->set(null, [], '0'))->toBe('0')
+        expect($numberField->set(null, [], '42'))->toBe(42)
+            ->and($numberField->set(null, [], '0'))->toBe(0)
             ->and($numberField->set(null, [], null))->toBeNull();
     });
 
-    test('value method casts to integer', function () {
+    test('value method preserves decimals instead of truncating them', function () {
         $numberField = new Number;
 
         expect($numberField->value('42'))->toBe(42)
-            ->and($numberField->value('3.14'))->toBe(3)
+            ->and($numberField->value('3.14'))->toBe('3.14')
             ->and($numberField->value('0'))->toBe(0)
             ->and($numberField->value('-10'))->toBe(-10);
+    });
+
+    test('configured decimals normalize precision without collapsing distinct empty states', function () {
+        $numberField = new Number;
+        $field = [
+            'number_type' => 'decimal',
+            'precision' => 8,
+            'scale' => 3,
+        ];
+
+        expect($numberField->set(null, $field, '12.3456'))->toBe('12.346')
+            ->and($numberField->set(null, $field, '-0.0049'))->toBe('-0.005')
+            ->and($numberField->set(null, $field, '0'))->toBe('0.000')
+            ->and($numberField->set(null, $field, 'legacy'))->toBe('legacy')
+            ->and($numberField->set(null, $field, ''))->toBe('')
+            ->and($numberField->set(null, $field, null))->toBeNull();
     });
 
     test('filterOptions returns numeric filters', function () {

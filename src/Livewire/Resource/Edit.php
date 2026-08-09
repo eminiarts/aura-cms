@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Livewire\Resource;
 
+use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Models\Post;
 use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
@@ -93,6 +94,12 @@ class Edit extends Component
     public function initializeModelFields()
     {
         foreach ($this->model->inputFields() as $field) {
+            if (isset($this->form['fields']) && array_key_exists($field['slug'], $this->form['fields'])) {
+                $this->form['fields'][$field['slug']] = $this->model->resolveFieldValueInContext(
+                    $field['slug'],
+                    FieldValueContext::Edit,
+                );
+            }
 
             // If the method exists in the field type, call it directly.
             if (method_exists($field['field'], 'hydrate') && isset($this->form['fields'][$field['slug']])) {

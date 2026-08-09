@@ -8,6 +8,7 @@ Fields are the building blocks of resources in Aura CMS. While Aura provides a c
 - [Field Structure](#field-structure)
 - [Field Properties](#field-properties)
 - [Field Methods](#field-methods)
+- [Field Value Lifecycle](#field-value-lifecycle)
 - [Field Views](#field-views)
 - [Creating a Field as a Package](#creating-a-field-as-a-package)
 - [Examples](#examples)
@@ -210,6 +211,58 @@ public function display($field, $value, $model)
     return sprintf('%.1f', $value);
 }
 ```
+
+## Field Value Lifecycle
+
+Every class extending `Aura\Base\Fields\Field` supports one value contract across physical columns and Aura meta rows:
+
+1. `normalizeForStorage()` converts submitted or imported input immediately before persistence.
+2. `hydrateFromStorage()` converts a stored value to its application/form representation.
+3. `displayValue()` presents an already hydrated value for a declared context.
+
+The storage location and presentation context are explicit:
+
+```php
+use Aura\Base\Contracts\FieldValueContext;
+use Aura\Base\Contracts\FieldValueStorage;
+use Illuminate\Database\Eloquent\Model;
+
+public function normalizeForStorage(
+    mixed $value,
+    array $field,
+    ?Model $model,
+    FieldValueStorage $storage,
+): mixed {
+    return $value;
+}
+
+public function hydrateFromStorage(
+    mixed $value,
+    array $field,
+    ?Model $model,
+    FieldValueStorage $storage,
+    FieldValueContext $context = FieldValueContext::Model,
+): mixed {
+    return $value;
+}
+
+public function displayValue(
+    mixed $value,
+    array $field,
+    ?Model $model,
+    FieldValueContext $context = FieldValueContext::Index,
+): mixed {
+    return $value;
+}
+```
+
+`FieldValueStorage` is either `Physical` or `Meta`. `FieldValueContext` is `Create`, `Edit`, `Model`, `Index`, or `View`. Use the context when a form needs a different shape from a table or detail view.
+
+Resources keep the backward-compatible `display($slug)` index API. Use `$resource->displayInContext($slug, FieldValueContext::View)` when rendering another surface; existing Resource overrides of `display($slug)` continue to be honored.
+
+The same compatibility rule applies to `displayFieldValue($key, $value)`, `getMeta($key)`, and `resolveFieldValue($slug, $meta = null)`. Their original signatures remain unchanged. Framework code that needs a form/view context uses the corresponding `*InContext()` method.
+
+Existing custom fields remain compatible: the base class adapts `set()`, `get()`, and `display()` to the new methods. Override the contract methods only when the storage location or UI context matters. Preserve `null`, an empty string, `0`, and `false` as separate values unless the field explicitly defines another domain rule.
 
 ### Filter Methods
 
