@@ -325,6 +325,11 @@ abstract class Field implements Wireable
         return $this->taxonomy;
     }
 
+    public function rendersOnIndex(): bool
+    {
+        return $this->index !== null;
+    }
+
     public function toLivewire()
     {
         return [

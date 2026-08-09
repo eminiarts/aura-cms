@@ -20,10 +20,11 @@ Aura CMS uses Livewire 4 to create dynamic, reactive user interfaces without req
 14. [Widget Components](#widget-components)
 15. [Component Communication](#component-communication)
 16. [Creating Custom Components](#creating-custom-components)
-17. [Performance Optimization](#performance-optimization)
-18. [Testing Components](#testing-components)
-19. [Best Practices](#best-practices)
-20. [Component Quick Reference](#component-quick-reference)
+17. [Embedding Components as Resource Fields](#embedding-components-as-resource-fields)
+18. [Performance Optimization](#performance-optimization)
+19. [Testing Components](#testing-components)
+20. [Best Practices](#best-practices)
+21. [Component Quick Reference](#component-quick-reference)
 
 ## Introduction
 
@@ -1080,6 +1081,138 @@ Dashboard, Settings, and Profile components are configurable via `config/aura.ph
 
 Replace with your own classes to customize behavior.
 
+## Embedding Components as Resource Fields
+
+`LivewireComponent` embeds host-application components on a resource's edit,
+view, and index surfaces. Each surface has an explicit alias. The field remains
+non-input, so Aura never persists its slug to a resource column or meta row.
+
+### Declare the field
+
+```php
+use App\Livewire\QuoteLineItems;
+use App\Support\QuoteLineItemParameters;
+use Aura\Base\Fields\LivewireComponent;
+
+[
+    'name' => 'Line items',
+    'slug' => 'quote_line_items',
+    'type' => LivewireComponent::class,
+    'component_aliases' => [
+        'edit' => QuoteLineItems::EDIT_ALIAS,
+        'view' => QuoteLineItems::VIEW_ALIAS,
+        'index' => QuoteLineItems::INDEX_ALIAS,
+        'fallback' => QuoteLineItems::VIEW_ALIAS,
+    ],
+    'parameter_mapper' => QuoteLineItemParameters::class,
+    'on_forms' => true,
+    'on_view' => true,
+    'on_index' => true,
+],
+```
+
+Register every alias with Livewire in the host service provider. Aliases, not
+component class names, are accepted by the field.
+
+```php
+Livewire::component(QuoteLineItems::EDIT_ALIAS, QuoteLineItems::class);
+Livewire::component(QuoteLineItems::VIEW_ALIAS, QuoteLineItems::class);
+Livewire::component(QuoteLineItems::INDEX_ALIAS, QuoteLineItems::class);
+```
+
+The legacy top-level `component` key remains an edit-only alias. New fields
+should use `component_aliases.edit` so every supported surface is explicit.
+
+### Map mount parameters
+
+The optional mapper is a class string, which keeps the field declaration safe
+to serialize through Livewire. Its output is merged over Aura's default mount
+parameters:
+
+```php
+use Aura\Base\Contracts\MapsEmbeddedComponentParameters;
+use Aura\Base\Services\EmbeddedComponentContext;
+use Aura\Base\Services\EmbeddedComponentSurface;
+
+final class QuoteLineItemParameters implements MapsEmbeddedComponentParameters
+{
+    public function map(EmbeddedComponentContext $context): array
+    {
+        return [
+            'quoteId' => $context->resource->getKey(),
+            'readOnly' => $context->surface !== EmbeddedComponentSurface::Edit,
+        ];
+    }
+}
+```
+
+The default parameters are `resourceType`, `resourceId`, `fieldSlug`, and
+`context`. Mappers may return only null, scalar, or nested array values. Aura
+rejects models, Eloquent collections, closures, objects, non-finite floats, and
+arrays deeper than ten levels instead of serializing an arbitrary model graph.
+
+A mapper runs once per rendered cell on an index. It must not issue a query per
+record. Read loaded attributes or relations and eager-load any required relation
+from the resource's table query.
+
+### Implement the authorization boundary
+
+Every embedded class must implement `EmbeddedLivewireComponent` and use
+`AuthorizesEmbeddedComponent`. Aura refuses aliases that do not satisfy both
+parts of this boundary.
+
+```php
+use Aura\Base\Contracts\EmbeddedLivewireComponent;
+use Aura\Base\Traits\AuthorizesEmbeddedComponent;
+use Illuminate\View\View;
+use Livewire\Attributes\Locked;
+use Livewire\Component;
+
+final class QuoteLineItems extends Component implements EmbeddedLivewireComponent
+{
+    use AuthorizesEmbeddedComponent;
+
+    public const EDIT_ALIAS = 'crm.quote-line-items.edit';
+    public const INDEX_ALIAS = 'crm.quote-line-items.index';
+    public const VIEW_ALIAS = 'crm.quote-line-items.view';
+
+    #[Locked]
+    public int|string|null $quoteId = null;
+
+    public bool $readOnly = false;
+
+    public function addLineItem(): void
+    {
+        $quote = $this->embeddedResource();
+
+        // Apply any additional operation-specific authorization here.
+    }
+
+    public function render(): View
+    {
+        return view('livewire.quote-line-items');
+    }
+}
+```
+
+The field checks the owner policy before rendering (`create` for an unsaved
+edit model, `update` for an existing edit model, and `view` for view/index).
+The trait verifies the signed, locked owner context before component `mount()`
+code runs and repeats that policy check on every child request. Component
+actions should use
+`embeddedResource()` as their authoritative owner instead of trusting a public
+ID parameter.
+
+When a create host cannot provide even an unsaved model, declare
+`'owner_resource' => Quote::class`; Aura instantiates it for the `create` policy
+and passes a null `resourceId`. A missing alias, invalid mapper, failed policy,
+or component outside the boundary renders nothing. If
+`component_aliases.fallback` is declared and valid, Aura uses it for an absent
+or invalid context alias.
+
+Keys are deterministic across renders and include the surface, owner, field
+slug, and Aura's nested field ids. For repeated programmatic instances that
+otherwise share those values, set a scalar `component_identity` on the field.
 
 ## Performance Optimization
 

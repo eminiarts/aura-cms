@@ -54,6 +54,7 @@ use Aura\Base\Policies\TeamPolicy;
 use Aura\Base\Policies\UserPolicy;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Services\EmbeddedComponentContextStore;
 use Aura\Base\Widgets\Bar;
 use Aura\Base\Widgets\Donut;
 use Aura\Base\Widgets\Pie;
@@ -404,6 +405,8 @@ class AuraServiceProvider extends PackageServiceProvider
         // registration after the first request. Per-request mutable state is
         // reset back to the boot baseline via Aura::flushState() instead.
         $this->app->singleton(\Aura\Base\Aura::class);
+
+        $this->app->scoped(EmbeddedComponentContextStore::class);
 
         $this->app->scoped('aura', function (): Aura {
             return app(Aura::class);

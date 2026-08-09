@@ -7,6 +7,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Illuminate\Contracts\Http\Kernel;
+use Livewire\Livewire;
 
 class BrowserTestCase extends TestCase
 {
@@ -35,9 +36,18 @@ class BrowserTestCase extends TestCase
         // Re-capture the baseline afterwards: Queue::after triggers
         // Aura::flushState(), which would otherwise drop the registration
         // as soon as any sync job (e.g. thumbnail generation) runs.
-        Aura::registerResources([Resources\GalleryPage::class]);
+        Aura::registerResources([
+            Resources\EmbeddedComponentPage::class,
+            Resources\GalleryPage::class,
+        ]);
+        Aura::registerRoutes('embedded-component-page');
         Aura::registerRoutes('gallery-page');
         Aura::captureBaselineState();
+
+        Livewire::component(
+            'aura-tests.embedded-field',
+            Browser\Support\EmbeddedFieldComponent::class,
+        );
 
         $this->serveBuiltAssets();
     }
