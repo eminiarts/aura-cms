@@ -18,6 +18,11 @@ use Livewire\Attributes\On;
 
 class MediaTable extends Table
 {
+    private const MAX_ALL_ROW_SELECTION = 1000;
+
+    #[Locked]
+    public ?string $detailsComponentId = null;
+
     #[Locked]
     public $field;
 
@@ -67,7 +72,27 @@ class MediaTable extends Table
 
     public function allTableRows(): array
     {
-        return $this->visibleRows($this->query()->get())->modelKeys();
+        $maximumFiles = is_array($this->field) ? (int) ($this->field['max_files'] ?? 0) : 0;
+        $limit = $maximumFiles > 0 ? min($maximumFiles, self::MAX_ALL_ROW_SELECTION) : self::MAX_ALL_ROW_SELECTION;
+        $ids = [];
+
+        foreach ($this->query()->lazyById(100) as $attachment) {
+            if (! $attachment instanceof Resource) {
+                abort(403);
+            }
+
+            if ($this->visibleRows(new Collection([$attachment]))->isEmpty()) {
+                continue;
+            }
+
+            $ids[] = $attachment->getKey();
+
+            if (count($ids) >= $limit) {
+                break;
+            }
+        }
+
+        return $ids;
     }
 
     public function getAllTableRows(): array
@@ -97,9 +122,37 @@ class MediaTable extends Table
 
     public function mount(): void
     {
+        if (is_array($this->field) && (! is_string($this->detailsComponentId) || $this->detailsComponentId === '')) {
+            $this->detailsComponentId = $this->getId();
+        }
+
         $this->ownerTokenDigest = app(MediaOwnerTokenBroker::class)->digest($this->ownerToken);
         $this->authorizeContext();
         parent::mount();
+    }
+
+    public function openAttachmentDetails(int|string $id): void
+    {
+        $actor = $this->actor();
+        $owner = app(MediaAuthorization::class)->authorizeOwner($this->ownerToken, $actor);
+        $attachment = $this->authorizedAttachment($id);
+        $rowIds = (new Collection($this->rows()->items()))
+            ->map(fn (Resource $row): string => (string) $row->getKey())
+            ->all();
+        app(MediaAuthorization::class)->authorizeAttachments($rowIds, $actor);
+
+        if (! is_string($this->detailsComponentId) || $this->detailsComponentId === '') {
+            abort(403);
+        }
+
+        $this->dispatch(
+            'open-attachment-details',
+            id: (string) $attachment->getKey(),
+            ids: $rowIds,
+            ownerToken: $this->ownerToken,
+            componentId: $this->detailsComponentId,
+            fieldSlug: $owner->context->slug,
+        );
     }
 
     public function render(): View
@@ -111,6 +164,7 @@ class MediaTable extends Table
 
     public function selectFieldRows($value, $slug): void
     {
+        $this->authorizeSelectionLimit((array) $value);
         app(MediaAuthorization::class)->authorizeAttachments((array) $value, $this->actor());
         parent::selectFieldRows($value, $slug);
     }
@@ -128,6 +182,7 @@ class MediaTable extends Table
 
     public function updatedSelected(): void
     {
+        $this->authorizeSelectionLimit((array) $this->selected);
         app(MediaAuthorization::class)->authorizeAttachments((array) $this->selected, $this->actor());
         parent::updatedSelected();
     }
@@ -136,7 +191,7 @@ class MediaTable extends Table
     {
         $this->authorizeContext();
 
-        return parent::query();
+        return app(MediaAuthorization::class)->applyAttachmentVisibility(parent::query(), $this->actor());
     }
 
     #[Computed]
@@ -204,7 +259,9 @@ class MediaTable extends Table
 
         if (! is_array($this->field)
             || ($this->field['slug'] ?? null) !== $owner->field['slug']
-            || ($this->field['type'] ?? null) !== $owner->field['type']) {
+            || ($this->field['type'] ?? null) !== $owner->field['type']
+            || ! is_string($this->detailsComponentId)
+            || $this->detailsComponentId === '') {
             abort(403);
         }
     }
@@ -220,6 +277,21 @@ class MediaTable extends Table
         }
 
         return $attachment;
+    }
+
+    /** @param list<int|string> $ids */
+    private function authorizeSelectionLimit(array $ids): void
+    {
+        $owner = app(MediaAuthorization::class)->authorizeOwner($this->ownerToken, $this->actor());
+
+        if ($owner->context->action !== 'library') {
+            app(MediaAuthorization::class)->authorizeOwnerSelection(
+                $this->ownerToken,
+                $ids,
+                $this->actor(),
+                expectedSlug: $owner->context->slug,
+            );
+        }
     }
 
     /** @param Collection<int, resource> $attachments */

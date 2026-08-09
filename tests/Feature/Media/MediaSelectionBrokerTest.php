@@ -4,6 +4,7 @@ use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\Media\InvalidMediaSelectionRequest;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Livewire\Media\MediaSelectionBroker;
+use Aura\Base\Livewire\Media\MediaSelectionMutation;
 use Aura\Base\Livewire\Media\MediaSelectionRejected;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
@@ -13,6 +14,7 @@ beforeEach(function () {
     config()->set('aura.media.security.selection_ttl', 15);
     config()->set('aura.media.security.owner_token_ttl', 120);
     $this->actor = createSuperAdmin();
+    app('aura')::registerResources([Post::class]);
     $this->owners = app(MediaOwnerTokenBroker::class);
     $this->selections = app(MediaSelectionBroker::class);
     $this->ownerToken = $this->owners->issue(
@@ -20,7 +22,7 @@ beforeEach(function () {
         modelClass: Post::class,
         modelKey: null,
         action: 'create',
-        slug: 'gallery',
+        slug: 'image',
         fieldType: Image::class,
         actor: $this->actor,
     );
@@ -48,7 +50,7 @@ test('selection requests bind both components actor team slug and normalized val
         ->and($record->ownerComponentId)->toBe('owner-component')
         ->and($record->actorId)->toBe((string) $this->actor->getAuthIdentifier())
         ->and($record->teamId)->toBe(config('aura.teams') ? (string) $this->actor->current_team_id : null)
-        ->and($record->slug)->toBe('gallery')
+        ->and($record->slug)->toBe('image')
         ->and($record->valueDigest)->toBe(hash('sha256', '["4","7"]'))
         ->and($record->state)->toBe('pending')
         ->and($record->errorCode)->toBeNull();
@@ -62,26 +64,36 @@ test('owner processing is atomic successful and idempotent', function () {
         requestToken: $request->token,
         ownerToken: $this->ownerToken,
         ownerComponentId: 'owner-component',
-        slug: 'gallery',
+        slug: 'image',
         value: ['9'],
         actor: $this->actor,
-        mutation: function () use (&$applications): Closure {
-            return function () use (&$applications): void {
-                $applications++;
-            };
+        mutation: function () use (&$applications): MediaSelectionMutation {
+            return new MediaSelectionMutation(
+                apply: function () use (&$applications): void {
+                    $applications++;
+                },
+                rollback: function () use (&$applications): void {
+                    $applications--;
+                },
+            );
         },
     );
     $duplicate = $this->selections->processForOwner(
         requestToken: $request->token,
         ownerToken: $this->ownerToken,
         ownerComponentId: 'owner-component',
-        slug: 'gallery',
+        slug: 'image',
         value: ['9'],
         actor: $this->actor,
-        mutation: function () use (&$applications): Closure {
-            return function () use (&$applications): void {
-                $applications++;
-            };
+        mutation: function () use (&$applications): MediaSelectionMutation {
+            return new MediaSelectionMutation(
+                apply: function () use (&$applications): void {
+                    $applications++;
+                },
+                rollback: function () use (&$applications): void {
+                    $applications--;
+                },
+            );
         },
     );
 
@@ -97,10 +109,10 @@ test('processing failures settle generically and a retry receives a new token', 
         requestToken: $request->token,
         ownerToken: $this->ownerToken,
         ownerComponentId: 'owner-component',
-        slug: 'gallery',
+        slug: 'image',
         value: ['9'],
         actor: $this->actor,
-        mutation: fn (): Closure => throw new MediaSelectionRejected('selection_rejected'),
+        mutation: fn (): MediaSelectionMutation => throw new MediaSelectionRejected('selection_rejected'),
     );
     $retry = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
 
@@ -114,10 +126,10 @@ test('forged owner request value manager and actor never alter the pending recor
     $otherActor = User::factory()->create(config('aura.teams') ? ['current_team_id' => $this->actor->current_team_id] : []);
 
     foreach ([
-        fn () => $this->selections->processForOwner($request->token, $this->ownerToken.'x', 'owner-component', 'gallery', ['9'], $this->actor, fn () => null),
-        fn () => $this->selections->processForOwner($request->token, $this->ownerToken, 'other-owner', 'gallery', ['9'], $this->actor, fn () => null),
+        fn () => $this->selections->processForOwner($request->token, $this->ownerToken.'x', 'owner-component', 'image', ['9'], $this->actor, fn () => null),
+        fn () => $this->selections->processForOwner($request->token, $this->ownerToken, 'other-owner', 'image', ['9'], $this->actor, fn () => null),
         fn () => $this->selections->processForOwner($request->token, $this->ownerToken, 'owner-component', 'other', ['9'], $this->actor, fn () => null),
-        fn () => $this->selections->processForOwner($request->token, $this->ownerToken, 'owner-component', 'gallery', ['10'], $this->actor, fn () => null),
+        fn () => $this->selections->processForOwner($request->token, $this->ownerToken, 'owner-component', 'image', ['10'], $this->actor, fn () => null),
         fn () => $this->selections->forManager($request->token, $this->ownerToken, 'other-manager', $this->actor),
         fn () => $this->selections->forManager($request->token, $this->ownerToken, 'manager', $otherActor),
     ] as $attempt) {
@@ -134,10 +146,13 @@ test('timeout and success ordering is authoritative and late owner work cannot m
         $successful->token,
         $this->ownerToken,
         'owner-component',
-        'gallery',
+        'image',
         ['1'],
         $this->actor,
-        fn (): Closure => static fn (): null => null,
+        fn (): MediaSelectionMutation => new MediaSelectionMutation(
+            apply: static function (): void {},
+            rollback: static function (): void {},
+        ),
     );
 
     Carbon::setTestNow(now()->addSeconds(16));
@@ -156,12 +171,17 @@ test('timeout and success ordering is authoritative and late owner work cannot m
             $expired->token,
             $this->ownerToken,
             'owner-component',
-            'gallery',
+            'image',
             ['2'],
             $this->actor,
-            fn (): Closure => function () use (&$applications): void {
-                $applications++;
-            },
+            fn (): MediaSelectionMutation => new MediaSelectionMutation(
+                apply: function () use (&$applications): void {
+                    $applications++;
+                },
+                rollback: function () use (&$applications): void {
+                    $applications--;
+                },
+            ),
         )->state)->toBe('expired')
         ->and($applications)->toBe(0);
 });
@@ -174,15 +194,20 @@ test('a request expiring during preparation never commits and cannot be settled 
         $request->token,
         $this->ownerToken,
         'owner-component',
-        'gallery',
+        'image',
         ['3'],
         $this->actor,
-        function () use (&$applications): Closure {
+        function () use (&$applications): MediaSelectionMutation {
             Carbon::setTestNow(now()->addSeconds(16));
 
-            return function () use (&$applications): void {
-                $applications++;
-            };
+            return new MediaSelectionMutation(
+                apply: function () use (&$applications): void {
+                    $applications++;
+                },
+                rollback: function () use (&$applications): void {
+                    $applications--;
+                },
+            );
         },
     );
 
@@ -191,4 +216,52 @@ test('a request expiring during preparation never commits and cannot be settled 
         ->and($applications)->toBe(0)
         ->and($this->selections->forManager($request->token, $this->ownerToken, 'manager', $this->actor)->state)
         ->toBe('expired');
+});
+
+test('a non-reversible prepared callback is rejected before it can mutate state', function () {
+    $request = $this->selections->begin($this->ownerToken, 'manager', ['5'], $this->actor);
+    $applications = 0;
+
+    $record = $this->selections->processForOwner(
+        $request->token,
+        $this->ownerToken,
+        'owner-component',
+        'image',
+        ['5'],
+        $this->actor,
+        fn (): Closure => function () use (&$applications): void {
+            $applications++;
+        },
+    );
+
+    expect($record->state)->toBe('failed')
+        ->and($record->errorCode)->toBe('processing_failed')
+        ->and($applications)->toBe(0);
+});
+
+test('a request expiring during application is rolled back and never succeeds', function () {
+    $request = $this->selections->begin($this->ownerToken, 'manager', ['4'], $this->actor);
+    $authoritativeValue = [];
+
+    $record = $this->selections->processForOwner(
+        $request->token,
+        $this->ownerToken,
+        'owner-component',
+        'image',
+        ['4'],
+        $this->actor,
+        fn (): MediaSelectionMutation => new MediaSelectionMutation(
+            apply: function () use (&$authoritativeValue): void {
+                $authoritativeValue = ['4'];
+                Carbon::setTestNow(now()->addSeconds(16));
+            },
+            rollback: function () use (&$authoritativeValue): void {
+                $authoritativeValue = [];
+            },
+        ),
+    );
+
+    expect($record->state)->toBe('expired')
+        ->and($record->errorCode)->toBe('selection_timeout')
+        ->and($authoritativeValue)->toBe([]);
 });

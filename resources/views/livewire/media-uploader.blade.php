@@ -379,7 +379,7 @@
                     </h1>
                 </div>
 
-                <livewire:aura::media-table :model="$model" :field="$field" :owner-token="$ownerToken" />
+                <livewire:aura::media-table :model="$model" :field="$field" :owner-token="$ownerToken" :details-component-id="$detailsComponentId" />
             </div>
         @endif
     </div>

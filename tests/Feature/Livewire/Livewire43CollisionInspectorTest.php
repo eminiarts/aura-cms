@@ -220,7 +220,7 @@ test('inspector rechecks livewire state after every third party resolver side ef
     expect(fn () => $inspector->assertUnclaimed(
         ['aura::global-search'],
         static fn (): null => null,
-    ))->toThrow(ComponentSlotCollision::class, 'explicit-class');
+    ))->toThrow(ComponentSlotCollision::class, 'protected-claim-mutation');
 });
 
 test('inspector repeats the full protected identifier sweep after resolver side effects', function () {
@@ -239,5 +239,33 @@ test('inspector repeats the full protected identifier sweep after resolver side 
     expect(fn () => $inspector->assertUnclaimed([
         ComponentSlotRegistry::GLOBAL_SEARCH_TRANSPORT_ID,
         'aura::media-manager',
-    ], static fn (): null => null))->toThrow(ComponentSlotCollision::class, 'explicit-class');
+    ], static fn (): null => null))->toThrow(ComponentSlotCollision::class, 'protected-claim-mutation');
 });
+
+test('inspector rejects every protected claim snapshot mutation by a resolver', function (string $mutation) {
+    [$inspector, $finder, $factory] = freshCollisionInspector();
+    $finder->addComponent(name: 'existing-unrelated-claim', class: CollisionFixture::class);
+
+    $factory->resolveMissingComponent(function () use ($finder, $mutation): null {
+        $claims = (function (): array {
+            return $this->classComponents;
+        })->call($finder);
+
+        if ($mutation === 'addition') {
+            $claims['added-unrelated-claim'] = CollisionFixture::class;
+        } elseif ($mutation === 'removal') {
+            unset($claims['existing-unrelated-claim']);
+        } else {
+            $claims['existing-unrelated-claim'] = GlobalSearch::class;
+        }
+
+        setLivewireInternal($finder, 'classComponents', $claims);
+
+        return null;
+    });
+
+    expect(fn () => $inspector->assertUnclaimed(
+        [ComponentSlotRegistry::GLOBAL_SEARCH_TRANSPORT_ID],
+        static fn (): null => null,
+    ))->toThrow(ComponentSlotCollision::class, 'protected-claim-mutation');
+})->with(['addition', 'removal', 'replacement']);

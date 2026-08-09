@@ -32,6 +32,9 @@ class MediaUploader extends Component
     public $button = false;
 
     #[Locked]
+    public ?string $detailsComponentId = null;
+
+    #[Locked]
     public $disabled = false;
 
     #[Locked]
@@ -119,6 +122,7 @@ class MediaUploader extends Component
 
         try {
             $this->validate([
+                'media' => ['required', 'array', 'max:'.self::MAX_FILES],
                 'media.*' => [
                     'required',
                     'max:'.self::MAX_FILE_SIZE_KILOBYTES,

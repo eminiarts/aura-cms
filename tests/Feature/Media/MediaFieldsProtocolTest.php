@@ -5,6 +5,7 @@ use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Livewire\Media\MediaSelectionBroker;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Tests\Resources\Post;
+use Aura\Base\Traits\InputFields;
 use Aura\Base\Traits\MediaFields;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -60,9 +61,69 @@ class Core20ProductionMediaOwnerHarness extends Component
     }
 }
 
+class Core20LimitedMediaOwnerHarness extends Component
+{
+    use InputFields;
+    use MediaFields;
+
+    public array $form = ['fields' => ['limited-image' => []]];
+
+    public static int $maximumFiles = 2;
+
+    public Post $model;
+
+    public string $ownerTokenForTest = '';
+
+    public static function getFields(): array
+    {
+        return [[
+            'name' => 'Limited image',
+            'slug' => 'limited-image',
+            'type' => Image::class,
+            'max_files' => self::$maximumFiles,
+        ]];
+    }
+
+    public function mount(): void
+    {
+        $this->model = new Post;
+    }
+
+    public function render(): string
+    {
+        $this->ownerTokenForTest = $this->mediaOwnerToken('limited-image');
+
+        return '<div>limited owner</div>';
+    }
+}
+
 beforeEach(function () {
+    Core20LimitedMediaOwnerHarness::$maximumFiles = 2;
     $this->actingAs($this->actor = createSuperAdmin());
     app('aura')::registerResources([Post::class]);
+});
+
+test('owner apply rejects a selection above the freshly resolved field maximum', function () {
+    config()->set('aura.resources.core20-limited-owner', Post::class);
+    $owner = Livewire::test(Core20LimitedMediaOwnerHarness::class);
+    $ownerToken = $owner->get('ownerTokenForTest');
+    $attachments = Attachment::factory()->count(2)->create(
+        config('aura.teams') ? ['team_id' => $this->actor->current_team_id] : [],
+    );
+    $value = $attachments->map(fn (Attachment $attachment): string => (string) $attachment->getKey())->all();
+    $request = app(MediaSelectionBroker::class)->begin($ownerToken, 'manager', $value, $this->actor);
+
+    Core20LimitedMediaOwnerHarness::$maximumFiles = 1;
+
+    $owner->dispatch(
+        'aura-media-selection-requested',
+        ownerToken: $ownerToken,
+        requestToken: $request->token,
+        slug: 'limited-image',
+        value: $value,
+    )->assertDispatched('aura-media-selection-acknowledged', fn (string $event, array $payload): bool => $payload['outcome'] === 'failed');
+
+    expect($owner->get('form.fields.limited-image'))->not->toBe($value);
 });
 
 test('media field owner keeps only a locked digest and applies a correlated request once', function () {

@@ -4,8 +4,10 @@ use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\ComponentSlots\ComponentSlotRegistry;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Livewire\Media\MediaSelectionBroker;
+use Aura\Base\Livewire\Media\MediaSelectionMutation;
 use Aura\Base\Livewire\Media\MediaSelectionRejected;
 use Aura\Base\Livewire\MediaManager;
+use Aura\Base\Livewire\Modals;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Tests\Resources\GalleryPage;
 use Aura\Base\Tests\Resources\Post;
@@ -75,7 +77,10 @@ test('authoritative success closes only on the third manager acknowledgement req
         slug: 'image',
         value: [(string) $this->attachment->getKey()],
         actor: $this->actor,
-        mutation: fn (): Closure => static fn (): null => null,
+        mutation: fn (): MediaSelectionMutation => new MediaSelectionMutation(
+            apply: static function (): void {},
+            rollback: static function (): void {},
+        ),
     );
 
     $manager->call(
@@ -137,7 +142,7 @@ test('authoritative failure stays open and permits retry with a new request toke
         'image',
         [(string) $this->attachment->getKey()],
         $this->actor,
-        fn (): Closure => throw new MediaSelectionRejected('selection_rejected'),
+        fn (): MediaSelectionMutation => throw new MediaSelectionRejected('selection_rejected'),
     );
 
     $manager->call(
@@ -193,7 +198,10 @@ test('timeout remains open while an already successful timeout race closes', fun
         'image',
         [(string) $this->attachment->getKey()],
         $this->actor,
-        fn (): Closure => static fn (): null => null,
+        fn (): MediaSelectionMutation => new MediaSelectionMutation(
+            apply: static function (): void {},
+            rollback: static function (): void {},
+        ),
     );
     Carbon::setTestNow(now()->addSeconds(16));
 
@@ -227,6 +235,42 @@ test('manager disables every explicit dismissal while a selection is pending', f
         ->call('requestMediaSelection', [(string) $this->attachment->getKey()])
         ->assertSeeHtml('data-picker-close')
         ->assertSeeHtml('disabled');
+});
+
+test('global modal close events cannot bypass a pending media dismissal lock', function () {
+    $request = app(MediaSelectionBroker::class)->begin(
+        $this->ownerToken,
+        'manager-component',
+        [(string) $this->attachment->getKey()],
+        $this->actor,
+    );
+    $modals = new Modals;
+    $modals->modals = [
+        'picker' => [
+            'name' => ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID,
+            'arguments' => ['ownerToken' => $this->ownerToken],
+        ],
+    ];
+
+    $modals->closeModal('picker');
+
+    expect($modals->modals)->toHaveKey('picker');
+
+    app(MediaSelectionBroker::class)->processForOwner(
+        $request->token,
+        $this->ownerToken,
+        'owner-component',
+        'image',
+        [(string) $this->attachment->getKey()],
+        $this->actor,
+        fn (): MediaSelectionMutation => new MediaSelectionMutation(
+            apply: static function (): void {},
+            rollback: static function (): void {},
+        ),
+    );
+    $modals->closeModal('picker');
+
+    expect($modals->modals)->not->toHaveKey('picker');
 });
 
 test('manager accepts upload selection only from its attested owner context', function () {
@@ -263,6 +307,31 @@ test('manager accepts upload selection only from its attested owner context', fu
         ->assertSet('field.max_files', 1)
         ->assertSet('selected', [(string) $uploaded->getKey()])
         ->assertDispatched('selectedRows', [(string) $uploaded->getKey()]);
+});
+
+test('manager rejects forged selections above the fresh field maximum', function () {
+    app('aura')::registerResources([GalleryPage::class]);
+    $second = Attachment::factory()->create(config('aura.teams') ? ['team_id' => $this->actor->current_team_id] : []);
+    $ownerToken = app(MediaOwnerTokenBroker::class)->issue(
+        ownerComponentId: 'gallery-owner',
+        modelClass: GalleryPage::class,
+        modelKey: null,
+        action: 'create',
+        slug: 'hero',
+        fieldType: Image::class,
+        actor: $this->actor,
+    );
+
+    Livewire::test(MediaManager::class, [
+        'model' => GalleryPage::class,
+        'slug' => 'hero',
+        'selected' => [],
+        'ownerToken' => $ownerToken,
+        'modalAttributes' => $this->arguments['modalAttributes'],
+    ])->call('requestMediaSelection', [
+        (string) $this->attachment->getKey(),
+        (string) $second->getKey(),
+    ])->assertForbidden()->assertNotDispatched('aura-media-selection-requested');
 });
 
 test('media manager transport and compatibility aliases mount and hydrate the selected winner', function (string $identifier) {

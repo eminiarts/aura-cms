@@ -309,6 +309,18 @@ test('accepts multiple safe files', function () {
     expect(Attachment::count())->toBe(3);
 });
 
+test('rejects an upload batch larger than the server limit', function () {
+    $files = collect(range(1, 21))
+        ->map(fn (int $index): UploadedFile => UploadedFile::fake()->image("photo-{$index}.jpg"))
+        ->all();
+
+    Livewire::test(MediaUploader::class)
+        ->set('media', $files)
+        ->assertHasErrors(['media']);
+
+    expect(Attachment::count())->toBe(0);
+});
+
 // All Allowed Extensions Test
 test('accepts all allowed MIME types from validation', function () {
     // Based on MediaUploader validation: mimes:jpg,jpeg,png,gif,webp,svg,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,mp4,mov,avi,mp3,wav

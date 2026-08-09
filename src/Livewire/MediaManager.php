@@ -148,15 +148,21 @@ class MediaManager extends Component
             return;
         }
 
-        $uploaded = app(MediaAuthorization::class)
-            ->authorizeAttachments($ids, $actor)
+        $authorization = app(MediaAuthorization::class);
+        $owner = $authorization->authorizeOwner(
+            $this->ownerToken,
+            $actor,
+            $this->model,
+            $this->slug,
+        );
+        $uploaded = $authorization->authorizeAttachments($ids, $actor)
             ->map(fn (Resource $attachment): string => (string) $attachment->getKey());
 
         if ($uploaded->isEmpty()) {
             return;
         }
 
-        $maximumFiles = (int) ($this->field['max_files'] ?? 0);
+        $maximumFiles = (int) ($owner->field['max_files'] ?? 0);
 
         if ($maximumFiles === 1) {
             $selection = $uploaded->slice(-1)->values();
@@ -196,6 +202,7 @@ class MediaManager extends Component
 
         $actor = $this->actor();
         $owner = app(MediaAuthorization::class)->authorizeOwner($ownerToken, $actor, $model, $slug);
+        app(MediaAuthorization::class)->authorizeOwnerSelection($ownerToken, $selected ?? [], $actor, $model, $slug);
         $this->field = $owner->field;
         $this->ownerTokenDigest = app(MediaOwnerTokenBroker::class)->digest($ownerToken);
         $this->selected = app(MediaAuthorization::class)
@@ -218,6 +225,13 @@ class MediaManager extends Component
         }
 
         $actor = $this->authorizeContext();
+        app(MediaAuthorization::class)->authorizeOwnerSelection(
+            $this->ownerToken,
+            $value,
+            $actor,
+            $this->model,
+            $this->slug,
+        );
         $selected = app(MediaAuthorization::class)->authorizeAttachments($value, $actor)
             ->map(fn (Resource $attachment): string => (string) $attachment->getKey())
             ->all();
@@ -259,6 +273,14 @@ class MediaManager extends Component
     public function selectAttachment($ids): void
     {
         if (! $this->initialSelectionDone && is_array($ids)) {
+            $actor = $this->authorizeContext();
+            app(MediaAuthorization::class)->authorizeOwnerSelection(
+                $this->ownerToken,
+                $ids,
+                $actor,
+                $this->model,
+                $this->slug,
+            );
             $this->selected = collect($ids)->map(fn ($id): string => (string) $id)->values()->toArray();
             $this->initialSelectionDone = true;
         }

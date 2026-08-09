@@ -2,8 +2,12 @@
 
 namespace Aura\Base\Livewire;
 
+use Aura\Base\Livewire\ComponentSlots\ComponentSlotRegistry;
+use Aura\Base\Livewire\Media\MediaSelectionBroker;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Throwable;
 
 class Modals extends Component
 {
@@ -13,8 +17,18 @@ class Modals extends Component
     public function closeModal($id = null): void
     {
         if ($id) {
+            if (isset($this->modals[$id]) && $this->dismissalLocked($this->modals[$id])) {
+                return;
+            }
+
             unset($this->modals[$id]);
         } else {
+            foreach ($this->modals as $modal) {
+                if ($this->dismissalLocked($modal)) {
+                    return;
+                }
+            }
+
             $this->modals = [];
         }
     }
@@ -53,6 +67,10 @@ class Modals extends Component
             ], $modalAttributes),
             'active' => true,
         ];
+
+        if ($component === ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID) {
+            $this->modals[$id]['modalAttributes']['persistent'] = true;
+        }
     }
 
     public function render()
@@ -60,5 +78,39 @@ class Modals extends Component
         // ray($this->modals)->blue(); // This will show the contents of $modals in Ray
 
         return view('aura::livewire.modals');
+    }
+
+    public function updatedModals(mixed $value, string $key): void
+    {
+        if ($value !== false || ! str_ends_with($key, '.active')) {
+            return;
+        }
+
+        $id = substr($key, 0, -strlen('.active'));
+
+        if (isset($this->modals[$id]) && $this->dismissalLocked($this->modals[$id])) {
+            $this->modals[$id]['active'] = true;
+        }
+    }
+
+    /** @param array<string, mixed> $modal */
+    private function dismissalLocked(array $modal): bool
+    {
+        if (($modal['name'] ?? null) !== ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID) {
+            return false;
+        }
+
+        $ownerToken = data_get($modal, 'arguments.ownerToken');
+        $actor = auth()->user();
+
+        if (! is_string($ownerToken) || ! $actor instanceof Authenticatable) {
+            return true;
+        }
+
+        try {
+            return app(MediaSelectionBroker::class)->hasActiveRequestForOwner($ownerToken, $actor);
+        } catch (Throwable) {
+            return true;
+        }
     }
 }

@@ -81,20 +81,24 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
     public function assertReservable(string $identifier, string $intrinsicComponent, Closure $auraResolver): void
     {
         $this->assertCompatible();
+        $snapshot = $this->protectedClaimSnapshot();
         $this->assertIdentifierUnclaimed(
             $identifier,
             $auraResolver,
             allowedConventionalClass: $intrinsicComponent,
             allowAuraReservation: false,
+            protectedClaimSnapshot: $snapshot,
         );
+        $this->assertProtectedClaimSnapshotUnchanged($identifier, $snapshot);
     }
 
     public function assertUnclaimed(array $identifiers, Closure $auraResolver): void
     {
         $this->assertCompatible();
+        $snapshot = $this->protectedClaimSnapshot();
 
         foreach ($identifiers as $identifier) {
-            $this->assertIdentifierUnclaimed($identifier, $auraResolver);
+            $this->assertIdentifierUnclaimed($identifier, $auraResolver, protectedClaimSnapshot: $snapshot);
         }
 
         foreach ($identifiers as $identifier) {
@@ -104,6 +108,10 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
                 allowedConventionalClass: null,
                 allowAuraReservation: true,
             );
+        }
+
+        foreach ($identifiers as $identifier) {
+            $this->assertProtectedClaimSnapshotUnchanged($identifier, $snapshot);
         }
     }
 
@@ -159,9 +167,11 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         Closure $auraResolver,
         ?string $allowedConventionalClass = null,
         bool $allowAuraReservation = true,
+        ?array $protectedClaimSnapshot = null,
     ): void {
         $normalized = $this->normalizeIdentifier($identifier);
         $resolvers = $this->read($this->factory, 'missingComponentResolvers');
+        $protectedClaimSnapshot ??= $this->protectedClaimSnapshot();
 
         $this->assertStaticClaimsUnclaimed(
             $identifier,
@@ -181,6 +191,8 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
                 $this->collision($identifier, 'missing-resolver-error', $exception::class);
             }
 
+            $this->assertProtectedClaimSnapshotUnchanged($identifier, $protectedClaimSnapshot);
+
             $this->assertStaticClaimsUnclaimed(
                 $identifier,
                 $normalized,
@@ -192,9 +204,6 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
                 $this->collision($identifier, 'missing-resolver', $target);
             }
 
-            if ($this->read($this->factory, 'missingComponentResolvers') !== $resolvers) {
-                $this->collision($identifier, 'missing-resolver-mutation', 'resolver list changed during inspection');
-            }
         }
     }
 
@@ -243,6 +252,14 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
             if (! $property->isProtected() || $property->isStatic() || $property->getDeclaringClass()->getName() !== $class) {
                 throw new UnsupportedLivewireInternals("Livewire 4.3 internal [{$class}::\${$propertyName}] has an unsupported shape.");
             }
+        }
+    }
+
+    /** @param array<string, mixed> $snapshot */
+    private function assertProtectedClaimSnapshotUnchanged(string $identifier, array $snapshot): void
+    {
+        if ($this->protectedClaimSnapshot() !== $snapshot) {
+            $this->collision($identifier, 'protected-claim-mutation', 'Livewire protected claims changed during inspection');
         }
     }
 
@@ -334,6 +351,21 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         }
 
         return $normalized;
+    }
+
+    /** @return array<string, mixed> */
+    private function protectedClaimSnapshot(): array
+    {
+        return [
+            'finder.classLocations' => $this->read($this->finder, 'classLocations'),
+            'finder.viewLocations' => $this->read($this->finder, 'viewLocations'),
+            'finder.classNamespaces' => $this->read($this->finder, 'classNamespaces'),
+            'finder.viewNamespaces' => $this->read($this->finder, 'viewNamespaces'),
+            'finder.classComponents' => $this->read($this->finder, 'classComponents'),
+            'finder.viewComponents' => $this->read($this->finder, 'viewComponents'),
+            'factory.missingComponentResolvers' => $this->read($this->factory, 'missingComponentResolvers'),
+            'factory.resolvedComponentCache' => $this->read($this->factory, 'resolvedComponentCache'),
+        ];
     }
 
     private function read(object $target, string $propertyName): mixed

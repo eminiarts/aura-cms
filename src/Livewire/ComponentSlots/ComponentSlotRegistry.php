@@ -232,7 +232,13 @@ class ComponentSlotRegistry
             return $candidate;
         }
 
-        $normalized = ltrim($candidate, '\\');
+        if (str_starts_with($candidate, '\\\\')) {
+            return $candidate;
+        }
+
+        $normalized = str_starts_with($candidate, '\\')
+            ? substr($candidate, 1)
+            : $candidate;
 
         return class_exists($normalized) ? $normalized : $candidate;
     }

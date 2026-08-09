@@ -40,6 +40,7 @@ class MediaSelectionBroker
 
         $normalized = $this->normalizeValue($value);
         $owner = $this->owners->resolve($ownerToken, $actor);
+        $this->authorizeOwnerSelection($ownerToken, $normalized, $actor);
         $issuedAt = now()->getTimestamp();
         $deadline = $issuedAt + $this->ttl();
         $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
@@ -63,6 +64,8 @@ class MediaSelectionBroker
         if (! $this->cache->add($this->recordKey($token), $record->toArray(), $this->ttl() + $this->retention())) {
             throw new InvalidMediaSelectionRequest('Unable to create a unique media selection request.');
         }
+
+        $this->rememberOwnerRequest($ownerToken, $token);
 
         return new MediaSelectionRequest($token, $digest, $record);
     }
@@ -97,13 +100,50 @@ class MediaSelectionBroker
         return $this->validatedForManager($requestToken, $ownerToken, $managerComponentId, $actor);
     }
 
+    public function hasActiveRequestForOwner(
+        string $ownerToken,
+        Authenticatable $actor,
+    ): bool {
+        $owner = $this->resolveOwner($ownerToken, $actor);
+        $indexKey = $this->ownerIndexKey($ownerToken);
+        $tokens = $this->cache->get($indexKey, []);
+
+        if (! is_array($tokens)) {
+            return true;
+        }
+
+        foreach ($tokens as $requestToken) {
+            if (! is_string($requestToken)) {
+                return true;
+            }
+
+            try {
+                $record = $this->read($requestToken);
+            } catch (InvalidMediaSelectionRequest) {
+                continue;
+            }
+
+            if (hash_equals($record->ownerTokenDigest, $this->owners->digest($ownerToken))
+                && hash_equals($record->actorId, $owner->actorId)
+                && $record->teamId === $owner->teamId
+                && in_array($record->state, ['pending', 'processing'], true)
+                && now()->getTimestamp() < $record->deadline) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * The first closure prepares an authorized mutation but must not change
      * authoritative state. Its returned closure is committed only after the
-     * broker rechecks the claim fence and deadline.
+     * broker rechecks the claim fence and deadline. The prepared mutation must
+     * provide rollback behavior so a deadline or authorization failure after
+     * application cannot leave authoritative state changed.
      *
      * @param  list<int|string>  $value
-     * @param  Closure(): Closure  $mutation
+     * @param  Closure(): MediaSelectionMutation  $mutation
      */
     public function processForOwner(
         string $requestToken,
@@ -132,7 +172,6 @@ class MediaSelectionBroker
                 $value,
                 $actor,
             );
-
             if (in_array($record->state, ['succeeded', 'failed', 'expired'], true)) {
                 return $record;
             }
@@ -159,14 +198,16 @@ class MediaSelectionBroker
             return $claimed;
         }
 
-        $commit = null;
+        $application = null;
         $errorCode = null;
 
         try {
-            $commit = $mutation();
+            $prepared = $mutation();
 
-            if (! $commit instanceof Closure) {
+            if (! $prepared instanceof MediaSelectionMutation) {
                 $errorCode = 'processing_failed';
+            } else {
+                $application = $prepared;
             }
         } catch (MediaSelectionRejected $exception) {
             $errorCode = $this->errorCode($exception->errorCode);
@@ -182,7 +223,7 @@ class MediaSelectionBroker
             $value,
             $actor,
             $claimId,
-            $commit,
+            $application,
             $errorCode,
         ): MediaSelectionRecord {
             $record = $this->validatedForOwner(
@@ -193,7 +234,6 @@ class MediaSelectionBroker
                 $value,
                 $actor,
             );
-
             if (in_array($record->state, ['succeeded', 'failed', 'expired'], true)) {
                 return $record;
             }
@@ -210,7 +250,7 @@ class MediaSelectionBroker
                 return $expired;
             }
 
-            if ($errorCode !== null || ! $commit instanceof Closure) {
+            if ($errorCode !== null || ! $application instanceof MediaSelectionMutation) {
                 $failed = $record->withState('failed', $errorCode ?? 'processing_failed');
                 $this->store($requestToken, $failed);
 
@@ -218,11 +258,23 @@ class MediaSelectionBroker
             }
 
             try {
-                $commit();
-                $settled = $record->withState('succeeded');
+                ($application->apply)();
+                $this->authorizeOwnerSelection($ownerToken, $value, $actor);
+
+                if (now()->getTimestamp() >= $record->deadline) {
+                    ($application->rollback)();
+                    $settled = $record->withState('expired', 'selection_timeout');
+                } else {
+                    $settled = $record->withState('succeeded');
+                }
             } catch (MediaSelectionRejected $exception) {
+                ($application->rollback)();
                 $settled = $record->withState('failed', $this->errorCode($exception->errorCode));
             } catch (Throwable) {
+                try {
+                    ($application->rollback)();
+                } catch (Throwable) {
+                }
                 $settled = $record->withState('failed', 'processing_failed');
             }
 
@@ -230,6 +282,19 @@ class MediaSelectionBroker
 
             return $settled;
         });
+    }
+
+    /** @param list<int|string> $value */
+    private function authorizeOwnerSelection(
+        string $ownerToken,
+        array $value,
+        Authenticatable $actor,
+    ): void {
+        try {
+            app(MediaAuthorization::class)->authorizeOwnerSelection($ownerToken, $value, $actor);
+        } catch (InvalidMediaOwnerToken|InvalidMediaOwnerContext) {
+            throw new InvalidMediaSelectionRequest('The media selection owner context is invalid.');
+        }
     }
 
     private function digest(string $token): string
@@ -271,6 +336,11 @@ class MediaSelectionBroker
         return $normalized;
     }
 
+    private function ownerIndexKey(string $ownerToken): string
+    {
+        return self::CACHE_PREFIX.'owner:'.$this->owners->digest($ownerToken);
+    }
+
     private function read(string $requestToken): MediaSelectionRecord
     {
         if (preg_match('/^[A-Za-z0-9_-]{43}$/', $requestToken) !== 1) {
@@ -299,6 +369,20 @@ class MediaSelectionBroker
     private function recordKey(string $requestToken): string
     {
         return self::CACHE_PREFIX.'request:'.$this->digest($requestToken);
+    }
+
+    private function rememberOwnerRequest(string $ownerToken, string $requestToken): void
+    {
+        $indexKey = $this->ownerIndexKey($ownerToken);
+
+        $this->locks->lock($indexKey.':lock', 5)->block(5, function () use ($indexKey, $requestToken): void {
+            $tokens = $this->cache->get($indexKey, []);
+            $tokens = is_array($tokens)
+                ? array_values(array_filter($tokens, 'is_string'))
+                : [];
+            $tokens[] = $requestToken;
+            $this->cache->put($indexKey, array_values(array_unique($tokens)), $this->ttl() + $this->retention());
+        });
     }
 
     private function resolveOwner(string $ownerToken, Authenticatable $actor): MediaOwnerContext

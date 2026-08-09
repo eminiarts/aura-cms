@@ -234,6 +234,9 @@ test('candidate class names are canonical and may have one leading slash', funct
 
     expect(fn () => $validator->validate('global-search', 'vendor/package', strtolower(ValidGlobalSearchSlot::class)))
         ->toThrow(InvalidComponentSlotCandidate::class, 'canonical');
+
+    expect(fn () => $validator->validate('global-search', 'vendor/package', '\\\\'.ValidGlobalSearchSlot::class))
+        ->toThrow(InvalidComponentSlotCandidate::class, 'at most one leading slash');
 });
 
 test('global search rejects invalid classes and caller supplied mount data', function (mixed $candidate, string $requirement) {

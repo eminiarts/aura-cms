@@ -1,12 +1,37 @@
 <?php
 
+use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\AttachmentDetails;
+use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Role;
+use Aura\Base\Tests\Resources\Post;
 
 use function Pest\Livewire\livewire;
 
-beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
+beforeEach(function () {
+    $this->actingAs($this->user = createSuperAdmin());
+    app('aura')::registerResources([Post::class]);
+    config()->set('aura.resources.core20-details-owner', Post::class);
+});
+
+function pickerDetailsArguments($actor): array
+{
+    return [
+        'surface' => 'picker',
+        'ownerToken' => app(MediaOwnerTokenBroker::class)->issue(
+            ownerComponentId: 'form-owner',
+            modelClass: Post::class,
+            modelKey: null,
+            action: 'create',
+            slug: 'image',
+            fieldType: Image::class,
+            actor: $actor,
+        ),
+        'correlationComponentId' => 'picker-owner',
+        'fieldSlug' => 'image',
+    ];
+}
 
 function detailsAttachment(string $name = 'photo.jpg', string $mime = 'image/jpeg'): Attachment
 {
@@ -28,6 +53,46 @@ test('opening the panel loads the attachment', function () {
         ->assertSet('title', 'photo.jpg')
         ->assertSee('Details')
         ->assertSee('2 KB');
+});
+
+test('picker details reject spoofed owner component and field correlations', function () {
+    $attachment = detailsAttachment('picker.jpg');
+    $ownerToken = app(MediaOwnerTokenBroker::class)->issue(
+        ownerComponentId: 'form-owner',
+        modelClass: Post::class,
+        modelKey: null,
+        action: 'create',
+        slug: 'image',
+        fieldType: Image::class,
+        actor: $this->user,
+    );
+    $details = livewire(AttachmentDetails::class, [
+        'surface' => 'picker',
+        'ownerToken' => $ownerToken,
+        'correlationComponentId' => 'picker-owner',
+        'fieldSlug' => 'image',
+    ]);
+
+    foreach ([
+        ['ownerToken' => $ownerToken.'x', 'componentId' => 'picker-owner', 'fieldSlug' => 'image'],
+        ['ownerToken' => $ownerToken, 'componentId' => 'other-picker', 'fieldSlug' => 'image'],
+        ['ownerToken' => $ownerToken, 'componentId' => 'picker-owner', 'fieldSlug' => 'other'],
+    ] as $spoofed) {
+        $details->dispatch('open-attachment-details', ...[
+            'id' => $attachment->id,
+            'ids' => [$attachment->id],
+            ...$spoofed,
+        ])->assertSet('attachmentId', null);
+    }
+
+    $details->dispatch(
+        'open-attachment-details',
+        id: $attachment->id,
+        ids: [$attachment->id],
+        ownerToken: $ownerToken,
+        componentId: 'picker-owner',
+        fieldSlug: 'image',
+    )->assertSet('attachmentId', $attachment->id);
 });
 
 test('the attachment id cannot bypass the view policy', function () {
@@ -123,7 +188,7 @@ test('delete removes the attachment and advances to a sibling', function () {
 test('delete is refused on the picker surface', function () {
     $attachment = detailsAttachment();
 
-    livewire(AttachmentDetails::class, ['surface' => 'picker'])
+    livewire(AttachmentDetails::class, pickerDetailsArguments($this->user))
         ->dispatch('open-attachment-details', id: $attachment->id, ids: [$attachment->id])
         ->call('deleteAttachment');
 
@@ -133,7 +198,7 @@ test('delete is refused on the picker surface', function () {
 test('the picker surface renders no delete button', function () {
     $attachment = detailsAttachment();
 
-    livewire(AttachmentDetails::class, ['surface' => 'picker'])
+    livewire(AttachmentDetails::class, pickerDetailsArguments($this->user))
         ->dispatch('open-attachment-details', id: $attachment->id, ids: [$attachment->id])
         ->assertDontSeeHtml('data-details-delete');
 });

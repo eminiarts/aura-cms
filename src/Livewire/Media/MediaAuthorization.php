@@ -7,9 +7,11 @@ use Aura\Base\Fields\File;
 use Aura\Base\Fields\Image;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Guard;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use InvalidArgumentException;
 use Livewire\Component;
@@ -24,6 +26,31 @@ class MediaAuthorization
         private readonly Guard $guard,
         private readonly MediaOwnerTokenBroker $owners,
     ) {}
+
+    public function applyAttachmentVisibility(Builder $query, Authenticatable $actor): Builder
+    {
+        $this->assertCurrentActor($actor);
+        $prototype = $this->attachmentPrototype();
+        $actorGate = $this->gate->forUser($actor);
+        $actorGate->authorize('viewAny', $prototype);
+        $keyName = $prototype->getKeyName();
+        $qualifiedKey = $prototype->qualifyColumn($keyName);
+        $visibleIds = [];
+        $candidateQuery = clone $query;
+        $candidateQuery->setEagerLoads([])->reorder($qualifiedKey);
+
+        foreach ($candidateQuery->lazyById(100, $qualifiedKey, $keyName) as $attachment) {
+            if (! $attachment instanceof Resource || $attachment::class !== $prototype::class) {
+                throw new InvalidMediaOwnerContext('The media attachment listing is invalid.');
+            }
+
+            if ($actorGate->allows('view', $attachment)) {
+                $visibleIds[] = $attachment->getKey();
+            }
+        }
+
+        return $query->whereKey($visibleIds);
+    }
 
     public function authorizeAttachmentCreate(Authenticatable $actor): Resource
     {
@@ -130,6 +157,34 @@ class MediaAuthorization
         $field = $this->resolveFreshOwnerField($context, $resource);
 
         return new AuthorizedMediaOwner($context, $resource, $field);
+    }
+
+    /** @param list<int|string> $ids */
+    public function authorizeOwnerSelection(
+        string $ownerToken,
+        array $ids,
+        Authenticatable $actor,
+        ?string $expectedModel = null,
+        ?string $expectedSlug = null,
+        ?string $expectedFieldType = null,
+    ): AuthorizedMediaOwner {
+        $owner = $this->authorizeOwner(
+            $ownerToken,
+            $actor,
+            $expectedModel,
+            $expectedSlug,
+            $expectedFieldType,
+        );
+        $normalized = $this->normalizeIds($ids);
+        $maximumFiles = $owner->context->action === 'library'
+            ? 0
+            : (int) ($owner->field['max_files'] ?? 0);
+
+        if ($maximumFiles > 0 && count($normalized) > $maximumFiles) {
+            throw new AuthorizationException('The media selection exceeds the field maximum.');
+        }
+
+        return $owner;
     }
 
     /**

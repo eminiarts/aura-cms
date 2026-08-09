@@ -2,7 +2,10 @@
 
 namespace Aura\Base\Livewire;
 
+use Aura\Base\Livewire\Media\MediaAuthorization;
+use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Resource;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
@@ -21,6 +24,18 @@ class AttachmentDetails extends Component
 
     #[Locked]
     public ?int $attachmentId = null;
+
+    #[Locked]
+    public ?string $correlationComponentId = null;
+
+    #[Locked]
+    public ?string $fieldSlug = null;
+
+    #[Locked]
+    public ?string $ownerToken = null;
+
+    #[Locked]
+    public ?string $ownerTokenDigest = null;
 
     /**
      * Ordered ids of the currently listed attachments, for prev/next.
@@ -65,6 +80,26 @@ class AttachmentDetails extends Component
         }
     }
 
+    public function hydrate(): void
+    {
+        $this->authorizePickerContext();
+    }
+
+    public function mount(
+        string $surface = 'index',
+        ?string $ownerToken = null,
+        ?string $correlationComponentId = null,
+        ?string $fieldSlug = null,
+    ): void {
+        $this->surface = $surface;
+        $this->ownerToken = $ownerToken;
+        $this->correlationComponentId = $correlationComponentId;
+        $this->fieldSlug = $fieldSlug;
+        $this->ownerTokenDigest = is_string($ownerToken)
+            ? app(MediaOwnerTokenBroker::class)->digest($ownerToken)
+            : null;
+    }
+
     public function next(): void
     {
         if ($id = $this->siblingId(1)) {
@@ -73,8 +108,40 @@ class AttachmentDetails extends Component
     }
 
     #[On('open-attachment-details')]
-    public function open(int|string $id, array $ids = []): void
-    {
+    public function open(
+        int|string $id,
+        array $ids = [],
+        ?string $ownerToken = null,
+        ?string $componentId = null,
+        ?string $fieldSlug = null,
+    ): void {
+        if ($this->surface === 'picker') {
+            $actor = $this->actor();
+
+            if (! is_string($this->ownerToken)
+                || ! is_string($this->ownerTokenDigest)
+                || ! is_string($this->correlationComponentId)
+                || ! is_string($this->fieldSlug)
+                || ! is_string($ownerToken)
+                || ! is_string($componentId)
+                || ! is_string($fieldSlug)
+                || ! hash_equals($this->ownerTokenDigest, app(MediaOwnerTokenBroker::class)->digest($ownerToken))
+                || ! hash_equals($this->correlationComponentId, $componentId)
+                || ! hash_equals($this->fieldSlug, $fieldSlug)) {
+                return;
+            }
+
+            app(MediaAuthorization::class)->authorizeOwner($ownerToken, $actor, expectedSlug: $fieldSlug);
+            $authorizedIds = app(MediaAuthorization::class)
+                ->authorizeAttachments($ids, $actor)
+                ->map(fn (Resource $attachment): string => (string) $attachment->getKey())
+                ->all();
+
+            if (! in_array((string) $id, $authorizedIds, true)) {
+                return;
+            }
+        }
+
         $this->rowIds = array_map('intval', (array) $ids);
 
         $this->show((int) $id);
@@ -89,6 +156,8 @@ class AttachmentDetails extends Component
 
     public function render(): View
     {
+        $this->authorizePickerContext();
+
         return view('aura::livewire.attachment-details', [
             'attachment' => $this->attachment(),
         ]);
@@ -171,5 +240,38 @@ class AttachmentDetails extends Component
         }
 
         return $this->rowIds[$index + $offset] ?? null;
+    }
+
+    private function actor(): Authenticatable
+    {
+        $actor = auth()->user();
+
+        if (! $actor instanceof Authenticatable) {
+            abort(403);
+        }
+
+        return $actor;
+    }
+
+    private function authorizePickerContext(): void
+    {
+        if ($this->surface !== 'picker') {
+            return;
+        }
+
+        if (! is_string($this->ownerToken)
+            || ! is_string($this->ownerTokenDigest)
+            || ! is_string($this->correlationComponentId)
+            || $this->correlationComponentId === ''
+            || ! is_string($this->fieldSlug)
+            || ! hash_equals($this->ownerTokenDigest, app(MediaOwnerTokenBroker::class)->digest($this->ownerToken))) {
+            abort(403);
+        }
+
+        app(MediaAuthorization::class)->authorizeOwner(
+            $this->ownerToken,
+            $this->actor(),
+            expectedSlug: $this->fieldSlug,
+        );
     }
 }

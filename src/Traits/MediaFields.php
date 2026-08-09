@@ -8,6 +8,7 @@ use Aura\Base\Livewire\Media\InvalidMediaSelectionRequest;
 use Aura\Base\Livewire\Media\MediaAuthorization;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Livewire\Media\MediaSelectionBroker;
+use Aura\Base\Livewire\Media\MediaSelectionMutation;
 use Aura\Base\Resource;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Collection;
@@ -46,15 +47,16 @@ trait MediaFields
                 slug: $slug,
                 value: $value,
                 actor: $actor,
-                mutation: function () use ($ownerToken, $slug, $value, $actor): \Closure {
+                mutation: function () use ($ownerToken, $slug, $value, $actor): MediaSelectionMutation {
                     if (! isset($this->model) || ! $this->model instanceof Resource) {
                         throw new InvalidArgumentException('The media owner component has no Resource model.');
                     }
 
                     $field = $this->mediaFieldBySlug($slug);
                     $authorization = app(MediaAuthorization::class);
-                    $authorization->authorizeOwner(
+                    $authorization->authorizeOwnerSelection(
                         $ownerToken,
+                        $value,
                         $actor,
                         $this->model::class,
                         $slug,
@@ -65,13 +67,19 @@ trait MediaFields
                     $authorizedValue = $attachments
                         ->map(fn (Resource $attachment): string => (string) $attachment->getKey())
                         ->all();
+                    $originalForm = $this->form;
 
-                    return function () use ($slug, $authorizedValue): void {
-                        $this->updateField([
-                            'slug' => $slug,
-                            'value' => $authorizedValue,
-                        ]);
-                    };
+                    return new MediaSelectionMutation(
+                        apply: function () use ($slug, $authorizedValue): void {
+                            $this->updateField([
+                                'slug' => $slug,
+                                'value' => $authorizedValue,
+                            ]);
+                        },
+                        rollback: function () use ($originalForm): void {
+                            $this->form = $originalForm;
+                        },
+                    );
                 },
             );
         } catch (InvalidArgumentException|InvalidMediaSelectionRequest) {
@@ -197,7 +205,7 @@ trait MediaFields
         ]);
     }
 
-    /** @return array{slug: string, type: class-string<Image|File>} */
+    /** @return array<string, mixed> */
     private function mediaFieldBySlug(string $slug): array
     {
         $field = method_exists($this, 'fieldBySlug')
@@ -212,6 +220,6 @@ trait MediaFields
             throw new InvalidArgumentException('The media owner field must be an existing Image or File field.');
         }
 
-        return ['slug' => $slug, 'type' => $fieldType];
+        return $field;
     }
 }

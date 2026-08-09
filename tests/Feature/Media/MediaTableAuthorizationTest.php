@@ -71,7 +71,8 @@ test('media table renders only attachments the current actor may view', function
         'ownerToken' => $this->ownerToken,
     ])
         ->assertSee('visible.jpg')
-        ->assertDontSee('hidden.jpg');
+        ->assertDontSee('hidden.jpg')
+        ->assertViewHas('rows', fn ($rows): bool => $rows->total() === 1);
 
     expect($hidden->exists)->toBeTrue();
 });

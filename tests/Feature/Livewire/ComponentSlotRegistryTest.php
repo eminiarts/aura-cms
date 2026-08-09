@@ -4,6 +4,7 @@ use Aura\Base\Livewire\ComponentSlots\ComponentSlotCandidateValidator;
 use Aura\Base\Livewire\ComponentSlots\ComponentSlotConflict;
 use Aura\Base\Livewire\ComponentSlots\ComponentSlotLifecycleException;
 use Aura\Base\Livewire\ComponentSlots\ComponentSlotRegistry;
+use Aura\Base\Livewire\ComponentSlots\InvalidComponentSlotCandidate;
 use Aura\Base\Livewire\ComponentSlots\LivewireComponentSlotBridge;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\MediaManager;
@@ -201,6 +202,20 @@ test('same source canonical class spellings are idempotent', function () {
     $registry->finalize();
 
     expect($registry->winner('global-search'))->toBe(RegistryPluginSearch::class);
+});
+
+test('registry rejects candidates with more than one leading namespace separator', function () {
+    [$registry, , $validator] = componentSlotRegistry();
+    $candidate = '\\\\'.RegistryPluginSearch::class;
+    $validator->shouldReceive('validate')
+        ->once()
+        ->with('global-search', 'vendor/package', $candidate)
+        ->andThrow(new InvalidComponentSlotCandidate('at most one leading slash'));
+    $registry->install();
+    $registry->register('vendor/package', ['global-search' => $candidate]);
+
+    expect(fn () => $registry->finalize())
+        ->toThrow(InvalidComponentSlotCandidate::class, 'at most one leading slash');
 });
 
 test('legacy media config remains a host choice and conflicting new and legacy values fail', function () {

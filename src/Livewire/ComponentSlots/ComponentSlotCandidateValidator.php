@@ -50,6 +50,10 @@ class ComponentSlotCandidateValidator
             $this->fail($slot, $source, $candidate, 'a class string');
         }
 
+        if (str_starts_with($candidate, '\\\\')) {
+            $this->fail($slot, $source, $candidate, 'the canonical, case-correct class name with at most one leading slash');
+        }
+
         $canonicalCandidate = str_starts_with($candidate, '\\')
             ? substr($candidate, 1)
             : $candidate;

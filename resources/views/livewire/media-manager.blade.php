@@ -39,10 +39,10 @@
         x-on:attachment-details-closed.window="detailsOpen = false">
         <div class="flex-1 min-w-0">
             {{-- @dump('mediamanager', $this->selected, $field) --}}
-            <livewire:aura::media-uploader :field="$field" :selected="$selected" :table="true" :model="app('Aura\Base\Resources\Attachment')" :owner-token="$ownerToken" />
+            <livewire:aura::media-uploader :field="$field" :selected="$selected" :table="true" :model="app('Aura\Base\Resources\Attachment')" :owner-token="$ownerToken" :details-component-id="$this->getId()" />
         </div>
         <div x-cloak x-show="detailsOpen" class="flex-shrink-0 ml-5 w-80">
-            <livewire:aura::attachment-details surface="picker" />
+            <livewire:aura::attachment-details surface="picker" :owner-token="$ownerToken" :correlation-component-id="$this->getId()" :field-slug="$slug" />
         </div>
     </div>
 
