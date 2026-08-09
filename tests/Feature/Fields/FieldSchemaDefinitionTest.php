@@ -70,22 +70,27 @@ test('schema lock domains use physical database identity rather than connection 
     ];
     config()->set('database.connections.core_10_lock_alias_a', $configuration);
     config()->set('database.connections.core_10_lock_alias_b', $configuration);
+    config()->set('database.connections.core_10_lock_prefixed', [...$configuration, 'prefix' => 'tenant_']);
 
     $first = DB::connection('core_10_lock_alias_a');
     $second = DB::connection('core_10_lock_alias_b');
+    $prefixed = DB::connection('core_10_lock_prefixed');
 
     try {
         expect(SchemaMigrationLock::domain($first, 'orders'))
             ->toBe(SchemaMigrationLock::domain($second, 'orders'))
             ->toContain($first->getDriverName())
-            ->toContain($first->getDatabaseName())
+            ->toContain(':inode:')
             ->not->toContain('core_10_lock_alias_a')
             ->not->toContain('core_10_lock_alias_b')
             ->not->toContain('do-not-leak')
-            ->toEndWith(':orders');
+            ->toEndWith(':orders')
+            ->not->toBe(SchemaMigrationLock::domain($first, 'invoices'))
+            ->not->toBe(SchemaMigrationLock::domain($prefixed, 'orders'));
     } finally {
         DB::purge('core_10_lock_alias_a');
         DB::purge('core_10_lock_alias_b');
+        DB::purge('core_10_lock_prefixed');
         File::delete($database);
     }
 });
@@ -98,10 +103,13 @@ test('sqlite schema locks canonicalize symlinks and time out across processes be
     $database = tempnam(sys_get_temp_dir(), 'aura-core10-lock-db-');
     $originalDefault = config('database.default');
     $symlink = $database.'-alias';
+    $hardlink = $database.'-hardlink';
     symlink(realpath($database), $symlink);
+    link(realpath($database), $hardlink);
     $configuration = ['driver' => 'sqlite', 'database' => $database, 'prefix' => ''];
     config()->set('database.connections.core_10_lock_process_a', $configuration);
     config()->set('database.connections.core_10_lock_process_b', [...$configuration, 'database' => $symlink]);
+    config()->set('database.connections.core_10_lock_hardlink', [...$configuration, 'database' => $hardlink]);
     config()->set('aura.schema.lock_timeout', 0.1);
     config()->set('aura.schema.lock_poll_interval_milliseconds', 10);
 
@@ -126,7 +134,8 @@ test('sqlite schema locks canonicalize symlinks and time out across processes be
     try {
         expect(stream_get_contents($reader, 6))->toBe('locked')
             ->and(SchemaMigrationLock::domain(DB::connection('core_10_lock_process_a'), 'orders'))
-            ->toBe(SchemaMigrationLock::domain(DB::connection('core_10_lock_process_b'), 'orders'));
+            ->toBe(SchemaMigrationLock::domain(DB::connection('core_10_lock_process_b'), 'orders'))
+            ->toBe(SchemaMigrationLock::domain(DB::connection('core_10_lock_hardlink'), 'orders'));
 
         config()->set('database.default', 'core_10_lock_process_b');
         DB::purge('core_10_lock_process_b');
@@ -145,7 +154,8 @@ test('sqlite schema locks canonicalize symlinks and time out across processes be
         config()->set('database.default', $originalDefault);
         DB::purge('core_10_lock_process_a');
         DB::purge('core_10_lock_process_b');
-        File::delete([$symlink, $database]);
+        DB::purge('core_10_lock_hardlink');
+        File::delete([$symlink, $hardlink, $database]);
     }
 });
 
@@ -155,6 +165,13 @@ test('schema locks release when the protected callback throws', function () {
     }))->toThrow(RuntimeException::class, 'callback failed');
 
     expect(SchemaMigrationLock::runForTable('orders', static fn (): string => 'released'))->toBe('released');
+});
+
+test('schema locks remain reentrant on the same database session', function () {
+    expect(SchemaMigrationLock::runForTable(
+        'orders',
+        static fn (): string => SchemaMigrationLock::runForTable('orders', static fn (): string => 'nested'),
+    ))->toBe('nested');
 });
 
 test('native schema locks contend across connection aliases and recover after a holder crashes', function (string $driver) {
@@ -225,6 +242,263 @@ test('native schema locks contend across connection aliases and recover after a 
         config()->set('database.default', $originalDefault);
         DB::purge($first);
         DB::purge($second);
+    }
+})->with(['mysql', 'pgsql']);
+
+test('native schema lock domains canonicalize endpoint and search path aliases', function (string $driver) {
+    $prefix = $driver === 'pgsql' ? 'POSTGRES' : 'MYSQL';
+    $database = getenv("AURA_TEST_{$prefix}_DATABASE") ?: null;
+
+    if (! $database) {
+        $this->markTestSkipped("Set AURA_TEST_{$prefix}_DATABASE to run the {$driver} physical lock identity contract.");
+    }
+
+    $port = getenv("AURA_TEST_{$prefix}_PORT") ?: ($driver === 'mysql' ? '3306' : '5432');
+    $configuration = [
+        'driver' => $driver,
+        'host' => getenv("AURA_TEST_{$prefix}_HOST") ?: '127.0.0.1',
+        'port' => $port,
+        'database' => $database,
+        'username' => getenv("AURA_TEST_{$prefix}_USERNAME") ?: ($driver === 'mysql' ? 'root' : getenv('USER')),
+        'password' => getenv("AURA_TEST_{$prefix}_PASSWORD") ?: '',
+        'prefix' => '',
+    ];
+    $configuration += $driver === 'mysql'
+        ? ['charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'strict' => true]
+        : ['search_path' => 'public'];
+    $primary = "core_10_{$driver}_physical_primary";
+    config()->set("database.connections.{$primary}", $configuration);
+    $connection = DB::connection($primary);
+    $schemaHead = 'core10_lock_identity_head';
+    $schemaTarget = 'core10_lock_identity_target';
+    $aliases = [];
+    $unavailableAliases = [];
+
+    try {
+        if ($driver === 'pgsql') {
+            $connection->unprepared("DROP SCHEMA IF EXISTS {$schemaHead} CASCADE");
+            $connection->unprepared("DROP SCHEMA IF EXISTS {$schemaTarget} CASCADE");
+            $connection->unprepared("CREATE SCHEMA {$schemaHead}");
+            $connection->unprepared("CREATE SCHEMA {$schemaTarget}");
+            $connection->unprepared("CREATE TABLE {$schemaTarget}.orders (id integer)");
+            $connection->unprepared("CREATE TABLE {$schemaHead}.audit (id integer)");
+            $connection->unprepared("CREATE TABLE {$schemaTarget}.audit (id integer)");
+        }
+
+        $endpointConfigurations = [
+            'ip' => [...$configuration, 'host' => '127.0.0.1'],
+            'hostname' => [...$configuration, 'host' => 'localhost'],
+        ];
+        $defaultPortConfiguration = [...$configuration, 'host' => '127.0.0.1'];
+        unset($defaultPortConfiguration['port']);
+        $endpointConfigurations['default_port'] = $defaultPortConfiguration;
+
+        if ($driver === 'mysql') {
+            $socket = (string) data_get($connection->selectOne('SELECT @@socket AS socket_path'), 'socket_path');
+
+            if ($socket !== '' && file_exists($socket)) {
+                $endpointConfigurations['socket'] = [...$configuration, 'host' => 'localhost', 'unix_socket' => $socket];
+            } else {
+                $unavailableAliases[] = 'socket';
+            }
+        } else {
+            $socketDirectories = (string) data_get($connection->selectOne('SHOW unix_socket_directories'), 'unix_socket_directories');
+            $socketDirectory = trim(explode(',', $socketDirectories)[0] ?? '', " \t\n\r\0\x0B'");
+
+            if ($socketDirectory !== '' && is_dir($socketDirectory)) {
+                $endpointConfigurations['socket'] = [...$configuration, 'host' => $socketDirectory];
+            } else {
+                $unavailableAliases[] = 'socket';
+            }
+
+            $endpointConfigurations['ip']['search_path'] = "{$schemaHead},{$schemaTarget}";
+            $endpointConfigurations['hostname']['search_path'] = $schemaTarget;
+            $endpointConfigurations['default_port']['search_path'] = $schemaTarget;
+
+            if (isset($endpointConfigurations['socket'])) {
+                $endpointConfigurations['socket']['search_path'] = $schemaTarget;
+            }
+        }
+
+        foreach ($endpointConfigurations as $alias => $endpointConfiguration) {
+            $name = "core_10_{$driver}_physical_{$alias}";
+            config()->set("database.connections.{$name}", $endpointConfiguration);
+
+            try {
+                DB::connection($name)->getPdo();
+                $aliases[] = $name;
+            } catch (Throwable) {
+                DB::purge($name);
+                $unavailableAliases[] = $alias;
+            }
+        }
+
+        if ($unavailableAliases !== []) {
+            $this->markTestSkipped("Unavailable equivalent {$driver} endpoints: ".implode(', ', $unavailableAliases).'.');
+        }
+
+        $domains = collect($aliases)
+            ->map(fn (string $name): string => SchemaMigrationLock::domain(DB::connection($name), 'orders'));
+
+        expect($domains->unique()->values()->all())->toHaveCount(1)
+            ->and(SchemaMigrationLock::domain(DB::connection($aliases[0]), 'invoices'))
+            ->not->toBe($domains->first());
+
+        if ($driver === 'pgsql') {
+            expect(SchemaMigrationLock::domain(DB::connection($aliases[0]), "{$schemaHead}.audit"))
+                ->not->toBe(SchemaMigrationLock::domain(DB::connection($aliases[0]), "{$schemaTarget}.audit"));
+        }
+    } finally {
+        if ($driver === 'pgsql') {
+            $connection->unprepared("DROP SCHEMA IF EXISTS {$schemaHead} CASCADE");
+            $connection->unprepared("DROP SCHEMA IF EXISTS {$schemaTarget} CASCADE");
+        }
+
+        foreach ([$primary, ...$aliases] as $name) {
+            DB::purge($name);
+        }
+    }
+})->with(['mysql', 'pgsql']);
+
+test('native endpoint aliases contend while distinct tables remain independent', function (string $driver) {
+    if (! function_exists('pcntl_fork')) {
+        $this->markTestSkipped('pcntl is required for the endpoint contention contract.');
+    }
+
+    $prefix = $driver === 'pgsql' ? 'POSTGRES' : 'MYSQL';
+    $database = getenv("AURA_TEST_{$prefix}_DATABASE") ?: null;
+
+    if (! $database) {
+        $this->markTestSkipped("Set AURA_TEST_{$prefix}_DATABASE to run the {$driver} endpoint contention contract.");
+    }
+
+    $configuration = [
+        'driver' => $driver,
+        'host' => '127.0.0.1',
+        'port' => getenv("AURA_TEST_{$prefix}_PORT") ?: ($driver === 'mysql' ? '3306' : '5432'),
+        'database' => $database,
+        'username' => getenv("AURA_TEST_{$prefix}_USERNAME") ?: ($driver === 'mysql' ? 'root' : getenv('USER')),
+        'password' => getenv("AURA_TEST_{$prefix}_PASSWORD") ?: '',
+        'prefix' => '',
+    ];
+    $configuration += $driver === 'mysql'
+        ? ['charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'strict' => true]
+        : ['search_path' => 'public'];
+    $first = "core_10_{$driver}_endpoint_ip";
+    $second = "core_10_{$driver}_endpoint_hostname";
+    $differentDatabase = "core_10_{$driver}_different_database";
+    $splitConnection = "core_10_{$driver}_read_write_split";
+    $otherDatabase = $driver === 'mysql' ? 'information_schema' : 'postgres';
+
+    if ($otherDatabase === $database) {
+        $otherDatabase = $driver === 'mysql' ? 'mysql' : 'template1';
+    }
+
+    $schemaHead = 'core10_lock_contention_head';
+    $schemaTarget = 'core10_lock_contention_target';
+    $originalDefault = config('database.default');
+    config()->set("database.connections.{$first}", $configuration);
+    config()->set("database.connections.{$second}", [...$configuration, 'host' => 'localhost']);
+    config()->set("database.connections.{$differentDatabase}", [...$configuration, 'database' => $otherDatabase]);
+    config()->set("database.connections.{$splitConnection}", [
+        ...$configuration,
+        'read' => ['database' => $otherDatabase],
+        'write' => ['database' => $database],
+    ]);
+    config()->set('aura.schema.lock_timeout', 0.1);
+    config()->set('aura.schema.lock_poll_interval_milliseconds', 10);
+    $connection = DB::connection($first);
+
+    try {
+        DB::connection($second)->getPdo();
+        DB::connection($differentDatabase)->getPdo();
+        $split = DB::connection($splitConnection);
+        $split->getReadPdo();
+        $split->getPdo();
+    } catch (Throwable) {
+        DB::purge($first);
+        DB::purge($second);
+        DB::purge($differentDatabase);
+        DB::purge($splitConnection);
+        $this->markTestSkipped("Equivalent endpoints and a second database must be reachable on the {$driver} test server.");
+    }
+
+    $databaseQuery = $driver === 'mysql'
+        ? 'SELECT DATABASE() AS database_name'
+        : 'SELECT current_database() AS database_name';
+    expect(data_get($split->selectOne($databaseQuery, [], true), 'database_name'))->toBe($otherDatabase)
+        ->and(data_get($split->selectOne($databaseQuery, [], false), 'database_name'))->toBe($database)
+        ->and(SchemaMigrationLock::domain($split, 'writer_lock_probe'))
+        ->toBe(SchemaMigrationLock::domain($connection, 'writer_lock_probe'));
+
+    if ($driver === 'pgsql') {
+        $connection->unprepared("DROP SCHEMA IF EXISTS {$schemaHead} CASCADE");
+        $connection->unprepared("DROP SCHEMA IF EXISTS {$schemaTarget} CASCADE");
+        $connection->unprepared("CREATE SCHEMA {$schemaHead}");
+        $connection->unprepared("CREATE SCHEMA {$schemaTarget}");
+        $connection->unprepared("CREATE TABLE {$schemaTarget}.orders (id integer)");
+        config()->set("database.connections.{$first}.search_path", "{$schemaHead},{$schemaTarget}");
+        config()->set("database.connections.{$second}.search_path", $schemaTarget);
+        DB::purge($first);
+        DB::purge($second);
+    }
+
+    [$reader, $writer] = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, 0);
+    $pid = pcntl_fork();
+
+    if ($pid === 0) {
+        fclose($reader);
+        config()->set('database.default', $first);
+        DB::purge($first);
+        SchemaMigrationLock::runForTable('orders', function () use ($writer): void {
+            fwrite($writer, 'locked');
+            fflush($writer);
+            sleep(5);
+        });
+        exit(0);
+    }
+
+    fclose($writer);
+
+    try {
+        expect(stream_get_contents($reader, 6))->toBe('locked');
+        config()->set('database.default', $second);
+        DB::purge($second);
+        expect(SchemaMigrationLock::domain(DB::connection($first), 'orders'))
+            ->toBe(SchemaMigrationLock::domain(DB::connection($second), 'orders'))
+            ->and(SchemaMigrationLock::runForTable('invoices', static fn (): string => 'independent'))
+            ->toBe('independent');
+        config()->set('database.default', $differentDatabase);
+        expect(SchemaMigrationLock::domain(DB::connection($differentDatabase), 'orders'))
+            ->not->toBe(SchemaMigrationLock::domain(DB::connection($second), 'orders'))
+            ->and(SchemaMigrationLock::runForTable('orders', static fn (): string => 'independent'))
+            ->toBe('independent');
+        config()->set('database.default', $second);
+        expect(fn () => SchemaMigrationLock::runForTable('orders', static fn () => null))
+            ->toThrow(RuntimeException::class, 'Timed out acquiring Aura database schema lock');
+
+        posix_kill($pid, SIGKILL);
+        pcntl_waitpid($pid, $status);
+        expect(pcntl_wifsignaled($status))->toBeTrue()
+            ->and(SchemaMigrationLock::runForTable('orders', static fn (): string => 'recovered'))->toBe('recovered');
+    } finally {
+        fclose($reader);
+
+        if (pcntl_waitpid($pid, $status, WNOHANG) === 0) {
+            posix_kill($pid, SIGKILL);
+            pcntl_waitpid($pid, $status);
+        }
+
+        if ($driver === 'pgsql') {
+            $connection->unprepared("DROP SCHEMA IF EXISTS {$schemaHead} CASCADE");
+            $connection->unprepared("DROP SCHEMA IF EXISTS {$schemaTarget} CASCADE");
+        }
+
+        config()->set('database.default', $originalDefault);
+        DB::purge($first);
+        DB::purge($second);
+        DB::purge($differentDatabase);
+        DB::purge($splitConnection);
     }
 })->with(['mysql', 'pgsql']);
 
