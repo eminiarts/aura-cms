@@ -2,8 +2,11 @@
 
 namespace Aura\Base\Providers;
 
+use Aura\Base\Policies\ResourcePolicyGate;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Container\Container;
+use Illuminate\Contracts\Auth\Access\Gate as GateContract;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -68,6 +71,15 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(GateContract::class, static function (): ResourcePolicyGate {
+            $container = Container::getInstance();
+
+            return new ResourcePolicyGate(
+                $container,
+                static fn (): mixed => call_user_func($container['auth']->userResolver()),
+            );
+        });
+
         $this->app->singleton(TwoFactorAuthenticationProviderContract::class, function ($app) {
             return new TwoFactorAuthenticationProvider(
                 $app->make(Google2FA::class),

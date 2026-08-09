@@ -1,10 +1,13 @@
 <?php
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Facades\DynamicFunctions;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 use function Pest\Livewire\livewire;
@@ -37,6 +40,11 @@ class SecurityBulkModel extends Resource
         'incrementInvocation' => [
             'label' => 'Increment invocation',
             'ability' => 'update',
+        ],
+        'incrementCollectionInvocation' => [
+            'label' => 'Increment collection invocation',
+            'ability' => 'update',
+            'method' => 'collection',
         ],
         'invalidCollectionHandler' => [
             'label' => 'Invalid collection handler',
@@ -91,10 +99,16 @@ class SecurityBulkModel extends Resource
         ];
     }
 
+    public function incrementCollectionInvocation(array $ids): void
+    {
+        foreach ($ids as $id) {
+            static::query()->whereKey($id)->increment('content');
+        }
+    }
+
     public function incrementInvocation(): void
     {
-        $this->content = (string) (((int) $this->content) + 1);
-        $this->save();
+        static::query()->whereKey($this->getKey())->increment('content');
     }
 
     public function indexQuery($query, $table = null)
@@ -296,6 +310,52 @@ test('bulk action normalizes duplicate selected identifiers and invokes each rec
     livewire(Table::class, ['query' => null, 'model' => $resource])
         ->set('selected', [$resource->getKey(), $resource->getKey(), (string) $resource->getKey()])
         ->call('bulkAction', 'incrementInvocation')
+        ->assertHasNoErrors();
+
+    expect($resource->fresh()->content)->toBe('1');
+});
+
+test('bulk action invokes a canonical record once when an effective query returns duplicate rows', function () {
+    $this->actingAs(createSuperAdmin());
+
+    $resource = SecurityBulkModel::create([
+        'title' => 'Joined bulk target',
+        'content' => '0',
+    ]);
+    $queryHash = DynamicFunctions::add(function (): Builder {
+        $duplicates = DB::query()
+            ->selectRaw('1 as duplicate_marker')
+            ->unionAll(DB::query()->selectRaw('2 as duplicate_marker'));
+
+        return SecurityBulkModel::query()->crossJoinSub($duplicates, 'core05_bulk_duplicates');
+    });
+
+    livewire(Table::class, ['query' => $queryHash, 'model' => new SecurityBulkModel])
+        ->set('selected', [$resource->getKey()])
+        ->call('bulkAction', 'incrementInvocation')
+        ->assertHasNoErrors();
+
+    expect($resource->fresh()->content)->toBe('1');
+});
+
+test('bulk collection action receives canonical ids when an effective query returns duplicate rows', function () {
+    $this->actingAs(createSuperAdmin());
+
+    $resource = SecurityBulkModel::create([
+        'title' => 'Joined collection target',
+        'content' => '0',
+    ]);
+    $queryHash = DynamicFunctions::add(function (): Builder {
+        $duplicates = DB::query()
+            ->selectRaw('1 as duplicate_marker')
+            ->unionAll(DB::query()->selectRaw('2 as duplicate_marker'));
+
+        return SecurityBulkModel::query()->crossJoinSub($duplicates, 'core05_collection_duplicates');
+    });
+
+    livewire(Table::class, ['query' => $queryHash, 'model' => new SecurityBulkModel])
+        ->set('selected', [$resource->getKey()])
+        ->call('bulkCollectionAction', 'incrementCollectionInvocation')
         ->assertHasNoErrors();
 
     expect($resource->fresh()->content)->toBe('1');

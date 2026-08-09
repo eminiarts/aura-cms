@@ -6,6 +6,7 @@ use Aura\Base\Fields\HasMany;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 
 use function Pest\Livewire\livewire;
@@ -34,6 +35,10 @@ class Core05MutationResource extends Resource
             'label' => 'Mark reviewed',
             'ability' => 'update',
         ],
+        'incrementInvocation' => [
+            'label' => 'Increment invocation',
+            'ability' => 'update',
+        ],
         'customWithoutAbility' => [
             'label' => 'Custom without ability',
         ],
@@ -49,6 +54,8 @@ class Core05MutationResource extends Resource
     public static ?string $slug = 'core05-mutation';
 
     public static string $type = 'Core05Mutation';
+
+    public static int $updateInvocations = 0;
 
     public function customWithoutAbility(): void
     {
@@ -100,6 +107,11 @@ class Core05MutationResource extends Resource
         return false;
     }
 
+    public function incrementInvocation(): void
+    {
+        static::query()->whereKey($this->getKey())->increment('content');
+    }
+
     public function indexQuery(Builder $query, ?Table $table = null): Builder
     {
         return $query->where('title', '!=', 'Excluded by indexQuery');
@@ -126,6 +138,15 @@ class Core05MutationResource extends Resource
     {
         $this->content = $content;
         $this->save();
+    }
+
+    protected static function booted(): void
+    {
+        parent::booted();
+
+        static::updating(function (): void {
+            static::$updateInvocations++;
+        });
     }
 }
 
@@ -168,6 +189,7 @@ class Core05NoKanbanFieldResource extends Resource
 }
 
 beforeEach(function () {
+    Core05MutationResource::$updateInvocations = 0;
     Aura::fake();
     Aura::registerResources([
         Core05MutationResource::class,
@@ -656,4 +678,51 @@ test('declared dynamic mutation scope cannot be widened through Livewire state t
         ->toThrow(CannotUpdateLockedPropertyException::class);
 
     expect($excluded->fresh()->content)->toBe('unchanged');
+});
+
+test('table action invokes one canonical record when an effective query returns duplicate rows', function () {
+    $this->actingAs(createSuperAdmin());
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Joined row target',
+        'content' => '0',
+        'status' => 'draft',
+    ]);
+    $queryHash = DynamicFunctions::add(function (): Builder {
+        $duplicates = DB::query()
+            ->selectRaw('1 as duplicate_marker')
+            ->unionAll(DB::query()->selectRaw('2 as duplicate_marker'));
+
+        return Core05MutationResource::query()->crossJoinSub($duplicates, 'core05_row_duplicates');
+    });
+
+    livewire(Table::class, ['query' => $queryHash, 'model' => new Core05MutationResource])
+        ->call('action', ['action' => 'incrementInvocation', 'id' => $resource->getKey()])
+        ->assertHasNoErrors();
+
+    expect($resource->fresh()->content)->toBe('1');
+});
+
+test('kanban updates one canonical record when an effective query returns duplicate rows', function () {
+    $this->actingAs(createSuperAdmin());
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Joined card target',
+        'status' => 'draft',
+    ]);
+    $queryHash = DynamicFunctions::add(function (): Builder {
+        $duplicates = DB::query()
+            ->selectRaw('1 as duplicate_marker')
+            ->unionAll(DB::query()->selectRaw('2 as duplicate_marker'));
+
+        return Core05MutationResource::query()->crossJoinSub($duplicates, 'core05_kanban_duplicates');
+    });
+    Core05MutationResource::$updateInvocations = 0;
+
+    livewire(Table::class, ['query' => $queryHash, 'model' => new Core05MutationResource])
+        ->call('updateCardStatus', $resource->getKey(), 'reviewed')
+        ->assertHasNoErrors();
+
+    expect($resource->fresh()->status)->toBe('reviewed')
+        ->and(Core05MutationResource::$updateInvocations)->toBe(1);
 });

@@ -4,6 +4,8 @@ use Aura\Base\Policies\ResourcePolicy;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Illuminate\Auth\Access\Events\GateEvaluated;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 
 class Core05PolicySubjectResource extends Resource
@@ -106,6 +108,60 @@ test('class subject normalization evaluates gate after callbacks once', function
     expect(Gate::forUser($user)->allows('viewAny', Core05PolicySubjectResource::class))->toBeTrue()
         ->and($evaluations)->toBe(1);
 });
+
+test('class subject normalization dispatches one gate evaluated event', function () {
+    $user = createSuperAdmin();
+    Event::fake([GateEvaluated::class]);
+
+    expect(Gate::forUser($user)->allows('viewAny', Core05PolicySubjectResource::class))->toBeTrue();
+
+    Event::assertDispatchedTimes(GateEvaluated::class, 1);
+});
+
+test('a later host gate before callback can deny a normalized class subject', function () {
+    $user = createSuperAdmin();
+    $evaluations = [];
+
+    Gate::before(function () use (&$evaluations): null {
+        $evaluations[] = 'early-null';
+
+        return null;
+    });
+    Gate::before(function () use (&$evaluations): bool {
+        $evaluations[] = 'late-deny';
+
+        return false;
+    });
+
+    expect(Gate::forUser($user)->allows('viewAny', Core05PolicySubjectResource::class))->toBeFalse()
+        ->and($evaluations)->toBe(['early-null', 'late-deny']);
+});
+
+test('host gate before callbacks preserve first non-null ordering', function (
+    bool $earlyResult,
+    bool $lateResult,
+    bool $expected,
+) {
+    $user = createSuperAdmin();
+    $evaluations = [];
+
+    Gate::before(function () use (&$evaluations, $earlyResult): bool {
+        $evaluations[] = 'early';
+
+        return $earlyResult;
+    });
+    Gate::before(function () use (&$evaluations, $lateResult): bool {
+        $evaluations[] = 'late';
+
+        return $lateResult;
+    });
+
+    expect(Gate::forUser($user)->allows('viewAny', Core05PolicySubjectResource::class))->toBe($expected)
+        ->and($evaluations)->toBe(['early']);
+})->with([
+    'early allow stops late deny' => [true, false, true],
+    'early deny stops late allow' => [false, true, false],
+]);
 
 test('class subject normalization preserves an inherited host policy before hook arguments', function () {
     $user = createSuperAdmin();

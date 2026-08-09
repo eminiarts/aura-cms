@@ -7,6 +7,7 @@ use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Validation\ValidationException;
@@ -143,9 +144,16 @@ final class TableMutationDispatcher
 
     public function findRecord(Builder $scope, int|string $id): Model
     {
-        $record = $scope->whereKey($id)->first();
+        $expectedIdentity = $this->canonicalIdentity($scope->getModel(), $id);
+        $records = $this->canonicalizeRecords($scope->whereKey($id)->get());
+        $resolvedIdentities = $this->canonicalIdentities($records);
+        $record = $records->first();
 
-        if (! $record instanceof Model) {
+        if (
+            ! $record instanceof Model
+            || count($resolvedIdentities) !== 1
+            || ! array_key_exists($expectedIdentity, $resolvedIdentities)
+        ) {
             abort(404);
         }
 
@@ -236,6 +244,45 @@ final class TableMutationDispatcher
     }
 
     /**
+     * @param  Collection<int, Model>  $records
+     * @return array<string, true>
+     */
+    private function canonicalIdentities(Collection $records): array
+    {
+        return $records
+            ->mapWithKeys(fn (Model $record): array => [$this->canonicalIdentity($record, $record->getKey()) => true])
+            ->all();
+    }
+
+    private function canonicalIdentity(Model $model, mixed $key): string
+    {
+        if ((! is_int($key) && ! is_string($key)) || (is_string($key) && $key === '')) {
+            abort(422, 'The resolved table record identity is invalid.');
+        }
+
+        return json_encode([
+            'class' => $model::class,
+            'connection' => $model->getConnection()->getName(),
+            'morph' => Relation::getMorphAlias($model::class),
+            'key' => (string) $key,
+        ], JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * @param  Collection<int, Model>  $records
+     * @return Collection<int, Model>
+     */
+    private function canonicalizeRecords(Collection $records): Collection
+    {
+        return $records
+            ->unique(
+                fn (Model $record): string => $this->canonicalIdentity($record, $record->getKey()),
+                true,
+            )
+            ->values();
+    }
+
+    /**
      * @param  array<string, mixed>  $declaredActions
      * @return array{ability: string, conditional_logic: mixed, mode: 'collection'|'record', trashed: 'only'|'with'|null}
      */
@@ -302,7 +349,7 @@ final class TableMutationDispatcher
     private function resolveExactSelection(Builder $scope, mixed $selected, bool $selectAll): Collection
     {
         if ($selectAll) {
-            $records = $scope->get();
+            $records = $this->canonicalizeRecords($scope->get());
 
             if ($records->isEmpty()) {
                 throw ValidationException::withMessages([
@@ -337,12 +384,16 @@ final class TableMutationDispatcher
             ]);
         }
 
-        $records = $scope->whereKey(array_values($normalized))->get();
-        $resolvedKeys = $records
-            ->mapWithKeys(fn (Model $record): array => [(string) $record->getKey() => true])
+        $records = $this->canonicalizeRecords($scope->whereKey(array_values($normalized))->get());
+        $expectedIdentities = collect($normalized)
+            ->mapWithKeys(fn (int|string $id): array => [$this->canonicalIdentity($scope->getModel(), $id) => true])
             ->all();
+        $resolvedIdentities = $this->canonicalIdentities($records);
 
-        if (array_diff_key($normalized, $resolvedKeys) !== [] || count($normalized) !== count($resolvedKeys)) {
+        if (
+            array_diff_key($expectedIdentities, $resolvedIdentities) !== []
+            || array_diff_key($resolvedIdentities, $expectedIdentities) !== []
+        ) {
             throw ValidationException::withMessages([
                 'selected' => 'The selected records are invalid.',
             ]);
