@@ -31,6 +31,15 @@ test('owner authorization reloads and authorizes create and update contexts with
         ->and($updateOwner->resource)->not->toBe($post);
 });
 
+test('standalone library owner authorization requires attachment listing access', function () {
+    $token = $this->tokens->issueLibrary('library', $this->actor);
+    $owner = $this->authorization->authorizeOwner($token, $this->actor, Attachment::class, '__library__');
+
+    expect($owner->context->action)->toBe('library')
+        ->and($owner->resource)->toBeInstanceOf(Attachment::class)
+        ->and($owner->field)->toBe(['slug' => '__library__']);
+});
+
 test('owner authorization rejects model slug unregistered resource and foreign records', function () {
     $post = Post::factory()->create(['team_id' => $this->actor->current_team_id]);
     $token = $this->tokens->issue('owner', Post::class, (string) $post->getKey(), 'update', 'image', $this->actor);

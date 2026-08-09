@@ -320,7 +320,7 @@
             <div class="z-[2] relative mt-2">
                 <x-aura::button.light
                     data-media-picker-button="{{ $field['slug'] }}"
-                    wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { model: {{ json_encode($for) }}, slug: '{{ $field['slug'] }}', selected: {{ json_encode($selected) }} }})">
+                    wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { model: {{ json_encode($for) }}, slug: '{{ $field['slug'] }}', selected: {{ json_encode($selected) }}, ownerToken: {{ json_encode($ownerToken) }} }})">
                     <x-slot:icon>
                         <x-aura::icon icon="media" class="" />
                     </x-slot>

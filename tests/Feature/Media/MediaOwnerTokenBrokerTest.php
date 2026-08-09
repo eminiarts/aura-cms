@@ -2,6 +2,7 @@
 
 use Aura\Base\Livewire\Media\InvalidMediaOwnerToken;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
+use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
@@ -85,6 +86,17 @@ test('owner tokens reject forgery actor changes team changes and expiry', functi
 
     expect(fn () => $this->broker->resolve($freshToken, $this->actor->refresh()))
         ->toThrow(InvalidMediaOwnerToken::class);
+});
+
+test('standalone media library tokens bind the configured attachment resource', function () {
+    $token = $this->broker->issueLibrary('library-component', $this->actor);
+    $context = $this->broker->resolve($token, $this->actor);
+
+    expect($context->ownerComponentId)->toBe('library-component')
+        ->and($context->modelClass)->toBe(Attachment::class)
+        ->and($context->modelKey)->toBeNull()
+        ->and($context->action)->toBe('library')
+        ->and($context->slug)->toBe('__library__');
 });
 
 test('owner token issue rejects malformed context before creating a token', function (array $arguments) {

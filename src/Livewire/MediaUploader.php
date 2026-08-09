@@ -2,12 +2,19 @@
 
 namespace Aura\Base\Livewire;
 
+use Aura\Base\Livewire\Media\MediaAuthorization;
+use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Throwable;
 
 class MediaUploader extends Component
 {
@@ -33,7 +40,14 @@ class MediaUploader extends Component
 
     public $model;
 
+    #[Locked]
     public $namespace = Attachment::class;
+
+    #[Locked]
+    public string $ownerToken = '';
+
+    #[Locked]
+    public string $ownerTokenDigest = '';
 
     public $selected;
 
@@ -47,13 +61,26 @@ class MediaUploader extends Component
         'ids' => [],
     ];
 
-    public function mount(): void
+    public function hydrate(): void
     {
+        $this->authorizeContext();
+    }
+
+    public function mount(?string $ownerToken = null): void
+    {
+        $actor = $this->actor();
+        $this->namespace = config('aura.resources.attachment', Attachment::class);
         $this->model = app($this->namespace);
+        $broker = app(MediaOwnerTokenBroker::class);
+        $this->ownerToken = $ownerToken ?: $broker->issueLibrary($this->getId(), $actor);
+        $this->ownerTokenDigest = $broker->digest($this->ownerToken);
+        $this->authorizeContext();
     }
 
     public function render(): View
     {
+        $this->authorizeContext();
+
         return view('aura::livewire.media-uploader', [
             'uploadPolicy' => $this->uploadPolicy(),
         ]);
@@ -63,12 +90,18 @@ class MediaUploader extends Component
     public function selectedMediaUpdated(array $data): void
     {
         if ($this->field && ($this->field['slug'] == $data['slug'])) {
-            $this->selected = $data['value'];
+            $actor = $this->authorizeContext();
+            $this->selected = app(MediaAuthorization::class)
+                ->authorizeAttachments(is_array($data['value'] ?? null) ? $data['value'] : [], $actor)
+                ->map(fn (Resource $attachment): string => (string) $attachment->getKey())
+                ->all();
         }
     }
 
     public function updatedMedia(): void
     {
+        $actor = $this->authorizeContext();
+        app(MediaAuthorization::class)->authorizeAttachmentCreate($actor);
         $this->resetValidation();
         $this->uploadResult = [
             'successful' => false,
@@ -111,26 +144,41 @@ class MediaUploader extends Component
                 continue;
             }
 
-            $url = $media->store(
-                config('aura.media.path', 'media'),
-                config('aura.media.disk', 'public'),
-            );
+            $disk = config('aura.media.disk', 'public');
+            $url = null;
 
-            $payload = [
-                'url' => $url,
-                'name' => $media->getClientOriginalName(),
-                'title' => $media->getClientOriginalName(),
-                'size' => $media->getSize(),
-                'mime_type' => $media->getMimeType(),
-            ];
+            try {
+                $url = $media->store(
+                    config('aura.media.path', 'media'),
+                    $disk,
+                );
 
-            if (str_starts_with((string) $media->getMimeType(), 'image/')
-                && ($dimensions = @getimagesize($media->getRealPath()))) {
-                $payload['width'] = $dimensions[0];
-                $payload['height'] = $dimensions[1];
+                $payload = [
+                    'url' => $url,
+                    'name' => $media->getClientOriginalName(),
+                    'title' => $media->getClientOriginalName(),
+                    'size' => $media->getSize(),
+                    'mime_type' => $media->getMimeType(),
+                ];
+
+                if (str_starts_with((string) $media->getMimeType(), 'image/')
+                    && ($dimensions = @getimagesize($media->getRealPath()))) {
+                    $payload['width'] = $dimensions[0];
+                    $payload['height'] = $dimensions[1];
+                }
+
+                $attachments[] = app(config('aura.resources.attachment'))::create($payload);
+            } catch (Throwable) {
+                if (is_string($url) && $url !== '') {
+                    Storage::disk($disk)->delete($url);
+                }
+
+                $this->addError("media.{$key}", __('Upload failed. Please try again.'));
+                $this->uploadResult['message'] = __('Upload failed. Please try again.');
+                unset($this->media[$key]);
+
+                continue;
             }
-
-            $attachments[] = app(config('aura.resources.attachment'))::create($payload);
 
             // Unset the processed file
             unset($this->media[$key]);
@@ -177,5 +225,41 @@ class MediaUploader extends Component
             'max_size_bytes' => self::MAX_FILE_SIZE_KILOBYTES * 1024,
             'blocked_extensions' => self::BLOCKED_EXTENSIONS,
         ];
+    }
+
+    private function actor(): Authenticatable
+    {
+        $actor = auth()->user();
+
+        if (! $actor instanceof Authenticatable) {
+            abort(403);
+        }
+
+        return $actor;
+    }
+
+    private function authorizeContext(): Authenticatable
+    {
+        $actor = $this->actor();
+
+        if (! hash_equals($this->ownerTokenDigest, app(MediaOwnerTokenBroker::class)->digest($this->ownerToken))) {
+            abort(403);
+        }
+
+        $owner = app(MediaAuthorization::class)->authorizeOwner($this->ownerToken, $actor);
+
+        if ($this->field && ($this->field['slug'] ?? null) !== $owner->context->slug) {
+            abort(403);
+        }
+
+        if (is_string($this->for) && $this->for !== '' && $this->for !== $owner->context->modelClass) {
+            abort(403);
+        }
+
+        if (is_array($this->selected)) {
+            app(MediaAuthorization::class)->authorizeAttachments($this->selected, $actor);
+        }
+
+        return $actor;
     }
 }

@@ -94,6 +94,16 @@ class MediaAuthorization
             throw new InvalidMediaOwnerContext('The media owner resource is unavailable.');
         }
 
+        if ($context->action === 'library') {
+            if ($context->modelClass !== $this->attachmentPrototype()::class || $context->slug !== '__library__') {
+                throw new InvalidMediaOwnerContext('The media library owner context is invalid.');
+            }
+
+            $this->gate->forUser($actor)->authorize('viewAny', $prototype);
+
+            return new AuthorizedMediaOwner($context, $prototype, ['slug' => '__library__']);
+        }
+
         $field = $prototype->fieldBySlug($context->slug);
 
         if (! is_array($field) || ($field['slug'] ?? null) !== $context->slug) {

@@ -2,6 +2,8 @@
 
 use Aura\Base\Livewire\ComponentSlots\ComponentSlotCandidateValidator;
 use Aura\Base\Livewire\ComponentSlots\InvalidComponentSlotCandidate;
+use Aura\Base\Livewire\GlobalSearch;
+use Aura\Base\Livewire\MediaManager;
 use Illuminate\Contracts\Routing\UrlRoutable;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -215,6 +217,13 @@ test('a global search slot accepts an instantiable Livewire component', function
 
     expect($validator->validate('global-search', 'vendor/package', ValidGlobalSearchSlot::class))
         ->toBe(ValidGlobalSearchSlot::class);
+});
+
+test('Aura default components satisfy their public slot structures', function () {
+    $validator = new ComponentSlotCandidateValidator(app());
+
+    expect($validator->validate('global-search', 'aura', GlobalSearch::class))->toBe(GlobalSearch::class)
+        ->and($validator->validate('media-manager', 'aura', MediaManager::class))->toBe(MediaManager::class);
 });
 
 test('candidate class names are canonical and may have one leading slash', function () {

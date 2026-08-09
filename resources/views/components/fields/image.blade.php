@@ -16,8 +16,7 @@
 
 @php
     if($selected) {
-        $attachmentClass = config('aura.resources.attachment', \Aura\Base\Resources\Attachment::class);
-        $files = $attachmentClass::find($selected)?->sortBy(function($item) use ($selected) {
+        $files = $this->authorizedMediaForField($selected)->sortBy(function($item) use ($selected) {
             return array_search($item->id, $selected);
         });
     }
@@ -98,6 +97,7 @@
             :button="true"
             :model="app('Aura\Base\Resources\Attachment')"
             :for="get_class($this->model)"
+            :owner-token="$this->mediaOwnerToken($field['slug'])"
             :disabled="$field['disabled'] ?? false"
         />
 

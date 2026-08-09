@@ -1,0 +1,71 @@
+<?php
+
+use Aura\Base\Livewire\MediaUploader;
+use Aura\Base\Resources\Attachment;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
+use Aura\Base\Tests\Fixtures\Media\Core20FailingAttachment;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
+
+beforeEach(function () {
+    Storage::fake('public');
+    $this->actingAs($this->actor = createSuperAdmin());
+});
+
+test('uploader requires authentication and attachment listing access on mount and hydration', function () {
+    auth()->logout();
+    Livewire::test(MediaUploader::class)->assertForbidden();
+
+    $denied = User::factory()->create(['current_team_id' => $this->actor->current_team_id]);
+    $this->actingAs($denied);
+    Livewire::test(MediaUploader::class)->assertForbidden();
+
+    $this->actingAs($this->actor);
+    $uploader = Livewire::test(MediaUploader::class);
+    auth()->logout();
+    $uploader->call('uploadPolicy')->assertForbidden();
+});
+
+test('uploader authorizes attachment creation before storing any bytes', function () {
+    Gate::before(fn ($user, string $ability): ?bool => $ability === 'create' ? false : null);
+    $file = UploadedFile::fake()->image('denied.jpg');
+
+    Livewire::test(MediaUploader::class)
+        ->set('media', [$file])
+        ->assertForbidden();
+
+    expect(Attachment::count())->toBe(0);
+    Storage::disk('public')->assertMissing('media/denied.jpg');
+    expect(Storage::disk('public')->allFiles('media'))->toBe([]);
+});
+
+test('uploader removes stored bytes when attachment persistence fails', function () {
+    config()->set('aura.resources.attachment', Core20FailingAttachment::class);
+    app('aura')::registerResources([Core20FailingAttachment::class]);
+
+    Livewire::test(MediaUploader::class)
+        ->set('media', [UploadedFile::fake()->image('orphan.jpg')])
+        ->assertHasErrors('media.0');
+
+    expect(Attachment::count())->toBe(0)
+        ->and(Storage::disk('public')->allFiles('media'))->toBe([]);
+});
+
+test('uploader rejects foreign preselected attachments and locks its owner token', function () {
+    $foreign = Attachment::withoutGlobalScopes()->create([
+        'type' => Attachment::$type,
+        'team_id' => Team::factory()->createQuietly()->getKey(),
+        'user_id' => $this->actor->getKey(),
+    ]);
+
+    expect(fn () => Livewire::test(MediaUploader::class, ['selected' => [(string) $foreign->getKey()]]))
+        ->toThrow(Exception::class);
+
+    $uploader = Livewire::test(MediaUploader::class);
+
+    expect(fn () => $uploader->set('ownerToken', 'forged'))
+        ->toThrow(Exception::class);
+});

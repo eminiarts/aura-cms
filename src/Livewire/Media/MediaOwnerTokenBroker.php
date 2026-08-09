@@ -3,6 +3,7 @@
 namespace Aura\Base\Livewire\Media;
 
 use Aura\Base\Resource;
+use Aura\Base\Resources\Attachment;
 use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
@@ -112,6 +113,24 @@ class MediaOwnerTokenBroker
 
             return $token;
         });
+    }
+
+    public function issueLibrary(string $ownerComponentId, Authenticatable $actor): string
+    {
+        $attachmentClass = $this->config->get('aura.resources.attachment', Attachment::class);
+
+        if (! is_string($attachmentClass)) {
+            throw new InvalidArgumentException('The configured attachment resource must be a class string.');
+        }
+
+        return $this->issue(
+            ownerComponentId: $ownerComponentId,
+            modelClass: $attachmentClass,
+            modelKey: null,
+            action: 'library',
+            slug: '__library__',
+            actor: $actor,
+        );
     }
 
     public function resolve(string $token, Authenticatable $actor): MediaOwnerContext
@@ -243,9 +262,11 @@ class MediaOwnerTokenBroker
             throw new InvalidArgumentException('Media owner model must be a canonical Aura Resource class.');
         }
 
-        if (! in_array($action, ['create', 'update'], true)
+        if (! in_array($action, ['create', 'update', 'library'], true)
             || ($action === 'create' && $modelKey !== null)
-            || ($action === 'update' && ($modelKey === null || $modelKey === ''))) {
+            || ($action === 'update' && ($modelKey === null || $modelKey === ''))
+            || ($action === 'library' && ($modelKey !== null || $slug !== '__library__'
+                || ltrim((string) $this->config->get('aura.resources.attachment', Attachment::class), '\\') !== $modelClass))) {
             throw new InvalidArgumentException('Media owner action and model key are inconsistent.');
         }
 
@@ -277,7 +298,7 @@ class MediaOwnerTokenBroker
         return is_string($payload['owner_component_id'])
             && is_string($payload['model_class'])
             && ($payload['model_key'] === null || is_string($payload['model_key']))
-            && in_array($payload['action'], ['create', 'update'], true)
+            && in_array($payload['action'], ['create', 'update', 'library'], true)
             && is_string($payload['slug'])
             && is_string($payload['actor_id'])
             && ($payload['team_id'] === null || is_string($payload['team_id']))
