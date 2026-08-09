@@ -1,5 +1,7 @@
 <?php
 
+use Aura\Base\Fields\Image;
+use Aura\Base\Fields\Text;
 use Aura\Base\Livewire\Media\InvalidMediaOwnerToken;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Resources\Attachment;
@@ -21,6 +23,7 @@ test('owner tokens are opaque reusable for one mounted field and bind the full c
         modelKey: '73',
         action: 'update',
         slug: 'gallery',
+        fieldType: Image::class,
         actor: $this->actor,
     );
 
@@ -30,6 +33,7 @@ test('owner tokens are opaque reusable for one mounted field and bind the full c
         modelKey: '73',
         action: 'update',
         slug: 'gallery',
+        fieldType: Image::class,
         actor: $this->actor,
     );
     $context = $this->broker->resolve($token, $this->actor);
@@ -42,6 +46,7 @@ test('owner tokens are opaque reusable for one mounted field and bind the full c
         ->and($context->modelKey)->toBe('73')
         ->and($context->action)->toBe('update')
         ->and($context->slug)->toBe('gallery')
+        ->and($context->fieldType)->toBe(Image::class)
         ->and($context->actorId)->toBe((string) $this->actor->getAuthIdentifier())
         ->and($context->teamId)->toBe((string) $this->actor->current_team_id)
         ->and($context->nonce)->toHaveLength(64)
@@ -55,6 +60,7 @@ test('owner tokens reject forgery actor changes team changes and expiry', functi
         modelKey: null,
         action: 'create',
         slug: 'image',
+        fieldType: Image::class,
         actor: $this->actor,
     );
 
@@ -79,6 +85,7 @@ test('owner tokens reject forgery actor changes team changes and expiry', functi
         modelKey: null,
         action: 'create',
         slug: 'image',
+        fieldType: Image::class,
         actor: $this->actor->refresh(),
     );
 
@@ -96,7 +103,8 @@ test('standalone media library tokens bind the configured attachment resource', 
         ->and($context->modelClass)->toBe(Attachment::class)
         ->and($context->modelKey)->toBeNull()
         ->and($context->action)->toBe('library')
-        ->and($context->slug)->toBe('__library__');
+        ->and($context->slug)->toBe('__library__')
+        ->and($context->fieldType)->toBeNull();
 });
 
 test('owner token issue rejects malformed context before creating a token', function (array $arguments) {
@@ -109,6 +117,7 @@ test('owner token issue rejects malformed context before creating a token', func
         'modelKey' => null,
         'action' => 'create',
         'slug' => 'image',
+        'fieldType' => Image::class,
     ]],
     'non resource model' => [[
         'ownerComponentId' => 'owner',
@@ -116,6 +125,7 @@ test('owner token issue rejects malformed context before creating a token', func
         'modelKey' => null,
         'action' => 'create',
         'slug' => 'image',
+        'fieldType' => Image::class,
     ]],
     'wrong action and key pair' => [[
         'ownerComponentId' => 'owner',
@@ -123,6 +133,7 @@ test('owner token issue rejects malformed context before creating a token', func
         'modelKey' => '1',
         'action' => 'create',
         'slug' => 'image',
+        'fieldType' => Image::class,
     ]],
     'empty slug' => [[
         'ownerComponentId' => 'owner',
@@ -130,5 +141,14 @@ test('owner token issue rejects malformed context before creating a token', func
         'modelKey' => null,
         'action' => 'create',
         'slug' => '',
+        'fieldType' => Image::class,
+    ]],
+    'non media field type' => [[
+        'ownerComponentId' => 'owner',
+        'modelClass' => Post::class,
+        'modelKey' => null,
+        'action' => 'create',
+        'slug' => 'title',
+        'fieldType' => Text::class,
     ]],
 ]);

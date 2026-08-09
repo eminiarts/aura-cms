@@ -2,12 +2,14 @@
 
 namespace Aura\Base\Livewire\Media;
 
+use Aura\Base\Fields\Field;
 use Aura\Base\Resource;
 
 final readonly class MediaOwnerContext
 {
     /**
      * @param  class-string<resource>  $modelClass
+     * @param  class-string<Field>|null  $fieldType
      */
     public function __construct(
         public string $ownerComponentId,
@@ -15,6 +17,7 @@ final readonly class MediaOwnerContext
         public ?string $modelKey,
         public string $action,
         public string $slug,
+        public ?string $fieldType,
         public string $actorId,
         public ?string $teamId,
         public string $nonce,
@@ -29,6 +32,7 @@ final readonly class MediaOwnerContext
      *     model_key: string|null,
      *     action: string,
      *     slug: string,
+     *     field_type: class-string<Field>|null,
      *     actor_id: string,
      *     team_id: string|null,
      *     nonce: string,
@@ -44,6 +48,7 @@ final readonly class MediaOwnerContext
             modelKey: $payload['model_key'],
             action: $payload['action'],
             slug: $payload['slug'],
+            fieldType: $payload['field_type'],
             actorId: $payload['actor_id'],
             teamId: $payload['team_id'],
             nonce: $payload['nonce'],
@@ -59,6 +64,7 @@ final readonly class MediaOwnerContext
      *     model_key: string|null,
      *     action: string,
      *     slug: string,
+     *     field_type: class-string<Field>|null,
      *     actor_id: string,
      *     team_id: string|null,
      *     nonce: string,
@@ -74,6 +80,7 @@ final readonly class MediaOwnerContext
             'model_key' => $this->modelKey,
             'action' => $this->action,
             'slug' => $this->slug,
+            'field_type' => $this->fieldType,
             'actor_id' => $this->actorId,
             'team_id' => $this->teamId,
             'nonce' => $this->nonce,

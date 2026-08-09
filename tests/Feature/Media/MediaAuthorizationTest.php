@@ -1,5 +1,7 @@
 <?php
 
+use Aura\Base\Fields\File;
+use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\Media\InvalidMediaOwnerContext;
 use Aura\Base\Livewire\Media\MediaAuthorization;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
@@ -17,11 +19,11 @@ beforeEach(function () {
 });
 
 test('owner authorization reloads and authorizes create and update contexts with a real field', function () {
-    $createToken = $this->tokens->issue('create-owner', Post::class, null, 'create', 'image', $this->actor);
+    $createToken = $this->tokens->issue('create-owner', Post::class, null, 'create', 'image', Image::class, $this->actor);
     $createOwner = $this->authorization->authorizeOwner($createToken, $this->actor, Post::class, 'image');
 
     $post = Post::factory()->create(['team_id' => $this->actor->current_team_id]);
-    $updateToken = $this->tokens->issue('update-owner', Post::class, (string) $post->getKey(), 'update', 'image', $this->actor);
+    $updateToken = $this->tokens->issue('update-owner', Post::class, (string) $post->getKey(), 'update', 'image', Image::class, $this->actor);
     $updateOwner = $this->authorization->authorizeOwner($updateToken, $this->actor, Post::class, 'image');
 
     expect($createOwner->resource)->toBeInstanceOf(Post::class)
@@ -40,13 +42,16 @@ test('standalone library owner authorization requires attachment listing access'
         ->and($owner->field)->toBe(['slug' => '__library__']);
 });
 
-test('owner authorization rejects model slug unregistered resource and foreign records', function () {
+test('owner authorization rejects model slug field type unregistered resource and foreign records', function () {
     $post = Post::factory()->create(['team_id' => $this->actor->current_team_id]);
-    $token = $this->tokens->issue('owner', Post::class, (string) $post->getKey(), 'update', 'image', $this->actor);
+    $token = $this->tokens->issue('owner', Post::class, (string) $post->getKey(), 'update', 'image', Image::class, $this->actor);
+    $wrongTypeToken = $this->tokens->issue('wrong-type-owner', Post::class, (string) $post->getKey(), 'update', 'image', File::class, $this->actor);
 
     expect(fn () => $this->authorization->authorizeOwner($token, $this->actor, Attachment::class, 'image'))
         ->toThrow(InvalidMediaOwnerContext::class)
         ->and(fn () => $this->authorization->authorizeOwner($token, $this->actor, Post::class, 'missing'))
+        ->toThrow(InvalidMediaOwnerContext::class)
+        ->and(fn () => $this->authorization->authorizeOwner($wrongTypeToken, $this->actor, Post::class, 'image'))
         ->toThrow(InvalidMediaOwnerContext::class);
 
     app('aura')::flushState();
@@ -61,7 +66,7 @@ test('owner authorization rejects model slug unregistered resource and foreign r
         'team_id' => $foreignTeam->getKey(),
         'user_id' => $this->actor->getKey(),
     ]);
-    $foreignToken = $this->tokens->issue('foreign-owner', Post::class, (string) $foreign->getKey(), 'update', 'image', $this->actor);
+    $foreignToken = $this->tokens->issue('foreign-owner', Post::class, (string) $foreign->getKey(), 'update', 'image', Image::class, $this->actor);
 
     expect(fn () => $this->authorization->authorizeOwner($foreignToken, $this->actor, Post::class, 'image'))
         ->toThrow(InvalidMediaOwnerContext::class);
@@ -70,7 +75,7 @@ test('owner authorization rejects model slug unregistered resource and foreign r
 test('owner and attachment policy denials fail authorization', function () {
     $denied = User::factory()->create(['current_team_id' => $this->actor->current_team_id]);
     $this->actingAs($denied);
-    $ownerToken = $this->tokens->issue('owner', Post::class, null, 'create', 'image', $denied);
+    $ownerToken = $this->tokens->issue('owner', Post::class, null, 'create', 'image', Image::class, $denied);
 
     expect(fn () => $this->authorization->authorizeOwner($ownerToken, $denied, Post::class, 'image'))
         ->toThrow(AuthorizationException::class)

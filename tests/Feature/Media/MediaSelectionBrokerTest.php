@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\Media\InvalidMediaSelectionRequest;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Livewire\Media\MediaSelectionBroker;
@@ -20,6 +21,7 @@ beforeEach(function () {
         modelKey: null,
         action: 'create',
         slug: 'gallery',
+        fieldType: Image::class,
         actor: $this->actor,
     );
 });

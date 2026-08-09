@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Livewire\Media\MediaSelectionBroker;
 use Aura\Base\Resources\Attachment;
@@ -125,6 +126,17 @@ test('locked owner digest cannot be changed by a browser update', function () {
 
     expect(fn () => $owner->set('mediaOwnerTokenDigests.image', str_repeat('0', 64)))
         ->toThrow(Exception::class);
+});
+
+test('media owner tokens can only be issued for an actual media field on the owner', function () {
+    $owner = Livewire::test(Core20MediaOwnerHarness::class);
+    $context = app(MediaOwnerTokenBroker::class)->resolve($owner->get('ownerTokenForTest'), $this->actor);
+
+    expect($context->fieldType)->toBe(Image::class)
+        ->and(fn () => $owner->instance()->mediaOwnerToken('title'))
+        ->toThrow(InvalidArgumentException::class)
+        ->and(fn () => $owner->instance()->mediaOwnerToken('missing'))
+        ->toThrow(InvalidArgumentException::class);
 });
 
 test('simultaneous forms with the same slug route a selection only to its token owner', function () {

@@ -3,6 +3,8 @@
 namespace Aura\Base\Livewire\Media;
 
 use Aura\Base\Aura;
+use Aura\Base\Fields\File;
+use Aura\Base\Fields\Image;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
 use Illuminate\Contracts\Auth\Access\Gate;
@@ -78,13 +80,16 @@ class MediaAuthorization
         Authenticatable $actor,
         ?string $expectedModel = null,
         ?string $expectedSlug = null,
+        ?string $expectedFieldType = null,
     ): AuthorizedMediaOwner {
         $this->assertCurrentActor($actor);
         $context = $this->owners->resolve($ownerToken, $actor);
 
         if (($expectedModel !== null && ! hash_equals($context->modelClass, $expectedModel))
             || ($expectedSlug !== null && ! hash_equals($context->slug, $expectedSlug))
-            || ! in_array($context->modelClass, $this->aura->getResources(), true)) {
+            || ($expectedFieldType !== null && (! is_string($context->fieldType)
+                || ! hash_equals($context->fieldType, $expectedFieldType)))
+            || ! $this->isRegisteredResource($context->modelClass)) {
             throw new InvalidMediaOwnerContext('The media owner context does not match a registered resource field.');
         }
 
@@ -95,7 +100,8 @@ class MediaAuthorization
         }
 
         if ($context->action === 'library') {
-            if ($context->modelClass !== $this->attachmentPrototype()::class || $context->slug !== '__library__') {
+            if ($context->modelClass !== $this->attachmentPrototype()::class
+                || $context->slug !== '__library__' || $context->fieldType !== null) {
                 throw new InvalidMediaOwnerContext('The media library owner context is invalid.');
             }
 
@@ -104,11 +110,20 @@ class MediaAuthorization
             return new AuthorizedMediaOwner($context, $prototype, ['slug' => '__library__']);
         }
 
-        $field = $prototype->fieldBySlug($context->slug);
-
-        if (! is_array($field) || ($field['slug'] ?? null) !== $context->slug) {
+        if (! $this->isMediaFieldType($context->fieldType)) {
             throw new InvalidMediaOwnerContext('The media owner field is unavailable.');
         }
+
+        $field = $prototype->fieldBySlug($context->slug);
+
+        if ($field !== null && (! is_array($field)
+            || ($field['slug'] ?? null) !== $context->slug
+            || ! is_string($field['type'] ?? null)
+            || ! hash_equals($context->fieldType, $field['type']))) {
+            throw new InvalidMediaOwnerContext('The media owner field is unavailable.');
+        }
+
+        $field ??= ['slug' => $context->slug, 'type' => $context->fieldType];
 
         $actorGate = $this->gate->forUser($actor);
 
@@ -156,6 +171,32 @@ class MediaAuthorization
         }
 
         return $attachment;
+    }
+
+    private function isMediaFieldType(?string $fieldType): bool
+    {
+        return is_string($fieldType)
+            && class_exists($fieldType)
+            && (is_a($fieldType, Image::class, true) || is_a($fieldType, File::class, true))
+            && (new ReflectionClass($fieldType))->getName() === $fieldType;
+    }
+
+    /** @param class-string<resource> $modelClass */
+    private function isRegisteredResource(string $modelClass): bool
+    {
+        if (in_array($modelClass, $this->aura->getResources(), true)) {
+            return true;
+        }
+
+        $configuredResources = config('aura.resources', []);
+
+        if (is_array($configuredResources) && in_array($modelClass, $configuredResources, true)) {
+            return true;
+        }
+
+        $resource = $this->aura->findResourceBySlug($modelClass);
+
+        return $resource instanceof Resource && $resource::class === $modelClass;
     }
 
     /**

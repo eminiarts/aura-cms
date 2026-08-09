@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\Fields\File;
+use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\Media\InvalidMediaSelectionRequest;
 use Aura\Base\Livewire\Media\MediaAuthorization;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
@@ -13,6 +15,7 @@ use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
+use ReflectionClass;
 
 trait MediaFields
 {
@@ -48,8 +51,15 @@ trait MediaFields
                         throw new InvalidArgumentException('The media owner component has no Resource model.');
                     }
 
+                    $field = $this->mediaFieldBySlug($slug);
                     $authorization = app(MediaAuthorization::class);
-                    $authorization->authorizeOwner($ownerToken, $actor, $this->model::class, $slug);
+                    $authorization->authorizeOwner(
+                        $ownerToken,
+                        $actor,
+                        $this->model::class,
+                        $slug,
+                        $field['type'],
+                    );
                     $attachments = $authorization->authorizeAttachments($value, $actor);
 
                     $this->updateField([
@@ -107,6 +117,7 @@ trait MediaFields
         $modelClass = $this->model::class;
         $modelKey = $this->model->exists ? (string) $this->model->getKey() : null;
         $action = $this->model->exists ? 'update' : 'create';
+        $field = $this->mediaFieldBySlug($slug);
         $broker = app(MediaOwnerTokenBroker::class);
         $token = $broker->issue(
             ownerComponentId: $this->getId(),
@@ -114,10 +125,11 @@ trait MediaFields
             modelKey: $modelKey,
             action: $action,
             slug: $slug,
+            fieldType: $field['type'],
             actor: $actor,
         );
 
-        app(MediaAuthorization::class)->authorizeOwner($token, $actor, $modelClass, $slug);
+        app(MediaAuthorization::class)->authorizeOwner($token, $actor, $modelClass, $slug, $field['type']);
         $this->mediaOwnerTokenDigests[$slug] = $broker->digest($token);
 
         return $token;
@@ -170,5 +182,23 @@ trait MediaFields
             'slug' => $data['slug'],
             'value' => $data['value'],
         ]);
+    }
+
+    /** @return array{slug: string, type: class-string<Image|File>} */
+    private function mediaFieldBySlug(string $slug): array
+    {
+        $field = method_exists($this, 'fieldBySlug')
+            ? $this->fieldBySlug($slug)
+            : $this->model->fieldBySlug($slug);
+        $fieldType = is_array($field) ? ($field['type'] ?? null) : null;
+
+        if (! is_array($field) || ($field['slug'] ?? null) !== $slug
+            || ! is_string($fieldType) || ! class_exists($fieldType)
+            || (! is_a($fieldType, Image::class, true) && ! is_a($fieldType, File::class, true))
+            || (new ReflectionClass($fieldType))->getName() !== $fieldType) {
+            throw new InvalidArgumentException('The media owner field must be an existing Image or File field.');
+        }
+
+        return ['slug' => $slug, 'type' => $fieldType];
     }
 }

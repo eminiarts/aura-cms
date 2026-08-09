@@ -4,6 +4,7 @@ namespace Aura\Base\Tests;
 
 use Aura\Base\ConditionalLogic;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
@@ -97,6 +98,7 @@ class BrowserTestCase extends TestCase
                     modelKey: null,
                     action: 'create',
                     slug: 'gallery',
+                    fieldType: Image::class,
                     actor: $actor,
                 );
 

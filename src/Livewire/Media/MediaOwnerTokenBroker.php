@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Livewire\Media;
 
+use Aura\Base\Fields\Field;
+use Aura\Base\Fields\File;
+use Aura\Base\Fields\Image;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
 use Illuminate\Cache\Repository as CacheRepository;
@@ -45,6 +48,7 @@ class MediaOwnerTokenBroker
 
     /**
      * @param  class-string<resource>  $modelClass
+     * @param  class-string<Field>|null  $fieldType
      */
     public function issue(
         string $ownerComponentId,
@@ -52,11 +56,12 @@ class MediaOwnerTokenBroker
         ?string $modelKey,
         string $action,
         string $slug,
+        ?string $fieldType,
         Authenticatable $actor,
     ): string {
         $actorId = $this->actorId($actor);
         $teamId = $this->teamId($actor);
-        $this->validateIssueContext($ownerComponentId, $modelClass, $modelKey, $action, $slug);
+        $this->validateIssueContext($ownerComponentId, $modelClass, $modelKey, $action, $slug, $fieldType);
 
         $fingerprint = hash('sha256', json_encode([
             $ownerComponentId,
@@ -64,6 +69,7 @@ class MediaOwnerTokenBroker
             $modelKey,
             $action,
             $slug,
+            $fieldType,
             $actorId,
             $teamId,
         ], JSON_THROW_ON_ERROR));
@@ -76,6 +82,7 @@ class MediaOwnerTokenBroker
             $modelKey,
             $action,
             $slug,
+            $fieldType,
             $actor,
             $actorId,
             $teamId,
@@ -100,6 +107,7 @@ class MediaOwnerTokenBroker
                 modelKey: $modelKey,
                 action: $action,
                 slug: $slug,
+                fieldType: $fieldType,
                 actorId: $actorId,
                 teamId: $teamId,
                 nonce: bin2hex(random_bytes(32)),
@@ -129,6 +137,7 @@ class MediaOwnerTokenBroker
             modelKey: null,
             action: 'library',
             slug: '__library__',
+            fieldType: null,
             actor: $actor,
         );
     }
@@ -252,6 +261,7 @@ class MediaOwnerTokenBroker
         ?string $modelKey,
         string $action,
         string $slug,
+        ?string $fieldType,
     ): void {
         if ($ownerComponentId === '' || strlen($ownerComponentId) > 255) {
             throw new InvalidArgumentException('Media owner component ID must be non-empty and at most 255 bytes.');
@@ -273,6 +283,20 @@ class MediaOwnerTokenBroker
         if ($slug === '' || strlen($slug) > 255) {
             throw new InvalidArgumentException('Media owner field slug must be non-empty and at most 255 bytes.');
         }
+
+        if ($action === 'library') {
+            if ($fieldType !== null) {
+                throw new InvalidArgumentException('Media library owner tokens cannot bind a field type.');
+            }
+
+            return;
+        }
+
+        if (! is_string($fieldType) || ! class_exists($fieldType)
+            || (! is_a($fieldType, Image::class, true) && ! is_a($fieldType, File::class, true))
+            || (new ReflectionClass($fieldType))->getName() !== $fieldType) {
+            throw new InvalidArgumentException('Media owner field type must be a canonical Image or File field class.');
+        }
     }
 
     /** @param array<string, mixed> $payload */
@@ -284,6 +308,7 @@ class MediaOwnerTokenBroker
             'model_key',
             'action',
             'slug',
+            'field_type',
             'actor_id',
             'team_id',
             'nonce',
@@ -300,6 +325,7 @@ class MediaOwnerTokenBroker
             && ($payload['model_key'] === null || is_string($payload['model_key']))
             && in_array($payload['action'], ['create', 'update', 'library'], true)
             && is_string($payload['slug'])
+            && ($payload['field_type'] === null || is_string($payload['field_type']))
             && is_string($payload['actor_id'])
             && ($payload['team_id'] === null || is_string($payload['team_id']))
             && is_string($payload['nonce'])
