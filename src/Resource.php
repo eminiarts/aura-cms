@@ -12,6 +12,7 @@ use Aura\Base\Traits\InputFields;
 use Aura\Base\Traits\InteractsWithTable;
 use Aura\Base\Traits\SaveFieldAttributes;
 use Aura\Base\Traits\SaveMetaFields;
+use Closure;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -83,6 +84,8 @@ class Resource extends Model implements DefinesFields
      * @var Collection|null
      */
     protected $normalizedMetaCache;
+
+    protected bool $readingAttributeState = false;
 
     /**
      * Input-field slugs used to derive this instance's current fillable state.
@@ -220,15 +223,37 @@ class Resource extends Model implements DefinesFields
     }
 
     /**
+     * Retrieve an attribute after synchronizing dynamic field state for the
+     * active provider context.
+     */
+    public function getAttribute($key)
+    {
+        return $this->readAfterSynchronizingFieldDefinition(
+            fn (): mixed => parent::getAttribute($key),
+        );
+    }
+
+    /**
      * Return attributes after synchronizing definition-derived instance state.
      *
      * @return array<string, mixed>
      */
     public function getAttributes()
     {
-        $this->ensureFieldDefinitionState();
+        return $this->readAfterSynchronizingFieldDefinition(
+            fn (): array => parent::getAttributes(),
+        );
+    }
 
-        return parent::getAttributes();
+    /**
+     * Retrieve a plain attribute after synchronizing dynamic field state for
+     * the active provider context.
+     */
+    public function getAttributeValue($key)
+    {
+        return $this->readAfterSynchronizingFieldDefinition(
+            fn (): mixed => parent::getAttributeValue($key),
+        );
     }
 
     public function getBulkActions()
@@ -370,6 +395,17 @@ class Resource extends Model implements DefinesFields
         $this->ensureFieldDefinitionState();
 
         return $this->tableDisplayCache[$slug] ?? null;
+    }
+
+    /**
+     * Determine whether an attribute exists after synchronizing dynamic field
+     * state for the active provider context.
+     */
+    public function hasAttribute($key)
+    {
+        return $this->readAfterSynchronizingFieldDefinition(
+            fn (): bool => parent::hasAttribute($key),
+        );
     }
 
     public function hasTableDisplayValue(string $slug): bool
@@ -576,6 +612,7 @@ class Resource extends Model implements DefinesFields
                 $this->attributes[$slug],
                 $this->original[$slug],
                 $this->changes[$slug],
+                $this->previous[$slug],
                 $this->relations[$slug],
                 $this->classCastCache[$slug],
                 $this->attributeCastCache[$slug],
@@ -592,6 +629,11 @@ class Resource extends Model implements DefinesFields
     protected function ensureFieldDefinitionState(): void
     {
         if (! $this->fieldDefinitionStateReady || $this->synchronizingFieldDefinitionState) {
+            return;
+        }
+
+        if ($this->fieldDefinitionStateKey === FieldProviderRegistry::DECLARATIVE_CACHE_KEY
+            && $this->fieldDefinitionGeneration === FieldCacheManager::generation()) {
             return;
         }
 
@@ -642,6 +684,23 @@ class Resource extends Model implements DefinesFields
         }
     }
 
+    private function readAfterSynchronizingFieldDefinition(Closure $read): mixed
+    {
+        if ($this->readingAttributeState) {
+            return $read();
+        }
+
+        $this->readingAttributeState = true;
+
+        try {
+            $this->ensureFieldDefinitionState();
+
+            return $read();
+        } finally {
+            $this->readingAttributeState = false;
+        }
+    }
+
     /**
      * Resolve dynamic property access — the single source of truth behind
      * __get. The precedence ladder (documented on the class) is annotated
@@ -656,9 +715,16 @@ class Resource extends Model implements DefinesFields
      */
     private function resolveDynamicAttribute($key)
     {
-        // 1. Real Eloquent state: parent::__get resolves a declared attribute,
+        return $this->readAfterSynchronizingFieldDefinition(
+            fn (): mixed => $this->resolveSynchronizedDynamicAttribute($key),
+        );
+    }
+
+    private function resolveSynchronizedDynamicAttribute($key)
+    {
+        // 1. Real Eloquent state: getAttribute resolves a declared attribute,
         //    an accessor, or a loaded/lazy relation for this key.
-        $value = parent::__get($key);
+        $value = $this->getAttribute($key);
 
         // 2. Any non-null result from (1) wins as-is — including falsy
         //    0/''/false; only a genuinely absent (null) attribute falls

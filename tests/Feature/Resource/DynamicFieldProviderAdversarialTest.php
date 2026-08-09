@@ -9,6 +9,7 @@ use Aura\Base\Resource;
 use Aura\Base\Traits\InputFields;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class Core08AdversarialResource extends Resource
 {
@@ -185,6 +186,65 @@ class Core08RefreshProvider implements FieldProvider
     }
 }
 
+class Core08AttributeBoundaryProviderState
+{
+    public static int $contextCalls = 0;
+
+    public static int $fieldsCalls = 0;
+
+    public static int $teamId = 1;
+
+    public static function reset(): void
+    {
+        static::$contextCalls = 0;
+        static::$fieldsCalls = 0;
+        static::$teamId = 1;
+    }
+}
+
+class Core08AttributeBoundaryResource extends Resource
+{
+    public static function getFields(): array
+    {
+        return [];
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'order' => 'integer',
+        ];
+    }
+}
+
+class Core08AttributeBoundaryProvider implements FieldProvider
+{
+    public function cacheContext(string $resourceClass): array
+    {
+        Core08AttributeBoundaryProviderState::$contextCalls++;
+
+        return ['team_id' => Core08AttributeBoundaryProviderState::$teamId];
+    }
+
+    public function cacheVersion(FieldProviderContext $context): string|int
+    {
+        return 1;
+    }
+
+    public function fields(FieldProviderContext $context): array
+    {
+        Core08AttributeBoundaryProviderState::$fieldsCalls++;
+
+        if ($context->value('team_id') !== 1) {
+            return [];
+        }
+
+        return [
+            ['name' => 'Old secret', 'slug' => 'old_secret', 'type' => 'Aura\\Base\\Fields\\Text'],
+        ];
+    }
+}
+
 class Core08VersionProviderState
 {
     public static int $fieldsCalls = 0;
@@ -283,10 +343,127 @@ beforeEach(function () {
     Core08WildcardProviderState::reset();
     Core08ConditionalProviderState::$teamId = 1;
     Core08RefreshProviderState::$teamId = 1;
+    Core08AttributeBoundaryProviderState::reset();
     Core08VersionProviderState::reset();
     Core08UserProviderState::$fieldsCalls = 0;
     Core08UserProviderState::$userId = 1;
     Resource::flushFieldCache();
+});
+
+it('prunes a context field before :dataset reads it on the same instance', function (bool $flush, Closure $read) {
+    Aura::registerFieldProvider(
+        Core08AttributeBoundaryProvider::class,
+        resources: [Core08AttributeBoundaryResource::class],
+    );
+
+    $resource = new Core08AttributeBoundaryResource;
+    $resource->forceFill(['old_secret' => 'team A secret']);
+
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+
+    if ($flush) {
+        Aura::flushFieldCache();
+    }
+
+    $result = $read($resource);
+
+    if (is_array($result)) {
+        expect($result)->not->toHaveKey('old_secret')
+            ->and((array) ($result['fields'] ?? []))->not->toHaveKey('old_secret');
+    } else {
+        expect($result)->toBeNull();
+    }
+
+    expect($resource->old_secret)->toBeNull()
+        ->and($resource->getAttribute('old_secret'))->toBeNull()
+        ->and($resource->getAttributeValue('old_secret'))->toBeNull()
+        ->and($resource->hasAttribute('old_secret'))->toBeFalse()
+        ->and($resource->getAttributes())->not->toHaveKey('old_secret');
+})->with([
+    'magic without flush' => [false, fn (Core08AttributeBoundaryResource $resource): mixed => $resource->old_secret],
+    'magic after flush' => [true, fn (Core08AttributeBoundaryResource $resource): mixed => $resource->old_secret],
+    'getAttribute without flush' => [false, fn (Core08AttributeBoundaryResource $resource): mixed => $resource->getAttribute('old_secret')],
+    'getAttribute after flush' => [true, fn (Core08AttributeBoundaryResource $resource): mixed => $resource->getAttribute('old_secret')],
+    'getAttributeValue without flush' => [false, fn (Core08AttributeBoundaryResource $resource): mixed => $resource->getAttributeValue('old_secret')],
+    'getAttributeValue after flush' => [true, fn (Core08AttributeBoundaryResource $resource): mixed => $resource->getAttributeValue('old_secret')],
+    'toArray without flush' => [false, fn (Core08AttributeBoundaryResource $resource): array => $resource->toArray()],
+    'toArray after flush' => [true, fn (Core08AttributeBoundaryResource $resource): array => $resource->toArray()],
+    'JSON without flush' => [false, fn (Core08AttributeBoundaryResource $resource): array => json_decode($resource->toJson(), true, flags: JSON_THROW_ON_ERROR)],
+    'JSON after flush' => [true, fn (Core08AttributeBoundaryResource $resource): array => json_decode($resource->toJson(), true, flags: JSON_THROW_ON_ERROR)],
+]);
+
+it('preserves physical model state across provider context changes', function (bool $flush) {
+    Aura::registerFieldProvider(
+        Core08AttributeBoundaryProvider::class,
+        resources: [Core08AttributeBoundaryResource::class],
+    );
+
+    $parent = new Core08AttributeBoundaryResource;
+    $resource = new Core08AttributeBoundaryResource;
+    $resource->forceFill([
+        'old_secret' => 'team A secret',
+        'title' => 'Original title',
+        'order' => '7',
+    ]);
+    $resource->setRelation('parent', $parent);
+    $resource->syncOriginal();
+    $resource->title = 'Changed title';
+
+    Core08AttributeBoundaryProviderState::$teamId = 2;
+
+    if ($flush) {
+        Aura::flushFieldCache();
+    }
+
+    expect($resource->title)->toBe('Changed title')
+        ->and($resource->getAttribute('order'))->toBe(7)
+        ->and($resource->parent)->toBe($parent)
+        ->and($resource->isDirty('title'))->toBeTrue()
+        ->and($resource->isDirty('old_secret'))->toBeFalse()
+        ->and($resource->exists)->toBeFalse()
+        ->and($resource->toArray())->toMatchArray([
+            'title' => 'Changed title',
+            'order' => 7,
+        ])
+        ->and(json_decode($resource->toJson(), true, flags: JSON_THROW_ON_ERROR))->toMatchArray([
+            'title' => 'Changed title',
+            'order' => 7,
+        ]);
+
+    Core08AttributeBoundaryProviderState::$teamId = 1;
+
+    expect($resource->fieldBySlug('old_secret'))->not->toBeNull()
+        ->and($resource->old_secret)->toBeNull()
+        ->and($resource->getAttribute('old_secret'))->toBeNull()
+        ->and($resource->title)->toBe('Changed title')
+        ->and($resource->parent)->toBe($parent)
+        ->and(Core08AttributeBoundaryProviderState::$fieldsCalls)->toBe($flush ? 3 : 2);
+})->with([
+    'without flush' => false,
+    'after flush' => true,
+]);
+
+it('keeps no-provider attribute reads query-free and declarative', function () {
+    config(['aura.features.legacy_fields_append' => false]);
+
+    $parent = new Core08UnrelatedResource;
+    $resource = new Core08UnrelatedResource;
+    $resource->forceFill(['title' => 'Original title', 'order' => 3]);
+    $resource->setRelation('parent', $parent);
+    $resource->syncOriginal();
+    $resource->title = 'Changed title';
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+
+    expect($resource->title)->toBe('Changed title')
+        ->and($resource->getAttribute('order'))->toBe(3)
+        ->and($resource->parent)->toBe($parent)
+        ->and($resource->isDirty('title'))->toBeTrue()
+        ->and($resource->toArray())->toMatchArray(['title' => 'Changed title', 'order' => 3])
+        ->and(json_decode($resource->toJson(), true, flags: JSON_THROW_ON_ERROR))->toMatchArray(['title' => 'Changed title', 'order' => 3])
+        ->and(Core08UnrelatedResource::$declarationCalls)->toBe(1)
+        ->and(DB::getQueryLog())->toBeEmpty();
 });
 
 it('limits wildcard providers to Aura resources', function () {
