@@ -536,11 +536,14 @@ the inputs used by the built-in capability factories. See
 [Creating Fields](creating-fields.md#filtercapabilitymodel-field) for the
 third-party extension contract.
 
-Choice filters preserve scalar value types, dates and datetimes normalize the
-browser's ISO payload to the field's configured storage format, and
-JSON-backed multiple-value fields use exact database JSON membership. Invalid
-field, operator, handler, and AND/OR payloads fail closed. Saved flat filter
-lists remain supported and are normalized to a single group.
+Choice filters restore scalar value types before querying. Scalar choice fields
+reject option sets whose values collapse to the same persisted string, while
+JSON-backed multiple-value fields preserve typed identities and use exact
+database JSON membership. Dates and datetimes normalize the browser's ISO
+payload for formatted meta storage or canonical native custom-table columns.
+Invalid field, operator, handler, nested structure, unknown payload key, and
+AND/OR value fail closed. Saved flat filter lists remain supported and are
+normalized to a single group.
 
 **Available Filter Operators** (from `QueryFilters` trait):
 
@@ -603,7 +606,7 @@ $filters = [
                     'name' => 'status',           // Field slug
                     'operator' => 'equals',       // Filter operator
                     'value' => 'published',       // Filter value
-                    'main_operator' => 'and',     // AND/OR with next filter
+                    'main_operator' => 'and',     // AND/OR with previous filter
                     'options' => [],              // Field-specific options
                 ],
                 [
@@ -618,6 +621,13 @@ $filters = [
     ],
 ];
 ```
+
+Groups are folded left-associatively in their listed order. The `operator` on
+each group after the first connects that group to the complete result before
+it; `main_operator` does the same for each filter after the first within its
+group. Empty groups and the exact blank UI placeholder (`name`, `operator`, and
+`value` empty, `options` empty) are inert. Filters cannot nest further, and
+unknown group or leaf keys reject the complete custom-filter payload.
 
 **Available Methods:**
 

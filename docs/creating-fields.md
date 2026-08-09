@@ -173,6 +173,20 @@ public function set($post, $field, $value)
 }
 ```
 
+#### `setTableValue($post, $field, $value)`
+
+Native custom-table columns normally keep the submitted value unchanged so
+Eloquent casts can serialize it. Override `setTableValue()` when the field must
+normalize or validate a native-column value before Eloquent persists it. Do not
+pre-serialize arrays when the model already declares an `array` or `json` cast.
+
+```php
+public function setTableValue(mixed $post, array $field, mixed $value): mixed
+{
+    return $value === null ? null : (int) $value;
+}
+```
+
 #### `get($class, $value, $field = null)`
 
 Transform the value when retrieving from the database:
@@ -286,16 +300,23 @@ them to canonical `value`, `wire_value`, and `label` rows. Empty or malformed
 options are omitted. Null and scalar option containers are treated as empty.
 The original scalar value is restored before the query is applied, so an
 integer option remains an integer even though HTML submits a string. Legacy
-wire values remain unchanged when unambiguous; collisions such as `false`, `0`,
-and `'0'` receive stable typed wire values. `Select::getFilterValues()` remains
+wire values remain unchanged when unambiguous. JSON-backed multiple-value
+fields can use stable typed wire values for collisions such as `false`, `0`,
+and `'0'`. Scalar `Select`, `Status`, and `Radio` fields reject option sets whose
+values have the same form/database string representation, because those fields
+cannot persist the identities distinctly. Use unique scalar keys or a
+JSON-backed multiple-value field instead. `Select::getFilterValues()` remains
 available, and `Status`, `Radio`, and `Checkbox` expose the same method through
 this shared path.
 
-Date and datetime controls submit ISO values. Aura normalizes those values and
-compares them chronologically against the field's declared `format`, including
-the built-in `d.m.Y` and `d.m.Y H:i` defaults. Storage formats must be
-fixed-width combinations of `Y`, `m`, `d`, `H`, `i`, and optional `s`; an
-unsupported format fails closed.
+Date and datetime controls submit ISO values. Meta-backed fields retain the
+declared fixed-width `format`, including the built-in `d.m.Y` and
+`d.m.Y H:i` defaults, and Aura constructs a portable chronological expression
+for that text. Native custom-table `date` and `timestamp` columns are persisted
+canonically as `Y-m-d` and `Y-m-d H:i:s` and compared directly; their empty
+operators use native null semantics. Text storage formats must be fixed-width
+combinations of `Y`, `m`, `d`, `H`, `i`, and optional `s`; an unsupported format
+fails closed.
 
 JSON-backed multiple values can opt into exact, portable membership queries:
 

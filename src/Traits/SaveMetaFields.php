@@ -74,9 +74,24 @@ trait SaveMetaFields
 
         if (isset($post->attributes['fields'])) {
 
-            // Dont save Meta Fields if it is uses customTable
             if ($post->usesCustomTable() && ! $post->usesMeta()) {
+                foreach ($post->attributes['fields'] as $key => $value) {
+                    $key = (string) $key;
+                    $class = $post->fieldClassBySlug($key);
+
+                    if (! $class) {
+                        continue;
+                    }
+
+                    $post->attributes[$key] = $class->setTableValue(
+                        $post,
+                        $post->fieldBySlug($key),
+                        $value,
+                    );
+                }
+
                 unset($post->attributes['fields']);
+                $post->clearFieldsAttributeCache();
 
                 return;
             }

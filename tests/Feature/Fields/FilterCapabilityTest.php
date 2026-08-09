@@ -20,6 +20,8 @@ use Aura\Base\Resources\Tag;
 use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Grammars\MySqlGrammar;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 use function Pest\Livewire\livewire;
 
@@ -136,6 +138,51 @@ class FilterCapabilityResource extends Resource
                 'on_index' => false,
             ],
         ];
+    }
+}
+
+class CollidingRadioFilterResource extends Resource
+{
+    public static ?string $slug = 'colliding-radio-filter-resource';
+
+    public static string $type = 'CollidingRadioFilterResource';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Typed choice',
+                'slug' => 'typed_choice',
+                'type' => Radio::class,
+                'options' => [
+                    ['key' => false, 'value' => 'False'],
+                    ['key' => 0, 'value' => 'Integer zero'],
+                    ['key' => '0', 'value' => 'String zero'],
+                ],
+            ],
+        ];
+    }
+}
+
+class CollidingCustomTableRadioFilterResource extends Resource
+{
+    public static $customTable = true;
+
+    public static ?string $slug = 'colliding-custom-table-radio-filter-resource';
+
+    public $timestamps = false;
+
+    public static string $type = 'CollidingCustomTableRadioFilterResource';
+
+    public static bool $usesMeta = false;
+
+    protected $fillable = ['typed_choice'];
+
+    protected $table = 'colliding_custom_table_choices';
+
+    public static function getFields(): array
+    {
+        return CollidingRadioFilterResource::getFields();
     }
 }
 
@@ -521,6 +568,43 @@ test('option normalization safely preserves strict scalar identities', function 
         ->and($normalizer->normalize($reservedWireValue)[3]['wire_value'])->not->toBe('__aura_filter:Ym9vbDow');
 });
 
+test('scalar choice fields reject option identities that collapse in form and database storage', function () {
+    $resource = new CollidingRadioFilterResource;
+    $field = $resource->fieldBySlug('typed_choice');
+
+    foreach ([new Radio, new Select, new Status] as $fieldInstance) {
+        expect(fn () => $fieldInstance->filterCapability($resource, $field))
+            ->toThrow(InvalidArgumentException::class, 'cannot distinguish scalar option values')
+            ->and(fn () => $fieldInstance->set($resource, $field, false))
+            ->toThrow(InvalidArgumentException::class, 'cannot distinguish scalar option values');
+    }
+
+    foreach ([false, 0, '0'] as $value) {
+        expect(fn () => CollidingRadioFilterResource::create([
+            'type' => CollidingRadioFilterResource::$type,
+            'title' => 'Rejected scalar choice',
+            'typed_choice' => $value,
+        ]))->toThrow(InvalidArgumentException::class, 'cannot distinguish scalar option values');
+    }
+
+    expect(CollidingRadioFilterResource::query()->count())->toBe(0);
+
+    Schema::create('colliding_custom_table_choices', function (Blueprint $table): void {
+        $table->id();
+        $table->string('typed_choice')->nullable();
+        $table->foreignId('team_id')->nullable();
+    });
+
+    try {
+        expect(fn () => CollidingCustomTableRadioFilterResource::create([
+            'typed_choice' => false,
+        ]))->toThrow(InvalidArgumentException::class, 'cannot distinguish scalar option values')
+            ->and(CollidingCustomTableRadioFilterResource::query()->count())->toBe(0);
+    } finally {
+        Schema::dropIfExists('colliding_custom_table_choices');
+    }
+});
+
 test('stored AdvancedSelect filtering uses exact portable JSON membership', function () {
     $one = FilterCapabilityResource::create([
         'type' => FilterCapabilityResource::$type,
@@ -733,7 +817,72 @@ test('invalid handlers operators and hostile group payloads fail closed', functi
                 'value' => 'draft',
             ]],
         ]])
+        ->assertViewHas('rows', fn ($rows) => $rows->isEmpty())
+        ->set('filters.custom', [[
+            'filters' => [[
+                'filters' => [[
+                    'name' => 'stage',
+                    'operator' => 'is',
+                    'value' => 'draft',
+                ]],
+            ]],
+        ]])
+        ->assertViewHas('rows', fn ($rows) => $rows->isEmpty())
+        ->set('filters.custom', [[
+            'filters' => [[
+                'name' => null,
+                'operator' => null,
+                'value' => null,
+                'options' => [],
+                'unknown' => ['name' => 'stage'],
+            ]],
+        ]])
+        ->assertViewHas('rows', fn ($rows) => $rows->isEmpty())
+        ->set('filters.custom', [[
+            'filters' => [[
+                'name' => 'stage',
+                'operator' => 'is',
+                'value' => 'draft',
+            ]],
+            'unknown' => ['operator' => 'or'],
+        ]])
         ->assertViewHas('rows', fn ($rows) => $rows->isEmpty());
+});
+
+test('recognized empty filter placeholders remain inert in any group position', function () {
+    $matching = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Expected match',
+        'stage' => 'draft',
+    ]);
+    FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Expected non-match',
+        'stage' => 7,
+    ]);
+
+    livewire(Table::class, ['model' => $matching])
+        ->set('filters.custom', [
+            ['filters' => []],
+            [
+                'filters' => [[
+                    'name' => null,
+                    'operator' => null,
+                    'value' => null,
+                    'options' => [],
+                ]],
+            ],
+            [
+                'operator' => 'and',
+                'filters' => [[
+                    'name' => 'stage',
+                    'operator' => 'is',
+                    'value' => 'draft',
+                ]],
+            ],
+            ['operator' => 'or', 'filters' => []],
+        ])
+        ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->all() === [$matching->id]);
 });
 
 test('relationship capabilities drive tags UI and pivot queries', function () {

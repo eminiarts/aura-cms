@@ -30,11 +30,10 @@ final class TemporalFieldFilter implements AppliesFieldFilter
         }
 
         if ($resource->isTableField($field['slug']) || $resource->usesCustomTable()) {
-            $this->applyOperator(
+            $this->applyNativeOperator(
                 $query,
                 $query->getModel()->qualifyColumn($field['slug']),
                 $filter,
-                $capability,
             );
 
             return;
@@ -46,43 +45,7 @@ final class TemporalFieldFilter implements AppliesFieldFilter
     /**
      * @param  array{name: string, operator: string, value?: mixed, options?: array<string, mixed>}  $filter
      */
-    private function applyMetaFilter(Builder $query, array $filter, FilterCapability $capability): void
-    {
-        if (in_array($filter['operator'], ['is_empty', 'date_is_empty'], true)) {
-            $query->where(function (Builder $query) use ($filter): void {
-                $query->whereDoesntHave('meta', function (Builder $query) use ($filter): void {
-                    $query->where('key', $filter['name']);
-                })->orWhereHas('meta', function (Builder $query) use ($filter): void {
-                    $query->where('key', $filter['name'])
-                        ->where(function (Builder $query): void {
-                            $query->whereNull('value')->orWhere('value', '');
-                        });
-                });
-            });
-
-            return;
-        }
-
-        if (in_array($filter['operator'], ['is_not_empty', 'date_is_not_empty'], true)) {
-            $query->whereHas('meta', function (Builder $query) use ($filter): void {
-                $query->where('key', $filter['name'])
-                    ->whereNotNull('value')
-                    ->where('value', '!=', '');
-            });
-
-            return;
-        }
-
-        $query->whereHas('meta', function (Builder $query) use ($filter, $capability): void {
-            $query->where('key', $filter['name']);
-            $this->applyOperator($query, 'value', $filter, $capability);
-        });
-    }
-
-    /**
-     * @param  array{name: string, operator: string, value?: mixed, options?: array<string, mixed>}  $filter
-     */
-    private function applyOperator(
+    private function applyFormattedTextOperator(
         Builder $query,
         string $column,
         array $filter,
@@ -161,6 +124,95 @@ final class TemporalFieldFilter implements AppliesFieldFilter
             sprintf('%s(%s) = ? and %s %s ?', $lengthFunction, $wrappedColumn, $sql, $operator),
             [$storageLength, $value],
         );
+    }
+
+    /**
+     * @param  array{name: string, operator: string, value?: mixed, options?: array<string, mixed>}  $filter
+     */
+    private function applyMetaFilter(Builder $query, array $filter, FilterCapability $capability): void
+    {
+        if (in_array($filter['operator'], ['is_empty', 'date_is_empty'], true)) {
+            $query->where(function (Builder $query) use ($filter): void {
+                $query->whereDoesntHave('meta', function (Builder $query) use ($filter): void {
+                    $query->where('key', $filter['name']);
+                })->orWhereHas('meta', function (Builder $query) use ($filter): void {
+                    $query->where('key', $filter['name'])
+                        ->where(function (Builder $query): void {
+                            $query->whereNull('value')->orWhere('value', '');
+                        });
+                });
+            });
+
+            return;
+        }
+
+        if (in_array($filter['operator'], ['is_not_empty', 'date_is_not_empty'], true)) {
+            $query->whereHas('meta', function (Builder $query) use ($filter): void {
+                $query->where('key', $filter['name'])
+                    ->whereNotNull('value')
+                    ->where('value', '!=', '');
+            });
+
+            return;
+        }
+
+        $query->whereHas('meta', function (Builder $query) use ($filter, $capability): void {
+            $query->where('key', $filter['name']);
+            $this->applyFormattedTextOperator($query, 'value', $filter, $capability);
+        });
+    }
+
+    /**
+     * @param  array{name: string, operator: string, value?: mixed, options?: array<string, mixed>}  $filter
+     */
+    private function applyNativeOperator(Builder $query, string $column, array $filter): void
+    {
+        if (in_array($filter['operator'], ['is_empty', 'date_is_empty'], true)) {
+            $query->whereNull($column);
+
+            return;
+        }
+
+        if (in_array($filter['operator'], ['is_not_empty', 'date_is_not_empty'], true)) {
+            $query->whereNotNull($column);
+
+            return;
+        }
+
+        $value = $filter['value'] ?? null;
+
+        if ($filter['operator'] === 'date_between' && is_array($value)) {
+            $from = $value['from'] ?? null;
+            $to = $value['to'] ?? null;
+
+            if (! is_string($from) || ! is_string($to)) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+
+            $query->whereBetween($column, [$from, $to]);
+
+            return;
+        }
+
+        $operator = match ($filter['operator']) {
+            'is', 'date_is' => '=',
+            'is_not', 'date_is_not' => '!=',
+            'before', 'date_before' => '<',
+            'after', 'date_after' => '>',
+            'on_or_before', 'date_on_or_before' => '<=',
+            'on_or_after', 'date_on_or_after' => '>=',
+            default => null,
+        };
+
+        if ($operator === null || ! is_string($value)) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where($column, $operator, $value);
     }
 
     /**

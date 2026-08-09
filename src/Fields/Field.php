@@ -3,6 +3,7 @@
 namespace Aura\Base\Fields;
 
 use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Fields\Filters\FilterOptionNormalizer;
 use Aura\Base\Resource;
 use Aura\Base\Traits\InputFields;
 use Illuminate\Support\Facades\Blade;
@@ -332,6 +333,17 @@ abstract class Field implements Wireable
         return $this->taxonomy;
     }
 
+    /**
+     * Prepare a value for a native custom-table column.
+     *
+     * Custom-table resources rely on Eloquent casts for ordinary values, so
+     * fields opt into native-column transformations by overriding this hook.
+     */
+    public function setTableValue(mixed $post, array $field, mixed $value): mixed
+    {
+        return $value;
+    }
+
     public function toLivewire()
     {
         return [
@@ -356,8 +368,17 @@ abstract class Field implements Wireable
         }
     }
 
+    protected function assertScalarOptionStorageIsUnambiguous(mixed $values): void
+    {
+        (new FilterOptionNormalizer)->assertScalarStorageIsUnambiguous($values);
+    }
+
     protected function optionFilterCapability(Resource $model, array $field): FilterCapability
     {
-        return FilterCapability::option($this->filterOptions(), $this->getFilterValues($model, $field));
+        $values = $this->getFilterValues($model, $field);
+
+        $this->assertScalarOptionStorageIsUnambiguous($values);
+
+        return FilterCapability::option($this->filterOptions(), $values);
     }
 }

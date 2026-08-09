@@ -2,12 +2,30 @@
 
 namespace Aura\Base\Fields\Filters;
 
+use InvalidArgumentException;
 use Stringable;
 use Traversable;
 
 final class FilterOptionNormalizer
 {
     private const WIRE_PREFIX = '__aura_filter:';
+
+    public function assertScalarStorageIsUnambiguous(mixed $options): void
+    {
+        $storageValues = [];
+
+        foreach ($this->normalize($options) as $option) {
+            $storageValue = $this->legacyWireValue($option['value']);
+
+            if (array_key_exists($storageValue, $storageValues)) {
+                throw new InvalidArgumentException(
+                    'Scalar choice storage cannot distinguish scalar option values with the same string representation. Use unique scalar keys or a JSON-backed multiple-value field.'
+                );
+            }
+
+            $storageValues[$storageValue] = true;
+        }
+    }
 
     /**
      * @return list<array{value: string|int|float|bool, wire_value: string, label: string}>

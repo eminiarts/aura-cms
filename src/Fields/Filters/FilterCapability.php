@@ -4,7 +4,6 @@ namespace Aura\Base\Fields\Filters;
 
 use Aura\Base\Contracts\AppliesFieldFilter;
 use Aura\Base\Resource;
-use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use InvalidArgumentException;
 use LogicException;
@@ -393,26 +392,11 @@ final class FilterCapability
 
     private function normalizeTemporalValue(mixed $value, bool $includeTime): ?string
     {
-        if (! is_string($value) || trim($value) === '') {
-            return null;
-        }
-
-        $formats = $includeTime
-            ? ['Y-m-d\\TH:i:s', 'Y-m-d\\TH:i', 'Y-m-d H:i:s', 'Y-m-d H:i', $this->context['storage_format'] ?? null]
-            : ['Y-m-d', $this->context['storage_format'] ?? null];
-
-        foreach (array_unique(array_filter($formats, 'is_string')) as $format) {
-            $date = DateTimeImmutable::createFromFormat('!'.$format, $value);
-            $errors = DateTimeImmutable::getLastErrors();
-
-            if ($date === false || ($errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0)) || $date->format($format) !== $value) {
-                continue;
-            }
-
-            return $date->format($includeTime ? 'Y-m-d H:i:s' : 'Y-m-d');
-        }
-
-        return null;
+        return (new TemporalValueNormalizer)->normalize(
+            $value,
+            $includeTime,
+            is_string($this->context['storage_format'] ?? null) ? $this->context['storage_format'] : null,
+        );
     }
 
     private function resolveOption(mixed $value): string|int|float|bool|null

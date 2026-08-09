@@ -153,6 +153,10 @@ trait QueryFilters
      */
     private function normalizeFilterGroup(array $group): ?array
     {
+        if (array_diff(array_keys($group), ['operator', 'filters']) !== []) {
+            return null;
+        }
+
         $operator = $group['operator'] ?? 'and';
         $filters = $group['filters'] ?? null;
 
@@ -164,6 +168,10 @@ trait QueryFilters
 
         foreach ($filters as $filter) {
             if (! is_array($filter)) {
+                return null;
+            }
+
+            if (array_diff(array_keys($filter), ['name', 'operator', 'value', 'main_operator', 'options']) !== []) {
                 return null;
             }
 
@@ -179,6 +187,12 @@ trait QueryFilters
             $missingOperator = $filterOperator === null || $filterOperator === '';
 
             if ($missingField && $missingOperator) {
+                $options = $filter['options'] ?? [];
+
+                if (FilterCapability::hasValue($filter['value'] ?? null) || ! is_array($options) || $options !== []) {
+                    return null;
+                }
+
                 continue;
             }
 
