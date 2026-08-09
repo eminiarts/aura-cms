@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Resource;
 use Aura\Base\Traits\InputFields;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Traits\Macroable;
@@ -95,6 +97,11 @@ abstract class Field implements Wireable
     public function field($field)
     {
         return $this;
+    }
+
+    public function filterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::text($this->filterOptions());
     }
 
     public function filterOptions()
@@ -347,5 +354,10 @@ abstract class Field implements Wireable
         if ($this->edit) {
             return $this->edit;
         }
+    }
+
+    protected function optionFilterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::option($this->filterOptions(), $this->getFilterValues($model, $field));
     }
 }

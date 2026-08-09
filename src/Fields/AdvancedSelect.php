@@ -3,6 +3,9 @@
 namespace Aura\Base\Fields;
 
 use Aura\Base\Contracts\ProvidesTableEagerLoad;
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Fields\Filters\ResourceFieldFilter;
+use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
@@ -51,6 +54,35 @@ class AdvancedSelect extends Field implements ProvidesTableEagerLoad
         if ($this->filter) {
             return $this->filter;
         }
+    }
+
+    public function filterCapability(Resource $model, array $field): FilterCapability
+    {
+        if (! $this->isRelation($field)) {
+            return FilterCapability::custom(
+                component: $this->filter(),
+                operators: $this->filterOptions(),
+                queryHandler: ResourceFieldFilter::class,
+            );
+        }
+
+        if ($field['reverse'] ?? false) {
+            return FilterCapability::relationship(
+                operators: $this->filterOptions(),
+                component: $this->filter(),
+                resourceType: $field['resource'],
+            );
+        }
+
+        return FilterCapability::relationship(
+            operators: $this->filterOptions(),
+            component: $this->filter(),
+            resourceType: $field['resource'],
+            ownerPivotKey: 'resource_id',
+            valuePivotKey: 'related_id',
+            ownerTypeColumn: 'resource_type',
+            valueTypeColumn: 'related_type',
+        );
     }
 
     public function filterOptions()

@@ -4,6 +4,7 @@ namespace Aura\Base\Tests;
 
 use Aura\Base\AuraServiceProvider;
 use Aura\Base\Providers\AuthServiceProvider;
+use Aura\Base\Tests\Fixtures\FilterComponentServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Foundation\Testing\Concerns\InteractsWithViews;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -118,6 +119,7 @@ class TestCase extends Orchestra
             ImpersonateServiceProvider::class,
             RayServiceProvider::class,
             ImageServiceProvider::class,
+            FilterComponentServiceProvider::class,
         ];
     }
 

@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Resource;
+
 class Date extends Field
 {
     public $edit = 'aura::fields.date';
@@ -13,6 +16,11 @@ class Date extends Field
     public $tableColumnType = 'date';
 
     public $view = 'aura::fields.view-value';
+
+    public function filterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::date($this->filterOptions());
+    }
 
     public function filterOptions()
     {

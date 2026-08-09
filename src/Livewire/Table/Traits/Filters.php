@@ -41,9 +41,11 @@ trait Filters
      */
     public function addFilter()
     {
+        $fieldSlug = $this->fieldsForFilter->keys()->first();
+
         $this->filters['custom'][] = [
-            'name' => $this->fieldsForFilter->keys()->first(),
-            'operator' => 'contains',
+            'name' => $fieldSlug,
+            'operator' => $this->defaultOperatorFor($fieldSlug),
             'value' => null,
             'main_operator' => 'and',
         ];
@@ -110,13 +112,14 @@ trait Filters
     {
         return $this->fields->mapWithKeys(function ($field) {
             $fieldInstance = app($field['type']);
+            $filter = $fieldInstance->filterCapability($this->model, $field)->toArray();
 
             return [
                 $field['slug'] => [
                     'name' => $field['name'],
-                    'type' => class_basename($field['type']),
-                    'filterOptions' => $fieldInstance->filterOptions(),
-                    'filterValues' => $fieldInstance->getFilterValues($this->model, $field),
+                    'filterOptions' => $filter['operators'],
+                    'filterValues' => $filter['values'],
+                    'filter' => $filter,
                 ],
             ];
         });
@@ -227,8 +230,13 @@ trait Filters
         if (count($parts) === 5 && $parts[4] === 'name') {
             $groupKey = $parts[1];
             $filterKey = $parts[3];
+
+            if (! is_string($value) || ! isset($this->fieldsForFilter[$value])) {
+                return;
+            }
+
             // Reset the operator when the field changes
-            $this->filters['custom'][$groupKey]['filters'][$filterKey]['operator'] = array_key_first($this->fieldsForFilter[$value]['filterOptions']);
+            $this->filters['custom'][$groupKey]['filters'][$filterKey]['operator'] = $this->defaultOperatorFor($value);
             // Also reset the value
             $this->filters['custom'][$groupKey]['filters'][$filterKey]['value'] = null;
         }
@@ -297,11 +305,22 @@ trait Filters
         return collect($userFilters)->merge($teamFilters)->keyBy('slug')->toArray();
     }
 
-    private function newFilter()
+    private function defaultOperatorFor(?string $fieldSlug): ?string
     {
+        if ($fieldSlug === null) {
+            return null;
+        }
+
+        return array_key_first($this->fieldsForFilter[$fieldSlug]['filterOptions'] ?? []);
+    }
+
+    private function newFilter(): array
+    {
+        $fieldSlug = $this->fieldsForFilter->keys()->first();
+
         return [
-            'name' => $this->fieldsForFilter->keys()->first(),
-            'operator' => 'contains',
+            'name' => $fieldSlug,
+            'operator' => $this->defaultOperatorFor($fieldSlug),
             'value' => null,
             'options' => [],
         ];

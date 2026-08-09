@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Resource;
+
 class Status extends Field
 {
     public $edit = 'aura::fields.status';
@@ -11,6 +14,21 @@ class Status extends Field
     public $optionGroup = 'Choice Fields';
 
     public $view = 'aura::fields.status-view';
+
+    public function filterCapability(Resource $model, array $field): FilterCapability
+    {
+        return $this->optionFilterCapability($model, $field);
+    }
+
+    public function filterOptions()
+    {
+        return [
+            'is' => __('is'),
+            'is_not' => __('is not'),
+            'is_empty' => __('is empty'),
+            'is_not_empty' => __('is not empty'),
+        ];
+    }
 
     public function getFields()
     {
@@ -129,6 +147,11 @@ class Status extends Field
             ],
 
         ]);
+    }
+
+    public function getFilterValues($model, $field)
+    {
+        return $this->options($model, $field);
     }
 
     // public $view = 'components.fields.select';
