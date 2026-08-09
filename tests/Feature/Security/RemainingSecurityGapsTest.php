@@ -80,7 +80,7 @@ it('sanitizes unsafe rich text while preserving safe formatting', function () {
 
     $display = (new Wysiwyg)->display(['slug' => 'body'], $value, new SecurityGapResource);
 
-    expect($display)
+    expect((string) $display)
         ->toContain('<p>Hello <strong>World</strong></p>')
         ->not->toContain('onclick')
         ->not->toContain('<script');

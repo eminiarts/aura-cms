@@ -12,6 +12,7 @@ use Aura\Base\Fields\Date;
 use Aura\Base\Fields\Datetime;
 use Aura\Base\Fields\Field;
 use Aura\Base\Fields\Number;
+use Aura\Base\Fields\Permissions;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Livewire\Resource\View as ResourceView;
@@ -201,6 +202,35 @@ class Core10ExactNumberResource extends Resource
                 'scale' => 30,
             ],
         ];
+    }
+}
+
+class Core10ArrayCastResource extends Resource
+{
+    public static $customTable = true;
+
+    public static ?string $slug = 'core-10-array-cast';
+
+    public static string $type = 'Core10ArrayCast';
+
+    public static bool $usesMeta = false;
+
+    protected $fillable = ['permissions'];
+
+    protected $table = 'core_10_array_cast_values';
+
+    public static function getFields(): array
+    {
+        return [[
+            'name' => 'Permissions',
+            'slug' => 'permissions',
+            'type' => Permissions::class,
+        ]];
+    }
+
+    protected function casts(): array
+    {
+        return ['permissions' => 'array'];
     }
 }
 
@@ -422,6 +452,16 @@ beforeEach(function () {
         });
     }
 
+    if (! Schema::hasTable('core_10_array_cast_values')) {
+        Schema::create('core_10_array_cast_values', function (Blueprint $table) {
+            $table->id();
+            $table->text('permissions')->nullable();
+            $table->foreignId('user_id')->nullable();
+            $table->foreignId('team_id')->nullable();
+            $table->timestamps();
+        });
+    }
+
     Core10BooleanCast::$setValues = [];
     Core10EloquentPipelineResource::$mutatorValues = [];
 });
@@ -534,6 +574,16 @@ test('physical writes compose Aura normalization before Eloquent casts and mutat
         ->and(Core10EloquentPipelineResource::$mutatorValues)->toBe([false])
         ->and(DB::table('core_10_eloquent_pipeline_values')->where('id', $resource->id)->value('cast_boolean'))->toBe('no')
         ->and(DB::table('core_10_eloquent_pipeline_values')->where('id', $resource->id)->value('mutated_boolean'))->toBe('no');
+});
+
+test('json field normalization composes with an Eloquent array cast without double encoding', function () {
+    $permissions = ['view-post' => true, 'delete-post' => false];
+    $resource = Core10ArrayCastResource::create(['permissions' => $permissions])->refresh();
+
+    expect($resource->permissions)->toBe($permissions)
+        ->and($resource->resolveFieldValue('permissions'))->toBe($permissions)
+        ->and(DB::table('core_10_array_cast_values')->where('id', $resource->id)->value('permissions'))
+        ->toBe(json_encode($permissions));
 });
 
 test('null returned by an Eloquent cast or accessor is authoritative during field hydration', function () {

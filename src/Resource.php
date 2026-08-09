@@ -127,8 +127,13 @@ class Resource extends Model implements DefinesFields
 
         $this->baseFillable = $this->getFillable();
 
-        // Merge fillable fields from fields
-        $this->mergeFillable($this->inputFieldsSlugs());
+        // Merge only concrete input slugs. Layout-only/custom definitions may
+        // intentionally omit a slug and must never leak null into Eloquent's
+        // fillable list (array_flip() rejects non-string keys during fill()).
+        $this->mergeFillable(array_values(array_filter(
+            $this->inputFieldsSlugs(),
+            static fn (mixed $slug): bool => is_string($slug) && $slug !== '',
+        )));
 
         if ($this->usesMeta()) {
             $this->with[] = 'meta';
@@ -387,6 +392,10 @@ class Resource extends Model implements DefinesFields
         mixed $value,
         FieldValueContext $context,
     ): mixed {
+        if ($value === null) {
+            return null;
+        }
+
         $field = $this->fieldBySlug($slug);
         $fieldClass = $this->fieldClassBySlug($slug);
         $storage = $this->isTableField($slug)

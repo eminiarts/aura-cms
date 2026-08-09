@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\FieldValueStorage;
+use Illuminate\Database\Eloquent\Model;
+
 class Permissions extends Field
 {
     public $edit = 'aura::fields.permissions';
@@ -35,6 +38,23 @@ class Permissions extends Field
                 'slug' => 'resource',
             ],
         ]);
+    }
+
+    public function normalizeForStorage(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueStorage $storage,
+    ): mixed {
+        $slug = $field['slug'] ?? null;
+
+        if ($storage === FieldValueStorage::Physical
+            && is_string($slug)
+            && $model?->hasCast($slug, ['array', 'json', 'object', 'collection'])) {
+            return $value;
+        }
+
+        return parent::normalizeForStorage($value, $field, $model, $storage);
     }
 
     public function set($post, $field, $value)

@@ -63,7 +63,7 @@ test('Image::display renders through the configured attachment class', function 
 
     // The sentinel proves display() routed the lookup + thumbnail() through the
     // configured subclass rather than the hard-coded Attachment resource.
-    expect($html)->toContain('SENTINEL-THUMB/'.$attachment->id);
+    expect((string) $html)->toContain('SENTINEL-THUMB/'.$attachment->id);
 });
 
 class ConfiguredAttachment extends Attachment
