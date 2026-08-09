@@ -11,6 +11,9 @@ import { assertCssContract } from './assert-css-contract.mjs';
 const execFileAsync = promisify(execFile);
 const fixtureDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(fixtureDirectory, '../../..');
+const documentationPath = path.join(repositoryRoot, 'docs/frontend-compatibility.md');
+const sourceBaselinePath = path.join(fixtureDirectory, 'source-baseline.json');
+const sourceManifestPath = path.join(fixtureDirectory, 'source-files.json');
 const npmCliPath = process.env.npm_execpath;
 const tailwindCliPath = path.join(
     repositoryRoot,
@@ -20,22 +23,36 @@ const tailwindCliPath = path.join(
     'cli.js',
 );
 const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'aura-frontend-compatibility-'));
+const sourceBaseline = JSON.parse(await fs.readFile(sourceBaselinePath, 'utf8'));
+const sourceManifest = JSON.parse(await fs.readFile(sourceManifestPath, 'utf8'));
 
 assert.ok(npmCliPath, 'Run this fixture through npm run test:frontend-compatibility.');
+assert.equal(sourceBaseline.manifest, path.basename(sourceManifestPath), 'Source baseline must name the selected-source manifest');
+assert.equal(sourceBaseline.algorithm, 'sha256', 'Source baseline must use SHA-256');
+assert.equal(sourceBaseline.lineEndings, 'lf', 'Source baseline must normalize line endings to LF');
+assert.match(sourceBaseline.expectedDigest, /^[a-f0-9]{64}$/, 'Source baseline must contain a SHA-256 digest');
+assert.ok(Array.isArray(sourceManifest) && sourceManifest.length > 0, 'Source manifest must select Aura source files');
 
 async function copyFile(source, destination) {
     await fs.mkdir(path.dirname(destination), { recursive: true });
     await fs.copyFile(source, destination);
 }
 
-async function copyAuraSources(destination) {
-    const manifest = JSON.parse(await fs.readFile(path.join(fixtureDirectory, 'source-files.json'), 'utf8'));
+function resolveSelectedSource(sourceRoot, relativePath) {
+    const resolvedRoot = path.resolve(sourceRoot);
+    const sourcePath = path.resolve(resolvedRoot, relativePath);
+
+    assert.ok(sourcePath.startsWith(`${resolvedRoot}${path.sep}`), `Unsafe source path: ${relativePath}`);
+
+    return sourcePath;
+}
+
+async function inspectAuraSources(sourceRoot) {
     const digest = crypto.createHash('sha256');
+    const files = [];
 
-    for (const entry of manifest) {
-        const sourcePath = path.resolve(repositoryRoot, entry.path);
-        assert.ok(sourcePath.startsWith(`${repositoryRoot}${path.sep}`), `Unsafe source path: ${entry.path}`);
-
+    for (const entry of sourceManifest) {
+        const sourcePath = resolveSelectedSource(sourceRoot, entry.path);
         const source = await fs.readFile(sourcePath, 'utf8');
 
         for (const className of entry.classes) {
@@ -44,19 +61,72 @@ async function copyAuraSources(destination) {
 
         digest.update(entry.path);
         digest.update('\0');
-        digest.update(source);
-        await copyFile(sourcePath, path.join(destination, entry.path));
+        digest.update(source.replace(/\r\n/g, '\n'));
+        files.push({ path: entry.path, source });
     }
 
+    return {
+        count: sourceManifest.length,
+        digest: digest.digest('hex'),
+        files,
+    };
+}
+
+function enforceSourceBaseline(snapshot, label) {
+    assert.equal(
+        snapshot.digest,
+        sourceBaseline.expectedDigest,
+        `${label}: selected Aura source drifted. Review the change, then update source-baseline.json and the documented digest intentionally.`,
+    );
+}
+
+async function writeSourceSnapshot(snapshot, destination) {
+    for (const file of snapshot.files) {
+        const outputPath = path.join(destination, file.path);
+
+        await fs.mkdir(path.dirname(outputPath), { recursive: true });
+        await fs.writeFile(outputPath, file.source, 'utf8');
+    }
+}
+
+async function copyAuraSources(destination, label) {
+    const snapshot = await inspectAuraSources(repositoryRoot);
+    enforceSourceBaseline(snapshot, label);
+    await writeSourceSnapshot(snapshot, destination);
     await copyFile(
         path.join(fixtureDirectory, 'semantic-probe.blade.php'),
         path.join(destination, 'fixtures/semantic-probe.blade.php'),
     );
 
-    return {
-        count: manifest.length,
-        digest: digest.digest('hex'),
-    };
+    return snapshot;
+}
+
+async function assertDocumentedSourceBaseline() {
+    const documentation = await fs.readFile(documentationPath, 'utf8');
+    const matches = [...documentation.matchAll(/Audited source SHA-256: `([a-f0-9]{64})`\./g)];
+
+    assert.equal(matches.length, 1, 'Frontend compatibility docs must contain exactly one audited source digest');
+    assert.equal(matches[0][1], sourceBaseline.expectedDigest, 'Documented source digest must match source-baseline.json');
+}
+
+async function assertSourceDriftIsRejected() {
+    const sourceRoot = path.join(temporaryRoot, 'source-drift-self-test');
+    const sourceSnapshot = await inspectAuraSources(repositoryRoot);
+
+    enforceSourceBaseline(sourceSnapshot, 'Drift self-test setup');
+    await writeSourceSnapshot(sourceSnapshot, sourceRoot);
+    const modifiedSource = resolveSelectedSource(sourceRoot, sourceManifest[0].path);
+    await fs.appendFile(modifiedSource, '\n{{-- Frontend compatibility drift self-test. --}}\n');
+    const driftedSnapshot = await inspectAuraSources(sourceRoot);
+
+    assert.notEqual(driftedSnapshot.digest, sourceBaseline.expectedDigest, 'Self-test mutation must change the selected-source digest');
+    assert.throws(
+        () => enforceSourceBaseline(driftedSnapshot, 'Drift self-test'),
+        /selected Aura source drifted/,
+        'Modified selected source must fail against the fixed baseline',
+    );
+
+    console.log('PASS fixed source baseline rejects a modified selected source');
 }
 
 async function execute(command, args, cwd) {
@@ -81,15 +151,14 @@ async function expectFailure(command, args, cwd, pattern, label) {
     throw new Error(`${label} unexpectedly succeeded`);
 }
 
-async function buildTailwind3(sourceDigest) {
+async function buildTailwind3() {
     const directory = path.join(temporaryRoot, 'tailwind-3');
 
     await fs.mkdir(directory, { recursive: true });
     await copyFile(path.join(fixtureDirectory, 'tailwind-v3.config.cjs'), path.join(directory, 'tailwind.config.cjs'));
     await copyFile(path.join(fixtureDirectory, 'tailwind-v3.css'), path.join(directory, 'input.css'));
     await copyFile(path.join(fixtureDirectory, 'token-contract.css'), path.join(directory, 'token-contract.css'));
-    const copiedSources = await copyAuraSources(path.join(directory, 'aura-source'));
-    assert.equal(copiedSources.digest, sourceDigest, 'Tailwind 3 must scan the shared Aura source snapshot');
+    await copyAuraSources(path.join(directory, 'aura-source'), 'Tailwind 3 source lane');
 
     const outputPath = path.join(directory, 'output.css');
     await execute(
@@ -102,13 +171,12 @@ async function buildTailwind3(sourceDigest) {
     console.log(`PASS Tailwind 3.4.19: ${result.assertionCount} parsed assertions (${result.bytes} bytes)`);
 }
 
-async function prepareTailwind4(sourceDigest) {
+async function prepareTailwind4() {
     const directory = path.join(temporaryRoot, 'tailwind-4');
 
     await fs.cp(path.join(fixtureDirectory, 'v4'), directory, { recursive: true });
     await copyFile(path.join(fixtureDirectory, 'token-contract.css'), path.join(directory, 'resources/css/token-contract.css'));
-    const copiedSources = await copyAuraSources(path.join(directory, 'aura-source'));
-    assert.equal(copiedSources.digest, sourceDigest, 'Tailwind 4 must scan the shared Aura source snapshot');
+    await copyAuraSources(path.join(directory, 'aura-source'), 'Tailwind 4 source lane');
 
     await execute(process.execPath, [npmCliPath, 'ci', '--ignore-scripts', '--no-audit', '--no-fund'], directory);
 
@@ -137,7 +205,7 @@ async function checkNegativeBoundaries(tailwind4Directory) {
     await copyFile(path.join(fixtureDirectory, 'v4/resources/css/app.css'), path.join(v3AgainstV4, 'resources/css/app.css'));
     await copyFile(path.join(fixtureDirectory, 'token-contract.css'), path.join(v3AgainstV4, 'resources/css/token-contract.css'));
     await copyFile(path.join(fixtureDirectory, 'tailwind-v3.config.cjs'), path.join(v3AgainstV4, 'tailwind.config.cjs'));
-    await copyAuraSources(path.join(v3AgainstV4, 'aura-source'));
+    await copyAuraSources(path.join(v3AgainstV4, 'aura-source'), 'Tailwind 3 negative source lane');
 
     await expectFailure(
         process.execPath,
@@ -174,11 +242,14 @@ async function checkNegativeBoundaries(tailwind4Directory) {
 }
 
 try {
-    const sourceSnapshot = await copyAuraSources(path.join(temporaryRoot, 'source-snapshot'));
-    console.log(`Aura source snapshot: ${sourceSnapshot.count} files, sha256 ${sourceSnapshot.digest}`);
+    const sourceSnapshot = await inspectAuraSources(repositoryRoot);
+    enforceSourceBaseline(sourceSnapshot, 'Pre-build source check');
+    await assertDocumentedSourceBaseline();
+    await assertSourceDriftIsRejected();
+    console.log(`Aura source baseline: ${sourceSnapshot.count} files, sha256 ${sourceBaseline.expectedDigest}`);
 
-    await buildTailwind3(sourceSnapshot.digest);
-    const tailwind4Directory = await prepareTailwind4(sourceSnapshot.digest);
+    await buildTailwind3();
+    const tailwind4Directory = await prepareTailwind4();
     await buildTailwind4(tailwind4Directory);
     await checkNegativeBoundaries(tailwind4Directory);
 } finally {
