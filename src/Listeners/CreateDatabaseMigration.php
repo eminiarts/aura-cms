@@ -6,11 +6,11 @@ use Aura\Base\Events\SaveFields;
 use Aura\Base\Schema\FieldColumn;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Symfony\Component\Process\ExecutableFinder;
+use Throwable;
 
 class CreateDatabaseMigration
 {
@@ -64,51 +64,69 @@ class CreateDatabaseMigration
         $timestamp = date('Y_m_d_His');
         $migrationName = "update_{$tableName}_table_{$timestamp}";
 
-        // Create the migration file
-        Artisan::call('make:migration', [
-            'name' => $migrationName,
-            '--table' => $tableName,
-        ]);
-
-        $migrationFile = $this->getMigrationPath($migrationName);
-
-        if ($migrationFile === null) {
-            throw new \Exception("Unable to find migration file '{$migrationName}'.");
-        }
-
-        // Generate schema for additions, updates, and deletions
-        $schemaAdditions = $this->generateSchema($fieldsToAdd, 'add');
-        $schemaUpdates = $this->generateSchema($fieldsToUpdate, 'update');
-        $schemaDeletions = $this->generateSchema($fieldsToDelete, 'delete');
-
-        // Generate down schema for additions, updates, and deletions
-        $schemaAdditionsDown = $this->generateDownSchema($fieldsToAdd, 'add');
-        $schemaUpdatesDown = $this->generateDownSchema($fieldsToUpdate, 'update');
-        $schemaDeletionsDown = $this->generateDownSchema($fieldsToDelete, 'delete');
-
-        // Update the migration file content
-        $content = $this->files->get($migrationFile);
-        $updatedContent = $this->updateMigrationContent($content, $schemaAdditions, $schemaUpdates, $schemaDeletions, $schemaAdditionsDown, $schemaUpdatesDown, $schemaDeletionsDown);
-
-        // Update the migration file content
-        $content = $this->files->get($migrationFile);
-
-        $updatedContent = $this->updateMigrationContent($content, $schemaAdditions, $schemaUpdates, $schemaDeletions, $schemaAdditionsDown, $schemaUpdatesDown, $schemaDeletionsDown);
-
-        // Write the updated content back to the migration file
-        $this->files->put($migrationFile, $updatedContent);
+        $migrationFile = null;
 
         try {
+            $this->createMigration($migrationName, $tableName);
+            $migrationFile = $this->getMigrationPath($migrationName);
+
+            if ($migrationFile === null) {
+                throw new RuntimeException("Unable to find migration file '{$migrationName}'.");
+            }
+
+            // Generate schema for additions, updates, and deletions
+            $schemaAdditions = $this->generateSchema($fieldsToAdd, 'add');
+            $schemaUpdates = $this->generateSchema($fieldsToUpdate, 'update');
+            $schemaDeletions = $this->generateSchema($fieldsToDelete, 'delete');
+
+            // Generate down schema for additions, updates, and deletions
+            $schemaAdditionsDown = $this->generateDownSchema($fieldsToAdd, 'add');
+            $schemaUpdatesDown = $this->generateDownSchema($fieldsToUpdate, 'update');
+            $schemaDeletionsDown = $this->generateDownSchema($fieldsToDelete, 'delete');
+            $downPreflight = $this->generateDownPreflight($fieldsToUpdate, 'update', $tableName);
+
+            $content = $this->files->get($migrationFile);
+            $updatedContent = $this->updateMigrationContent(
+                $content,
+                $schemaAdditions,
+                $schemaUpdates,
+                $schemaDeletions,
+                $schemaAdditionsDown,
+                $schemaUpdatesDown,
+                $schemaDeletionsDown,
+                $downPreflight,
+            );
+
+            if ($this->files->put($migrationFile, $updatedContent) === false) {
+                throw new RuntimeException("Unable to update generated migration [{$migrationFile}].");
+            }
+
             // Run Pint to format the migration file
             $this->runPint($migrationFile);
 
             // Run the migration
-            Artisan::call('migrate');
-        } catch (\Exception $e) {
-            // We don't want to throw an exception here, just log it
-            Log::error($e->getMessage());
+            $this->runMigration($migrationFile);
+        } catch (Throwable $exception) {
+            if ($migrationFile !== null && $this->files->exists($migrationFile) && ! $this->files->delete($migrationFile)) {
+                throw new RuntimeException("Unable to remove failed migration [{$migrationFile}].", previous: $exception);
+            }
+
+            throw $exception;
         }
 
+    }
+
+    protected function createMigration(string $migrationName, string $tableName): void
+    {
+        $exitCode = Artisan::call('make:migration', [
+            'name' => $migrationName,
+            '--table' => $tableName,
+            '--no-interaction' => true,
+        ]);
+
+        if ($exitCode !== 0) {
+            throw new RuntimeException(trim(Artisan::output()) ?: 'Unable to generate migration.');
+        }
     }
 
     protected function generateColumn($field)
@@ -116,6 +134,38 @@ class CreateDatabaseMigration
         $definition = $this->getColumnDefinition($field);
 
         return $definition->toMigration($field['slug']).";\n";
+    }
+
+    protected function generateDownPreflight($fields, $action, string $tableName): string
+    {
+        if ($action !== 'update') {
+            return '';
+        }
+
+        $preflight = '';
+
+        foreach ($fields as $field) {
+            $oldDefinition = $this->getColumnDefinition($field['old']);
+            $newDefinition = $this->getColumnDefinition($field['new']);
+
+            if (! $this->requiresIntegerRollbackPreflight($oldDefinition, $newDefinition)) {
+                continue;
+            }
+
+            $column = (string) $field['new']['slug'];
+            $tableLiteral = var_export($tableName, true);
+            $columnLiteral = var_export($column, true);
+            $message = var_export("Refusing lossy rollback of {$tableName}.{$column} from decimal to integer.", true);
+
+            $preflight .= "foreach (\\Illuminate\\Support\\Facades\\DB::table({$tableLiteral})->whereNotNull({$columnLiteral})->select({$columnLiteral})->cursor() as \$row) {\n";
+            $preflight .= '    $value = (string) $row->{'.$columnLiteral."};\n";
+            $preflight .= "    if (preg_match('/^[+-]?\\d+(?:\\.0+)?$/D', \$value) !== 1) {\n";
+            $preflight .= "        throw new \\RuntimeException({$message});\n";
+            $preflight .= "    }\n";
+            $preflight .= "}\n";
+        }
+
+        return $preflight;
     }
 
     protected function generateDownSchema($fields, $action)
@@ -218,7 +268,39 @@ class CreateDatabaseMigration
 
     }
 
-    protected function runPint($migrationFile)
+    protected function requiresIntegerRollbackPreflight(FieldColumn $old, FieldColumn $new): bool
+    {
+        $newScale = $new->type === 'decimal' ? (int) ($new->arguments[1] ?? 0) : 0;
+        $oldIsInteger = in_array($old->type, [
+            'bigInteger',
+            'integer',
+            'mediumInteger',
+            'smallInteger',
+            'tinyInteger',
+            'unsignedBigInteger',
+            'unsignedInteger',
+            'unsignedMediumInteger',
+            'unsignedSmallInteger',
+            'unsignedTinyInteger',
+        ], true) || ($old->type === 'decimal' && (int) ($old->arguments[1] ?? 0) === 0);
+
+        return $oldIsInteger && $new->type === 'decimal' && $newScale > 0;
+    }
+
+    protected function runMigration(string $migrationFile): void
+    {
+        $exitCode = Artisan::call('migrate', [
+            '--path' => [$migrationFile],
+            '--realpath' => true,
+            '--no-interaction' => true,
+        ]);
+
+        if ($exitCode !== 0) {
+            throw new RuntimeException(trim(Artisan::output()) ?: 'Generated migration failed.');
+        }
+    }
+
+    protected function runPint($migrationFile): void
     {
         $command = [
             (new ExecutableFinder)->find('php', 'php', [
@@ -229,20 +311,50 @@ class CreateDatabaseMigration
             'vendor/bin/pint', $migrationFile,
         ];
 
-        $result = Process::path(base_path())->run($command);
+        Process::path(base_path())->run($command)->throw();
     }
 
-    protected function updateMigrationContent($content, $additions, $updates, $deletions, $additionsDown, $updatesDown, $deletionsDown)
-    {
+    protected function updateMigrationContent(
+        $content,
+        $additions,
+        $updates,
+        $deletions,
+        $additionsDown,
+        $updatesDown,
+        $deletionsDown,
+        string $downPreflight = '',
+    ) {
         // Up method
         $pattern = '/(public function up\(\): void[\s\S]*?Schema::table\(.*?\{)([\s\S]*?)(\}\);[\s\S]*?\})/';
         $replacement = '${1}'.PHP_EOL.$additions.PHP_EOL.$updates.PHP_EOL.$deletions.PHP_EOL.'${3}';
-        $updatedContent = preg_replace($pattern, $replacement, $content);
+        $updatedContent = preg_replace($pattern, $replacement, $content, -1, $upReplacementCount);
+
+        if ($updatedContent === null || $upReplacementCount !== 1) {
+            throw new RuntimeException('Unable to update the generated migration up method.');
+        }
 
         // Down method
         $downPattern = '/(public function down\(\): void[\s\S]*?Schema::table\(.*?\{)([\s\S]*?)(\}\);[\s\S]*?\})/';
         $downReplacement = '${1}'.PHP_EOL.$additionsDown.PHP_EOL.$updatesDown.PHP_EOL.$deletionsDown.PHP_EOL.'${3}';
-        $updatedContent = preg_replace($downPattern, $downReplacement, $updatedContent);
+        $updatedContent = preg_replace($downPattern, $downReplacement, $updatedContent, -1, $downReplacementCount);
+
+        if ($updatedContent === null || $downReplacementCount !== 1) {
+            throw new RuntimeException('Unable to update the generated migration down method.');
+        }
+
+        if ($downPreflight !== '') {
+            $updatedContent = preg_replace(
+                '/(public function down\(\): void\s*\{)/',
+                '${1}'.PHP_EOL.$downPreflight,
+                $updatedContent,
+                1,
+                $preflightReplacementCount,
+            );
+
+            if ($updatedContent === null || $preflightReplacementCount !== 1) {
+                throw new RuntimeException('Unable to add the generated migration rollback preflight.');
+            }
+        }
 
         return $updatedContent;
     }

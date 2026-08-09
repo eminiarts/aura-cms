@@ -5,12 +5,17 @@ namespace Aura\Base\Traits;
 use Aura\Base\Events\SaveFields as SaveFieldsEvent;
 use Aura\Base\Facades\Aura;
 use Illuminate\Support\Str;
+use RuntimeException;
+use Throwable;
 
 trait SaveFields
 {
     public function saveFields($fields)
     {
         $fieldsWithIds = $fields;
+        $filePath = null;
+        $originalFile = null;
+        $fileUpdated = false;
 
         // Unset Mapping of Fields
         foreach ($fields as &$field) {
@@ -22,52 +27,71 @@ trait SaveFields
 
         $a = new \ReflectionClass($this->model::class);
 
-        $filePath = $a->getFileName();
+        $reflectedFilePath = $a->getFileName();
+        $filePath = is_string($reflectedFilePath) ? $reflectedFilePath : null;
 
-        if (file_exists($filePath)) {
-            $file = file_get_contents($filePath);
+        try {
+            if ($filePath && file_exists($filePath)) {
+                $file = file_get_contents($filePath);
 
-            $replacement = Aura::varexport($this->setKeysToFields($fields), true);
+                if ($file === false) {
+                    throw new RuntimeException("Unable to read resource file [{$filePath}].");
+                }
 
-            preg_match('/function\s+getFields\s*\((?:[^()]*?)\s*\)\s*(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches, PREG_OFFSET_CAPTURE);
+                $originalFile = $file;
+                $replacement = Aura::varexport($this->setKeysToFields($fields), true);
 
-            if (isset($matches['functionBody'])) {
-                $functionBody = $matches['functionBody'][0];
-                $functionBodyOffset = $matches['functionBody'][1];
+                preg_match('/function\s+getFields\s*\((?:[^()]*?)\s*\)\s*(?::\s*[?\\\\\w|&]+)?\s*(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches, PREG_OFFSET_CAPTURE);
 
-                preg_match('/return\s+(\[.*\]);/ms', $functionBody, $matches2);
+                if (isset($matches['functionBody'])) {
+                    $functionBody = $matches['functionBody'][0];
+                    $functionBodyOffset = $matches['functionBody'][1];
 
-                if (isset($matches2[1])) {
+                    preg_match('/return\s+(\[.*\]);/ms', $functionBody, $matches2);
 
-                    $newFunctionBody = Str::replace(
-                        $matches2[1],
-                        $replacement,
-                        $functionBody
-                    );
+                    if (isset($matches2[1])) {
 
-                    $newFile = substr_replace(
-                        $file,
-                        $newFunctionBody,
-                        $functionBodyOffset,
-                        strlen($functionBody)
-                    );
+                        $newFunctionBody = Str::replace(
+                            $matches2[1],
+                            $replacement,
+                            $functionBody
+                        );
 
-                    file_put_contents($filePath, $newFile);
+                        $newFile = substr_replace(
+                            $file,
+                            $newFunctionBody,
+                            $functionBodyOffset,
+                            strlen($functionBody)
+                        );
 
+                        if (file_put_contents($filePath, $newFile) === false) {
+                            throw new RuntimeException("Unable to update resource file [{$filePath}].");
+                        }
+
+                        $fileUpdated = true;
+                    } else {
+                        $this->notify('Return statement not found in getFields().');
+
+                        throw new RuntimeException('Return statement not found in getFields().');
+                    }
                 } else {
-                    // Handle the case where the return statement is not found
-                    // You may want to add the return statement if it's missing
-                    // For now, we'll notify that the return statement was not found
-                    $this->notify('Return statement not found in getFields().');
+                    $this->notify('Function getFields() not found.');
+
+                    throw new RuntimeException('Function getFields() not found.');
                 }
             } else {
-                // Handle the case where getFields() function is not found
-                $this->notify('Function getFields() not found.');
+                throw new RuntimeException('Unable to locate the resource file for field configuration.');
             }
-        }
 
-        // Trigger the event to change the database schema
-        event(new SaveFieldsEvent($fieldsWithIds, $this->mappedFields, $this->model));
+            // Trigger the event to change the database schema
+            event(new SaveFieldsEvent($fieldsWithIds, $this->mappedFields, $this->model));
+        } catch (Throwable $exception) {
+            if ($fileUpdated && $filePath && is_string($originalFile) && file_put_contents($filePath, $originalFile) === false) {
+                throw new RuntimeException("Unable to restore resource file [{$filePath}] after a failed migration.", previous: $exception);
+            }
+
+            throw $exception;
+        }
 
         // $this->dispatch('refreshComponent');
 

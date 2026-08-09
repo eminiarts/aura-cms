@@ -8,7 +8,9 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Symfony\Component\Process\ExecutableFinder;
+use Throwable;
 
 class ModifyDatabaseMigration
 {
@@ -38,43 +40,69 @@ class ModifyDatabaseMigration
 
         $schema = $this->generateSchema($newFields);
 
-        if ($this->migrationExists($migrationName)) {
-            // $this->error("Migration '{$migrationName}' already exists.");
-            // return 1;
-            $migrationFile = $this->getMigrationPath($migrationName);
-        } else {
-            Artisan::call('make:migration', [
-                'name' => $migrationName,
-                '--create' => $tableName,
-            ]);
+        $migrationFile = null;
+        $migrationCreated = false;
+        $originalContent = null;
 
-            $migrationFile = $this->getMigrationPath($migrationName);
+        try {
+            if ($this->migrationExists($migrationName)) {
+                $migrationFile = $this->getMigrationPath($migrationName);
+            } else {
+                $this->createMigration($migrationName, $tableName);
+                $migrationFile = $this->getMigrationPath($migrationName);
+                $migrationCreated = true;
+            }
+
+            if ($migrationFile === null) {
+                throw new RuntimeException("Unable to find migration file '{$migrationName}'.");
+            }
+
+            $content = $this->files->get($migrationFile);
+            $originalContent = $content;
+
+            // Up method
+            $pattern = '/(public function up\(\): void[\s\S]*?Schema::create\(.*?\{)([\s\S]*?)(\}\);[\s\S]*?\})/';
+            $replacement = '${1}'.$schema.'${3}';
+            $replacedContent = preg_replace($pattern, $replacement, $content, -1, $upReplacementCount);
+
+            if ($replacedContent === null || $upReplacementCount !== 1) {
+                throw new RuntimeException("Unable to update the up method in migration [{$migrationFile}].");
+            }
+
+            // Down method
+            $down = "Schema::dropIfExists('{$tableName}');";
+            $pattern = '/(public function down\(\): void[\s\S]*?{)[\s\S]*?Schema::table\(.*?function \(Blueprint \$table\) \{[\s\S]*?\/\/[\s\S]*?\}\);[\s\S]*?\}/';
+            $replacement = '${1}'.PHP_EOL.'    '.$down.PHP_EOL.'}';
+            $updatedContent = preg_replace($pattern, $replacement, $replacedContent);
+
+            if ($updatedContent === null || $this->files->put($migrationFile, $updatedContent) === false) {
+                throw new RuntimeException("Unable to update migration [{$migrationFile}].");
+            }
+
+            $this->runPint($migrationFile);
+            $this->runSchemaUpdate($migrationFile);
+        } catch (Throwable $exception) {
+            if ($migrationCreated && $migrationFile !== null) {
+                $this->files->delete($migrationFile);
+            } elseif ($migrationFile !== null && is_string($originalContent) && $this->files->put($migrationFile, $originalContent) === false) {
+                throw new RuntimeException("Unable to restore migration [{$migrationFile}] after schema synchronization failed.", previous: $exception);
+            }
+
+            throw $exception;
         }
+    }
 
-        if ($migrationFile === null) {
-            throw new \Exception("Unable to find migration file '{$migrationName}'.");
+    protected function createMigration(string $migrationName, string $tableName): void
+    {
+        $exitCode = Artisan::call('make:migration', [
+            'name' => $migrationName,
+            '--create' => $tableName,
+            '--no-interaction' => true,
+        ]);
+
+        if ($exitCode !== 0) {
+            throw new RuntimeException(trim(Artisan::output()) ?: 'Unable to generate migration.');
         }
-
-        $content = $this->files->get($migrationFile);
-
-        // Up method
-        $pattern = '/(public function up\(\): void[\s\S]*?Schema::create\(.*?\{)([\s\S]*?)(\}\);[\s\S]*?\})/';
-        $replacement = '${1}'.$schema.'${3}';
-        $replacedContent = preg_replace($pattern, $replacement, $content);
-
-        // Down method
-        $down = "Schema::dropIfExists('{$tableName}');";
-        $pattern = '/(public function down\(\): void[\s\S]*?{)[\s\S]*?Schema::table\(.*?function \(Blueprint \$table\) \{[\s\S]*?\/\/[\s\S]*?\}\);[\s\S]*?\}/';
-        $replacement = '${1}'.PHP_EOL.'    '.$down.PHP_EOL.'}';
-        $replacedContent2 = preg_replace($pattern, $replacement, $replacedContent);
-
-        $this->files->put($migrationFile, $replacedContent2);
-
-        // Run "pint" on the migration file
-        $this->runPint($migrationFile);
-
-        // Run the migration
-        Artisan::call('aura:schema-update', ['migration' => $migrationFile]);
     }
 
     protected function generateColumn($field)
@@ -134,7 +162,7 @@ class ModifyDatabaseMigration
         return false;
     }
 
-    protected function runPint($migrationFile)
+    protected function runPint($migrationFile): void
     {
         $command = [
             (new ExecutableFinder)->find('php', 'php', [
@@ -145,6 +173,18 @@ class ModifyDatabaseMigration
             'vendor/bin/pint', $migrationFile,
         ];
 
-        $result = Process::path(base_path())->run($command);
+        Process::path(base_path())->run($command)->throw();
+    }
+
+    protected function runSchemaUpdate(string $migrationFile): void
+    {
+        $exitCode = Artisan::call('aura:schema-update', [
+            'migration' => $migrationFile,
+            '--no-interaction' => true,
+        ]);
+
+        if ($exitCode !== 0) {
+            throw new RuntimeException(trim(Artisan::output()) ?: 'Schema synchronization failed.');
+        }
     }
 }

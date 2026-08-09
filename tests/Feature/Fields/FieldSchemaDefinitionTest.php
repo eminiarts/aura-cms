@@ -7,6 +7,7 @@ use Aura\Base\Listeners\ModifyDatabaseMigration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 
 test('number fields declare portable integer and decimal schema columns', function () {
@@ -107,23 +108,57 @@ test('configured large numbers use native exact decimal storage on mysql when av
     DB::purge($connection);
 
     try {
-        $number = new Number;
-        $integer = $number->columnDefinition([
-            'slug' => 'large_integer',
-            'number_type' => 'integer',
-            'precision' => 65,
+        Schema::create($tableName, fn (Blueprint $table) => $table->id());
+        $generator = new CreateDatabaseMigration(app(Filesystem::class));
+        $generate = new ReflectionMethod(CreateDatabaseMigration::class, 'generateSchema');
+        $generateDown = new ReflectionMethod(CreateDatabaseMigration::class, 'generateDownSchema');
+        $update = new ReflectionMethod(CreateDatabaseMigration::class, 'updateMigrationContent');
+        $fields = collect([
+            [
+                'slug' => 'large_integer',
+                'type' => Number::class,
+                'number_type' => 'integer',
+                'precision' => 65,
+            ],
+            [
+                'slug' => 'large_decimal',
+                'type' => Number::class,
+                'number_type' => 'decimal',
+                'precision' => 65,
+                'scale' => 30,
+            ],
         ]);
-        $decimal = $number->columnDefinition([
-            'slug' => 'large_decimal',
-            'number_type' => 'decimal',
-            'precision' => 65,
-            'scale' => 30,
-        ]);
+        $up = $generate->invoke($generator, $fields, 'add');
+        $down = $generateDown->invoke($generator, $fields, 'add');
+        $template = str_replace('__TABLE__', $tableName, <<<'PHP'
+<?php
 
-        Schema::create($tableName, function (Blueprint $table) use ($decimal, $integer) {
-            $integer->addTo($table, 'large_integer');
-            $decimal->addTo($table, 'large_decimal');
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('__TABLE__', function (Blueprint $table) {
+            //
         });
+    }
+
+    public function down(): void
+    {
+        Schema::table('__TABLE__', function (Blueprint $table) {
+            //
+        });
+    }
+};
+PHP);
+        $content = $update->invoke($generator, $template, $up, '', '', $down, '', '', '');
+        $path = tempnam(sys_get_temp_dir(), 'aura-core10-mysql-migration-');
+        File::put($path, $content);
+        $migration = require $path;
+        $migration->up();
 
         $largeInteger = '12345678901234567890123456789012345678901234567890123456789012345';
         $largeDecimal = '12345678901234567890123456789012345.123456789012345678901234567890';
@@ -133,8 +168,16 @@ test('configured large numbers use native exact decimal storage on mysql when av
         ]);
 
         expect(DB::table($tableName)->value('large_integer'))->toBe($largeInteger)
-            ->and(DB::table($tableName)->value('large_decimal'))->toBe($largeDecimal);
+            ->and(DB::table($tableName)->value('large_decimal'))->toBe($largeDecimal)
+            ->and(Schema::getColumnType($tableName, 'large_integer'))->toBe('decimal')
+            ->and(Schema::getColumnType($tableName, 'large_decimal'))->toBe('decimal');
+
+        $migration->down();
     } finally {
+        if (isset($path)) {
+            File::delete($path);
+        }
+
         Schema::dropIfExists($tableName);
         DB::disconnect($connection);
         config()->set('database.default', $originalDefault);
@@ -186,4 +229,137 @@ test('resource editor migrations change an existing integer column to its decima
         ->toContain(')->nullable()->change()')
         ->and($down->invoke($generator, $fields, 'update'))
         ->toContain("\$table->integer('amount')->nullable()->change()");
+});
+
+test('generated resource editor migration code executes against sqlite', function () {
+    $tableName = 'core_10_generated_migration_values';
+    Schema::create($tableName, fn (Blueprint $table) => $table->id());
+
+    $generator = new CreateDatabaseMigration(app(Filesystem::class));
+    $generate = new ReflectionMethod(CreateDatabaseMigration::class, 'generateSchema');
+    $generateDown = new ReflectionMethod(CreateDatabaseMigration::class, 'generateDownSchema');
+    $update = new ReflectionMethod(CreateDatabaseMigration::class, 'updateMigrationContent');
+    $fields = collect([[
+        'slug' => 'amount',
+        'type' => Number::class,
+        'number_type' => 'decimal',
+        'precision' => 65,
+        'scale' => 30,
+    ]]);
+    $up = $generate->invoke($generator, $fields, 'add');
+    $down = $generateDown->invoke($generator, $fields, 'add');
+    $template = str_replace('__TABLE__', $tableName, <<<'PHP'
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('__TABLE__', function (Blueprint $table) {
+            //
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('__TABLE__', function (Blueprint $table) {
+            //
+        });
+    }
+};
+PHP);
+    $content = $update->invoke($generator, $template, $up, '', '', $down, '', '', '');
+    $path = tempnam(sys_get_temp_dir(), 'aura-core10-migration-');
+    File::put($path, $content);
+    $migration = require $path;
+    $value = '12345678901234567890123456789012345.123456789012345678901234567890';
+
+    try {
+        $migration->up();
+        DB::table($tableName)->insert(['amount' => $value]);
+
+        expect(DB::table($tableName)->value('amount'))->toBe($value);
+
+        $migration->down();
+
+        expect(Schema::hasColumn($tableName, 'amount'))->toBeFalse();
+    } finally {
+        File::delete($path);
+        Schema::dropIfExists($tableName);
+    }
+});
+
+test('generated decimal rollback refuses fractional rows before changing to integer', function () {
+    $tableName = 'core_10_lossy_rollback_values';
+    Schema::create($tableName, function (Blueprint $table) {
+        $table->id();
+        $table->integer('amount')->nullable();
+    });
+
+    $generator = new CreateDatabaseMigration(app(Filesystem::class));
+    $generate = new ReflectionMethod(CreateDatabaseMigration::class, 'generateSchema');
+    $generateDown = new ReflectionMethod(CreateDatabaseMigration::class, 'generateDownSchema');
+    $generatePreflight = new ReflectionMethod(CreateDatabaseMigration::class, 'generateDownPreflight');
+    $update = new ReflectionMethod(CreateDatabaseMigration::class, 'updateMigrationContent');
+    $fields = collect([[
+        'old' => [
+            'slug' => 'amount',
+            'type' => Number::class,
+            'number_type' => 'integer',
+        ],
+        'new' => [
+            'slug' => 'amount',
+            'type' => Number::class,
+            'number_type' => 'decimal',
+            'precision' => 19,
+            'scale' => 2,
+        ],
+    ]]);
+    $up = $generate->invoke($generator, $fields, 'update');
+    $down = $generateDown->invoke($generator, $fields, 'update');
+    $preflight = $generatePreflight->invoke($generator, $fields, 'update', $tableName);
+    $template = str_replace('__TABLE__', $tableName, <<<'PHP'
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('__TABLE__', function (Blueprint $table) {
+            //
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('__TABLE__', function (Blueprint $table) {
+            //
+        });
+    }
+};
+PHP);
+    $content = $update->invoke($generator, $template, '', $up, '', '', $down, '', $preflight);
+    $path = tempnam(sys_get_temp_dir(), 'aura-core10-rollback-');
+    File::put($path, $content);
+    $migration = require $path;
+
+    try {
+        $migration->up();
+        DB::table($tableName)->insert(['amount' => '1.50']);
+
+        expect(fn () => $migration->down())->toThrow(RuntimeException::class, 'lossy')
+            ->and(DB::table($tableName)->value('amount'))->toBe('1.50')
+            ->and(Schema::getColumnType($tableName, 'amount'))->toBe('text');
+    } finally {
+        File::delete($path);
+        Schema::dropIfExists($tableName);
+    }
 });
