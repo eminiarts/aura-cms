@@ -7,6 +7,7 @@
         "dev": "vite",
         "build": "vite build",
         "build:lib": "vite build --mode lib",
+        "test:frontend-compatibility": "node tests/Fixtures/FrontendCompatibility/run.mjs",
         "watch": "nodemon --watch resources/views --exec \"npm run build\" --ext php,js,css,html"
     },
     "devDependencies": {

@@ -1,7 +1,7 @@
 @import "tailwindcss" source(none);
 @import "./token-contract.css";
 
-@source "./representative.html";
+@source "../../aura-source";
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
@@ -15,8 +15,14 @@
     --color-aura-success: rgb(var(--aura-color-success));
     --color-aura-warning: rgb(var(--aura-color-warning));
     --color-aura-danger: rgb(var(--aura-color-danger));
+    --color-primary-400: rgb(var(--primary-400));
     --color-primary-500: rgb(var(--primary-500));
     --color-primary-600: rgb(var(--primary-600));
+    --color-primary-700: rgb(var(--primary-700));
+    --color-gray-100: rgb(var(--gray-100));
+    --color-gray-800: rgb(var(--gray-800));
+    --color-gray-900: rgb(var(--gray-900));
+    --color-gray-950: rgb(var(--gray-950));
     --color-sidebar-bg: rgb(var(--sidebar-bg));
     --color-sidebar-text: rgb(var(--sidebar-text));
 }

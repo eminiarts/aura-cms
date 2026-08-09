@@ -1,7 +1,8 @@
+/* Verbatim build-syntax extract from resources/css/app.css. */
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
 .aura-card {
-    @apply rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-950/10;
+    @apply p-5 bg-white rounded-xl shadow-sm ring-1 ring-gray-950/10;
 }

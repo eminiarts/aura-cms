@@ -1,5 +1,3 @@
-const defaultTheme = require('tailwindcss/defaultTheme');
-
 function withOpacityValue(variable) {
     return ({ opacityValue }) => {
         if (opacityValue === undefined) {
@@ -13,7 +11,10 @@ function withOpacityValue(variable) {
 module.exports = {
     content: {
         relative: true,
-        files: ['./representative.html'],
+        files: [
+            './aura-source/**/*.blade.php',
+            './aura-source/**/*.php',
+        ],
     },
     darkMode: 'selector',
     theme: {
@@ -31,8 +32,16 @@ module.exports = {
                     danger: withOpacityValue('--aura-color-danger'),
                 },
                 primary: {
+                    400: withOpacityValue('--primary-400'),
                     500: withOpacityValue('--primary-500'),
                     600: withOpacityValue('--primary-600'),
+                    700: withOpacityValue('--primary-700'),
+                },
+                gray: {
+                    100: withOpacityValue('--gray-100'),
+                    800: withOpacityValue('--gray-800'),
+                    900: withOpacityValue('--gray-900'),
+                    950: withOpacityValue('--gray-950'),
                 },
                 sidebar: {
                     bg: withOpacityValue('--sidebar-bg'),
@@ -40,7 +49,16 @@ module.exports = {
                 },
             },
             fontFamily: {
-                sans: ['var(--aura-font-sans)', ...defaultTheme.fontFamily.sans],
+                sans: [
+                    'var(--aura-font-sans)',
+                    'ui-sans-serif',
+                    'system-ui',
+                    'sans-serif',
+                    '"Apple Color Emoji"',
+                    '"Segoe UI Emoji"',
+                    '"Segoe UI Symbol"',
+                    '"Noto Color Emoji"',
+                ],
             },
         },
     },

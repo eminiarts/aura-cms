@@ -1,7 +1,13 @@
 :root {
     --aura-font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    --primary-400: 104 148 246;
     --primary-500: 60 115 242;
     --primary-600: 31 85 233;
+    --primary-700: 22 67 215;
+    --gray-100: 243 244 246;
+    --gray-800: 30 41 59;
+    --gray-900: 15 23 42;
+    --gray-950: 2 6 23;
     --sidebar-bg: 24 24 27;
     --sidebar-text: 244 244 245;
 
