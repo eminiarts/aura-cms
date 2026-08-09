@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Fields;
 
+use Illuminate\Support\HtmlString;
+
 class Json extends Field
 {
     public $edit = 'aura::fields.json';
@@ -10,7 +12,7 @@ class Json extends Field
 
     public function display($field, $value, $model)
     {
-        return json_encode($value);
+        return new HtmlString(e(json_encode($value)));
     }
 
     public function get($class, $value, $field = null)

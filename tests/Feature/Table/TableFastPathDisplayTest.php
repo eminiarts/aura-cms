@@ -106,7 +106,7 @@ test('display() of a plain field never builds the full fields collection', funct
 
     FastPathPlainPost::$fullAccessorCalls = 0;
 
-    expect($post->display('headline'))->toContain('Hello');
+    expect((string) $post->display('headline'))->toContain('Hello');
     expect($post->display('id'))->toBe(e($post->id));
 
     // Neither the input-field cell nor the id cell should build every field.
@@ -121,7 +121,7 @@ test('display() of a conditional-logic field falls back to the full accessor', f
 
     FastPathConditionalPost::$fullAccessorCalls = 0;
 
-    expect($post->display('secret'))->toContain('Classified');
+    expect((string) $post->display('secret'))->toContain('Classified');
 
     // The conditional-logic cell must resolve through the full accessor.
     expect(FastPathConditionalPost::$fullAccessorCalls)->toBe(1);
@@ -136,7 +136,7 @@ test('fast path output equals the legacy full-accessor output', function () {
     // The value the full accessor would have produced for this cell.
     $legacy = $post->displayFieldValue('headline', $post->fields['headline'] ?? null);
 
-    expect($post->display('headline'))->toBe($legacy);
+    expect((string) $post->display('headline'))->toBe((string) $legacy);
 });
 
 /*

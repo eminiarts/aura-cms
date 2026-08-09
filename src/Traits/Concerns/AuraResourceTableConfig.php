@@ -4,6 +4,7 @@ namespace Aura\Base\Traits\Concerns;
 
 use Aura\Base\ConditionalLogic;
 use Aura\Base\Contracts\FieldValueContext;
+use Aura\Base\Support\FieldDisplayValue;
 use Illuminate\Support\Collection;
 
 trait AuraResourceTableConfig
@@ -156,15 +157,9 @@ trait AuraResourceTableConfig
 
         $value = $this->{$key};
 
-        // if $value is an array, implode it
-        if (is_array($value)) {
-            return implode(', ', $value);
-        }
-
-        // This branch bypasses the field's own display() (which escapes
-        // scalar values), so escape here too — the value is rendered raw
-        // via {!! !!} in the table/view blades.
-        return is_scalar($value) ? e($value) : $value;
+        // This branch bypasses the field contract and is rendered through a
+        // raw Blade slot, so recursively escape every non-Htmlable value.
+        return FieldDisplayValue::escape($value);
     }
 
     /**
@@ -178,20 +173,7 @@ trait AuraResourceTableConfig
     ) {
         $value = $this->displayFieldValueInContext($key, $rawValue, $context);
 
-        // if $value is an array, implode it
-        if (is_array($value)) {
-            $formattedValues = array_map(function ($subArray) {
-                if (is_array($subArray)) {
-                    return '['.implode(', ', $subArray).']';
-                }
-
-                return $subArray;
-            }, $value);
-
-            return implode(', ', $formattedValues);
-        }
-
-        return $value;
+        return FieldDisplayValue::secure($value);
     }
 
     protected function resolveDisplayFieldValue(string $key, FieldValueContext $context): mixed

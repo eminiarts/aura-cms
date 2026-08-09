@@ -4,6 +4,7 @@ namespace Aura\Base\Fields;
 
 use Aura\Base\Contracts\ProvidesTableEagerLoad;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -43,11 +44,11 @@ class Tags extends Field implements ProvidesTableEagerLoad
             return '';
         }
 
-        return $resource->map(function ($item) {
+        return new HtmlString($resource->map(function ($item) {
             $title = $item->title ?? $item->title();
 
-            return "<span class='px-2 py-1 text-xs text-white whitespace-nowrap rounded-full bg-primary-500'>$title</span>";
-        })->implode(' ');
+            return "<span class='px-2 py-1 text-xs text-white whitespace-nowrap rounded-full bg-primary-500'>".e($title).'</span>';
+        })->implode(' '));
     }
 
     public function filter()

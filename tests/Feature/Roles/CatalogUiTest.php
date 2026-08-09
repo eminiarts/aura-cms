@@ -135,8 +135,8 @@ describe('Global Roles are visibly marked read-only in a team context', function
         $teamRole = catalogTeamRole($teamId, 'reviewer', ['name' => 'Reviewer']);
 
         // The name column's display carries the badge only for global rows.
-        expect($globalRole->display('name'))->toContain('Global')
-            ->and($teamRole->display('name'))->not->toContain('Global');
+        expect((string) $globalRole->display('name'))->toContain('Global')
+            ->and((string) $teamRole->display('name'))->not->toContain('Global');
     });
 
     it('shows the Global marker in the rendered Roles index', function () {

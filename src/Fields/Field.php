@@ -6,9 +6,12 @@ use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Contracts\FieldValueContract;
 use Aura\Base\Contracts\FieldValueStorage;
 use Aura\Base\Schema\FieldColumn;
+use Aura\Base\Support\FieldDisplayValue;
 use Aura\Base\Traits\InputFields;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Traits\Macroable;
 use Illuminate\Support\Traits\Tappable;
 use Livewire\Wireable;
@@ -31,14 +34,7 @@ abstract class Field implements FieldValueContract, Wireable
 
     public $optionGroup = 'Fields';
 
-    /**
-     * Whether display() returns trusted HTML that must be rendered raw.
-     *
-     * Defaults to false so the scalar display path is HTML-escaped and
-     * cannot be used for stored XSS. Fields that intentionally emit markup
-     * either override display() (e.g. Boolean, Image, BelongsTo, Tags) or
-     * set this flag to true (e.g. a rich-text field).
-     */
+    /** @deprecated Return an Htmlable value from display() instead. */
     public bool $rawHtmlDisplay = false;
 
     public bool $sameLevelGrouping = false;
@@ -74,33 +70,30 @@ abstract class Field implements FieldValueContract, Wireable
     {
 
         if (optional($field)['display_view']) {
-            return view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render();
+            return new HtmlString(
+                view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render(),
+            );
         }
 
         if ($this->index) {
             $componentName = $this->index;
 
-            return Blade::render(
+            return new HtmlString(Blade::render(
                 '<x-dynamic-component :component="$componentName" :row="$row" :field="$field" :value="$value" />',
                 [
                     'componentName' => $componentName,
                     'row' => $model,
                     'field' => $field,
                     'value' => $value,
-                ]
-            );
+                ],
+            ));
         }
 
-        // Fields that emit their own trusted markup are rendered raw. The
-        // Wysiwyg field produces HTML through this default path, so it is
-        // treated as trusted here.
-        if ($this->rawHtmlDisplay || class_basename($this) === 'Wysiwyg') {
+        if ($value === null || $value === '') {
             return $value;
         }
 
-        // Default scalar path: HTML-escape to prevent stored XSS. Non-scalar
-        // values (arrays, objects, null) are returned unchanged.
-        return is_scalar($value) ? e($value) : $value;
+        return FieldDisplayValue::escape($value);
     }
 
     public function displayValue(
@@ -109,7 +102,24 @@ abstract class Field implements FieldValueContract, Wireable
         ?Model $model,
         FieldValueContext $context = FieldValueContext::Index,
     ): mixed {
-        return $this->display($field, $value, $model);
+        $display = $this->display($field, $value, $model);
+
+        if ($display instanceof Htmlable) {
+            return $display;
+        }
+
+        $displayMethod = new \ReflectionMethod($this, 'display');
+
+        // The base implementation escapes all plain values and only emits
+        // template markup as HtmlString. Custom overrides must explicitly
+        // return Htmlable; their plain strings/arrays remain untrusted.
+        if ($displayMethod->getDeclaringClass()->getName() === self::class) {
+            return $display === null || $display === ''
+                ? $display
+                : new HtmlString((string) $display);
+        }
+
+        return FieldDisplayValue::secure($display);
     }
 
     public function edit()

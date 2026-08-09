@@ -6,6 +6,7 @@ use Aura\Base\Contracts\PreloadsTableDisplay;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\HtmlString;
 
 class Image extends Field implements PreloadsTableDisplay
 {
@@ -28,7 +29,7 @@ class Image extends Field implements PreloadsTableDisplay
             $attachment = $this->resolveDisplayAttachment($field, $firstImageValue, $model);
 
             if ($attachment) {
-                $url = $attachment->thumbnail('xs');
+                $url = e($attachment->thumbnail('xs'));
                 $imageHtml = "<img src='{$url}' class='object-cover rounded-lg shadow-lg' style='width: 6rem;'>";
             } else {
                 return $value;
@@ -40,7 +41,7 @@ class Image extends Field implements PreloadsTableDisplay
                 $circleHtml = "<div class='flex justify-center items-center w-10 h-10 font-bold text-center text-gray-800 bg-gray-200 rounded-full'>+{$additionalImagesCount}</div>";
             }
 
-            return "<div class='flex items-center space-x-2'>{$imageHtml}{$circleHtml}</div>";
+            return new HtmlString("<div class='flex items-center space-x-2'>{$imageHtml}{$circleHtml}</div>");
         } catch (\Exception $e) {
             // Handle the exception or return a default value
             // Log the error message if logging is desired

@@ -70,8 +70,8 @@ describe('Wysiwyg Field Sanitization', function () {
 
         $result = $field->display([], '<p>ok</p><script>alert(1)</script>', null);
 
-        expect($result)->toContain('<p>ok</p>')
-            ->and($result)->not->toContain('<script>');
+        expect((string) $result)->toContain('<p>ok</p>')
+            ->and((string) $result)->not->toContain('<script>');
     });
 
     test('display returns non-string values unchanged', function () {

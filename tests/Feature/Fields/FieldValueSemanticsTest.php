@@ -432,7 +432,7 @@ test('the value contract adapts legacy set get and display hooks', function () {
     expect($field)->toBeInstanceOf(FieldValueContract::class)
         ->and($field->normalizeForStorage('value', [], null, FieldValueStorage::Meta))->toBe('stored:value')
         ->and($field->hydrateFromStorage('value', [], null, FieldValueStorage::Physical))->toBe('hydrated:value')
-        ->and($field->displayValue('value', [], null, FieldValueContext::View))->toBe('displayed:value');
+        ->and((string) $field->displayValue('value', [], null, FieldValueContext::View))->toBe('displayed:value');
 });
 
 test('field presentation receives an explicit context', function () {
@@ -670,7 +670,7 @@ test('date rendering is null safe and date only values never shift timezones', f
     $date = new Date;
     $field = ['slug' => 'date_value', 'display_format' => 'Y-m-d'];
 
-    expect($date->displayValue(null, $field, null, FieldValueContext::Index))->not->toContain(now()->format('Y-m-d'))
+    expect((string) $date->displayValue(null, $field, null, FieldValueContext::Index))->not->toContain(now()->format('Y-m-d'))
         ->and(trim(strip_tags($date->displayValue('', $field, null, FieldValueContext::View))))->toBe('')
         ->and(trim(strip_tags($date->displayValue('2026-01-01', $field, null, FieldValueContext::Index))))->toBe('2026-01-01');
 });

@@ -47,8 +47,8 @@ describe('BelongsTo Field Display', function () {
         $html = $field->display($definition, $related->id, $this->user);
 
         // display() resolves the resource slug and builds an anchor to its edit route.
-        expect($html)->toContain('<a')
-            ->and($html)->toContain(route('aura.user.edit', $related->id));
+        expect((string) $html)->toContain('<a')
+            ->and((string) $html)->toContain(route('aura.user.edit', $related->id));
     });
 
     test('returns the raw value when no resource is configured', function () {

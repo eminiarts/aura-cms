@@ -6,6 +6,7 @@ use Aura\Base\Contracts\PreloadsTableDisplay;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\HtmlString;
 
 class Roles extends AdvancedSelect implements PreloadsTableDisplay
 {
@@ -28,7 +29,7 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
             return '';
         }
 
-        return $roles->pluck('name')->implode(', ');
+        return new HtmlString(e($roles->pluck('name')->implode(', ')));
     }
 
     public function getRelation($model, $field)

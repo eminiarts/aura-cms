@@ -171,8 +171,8 @@ describe('Boolean Field Display', function () {
 
         $result = $booleanField->display($field, true, $model);
 
-        expect($result)->toContain('svg')
-            ->and($result)->toContain('M5 13l4 4L19 7');
+        expect((string) $result)->toContain('svg')
+            ->and((string) $result)->toContain('M5 13l4 4L19 7');
     });
 
     test('displays x icon for false value', function () {
@@ -182,9 +182,9 @@ describe('Boolean Field Display', function () {
 
         $result = $booleanField->display($field, false, $model);
 
-        expect($result)->toContain('svg')
-            ->and($result)->toContain('M6 18L18 6M6 6l12 12')
-            ->and($result)->toContain('text-gray-200');
+        expect((string) $result)->toContain('svg')
+            ->and((string) $result)->toContain('M6 18L18 6M6 6l12 12')
+            ->and((string) $result)->toContain('text-gray-200');
     });
 
     test('displays an invalid legacy value without treating it as true', function () {

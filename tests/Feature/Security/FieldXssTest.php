@@ -2,11 +2,15 @@
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Boolean;
+use Aura\Base\Fields\Json;
 use Aura\Base\Fields\Text;
 use Aura\Base\Fields\Wysiwyg;
 use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Livewire\Resource\View as ResourceView;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\HtmlString;
 
 use function Pest\Livewire\livewire;
 
@@ -42,6 +46,13 @@ class XssResourceModel extends Resource
                 'slug' => 'body',
                 'on_index' => true,
             ],
+            [
+                'name' => 'Nested',
+                'type' => Json::class,
+                'slug' => 'nested',
+                'on_index' => true,
+                'on_view' => true,
+            ],
         ];
     }
 }
@@ -72,7 +83,7 @@ describe('Field::display escaping', function () {
 
         $result = (new Wysiwyg)->display(['slug' => 'body'], $html, new XssResourceModel);
 
-        expect($result)->toBe($html);
+        expect((string) $result)->toBe($html);
     });
 
     test('Wysiwyg::sanitize strips dangerous handlers but keeps safe formatting', function () {
@@ -86,18 +97,33 @@ describe('Field::display escaping', function () {
     test('Boolean field keeps its icon markup raw', function () {
         $result = (new Boolean)->display(['slug' => 'active'], true, new XssResourceModel);
 
-        expect($result)->toContain('<svg');
+        expect((string) $result)->toContain('<svg');
     });
 
-    test('a custom field can opt into raw HTML via rawHtmlDisplay', function () {
+    test('a boolean flag cannot make a plain string trusted HTML', function () {
         $field = new class extends Text
         {
             public bool $rawHtmlDisplay = true;
         };
 
-        $result = $field->display(['slug' => 'text'], '<b>bold</b>', new XssResourceModel);
+        $result = $field->displayValue('<b>bold</b>', ['slug' => 'text'], new XssResourceModel);
 
-        expect($result)->toBe('<b>bold</b>');
+        expect((string) $result)->toBe('&lt;b&gt;bold&lt;/b&gt;');
+    });
+
+    test('a custom field must return Htmlable to opt into trusted markup', function () {
+        $field = new class extends Text
+        {
+            public function display($field, $value, $model): Htmlable
+            {
+                return new HtmlString('<b>trusted</b>');
+            }
+        };
+
+        $result = $field->displayValue('ignored', ['slug' => 'text'], new XssResourceModel);
+
+        expect($result)->toBeInstanceOf(Htmlable::class)
+            ->and((string) $result)->toBe('<b>trusted</b>');
     });
 });
 
@@ -151,5 +177,38 @@ describe('table row rendering', function () {
         livewire(Table::class, ['query' => null, 'model' => $post])
             ->assertDontSee('<script>alert(1)</script>', false)
             ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false);
+    });
+
+    test('nested stored payloads are escaped on index view and export surfaces', function () {
+        Aura::fake();
+        Aura::setModel(new XssResourceModel);
+
+        $payload = [
+            'safe',
+            ['<img src=x onerror=alert(1)>', '<script>alert(2)</script>'],
+        ];
+        $post = XssResourceModel::create([
+            'type' => 'XssModel',
+            'text' => 'safe',
+            'nested' => $payload,
+        ]);
+
+        livewire(Table::class, ['query' => null, 'model' => $post])
+            ->assertDontSee('<img src=x onerror=alert(1)>', false)
+            ->assertDontSee('<script>alert(2)</script>', false)
+            ->assertSee('&lt;img src=x onerror=alert(1)&gt;', false);
+
+        livewire(ResourceView::class, ['slug' => 'xssmodel', 'id' => $post->id])
+            ->assertDontSee('<img src=x onerror=alert(1)>', false)
+            ->assertDontSee('<script>alert(2)</script>', false)
+            ->assertSee('&lt;script&gt;alert(2)&lt;\/script&gt;', false);
+
+        $export = (string) $post->exportFieldValue('nested');
+
+        expect($export)
+            ->not->toContain('<img')
+            ->not->toContain('<script>')
+            ->toContain('&lt;img src=x onerror=alert(1)&gt;')
+            ->toContain('&lt;script&gt;alert(2)&lt;\/script&gt;');
     });
 });

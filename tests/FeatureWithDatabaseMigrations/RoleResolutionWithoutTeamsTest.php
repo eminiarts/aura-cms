@@ -94,7 +94,7 @@ describe('Teams-off catalog UI (issue #52)', function () {
             ->toContain(Role::where('slug', 'user')->value('id'));
 
         // No team_id column means no Global Role concept and no badge.
-        expect(Role::where('slug', 'admin')->first()->display('name'))->not->toContain('Global');
+        expect((string) Role::where('slug', 'admin')->first()->display('name'))->not->toContain('Global');
     });
 
     it('hides the global toggle from the Role form in Teams-off mode', function () {

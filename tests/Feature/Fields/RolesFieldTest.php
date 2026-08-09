@@ -38,7 +38,7 @@ describe('Roles Field Resolve', function () {
         $field = new Roles;
 
         // The super admin created in beforeEach carries the "Admin" role.
-        expect($field->display(rolesFieldDefinition(), null, $this->user))->toBe('Admin');
+        expect((string) $field->display(rolesFieldDefinition(), null, $this->user))->toBe('Admin');
     });
 
     test('display returns empty string for an unsaved model', function () {
