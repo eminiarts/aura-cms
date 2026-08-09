@@ -179,11 +179,20 @@ class Datetime extends Field
         ?Model $model,
         FieldValueStorage $storage,
     ): mixed {
-        return TemporalValue::normalizeDatetime($value, $field);
+        return TemporalValue::normalizeDatetime($value, $field, $model, $storage);
     }
 
     public function set($post, $field, $value)
     {
-        return TemporalValue::normalizeDatetime($value, is_array($field) ? $field : []);
+        $definition = is_array($field) ? $field : [];
+
+        return TemporalValue::normalizeDatetime(
+            $value,
+            $definition,
+            $post instanceof Model ? $post : null,
+            $post instanceof Model && method_exists($post, 'isTableField') && $post->isTableField($definition['slug'] ?? '')
+                ? FieldValueStorage::Physical
+                : FieldValueStorage::Meta,
+        );
     }
 }

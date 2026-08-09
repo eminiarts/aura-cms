@@ -5,6 +5,7 @@ namespace Tests\Feature\Fields;
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Contracts\FieldValueContract;
 use Aura\Base\Contracts\FieldValueStorage;
+use Aura\Base\Exceptions\InvalidFieldValue;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Boolean;
 use Aura\Base\Fields\Date;
@@ -135,6 +136,35 @@ class Core10EloquentPipelineResource extends Resource
     protected function nullAccessorValue(): Attribute
     {
         return Attribute::make(get: fn (mixed $value): mixed => null);
+    }
+}
+
+class Core10DstResource extends Resource
+{
+    public static $customTable = true;
+
+    public static ?string $slug = 'core-10-dst';
+
+    public static string $type = 'Core10Dst';
+
+    public static bool $usesMeta = false;
+
+    protected $fillable = ['occurred_at'];
+
+    protected $table = 'core_10_dst_values';
+
+    public static function getFields(): array
+    {
+        return [[
+            'name' => 'Occurred at',
+            'slug' => 'occurred_at',
+            'type' => Datetime::class,
+            'format' => 'd.m.Y H:i',
+            'display_format' => 'Y-m-d H:i P T',
+            'input_timezone' => 'Europe/Zurich',
+            'display_timezone' => 'Europe/Zurich',
+            'storage_timezone' => 'UTC',
+        ]];
     }
 }
 
@@ -324,6 +354,16 @@ beforeEach(function () {
         });
     }
 
+    if (! Schema::hasTable('core_10_dst_values')) {
+        Schema::create('core_10_dst_values', function (Blueprint $table) {
+            $table->id();
+            $table->timestamp('occurred_at')->nullable();
+            $table->foreignId('user_id')->nullable();
+            $table->foreignId('team_id')->nullable();
+            $table->timestamps();
+        });
+    }
+
     Core10BooleanCast::$setValues = [];
     Core10EloquentPipelineResource::$mutatorValues = [];
 });
@@ -343,6 +383,7 @@ test('field presentation receives an explicit context', function () {
     expect($field->displayValue('value', [], null, FieldValueContext::Create))->toBe('create:value')
         ->and($field->displayValue('value', [], null, FieldValueContext::Edit))->toBe('edit:value')
         ->and($field->displayValue('value', [], null, FieldValueContext::Index))->toBe('index:value')
+        ->and($field->displayValue('value', [], null, FieldValueContext::Export))->toBe('export:value')
         ->and($field->displayValue('value', [], null, FieldValueContext::View))->toBe('view:value');
 });
 
@@ -508,11 +549,23 @@ test('the view surface renders zero instead of the empty-value placeholder', fun
 
 test('invalid legacy values remain inspectable instead of becoming fabricated values', function () {
     $resource = Core10ValueResource::create([
+        'integer_value' => 1,
+        'date_value' => '09.08.2026',
+        'datetime_value' => '09.08.2026 18:15',
+        'meta_decimal' => '1.000',
+    ]);
+
+    DB::table('core_10_values')->where('id', $resource->id)->update([
         'integer_value' => 'not-a-number',
         'date_value' => 'not-a-date',
         'datetime_value' => 'not-a-datetime',
-        'meta_decimal' => 'legacy-value',
-    ])->refresh();
+    ]);
+    DB::table('meta')
+        ->where('metable_id', $resource->id)
+        ->where('key', 'meta_decimal')
+        ->update(['value' => 'legacy-value']);
+
+    $resource = $resource->fresh();
 
     expect($resource->integer_value)->toBe('not-a-number')
         ->and($resource->date_value)->toBe('not-a-date')
@@ -557,4 +610,54 @@ test('datetime defaults preserve legacy application-timezone clock values', func
     expect($stored)->toBe('2026-08-09 18:15:00')
         ->and($datetime->hydrateFromStorage($stored, $field, null, FieldValueStorage::Meta, FieldValueContext::Edit))
         ->toBe('09.08.2026 18:15');
+});
+
+test('ambiguous edit values retain the exact original instant across presentation contexts', function (string $stored, string $offset) {
+    $id = DB::table('core_10_dst_values')->insertGetId([
+        'occurred_at' => $stored,
+        'user_id' => $this->user->id,
+        'team_id' => $this->user->current_team_id,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    Aura::fake();
+    Aura::setModel(new Core10DstResource);
+
+    Livewire::test(Edit::class, ['id' => $id, 'slug' => 'core-10-dst'])
+        ->assertSet('form.fields.occurred_at', '25.10.2026 02:30')
+        ->set('form.fields.occurred_at', '25.10.2026 02:30')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $resource = Core10DstResource::findOrFail($id);
+
+    expect(DB::table('core_10_dst_values')->where('id', $id)->value('occurred_at'))->toBe($stored)
+        ->and(strip_tags($resource->displayInContext('occurred_at', FieldValueContext::Index)))->toContain($offset)
+        ->and(strip_tags($resource->displayInContext('occurred_at', FieldValueContext::View)))->toContain($offset)
+        ->and(strip_tags($resource->exportFieldValue('occurred_at')))->toContain($offset);
+})->with([
+    'summer occurrence' => ['2026-10-25 00:30:00', '+02:00 CEST'],
+    'winter occurrence' => ['2026-10-25 01:30:00', '+01:00 CET'],
+]);
+
+test('datetime writes reject nonexistent and unresolved ambiguous wall-clock values', function (string $value) {
+    expect(fn () => Core10DstResource::create(['occurred_at' => $value]))
+        ->toThrow(InvalidFieldValue::class);
+})->with([
+    'spring gap' => '29.03.2026 02:30',
+    'unresolved fall overlap' => '25.10.2026 02:30',
+]);
+
+test('create accepts an explicit offset and stores the exact instant', function () {
+    Aura::fake();
+    Aura::setModel(new Core10DstResource);
+
+    Livewire::test(Create::class, ['slug' => 'core-10-dst'])
+        ->set('form.fields.occurred_at', '2026-10-25T02:30:00+01:00')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(DB::table('core_10_dst_values')->orderByDesc('id')->value('occurred_at'))
+        ->toBe('2026-10-25 01:30:00');
 });

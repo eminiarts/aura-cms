@@ -71,6 +71,14 @@ trait AuraResourceTableConfig
         }
     }
 
+    /**
+     * Render a field through the explicit export presentation contract.
+     */
+    public function exportFieldValue(string $key): mixed
+    {
+        return $this->displayInContext($key, FieldValueContext::Export);
+    }
+
     public function getHeaders()
     {
         $fields = $this->indexFields();

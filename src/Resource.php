@@ -382,6 +382,34 @@ class Resource extends Model implements DefinesFields
         return array_key_exists($slug, $this->tableDisplayCache);
     }
 
+    public function hydrateFieldValueInContext(
+        string $slug,
+        mixed $value,
+        FieldValueContext $context,
+    ): mixed {
+        $field = $this->fieldBySlug($slug);
+        $fieldClass = $this->fieldClassBySlug($slug);
+        $storage = $this->isTableField($slug)
+            ? FieldValueStorage::Physical
+            : FieldValueStorage::Meta;
+
+        if ($fieldClass instanceof FieldValueContract) {
+            return $fieldClass->hydrateFromStorage(
+                $value,
+                is_array($field) ? $field : [],
+                $this,
+                $storage,
+                $context,
+            );
+        }
+
+        if ($fieldClass && method_exists($fieldClass, 'get')) {
+            return $fieldClass->get($fieldClass, $value, $field);
+        }
+
+        return $value;
+    }
+
     public function isBaseFillable($key)
     {
         return in_array($key, $this->baseFillable);

@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Livewire\Resource;
 
+use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Models\Post;
 use Aura\Base\Traits\InteractsWithFields;
@@ -219,7 +220,11 @@ class Create extends Component
             // First, ensure all fields are initialized (even if to null)
             // This allows params/query parameters to be applied to any field
             if (! isset($this->form['fields'][$slug])) {
-                $this->form['fields'][$slug] = null;
+                $this->form['fields'][$slug] = $this->model->hydrateFieldValueInContext(
+                    $slug,
+                    null,
+                    FieldValueContext::Create,
+                );
             }
 
             if ($field['type'] == "Aura\Base\Fields\Boolean" && ! isset($field['default'])) {
@@ -241,7 +246,11 @@ class Create extends Component
                     $field['default'] = [$field['default']];
                 }
 
-                $this->form['fields'][$slug] = $field['default'];
+                $this->form['fields'][$slug] = $this->model->hydrateFieldValueInContext(
+                    $slug,
+                    $field['default'],
+                    FieldValueContext::Create,
+                );
             }
         }
     }
