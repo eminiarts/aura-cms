@@ -147,12 +147,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function belongsToTeam($team)
     {
-        if (is_null($team)) {
+        if (! $this->isTeamOnOwnConnection($team)) {
             return false;
         }
 
         return $this->teams->contains(function ($t) use ($team) {
-            return $t->id === $team->id;
+            return $this->isTeamOnOwnConnection($t) && $t->getKey() === $team->getKey();
         });
     }
 
@@ -300,7 +300,18 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             }
         }
 
-        return $this->belongsTo(config('aura.resources.team'), 'current_team_id');
+        /** @var Model $team */
+        $team = app(config('aura.resources.team'));
+        $team = $team->newInstance();
+        $team->setConnection($this->getConnectionName());
+
+        return $this->newBelongsTo(
+            $team->newQuery(),
+            $this,
+            'current_team_id',
+            $team->getKeyName(),
+            'currentTeam',
+        );
     }
 
     public static function currentTeamCacheKey(
@@ -893,13 +904,29 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function roles(): BelongsToMany
     {
+        /** @var Role $role */
+        $role = app(config('aura.resources.role'));
+        $role = $role->newInstance();
+        $role->setConnection($this->getConnectionName());
+
+        $relationship = $this->newBelongsToMany(
+            $role->newQuery(),
+            $this,
+            'user_role',
+            $this->getForeignKey(),
+            $role->getForeignKey(),
+            $this->getKeyName(),
+            $role->getKeyName(),
+            'roles',
+        );
+
         if (config('aura.teams')) {
-            return $this->belongsToMany(Role::class, 'user_role')
+            return $relationship
                 ->withPivot('team_id')
                 ->withTimestamps();
         }
 
-        return $this->belongsToMany(Role::class, 'user_role')
+        return $relationship
             // ->using(TeamUser::class)
             // ->withPivot('team_id')
             ->withTimestamps();
@@ -916,6 +943,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         // Switching the current team is a teams-only operation — a no-op in
         // Teams-off mode (there is no teams table to switch between).
         if (! config('aura.teams')) {
+            return false;
+        }
+
+        if (! $this->isTeamOnOwnConnection($team)) {
             return false;
         }
 
@@ -948,7 +979,21 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function teams(): BelongsToMany
     {
-        return $this->belongsToMany(Team::class, 'user_role')
+        /** @var Team $team */
+        $team = app(config('aura.resources.team'));
+        $team = $team->newInstance();
+        $team->setConnection($this->getConnectionName());
+
+        return $this->newBelongsToMany(
+            $team->newQuery(),
+            $this,
+            'user_role',
+            $this->getForeignKey(),
+            $team->getForeignKey(),
+            $this->getKeyName(),
+            $team->getKeyName(),
+            'teams',
+        )
             ->withPivot('role_id')
             ->withTimestamps();
     }
@@ -1037,5 +1082,15 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         return is_array($permissions) ? $permissions : [];
+    }
+
+    private function isTeamOnOwnConnection(mixed $team): bool
+    {
+        $teamClass = config('aura.resources.team', Team::class);
+
+        return $team instanceof $teamClass
+            && $team->exists
+            && static::connectionCacheIdentity($team->getConnection())
+                === static::connectionCacheIdentity($this->getConnection());
     }
 }

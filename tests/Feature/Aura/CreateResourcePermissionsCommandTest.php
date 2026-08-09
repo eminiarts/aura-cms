@@ -1,12 +1,49 @@
 <?php
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Jobs\GenerateResourcePermissions;
 use Aura\Base\Resources\Permission;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Connection;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
+
+function resourcePermissionTenantConnection(): Connection
+{
+    config()->set('database.connections.resource_permission_tenant', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+        'foreign_key_constraints' => false,
+    ]);
+
+    DB::purge('resource_permission_tenant');
+
+    Schema::connection('resource_permission_tenant')->create('permissions', function (Blueprint $table): void {
+        $table->id();
+        $table->string('name');
+        $table->string('slug');
+        $table->text('description')->nullable();
+        $table->string('group')->nullable();
+        $table->foreignId('user_id')->nullable();
+
+        if (config('aura.teams')) {
+            $table->foreignId('team_id')->nullable();
+            $table->unique(['slug', 'team_id']);
+        } else {
+            $table->unique('slug');
+        }
+
+        $table->timestamps();
+    });
+
+    return DB::connection('resource_permission_tenant');
+}
 
 beforeEach(function () {
     // Mock Aura::getResources() to return test resources
@@ -15,6 +52,61 @@ beforeEach(function () {
             User::class,
             Permission::class,
         ]);
+});
+
+afterEach(function () {
+    DB::purge('resource_permission_tenant');
+});
+
+it('keeps serialized resource permission generation on its explicit database in both team modes', function () {
+    $defaultConnection = DB::connection();
+    $tenantConnection = resourcePermissionTenantConnection();
+    $collision = [
+        'id' => 980000,
+        'name' => 'Connection Collision',
+        'slug' => 'connection-collision',
+        'group' => 'Connection',
+        'user_id' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ];
+
+    if (config('aura.teams')) {
+        $collision['team_id'] = null;
+    }
+
+    $defaultConnection->table('permissions')->insert($collision);
+    $tenantConnection->table('permissions')->insert($collision);
+
+    $job = unserialize(serialize(new GenerateResourcePermissions(
+        User::class,
+        $tenantConnection->getName(),
+    )));
+    $job->handle();
+
+    expect($tenantConnection->table('permissions')->count())->toBe(9)
+        ->and($defaultConnection->table('permissions')->count())->toBe(1)
+        ->and($tenantConnection->table('permissions')->where('slug', 'view-user')->exists())->toBeTrue()
+        ->and($defaultConnection->table('permissions')->where('slug', 'view-user')->exists())->toBeFalse();
+});
+
+it('refuses a queued resource permission job when its named database identity changes', function () {
+    $tenantConnection = resourcePermissionTenantConnection();
+    $job = new GenerateResourcePermissions(User::class, $tenantConnection->getName());
+    $replacementDatabase = tempnam(sys_get_temp_dir(), 'aura-connection-drift-');
+
+    expect($replacementDatabase)->toBeString();
+
+    try {
+        config()->set('database.connections.resource_permission_tenant.database', $replacementDatabase);
+        DB::purge('resource_permission_tenant');
+
+        expect(fn () => $job->handle())
+            ->toThrow(RuntimeException::class, 'database connection identity changed');
+    } finally {
+        DB::purge('resource_permission_tenant');
+        @unlink($replacementDatabase);
+    }
 });
 
 describe('permission creation', function () {

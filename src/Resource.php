@@ -269,13 +269,19 @@ class Resource extends Model implements DefinesFields
      *
      * @param  array<string, mixed>  $attributes
      */
-    public static function createGlobal(array $attributes = []): static
+    public static function createGlobal(array $attributes = [], ?Connection $connection = null): static
     {
-        $resource = app(static::class);
+        $authenticatedUser = auth()->user();
+
+        if ($connection === null && $authenticatedUser instanceof Model) {
+            $connection = $authenticatedUser->getConnection();
+        }
+
+        $resource = static::resourceModelOnConnection($connection);
 
         Gate::authorize('createGlobal', $resource);
 
-        return static::createGlobalRecord($attributes);
+        return static::createGlobalRecord($attributes, $resource->getConnection());
     }
 
     /**
@@ -284,13 +290,16 @@ class Resource extends Model implements DefinesFields
      *
      * @param  array<string, mixed>  $attributes
      */
-    public static function createGlobalForSystem(array $attributes = []): static
-    {
+    public static function createGlobalForSystem(
+        array $attributes = [],
+        ?Connection $connection = null,
+    ): static {
         static::ensureGlobalWriteIsSupported();
+        $resource = static::resourceModelOnConnection($connection);
 
         return static::withinTrustedOwnerFromAttributes(
             $attributes,
-            fn (): static => static::createGlobalRecord($attributes),
+            fn (): static => static::createGlobalRecord($attributes, $resource->getConnection()),
         );
     }
 
@@ -313,7 +322,7 @@ class Resource extends Model implements DefinesFields
                 $attributes['team_id'] = null;
                 unset($values['team_id']);
 
-                $model = app(static::class);
+                $model = clone app(static::class);
 
                 if ($connection) {
                     $model->setConnection($connection->getName());
@@ -680,7 +689,7 @@ class Resource extends Model implements DefinesFields
                 $attributes['team_id'] = null;
                 unset($values['team_id']);
 
-                $model = app(static::class);
+                $model = clone app(static::class);
 
                 if ($connection) {
                     $model->setConnection($connection->getName());
@@ -739,14 +748,22 @@ class Resource extends Model implements DefinesFields
     /**
      * @param  array<string, mixed>  $attributes
      */
-    protected static function createGlobalRecord(array $attributes): static
-    {
+    protected static function createGlobalRecord(
+        array $attributes,
+        ?Connection $connection = null,
+    ): static {
         static::ensureGlobalWriteIsSupported();
 
-        return static::withinGlobalWrite(function () use ($attributes): static {
+        return static::withinGlobalWrite(function () use ($attributes, $connection): static {
             $attributes['team_id'] = null;
 
-            return app(static::class)->newQueryWithoutScopes()->create($attributes);
+            $model = clone app(static::class);
+
+            if ($connection) {
+                $model->setConnection($connection->getName());
+            }
+
+            return $model->newQueryWithoutScopes()->create($attributes);
         });
     }
 
@@ -775,6 +792,19 @@ class Resource extends Model implements DefinesFields
         $actorId = auth()->id();
 
         return $actorId !== null && (string) $actorId === (string) $ownerId;
+    }
+
+    protected static function resourceModelOnConnection(?Connection $connection = null): static
+    {
+        /** @var static $configuredResource */
+        $configuredResource = app(static::class);
+        $resource = $configuredResource->newInstance();
+
+        if ($connection) {
+            $resource->setConnection($connection->getName());
+        }
+
+        return $resource;
     }
 
     /**

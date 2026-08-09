@@ -60,7 +60,7 @@ class GlobalSearch extends Component
                 continue;
             }
 
-            $results = $resource::query()
+            $results = $model->newQuery()
                 ->select($model->getTable().'.*')
                 ->where(function ($query) use ($model, $searchableFields) {
                     foreach ($searchableFields as $field) {
@@ -87,8 +87,11 @@ class GlobalSearch extends Component
         }
 
         // Search in User model, but only if the current user may view users.
-        if (Gate::allows('viewAny', app(User::class))) {
-            $user = new User;
+        /** @var User $configuredUser */
+        $configuredUser = app(config('aura.resources.user'));
+
+        if (Gate::allows('viewAny', $configuredUser)) {
+            $user = $configuredUser->newInstance();
             $authenticatedUser = auth()->user();
 
             if ($authenticatedUser instanceof Model) {

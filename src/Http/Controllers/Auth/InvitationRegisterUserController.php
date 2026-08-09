@@ -8,10 +8,11 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\TeamInvitation;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Database\Connection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -33,7 +34,7 @@ class InvitationRegisterUserController extends Controller
         // An email that already has an account must accept the invitation, not
         // register a second one — refuse the register form outright (the mail
         // routes existing accounts to the accept link anyway).
-        abort_if($this->emailAlreadyRegistered($teamInvitation->email, $team->getConnectionName()), 403);
+        abort_if($this->emailAlreadyRegistered($teamInvitation->email, $team->getConnection()), 403);
 
         return view('aura::auth.user_invitation', [
             'team' => $team,
@@ -64,9 +65,12 @@ class InvitationRegisterUserController extends Controller
         // the team-or-global rule TeamInvitationController::accept applies. A role
         // deleted between invite and acceptance fails like the accept path (404)
         // and, thanks to the transaction below, leaves no orphaned user behind.
-        $connectionName = $team->getConnectionName();
-        $role = Role::on($connectionName)
-            ->withoutGlobalScopes()
+        $connection = $team->getConnection();
+        /** @var Role $roleResource */
+        $roleResource = app(config('aura.resources.role'));
+        $roleResource = $roleResource->newInstance();
+        $roleResource->setConnection($connection->getName());
+        $role = $roleResource->newQueryWithoutScopes()
             ->whereKey($teamInvitation->role)
             ->visibleToTeam($team->id)
             ->first();
@@ -76,13 +80,17 @@ class InvitationRegisterUserController extends Controller
         // An email that already belongs to an account (any casing) must accept the
         // invitation, not register a second account. Refuse rather than mint a
         // case-variant duplicate.
-        abort_if($this->emailAlreadyRegistered($teamInvitation->email, $connectionName), 403);
+        abort_if($this->emailAlreadyRegistered($teamInvitation->email, $connection), 403);
 
         // Create the user and consume the invitation atomically: a mid-flight
         // failure (e.g. the Roles field refusing the assignment) rolls the insert
         // back, so a refusal never leaves a half-provisioned, role-less account.
-        $user = DB::connection($connectionName)->transaction(function () use ($connectionName, $request, $team, $teamInvitation, $role) {
-            $user = User::on($connectionName)->create([
+        $user = $connection->transaction(function () use ($connection, $request, $team, $teamInvitation, $role) {
+            /** @var User $userResource */
+            $userResource = app(config('aura.resources.user'));
+            $userResource = $userResource->newInstance();
+            $userResource->setConnection($connection->getName());
+            $user = $userResource->newQuery()->create([
                 'name' => $request->name,
                 'email' => $teamInvitation->email,
                 'password' => $request->password,
@@ -106,16 +114,44 @@ class InvitationRegisterUserController extends Controller
      * Whether an account already exists for the given email, compared
      * case-insensitively (consistent with the accept path's strcasecmp match).
      */
-    protected function emailAlreadyRegistered(?string $email, ?string $connectionName = null): bool
+    protected function emailAlreadyRegistered(?string $email, Connection $connection): bool
     {
         if ($email === null || $email === '') {
             return false;
         }
 
-        return User::on($connectionName)
-            ->withoutGlobalScopes()
+        /** @var User $user */
+        $user = app(config('aura.resources.user'));
+        $user = $user->newInstance();
+        $user->setConnection($connection->getName());
+
+        return $user->newQueryWithoutScopes()
             ->whereRaw('lower(email) = ?', [mb_strtolower($email)])
             ->exists();
+    }
+
+    protected function invitationConnection(mixed $team, mixed $teamInvitation): Connection
+    {
+        $modelParameters = collect([$team, $teamInvitation])
+            ->filter(fn (mixed $parameter): bool => $parameter instanceof Model)
+            ->values();
+
+        if ($modelParameters->count() === 2) {
+            abort_unless(
+                User::connectionCacheIdentity($modelParameters[0]->getConnection())
+                    === User::connectionCacheIdentity($modelParameters[1]->getConnection()),
+                404,
+            );
+        }
+
+        if ($modelParameters->isNotEmpty()) {
+            return $modelParameters[0]->getConnection();
+        }
+
+        /** @var Team $configuredTeam */
+        $configuredTeam = app(config('aura.resources.team'));
+
+        return $configuredTeam->getConnection();
     }
 
     /**
@@ -127,19 +163,24 @@ class InvitationRegisterUserController extends Controller
      */
     protected function resolveInvitation(mixed $team, mixed $teamInvitation): array
     {
-        $connectionName = $team instanceof Team
-            ? $team->getConnectionName()
-            : ($teamInvitation instanceof TeamInvitation
-                ? $teamInvitation->getConnectionName()
-                : (new Team)->getConnectionName());
+        $connection = $this->invitationConnection($team, $teamInvitation);
         $teamId = $team instanceof Team ? $team->getRouteKey() : $team;
         $invitationId = $teamInvitation instanceof TeamInvitation
             ? $teamInvitation->getRouteKey()
             : $teamInvitation;
 
-        $resolvedTeam = Team::on($connectionName)->withoutGlobalScopes()->findOrFail($teamId);
-        $resolvedInvitation = TeamInvitation::on($connectionName)
-            ->withoutGlobalScopes()
+        /** @var Team $teamResource */
+        $teamResource = app(config('aura.resources.team'));
+        $teamResource = $teamResource->newInstance();
+        $teamResource->setConnection($connection->getName());
+
+        /** @var TeamInvitation $invitationResource */
+        $invitationResource = app(config('aura.resources.team-invitation'));
+        $invitationResource = $invitationResource->newInstance();
+        $invitationResource->setConnection($connection->getName());
+
+        $resolvedTeam = $teamResource->newQueryWithoutScopes()->findOrFail($teamId);
+        $resolvedInvitation = $invitationResource->newQueryWithoutScopes()
             ->whereKey($invitationId)
             ->where('team_id', $resolvedTeam->getKey())
             ->firstOrFail();

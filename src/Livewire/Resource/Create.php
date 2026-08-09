@@ -189,7 +189,7 @@ class Create extends Component
             : ['fields' => $attributes];
 
         $model = $globalIntent === true
-            ? $this->model::createGlobal($persistenceAttributes)
+            ? $this->model::createGlobal($persistenceAttributes, $this->model->getConnection())
             : $this->model->create($persistenceAttributes);
 
         $this->notify('Successfully created.');

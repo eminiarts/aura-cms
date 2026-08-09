@@ -24,16 +24,29 @@ class TeamInvitationController extends Controller
         abort_unless(config('aura.teams'), 404);
 
         $authenticatedUser = $request->user();
-        $connectionName = $authenticatedUser instanceof Model
-            ? $authenticatedUser->getConnectionName()
-            : (new User)->getConnectionName();
-        $invitation = TeamInvitation::on($connectionName)->withoutGlobalScopes()->findOrFail($invitation);
-        $team = Team::on($connectionName)->withoutGlobalScopes()->findOrFail($invitation->team_id);
+        abort_unless($authenticatedUser instanceof Model, 403);
+
+        $connection = $authenticatedUser->getConnection();
+        /** @var TeamInvitation $invitationResource */
+        $invitationResource = app(config('aura.resources.team-invitation'));
+        $invitationResource = $invitationResource->newInstance();
+        $invitationResource->setConnection($connection->getName());
+        $invitation = $invitationResource->newQueryWithoutScopes()->findOrFail($invitation);
+
+        /** @var Team $teamResource */
+        $teamResource = app(config('aura.resources.team'));
+        $teamResource = $teamResource->newInstance();
+        $teamResource->setConnection($connection->getName());
+        $team = $teamResource->newQueryWithoutScopes()->findOrFail($invitation->team_id);
         $userId = $authenticatedUser->getAuthIdentifier();
 
         abort_unless(is_int($userId) || is_string($userId), 403);
 
-        $user = User::on($connectionName)->withoutGlobalScopes()->whereKey($userId)->firstOrFail();
+        /** @var User $userResource */
+        $userResource = app(config('aura.resources.user'));
+        $userResource = $userResource->newInstance();
+        $userResource->setConnection($connection->getName());
+        $user = $userResource->newQueryWithoutScopes()->whereKey($userId)->firstOrFail();
         $userEmail = $user->getAttribute('email');
 
         abort_unless(is_string($userEmail) && strcasecmp($userEmail, $invitation->email) === 0, 403);
@@ -43,8 +56,11 @@ class TeamInvitationController extends Controller
             // Global Role (team_id = null). Accept either, but still refuse a role
             // owned by a different team so invitations cannot inject cross-team
             // access. The Membership records the team via the pivot regardless.
-            $role = Role::on($connectionName)
-                ->withoutGlobalScopes()
+            /** @var Role $roleResource */
+            $roleResource = app(config('aura.resources.role'));
+            $roleResource = $roleResource->newInstance();
+            $roleResource->setConnection($connection->getName());
+            $role = $roleResource->newQueryWithoutScopes()
                 ->whereKey($invitation->role)
                 ->visibleToTeam($team->id)
                 ->firstOrFail();
@@ -69,6 +85,7 @@ class TeamInvitationController extends Controller
     public function destroy(Request $request, Team $team, string|int $invitation): RedirectResponse
     {
         abort_unless(config('aura.teams'), 404);
+        $this->ensureTeamUsesRequestConnection($request, $team);
 
         $invitation = $this->invitationForTeam($team, $invitation);
 
@@ -83,6 +100,7 @@ class TeamInvitationController extends Controller
     public function resend(Request $request, Team $team, string|int $invitation): RedirectResponse
     {
         abort_unless(config('aura.teams'), 404);
+        $this->ensureTeamUsesRequestConnection($request, $team);
 
         $invitation = $this->invitationForTeam($team, $invitation);
 
@@ -91,10 +109,26 @@ class TeamInvitationController extends Controller
         return back(303)->with('status', __('Team invitation resent.'));
     }
 
+    protected function ensureTeamUsesRequestConnection(Request $request, Team $team): void
+    {
+        $authenticatedUser = $request->user();
+
+        abort_unless(
+            $authenticatedUser instanceof Model
+                && User::connectionCacheIdentity($authenticatedUser->getConnection())
+                    === User::connectionCacheIdentity($team->getConnection()),
+            404,
+        );
+    }
+
     protected function invitationForTeam(Team $team, string|int $invitation): TeamInvitation
     {
-        return TeamInvitation::on($team->getConnectionName())
-            ->withoutGlobalScopes()
+        /** @var TeamInvitation $invitationResource */
+        $invitationResource = app(config('aura.resources.team-invitation'));
+        $invitationResource = $invitationResource->newInstance();
+        $invitationResource->setConnection($team->getConnectionName());
+
+        return $invitationResource->newQueryWithoutScopes()
             ->whereKey($invitation)
             ->where('team_id', $team->id)
             ->firstOrFail();

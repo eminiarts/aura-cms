@@ -3,9 +3,13 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Roles as RolesField;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
+use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\UserTeams;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Permission;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
+use Aura\Base\Resources\TeamInvitation;
 use Aura\Base\Resources\User;
 use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
 use Aura\Base\Tests\Resources\Post;
@@ -23,7 +27,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 
 class AuthenticateQueueWorkerJob implements ShouldQueue
@@ -74,6 +80,25 @@ class ConnectionAwareUserTeamsProbe extends UserTeams
     public function userForTest(): User
     {
         return $this->user();
+    }
+}
+
+class CurrentTeamConnectionSearchResource extends Resource
+{
+    public static ?string $slug = 'post';
+
+    public static string $type = 'CurrentTeamConnectionSearch';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Title',
+                'slug' => 'title',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'searchable' => true,
+            ],
+        ];
     }
 }
 
@@ -550,6 +575,172 @@ it('resolves memberships roles and catalog generations on the user model connect
         ->and(Role::catalogVersion($tenantConnection))->toBe($tenantCatalogVersion);
 });
 
+it('rejects a same-id team model from another database in membership and switching checks', function () {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedRoleIsolationConnection($defaultConnection, 'Default', false);
+    $tenant = seedRoleIsolationConnection($tenantConnection, 'Tenant', false);
+
+    Auth::setUser($tenant['user']);
+    $tenant['user']->unsetRelation('teams');
+
+    expect(User::connectionCacheIdentity($tenant['user']->teams()->getRelated()->getConnection()))
+        ->toBe(User::connectionCacheIdentity($tenantConnection))
+        ->and($tenant['user']->belongsToTeam($tenant['team']))->toBeTrue()
+        ->and($tenant['user']->belongsToTeam($default['team']))->toBeFalse()
+        ->and($tenant['user']->switchTeam($default['team']))->toBeFalse()
+        ->and($tenantConnection->table('users')->where('id', $tenant['user']->getKey())->value('current_team_id'))
+        ->toBe($tenant['team']->getKey());
+});
+
+it('resolves a team-switch scalar id on the authenticated user database', function () {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedRoleIsolationConnection($defaultConnection, 'Default', false);
+    $tenant = seedRoleIsolationConnection($tenantConnection, 'Tenant', false);
+
+    $this->actingAs($tenant['user'])
+        ->put(route('aura.current-team.update'), ['team_id' => $tenant['team']->getKey()])
+        ->assertRedirect(route('aura.dashboard'));
+
+    expect($default['team']->getKey())->toBe($tenant['team']->getKey())
+        ->and($tenant['user']->fresh()->current_team_id)->toBe($tenant['team']->getKey());
+});
+
+it('resolves guest invitation scalar ids through the configured resource connection', function () {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedTeamListConnection($defaultConnection, 'Default');
+    $tenant = seedTeamListConnection($tenantConnection, 'Tenant');
+    $invitationId = 960030;
+    $timestamp = now();
+
+    foreach ([
+        [$defaultConnection, $default['member']->getAttribute('email')],
+        [$tenantConnection, 'tenant-guest@example.test'],
+    ] as [$connection, $email]) {
+        $connection->table('posts')->insert([
+            'id' => $invitationId,
+            'title' => null,
+            'type' => TeamInvitation::$type,
+            'status' => 'publish',
+            'user_id' => $default['global_admin']->getKey(),
+            'team_id' => $default['team']->getKey(),
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ]);
+        $connection->table('meta')->insert([
+            [
+                'metable_type' => TeamInvitation::class,
+                'metable_id' => $invitationId,
+                'key' => 'email',
+                'value' => $email,
+            ],
+            [
+                'metable_type' => TeamInvitation::class,
+                'metable_id' => $invitationId,
+                'key' => 'role',
+                'value' => $default['role']->getKey(),
+            ],
+        ]);
+    }
+
+    $teamResource = new Team;
+    $teamResource->setConnection($tenantConnection->getName());
+    app()->instance(config('aura.resources.team'), $teamResource);
+
+    $invitationResource = new TeamInvitation;
+    $invitationResource->setConnection($tenantConnection->getName());
+    app()->instance(config('aura.resources.team-invitation'), $invitationResource);
+
+    config(['aura.auth.user_invitations' => true]);
+    Auth::logout();
+
+    $url = URL::signedRoute('aura.invitation.register', [
+        'team' => $tenant['team']->getKey(),
+        'teamInvitation' => $invitationId,
+    ]);
+
+    $this->get($url)
+        ->assertOk()
+        ->assertSee('Tenant Team');
+});
+
+it('creates an authorized global permission only on the supplied resource connection', function () {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedTeamListConnection($defaultConnection, 'Default');
+    $tenant = seedTeamListConnection($tenantConnection, 'Tenant');
+    $slug = 'tenant-authorized-global';
+
+    Auth::setUser($tenant['global_admin']);
+
+    $permission = Permission::createGlobal([
+        'name' => 'Tenant Authorized Global',
+        'slug' => $slug,
+        'group' => 'Connection',
+    ], $tenantConnection);
+    $requestPermission = Permission::createGlobal([
+        'name' => 'Tenant Request Global',
+        'slug' => 'tenant-request-global',
+        'group' => 'Connection',
+    ]);
+
+    expect($permission->getConnectionName())->toBe($tenantConnection->getName())
+        ->and($requestPermission->getConnectionName())->toBe($tenantConnection->getName())
+        ->and($tenantConnection->table('permissions')->where('slug', $slug)->exists())->toBeTrue()
+        ->and($tenantConnection->table('permissions')->where('slug', 'tenant-request-global')->exists())->toBeTrue()
+        ->and($defaultConnection->table('permissions')->where('slug', $slug)->exists())->toBeFalse()
+        ->and($defaultConnection->table('permissions')->where('slug', 'tenant-request-global')->exists())->toBeFalse()
+        ->and($default['team']->getKey())->toBe($tenant['team']->getKey());
+});
+
+it('keeps container-connected non-user global search queries on that database', function () {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedTeamListConnection($defaultConnection, 'Default');
+    $tenant = seedTeamListConnection($tenantConnection, 'Tenant');
+    $postId = 970030;
+    $timestamp = now();
+
+    foreach ([
+        [$defaultConnection, 'Default Connection Needle'],
+        [$tenantConnection, 'Tenant Connection Needle'],
+    ] as [$connection, $title]) {
+        $connection->table('posts')->insert([
+            'id' => $postId,
+            'title' => $title,
+            'type' => CurrentTeamConnectionSearchResource::$type,
+            'status' => 'publish',
+            'user_id' => $default['global_admin']->getKey(),
+            'team_id' => $default['team']->getKey(),
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ]);
+    }
+
+    Aura::fake();
+    Aura::registerResources([CurrentTeamConnectionSearchResource::class]);
+
+    $searchResource = new CurrentTeamConnectionSearchResource;
+    $searchResource->setConnection($tenantConnection->getName());
+    app()->instance(CurrentTeamConnectionSearchResource::class, $searchResource);
+
+    if (! Route::has('aura.post.view')) {
+        Route::get('/current-team-connection-search/{id}', fn () => null)
+            ->name('aura.post.view');
+    }
+
+    Auth::setUser($tenant['global_admin']);
+
+    $globalSearch = new GlobalSearch;
+    $globalSearch->search = 'Connection Needle';
+
+    expect($globalSearch->getSearchResultsProperty()->flatten(1)->pluck('title')->all())
+        ->toBe(['Tenant Connection Needle'])
+        ->and($default['team']->getKey())->toBe($tenant['team']->getKey());
+});
+
 it('isolates global and member team lists and rename invalidation by connection', function () {
     $defaultConnection = DB::connection();
     $tenantConnection = currentTeamTenantConnection();
@@ -717,6 +908,27 @@ it('does not carry an authenticated team id into permission generation on anothe
         ->exists())->toBeFalse()
         ->and($tenantConnection->table('permissions')->whereNull('team_id')->count())->toBeGreaterThan(0)
         ->and($defaultConnection->table('permissions')->count())->toBe(0);
+});
+
+it('refuses all-resource permission generation when its named database identity changes', function () {
+    $tenantConnection = currentTeamTenantConnection();
+    $job = new GenerateAllResourcePermissions(null, $tenantConnection->getName());
+    $replacementDatabase = tempnam(sys_get_temp_dir(), 'aura-all-connection-drift-');
+
+    expect($replacementDatabase)->toBeString();
+
+    try {
+        Aura::fake();
+        Aura::registerResources([]);
+        config()->set('database.connections.current_team_tenant.database', $replacementDatabase);
+        DB::purge('current_team_tenant');
+
+        expect(fn () => $job->handle())
+            ->toThrow(RuntimeException::class, 'database connection identity changed');
+    } finally {
+        DB::purge('current_team_tenant');
+        @unlink($replacementDatabase);
+    }
 });
 
 it('validates user email uniqueness on the authenticated model connection', function () {

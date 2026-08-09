@@ -15,27 +15,34 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class GenerateAllResourcePermissions
 {
     use Dispatchable, InteractsWithQueue, SerializesModels;
 
-    private ?string $connectionName;
+    private string $connectionIdentity;
+
+    private string $connectionName;
 
     private ?int $teamId;
 
     public function __construct(?int $teamId = null, ?string $connectionName = null)
     {
         $authenticatedUser = auth()->user();
-        $this->connectionName = $connectionName ?? ($authenticatedUser instanceof Model
+        $connectionName ??= $authenticatedUser instanceof Model
             ? $authenticatedUser->getConnectionName()
-            : null);
+            : null;
+        $connection = DB::connection($connectionName);
+
+        $this->connectionName = (string) $connection->getName();
+        $this->connectionIdentity = User::connectionCacheIdentity($connection);
         $this->teamId = $teamId;
 
         if ($this->teamId === null
             && $authenticatedUser instanceof Model
             && User::connectionCacheIdentity($authenticatedUser->getConnection())
-                === User::connectionCacheIdentity(DB::connection($this->connectionName))
+                === $this->connectionIdentity
         ) {
             $this->teamId = $authenticatedUser->getAttribute('current_team_id');
         }
@@ -43,9 +50,13 @@ class GenerateAllResourcePermissions
 
     public function handle(): void
     {
+        if (User::connectionCacheIdentity(DB::connection($this->connectionName)) !== $this->connectionIdentity) {
+            throw new RuntimeException('The database connection identity changed after this permission-generation job was dispatched.');
+        }
+
         $resources = collect(Aura::getResources())->filter(function ($resource) {
             try {
-                $resourceInstance = app($resource);
+                $resourceInstance = clone app($resource);
                 $resourceInstance->setConnection($this->connectionName);
 
                 return is_subclass_of($resourceInstance, Resource::class) &&
@@ -62,7 +73,7 @@ class GenerateAllResourcePermissions
 
         DB::connection($this->connectionName)->transaction(function () use ($resources) {
             foreach ($resources as $resource) {
-                $resourceInstance = app($resource);
+                $resourceInstance = clone app($resource);
                 $resourceInstance->setConnection($this->connectionName);
 
                 $this->generatePermissionsForResource($resourceInstance);
