@@ -150,41 +150,46 @@ aspect-ratio `0.4.2`, and tailwind-scrollbar `2.1.0`.
 `public/vendor/aura/public`. The last directory contains local Inter files and
 favicons; it contains no remote font dependency.
 
-The reference Tailwind 4 host at commit
-`c46654793eb36d91fb56f40297237978f91c0373` locked Tailwind CSS and
-`@tailwindcss/vite` `4.3.3`, PostCSS `8.5.26`, Vite `8.2.1`, and
-laravel-vite-plugin `3.1.3`. Its host CSS is already a separate Vite input,
-which validates the integration shape above.
+The isolated host fixture under
+`tests/Fixtures/FrontendCompatibility/v4` commits its own `package.json` and
+`package-lock.json`. It pins Tailwind CSS and `@tailwindcss/vite` `4.3.3` and
+Vite `8.2.1`; none of those packages enter Aura's Tailwind 3 dependency tree.
+Its HTML-linked CSS entrypoint is built by the real Vite plugin, which validates
+the supported host integration shape.
 
 ## Reproducible evidence
 
-Fixtures live in `tests/Fixtures/FrontendCompatibility`. Generated CSS belongs
-in a temporary directory and is not committed.
+Fixtures live in `tests/Fixtures/FrontendCompatibility`. The Node runner uses
+`os.tmpdir()`, `path`, and `execFile()` and removes its generated workspace.
+Generated CSS and the isolated Tailwind 4 install are never committed.
 
 ### Package install and build
 
 ```bash
+composer install
 npm ci
 npm ls --depth=0 tailwindcss postcss vite laravel-vite-plugin autoprefixer postcss-import
-
-AURA_GATE_OUT=$(mktemp -d /tmp/aura-frontend-pre-main.XXXXXX)
-npm run build -- --outDir "$AURA_GATE_OUT" --emptyOutDir
-
-AURA_GATE_LIB_OUT=$(mktemp -d /tmp/aura-frontend-pre-lib.XXXXXX)
-npm run build:lib -- --outDir "$AURA_GATE_LIB_OUT" --emptyOutDir
+npm run build
+git diff --exit-code -- resources/dist
 ```
 
 Results on the audit snapshot:
 
 - `npm ci`: pass; 190 packages installed.
-- Main build: pass; Vite `8.1.5`, 158 modules transformed, CSS 212,231
-  bytes and JavaScript 267,729 bytes before gzip.
-- The fresh CSS was `app-BvIzBNVo.css`, SHA-256
-  `61093ab67d0d115cbebbd2b393bde1e8e147727f753791bbd47637c76c7aa2b1`.
-  The tracked manifest references `app-BzQlU9Hi.css` (213,714 bytes,
-  SHA-256
-  `ac245d6802619eaa6bc8549be8dcc0164909224663931e9dde4c3f2bc4913e08`).
-  The committed main CSS is therefore not reproducible from the current lock.
+- Main build: pass twice from the current locks; each run used Vite `8.1.5`,
+  transformed 158 modules, and left `resources/dist` byte-for-byte unchanged.
+- The manifest is 331 bytes (SHA-256
+  `349e95bb3c759a9d1ffce652ef8397d12f354655692c5c9ff0f8333e3134a699`)
+  and references `assets/app-BzQlU9Hi.css` and
+  `assets/app-ccnW50-_.js`.
+- The reproduced CSS is 213,714 bytes (SHA-256
+  `ac245d6802619eaa6bc8549be8dcc0164909224663931e9dde4c3f2bc4913e08`);
+  the reproduced JavaScript is 267,729 bytes (SHA-256
+  `9fdf0e55d0f5a74ddb65467a2686701e989bba921de45dfdc339c77f13647253`).
+- Composer dependencies are a build precondition: Aura's Tailwind content
+  configuration deliberately scans Laravel pagination templates under
+  `vendor/laravel/framework`. A temporary source archive without `vendor`
+  emits a smaller stylesheet and is not valid reproducibility evidence.
 - Library build: fail during Vite resolution because
   `monaco-themes` does not export `./themes/GitHub Dark.json` for the active
   production import conditions. This is independent of Tailwind but blocks a
@@ -193,56 +198,52 @@ Results on the audit snapshot:
   PostCSS, nanoid, and brace-expansion. Dependency updates were deliberately
   outside this gate.
 
-### Tailwind 3 contract fixture
+### Cross-major contract fixture
 
 ```bash
-AURA_V3_OUT=$(mktemp -d /tmp/aura-tailwind-v3.XXXXXX)
-./node_modules/.bin/tailwindcss \
-  -c tests/Fixtures/FrontendCompatibility/tailwind-v3.config.cjs \
-  -i tests/Fixtures/FrontendCompatibility/tailwind-v3.css \
-  -o "$AURA_V3_OUT/output.css" \
-  --minify
-node tests/Fixtures/FrontendCompatibility/assert-output.mjs \
-  "$AURA_V3_OUT/output.css"
+npm run test:frontend-compatibility
 ```
 
-Tailwind `3.4.19`: pass; minified output 7,856 bytes. The output contains the
-shared runtime variables, semantic utilities including opacity, legacy
-`primary-*`/`sidebar-*` utilities, `font-sans`, and the `.dark` selector
-variant.
+The runner snapshots five full, representative Aura sources declared in
+`source-files.json`: the application shell, primary and light buttons, list
+table, and PHP status field. It verifies their expected literal classes before
+copying them. Both compiler lanes scan that same source snapshot plus the
+gate-only semantic probe. The audited source snapshot contains five files and
+has SHA-256
+`a99851e8d838c985066d56a34d00d52fcad5c8fa755a6deab8a08a2abae7f560`.
 
-### Tailwind 4 contract fixture
+The assertions parse generated CSS with PostCSS. They compare declarations and
+normalized values rather than checking output substrings. Coverage includes:
 
-Use an isolated directory so Aura's v3 `node_modules` cannot satisfy imports:
+- exact light and distinct dark token values;
+- semantic color and font mappings;
+- legacy primary, sidebar, and dark-mode aliases;
+- semantic and legacy alpha modifiers;
+- utilities found in the real Blade and PHP sources; and
+- absence of remote stylesheet and asset URLs.
 
-```bash
-AURA_V4_DIR=$(mktemp -d /tmp/aura-tailwind-v4.XXXXXX)
-cp tests/Fixtures/FrontendCompatibility/{assert-output.mjs,representative.html,token-contract.css,tailwind-v4.css,tailwind-v3-source-under-v4.css} "$AURA_V4_DIR"
-npm install --prefix "$AURA_V4_DIR" --no-package-lock --no-save \
-  tailwindcss@4.3.3 @tailwindcss/cli@4.3.3
+Results on the audit snapshot:
 
-cd "$AURA_V4_DIR"
-./node_modules/.bin/tailwindcss -i tailwind-v4.css -o output.css --minify
-node assert-output.mjs output.css
-```
+- Tailwind `3.4.19`: pass, 486 parsed assertions, 17,433 output bytes.
+- Tailwind `4.3.3` through Vite `8.2.1`: pass, 460 parsed assertions,
+  20,497 output bytes.
 
-Tailwind `4.3.3`: pass; minified output 8,329 bytes. The output contains the
-same runtime variables and representative utility names, including opacity,
-with dark utilities scoped through `.dark`.
+The v4 lane copies only the committed isolated fixture and shared contract into
+the temporary workspace, runs `npm ci` against its lockfile, and builds its
+actual Vite HTML/CSS entrypoint. It never performs an unlocked package install
+and does not alter Aura's root lockfile or runtime dependencies.
 
 ### Proved cross-major failures
 
-Compiling the v4 fixture with Aura's v3 CLI exits `1`:
+The same npm script also proves both unsupported boundaries. Compiling the v4
+entrypoint with Aura's v3 CLI exits `1` because v3 cannot resolve the v4
+`tailwindcss` import. Building a source-verified extract of Aura's v3
+entrypoint with the v4 Vite host exits `1` because `tailwindcss/base` is not a
+v4 style export:
 
 ```text
 Error: Failed to find 'tailwindcss'
-```
-
-Compiling the representative Aura v3 source entry with the isolated v4 CLI
-also exits `1`:
-
-```text
-"./base" is not exported under the condition "style" from package tailwindcss
+"./base" is not exported under the conditions ["style", "production", "import"]
 ```
 
 These failures are why CORE-24 must use the runtime variable bridge and keep
@@ -264,15 +265,17 @@ the package-source layout path, and command registration.
 
 CORE-24 may proceed against this exact build shape, subject to these rules:
 
-1. Keep Aura's production entrypoint on Tailwind 3 and implement the semantic
+1. Install Composer and npm dependencies before package asset verification;
+   Tailwind's package build scans both package and framework-owned source.
+2. Keep Aura's production entrypoint on Tailwind 3 and implement the semantic
    runtime variables/config renderer first.
-2. Rebuild and commit `resources/dist` with the token change; verify the
-   resulting manifest and published asset behavior. Do not treat the current
-   tracked CSS as a reproducible baseline.
-3. Run both compatibility fixtures after every token/config change.
-4. Keep host Tailwind source out of Aura's package build and Aura source out of
+3. Rebuild and commit `resources/dist` with the token change; compare the
+   resulting manifest, content hashes, and published asset behavior against the
+   reproducible baseline above.
+4. Run `npm run test:frontend-compatibility` after every token/config change.
+5. Keep host Tailwind source out of Aura's package build and Aura source out of
    the host build.
-5. Resolve the independent `build:lib` export failure and npm audit findings in
+6. Resolve the independent `build:lib` export failure and npm audit findings in
    dependency-scoped work; do not hide them inside the theme rollout.
-6. The zero-byte `stubs/scaffold` frontend files are not an integration API and
+7. The zero-byte `stubs/scaffold` frontend files are not an integration API and
    must not become the token source of truth.
