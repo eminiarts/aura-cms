@@ -2,7 +2,8 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
-use Illuminate\Support\Facades\Gate;
+use Aura\Base\Livewire\Table\TableMutationDispatcher;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -15,21 +16,23 @@ trait BulkActions
     /**
      * Handle bulk action on the selected rows.
      */
-    public function bulkAction(string $action)
+    public function bulkAction(string $action, TableMutationDispatcher $mutations): void
     {
         $this->ensureBulkActionAllowed($action);
 
-        $ability = $this->bulkActionAbility($action);
+        $ability = $this->resolveBulkActionAbility($action, $mutations);
+        $selectedRows = $this->selectedRowsQuery->get();
 
-        $this->selectedRowsQuery->each(function ($item, $key) use ($action, $ability) {
-            // Authorize the action against each selected model before running it.
-            Gate::authorize($ability, $item);
+        // Preflight every record so a later denial cannot leave a partial mutation.
+        $selectedRows->each(function ($item) use ($ability, $mutations): void {
+            $mutations->authorize($item, $ability);
+        });
 
+        $selectedRows->each(function ($item) use ($action, $selectedRows): void {
             if (str_starts_with($action, 'callFlow.')) {
                 $item->callFlow(explode('.', $action)[1]);
             } elseif (str_starts_with($action, 'multiple')) {
-                $posts = $this->selectedRowsQuery->get();
-                $response = $item->{$action}($posts);
+                $item->{$action}($selectedRows);
 
             } elseif (method_exists($item, $action)) {
                 $item->{$action}();
@@ -42,15 +45,15 @@ trait BulkActions
         $this->notify('Success: '.$action);
     }
 
-    public function bulkCollectionAction($action)
+    public function bulkCollectionAction(string $action, TableMutationDispatcher $mutations): ?StreamedResponse
     {
         $this->ensureBulkActionAllowed($action);
 
-        $ability = $this->bulkActionAbility($action);
+        $ability = $this->resolveBulkActionAbility($action, $mutations);
 
         // Authorize the action against every selected model before running it.
-        $this->selectedRowsQuery->each(function ($item) use ($ability) {
-            Gate::authorize($ability, $item);
+        $this->selectedRowsQuery->each(function ($item) use ($ability, $mutations) {
+            $mutations->authorize($item, $ability);
         });
 
         $ids = $this->selectedRowsQuery->pluck('id')->toArray();
@@ -67,6 +70,8 @@ trait BulkActions
         $this->notify('Success: '.$action);
 
         $this->dispatch('refreshTable');
+
+        return null;
     }
 
     /**
@@ -82,22 +87,21 @@ trait BulkActions
     /**
      * Map a declared bulk action to the policy ability it requires.
      *
-     * Destructive actions are matched by name so they are authorized with the
-     * matching ability; anything else defaults to the mutating 'update' ability.
+     * Kept as an override seam for existing custom Table components.
      */
     protected function bulkActionAbility(string $action): string
     {
-        $normalized = strtolower($action);
+        $normalizedAction = Str::lower($action);
 
-        if (str_contains($normalized, 'forcedelete')) {
+        if (str_contains($normalizedAction, 'forcedelete')) {
             return 'forceDelete';
         }
 
-        if (str_contains($normalized, 'restore')) {
+        if (str_contains($normalizedAction, 'restore')) {
             return 'restore';
         }
 
-        if (str_contains($normalized, 'delete') || str_contains($normalized, 'trash')) {
+        if (str_contains($normalizedAction, 'delete') || str_contains($normalizedAction, 'trash')) {
             return 'delete';
         }
 
@@ -117,5 +121,17 @@ trait BulkActions
         if (! in_array($action, $allowed, true)) {
             abort(403, 'This bulk action is not allowed.');
         }
+    }
+
+    protected function resolveBulkActionAbility(string $action, TableMutationDispatcher $mutations): string
+    {
+        $definitions = (array) $this->getBulkActionsProperty();
+        $definition = $definitions[$action] ?? null;
+
+        if (is_array($definition) && array_key_exists('ability', $definition)) {
+            return $mutations->abilityFor($action, $definition);
+        }
+
+        return $this->bulkActionAbility($action);
     }
 }

@@ -3,7 +3,9 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
+use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
 
 use function Pest\Livewire\livewire;
 
@@ -39,6 +41,14 @@ class SecurityBulkModel extends Resource
                 'slug' => 'title',
             ],
         ];
+    }
+}
+
+class SecurityBulkModelPolicy
+{
+    public function delete(User $user, SecurityBulkModel $resource): bool
+    {
+        return $user->exists && $resource->title === 'Allowed';
     }
 }
 
@@ -109,4 +119,20 @@ test('bulkAction runs a declared action for an authorized user', function () {
         ->assertHasNoErrors();
 
     expect(SecurityBulkModel::count())->toBe(0);
+});
+
+test('bulkAction authorizes every selected record before mutating any record', function () {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(SecurityBulkModel::class, SecurityBulkModelPolicy::class);
+
+    $denied = SecurityBulkModel::create(['title' => 'Denied']);
+    $allowed = SecurityBulkModel::create(['title' => 'Allowed']);
+
+    livewire(Table::class, ['query' => null, 'model' => $allowed])
+        ->set('selected', [$allowed->getKey(), $denied->getKey()])
+        ->call('bulkAction', 'deleteSelected')
+        ->assertStatus(403);
+
+    expect(SecurityBulkModel::whereKey($allowed->getKey())->exists())->toBeTrue()
+        ->and(SecurityBulkModel::whereKey($denied->getKey())->exists())->toBeTrue();
 });

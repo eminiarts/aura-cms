@@ -17,11 +17,13 @@ use Aura\Base\Livewire\Table\Traits\Sorting;
 use Aura\Base\Livewire\Table\Traits\SwitchView;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Closure;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
@@ -130,20 +132,33 @@ class Table extends Component
 
     protected $queryString = ['selectedFilter'];
 
-    public function action($data)
+    public function action(array $data, TableMutationDispatcher $mutations): mixed
     {
+        $data = Validator::make($data, [
+            'action' => ['required', 'string'],
+            'id' => $this->mutationIdentifierRules(),
+        ])->validate();
+
+        $record = $mutations->findRecord($this->model(), $data['id']);
+
         // return redirect to post view
         if ($data['action'] == 'view') {
-            return redirect()->route('aura.'.$this->model()->getSlug().'.view', ['id' => $data['id']]);
+            $mutations->authorize($record, 'view');
+
+            return redirect()->route('aura.'.$this->model()->getSlug().'.view', ['id' => $record->getKey()]);
         }
         // edit
         if ($data['action'] == 'edit') {
-            return redirect()->route('aura.'.$this->model()->getSlug().'.edit', ['id' => $data['id']]);
+            $mutations->authorize($record, 'update');
+
+            return redirect()->route('aura.'.$this->model()->getSlug().'.edit', ['id' => $record->getKey()]);
         }
 
-        if (method_exists($this->model, $data['action'])) {
-            return $this->model()->find($data['id'])->{$data['action']}();
+        if (! $record instanceof Resource) {
+            abort(422, 'Table mutations require an Aura resource.');
         }
+
+        return $mutations->dispatchAction($record, $data['action'], (array) $record->getActions());
     }
 
     public function allTableRows()
@@ -463,16 +478,31 @@ class Table extends Component
         $this->resetPage();
     }
 
-    public function updateCardStatus($cardId, $newStatus)
+    public function updateCardStatus(mixed $cardId, mixed $newStatus, TableMutationDispatcher $mutations): void
     {
-        $card = $this->model->find($cardId);
-        if ($card) {
-            $card->status = $newStatus;
-            $card->save();
-            $this->notify('Card status updated successfully');
-        } else {
-            $this->notify('Card not found', 'error');
+        $data = Validator::make([
+            'cardId' => $cardId,
+            'kanbanStatus' => $newStatus,
+        ], [
+            'cardId' => $this->mutationIdentifierRules(),
+            'kanbanStatus' => [
+                'required',
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    if (! is_int($value) && ! is_string($value)) {
+                        $fail('The '.$attribute.' must be a valid option value.');
+                    }
+                },
+            ],
+        ])->validate();
+
+        $card = $mutations->findRecord($this->model(), $data['cardId']);
+
+        if (! $card instanceof Resource) {
+            abort(422, 'Kanban mutations require an Aura resource.');
         }
+
+        $mutations->updateField($card, 'status', $data['kanbanStatus']);
+        $this->notify('Card status updated successfully');
     }
 
     /**
@@ -508,6 +538,21 @@ class Table extends Component
         } else {
             $this->dispatch('selectedRows', $this->selected);
         }
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    protected function mutationIdentifierRules(): array
+    {
+        return [
+            'required',
+            function (string $attribute, mixed $value, Closure $fail): void {
+                if (! is_int($value) && ! is_string($value)) {
+                    $fail('The '.$attribute.' must be a valid record identifier.');
+                }
+            },
+        ];
     }
 
     /**

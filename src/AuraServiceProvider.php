@@ -50,6 +50,7 @@ use Aura\Base\Livewire\TwoFactorAuthenticationForm;
 use Aura\Base\Livewire\UserTeams;
 use Aura\Base\Navigation\Navigation as AuraNavigation;
 use Aura\Base\Policies\ResourcePolicy;
+use Aura\Base\Policies\ResourcePolicySubject;
 use Aura\Base\Policies\TeamPolicy;
 use Aura\Base\Policies\UserPolicy;
 use Aura\Base\Resources\Team;
@@ -61,6 +62,7 @@ use Aura\Base\Widgets\SparklineArea;
 use Aura\Base\Widgets\SparklineBar;
 use Aura\Base\Widgets\ValueWidget;
 use Aura\Base\Widgets\Widgets;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
@@ -84,7 +86,10 @@ class AuraServiceProvider extends PackageServiceProvider
     {
         parent::boot();
 
-        $this->app->booted(fn () => Aura::captureBaselineState());
+        $this->app->booted(function (): void {
+            $this->registerResourcePolicySubjectAdapter();
+            Aura::captureBaselineState();
+        });
     }
 
     public function bootGate()
@@ -445,5 +450,28 @@ class AuraServiceProvider extends PackageServiceProvider
     protected function getResources(): array
     {
         return config('aura.resources');
+    }
+
+    protected function registerResourcePolicySubjectAdapter(): void
+    {
+        Gate::before(function (Authenticatable $user, string $ability, array $arguments): mixed {
+            $subject = $arguments[0] ?? null;
+
+            if (! is_string($subject) || ! ResourcePolicySubject::supports($ability, $subject)) {
+                return null;
+            }
+
+            $policy = Gate::getPolicyFor($subject);
+
+            if (! $policy instanceof ResourcePolicy && ! $policy instanceof TeamPolicy) {
+                return null;
+            }
+
+            if (! ResourcePolicySubject::usesAuraSubject($policy, $ability)) {
+                return null;
+            }
+
+            return ResourcePolicySubject::evaluate($policy, $user, $ability, $subject, $arguments);
+        });
     }
 }

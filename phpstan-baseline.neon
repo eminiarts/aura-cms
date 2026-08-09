@@ -618,7 +618,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Table\\Table\:\:\$selectedRowsQuery\.$#'
 			identifier: property.notFound
-			count: 5
+			count: 4
 			path: src/Livewire/Table/Table.php
 
 		-
@@ -648,7 +648,7 @@ parameters:
 		-
 			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Table\\Table\:\:notify\(\)\.$#'
 			identifier: method.notFound
-			count: 7
+			count: 6
 			path: src/Livewire/Table/Table.php
 
 		-
