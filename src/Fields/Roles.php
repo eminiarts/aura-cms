@@ -3,6 +3,7 @@
 namespace Aura\Base\Fields;
 
 use Aura\Base\Contracts\PreloadsTableDisplay;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Illuminate\Database\Eloquent\Collection;
@@ -124,8 +125,14 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
             $assignableRoles->visibleToTeam($teamId);
         }
 
-        $requestedRoles = $assignableRoles->whereKey($roleIds)->get();
-        $existingRoles = $currentRoles->get();
+        $resolveRoles = fn () => [
+            $assignableRoles->whereKey($roleIds)->get(),
+            $currentRoles->get(),
+        ];
+
+        [$requestedRoles, $existingRoles] = config('aura.teams') && $teamId !== null
+            ? TeamScope::forTeam($teamId, $resolveRoles)
+            : $resolveRoles();
 
         abort_unless($requestedRoles->count() === count(array_unique($roleIds)), 403);
 
@@ -157,6 +164,8 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
                 $post->roles()->detach();
             }
 
+            $post->unsetRelation('roles');
+
             return;
         }
 
@@ -179,6 +188,8 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
                 $post->roles()->attach($roleId);
             }
         }
+
+        $post->unsetRelation('roles');
     }
 
     public function tableEagerLoad(array $field): string|array|null

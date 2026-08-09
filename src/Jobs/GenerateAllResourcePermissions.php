@@ -3,6 +3,7 @@
 namespace Aura\Base\Jobs;
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Permission;
 use Aura\Base\Resources\Team;
@@ -17,14 +18,14 @@ class GenerateAllResourcePermissions
 {
     use Dispatchable, InteractsWithQueue, SerializesModels;
 
-    private $teamId;
+    private ?int $teamId;
 
     public function __construct(?int $teamId = null)
     {
         $this->teamId = $teamId ?? auth()->user()?->current_team_id;
     }
 
-    public function handle()
+    public function handle(): void
     {
         $resources = collect(Aura::getResources())->filter(function ($resource) {
             try {
@@ -49,7 +50,7 @@ class GenerateAllResourcePermissions
         });
     }
 
-    private function generatePermissionsForResource(Resource $resource)
+    private function generatePermissionsForResource(Resource $resource): void
     {
         $permissions = [
             'view' => "View {$resource->pluralName()}",
@@ -64,16 +65,22 @@ class GenerateAllResourcePermissions
 
         foreach ($permissions as $action => $name) {
             try {
-                Permission::withoutGlobalScopes()->updateOrCreate(
-                    [
-                        'slug' => "{$action}-{$resource::$slug}",
-                        'team_id' => $this->teamId,
-                    ],
-                    [
-                        'name' => $name,
-                        'group' => $resource->pluralName(),
-                    ]
-                );
+                $slug = "{$action}-{$resource::$slug}";
+                $values = [
+                    'name' => $name,
+                    'group' => $resource->pluralName(),
+                ];
+
+                if (! config('aura.teams')) {
+                    Permission::withoutGlobalScopes()->updateOrCreate(['slug' => $slug], $values);
+                } elseif ($this->teamId === null) {
+                    Permission::updateOrCreateGlobalForSystem(['slug' => $slug], $values);
+                } else {
+                    TeamScope::forTeam($this->teamId, fn () => Permission::updateOrCreate(
+                        ['slug' => $slug, 'team_id' => $this->teamId],
+                        $values
+                    ));
+                }
             } catch (QueryException $e) {
                 // Check if it's a duplicate entry error
                 Log::error($e->getMessage());

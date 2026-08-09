@@ -4,6 +4,7 @@ namespace Aura\Base\Models\Scopes;
 
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
@@ -14,60 +15,71 @@ use Illuminate\Support\Facades\Gate;
 
 class TeamScope implements Scope
 {
-    // Static flag to prevent recursive calls
-    private static $applying = false;
+    private static bool $applying = false;
+
+    private static int $bypassDepth = 0;
 
     /** @var array<int|string, int|null> */
     private static array $currentTeamIds = [];
 
+    /** @var array<string, true> */
+    private static array $transactionResetRegistrations = [];
+
+    /** @var list<int|string> */
+    private static array $trustedTeamContexts = [];
+
     /**
      * Apply the scope to a given Eloquent query builder.
-     *
-     * @return void
      */
-    public function apply(Builder $builder, Model $model)
+    public function apply(Builder $builder, Model $model): void
     {
-        if (! config('aura.teams')) {
+        if (! config('aura.teams') || self::$bypassDepth > 0) {
             return;
         }
 
-        // Prevent recursive calls
         if (self::$applying) {
             return;
         }
-
-        // Don't apply scope in console (optional, as you commented it out)
-        // if (app()->runningInConsole()) {
-        //     return;
-        // }
 
         self::$applying = true;
 
         try {
             $currentTeamId = $this->getCurrentTeamId();
-            // Handle User model specially
+            $authUser = Auth::user();
+            $hasTenantContext = self::$trustedTeamContexts !== [];
+
             if ($model->getTable() === 'users') {
-                $authUser = Auth::user();
                 $isGlobalAdmin = $authUser && Gate::forUser($authUser)->allows(User::GLOBAL_ADMIN_GATE);
 
-                if (! $isGlobalAdmin) {
-                    if ($currentTeamId !== null) {
-                        $builder->whereHas('teams', function ($query) use ($currentTeamId) {
-                            $query->where('teams.id', $currentTeamId);
-                        });
-                    } elseif ($authUser) {
-                        $builder->whereKey($authUser->getAuthIdentifier());
-                    }
+                if ($isGlobalAdmin) {
+                    return;
                 }
 
-                self::$applying = false;
+                if ($currentTeamId !== null) {
+                    $builder->whereHas('teams', function ($query) use ($currentTeamId) {
+                        $query->where('teams.id', $currentTeamId);
+                    });
 
-                return;  // Early return is important.
+                    return;
+                }
+
+                if ($authUser && ! $hasTenantContext) {
+                    $builder->whereKey($authUser->getAuthIdentifier());
+
+                    return;
+                }
+
+                $builder->whereRaw('1 = 0');
+
+                return;
             }
 
-            // For Team model, don't apply team scope
             if ($model->getTable() === 'teams') {
-                self::$applying = false;
+                if ($hasTenantContext && $currentTeamId !== null) {
+                    $builder->whereKey($currentTeamId);
+                } elseif (! $authUser) {
+                    $builder->whereRaw('1 = 0');
+                }
 
                 return;
             }
@@ -76,15 +88,11 @@ class TeamScope implements Scope
                 && $model::sharesRecordsAcrossTeams();
 
             if ($currentTeamId === null) {
-                if (Auth::check()) {
-                    if ($sharesRecordsAcrossTeams) {
-                        $builder->whereNull($model->getTable().'.team_id');
-                    } else {
-                        $builder->whereRaw('1 = 0');
-                    }
+                if ($authUser && $sharesRecordsAcrossTeams) {
+                    $builder->whereNull($model->getTable().'.team_id');
+                } else {
+                    $builder->whereRaw('1 = 0');
                 }
-
-                self::$applying = false;
 
                 return;
             }
@@ -96,28 +104,22 @@ class TeamScope implements Scope
                     $query->where($column, $currentTeamId)->orWhereNull($column);
                 });
 
-                self::$applying = false;
-
                 return;
             }
 
-            // For all other models, filter by team_id
             $builder->where($model->getTable().'.team_id', $currentTeamId);
-
+        } finally {
             self::$applying = false;
-
-            return;
-
-        } catch (\Exception $e) {
-            self::$applying = false;
-            throw $e;
         }
     }
 
     public static function flushState(): void
     {
         self::$applying = false;
+        self::$bypassDepth = 0;
         self::$currentTeamIds = [];
+        self::$trustedTeamContexts = [];
+        self::$transactionResetRegistrations = [];
     }
 
     public static function forgetCurrentTeamId(string|int|null $userId): void
@@ -130,17 +132,90 @@ class TeamScope implements Scope
     }
 
     /**
+     * Execute a complete background query inside an explicit tenant context.
+     *
+     * @template TValue
+     *
+     * @param  callable(): TValue  $callback
+     * @return TValue
+     */
+    public static function forTeam(int|string $teamId, callable $callback): mixed
+    {
+        self::$trustedTeamContexts[] = $teamId;
+
+        try {
+            return $callback();
+        } finally {
+            array_pop(self::$trustedTeamContexts);
+        }
+    }
+
+    /**
+     * Invalidate a user's request snapshot now, but preserve the last committed
+     * shared-cache value until an open transaction actually commits.
+     */
+    public static function invalidateCurrentTeamId(string|int|null $userId): void
+    {
+        if ($userId === null) {
+            return;
+        }
+
+        self::forgetCurrentTeamId($userId);
+
+        $connection = DB::connection();
+
+        if (! self::hasActiveApplicationTransaction($connection)) {
+            Cache::forget(User::currentTeamCacheKey($userId));
+
+            return;
+        }
+
+        self::registerTransactionReset($connection, $userId);
+    }
+
+    /**
+     * Execute a complete trusted query without tenant constraints.
+     *
+     * @template TValue
+     *
+     * @param  callable(): TValue  $callback
+     * @return TValue
+     */
+    public static function withoutTenantScope(callable $callback): mixed
+    {
+        self::$bypassDepth++;
+
+        try {
+            return $callback();
+        } finally {
+            self::$bypassDepth--;
+        }
+    }
+
+    /**
      * Get the current team ID without triggering the scope again.
      *
      * @return int|null
      */
     private function getCurrentTeamId()
     {
+        if (self::$trustedTeamContexts !== []) {
+            return self::$trustedTeamContexts[array_key_last(self::$trustedTeamContexts)];
+        }
+
         if (! Auth::check()) {
             return;
         }
 
         $userId = Auth::id();
+
+        $connection = DB::connection();
+
+        if (self::hasActiveApplicationTransaction($connection)) {
+            self::registerTransactionReset($connection, $userId);
+
+            return $connection->table('users')->where('id', $userId)->value('current_team_id');
+        }
 
         if (array_key_exists($userId, self::$currentTeamIds)) {
             return self::$currentTeamIds[$userId];
@@ -160,5 +235,41 @@ class TeamScope implements Scope
         Cache::forever($cacheKey, $currentTeamId ?? false);
 
         return self::$currentTeamIds[$userId] = $currentTeamId;
+    }
+
+    private static function hasActiveApplicationTransaction(Connection $connection): bool
+    {
+        $transactionLevel = $connection->transactionLevel();
+
+        if (app()->runningUnitTests()) {
+            // Laravel's database test traits keep one outer rollback-only
+            // transaction open. Nested levels represent application work.
+            return $transactionLevel > 1;
+        }
+
+        return $transactionLevel > 0;
+    }
+
+    private static function registerTransactionReset(Connection $connection, string|int $userId): void
+    {
+        $registrationKey = spl_object_id($connection).':'.$userId;
+
+        if (isset(self::$transactionResetRegistrations[$registrationKey])) {
+            return;
+        }
+
+        self::$transactionResetRegistrations[$registrationKey] = true;
+
+        $clearProcessState = function () use ($registrationKey, $userId): void {
+            unset(self::$transactionResetRegistrations[$registrationKey]);
+            self::forgetCurrentTeamId($userId);
+        };
+
+        $connection->afterCommit(function () use ($clearProcessState, $userId): void {
+            $clearProcessState();
+            Cache::forget(User::currentTeamCacheKey($userId));
+        });
+
+        $connection->afterRollBack($clearProcessState);
     }
 }

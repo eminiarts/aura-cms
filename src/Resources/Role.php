@@ -29,18 +29,6 @@ class Role extends Resource
 
     public static $customTable = true;
 
-    /**
-     * Transient "make this role global" intent captured from the guarded
-     * `is_global` form toggle. It is NOT a database column: the setIsGlobal
-     * mutator (setIsGlobalAttribute) diverts the submitted value here so it
-     * never reaches an INSERT,
-     * and the `saving` hook below translates it into the authoritative team_id
-     * write (team_id = null for a Global Role), gated on the actor being a
-     * Global Admin. `null` means the toggle was never submitted (leave team_id
-     * exactly as the normal pipeline set it).
-     */
-    public ?bool $globalIntent = null;
-
     public static $globalSearch = false;
 
     public static bool $sharedAcrossTeams = true;
@@ -160,37 +148,21 @@ class Role extends Resource
      * `migrate`, or the test harness, which does not run aura:install), using the
      * shared catalogDefaults().
      *
-     * The row is written with saveQuietly() so the InitialPostFields saving hook
-     * — which auto-assigns the current team's id whenever team_id is unset — does
-     * not silently re-team the Global Role. In Teams-off mode the roles table has
-     * no team_id column, so the flat catalog row is used as-is. The catalog
-     * version is bumped explicitly since quiet writes fire no model events.
+     * Teams-on creation uses Resource's explicit trusted global-write contract,
+     * which preserves team_id = null without bypassing model events. In Teams-off
+     * mode the roles table has no team_id column, so the flat catalog row is used.
      */
     public static function firstOrCreateCatalogRole(string $slug): self
     {
-        $query = static::withoutGlobalScopes()->where('slug', $slug);
-
-        if (config('aura.teams')) {
-            $query->whereNull('team_id');
-        }
-
-        if ($role = $query->first()) {
-            return $role;
-        }
-
         $attributes = static::catalogDefaults($slug);
 
         if (config('aura.teams')) {
-            // team_id is fillable, so passing it explicitly writes a Global Role.
-            $attributes['team_id'] = null;
+            unset($attributes['slug']);
+
+            return static::firstOrCreateGlobalForSystem(['slug' => $slug], $attributes);
         }
 
-        $role = static::withoutGlobalScopes()->newModelInstance($attributes);
-        $role->saveQuietly();
-
-        static::bumpCatalogVersion();
-
-        return $role;
+        return static::withoutGlobalScopes()->firstOrCreate(['slug' => $slug], $attributes);
     }
 
     /**
@@ -276,9 +248,9 @@ class Role extends Resource
                 'on_view' => true,
                 // Client-advisory only: the toggle is shown to Global Admins so
                 // they can promote a role to the catalog. The authoritative
-                // guard lives server-side in the `saving` hook, which ignores
-                // the intent for any non-Global-Admin actor. Teams-off has no
-                // global/team distinction, so the toggle is hidden entirely.
+                // path calls createGlobal()/promoteToGlobal(), which authorize
+                // the createGlobal policy. Teams-off has no global/team
+                // distinction, so the toggle is hidden entirely.
                 'conditional_logic' => function ($model, $post) {
                     return config('aura.teams') && auth()->check() && Gate::allows('AuraGlobalAdmin');
                 },
@@ -440,16 +412,13 @@ class Role extends Resource
     }
 
     /**
-     * Capture the guarded `is_global` toggle without ever letting it reach the
-     * database as a column. The submitted value is diverted into the transient
-     * $globalIntent property; the `saving` hook applies it (team_id = null) only
-     * for a Global Admin actor. Non-global/absent submissions leave team_id as
-     * the normal pipeline set it, so the toggle can never self-grant catalog
-     * scope through mass assignment or form tampering.
+     * Swallow direct mass assignment of the virtual form field. The Livewire
+     * resource components remove it from validated attributes and route global
+     * creation/promotion through Resource's explicit, policy-checked methods.
      */
     public function setIsGlobalAttribute($value): void
     {
-        $this->globalIntent = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+        // Intentionally not persisted.
     }
 
     /**
@@ -503,40 +472,6 @@ class Role extends Resource
     protected static function booted()
     {
         parent::booted();
-
-        // Apply the guarded `is_global` toggle. Registered from booted() so it
-        // runs AFTER InitialPostFields' saving hook (which auto-teams a new row
-        // to the current team): only here can team_id be forced back to null for
-        // a Global Admin promoting a role to the catalog. The intent is honored
-        // for a Global Admin only; every other actor's toggle is silently
-        // refused, so a Global Role can never be minted through form tampering.
-        static::saving(function (self $role) {
-            if ($role->globalIntent === null || ! config('aura.teams')) {
-                return;
-            }
-
-            $actor = auth()->user();
-            $canCreateGlobalRole = $actor && Gate::forUser($actor)->allows('createGlobal', $role);
-
-            if (! $canCreateGlobalRole) {
-                // Silent refusal: a non-Global-Admin can never produce a Global
-                // Role. If nothing team-scoped it yet, pin it to the actor's
-                // current team so the escalation attempt yields a Team Role.
-                if ($role->getAttribute('team_id') === null) {
-                    $role->setAttribute('team_id', optional($actor)->current_team_id);
-                }
-
-                return;
-            }
-
-            if ($role->globalIntent === true) {
-                $role->setAttribute('team_id', null);
-            } elseif ($role->getAttribute('team_id') === null) {
-                // A Global Admin explicitly turning the toggle off demotes the
-                // role to a Team Role in their current team.
-                $role->setAttribute('team_id', optional($actor)->current_team_id);
-            }
-        });
 
         // Any catalog write (including creating or deleting a Shadow) bumps the
         // Role Catalog version so every user's resolved-roles memo recomputes on

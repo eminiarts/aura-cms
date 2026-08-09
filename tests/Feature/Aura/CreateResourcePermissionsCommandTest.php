@@ -72,19 +72,25 @@ describe('duplicate handling', function () {
         $user = User::factory()->create(['id' => 1]);
 
         $resource = app(User::class);
-        Permission::create([
+        $attributes = [
             'name' => 'View '.$resource->pluralName(),
             'slug' => 'view-'.$resource::$slug,
             'group' => $resource->pluralName(),
-        ]);
+        ];
 
-        $initialCount = Permission::where('slug', 'view-'.$resource::$slug)->count();
+        if (config('aura.teams')) {
+            Permission::createGlobalForSystem($attributes);
+        } else {
+            Permission::withoutGlobalScopes()->create($attributes);
+        }
+
+        $initialCount = Permission::withoutGlobalScopes()->where('slug', 'view-'.$resource::$slug)->count();
         expect($initialCount)->toBe(1);
 
         $this->artisan('aura:create-resource-permissions')
             ->assertSuccessful();
 
-        $finalCount = Permission::where('slug', 'view-'.$resource::$slug)->count();
+        $finalCount = Permission::withoutGlobalScopes()->where('slug', 'view-'.$resource::$slug)->count();
         expect($finalCount)->toBe(1);
     });
 });

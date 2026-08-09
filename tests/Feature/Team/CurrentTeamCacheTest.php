@@ -201,3 +201,61 @@ it('resets the current-team snapshot after a queue job is processed', function (
     expect(Post::whereKey($postA->id)->exists())->toBeFalse()
         ->and(Post::whereKey($postB->id)->exists())->toBeTrue();
 });
+
+it('never publishes an uncommitted current team and restores scope state after rollback', function () {
+    $user = createSuperAdmin();
+    $teamA = Team::findOrFail($user->current_team_id);
+    $teamB = Team::factory()->createQuietly(['user_id' => $user->id]);
+    $postA = createPost(['title' => 'Rollback team A', 'team_id' => $teamA->id]);
+    $postB = createPost(['title' => 'Rollback team B', 'team_id' => $teamB->id]);
+    $cacheKey = User::currentTeamCacheKey($user->id);
+
+    Aura::flushState();
+    Cache::forget($cacheKey);
+
+    expect(Post::whereKey($postA->id)->exists())->toBeTrue()
+        ->and(Cache::get($cacheKey))->toBe($teamA->id);
+
+    DB::beginTransaction();
+
+    try {
+        $user->forceFill(['current_team_id' => $teamB->id])->save();
+
+        $visibleInsideTransaction = Post::whereKey($postB->id)->exists();
+        $sharedCacheInsideTransaction = Cache::get($cacheKey);
+    } finally {
+        DB::rollBack();
+    }
+
+    expect($visibleInsideTransaction)->toBeTrue()
+        ->and($sharedCacheInsideTransaction)->toBe($teamA->id)
+        ->and(Post::whereKey($postA->id)->exists())->toBeTrue()
+        ->and(Post::whereKey($postB->id)->exists())->toBeFalse()
+        ->and(Cache::get($cacheKey))->toBe($teamA->id);
+});
+
+it('keeps a cold shared cache empty before commit and invalidates process state after commit', function () {
+    $user = createSuperAdmin();
+    $teamA = Team::findOrFail($user->current_team_id);
+    $teamB = Team::factory()->createQuietly(['user_id' => $user->id]);
+    $postB = createPost(['title' => 'Committed team B', 'team_id' => $teamB->id]);
+    $cacheKey = User::currentTeamCacheKey($user->id);
+
+    Aura::flushState();
+    Cache::forget($cacheKey);
+
+    DB::beginTransaction();
+    $user->forceFill(['current_team_id' => $teamB->id])->save();
+
+    $visibleBeforeCommit = Post::whereKey($postB->id)->exists();
+    $cacheWasPublishedBeforeCommit = Cache::has($cacheKey);
+
+    DB::commit();
+
+    expect($visibleBeforeCommit)->toBeTrue()
+        ->and($cacheWasPublishedBeforeCommit)->toBeFalse()
+        ->and(Cache::has($cacheKey))->toBeFalse()
+        ->and(Post::whereKey($postB->id)->exists())->toBeTrue()
+        ->and(Cache::get($cacheKey))->toBe($teamB->id)
+        ->and($teamA->id)->not->toBe($teamB->id);
+});

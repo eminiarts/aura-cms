@@ -27,25 +27,17 @@ function membershipRole(int $teamId, array $attributes = []): Role
 }
 
 /**
- * A Global Role (team_id = null) in the shared catalog. Written with
- * saveQuietly() so the InitialPostFields saving hook does not re-team the null
- * team_id to the current team — the same posture Role::firstOrCreateCatalogRole
- * uses.
+ * A Global Role in the shared catalog, created through the trusted test contract.
  */
 function catalogRole(string $slug, string $name, bool $superAdmin = false): Role
 {
-    $role = Role::withoutGlobalScopes()->newModelInstance([
+    return Role::createGlobalForSystem([
         'type' => 'Role',
         'name' => $name,
         'slug' => $slug,
         'super_admin' => $superAdmin,
         'permissions' => [],
-        'team_id' => null,
     ]);
-
-    $role->saveQuietly();
-
-    return $role;
 }
 
 /** Record a Membership: user in $team with role $roleId (pivot team_id). */

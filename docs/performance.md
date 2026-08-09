@@ -173,6 +173,13 @@ public function clearFieldsAttributeCache()
 
 `User::clearCurrentTeamCache($userId)` invalidates both layers. Aura calls it for model-based current-team changes, and `Aura::flushState()` clears the process-local snapshots after queue jobs and at each Octane request, task, and tick boundary. Query-builder or raw-SQL updates must call the invalidation method explicitly.
 
+TeamScope never publishes values read inside an open database transaction. It
+bypasses both cache layers for the transactional read, defers shared-cache
+invalidation until commit, and clears the process-local snapshot after either
+commit or rollback. A concurrent request therefore sees the last committed
+shared-cache value, while a rollback cannot poison a long-running worker with
+the abandoned team ID.
+
 ### User Data Caching
 
 User-specific data is cached for 1 hour:

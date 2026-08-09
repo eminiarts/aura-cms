@@ -52,6 +52,7 @@ use Aura\Base\Navigation\Navigation as AuraNavigation;
 use Aura\Base\Policies\ResourcePolicy;
 use Aura\Base\Policies\TeamPolicy;
 use Aura\Base\Policies\UserPolicy;
+use Aura\Base\Providers\AuraEloquentUserProvider;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Widgets\Bar;
@@ -377,6 +378,16 @@ class AuraServiceProvider extends PackageServiceProvider
     public function packageRegistered()
     {
         parent::packageRegistered();
+
+        $this->app->make('auth')->provider('aura-eloquent', function ($app, array $config) {
+            return new AuraEloquentUserProvider($app['hash'], $config['model']);
+        });
+
+        foreach (config('auth.providers', []) as $name => $provider) {
+            if (($provider['driver'] ?? null) === 'eloquent') {
+                config()->set("auth.providers.{$name}.driver", 'aura-eloquent');
+            }
+        }
 
         $this->app->singleton('hook_manager', function ($app) {
             return new HookManager;

@@ -176,28 +176,21 @@ class Create extends Component
 
     public function save()
     {
-        $this->validate();
-
-        $attributes = collect($this->form['fields'])
-            ->except(['team_id', 'user_id', 'type', 'current_team_id'])
-            ->all();
+        $attributes = $this->validatedFormFields($this->validate());
+        $globalIntent = $this->pullGlobalFormIntent($attributes);
 
         $userClass = config('aura.resources.user');
         if (config('aura.teams') && $this->model instanceof $userClass) {
             $attributes['current_team_id'] = data_get(auth()->user(), 'current_team_id');
         }
 
-        if ($this->model->usesCustomTable()) {
+        $persistenceAttributes = $this->model->usesCustomTable()
+            ? $attributes
+            : ['fields' => $attributes];
 
-            $model = $this->model->create($attributes);
-
-        } else {
-
-            // Never trust client-supplied ownership/tenancy columns. team_id,
-            // user_id and type are assigned server-side (see InitialPostFields).
-            $model = $this->model->create(['fields' => $attributes]);
-
-        }
+        $model = $globalIntent === true
+            ? $this->model::createGlobal($persistenceAttributes)
+            : $this->model->create($persistenceAttributes);
 
         $this->notify('Successfully created.');
 

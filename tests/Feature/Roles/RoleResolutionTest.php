@@ -1,7 +1,6 @@
 <?php
 
 use Aura\Base\Database\Seeders\RoleCatalogSeeder;
-use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
@@ -25,16 +24,15 @@ beforeEach(function () {
 });
 
 /**
- * Create a Global Role (team_id = null) bypassing TeamScope.
+ * Create a Global Role through the trusted test-infrastructure contract.
  */
 function makeGlobalRole(string $slug, array $attributes = []): Role
 {
-    return Role::withoutGlobalScopes()->create(array_merge([
+    return Role::createGlobalForSystem(array_merge([
         'name' => ucfirst($slug),
         'slug' => $slug,
         'super_admin' => false,
         'permissions' => [],
-        'team_id' => null,
     ], $attributes));
 }
 

@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 /**
@@ -96,6 +97,13 @@ class Resource extends Model implements DefinesFields
     protected array $tableDisplayCache = [];
 
     protected $with = [];
+
+    /**
+     * Process-local depth for the narrow global-write invariant bypass.
+     * Always entered through a named creation/promotion contract and unwound
+     * in finally, including when model events throw an Error.
+     */
+    private static int $globalWriteDepth = 0;
 
     public function __construct(array $attributes = [])
     {
@@ -200,6 +208,51 @@ class Resource extends Model implements DefinesFields
             $this->load('meta'); // This will refresh only the 'meta' relationship
         }
 
+    }
+
+    /**
+     * Create a shared row visible to every team after policy authorization.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public static function createGlobal(array $attributes = []): static
+    {
+        $resource = app(static::class);
+
+        Gate::authorize('createGlobal', $resource);
+
+        return static::createGlobalRecord($attributes);
+    }
+
+    /**
+     * Create a shared row from trusted infrastructure such as an installer,
+     * seeder, or background catalog synchronization job.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public static function createGlobalForSystem(array $attributes = []): static
+    {
+        static::ensureGlobalWriteIsSupported();
+
+        return static::createGlobalRecord($attributes);
+    }
+
+    /**
+     * Resolve or create one shared global row from trusted infrastructure.
+     *
+     * @param  array<string, mixed>  $attributes
+     * @param  array<string, mixed>  $values
+     */
+    public static function firstOrCreateGlobalForSystem(array $attributes, array $values = []): static
+    {
+        static::ensureGlobalWriteIsSupported();
+
+        return static::withinGlobalWrite(function () use ($attributes, $values): static {
+            $attributes['team_id'] = null;
+            unset($values['team_id']);
+
+            return app(static::class)->newQueryWithoutScopes()->firstOrCreate($attributes, $values);
+        });
     }
 
     public function getBulkActions()
@@ -337,6 +390,11 @@ class Resource extends Model implements DefinesFields
         return in_array($key, $this->baseFillable);
     }
 
+    public static function isGlobalWriteInProgress(): bool
+    {
+        return self::$globalWriteDepth > 0;
+    }
+
     // Override isRelation
     public function isRelation($key)
     {
@@ -355,11 +413,62 @@ class Resource extends Model implements DefinesFields
     }
 
     /**
+     * Move a shared global row into one team through an explicit, authorized
+     * tenancy transition rather than accepting team_id from an ordinary form.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function moveGlobalToTeam(?int $teamId, array $attributes = []): bool
+    {
+        static::ensureGlobalWriteIsSupported();
+
+        if (! $this->exists || $this->getAttribute('team_id') !== null) {
+            throw new \LogicException('Only a persisted global resource can be moved to a team.');
+        }
+
+        if ($teamId === null) {
+            throw new \LogicException('A team is required when moving a global resource.');
+        }
+
+        Gate::authorize('update', $this);
+
+        $this->fill($attributes);
+        $this->setAttribute('team_id', $teamId);
+
+        return $this->save();
+    }
+
+    /**
      * @return BelongsTo
      */
     public function parent()
     {
         return $this->belongsTo(get_class($this), 'parent_id');
+    }
+
+    /**
+     * Promote an existing team row through the same global-write invariant and
+     * policy used by createGlobal().
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function promoteToGlobal(array $attributes = []): bool
+    {
+        static::ensureGlobalWriteIsSupported();
+
+        if (! $this->exists) {
+            throw new \LogicException('Only a persisted resource can be promoted globally.');
+        }
+
+        Gate::authorize('update', $this);
+        Gate::authorize('createGlobal', $this);
+
+        return static::withinGlobalWrite(function () use ($attributes): bool {
+            $this->fill($attributes);
+            $this->setAttribute('team_id', null);
+
+            return $this->save();
+        });
     }
 
     /**
@@ -461,6 +570,25 @@ class Resource extends Model implements DefinesFields
     }
 
     /**
+     * Resolve and update, or create, one shared global row from trusted
+     * infrastructure.
+     *
+     * @param  array<string, mixed>  $attributes
+     * @param  array<string, mixed>  $values
+     */
+    public static function updateOrCreateGlobalForSystem(array $attributes, array $values = []): static
+    {
+        static::ensureGlobalWriteIsSupported();
+
+        return static::withinGlobalWrite(function () use ($attributes, $values): static {
+            $attributes['team_id'] = null;
+            unset($values['team_id']);
+
+            return app(static::class)->newQueryWithoutScopes()->updateOrCreate($attributes, $values);
+        });
+    }
+
+    /**
      * Get the User associated with the Content
      *
      * @return mixed
@@ -503,6 +631,44 @@ class Resource extends Model implements DefinesFields
         static::saved(function ($model) {
             $model->clearFieldsAttributeCache();
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    protected static function createGlobalRecord(array $attributes): static
+    {
+        static::ensureGlobalWriteIsSupported();
+
+        return static::withinGlobalWrite(function () use ($attributes): static {
+            $attributes['team_id'] = null;
+
+            return app(static::class)->newQueryWithoutScopes()->create($attributes);
+        });
+    }
+
+    protected static function ensureGlobalWriteIsSupported(): void
+    {
+        if (! config('aura.teams') || ! static::sharesRecordsAcrossTeams()) {
+            throw new \LogicException('Global writes require teams and an opted-in shared resource.');
+        }
+    }
+
+    /**
+     * @template TValue
+     *
+     * @param  callable(): TValue  $callback
+     * @return TValue
+     */
+    protected static function withinGlobalWrite(callable $callback): mixed
+    {
+        self::$globalWriteDepth++;
+
+        try {
+            return $callback();
+        } finally {
+            self::$globalWriteDepth--;
+        }
     }
 
     /**

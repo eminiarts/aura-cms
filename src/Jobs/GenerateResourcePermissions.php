@@ -22,97 +22,48 @@ class GenerateResourcePermissions implements ShouldQueue
      *
      * @var class-string<\Aura\Base\Resource>
      */
-    public $resource;
+    public string $resource;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($resource)
+    public function __construct(string $resource)
     {
         $this->resource = $resource;
     }
 
     /**
      * Execute the job.
-     *
-     * @return void
      */
-    public function handle()
+    public function handle(): void
     {
         $r = app($this->resource);
 
-        Permission::firstOrCreate(
-            ['slug' => 'view-'.$r::$slug],
-            [
-                'name' => 'View '.$r->pluralName(),
-                'slug' => 'view-'.$r::$slug,
-                'group' => $r->pluralName(),
-            ]
-        );
+        $permissions = [
+            'view' => 'View',
+            'viewAny' => 'View Any',
+            'create' => 'Create',
+            'update' => 'Update',
+            'restore' => 'Restore',
+            'delete' => 'Delete',
+            'forceDelete' => 'Force Delete',
+            'scope' => 'Scope',
+        ];
 
-        Permission::firstOrCreate(
-            ['slug' => 'viewAny-'.$r::$slug],
-            [
-                'name' => 'View Any '.$r->pluralName(),
-                'slug' => 'viewAny-'.$r::$slug,
+        foreach ($permissions as $ability => $label) {
+            $attributes = ['slug' => $ability.'-'.$r::$slug];
+            $values = [
+                'name' => $label.' '.$r->pluralName(),
                 'group' => $r->pluralName(),
-            ]
-        );
+            ];
 
-        Permission::firstOrCreate(
-            ['slug' => 'create-'.$r::$slug],
-            [
-                'name' => 'Create '.$r->pluralName(),
-                'slug' => 'create-'.$r::$slug,
-                'group' => $r->pluralName(),
-            ]
-        );
-
-        Permission::firstOrCreate(
-            ['slug' => 'update-'.$r::$slug],
-            [
-                'name' => 'Update '.$r->pluralName(),
-                'slug' => 'update-'.$r::$slug,
-                'group' => $r->pluralName(),
-            ]
-        );
-
-        Permission::firstOrCreate(
-            ['slug' => 'restore-'.$r::$slug],
-            [
-                'name' => 'Restore '.$r->pluralName(),
-                'slug' => 'restore-'.$r::$slug,
-                'group' => $r->pluralName(),
-            ]
-        );
-
-        Permission::firstOrCreate(
-            ['slug' => 'delete-'.$r::$slug],
-            [
-                'name' => 'Delete '.$r->pluralName(),
-                'slug' => 'delete-'.$r::$slug,
-                'group' => $r->pluralName(),
-            ]
-        );
-
-        Permission::firstOrCreate(
-            ['slug' => 'forceDelete-'.$r::$slug],
-            [
-                'name' => 'Force Delete '.$r->pluralName(),
-                'slug' => 'forceDelete-'.$r::$slug,
-                'group' => $r->pluralName(),
-            ]
-        );
-
-        Permission::firstOrCreate(
-            ['slug' => 'scope-'.$r::$slug],
-            [
-                'name' => 'Scope '.$r->pluralName(),
-                'slug' => 'scope-'.$r::$slug,
-                'group' => $r->pluralName(),
-            ]
-        );
+            if (config('aura.teams')) {
+                Permission::firstOrCreateGlobalForSystem($attributes, $values);
+            } else {
+                Permission::withoutGlobalScopes()->firstOrCreate($attributes, $values);
+            }
+        }
     }
 }

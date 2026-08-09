@@ -23,10 +23,12 @@ class InvitationRegisterUserController extends Controller
      *
      * @return View
      */
-    public function create(Request $request, Team $team, TeamInvitation $teamInvitation)
+    public function create(Request $request, mixed $team, mixed $teamInvitation)
     {
         // If team registration is disabled, we show a 404 page.
         abort_if(! config('aura.auth.user_invitations'), 404);
+
+        [$team, $teamInvitation] = $this->resolveInvitation($team, $teamInvitation);
 
         // An email that already has an account must accept the invitation, not
         // register a second one — refuse the register form outright (the mail
@@ -46,9 +48,11 @@ class InvitationRegisterUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request, Team $team, TeamInvitation $teamInvitation)
+    public function store(Request $request, mixed $team, mixed $teamInvitation)
     {
         abort_if(! config('aura.auth.user_invitations'), 404);
+
+        [$team, $teamInvitation] = $this->resolveInvitation($team, $teamInvitation);
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -109,5 +113,28 @@ class InvitationRegisterUserController extends Controller
         return User::withoutGlobalScopes()
             ->whereRaw('lower(email) = ?', [mb_strtolower($email)])
             ->exists();
+    }
+
+    /**
+     * Signed invitation routes are a narrow, explicit guest lookup bypass.
+     * Resolve both records unscoped, then bind the invitation back to the team
+     * encoded in the same signed URL.
+     *
+     * @return array{0: Team, 1: TeamInvitation}
+     */
+    protected function resolveInvitation(mixed $team, mixed $teamInvitation): array
+    {
+        $teamId = $team instanceof Team ? $team->getRouteKey() : $team;
+        $invitationId = $teamInvitation instanceof TeamInvitation
+            ? $teamInvitation->getRouteKey()
+            : $teamInvitation;
+
+        $resolvedTeam = Team::withoutGlobalScopes()->findOrFail($teamId);
+        $resolvedInvitation = TeamInvitation::withoutGlobalScopes()
+            ->whereKey($invitationId)
+            ->where('team_id', $resolvedTeam->getKey())
+            ->firstOrFail();
+
+        return [$resolvedTeam, $resolvedInvitation];
     }
 }

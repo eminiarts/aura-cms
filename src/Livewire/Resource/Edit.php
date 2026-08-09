@@ -176,14 +176,21 @@ class Edit extends Component
     #[On('saveModel')]
     public function save()
     {
-        $this->validate();
+        $attributes = $this->validatedFormFields($this->validate());
+        $globalIntent = $this->pullGlobalFormIntent($attributes);
 
-        // unset this post fields group
-        if ($this->model->usesCustomTable()) {
-            $this->model->update($this->form['fields']);
+        $persistenceAttributes = $this->model->usesCustomTable()
+            ? $attributes
+            : ['fields' => $attributes];
+
+        if ($globalIntent === true && $this->model->getAttribute('team_id') !== null) {
+            $this->model->promoteToGlobal($persistenceAttributes);
+        } elseif ($globalIntent === false
+            && $this->model::sharesRecordsAcrossTeams()
+            && $this->model->getAttribute('team_id') === null) {
+            $this->model->moveGlobalToTeam(data_get(auth()->user(), 'current_team_id'), $persistenceAttributes);
         } else {
-            // Never trust client-supplied ownership/tenancy columns.
-            $this->model->update(collect($this->form)->except(['team_id', 'user_id', 'type'])->all());
+            $this->model->update($persistenceAttributes);
         }
 
         $this->notify(__('Successfully updated'));

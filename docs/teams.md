@@ -160,21 +160,38 @@ $post = Post::create(['title' => 'My Post']);
 // $post->team_id is automatically set to auth()->user()->current_team_id
 ```
 
-The defaults apply only when the keys are omitted. Explicit null values are preserved:
+Ordinary authenticated creates also treat explicit `null` as an unset ownership
+value. This prevents a controller or mass-assigned payload from turning a team
+row into a global or unowned row:
 
 ```php
 // Defaults team_id and user_id from the authenticated user.
-$teamPost = Post::create(['title' => 'Team Post']);
+$omittedOwnership = Post::create(['title' => 'Team Post']);
 
-// Preserves both null values for an authorized global/system workflow.
-$globalPost = SharedCatalog::create([
-    'title' => 'Global Entry',
+// Explicit nulls are defaulted back to the authenticated actor.
+$explicitNullOwnership = Post::create([
+    'title' => 'Team Post',
     'team_id' => null,
+    'user_id' => null,
+]);
+
+// Gate-checked Global Admin path. Both nulls are intentional and preserved.
+$globalPost = SharedCatalog::createGlobal([
+    'title' => 'Global Entry',
     'user_id' => null,
 ]);
 ```
 
-An explicit `team_id => null` is privileged server-side intent. Any custom form, controller, or action that creates such a row must authorize the `createGlobal` ability. It is limited to Global Admins and resources that opt in with `public static bool $sharedAcrossTeams = true`; the default is `false`. Aura's standard create form does not accept `team_id` from the client.
+`createGlobal()` is limited to Global Admins and resources that opt in with
+`public static bool $sharedAcrossTeams = true`; the default is `false`.
+`promoteToGlobal()` applies the same `createGlobal` policy to an existing row.
+Seeders and trusted catalog jobs that have no authenticated actor use the
+deliberately named `createGlobalForSystem()` or
+`firstOrCreateGlobalForSystem()` / `updateOrCreateGlobalForSystem()` contracts.
+An unauthenticated ordinary create that would otherwise produce a global shared
+row throws a `LogicException`. Aura's ordinary create/edit forms persist only
+validated resource fields and never accept ownership, tenancy, or system columns
+from the client.
 
 ### Accessing Team Resources
 
@@ -202,8 +219,9 @@ The `TeamScope` (`Aura\Base\Models\Scopes\TeamScope`) is a global scope that is 
 2. **For opted-in shared resources**: Filters by `(team_id = current_team_id OR team_id IS NULL)`
 3. **For an authenticated user without a current team**: Returns only global rows for shared resources and no rows for regular resources
 4. **For the User model**: Filters users who belong to the current team via the `user_role` pivot table; a non-Global-Admin without a team sees only their own user row
-5. **For the Team model**: No team filtering is applied (teams are not scoped to themselves)
-6. **When teams are disabled or no user is authenticated**: No filtering is applied
+5. **For the Team model**: Authenticated queries are not scoped to one team; authorization and Membership relations constrain UI access
+6. **For guests and background workers**: Fails closed with no rows unless the query executes inside an explicit trusted tenant context or bypass
+7. **When teams are disabled**: No team filtering is applied
 
 ```php
 // TeamScope automatically adds this to queries:
@@ -212,7 +230,7 @@ $builder->where($model->getTable().'.team_id', $currentTeamId);
 
 ### Cache Mechanism
 
-The current team ID is cached per user to avoid repeated database queries. Both an ID and the absence of an ID are cached, so users without a team do not trigger one lookup per scoped query. Aura also keeps a request/job-local snapshot and clears it through `Aura::flushState()` at queue and Octane worker boundaries.
+The current team ID is cached per user to avoid repeated database queries. Both an ID and the absence of an ID are cached, so users without a team do not trigger one lookup per scoped query. Aura also keeps a request/job-local snapshot and clears it through `Aura::flushState()` at queue and Octane worker boundaries. Inside a database transaction, TeamScope reads the connection directly and never writes an uncommitted value to either cache. Shared-cache invalidation occurs after commit; both commit and rollback clear the process-local snapshot.
 
 ```php
 // Cache key format
@@ -225,6 +243,23 @@ The current team ID is cached per user to avoid repeated database queries. Both 
 ## Bypassing Team Scope
 
 Sometimes you need to query resources across all teams, such as in admin tools or background jobs.
+
+Prefer the callback APIs for background work. The query must execute inside the
+callback; returning a lazy builder and executing it later is intentionally not a
+bypass. Both APIs restore scope state in `finally`, including after an `Error`.
+
+```php
+use Aura\Base\Models\Scopes\TeamScope;
+
+$teamPosts = TeamScope::forTeam(
+    $teamId,
+    fn () => Post::query()->get(),
+);
+
+$allPosts = TeamScope::withoutTenantScope(
+    fn () => Post::query()->get(),
+);
+```
 
 ### Using withoutGlobalScope
 

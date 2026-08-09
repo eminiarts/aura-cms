@@ -184,7 +184,7 @@ function createAdmin()
 
     $team = null;
     if (config('aura.teams')) {
-        $team = Team::first() ?: Team::factory()->create();
+        $team = Team::withoutGlobalScopes()->first() ?: Team::factory()->create();
         $user->update(['current_team_id' => $team->id]);
     }
 
@@ -262,6 +262,7 @@ function createAdmin()
         $user->roles()->sync([$role->id]);
     }
 
+    $user->unsetRelation('roles');
     $user->refresh();
 
     return $user;

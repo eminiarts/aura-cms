@@ -27,17 +27,41 @@ trait InitialPostFields
 
         $attributes = $post->getAttributes();
         $user = auth()->user();
+        $globalWrite = $post::isGlobalWriteInProgress();
 
         if (! $post->content && ! $post::usesCustomTable()) {
             $post->content = '';
         }
 
-        if (! array_key_exists('user_id', $attributes) && $user) {
+        if (! $post->exists
+            && $user
+            && (! array_key_exists('user_id', $attributes) || ($attributes['user_id'] === null && ! $globalWrite))) {
             $post->user_id = $user->id;
         }
 
-        if (config('aura.teams') && ! array_key_exists('team_id', $attributes) && $user) {
+        if (config('aura.teams')
+            && $post->exists
+            && $post::sharesRecordsAcrossTeams()
+            && $post->isDirty('team_id')
+            && $post->getOriginal('team_id') !== null
+            && $post->getAttribute('team_id') === null
+            && ! $globalWrite) {
+            throw new \LogicException('Use promoteToGlobal() to change a shared resource to global scope.');
+        }
+
+        if (config('aura.teams')
+            && ! $post->exists
+            && $user
+            && (! array_key_exists('team_id', $attributes) || ($attributes['team_id'] === null && ! $globalWrite))) {
             $post->team_id = $user->current_team_id;
+        }
+
+        if (config('aura.teams')
+            && ! $post->exists
+            && $post::sharesRecordsAcrossTeams()
+            && $post->getAttribute('team_id') === null
+            && ! $globalWrite) {
+            throw new \LogicException('Use createGlobal() or createGlobalForSystem() to create a global shared resource.');
         }
 
         if (! $post->type && ! $post::usesCustomTable()) {

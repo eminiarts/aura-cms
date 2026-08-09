@@ -239,8 +239,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             return;
         }
 
-        TeamScope::forgetCurrentTeamId($userId);
-        Cache::forget(static::currentTeamCacheKey($userId));
+        TeamScope::invalidateCurrentTeamId($userId);
     }
 
     /**

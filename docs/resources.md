@@ -964,9 +964,29 @@ class Status extends Resource
 
 For an authenticated user with a current team, `TeamScope` then returns rows where `team_id` is either the current team ID or `null`. Team-specific and global rows are both returned; Aura does not generically shadow or deduplicate them. An authenticated user without a current team sees only global rows from opted-in resources and no rows from regular resources. `Role` and `Permission` opt in; every other resource remains isolated unless it declares the property.
 
-Global creation is a separate authorization concern. Custom forms, controllers, and actions that deliberately write `team_id => null` must authorize `createGlobal` for the resource. That policy allows only a Global Admin, only while teams are enabled, and only for an opted-in resource with creation enabled. Aura's normal create form does not accept `team_id` from the client.
+Global creation is a separate authorization concern. Call
+`SharedCatalog::createGlobal($attributes)` instead of mass assigning
+`team_id => null`. That method authorizes `createGlobal`, which allows only a
+Global Admin, only while teams are enabled, and only for an opted-in resource
+with creation enabled. Use `$resource->promoteToGlobal()` for an existing row.
+Global rows from every opted-in resource are mutable only by a Global Admin;
+team Super Admins retain read access but are denied update, delete, restore,
+and force-delete operations.
 
-The initial-field pipeline distinguishes omission from an explicit `null`: omitted `team_id` and `user_id` values default to the authenticated user's team and ID, while explicitly supplied null values remain null for authorized catalog or system workflows.
+For an ordinary authenticated create, omitted and explicitly null `team_id` and
+`user_id` values both default to the authenticated user's team and ID. The
+global-write contract is the narrow exception that preserves intentional nulls
+for both posts storage and custom-table storage. Trusted seeders and background
+catalog synchronization may use `createGlobalForSystem()` or
+`firstOrCreateGlobalForSystem()` / `updateOrCreateGlobalForSystem()`.
+Unauthenticated ordinary creation cannot silently create a global shared row.
+Ordinary Livewire forms persist only validated declared fields and strip tenant,
+owner, identity, type, timestamp, and soft-delete columns before persistence.
+
+Unauthenticated and background `TeamScope` queries fail closed. Execute trusted
+tenant work inside `TeamScope::forTeam($teamId, fn () => ...)`, or use
+`TeamScope::withoutTenantScope(fn () => ...)` for a deliberate cross-tenant
+operation. The callback must execute the query before it returns.
 
 **Removing Multiple Scopes**
 
