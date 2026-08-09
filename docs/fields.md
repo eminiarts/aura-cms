@@ -1441,12 +1441,16 @@ class RatingField extends Field
 
 ### Registering Custom Fields
 
-Register your custom field in a service provider:
+Application fields under `app/Aura/Fields` are discovered automatically. To
+register an individual field from another location, use the array API in a
+service provider:
 
 ```php
 public function boot()
 {
-    Aura::registerField('rating', RatingField::class);
+    Aura::registerFields([
+        RatingField::class,
+    ]);
 }
 ```
 

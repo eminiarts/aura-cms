@@ -53,7 +53,7 @@ Aura::registerFields([
     \App\Fields\CustomField::class,
 ]);
 
-// Get app-defined fields
+// Get fields discovered from configured application and package sources
 $appFields = Aura::getAppFields();
 ```
 

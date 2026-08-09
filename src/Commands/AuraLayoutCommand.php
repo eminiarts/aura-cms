@@ -11,13 +11,13 @@ class AuraLayoutCommand extends Command
 
     protected $signature = 'aura:layout';
 
-    public function handle()
+    public function handle(): int
     {
-        $sourcePath = 'vendor/eminiarts/aura/resources/views/components/layout/app.blade.php';
-        $destinationPath = 'resources/views/vendor/aura/components/layout/app.blade.php';
+        $sourcePath = $this->sourcePath();
+        $destinationPath = $this->destinationPath();
 
         if (! File::exists($sourcePath)) {
-            $this->error('Aura layout file not found. Make sure the Aura package is installed.');
+            $this->error("Aura layout file not found at [{$sourcePath}]. Make sure the Aura package installation is complete.");
 
             return 1;
         }
@@ -27,7 +27,7 @@ class AuraLayoutCommand extends Command
         try {
             File::copy($sourcePath, $destinationPath);
             $this->info('Aura layout file copied successfully.');
-            $this->info("You can now customize the layout at: $destinationPath");
+            $this->info("You can now customize the layout at: {$destinationPath}");
         } catch (\Exception $e) {
             $this->error('Failed to copy Aura layout file: '.$e->getMessage());
 
@@ -35,5 +35,15 @@ class AuraLayoutCommand extends Command
         }
 
         return 0;
+    }
+
+    protected function destinationPath(): string
+    {
+        return resource_path('views/vendor/aura/components/layout/app.blade.php');
+    }
+
+    protected function sourcePath(): string
+    {
+        return dirname(__DIR__, 2).'/resources/views/components/layout/app.blade.php';
     }
 }

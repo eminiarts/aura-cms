@@ -645,12 +645,43 @@ The `config/aura-settings.php` file handles advanced configuration for paths, au
         'register' => [],  // Additional resources
     ],
     'fields' => [
-        'namespace' => 'App\\Aura\\Fields',
-        'path' => app_path('Aura/Fields'),
-        'register' => [],  // Additional fields
+        'discover' => [
+            'app' => [
+                'namespace' => 'App\\Aura\\Fields',
+                'path' => app_path('Aura/Fields'),
+            ],
+        ],
+        'register' => [],  // Explicit field classes
     ],
 ],
 ```
+
+Each entry in `paths.fields.discover` pairs a PSR-4 namespace with its
+filesystem directory. Aura scans every source, keeps only `Field` subclasses,
+removes duplicate classes, and returns them in deterministic class-name order.
+The previous single `paths.fields.path` / `namespace` shape remains supported
+for published configurations, but new applications and packages should use
+`discover`.
+
+Packages can add a source from their service provider without assuming the
+application's Composer vendor directory:
+
+```php
+public function registeringPackage(): void
+{
+    $sources = config('aura-settings.paths.fields.discover', []);
+
+    $sources['acme-crm'] = [
+        'namespace' => 'Acme\\Crm\\Fields',
+        'path' => __DIR__.'/Fields',
+    ];
+
+    config()->set('aura-settings.paths.fields.discover', $sources);
+}
+```
+
+Use `paths.fields.register` for individual field classes that do not share a
+discovery directory.
 
 #### Custom Organization
 

@@ -1,40 +1,78 @@
 <?php
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Aura\Base\Commands\AuraLayoutCommand;
 use Illuminate\Support\Facades\File;
-
-uses(RefreshDatabase::class);
+use Symfony\Component\Console\Tester\CommandTester;
 
 beforeEach(function () {
-    $this->sourcePath = base_path('vendor/eminiarts/aura/resources/views/components/layout/app.blade.php');
-    $this->destinationPath = resource_path('views/vendor/aura/components/layout/app.blade.php');
+    $this->layoutTestPath = storage_path('framework/testing/aura-layout-command');
+    $this->destinationPath = $this->layoutTestPath.'/resources/views/vendor/aura/components/layout/app.blade.php';
 
-    // Clean up destination
-    if (File::exists($this->destinationPath)) {
-        File::delete($this->destinationPath);
-    }
+    File::deleteDirectory($this->layoutTestPath);
 });
 
 afterEach(function () {
-    // Clean up test files
-    if (File::exists($this->destinationPath)) {
-        File::delete($this->destinationPath);
-    }
+    File::deleteDirectory($this->layoutTestPath);
 });
 
-describe('error handling', function () {
-    it('shows error when source file does not exist', function () {
-        // Ensure source doesn't exist
-        if (File::exists($this->sourcePath)) {
-            File::delete($this->sourcePath);
+test('layout is published from the package source in a path repository', function () {
+    $command = new class($this->destinationPath) extends AuraLayoutCommand
+    {
+        public function __construct(private readonly string $testDestinationPath)
+        {
+            parent::__construct();
         }
 
-        $this->artisan('aura:layout')
-            ->expectsOutput('Aura layout file not found. Make sure the Aura package is installed.')
-            ->assertExitCode(1);
-    });
+        public function resolvedSourcePath(): string
+        {
+            return $this->sourcePath();
+        }
+
+        protected function destinationPath(): string
+        {
+            return $this->testDestinationPath;
+        }
+    };
+
+    $command->setLaravel($this->app);
+    $tester = new CommandTester($command);
+    $sourcePath = dirname(__DIR__, 3).'/resources/views/components/layout/app.blade.php';
+
+    expect($command->resolvedSourcePath())->toBe($sourcePath)
+        ->and($tester->execute([]))->toBe(0)
+        ->and(File::exists($this->destinationPath))->toBeTrue()
+        ->and(File::get($this->destinationPath))->toBe(File::get($sourcePath))
+        ->and($tester->getDisplay())->toContain('Aura layout file copied successfully.')
+        ->and($tester->getDisplay())->toContain($this->destinationPath);
 });
 
-// Note: The test for copying layout when source exists is skipped
-// because the vendor/eminiarts path doesn't exist in the test environment.
-// This functionality is tested manually during package development.
+test('layout publishing fails clearly when the package source is missing', function () {
+    $missingSourcePath = $this->layoutTestPath.'/missing-package/resources/views/components/layout/app.blade.php';
+
+    $command = new class($missingSourcePath, $this->destinationPath) extends AuraLayoutCommand
+    {
+        public function __construct(
+            private readonly string $testSourcePath,
+            private readonly string $testDestinationPath,
+        ) {
+            parent::__construct();
+        }
+
+        protected function destinationPath(): string
+        {
+            return $this->testDestinationPath;
+        }
+
+        protected function sourcePath(): string
+        {
+            return $this->testSourcePath;
+        }
+    };
+
+    $command->setLaravel($this->app);
+    $tester = new CommandTester($command);
+
+    expect($tester->execute([]))->toBe(1)
+        ->and($tester->getDisplay())->toContain($missingSourcePath)
+        ->and(File::exists($this->destinationPath))->toBeFalse();
+});

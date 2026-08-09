@@ -2,6 +2,7 @@
 
 namespace Aura\Base;
 
+use Aura\Base\Fields\Field as AuraField;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Livewire\Resource\Index;
@@ -156,15 +157,52 @@ class Aura
         static::$userModel = User::class;
     }
 
-    public function getAppFields()
+    public function getAppFields(): array
     {
-        $path = config('aura.fields.path');
+        $configuration = config('aura-settings.paths.fields', []);
 
-        if (! file_exists($path)) {
+        if (! is_array($configuration)) {
             return [];
         }
 
-        return $this->getAppFiles($path, $filter = 'Field', $namespace = config('aura.fields.namespace'));
+        $sources = $configuration['discover'] ?? [];
+
+        if (! is_array($sources)) {
+            $sources = [];
+        }
+
+        if (isset($sources['path'], $sources['namespace'])) {
+            $sources = [$sources];
+        }
+
+        if (isset($configuration['path'], $configuration['namespace'])) {
+            array_unshift($sources, [
+                'namespace' => $configuration['namespace'],
+                'path' => $configuration['path'],
+            ]);
+        }
+
+        $fields = collect($sources)
+            ->filter(fn ($source): bool => is_array($source)
+                && is_string($source['path'] ?? null)
+                && is_string($source['namespace'] ?? null)
+                && is_dir($source['path']))
+            ->flatMap(fn (array $source): array => $this->getAppFiles(
+                $source['path'],
+                'Field',
+                rtrim($source['namespace'], '\\'),
+            ))
+            ->merge(is_array($configuration['register'] ?? null) ? $configuration['register'] : [])
+            ->filter(fn ($field): bool => is_string($field)
+                && class_exists($field)
+                && is_subclass_of($field, AuraField::class))
+            ->unique()
+            ->values()
+            ->all();
+
+        sort($fields, SORT_STRING);
+
+        return $fields;
     }
 
     public function getAppFiles($path, $filter, $namespace)

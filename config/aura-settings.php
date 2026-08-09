@@ -13,8 +13,8 @@ return [
     | Default App Paths
     |--------------------------------------------------------------------------
     |
-    | This is the namespace and directory that Aura will automatically
-    | register resources from. You may also register resources here.
+    | Configure the application resource path and every PSR-4 field source
+    | that Aura should discover. Packages may append class-relative sources.
     |
     */
 
@@ -26,8 +26,12 @@ return [
         ],
 
         'fields' => [
-            'namespace' => 'App\\Aura\\Fields',
-            'path' => app_path('Aura/Fields'),
+            'discover' => [
+                'app' => [
+                    'namespace' => 'App\\Aura\\Fields',
+                    'path' => app_path('Aura/Fields'),
+                ],
+            ],
             'register' => [],
         ],
     ],

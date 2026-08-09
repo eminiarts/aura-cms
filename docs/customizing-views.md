@@ -1155,6 +1155,18 @@ Route registration resolves these hooks, so `/admin/product/{id}/edit` (route na
 
 ## Layout Customization
 
+Publish only Aura's application layout when you need to replace the surrounding
+chrome:
+
+```bash
+php artisan aura:layout
+```
+
+Aura copies its package-owned layout to
+`resources/views/vendor/aura/components/layout/app.blade.php`. The command
+resolves the source relative to the installed package, including Composer path
+repositories and custom vendor directories.
+
 ### Custom App Layout
 
 ```blade

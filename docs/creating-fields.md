@@ -490,6 +490,17 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 
 class MyFieldServiceProvider extends PackageServiceProvider
 {
+    public function registeringPackage(): void
+    {
+        $sources = config('aura-settings.paths.fields.discover', []);
+        $sources['your-vendor-my-field'] = [
+            'namespace' => 'YourVendor\\MyField',
+            'path' => __DIR__,
+        ];
+
+        config()->set('aura-settings.paths.fields.discover', $sources);
+    }
+
     public function configurePackage(Package $package): void
     {
         $package
@@ -498,6 +509,11 @@ class MyFieldServiceProvider extends PackageServiceProvider
     }
 }
 ```
+
+Register discovery sources in `registeringPackage()`. Laravel finishes
+registering every provider before Aura scans the configured sources, so this
+works for normal, custom-vendor-directory, and Composer path-repository
+installations.
 
 ### Register the Package
 

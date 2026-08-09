@@ -287,6 +287,8 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function packageBooted()
     {
+        app('aura')::registerFields(app('aura')::getAppFields());
+
         Queue::after(fn () => Aura::flushState());
         Queue::exceptionOccurred(fn () => Aura::flushState());
 
@@ -437,7 +439,6 @@ class AuraServiceProvider extends PackageServiceProvider
         // Register App Resources
         app('aura')::registerResources(app('aura')::getAppResources());
         app('aura')::registerWidgets(app('aura')::getAppWidgets());
-        app('aura')::registerFields(app('aura')::getAppFields());
     }
 
     public function registeringPackage() {}
