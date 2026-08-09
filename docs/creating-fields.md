@@ -258,6 +258,12 @@ outside the `Field` inheritance method namespace, so existing package fields may
 keep unrelated legacy methods without signature collisions. The table does not
 inspect the field class name.
 
+Table subclasses may continue overriding Aura's former protected query-filter
+helpers during the compatibility window. Those helpers are deprecated adapters;
+new field behavior belongs in `ProvidesFilterCapability` and
+`AppliesFieldFilter`. The default adapters still resolve the server-owned field
+capability and apply its query handler once.
+
 ```php
 use Aura\Base\Contracts\ProvidesFilterCapability;
 use Aura\Base\Fields\Filters\FilterCapability;

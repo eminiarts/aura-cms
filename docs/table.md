@@ -536,6 +536,14 @@ the inputs used by the built-in capability factories. See
 [Creating Fields](creating-fields.md#providesfiltercapability) for the
 third-party extension contract.
 
+The public `fieldsForFilter` computed descriptor remains additive for existing
+table views: `type`, `filterOptions`, and the raw `filterValues` shape are
+preserved. Canonical `{value, wire_value, label}` rows are available through
+`canonicalFilterValues` and `filter.values`. Existing protected `QueryFilters`
+helpers remain as deprecated compatibility adapters for Table subclasses; new
+extensions should declare behavior on the field capability or its query
+handler instead.
+
 Choice filters restore scalar value types before querying. Scalar choice fields
 reject option sets whose values collapse to the same persisted string, while
 JSON-backed multiple-value fields preserve typed identities and use exact

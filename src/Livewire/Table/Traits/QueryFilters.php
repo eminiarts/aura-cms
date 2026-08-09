@@ -5,7 +5,9 @@ namespace Aura\Base\Livewire\Table\Traits;
 use Aura\Base\Fields\Field;
 use Aura\Base\Fields\Filters\FieldFilterCapabilityResolver;
 use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Livewire\Table\Table;
 use Illuminate\Database\Eloquent\Builder;
+use ReflectionMethod;
 
 trait QueryFilters
 {
@@ -47,30 +49,42 @@ trait QueryFilters
         $method = $groupOperator === 'or' ? 'orWhere' : 'where';
 
         $query->{$method}(function (Builder $query) use ($filter): void {
-            $fieldSlug = $filter['name'] ?? null;
-
-            if (! is_string($fieldSlug) || trim($fieldSlug) === '') {
-                $query->whereRaw('1 = 0');
-
-                return;
-            }
-
-            $field = $this->model->fieldBySlug($fieldSlug);
-            $fieldInstance = $this->model->fieldClassBySlug($fieldSlug);
-
-            if (! $field || ! $fieldInstance instanceof Field) {
-                $query->whereRaw('1 = 0');
-
-                return;
-            }
-
-            (new FieldFilterCapabilityResolver)->resolve($fieldInstance, $this->model, $field)->apply(
-                $query,
-                $this->model,
-                $field,
-                $filter,
-            );
+            $this->applyFilterBasedOnType($query, $filter);
         });
+    }
+
+    /**
+     * Compatibility dispatch for table subclasses; prefer field capabilities or query handlers.
+     */
+    protected function applyFilterBasedOnType(Builder $query, array $filter): void
+    {
+        $fieldSlug = $filter['name'] ?? null;
+
+        if (! is_string($fieldSlug) || trim($fieldSlug) === '' || ! $this->resolvedFilterField($fieldSlug)) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        if ($this->isRelationBackedFilter($filter)) {
+            $this->applyRelationFieldFilter($query, $filter);
+
+            return;
+        }
+
+        if ($this->model->isMetaField($fieldSlug)) {
+            $this->applyMetaFieldFilter($query, $filter);
+
+            return;
+        }
+
+        if ($this->model->isTableField($fieldSlug) || $this->model->usesCustomTable()) {
+            $this->applyTableFieldFilter($query, $filter);
+
+            return;
+        }
+
+        $this->applyMetaFieldFilter($query, $filter);
     }
 
     /**
@@ -82,6 +96,203 @@ trait QueryFilters
             $groupOperator = $filterIndex > 0 ? $filter['main_operator'] : 'and';
             $this->applyFilter($query, $filter, $groupOperator);
         }
+    }
+
+    /**
+     * Compatibility adapter; prefer a field capability or query handler.
+     */
+    protected function applyIsEmptyMetaFilter(Builder $query, array $filter): void
+    {
+        $query->where(function (Builder $query) use ($filter): void {
+            $query->whereDoesntHave('meta', function (Builder $query) use ($filter): void {
+                $query->where('key', $filter['name']);
+            })->orWhereHas('meta', function (Builder $query) use ($filter): void {
+                $query->where('key', $filter['name'])
+                    ->where(function (Builder $query): void {
+                        $query->whereNull('value')->orWhere('value', '');
+                    });
+            });
+        });
+    }
+
+    /**
+     * Compatibility adapter; prefer a field capability or query handler.
+     */
+    protected function applyIsNotEmptyMetaFilter(Builder $query, array $filter): void
+    {
+        $query->whereHas('meta', function (Builder $query) use ($filter): void {
+            $query->where('key', $filter['name'])
+                ->whereNotNull('value')
+                ->where('value', '!=', '');
+        });
+    }
+
+    /**
+     * Compatibility adapter; prefer a field capability or query handler.
+     */
+    protected function applyMetaFieldFilter(Builder $query, array $filter): Builder
+    {
+        if (in_array($filter['operator'] ?? null, ['is_empty', 'date_is_empty'], true)
+            && $this->legacyFilterHookIsOverridden('applyIsEmptyMetaFilter')) {
+            $this->applyIsEmptyMetaFilter($query, $filter);
+
+            return $query;
+        }
+
+        if (in_array($filter['operator'] ?? null, ['is_not_empty', 'date_is_not_empty'], true)
+            && $this->legacyFilterHookIsOverridden('applyIsNotEmptyMetaFilter')) {
+            $this->applyIsNotEmptyMetaFilter($query, $filter);
+
+            return $query;
+        }
+
+        if ($this->legacyFilterHookIsOverridden('applyStandardMetaFilter')
+            || $this->legacyFilterHookIsOverridden('applyOperatorCondition')
+            || ($this->legacyFilterHookIsOverridden('applyRelationFieldFilter')
+                && $this->hasLegacyRelationshipOption($filter))) {
+            $this->applyStandardMetaFilter($query, $filter);
+
+            return $query;
+        }
+
+        $this->applyResolvedFilterCapability($query, $filter);
+
+        return $query;
+    }
+
+    /**
+     * Compatibility adapter; prefer a field capability or query handler.
+     */
+    protected function applyOperatorCondition(Builder $query, array $filter): void
+    {
+        $value = $filter['value'] ?? null;
+        $operator = $filter['operator'] ?? null;
+
+        if (! is_string($operator)) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        if (in_array($operator, ['is_empty', 'date_is_empty'], true)) {
+            $query->where(function (Builder $query): void {
+                $query->whereNull('value')->orWhere('value', '');
+            });
+
+            return;
+        }
+
+        if (in_array($operator, ['is_not_empty', 'date_is_not_empty'], true)) {
+            $query->whereNotNull('value')->where('value', '!=', '');
+
+            return;
+        }
+
+        if (in_array($operator, ['in', 'not_in'], true)) {
+            $values = is_array($value) ? $value : (is_scalar($value) ? explode(',', (string) $value) : []);
+
+            if (! array_is_list($values) || $values === [] || collect($values)->contains(fn ($item) => ! is_scalar($item))) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+
+            $operator === 'in' ? $query->whereIn('value', $values) : $query->whereNotIn('value', $values);
+
+            return;
+        }
+
+        if (! is_scalar($value)) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $value = (string) $value;
+
+        match ($operator) {
+            'contains' => $query->where('value', 'like', '%'.$value.'%'),
+            'does_not_contain' => $query->where('value', 'not like', '%'.$value.'%'),
+            'starts_with' => $query->where('value', 'like', $value.'%'),
+            'ends_with' => $query->where('value', 'like', '%'.$value),
+            'is', 'equals' => $query->where('value', $value),
+            'is_not', 'not_equals' => $query->where('value', '!=', $value),
+            'greater_than' => $query->where('value', '>', $value),
+            'less_than' => $query->where('value', '<', $value),
+            'greater_than_or_equal' => $query->where('value', '>=', $value),
+            'less_than_or_equal' => $query->where('value', '<=', $value),
+            'like' => $query->where('value', 'like', $value),
+            'not_like' => $query->where('value', 'not like', $value),
+            'regex' => $query->where('value', 'regexp', $value),
+            'not_regex' => $query->where('value', 'not regexp', $value),
+            'date_is' => $query->whereDate('value', $value),
+            'date_is_not' => $query->whereDate('value', '!=', $value),
+            'date_before' => $query->whereDate('value', '<', $value),
+            'date_after' => $query->whereDate('value', '>', $value),
+            'date_on_or_before' => $query->whereDate('value', '<=', $value),
+            'date_on_or_after' => $query->whereDate('value', '>=', $value),
+            default => $query->whereRaw('1 = 0'),
+        };
+    }
+
+    /**
+     * Compatibility adapter; prefer a relationship field capability or query handler.
+     */
+    protected function applyRelationFieldFilter(Builder $query, array $filter): void
+    {
+        $this->applyResolvedFilterCapability($query, $filter);
+    }
+
+    /**
+     * Compatibility adapter; prefer a field capability or query handler.
+     */
+    protected function applyStandardMetaFilter(Builder $query, array $filter): void
+    {
+        if ($this->hasLegacyRelationshipOption($filter)
+            && $this->legacyFilterHookIsOverridden('applyRelationFieldFilter')) {
+            $this->applyRelationFieldFilter($query, $filter);
+
+            return;
+        }
+
+        if (! $this->legacyFilterHookIsOverridden('applyOperatorCondition')) {
+            $this->applyResolvedFilterCapability($query, $filter);
+
+            return;
+        }
+
+        $query->whereHas('meta', function (Builder $query) use ($filter): void {
+            $query->where('key', $filter['name']);
+            $this->applyOperatorCondition($query, $filter);
+        });
+    }
+
+    /**
+     * Compatibility adapter; prefer a field capability or query handler.
+     */
+    protected function applyTableFieldFilter(Builder $query, array $filter): Builder
+    {
+        $this->applyResolvedFilterCapability($query, $filter);
+
+        return $query;
+    }
+
+    /**
+     * Compatibility adapter; prefer inspecting the resolved field capability.
+     */
+    protected function isRelationBackedFilter(array $filter): bool
+    {
+        $resolved = $this->resolvedFilterField($filter['name'] ?? null);
+
+        if ($resolved === null) {
+            return false;
+        }
+
+        [$field, $fieldInstance] = $resolved;
+
+        return (new FieldFilterCapabilityResolver)
+            ->resolve($fieldInstance, $this->model, $field)
+            ->toArray()['type'] === FilterCapability::RELATIONSHIP;
     }
 
     protected function isValidFilter(array $filter): bool
@@ -144,6 +355,39 @@ trait QueryFilters
     /**
      * @param  array<string, mixed>  $filter
      */
+    private function applyResolvedFilterCapability(Builder $query, array $filter): void
+    {
+        $resolved = $this->resolvedFilterField($filter['name'] ?? null);
+
+        if ($resolved === null) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        [$field, $fieldInstance] = $resolved;
+
+        (new FieldFilterCapabilityResolver)->resolve($fieldInstance, $this->model, $field)->apply(
+            $query,
+            $this->model,
+            $field,
+            $filter,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $filter
+     */
+    private function hasLegacyRelationshipOption(array $filter): bool
+    {
+        $resourceType = $filter['options']['resource_type'] ?? null;
+
+        return is_string($resourceType) && trim($resourceType) !== '';
+    }
+
+    /**
+     * @param  array<string, mixed>  $filter
+     */
     private function isIncompleteFilter(array $filter): bool
     {
         $fieldSlug = $filter['name'] ?? null;
@@ -165,6 +409,11 @@ trait QueryFilters
                 $operator,
                 (new FieldFilterCapabilityResolver)->resolve($fieldInstance, $this->model, $field)->toArray()['operators'],
             );
+    }
+
+    private function legacyFilterHookIsOverridden(string $method): bool
+    {
+        return (new ReflectionMethod($this, $method))->getDeclaringClass()->getName() !== Table::class;
     }
 
     private function matchNoFilterRows(Builder $query): Builder
@@ -306,5 +555,24 @@ trait QueryFilters
         }
 
         return $groups;
+    }
+
+    /**
+     * @return array{array<string, mixed>, Field}|null
+     */
+    private function resolvedFilterField(mixed $fieldSlug): ?array
+    {
+        if (! is_string($fieldSlug) || trim($fieldSlug) === '') {
+            return null;
+        }
+
+        $field = $this->model->fieldBySlug($fieldSlug);
+        $fieldInstance = $this->model->fieldClassBySlug($fieldSlug);
+
+        if (! is_array($field) || ! $fieldInstance instanceof Field) {
+            return null;
+        }
+
+        return [$field, $fieldInstance];
     }
 }

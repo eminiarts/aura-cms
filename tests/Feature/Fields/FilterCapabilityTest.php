@@ -301,7 +301,7 @@ test('table filter UI consumes field capabilities without class name dispatch', 
     $fieldsForFilter = $component->instance()->fieldsForFilter();
 
     expect($fieldsForFilter['stage'])
-        ->not->toHaveKey('type')
+        ->toHaveKey('type', 'Select')
         ->toHaveKey('filter.type', FilterCapability::OPTION)
         ->toHaveKey('filter.component', 'aura::fields.filters.option');
 

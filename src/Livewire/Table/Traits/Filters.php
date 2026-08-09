@@ -124,8 +124,10 @@ trait Filters
             return [
                 $field['slug'] => [
                     'name' => $field['name'],
+                    'type' => class_basename($field['type']),
                     'filterOptions' => $filter['operators'],
-                    'filterValues' => $filter['values'],
+                    'filterValues' => $fieldInstance->getFilterValues($this->model, $field),
+                    'canonicalFilterValues' => $filter['values'],
                     'filter' => $filter,
                 ],
             ];
@@ -268,6 +270,20 @@ trait Filters
 
         $this->filters['custom'][(int) $groupKey]['filters'][(int) $filterKey]['operator'] = $operator;
         $this->filters['custom'][(int) $groupKey]['filters'][(int) $filterKey]['value'] = null;
+    }
+
+    /**
+     * @deprecated Livewire 4 invokes updatedFilters() with the complete property path.
+     */
+    public function updatedFiltersCustom($value, $key)
+    {
+        if (! is_string($key)) {
+            return;
+        }
+
+        $path = str_starts_with($key, 'filters.custom.') ? $key : 'filters.'.$key;
+
+        $this->updatedFilters($path, $value);
     }
 
     /**
