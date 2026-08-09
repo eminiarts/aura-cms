@@ -13,7 +13,10 @@ use Aura\Base\Services\EmbeddedComponentContext;
 use Aura\Base\Services\EmbeddedComponentResolver;
 use Aura\Base\Services\EmbeddedComponentSurface;
 use Aura\Base\Traits\AuthorizesEmbeddedComponent;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Component;
 use Livewire\Livewire;
 use stdClass;
@@ -24,20 +27,11 @@ class Core12EmbeddedComponent extends Component implements EmbeddedLivewireCompo
 {
     use AuthorizesEmbeddedComponent;
 
-    public string $context = '';
-
-    public string $fieldSlug = '';
-
-    public string $label = '';
-
     public static int $mountCount = 0;
 
-    /** @var array<string, mixed> */
-    public array $nested = [];
+    public static int $revokeActionCount = 0;
 
-    public int|string|null $resourceId = null;
-
-    public string $resourceType = '';
+    public static int $sensitiveActionCount = 0;
 
     public function mount(): void
     {
@@ -48,11 +42,29 @@ class Core12EmbeddedComponent extends Component implements EmbeddedLivewireCompo
 
     public function render(): string
     {
-        return <<<'HTML'
-            <div data-embedded-context="{{ $context }}" data-embedded-field="{{ $fieldSlug }}">
-                {{ $label }}|{{ $resourceId ?? 'new' }}|{{ data_get($nested, 'owner.id') ?? 'none' }}
-            </div>
-        HTML;
+        $context = $this->embeddedContext();
+        $resourceKey = $context->resource->getKey() ?? 'new';
+        $nestedOwnerKey = $context->parameter('nested.owner.id') ?? 'none';
+
+        return sprintf(
+            '<div data-embedded-context="%s" data-embedded-field="%s">%s|%s|%s</div>',
+            e($context->surface->value),
+            e($context->fieldSlug),
+            e((string) $context->parameter('label', '')),
+            e((string) $resourceKey),
+            e((string) $nestedOwnerKey),
+        );
+    }
+
+    public function revokeAccess(): void
+    {
+        self::$revokeActionCount++;
+        auth()->user()->forceFill(['global_admin' => false])->saveQuietly();
+    }
+
+    public function sensitiveAction(): void
+    {
+        self::$sensitiveActionCount++;
     }
 }
 
@@ -66,9 +78,18 @@ class Core12FallbackEmbeddedComponent extends Core12EmbeddedComponent
 
 class Core12UnboundedComponent extends Component
 {
+    /** @var array<string, mixed> */
+    public array $field = [];
+
+    public mixed $model = null;
+
     public function render(): string
     {
-        return '<div>Unbounded component</div>';
+        return <<<'HTML'
+            <div data-legacy-embedded-field>
+                Legacy|{{ $model?->getKey() ?? 'new' }}|{{ $field['slug'] ?? 'none' }}
+            </div>
+        HTML;
     }
 }
 
@@ -82,8 +103,12 @@ class Core12MissingAuthorizationTraitComponent extends Component implements Embe
 
 class Core12ParameterMapper implements MapsEmbeddedComponentParameters
 {
+    public static int $mapCount = 0;
+
     public function map(EmbeddedComponentContext $context): array
     {
+        self::$mapCount++;
+
         return [
             'label' => 'Mapped '.$context->surface->value,
             'nested' => [
@@ -133,6 +158,25 @@ class Core12EmbeddedResource extends Resource
     }
 }
 
+class Core12UuidEmbeddedResource extends Core12EmbeddedResource
+{
+    public static $customTable = true;
+
+    public $incrementing = false;
+
+    public static ?string $slug = 'core12-uuid-embedded-resource';
+
+    public static string $type = 'Core12UuidEmbeddedResource';
+
+    public static bool $usesMeta = false;
+
+    protected $fillable = ['id', 'title', 'user_id', 'team_id'];
+
+    protected $keyType = 'string';
+
+    protected $table = 'core12_uuid_embedded_resources';
+}
+
 beforeEach(function () {
     $this->actingAs($this->user = createGlobalAdmin());
 
@@ -142,6 +186,11 @@ beforeEach(function () {
     Livewire::component('core12.embedded.fallback', Core12FallbackEmbeddedComponent::class);
     Livewire::component('core12.missing-authorization-trait', Core12MissingAuthorizationTraitComponent::class);
     Livewire::component('core12.unbounded', Core12UnboundedComponent::class);
+
+    Core12EmbeddedComponent::$mountCount = 0;
+    Core12EmbeddedComponent::$revokeActionCount = 0;
+    Core12EmbeddedComponent::$sensitiveActionCount = 0;
+    Core12ParameterMapper::$mapCount = 0;
 });
 
 function core12Field(array $overrides = []): array
@@ -185,16 +234,25 @@ describe('embedded component resolution', function () {
 
         expect($definition)->not->toBeNull()
             ->and($definition->alias)->toBe($alias)
-            ->and($definition->parameters)->toMatchArray([
-                'resourceType' => Core12EmbeddedResource::class,
-                'resourceId' => $resource->getKey(),
-                'fieldSlug' => 'embedded_surface',
-                'context' => $surface->value,
-                'label' => 'Mapped '.$surface->value,
-                'nested' => ['owner' => ['id' => $resource->getKey()]],
+            ->and($definition->parameters)->toHaveKeys(['auraEmbeddedContext'])
+            ->and($definition->parameters)->not->toHaveKeys([
+                'model',
+                'field',
+                'resourceType',
+                'resourceId',
+                'fieldSlug',
+                'context',
+                'label',
+                'nested',
             ])
-            ->and($definition->parameters)->not->toHaveKeys(['model', 'field'])
-            ->and($definition->parameters['auraEmbeddedContext'])->toBeArray();
+            ->and($definition->parameters['auraEmbeddedContext'])->toMatchArray([
+                'surface' => $surface->value,
+                'field_slug' => 'embedded_surface',
+                'parameters' => [
+                    'label' => 'Mapped '.$surface->value,
+                    'nested' => ['owner' => ['id' => $resource->getKey()]],
+                ],
+            ]);
     })->with([
         'edit' => [EmbeddedComponentSurface::Edit, 'core12.embedded.edit'],
         'view' => [EmbeddedComponentSurface::View, 'core12.embedded.view'],
@@ -209,9 +267,17 @@ describe('embedded component resolution', function () {
         );
 
         expect($definition)->not->toBeNull()
-            ->and($definition->parameters['resourceId'])->toBeNull()
-            ->and($definition->parameters['resourceType'])->toBe(Core12EmbeddedResource::class)
-            ->and($definition->parameters)->not->toHaveKeys(['model', 'field']);
+            ->and($definition->parameters)->toHaveKeys(['auraEmbeddedContext'])
+            ->and($definition->parameters)->not->toHaveKeys([
+                'model',
+                'field',
+                'resourceId',
+                'resourceType',
+            ])
+            ->and($definition->parameters['auraEmbeddedContext'])->toMatchArray([
+                'resource_key' => null,
+                'persisted' => false,
+            ]);
 
         Livewire::test($definition->alias, $definition->parameters)
             ->assertSee('Mapped edit|new|none');
@@ -254,6 +320,48 @@ describe('embedded component resolution', function () {
         'missing authorization trait' => [['view' => 'core12.missing-authorization-trait']],
         'unbounded' => [['view' => 'core12.unbounded']],
     ]);
+
+    test('preserves the legacy edit-only component contract without opting it into secure surfaces', function () {
+        $resource = Core12EmbeddedResource::create(['title' => 'Legacy owner']);
+        $field = [
+            'name' => 'Legacy surface',
+            'slug' => 'legacy_surface',
+            'type' => LivewireComponent::class,
+            'component' => 'core12.unbounded',
+        ];
+
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: $field,
+            resource: $resource,
+            surface: EmbeddedComponentSurface::Edit,
+        );
+
+        expect($definition?->alias)->toBe('core12.unbounded')
+            ->and($definition?->parameters['model'])->toBe($resource)
+            ->and($definition?->parameters['field'])->toBe($field)
+            ->and(app(EmbeddedComponentResolver::class)->resolve(
+                field: $field,
+                resource: $resource,
+                surface: EmbeddedComponentSurface::View,
+            ))->toBeNull()
+            ->and((new LivewireComponent)->rendersOnIndex($field))->toBeFalse();
+
+        Livewire::test($definition->alias, $definition->parameters)
+            ->assertSee('Legacy|'.$resource->getKey().'|legacy_surface');
+    });
+
+    test('keeps the Aura user two-factor field on its legacy edit contract and out of index columns', function () {
+        $field = collect(User::getFields())->firstWhere('slug', '2fa');
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: $field,
+            resource: $this->user,
+            surface: EmbeddedComponentSurface::Edit,
+        );
+
+        expect($definition?->alias)->toBe('aura::two-factor-authentication-form')
+            ->and($definition?->parameters['model'])->toBe($this->user)
+            ->and((new User)->indexFields()->pluck('slug'))->not->toContain('2fa');
+    });
 });
 
 describe('embedded component security and identity', function () {
@@ -312,6 +420,99 @@ describe('embedded component security and identity', function () {
 
         Livewire::test('core12.embedded.edit', $definition->parameters)
             ->assertForbidden();
+    });
+
+    test('rejects tampered mapper values inside the signed authoritative context', function () {
+        $resource = Core12EmbeddedResource::create(['title' => 'Signed mapper values']);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+        $tamperedParameters = $definition->parameters;
+        $tamperedParameters['auraEmbeddedContext']['parameters']['label'] = 'Forged';
+
+        Livewire::test($definition->alias, $tamperedParameters)
+            ->assertForbidden();
+    });
+
+    test('reauthorizes before each action in one batched Livewire request', function () {
+        $resource = Core12EmbeddedResource::create(['title' => 'Batched authorization']);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+
+        $component->update(calls: [
+            ['method' => 'revokeAccess', 'params' => [], 'path' => ''],
+            ['method' => 'sensitiveAction', 'params' => [], 'path' => ''],
+        ])->assertForbidden();
+
+        expect(Core12EmbeddedComponent::$revokeActionCount)->toBe(1)
+            ->and(Core12EmbeddedComponent::$sensitiveActionCount)->toBe(0)
+            ->and($this->user->fresh()->global_admin)->toBeFalse();
+    });
+
+    test('hydrates an unsaved resource with a preassigned UUID as create context', function () {
+        Schema::create('core12_uuid_embedded_resources', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->string('title')->nullable();
+            $table->foreignId('user_id')->nullable();
+            $table->foreignId('team_id')->nullable();
+            $table->timestamps();
+        });
+
+        $resource = new Core12UuidEmbeddedResource;
+        $resource->setAttribute($resource->getKeyName(), '00000000-0000-4000-8000-000000000012');
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::Edit,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+
+        app()->forgetScopedInstances();
+
+        $component->call('ping')->assertOk();
+    });
+
+    test('hydrates saved UUID resources and rejects delete-recreate identity reuse', function () {
+        Schema::create('core12_uuid_embedded_resources', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->string('title')->nullable();
+            $table->foreignId('user_id')->nullable();
+            $table->foreignId('team_id')->nullable();
+            $table->timestamps();
+        });
+
+        $key = '00000000-0000-4000-8000-000000000013';
+        $resource = Core12UuidEmbeddedResource::create([
+            'id' => $key,
+            'title' => 'Original row',
+        ]);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+
+        app()->forgetScopedInstances();
+        $component->call('ping')->assertOk();
+
+        $resource->delete();
+        Core12UuidEmbeddedResource::create([
+            'id' => $key,
+            'title' => 'Replacement row',
+        ]);
+        app()->forgetScopedInstances();
+
+        $component->call('ping')->assertForbidden();
     });
 
     test('keeps nested identities stable and unique by field and owner', function () {
@@ -377,21 +578,25 @@ describe('resource surfaces', function () {
             ->not->toContain('embedded_surface');
     });
 
-    test('renders an index page without per-row owner lookups', function () {
-        foreach (range(1, 20) as $index) {
+    test('mounts real index children without per-row owner lookups', function () {
+        foreach (range(1, 10) as $index) {
             Core12EmbeddedResource::create(['title' => 'Owner '.$index]);
         }
 
-        $component = livewire(Table::class, [
-            'query' => null,
-            'model' => new Core12EmbeddedResource,
-        ])->set('perPage', 100)
-            ->assertSee('Mapped index');
+        $authorizationChecks = 0;
+        Gate::after(function (mixed $user, string $ability, mixed $result, array $arguments) use (&$authorizationChecks): void {
+            if (($arguments[0] ?? null) instanceof Core12EmbeddedResource) {
+                $authorizationChecks++;
+            }
+        });
 
         DB::enableQueryLog();
         DB::flushQueryLog();
 
-        $component->call('$refresh');
+        livewire(Table::class, [
+            'query' => null,
+            'model' => new Core12EmbeddedResource,
+        ])->assertSee('Mapped index');
 
         $ownerSelects = collect(DB::getQueryLog())->filter(function (array $query): bool {
             $sql = strtolower($query['query']);
@@ -401,6 +606,9 @@ describe('resource surfaces', function () {
 
         DB::disableQueryLog();
 
-        expect($ownerSelects)->toHaveCount(2);
+        expect($ownerSelects)->toHaveCount(2)
+            ->and(Core12ParameterMapper::$mapCount)->toBe(10)
+            ->and(Core12EmbeddedComponent::$mountCount)->toBe(10)
+            ->and($authorizationChecks)->toBeGreaterThanOrEqual(20);
     });
 });

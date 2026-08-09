@@ -8,11 +8,6 @@ final class DefaultEmbeddedComponentParameterMapper implements MapsEmbeddedCompo
 {
     public function map(EmbeddedComponentContext $context): array
     {
-        return [
-            'resourceType' => $context->resource::class,
-            'resourceId' => $context->resource->getKey(),
-            'fieldSlug' => (string) ($context->field['slug'] ?? ''),
-            'context' => $context->surface->value,
-        ];
+        return [];
     }
 }

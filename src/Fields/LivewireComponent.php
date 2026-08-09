@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Services\EmbeddedComponentResolver;
+use Aura\Base\Services\EmbeddedComponentSurface;
+
 class LivewireComponent extends Field
 {
     public $edit = 'aura::fields.livewire-component';
@@ -66,5 +69,16 @@ class LivewireComponent extends Field
                 'slug' => 'owner_resource',
             ],
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     */
+    public function rendersOnIndex(array $field = []): bool
+    {
+        return app(EmbeddedComponentResolver::class)->supportsSecureSurface(
+            $field,
+            EmbeddedComponentSurface::Index,
+        );
     }
 }

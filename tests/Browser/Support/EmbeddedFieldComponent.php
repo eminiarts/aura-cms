@@ -10,18 +10,14 @@ class EmbeddedFieldComponent extends Component implements EmbeddedLivewireCompon
 {
     use AuthorizesEmbeddedComponent;
 
-    public string $context = '';
-
-    public string $fieldSlug = '';
-
-    public int|string|null $resourceId = null;
-
-    public string $resourceType = '';
-
     public function render(): string
     {
-        return <<<'HTML'
-            <div data-browser-embedded-field>{{ $context }}:{{ $resourceId ?? 'new' }}</div>
-        HTML;
+        $context = $this->embeddedContext();
+
+        return sprintf(
+            '<div data-browser-embedded-field>%s:%s</div>',
+            e($context->surface->value),
+            e((string) ($context->resource->getKey() ?? 'new')),
+        );
     }
 }

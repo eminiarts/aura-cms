@@ -31,6 +31,12 @@ final class EmbeddedComponentResolver
         EmbeddedComponentSurface $surface,
         mixed $value = null,
     ): ?ResolvedEmbeddedComponent {
+        $alias = $this->resolveAlias($field, $surface);
+
+        if (! $alias) {
+            return $this->resolveLegacyEditComponent($field, $resource, $surface);
+        }
+
         $resource = $this->resolveOwningResource($field, $resource, $surface);
 
         if (! $resource) {
@@ -43,12 +49,6 @@ final class EmbeddedComponentResolver
             return null;
         }
 
-        $alias = $this->resolveAlias($field, $surface);
-
-        if (! $alias) {
-            return null;
-        }
-
         $context = new EmbeddedComponentContext($surface, $resource, $field, $value);
         $parameters = $this->parameters($field, $context);
 
@@ -57,12 +57,13 @@ final class EmbeddedComponentResolver
         }
 
         try {
-            $parameters['auraEmbeddedContext'] = $this->contextCodec->issue(
+            $signedContext = $this->contextCodec->issue(
                 resource: $resource,
                 ability: $ability,
                 surface: $surface,
                 fieldSlug: (string) ($field['slug'] ?? ''),
                 componentAlias: $alias,
+                parameters: $parameters,
             );
 
             $key = $this->componentKey($field, $resource, $surface, $alias);
@@ -70,13 +71,25 @@ final class EmbeddedComponentResolver
             return null;
         }
 
-        return new ResolvedEmbeddedComponent($alias, $parameters, $key);
+        return new ResolvedEmbeddedComponent(
+            alias: $alias,
+            parameters: ['auraEmbeddedContext' => $signedContext],
+            key: $key,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     */
+    public function supportsSecureSurface(array $field, EmbeddedComponentSurface $surface): bool
+    {
+        return $this->resolveAlias($field, $surface) !== null;
     }
 
     private function ability(Model $resource, EmbeddedComponentSurface $surface): string
     {
         if ($surface === EmbeddedComponentSurface::Edit) {
-            return $resource->exists ? 'update' : 'create';
+            return ($resource->exists || $resource->wasRecentlyCreated) ? 'update' : 'create';
         }
 
         return 'view';
@@ -128,6 +141,23 @@ final class EmbeddedComponentResolver
             && in_array(AuthorizesEmbeddedComponent::class, class_uses_recursive($component), true);
     }
 
+    /**
+     * @param  array<string, mixed>  $field
+     */
+    private function hasConfiguredSecureEditAlias(array $field): bool
+    {
+        foreach ([
+            Arr::get($field, 'component_aliases.edit'),
+            Arr::get($field, 'component_aliases.fallback'),
+        ] as $alias) {
+            if (is_string($alias) && $alias !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function hasOnlySerializableValues(mixed $value, int $depth = 0): bool
     {
         if ($depth > self::MAX_PARAMETER_DEPTH) {
@@ -155,6 +185,47 @@ final class EmbeddedComponentResolver
         }
 
         return true;
+    }
+
+    private function isLegacyComponent(mixed $alias): bool
+    {
+        if (! is_string($alias)
+            || ! preg_match('/^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/', $alias)
+        ) {
+            return false;
+        }
+
+        try {
+            $component = Livewire::new($alias);
+        } catch (Throwable) {
+            return false;
+        }
+
+        return ! $component instanceof EmbeddedLivewireComponent
+            && ! in_array(AuthorizesEmbeddedComponent::class, class_uses_recursive($component), true);
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     *
+     * @throws JsonException
+     */
+    private function legacyComponentKey(array $field, ?Model $resource, string $alias): string
+    {
+        $identity = [
+            'resource_class' => $resource?->getMorphClass(),
+            'resource_key' => $resource?->getKey(),
+            'field_slug' => (string) ($field['slug'] ?? ''),
+            'field_id' => $field['_id'] ?? null,
+            'parent_id' => $field['_parent_id'] ?? null,
+            'component_identity' => $field['component_identity'] ?? null,
+            'alias' => $alias,
+        ];
+
+        return 'aura-legacy-embedded-'.hash(
+            'sha256',
+            json_encode($identity, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION),
+        );
     }
 
     /**
@@ -218,6 +289,42 @@ final class EmbeddedComponentResolver
         }
 
         return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     */
+    private function resolveLegacyEditComponent(
+        array $field,
+        ?Model $resource,
+        EmbeddedComponentSurface $surface,
+    ): ?ResolvedEmbeddedComponent {
+        if ($surface !== EmbeddedComponentSurface::Edit
+            || $this->hasConfiguredSecureEditAlias($field)
+        ) {
+            return null;
+        }
+
+        $alias = $field['component'] ?? null;
+
+        if (! $this->isLegacyComponent($alias)) {
+            return null;
+        }
+
+        try {
+            $key = $this->legacyComponentKey($field, $resource, $alias);
+        } catch (JsonException) {
+            return null;
+        }
+
+        return new ResolvedEmbeddedComponent(
+            alias: $alias,
+            parameters: [
+                'model' => $resource,
+                'field' => $field,
+            ],
+            key: $key,
+        );
     }
 
     /**

@@ -1120,14 +1120,17 @@ Livewire::component(QuoteLineItems::VIEW_ALIAS, QuoteLineItems::class);
 Livewire::component(QuoteLineItems::INDEX_ALIAS, QuoteLineItems::class);
 ```
 
-The legacy top-level `component` key remains an edit-only alias. New fields
-should use `component_aliases.edit` so every supported surface is explicit.
+The legacy top-level `component` key remains an edit-only alias. Components
+that do not opt into the embedded boundary continue to receive the historical
+`model` and `field` mount parameters. They never create view/index surfaces or
+table columns. New fields should use `component_aliases.edit` so every
+supported surface is explicit.
 
 ### Map mount parameters
 
 The optional mapper is a class string, which keeps the field declaration safe
-to serialize through Livewire. Its output is merged over Aura's default mount
-parameters:
+to serialize through Livewire. Its output is placed inside Aura's signed
+component context:
 
 ```php
 use Aura\Base\Contracts\MapsEmbeddedComponentParameters;
@@ -1146,10 +1149,12 @@ final class QuoteLineItemParameters implements MapsEmbeddedComponentParameters
 }
 ```
 
-The default parameters are `resourceType`, `resourceId`, `fieldSlug`, and
-`context`. Mappers may return only null, scalar, or nested array values. Aura
-rejects models, Eloquent collections, closures, objects, non-finite floats, and
-arrays deeper than ten levels instead of serializing an arbitrary model graph.
+Mappers may return only null, scalar, or nested array values. Aura rejects
+models, Eloquent collections, closures, objects, non-finite floats, and arrays
+deeper than ten levels instead of serializing an arbitrary model graph. Mapper
+values are not exposed as duplicate public mount properties; the component
+reads them from `embeddedContext()->parameter()` after Aura verifies the locked
+signature.
 
 A mapper runs once per rendered cell on an index. It must not issue a query per
 record. Read loaded attributes or relations and eager-load any required relation
@@ -1165,7 +1170,6 @@ parts of this boundary.
 use Aura\Base\Contracts\EmbeddedLivewireComponent;
 use Aura\Base\Traits\AuthorizesEmbeddedComponent;
 use Illuminate\View\View;
-use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 final class QuoteLineItems extends Component implements EmbeddedLivewireComponent
@@ -1176,14 +1180,11 @@ final class QuoteLineItems extends Component implements EmbeddedLivewireComponen
     public const INDEX_ALIAS = 'crm.quote-line-items.index';
     public const VIEW_ALIAS = 'crm.quote-line-items.view';
 
-    #[Locked]
-    public int|string|null $quoteId = null;
-
-    public bool $readOnly = false;
-
     public function addLineItem(): void
     {
-        $quote = $this->embeddedResource();
+        $context = $this->embeddedContext();
+        $quote = $context->resource;
+        $readOnly = (bool) $context->parameter('readOnly', false);
 
         // Apply any additional operation-specific authorization here.
     }
@@ -1196,12 +1197,15 @@ final class QuoteLineItems extends Component implements EmbeddedLivewireComponen
 ```
 
 The field checks the owner policy before rendering (`create` for an unsaved
-edit model, `update` for an existing edit model, and `view` for view/index).
-The trait verifies the signed, locked owner context before component `mount()`
-code runs and repeats that policy check on every child request. Component
-actions should use
-`embeddedResource()` as their authoritative owner instead of trusting a public
-ID parameter.
+edit model, `update` for a persisted edit model, and `view` for view/index).
+The trait verifies the signed, locked context before component `mount()` code
+runs and again before every action, including every action in one batched
+Livewire request. Unsaved resources may carry preassigned UUID/ULID keys and
+remain create contexts. Persisted contexts include a signed row fingerprint;
+owner changes or delete/recreate reuse make the context stale and require a
+refresh. Component actions should use `embeddedContext()` (or the
+`embeddedResource()` convenience method) instead of trusting duplicate public
+IDs, surface names, field slugs, or read-only flags.
 
 When a create host cannot provide even an unsaved model, declare
 `'owner_resource' => Quote::class`; Aura instantiates it for the `create` policy

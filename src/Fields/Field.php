@@ -325,7 +325,10 @@ abstract class Field implements Wireable
         return $this->taxonomy;
     }
 
-    public function rendersOnIndex(): bool
+    /**
+     * @param  array<string, mixed>  $field
+     */
+    public function rendersOnIndex(array $field = []): bool
     {
         return $this->index !== null;
     }
