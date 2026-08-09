@@ -8,7 +8,6 @@ use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Livewire\Media\MediaSelectionBroker;
 use Aura\Base\Livewire\Media\MediaSelectionRecord;
 use Aura\Base\Resource;
-use Aura\Base\Resources\Attachment;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
@@ -17,13 +16,16 @@ use Livewire\Component;
 
 class MediaManager extends Component
 {
+    #[Locked]
     public array $field = [];
 
+    #[Locked]
     public string $fieldSlug = '';
 
     public bool $initialSelectionDone = false;
 
     /** @var array{persistent: bool, modalClasses: string, slideOver: bool} */
+    #[Locked]
     public array $modalAttributes = [
         'persistent' => false,
         'modalClasses' => 'max-w-7xl',
@@ -39,6 +41,7 @@ class MediaManager extends Component
     #[Locked]
     public string $ownerTokenDigest = '';
 
+    #[Locked]
     public bool $pending = false;
 
     #[Locked]
@@ -164,17 +167,9 @@ class MediaManager extends Component
 
     public function render(): View
     {
-        $actor = $this->authorizeContext();
-        $attachmentClass = config('aura.resources.attachment', Attachment::class);
-        $rows = $attachmentClass::query()->paginate(25);
-        $this->rowIds = app(MediaAuthorization::class)
-            ->authorizeAttachments($rows->getCollection()->modelKeys(), $actor)
-            ->map(fn (Resource $attachment): string => (string) $attachment->getKey())
-            ->all();
+        $this->authorizeContext();
 
-        return view('aura::livewire.media-manager', [
-            'rows' => $rows,
-        ]);
+        return view('aura::livewire.media-manager');
     }
 
     public function requestMediaSelection(array $value): void
@@ -236,14 +231,6 @@ class MediaManager extends Component
         if ($this->selected && ! $this->initialSelectionDone) {
             $this->dispatch('selectedRows', collect($this->selected)->map(fn ($id): string => (string) $id)->values()->toArray());
             $this->initialSelectionDone = true;
-        }
-    }
-
-    #[On('updateField')]
-    public function updateField($data): void
-    {
-        if (is_array($data) && ($data['slug'] ?? null) === $this->slug && is_array($data['value'] ?? null)) {
-            $this->selected = collect($data['value'])->map(fn ($id): string => (string) $id)->values()->toArray();
         }
     }
 

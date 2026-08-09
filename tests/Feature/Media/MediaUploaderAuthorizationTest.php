@@ -5,6 +5,7 @@ use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Fixtures\Media\Core20FailingAttachment;
+use Aura\Base\Tests\Fixtures\Media\Core20PostInsertFailingAttachment;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -69,5 +70,21 @@ test('uploader locks its owner token', function () {
     $uploader = Livewire::test(MediaUploader::class);
 
     expect(fn () => $uploader->set('ownerToken', 'forged'))
+        ->toThrow(Exception::class)
+        ->and(fn () => $uploader->set('table', false))
+        ->toThrow(Exception::class)
+        ->and(fn () => $uploader->set('model', new Attachment))
         ->toThrow(Exception::class);
+});
+
+test('uploader rolls back a row inserted before a persistence listener fails', function () {
+    config()->set('aura.resources.attachment', Core20PostInsertFailingAttachment::class);
+    app('aura')::registerResources([Core20PostInsertFailingAttachment::class]);
+
+    Livewire::test(MediaUploader::class)
+        ->set('media', [UploadedFile::fake()->image('post-insert-orphan.jpg')])
+        ->assertHasErrors('media.0');
+
+    expect(Attachment::count())->toBe(0)
+        ->and(Storage::disk('public')->allFiles('media'))->toBe([]);
 });

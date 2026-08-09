@@ -52,7 +52,7 @@
                 {{ __('The media selection could not be applied. Please try again.') }}
             </p>
         @endif
-        <x-aura::button class="ml-4" x-on:click="$dialog.close()">
+        <x-aura::button class="ml-4" data-picker-close x-on:click="if (! $wire.pending) $wire.$dispatch('closeModal')" :disabled="$pending">
             {{ __('Close') }}
         </x-aura::button>
         <x-aura::button.primary class="ml-4" data-picker-select x-on:click="$wire.requestMediaSelection([...selected])" wire:loading.attr="disabled" wire:target="requestMediaSelection" :disabled="$pending">

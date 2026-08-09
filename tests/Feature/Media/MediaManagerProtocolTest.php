@@ -74,7 +74,7 @@ test('authoritative success closes only on the third manager acknowledgement req
         slug: 'image',
         value: [(string) $this->attachment->getKey()],
         actor: $this->actor,
-        mutation: fn () => null,
+        mutation: fn (): Closure => static fn (): null => null,
     );
 
     $manager->call(
@@ -136,7 +136,7 @@ test('authoritative failure stays open and permits retry with a new request toke
         'image',
         [(string) $this->attachment->getKey()],
         $this->actor,
-        fn () => throw new MediaSelectionRejected('selection_rejected'),
+        fn (): Closure => throw new MediaSelectionRejected('selection_rejected'),
     );
 
     $manager->call(
@@ -192,7 +192,7 @@ test('timeout remains open while an already successful timeout race closes', fun
         'image',
         [(string) $this->attachment->getKey()],
         $this->actor,
-        fn () => null,
+        fn (): Closure => static fn (): null => null,
     );
     Carbon::setTestNow(now()->addSeconds(16));
 
@@ -215,8 +215,17 @@ test('manager rejects guests foreign selected ids and browser mutation of locked
         ->toThrow(Exception::class)
         ->and(fn () => $manager->set('slug', 'other'))
         ->toThrow(Exception::class)
+        ->and(fn () => $manager->set('pending', false))
+        ->toThrow(Exception::class)
         ->and(fn () => $manager->call('requestMediaSelection', ['999999']))
         ->toThrow(Exception::class);
+});
+
+test('manager disables every explicit dismissal while a selection is pending', function () {
+    Livewire::test(MediaManager::class, $this->arguments)
+        ->call('requestMediaSelection', [(string) $this->attachment->getKey()])
+        ->assertSeeHtml('data-picker-close')
+        ->assertSeeHtml('disabled');
 });
 
 test('media manager transport and compatibility aliases mount and hydrate the selected winner', function (string $identifier) {

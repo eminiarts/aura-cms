@@ -28,16 +28,21 @@ class MediaUploader extends Component
 
     private const MAX_FILES = 20;
 
+    #[Locked]
     public $button = false;
 
+    #[Locked]
     public $disabled = false;
 
+    #[Locked]
     public $field;
 
+    #[Locked]
     public $for;
 
     public $media = [];
 
+    #[Locked]
     public $model;
 
     #[Locked]
@@ -49,10 +54,13 @@ class MediaUploader extends Component
     #[Locked]
     public string $ownerTokenDigest = '';
 
+    #[Locked]
     public $selected;
 
+    #[Locked]
     public $table = true;
 
+    #[Locked]
     public $upload = false;
 
     public array $uploadResult = [
@@ -101,7 +109,7 @@ class MediaUploader extends Component
     public function updatedMedia(): void
     {
         $actor = $this->authorizeContext();
-        app(MediaAuthorization::class)->authorizeAttachmentCreate($actor);
+        $attachmentPrototype = app(MediaAuthorization::class)->authorizeAttachmentCreate($actor);
         $this->resetValidation();
         $this->uploadResult = [
             'successful' => false,
@@ -167,7 +175,10 @@ class MediaUploader extends Component
                     $payload['height'] = $dimensions[1];
                 }
 
-                $attachments[] = app(config('aura.resources.attachment'))::create($payload);
+                $attachmentClass = $attachmentPrototype::class;
+                $attachments[] = $attachmentPrototype->getConnection()->transaction(
+                    fn (): Resource => $attachmentClass::create($payload),
+                );
             } catch (Throwable) {
                 if (is_string($url) && $url !== '') {
                     Storage::disk($disk)->delete($url);
@@ -182,21 +193,6 @@ class MediaUploader extends Component
 
             // Unset the processed file
             unset($this->media[$key]);
-        }
-
-        // Only the inline field uploader commits the field value directly. In the
-        // picker ($table) an upload merely joins the selection — the value is
-        // committed when the user confirms with Select. Dispatching updateField
-        // here would re-render the form under the open picker and tear it down.
-        if ($this->field && ! $this->table) {
-            // Emit update Field - use named parameter 'data' to match listener signature
-            $this->dispatch('updateField', data: [
-                'slug' => $this->field['slug'],
-                // merge the new attachments with the old ones
-                'value' => optional($this)->selected ? array_merge($this->selected, collect($attachments)->pluck('id')->toArray()) : collect($attachments)->pluck('id')->toArray(),
-            ]);
-
-            $this->selected = optional($this)->selected ? array_merge($this->selected, collect($attachments)->pluck('id')->toArray()) : collect($attachments)->pluck('id')->toArray();
         }
 
         // Notify consumers (grid highlight, picker auto-select) about the freshly

@@ -35,6 +35,7 @@ use Aura\Base\Livewire\ComponentSlots\LivewireComponentSlotBridge;
 use Aura\Base\Livewire\CreateResource;
 use Aura\Base\Livewire\EditResourceField;
 use Aura\Base\Livewire\InviteUser;
+use Aura\Base\Livewire\MediaTable;
 use Aura\Base\Livewire\MediaUploader;
 use Aura\Base\Livewire\Modals;
 use Aura\Base\Livewire\Navigation;
@@ -140,6 +141,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
             // Table component
             'aura::table' => Table::class,
+            'aura::media-table' => MediaTable::class,
             'aura.base.livewire.table.table' => Table::class,
 
             // Attachment component

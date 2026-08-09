@@ -8,6 +8,7 @@ use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -70,6 +71,7 @@ class Attachment extends Resource
 
     public function deleteAttachment()
     {
+        Gate::authorize('delete', $this);
         parent::delete();
 
         return redirect()->route('aura.attachment.index');
@@ -77,7 +79,10 @@ class Attachment extends Resource
 
     public function deleteSelected($ids)
     {
-        self::whereIn('id', $ids)->delete();
+        self::whereIn('id', $ids)->get()->each(function (self $attachment): void {
+            Gate::authorize('delete', $attachment);
+            $attachment->delete();
+        });
 
     }
 
