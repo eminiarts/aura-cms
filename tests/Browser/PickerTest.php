@@ -87,8 +87,11 @@ test('the picker stays pending until the verified acknowledgement request closes
     $page->assertVisible('[data-media-picker-root]')
         ->assertSee('Applying…')
         ->assertDisabled('[data-picker-select]')
-        ->assertDisabled('[data-picker-close]')
-        ->assertNotPresent('[data-dialog-close]');
+        ->assertDisabled('[data-picker-close]');
+
+    expect((int) $page->script(
+        "document.querySelector('[data-media-picker-root]').closest('[role=\"dialog\"]')?.querySelectorAll('[data-dialog-close]').length ?? -1"
+    ))->toBe(0);
 
     $page->script("document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))");
     $page->script("document.querySelector('[data-dialog-overlay]').click()");

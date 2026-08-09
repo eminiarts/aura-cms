@@ -205,7 +205,7 @@ class MediaUploader extends Component
                 'message' => '',
                 'ids' => $ids,
             ];
-            $this->dispatch('media-uploaded', ids: $ids);
+            $this->dispatch('media-uploaded', ids: $ids, ownerToken: $this->ownerToken);
         }
 
         $this->dispatch('refreshTable');

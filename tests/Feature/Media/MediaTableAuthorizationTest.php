@@ -114,3 +114,24 @@ test('media table locks and revalidates its security context', function () {
         ->and(fn () => $table()->set('field.slug', 'other'))
         ->toThrow(Exception::class);
 });
+
+test('media table accepts upload selection only from its attested owner context', function () {
+    $attachment = Attachment::factory()->create(config('aura.teams') ? ['team_id' => $this->actor->current_team_id] : []);
+    $table = Livewire::test(MediaTable::class, [
+        'model' => new Attachment,
+        'field' => $this->field,
+        'ownerToken' => $this->ownerToken,
+    ]);
+
+    $table->dispatch(
+        'media-uploaded',
+        ids: [(string) $attachment->getKey()],
+        ownerToken: 'foreign-owner-token',
+    )->assertSet('selected', []);
+
+    $table->dispatch(
+        'media-uploaded',
+        ids: [(string) $attachment->getKey()],
+        ownerToken: $this->ownerToken,
+    )->assertSet('selected', [(string) $attachment->getKey()]);
+});

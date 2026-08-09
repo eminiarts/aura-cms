@@ -3,7 +3,6 @@
 namespace Aura\Base\Livewire\Media;
 
 use Aura\Base\Aura;
-use Aura\Base\Fields\Field;
 use Aura\Base\Fields\File;
 use Aura\Base\Fields\Image;
 use Aura\Base\Resource;
@@ -237,7 +236,7 @@ class MediaAuthorization
         return $normalized;
     }
 
-    /** @return array{slug: string, type: class-string<Field>} */
+    /** @return array<string, mixed> */
     private function resolveFreshOwnerField(MediaOwnerContext $context, Resource $resource): array
     {
         if (! $this->isMediaFieldType($context->fieldType)) {
@@ -280,6 +279,6 @@ class MediaAuthorization
             throw new InvalidMediaOwnerContext('The media owner field is unavailable.');
         }
 
-        return ['slug' => $context->slug, 'type' => $context->fieldType];
+        return $field;
     }
 }

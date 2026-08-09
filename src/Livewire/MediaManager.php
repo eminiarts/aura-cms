@@ -137,6 +137,45 @@ class MediaManager extends Component
         $this->authorizeContext();
     }
 
+    #[On('media-uploaded')]
+    public function mediaUploaded(mixed $ids = [], mixed $ownerToken = null): void
+    {
+        $actor = $this->authorizeContext();
+
+        if (! is_array($ids)
+            || ! is_string($ownerToken)
+            || ! hash_equals($this->ownerTokenDigest, app(MediaOwnerTokenBroker::class)->digest($ownerToken))) {
+            return;
+        }
+
+        $uploaded = app(MediaAuthorization::class)
+            ->authorizeAttachments($ids, $actor)
+            ->map(fn (Resource $attachment): string => (string) $attachment->getKey());
+
+        if ($uploaded->isEmpty()) {
+            return;
+        }
+
+        $maximumFiles = (int) ($this->field['max_files'] ?? 0);
+
+        if ($maximumFiles === 1) {
+            $selection = $uploaded->slice(-1)->values();
+        } else {
+            $selection = collect($this->selected ?? [])
+                ->map(fn ($id): string => (string) $id)
+                ->merge($uploaded)
+                ->unique()
+                ->values();
+
+            if ($maximumFiles > 0) {
+                $selection = $selection->take($maximumFiles);
+            }
+        }
+
+        $this->selected = $selection->all();
+        $this->dispatch('selectedRows', $this->selected);
+    }
+
     public static function modalClasses(): string
     {
         return 'max-w-7xl';

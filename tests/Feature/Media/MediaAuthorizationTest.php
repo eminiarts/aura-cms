@@ -34,6 +34,7 @@ class Core20DynamicMediaFieldOwner extends Component
             'name' => 'Dynamic image',
             'slug' => 'dynamic-image',
             'type' => Image::class,
+            'max_files' => 1,
         ]] : [];
     }
 
@@ -160,6 +161,14 @@ test('owner authorization requires the attested component field to still exist',
     $this->actingAs($this->actor);
     $owner = Livewire::test(Core20DynamicMediaFieldOwner::class);
     $token = $owner->get('ownerTokenForTest');
+
+    expect($this->authorization->authorizeOwner(
+        $token,
+        $this->actor,
+        Post::class,
+        'dynamic-image',
+        Image::class,
+    )->field['max_files'])->toBe(1);
 
     Core20DynamicMediaFieldOwner::$includeDynamicImage = false;
 

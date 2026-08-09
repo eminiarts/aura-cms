@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\On;
 
 class MediaTable extends Table
 {
@@ -79,9 +80,18 @@ class MediaTable extends Table
         $this->authorizeContext();
     }
 
-    public function mediaUploaded($ids = []): void
+    #[On('media-uploaded')]
+    public function mediaUploaded(mixed $ids = [], mixed $ownerToken = null): void
     {
-        app(MediaAuthorization::class)->authorizeAttachments((array) $ids, $this->actor());
+        $this->authorizeContext();
+
+        if (! is_array($ids)
+            || ! is_string($ownerToken)
+            || ! hash_equals($this->ownerTokenDigest, app(MediaOwnerTokenBroker::class)->digest($ownerToken))) {
+            return;
+        }
+
+        app(MediaAuthorization::class)->authorizeAttachments($ids, $this->actor());
         parent::mediaUploaded($ids);
     }
 

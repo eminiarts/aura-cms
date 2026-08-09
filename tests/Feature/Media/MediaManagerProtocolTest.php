@@ -7,6 +7,7 @@ use Aura\Base\Livewire\Media\MediaSelectionBroker;
 use Aura\Base\Livewire\Media\MediaSelectionRejected;
 use Aura\Base\Livewire\MediaManager;
 use Aura\Base\Resources\Attachment;
+use Aura\Base\Tests\Resources\GalleryPage;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
@@ -226,6 +227,42 @@ test('manager disables every explicit dismissal while a selection is pending', f
         ->call('requestMediaSelection', [(string) $this->attachment->getKey()])
         ->assertSeeHtml('data-picker-close')
         ->assertSeeHtml('disabled');
+});
+
+test('manager accepts upload selection only from its attested owner context', function () {
+    app('aura')::registerResources([GalleryPage::class]);
+    $uploaded = Attachment::factory()->create(config('aura.teams') ? ['team_id' => $this->actor->current_team_id] : []);
+    $ownerToken = app(MediaOwnerTokenBroker::class)->issue(
+        ownerComponentId: 'gallery-owner',
+        modelClass: GalleryPage::class,
+        modelKey: null,
+        action: 'create',
+        slug: 'hero',
+        fieldType: Image::class,
+        actor: $this->actor,
+    );
+    $manager = Livewire::test(MediaManager::class, [
+        'model' => GalleryPage::class,
+        'slug' => 'hero',
+        'selected' => [(string) $this->attachment->getKey()],
+        'ownerToken' => $ownerToken,
+        'modalAttributes' => $this->arguments['modalAttributes'],
+    ]);
+
+    $manager->dispatch(
+        'media-uploaded',
+        ids: [(string) $uploaded->getKey()],
+        ownerToken: 'foreign-owner-token',
+    )->assertSet('selected', [(string) $this->attachment->getKey()]);
+
+    $manager->dispatch(
+        'media-uploaded',
+        ids: [(string) $uploaded->getKey()],
+        ownerToken: $ownerToken,
+    )
+        ->assertSet('field.max_files', 1)
+        ->assertSet('selected', [(string) $uploaded->getKey()])
+        ->assertDispatched('selectedRows', [(string) $uploaded->getKey()]);
 });
 
 test('media manager transport and compatibility aliases mount and hydrate the selected winner', function (string $identifier) {
