@@ -5,8 +5,13 @@ use Aura\Base\Facades\DynamicFunctions;
 use Aura\Base\Fields\HasMany;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
+use Aura\Base\Resources\User;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 
 use function Pest\Livewire\livewire;
@@ -14,6 +19,10 @@ use function Pest\Livewire\livewire;
 class Core05MutationResource extends Resource
 {
     public array $actions = [
+        'captureAuthoritativeAttributes' => [
+            'label' => 'Capture authoritative attributes',
+            'ability' => 'update',
+        ],
         'deleteRecord' => [
             'label' => 'Delete',
             'ability' => 'delete',
@@ -45,6 +54,15 @@ class Core05MutationResource extends Resource
     ];
 
     public array $bulkActions = [
+        'captureAuthoritativeAttributes' => [
+            'label' => 'Capture authoritative attributes',
+            'ability' => 'update',
+        ],
+        'captureCollectionAttributes' => [
+            'label' => 'Capture collection attributes',
+            'ability' => 'update',
+            'method' => 'collection',
+        ],
         'markBulkReviewed' => [
             'label' => 'Mark reviewed',
             'ability' => 'update',
@@ -56,6 +74,23 @@ class Core05MutationResource extends Resource
     public static string $type = 'Core05Mutation';
 
     public static int $updateInvocations = 0;
+
+    public static bool $useCollidingIndexQuery = false;
+
+    public function captureAuthoritativeAttributes(): void
+    {
+        $this->content = json_encode($this->mutationAttributeSnapshot(), JSON_THROW_ON_ERROR);
+        $this->save();
+    }
+
+    public function captureCollectionAttributes(array $ids): void
+    {
+        $snapshot = $this->mutationAttributeSnapshot();
+        $snapshot['ids'] = $ids;
+
+        $this->content = json_encode($snapshot, JSON_THROW_ON_ERROR);
+        $this->save();
+    }
 
     public function customWithoutAbility(): void
     {
@@ -114,12 +149,25 @@ class Core05MutationResource extends Resource
 
     public function indexQuery(Builder $query, ?Table $table = null): Builder
     {
-        return $query->where('title', '!=', 'Excluded by indexQuery');
+        $query->where($query->getModel()->qualifyColumn('title'), '!=', 'Excluded by indexQuery');
+
+        if (static::$useCollidingIndexQuery) {
+            $query
+                ->join(
+                    'core05_mutation_collisions',
+                    'core05_mutation_collisions.base_id',
+                    '=',
+                    $query->getModel()->qualifyColumn('id'),
+                )
+                ->select('*');
+        }
+
+        return $query;
     }
 
     public function kanbanQuery($query)
     {
-        return $query->where('title', '!=', 'Excluded by kanbanQuery');
+        return $query->where($query->getModel()->qualifyColumn('title'), '!=', 'Excluded by kanbanQuery');
     }
 
     public function markBulkReviewed(): void
@@ -147,6 +195,49 @@ class Core05MutationResource extends Resource
         static::updating(function (): void {
             static::$updateInvocations++;
         });
+    }
+
+    /**
+     * @return array{id: mixed, user_id: mixed, team_id: mixed, title: mixed, content: mixed, data: mixed, status: mixed}
+     */
+    private function mutationAttributeSnapshot(): array
+    {
+        return [
+            'id' => $this->getKey(),
+            'user_id' => $this->getAttribute('user_id'),
+            'team_id' => $this->getAttribute('team_id'),
+            'title' => $this->getAttribute('title'),
+            'content' => $this->getAttribute('content'),
+            'data' => $this->getAttribute('data'),
+            'status' => $this->getAttribute('status'),
+        ];
+    }
+}
+
+class Core05AuthoritativeCollisionPolicy
+{
+    public function update(User $user, Core05MutationResource $resource): bool
+    {
+        return $user->exists
+            && (string) $resource->getAttribute('user_id') !== (string) $user->getKey()
+            && (int) $resource->getAttribute('team_id') !== -900001
+            && $resource->getAttribute('title') === 'Authoritative title'
+            && $resource->getAttribute('content') === 'authoritative-content'
+            && $resource->getAttribute('data') === 'authoritative-data'
+            && $resource->getAttribute('status') === 'draft';
+    }
+}
+
+class Core05PoisonCollisionPolicy
+{
+    public function update(User $user, Core05MutationResource $resource): bool
+    {
+        return (string) $resource->getAttribute('user_id') === (string) $user->getKey()
+            && (int) $resource->getAttribute('team_id') === -900001
+            && $resource->getAttribute('title') === 'Poisoned title'
+            && $resource->getAttribute('content') === 'poisoned-content'
+            && $resource->getAttribute('data') === 'poisoned-data'
+            && $resource->getAttribute('status') === 'poisoned-status';
     }
 }
 
@@ -189,7 +280,25 @@ class Core05NoKanbanFieldResource extends Resource
 }
 
 beforeEach(function () {
+    Core05MutationResource::$useCollidingIndexQuery = false;
     Core05MutationResource::$updateInvocations = 0;
+    if (! Schema::hasColumn('posts', 'data')) {
+        Schema::table('posts', function (Blueprint $table): void {
+            $table->text('data')->nullable();
+        });
+    }
+    Schema::dropIfExists('core05_mutation_collisions');
+    Schema::create('core05_mutation_collisions', function (Blueprint $table): void {
+        $table->unsignedBigInteger('base_id');
+        $table->unsignedBigInteger('id');
+        $table->unsignedBigInteger('user_id')->nullable();
+        $table->bigInteger('team_id')->nullable();
+        $table->string('title');
+        $table->text('content')->nullable();
+        $table->text('data')->nullable();
+        $table->string('status')->nullable();
+    });
+
     Aura::fake();
     Aura::registerResources([
         Core05MutationResource::class,
@@ -198,6 +307,76 @@ beforeEach(function () {
     ]);
     Aura::setModel(new Core05MutationResource);
 });
+
+/**
+ * @return array{id: mixed, user_id: mixed, team_id: mixed, title: mixed, content: mixed, data: mixed, status: mixed}
+ */
+function core05AuthoritativeMutationSnapshot(Core05MutationResource $resource): array
+{
+    return [
+        'id' => $resource->getKey(),
+        'user_id' => $resource->getAttribute('user_id'),
+        'team_id' => $resource->getAttribute('team_id'),
+        'title' => $resource->getAttribute('title'),
+        'content' => $resource->getAttribute('content'),
+        'data' => $resource->getAttribute('data'),
+        'status' => $resource->getAttribute('status'),
+    ];
+}
+
+function core05CreateMutationCollision(
+    Core05MutationResource $resource,
+    User $user,
+    bool $matchingId = false,
+    int $duplicates = 1,
+): void {
+    $row = [
+        'base_id' => $resource->getKey(),
+        'id' => $matchingId ? $resource->getKey() : ((int) $resource->getKey()) + 100000,
+        'user_id' => $user->getKey(),
+        'team_id' => -900001,
+        'title' => 'Poisoned title',
+        'content' => 'poisoned-content',
+        'data' => 'poisoned-data',
+        'status' => 'poisoned-status',
+    ];
+
+    DB::table('core05_mutation_collisions')->insert(array_fill(0, $duplicates, $row));
+    Core05MutationResource::$useCollidingIndexQuery = true;
+}
+
+function core05CreateAuthoritativeMutationResource(User $actor): Core05MutationResource
+{
+    $resource = Core05MutationResource::create([
+        'title' => 'Authoritative title',
+        'content' => 'authoritative-content',
+        'status' => 'draft',
+    ]);
+
+    $attributes = [
+        'user_id' => User::factory()->create()->getKey(),
+        'data' => 'authoritative-data',
+    ];
+
+    if (config('aura.teams')) {
+        $attributes['team_id'] = $actor->getAttribute('current_team_id');
+    }
+
+    $resource->forceFill($attributes)->saveQuietly();
+
+    return $resource->refresh();
+}
+
+function core05FailingMutationQuery(string $failure): string
+{
+    if ($failure === 'thrown callback') {
+        return DynamicFunctions::add(static function (): Builder {
+            throw new RuntimeException('declared mutation query failed');
+        });
+    }
+
+    return 'core05-unregistered-mutation-query';
+}
 
 test('table action rejects an undeclared model method', function () {
     $this->actingAs(createSuperAdmin());
@@ -679,6 +858,209 @@ test('declared dynamic mutation scope cannot be widened through Livewire state t
 
     expect($excluded->fresh()->content)->toBe('unchanged');
 });
+
+test('joined index columns cannot poison a single action policy or handler model', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    Gate::policy(Core05MutationResource::class, Core05AuthoritativeCollisionPolicy::class);
+
+    $resource = core05CreateAuthoritativeMutationResource($actor);
+    $expectedSnapshot = core05AuthoritativeMutationSnapshot($resource);
+    core05CreateMutationCollision($resource, $actor);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->call('action', [
+            'action' => 'captureAuthoritativeAttributes',
+            'id' => $resource->getKey(),
+        ])
+        ->assertHasNoErrors();
+
+    expect(json_decode($resource->fresh()->content, true, flags: JSON_THROW_ON_ERROR))
+        ->toBe($expectedSnapshot);
+});
+
+test('joined index columns cannot poison a bulk record policy or handler model', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    Gate::policy(Core05MutationResource::class, Core05AuthoritativeCollisionPolicy::class);
+
+    $resource = core05CreateAuthoritativeMutationResource($actor);
+    $expectedSnapshot = core05AuthoritativeMutationSnapshot($resource);
+    core05CreateMutationCollision($resource, $actor);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('bulkAction', 'captureAuthoritativeAttributes')
+        ->assertHasNoErrors();
+
+    expect(json_decode($resource->fresh()->content, true, flags: JSON_THROW_ON_ERROR))
+        ->toBe($expectedSnapshot);
+});
+
+test('joined index columns cannot poison a bulk collection receiver or canonical ids', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    Gate::policy(Core05MutationResource::class, Core05AuthoritativeCollisionPolicy::class);
+
+    $resource = core05CreateAuthoritativeMutationResource($actor);
+    $expectedSnapshot = core05AuthoritativeMutationSnapshot($resource);
+    $expectedSnapshot['ids'] = [$resource->getKey()];
+    core05CreateMutationCollision($resource, $actor);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('bulkCollectionAction', 'captureCollectionAttributes')
+        ->assertHasNoErrors();
+
+    expect(json_decode($resource->fresh()->content, true, flags: JSON_THROW_ON_ERROR))
+        ->toBe($expectedSnapshot);
+});
+
+test('joined index columns cannot poison Kanban authorization or its target model', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    Gate::policy(Core05MutationResource::class, Core05AuthoritativeCollisionPolicy::class);
+
+    $resource = core05CreateAuthoritativeMutationResource($actor);
+    core05CreateMutationCollision($resource, $actor);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->call('updateCardStatus', $resource->getKey(), 'reviewed')
+        ->assertHasNoErrors();
+
+    expect($resource->fresh()->status)->toBe('reviewed');
+});
+
+test('matching joined ids cannot smuggle poisoned attributes through policy authorization', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    Gate::policy(Core05MutationResource::class, Core05PoisonCollisionPolicy::class);
+
+    $resource = core05CreateAuthoritativeMutationResource($actor);
+    core05CreateMutationCollision($resource, $actor, matchingId: true);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->call('action', ['action' => 'markReviewed', 'id' => $resource->getKey()])
+        ->assertStatus(403);
+
+    expect($resource->fresh()->content)->toBe('authoritative-content');
+});
+
+test('poisoned duplicate joins still invoke one authoritative record once', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Authoritative title',
+        'content' => '0',
+        'status' => 'draft',
+    ]);
+    core05CreateMutationCollision($resource, $actor, duplicates: 2);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->call('action', ['action' => 'incrementInvocation', 'id' => $resource->getKey()])
+        ->assertHasNoErrors();
+
+    expect($resource->fresh()->content)->toBe('1');
+});
+
+test('authoritative rehydration reapplies the resource type scope to dynamic mutation queries', function () {
+    $this->actingAs(createSuperAdmin());
+
+    $foreignType = Core05NoKanbanFieldResource::create([
+        'title' => 'Different resource type',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $queryHash = DynamicFunctions::add(
+        fn (): Builder => Core05MutationResource::withoutGlobalScopes()->whereKey($foreignType->getKey())
+    );
+
+    livewire(Table::class, ['query' => $queryHash, 'model' => new Core05MutationResource])
+        ->call('action', ['action' => 'markReviewed', 'id' => $foreignType->getKey()])
+        ->assertNotFound();
+
+    expect(Core05NoKanbanFieldResource::findOrFail($foreignType->getKey())->content)->toBe('unchanged');
+});
+
+test('authoritative rehydration reapplies the team scope to dynamic mutation queries', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team isolation only applies when teams are enabled.');
+    }
+
+    $this->actingAs(createSuperAdmin());
+
+    $foreignTeam = foreignTeam();
+    $foreignResource = Core05MutationResource::withoutGlobalScopes()->create([
+        'title' => 'Foreign unscoped dynamic row',
+        'content' => 'unchanged',
+        'status' => 'draft',
+        'team_id' => $foreignTeam->getKey(),
+    ]);
+    $queryHash = DynamicFunctions::add(
+        fn (): Builder => Core05MutationResource::withoutGlobalScopes()->whereKey($foreignResource->getKey())
+    );
+
+    livewire(Table::class, ['query' => $queryHash, 'model' => new Core05MutationResource])
+        ->call('action', ['action' => 'markReviewed', 'id' => $foreignResource->getKey()])
+        ->assertNotFound();
+
+    expect(Core05MutationResource::withoutGlobalScopes()->findOrFail($foreignResource->getKey())->content)
+        ->toBe('unchanged');
+});
+
+test('declared dynamic query failures abort every mutation surface', function (string $surface, string $failure) {
+    $this->actingAs(createSuperAdmin());
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Fail closed target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $queryHash = core05FailingMutationQuery($failure);
+
+    $expectedException = match ($failure) {
+        'missing facade root' => BindingResolutionException::class,
+        'missing callback' => Exception::class,
+        'thrown callback' => RuntimeException::class,
+    };
+
+    if ($failure === 'missing facade root') {
+        app()->forgetInstance('dynamicFunctions');
+        app()->offsetUnset('dynamicFunctions');
+    }
+
+    $mutate = match ($surface) {
+        'single action' => fn () => livewire(Table::class, [
+            'query' => $queryHash,
+            'model' => new Core05MutationResource,
+        ])->call('action', ['action' => 'markReviewed', 'id' => $resource->getKey()]),
+        'bulk action' => fn () => livewire(Table::class, [
+            'query' => $queryHash,
+            'model' => new Core05MutationResource,
+        ])->set('selected', [$resource->getKey()])
+            ->call('bulkAction', 'markBulkReviewed'),
+        'Kanban update' => fn () => livewire(Table::class, [
+            'query' => $queryHash,
+            'model' => new Core05MutationResource,
+        ])->call('updateCardStatus', $resource->getKey(), 'reviewed'),
+    };
+
+    expect($mutate)->toThrow($expectedException);
+
+    $freshResource = $resource->fresh();
+
+    expect($freshResource->content)->toBe('unchanged')
+        ->and($freshResource->status)->toBe('draft');
+})->with([
+    'single action' => 'single action',
+    'bulk action' => 'bulk action',
+    'Kanban update' => 'Kanban update',
+])->with([
+    'missing facade root' => 'missing facade root',
+    'missing callback' => 'missing callback',
+    'thrown callback' => 'thrown callback',
+]);
 
 test('table action invokes one canonical record when an effective query returns duplicate rows', function () {
     $this->actingAs(createSuperAdmin());

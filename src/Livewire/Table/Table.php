@@ -137,6 +137,8 @@ class Table extends Component
 
     protected $queryString = ['selectedFilter'];
 
+    private bool $failClosedDynamicQuery = false;
+
     public function action(array $data, TableMutationDispatcher $mutations): mixed
     {
         $data = Validator::make($data, [
@@ -577,7 +579,14 @@ class Table extends Component
      */
     protected function mutationQuery(bool $forKanban = false)
     {
-        $query = $this->query();
+        $previousFailClosedState = $this->failClosedDynamicQuery;
+        $this->failClosedDynamicQuery = true;
+
+        try {
+            $query = $this->query();
+        } finally {
+            $this->failClosedDynamicQuery = $previousFailClosedState;
+        }
 
         if ($forKanban && $this->currentView !== 'kanban') {
             $query = $this->applyKanbanQuery($query);
@@ -642,10 +651,14 @@ class Table extends Component
 
         // If query is set, use it
         if ($this->query && is_string($this->query)) {
-            try {
+            if ($this->failClosedDynamicQuery) {
                 $query = app('dynamicFunctions')::call($this->query);
-            } catch (\Exception $e) {
-                // Handle the exception
+            } else {
+                try {
+                    $query = app('dynamicFunctions')::call($this->query);
+                } catch (\Exception $e) {
+                    // Preserve the existing read-path fallback.
+                }
             }
         }
 

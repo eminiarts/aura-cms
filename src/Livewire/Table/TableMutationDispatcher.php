@@ -65,7 +65,7 @@ final class TableMutationDispatcher
     ): mixed {
         $descriptor = $this->descriptor($action, $declaredActions);
         $scope = $this->applyTrashedScope($scope, $descriptor);
-        $record = $this->findRecord($scope, $id);
+        $record = $this->findRecord($scope, $id, $descriptor['trashed']);
 
         if (! $record instanceof TableResource) {
             abort(422, 'Table mutations require an Aura table resource.');
@@ -102,7 +102,12 @@ final class TableMutationDispatcher
         }
 
         $scope = $this->applyTrashedScope($scope, $descriptor);
-        $records = $this->resolveExactSelection($scope, $selected, $selectAll);
+        $records = $this->resolveExactSelection(
+            $scope,
+            $selected,
+            $selectAll,
+            $descriptor['trashed'],
+        );
         $receiver = $records->first();
 
         if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
@@ -142,10 +147,16 @@ final class TableMutationDispatcher
         });
     }
 
-    public function findRecord(Builder $scope, int|string $id): Model
+    public function findRecord(Builder $scope, int|string $id, ?string $trashed = null): Model
     {
         $expectedIdentity = $this->canonicalIdentity($scope->getModel(), $id);
-        $records = $this->canonicalizeRecords($scope->whereKey($id)->get());
+        $effectiveKeys = $this->effectiveKeys($scope->whereKey($id));
+
+        if (count($effectiveKeys) !== 1 || ! array_key_exists($expectedIdentity, $effectiveKeys)) {
+            abort(404);
+        }
+
+        $records = $this->authoritativeRecords($scope, $effectiveKeys, $trashed);
         $resolvedIdentities = $this->canonicalIdentities($records);
         $record = $records->first();
 
@@ -203,13 +214,21 @@ final class TableMutationDispatcher
         $record->save();
     }
 
-    /**
-     * @param  array{ability: string, conditional_logic: mixed, mode: 'collection'|'record', trashed: 'only'|'with'|null}  $descriptor
-     */
-    private function applyTrashedScope(Builder $scope, array $descriptor): Builder
+    private function applyScopesOnce(Builder $scope): Builder
     {
-        if ($descriptor['trashed'] === null) {
+        $scope = (clone $scope)->applyScopes();
+
+        return $scope->withoutGlobalScopes();
+    }
+
+    private function applyTrashedMode(Builder $scope, ?string $trashed): Builder
+    {
+        if ($trashed === null) {
             return $scope;
+        }
+
+        if (! in_array($trashed, ['only', 'with'], true)) {
+            abort(422, 'The declared trashed-record scope is invalid.');
         }
 
         if (! in_array(SoftDeletes::class, class_uses_recursive($scope->getModel()), true)) {
@@ -226,9 +245,17 @@ final class TableMutationDispatcher
 
         $scope->withoutGlobalScope(SoftDeletingScope::class);
 
-        return $descriptor['trashed'] === 'only'
+        return $trashed === 'only'
             ? $scope->whereNotNull($model->qualifyColumn($deletedAtColumn))
             : $scope;
+    }
+
+    /**
+     * @param  array{ability: string, conditional_logic: mixed, mode: 'collection'|'record', trashed: 'only'|'with'|null}  $descriptor
+     */
+    private function applyTrashedScope(Builder $scope, array $descriptor): Builder
+    {
+        return $this->applyTrashedMode($scope, $descriptor['trashed']);
     }
 
     /**
@@ -241,6 +268,46 @@ final class TableMutationDispatcher
         if ($condition !== null && (! is_callable($condition) || ! $condition())) {
             abort(403, 'This table action is not available for the record.');
         }
+    }
+
+    /**
+     * Rehydrate trusted base-table attributes under the model's default scopes.
+     *
+     * @param  array<string, int|string>  $keys
+     * @return Collection<int, Model>
+     */
+    private function authoritativeRecords(Builder $scope, array $keys, ?string $trashed): Collection
+    {
+        $model = clone $scope->getModel();
+        $model->setConnection($scope->getModel()->getConnection()->getName());
+
+        if ($keys === []) {
+            return $model->newCollection();
+        }
+
+        $query = $model->newQuery();
+        $query->setEagerLoads($scope->getEagerLoads());
+        $query = $this->applyTrashedMode($query, $trashed);
+        $query->whereKey(array_values($keys));
+        $query = $this->applyScopesOnce($query);
+        $query->select($model->qualifyColumn('*'));
+
+        $records = $this->canonicalizeRecords($query->get());
+        $recordsByIdentity = [];
+
+        foreach ($records as $record) {
+            $recordsByIdentity[$this->canonicalIdentity($record, $record->getKey())] = $record;
+        }
+
+        $orderedRecords = [];
+
+        foreach (array_keys($keys) as $identity) {
+            if (array_key_exists($identity, $recordsByIdentity)) {
+                $orderedRecords[] = $recordsByIdentity[$identity];
+            }
+        }
+
+        return $model->newCollection($orderedRecords);
     }
 
     /**
@@ -325,6 +392,35 @@ final class TableMutationDispatcher
         ];
     }
 
+    /**
+     * Resolve only qualified base-table keys from the effective table scope.
+     *
+     * @return array<string, int|string>
+     */
+    private function effectiveKeys(Builder $scope): array
+    {
+        $model = $scope->getModel();
+        $keyAlias = '__aura_mutation_key';
+        $keyQuery = $this->applyScopesOnce($scope);
+        $keyQuery->setEagerLoads([]);
+        $keyQuery->select($model->getQualifiedKeyName().' as '.$keyAlias);
+
+        $keys = [];
+
+        foreach ($keyQuery->toBase()->get() as $row) {
+            $key = is_object($row) && property_exists($row, $keyAlias)
+                ? $row->{$keyAlias}
+                : null;
+            $identity = $this->canonicalIdentity($model, $key);
+
+            if (! array_key_exists($identity, $keys)) {
+                $keys[$identity] = $key;
+            }
+        }
+
+        return $keys;
+    }
+
     private function mutationMethod(Model $receiver, string $action, string $mode): ReflectionMethod
     {
         if (! method_exists($receiver, $action)) {
@@ -346,14 +442,30 @@ final class TableMutationDispatcher
     /**
      * @return Collection<int, Model>
      */
-    private function resolveExactSelection(Builder $scope, mixed $selected, bool $selectAll): Collection
-    {
+    private function resolveExactSelection(
+        Builder $scope,
+        mixed $selected,
+        bool $selectAll,
+        ?string $trashed,
+    ): Collection {
         if ($selectAll) {
-            $records = $this->canonicalizeRecords($scope->get());
+            $effectiveKeys = $this->effectiveKeys($scope);
 
-            if ($records->isEmpty()) {
+            if ($effectiveKeys === []) {
                 throw ValidationException::withMessages([
                     'selected' => 'Select at least one record.',
+                ]);
+            }
+
+            $records = $this->authoritativeRecords($scope, $effectiveKeys, $trashed);
+            $resolvedIdentities = $this->canonicalIdentities($records);
+
+            if (
+                array_diff_key($effectiveKeys, $resolvedIdentities) !== []
+                || array_diff_key($resolvedIdentities, $effectiveKeys) !== []
+            ) {
+                throw ValidationException::withMessages([
+                    'selected' => 'The selected records are invalid.',
                 ]);
             }
 
@@ -384,10 +496,21 @@ final class TableMutationDispatcher
             ]);
         }
 
-        $records = $this->canonicalizeRecords($scope->whereKey(array_values($normalized))->get());
+        $effectiveKeys = $this->effectiveKeys($scope->whereKey(array_values($normalized)));
         $expectedIdentities = collect($normalized)
             ->mapWithKeys(fn (int|string $id): array => [$this->canonicalIdentity($scope->getModel(), $id) => true])
             ->all();
+
+        if (
+            array_diff_key($expectedIdentities, $effectiveKeys) !== []
+            || array_diff_key($effectiveKeys, $expectedIdentities) !== []
+        ) {
+            throw ValidationException::withMessages([
+                'selected' => 'The selected records are invalid.',
+            ]);
+        }
+
+        $records = $this->authoritativeRecords($scope, $effectiveKeys, $trashed);
         $resolvedIdentities = $this->canonicalIdentities($records);
 
         if (

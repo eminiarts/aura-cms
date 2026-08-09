@@ -6,6 +6,7 @@ use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Gate;
@@ -162,8 +163,74 @@ class Core05BaseTablePolicy
     }
 }
 
+class Core05CompoundStringResource extends BaseResource
+{
+    public array $actions = [
+        'markReviewed' => [
+            'label' => 'Mark reviewed',
+            'ability' => 'update',
+        ],
+    ];
+
+    public static $customTable = true;
+
+    public $incrementing = false;
+
+    public static ?string $slug = 'core05-compound-string';
+
+    public static string $type = 'Core05CompoundString';
+
+    public static bool $usesMeta = false;
+
+    protected $baseFillable = ['id', 'title', 'content'];
+
+    protected $connection = 'core05_mutation_secondary';
+
+    protected $fillable = ['id', 'title', 'content'];
+
+    protected $keyType = 'string';
+
+    protected $table = 'core05_compound_string_resources';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Title',
+                'slug' => 'title',
+                'type' => 'Aura\\Base\\Fields\\Text',
+            ],
+        ];
+    }
+
+    public function markReviewed(): void
+    {
+        $this->content = 'reviewed-on-secondary';
+        $this->save();
+    }
+
+    public function resolveFieldValue(string $slug, mixed $meta = null): mixed
+    {
+        return $this->getAttribute($slug);
+    }
+}
+
+class Core05CompoundStringPolicy
+{
+    public function update(User $user, Core05CompoundStringResource $resource): bool
+    {
+        return $user->exists;
+    }
+}
+
 beforeEach(function () {
     Core05SoftDeletePolicy::$allowForceDelete = false;
+    config()->set('database.connections.core05_mutation_secondary', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+        'foreign_key_constraints' => true,
+    ]);
     Schema::dropIfExists('core05_base_table_resources');
     Schema::create('core05_base_table_resources', function (Blueprint $table): void {
         $table->id();
@@ -172,14 +239,24 @@ beforeEach(function () {
         $table->string('status')->nullable();
         $table->timestamps();
     });
+    Schema::connection('core05_mutation_secondary')->dropIfExists('core05_compound_string_resources');
+    Schema::connection('core05_mutation_secondary')->create('core05_compound_string_resources', function (Blueprint $table): void {
+        $table->string('id')->primary();
+        $table->string('title');
+        $table->text('content')->nullable();
+        $table->timestamps();
+    });
 
     Aura::fake();
     Aura::registerResources([
         Core05SoftDeleteResource::class,
         Core05BaseTableResource::class,
+        Core05CompoundStringResource::class,
     ]);
+    Relation::morphMap(['core05-compound-string' => Core05CompoundStringResource::class]);
     Gate::policy(Core05SoftDeleteResource::class, Core05SoftDeletePolicy::class);
     Gate::policy(Core05BaseTableResource::class, Core05BaseTablePolicy::class);
+    Gate::policy(Core05CompoundStringResource::class, Core05CompoundStringPolicy::class);
 });
 
 test('soft-deleted table rows can be restored through an explicitly trashed action descriptor', function () {
@@ -274,4 +351,28 @@ test('BaseResource custom-table Kanban updates retain scope and option validatio
 
     expect($resource->fresh()->status)->toBe('reviewed')
         ->and($excluded->fresh()->status)->toBe('draft');
+});
+
+test('custom-table mutations preserve morph-aliased compound string ids and model connections', function () {
+    $this->actingAs(createAdmin());
+
+    $id = 'tenant:alpha|record/0001';
+    $resource = Core05CompoundStringResource::create([
+        'id' => $id,
+        'title' => 'Compound string target',
+        'content' => 'unchanged',
+    ]);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05CompoundStringResource])
+        ->call('action', ['action' => 'markReviewed', 'id' => $id])
+        ->assertHasNoErrors();
+
+    $freshResource = $resource->fresh();
+
+    expect($freshResource)
+        ->not->toBeNull()
+        ->and($freshResource->getKey())->toBe($id)
+        ->and($freshResource->getConnectionName())->toBe('core05_mutation_secondary')
+        ->and(Relation::getMorphAlias(Core05CompoundStringResource::class))->toBe('core05-compound-string')
+        ->and($freshResource->content)->toBe('reviewed-on-secondary');
 });
