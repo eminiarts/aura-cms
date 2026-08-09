@@ -394,8 +394,19 @@ trait QueryFilters
 
     protected function isValidFilter(array $filter): bool
     {
-        return ! empty($filter['name']) &&
-               (! empty($filter['value']) || in_array($filter['operator'], ['is_empty', 'is_not_empty']));
+        if (! isset($filter['name'], $filter['operator']) || trim((string) $filter['name']) === '') {
+            return false;
+        }
+
+        if (in_array($filter['operator'], ['is_empty', 'is_not_empty'], true)) {
+            return true;
+        }
+
+        if (! array_key_exists('value', $filter) || $filter['value'] === null) {
+            return false;
+        }
+
+        return ! is_string($filter['value']) || trim($filter['value']) !== '';
     }
 
     private function applyExactSqliteNumberCondition(Builder $query, string $column, array $filter): bool
@@ -429,8 +440,9 @@ trait QueryFilters
         );
         ExactDecimal::registerSqliteFunction(DB::connection($this->model->getConnectionName()));
         $wrapped = $query->getQuery()->getGrammar()->wrap($column);
+        $key = "aura_decimal_sort_key({$wrapped})";
         $query->whereRaw(
-            "aura_decimal_sort_key({$wrapped}) {$operators[$filter['operator']]} aura_decimal_sort_key(?)",
+            "substr({$key}, 1, 1) IN ('0', '1', '2') AND {$key} {$operators[$filter['operator']]} aura_decimal_sort_key(?)",
             [(string) $value],
         );
 

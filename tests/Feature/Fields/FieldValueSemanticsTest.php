@@ -1126,6 +1126,55 @@ test('sqlite exact decimals have mathematically correct comparison keys', functi
             ->pluck('amount')->all())->toBe(array_slice($values, 7));
 });
 
+test('sqlite exact decimal keys reject malformed and over-precision legacy values', function () {
+    $valid = [
+        '-99999999999999999999999999999999999.000000000000000000000000000001',
+        '-0.25',
+        '0',
+        '0.125',
+        str_repeat('9', 65),
+    ];
+    $invalid = [
+        '',
+        'not-a-number',
+        '1e3',
+        str_repeat('9', 66),
+        '1.'.str_repeat('2', 65),
+    ];
+
+    foreach ($valid as $value) {
+        expect(ExactDecimal::sortableKey($value))->toMatch('/^[012]/');
+    }
+
+    foreach ($invalid as $value) {
+        expect(ExactDecimal::sortableKey($value))->toStartWith('3');
+    }
+
+    Schema::create('core_10_invalid_exact_decimals', function (Blueprint $table) {
+        $table->id();
+        $table->text('amount');
+    });
+    DB::table('core_10_invalid_exact_decimals')->insert(array_map(
+        fn (string $value): array => ['amount' => $value],
+        [...$valid, ...$invalid],
+    ));
+    ExactDecimal::registerSqliteFunction(DB::connection());
+
+    $sorted = DB::table('core_10_invalid_exact_decimals')
+        ->orderByRaw("CASE WHEN substr(aura_decimal_sort_key(amount), 1, 1) = '3' THEN 1 ELSE 0 END")
+        ->orderByRaw('aura_decimal_sort_key(amount)')
+        ->pluck('amount')->all();
+
+    expect(array_slice($sorted, 0, count($valid)))->toBe($valid)
+        ->and(array_slice($sorted, count($valid)))->toBe([
+            '',
+            '1.'.str_repeat('2', 65),
+            '1e3',
+            str_repeat('9', 66),
+            'not-a-number',
+        ]);
+});
+
 test('invalid configured timezones fail clearly instead of falling back to utc', function () {
     $datetime = new Datetime;
     $field = [

@@ -4,6 +4,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Aura\Base\Tests\Resources\Post;
+use Illuminate\Support\Facades\DB;
 
 use function Pest\Livewire\livewire;
 
@@ -227,6 +228,49 @@ describe('meta field sorting', function () {
         $component->assertViewHas('rows', fn ($rows) => $rows->items()[0]->id === $post3->id);
         $component->assertViewHas('rows', fn ($rows) => $rows->items()[1]->id === $post2->id);
         $component->assertViewHas('rows', fn ($rows) => $rows->items()[2]->id === $post->id);
+    });
+
+    test('invalid exact decimals sort last in both directions', function () {
+        $values = ['negative' => '-0.25', 'fraction' => '0.125', 'maximum' => str_repeat('9', 65)];
+        $posts = collect($values)->map(function (string $number, string $title): MetaSortingModel {
+            return MetaSortingModel::create([
+                'title' => $title,
+                'content' => 'Exact decimal sorting',
+                'type' => 'Post',
+                'status' => 'publish',
+                'meta' => $title,
+                'number' => $number,
+            ]);
+        });
+        $invalid = MetaSortingModel::create([
+            'title' => 'invalid',
+            'content' => 'Exact decimal sorting',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'invalid',
+            'number' => 1,
+        ]);
+        DB::table('meta')
+            ->where('metable_id', $invalid->id)
+            ->where('metable_type', $invalid->getMorphClass())
+            ->where('key', 'number')
+            ->update(['value' => 'legacy-invalid']);
+
+        $component = livewire(Table::class, ['query' => null, 'model' => $posts->first()]);
+        $component->call('sortBy', 'number')
+            ->assertViewHas('rows', fn ($rows): bool => collect($rows->items())->pluck('id')->all() === [
+                $posts['negative']->id,
+                $posts['fraction']->id,
+                $posts['maximum']->id,
+                $invalid->id,
+            ]);
+        $component->call('sortBy', 'number')
+            ->assertViewHas('rows', fn ($rows): bool => collect($rows->items())->pluck('id')->all() === [
+                $posts['maximum']->id,
+                $posts['fraction']->id,
+                $posts['negative']->id,
+                $invalid->id,
+            ]);
     });
 });
 

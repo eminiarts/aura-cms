@@ -100,6 +100,7 @@ trait Sorting
                     ->when($this->model->isNumberField($field), function ($query) use ($direction) {
                         if (DB::connection($this->model->getConnectionName())->getDriverName() === 'sqlite') {
                             ExactDecimal::registerSqliteFunction(DB::connection($this->model->getConnectionName()));
+                            $query->orderByRaw("CASE WHEN substr(aura_decimal_sort_key(meta.value), 1, 1) = '3' THEN 1 ELSE 0 END");
                             $query->orderByRaw('aura_decimal_sort_key(meta.value) '.$direction);
 
                             return;
@@ -117,6 +118,7 @@ trait Sorting
                 if ($this->model->isNumberField($field) && DB::connection($this->model->getConnectionName())->getDriverName() === 'sqlite') {
                     ExactDecimal::registerSqliteFunction(DB::connection($this->model->getConnectionName()));
                     $column = $query->getQuery()->getGrammar()->wrap($field);
+                    $query->orderByRaw("CASE WHEN substr(aura_decimal_sort_key({$column}), 1, 1) = '3' THEN 1 ELSE 0 END");
                     $query->orderByRaw("aura_decimal_sort_key({$column}) {$direction}");
 
                     return $query;

@@ -60,15 +60,173 @@ test('datetime fields declare portable wall clock columns', function () {
         ->and($definition->toMigration('occurred_at'))->toContain("\$table->dateTime('occurred_at')");
 });
 
-test('schema lock domains include driver database connection and table', function () {
-    $connection = DB::connection();
+test('schema lock domains use physical database identity rather than connection aliases', function () {
+    $database = tempnam(sys_get_temp_dir(), 'aura-core10-lock-domain-');
+    $configuration = [
+        'driver' => 'sqlite',
+        'database' => $database,
+        'password' => 'do-not-leak',
+        'prefix' => '',
+    ];
+    config()->set('database.connections.core_10_lock_alias_a', $configuration);
+    config()->set('database.connections.core_10_lock_alias_b', $configuration);
 
-    expect(SchemaMigrationLock::domain($connection, 'orders'))
-        ->toContain($connection->getDriverName())
-        ->toContain($connection->getDatabaseName())
-        ->toContain($connection->getName())
-        ->toEndWith(':orders');
+    $first = DB::connection('core_10_lock_alias_a');
+    $second = DB::connection('core_10_lock_alias_b');
+
+    try {
+        expect(SchemaMigrationLock::domain($first, 'orders'))
+            ->toBe(SchemaMigrationLock::domain($second, 'orders'))
+            ->toContain($first->getDriverName())
+            ->toContain($first->getDatabaseName())
+            ->not->toContain('core_10_lock_alias_a')
+            ->not->toContain('core_10_lock_alias_b')
+            ->not->toContain('do-not-leak')
+            ->toEndWith(':orders');
+    } finally {
+        DB::purge('core_10_lock_alias_a');
+        DB::purge('core_10_lock_alias_b');
+        File::delete($database);
+    }
 });
+
+test('sqlite schema locks canonicalize symlinks and time out across processes before recovering after release', function () {
+    if (! function_exists('pcntl_fork')) {
+        $this->markTestSkipped('pcntl is required for the process contention contract.');
+    }
+
+    $database = tempnam(sys_get_temp_dir(), 'aura-core10-lock-db-');
+    $originalDefault = config('database.default');
+    $symlink = $database.'-alias';
+    symlink(realpath($database), $symlink);
+    $configuration = ['driver' => 'sqlite', 'database' => $database, 'prefix' => ''];
+    config()->set('database.connections.core_10_lock_process_a', $configuration);
+    config()->set('database.connections.core_10_lock_process_b', [...$configuration, 'database' => $symlink]);
+    config()->set('aura.schema.lock_timeout', 0.1);
+    config()->set('aura.schema.lock_poll_interval_milliseconds', 10);
+
+    [$reader, $writer] = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, 0);
+    $pid = pcntl_fork();
+
+    if ($pid === 0) {
+        fclose($reader);
+        config()->set('database.default', 'core_10_lock_process_a');
+        DB::purge('core_10_lock_process_a');
+        SchemaMigrationLock::runForTable('orders', function () use ($writer): void {
+            fwrite($writer, 'locked');
+            fflush($writer);
+            usleep(400_000);
+        });
+        fclose($writer);
+        exit(0);
+    }
+
+    fclose($writer);
+
+    try {
+        expect(stream_get_contents($reader, 6))->toBe('locked')
+            ->and(SchemaMigrationLock::domain(DB::connection('core_10_lock_process_a'), 'orders'))
+            ->toBe(SchemaMigrationLock::domain(DB::connection('core_10_lock_process_b'), 'orders'));
+
+        config()->set('database.default', 'core_10_lock_process_b');
+        DB::purge('core_10_lock_process_b');
+        $startedAt = microtime(true);
+
+        expect(fn () => SchemaMigrationLock::runForTable('orders', static fn () => null))
+            ->toThrow(RuntimeException::class, 'Timed out acquiring Aura database schema lock');
+        expect(microtime(true) - $startedAt)->toBeLessThan(0.35);
+
+        pcntl_waitpid($pid, $status);
+        expect(pcntl_wexitstatus($status))->toBe(0)
+            ->and(SchemaMigrationLock::runForTable('orders', static fn (): string => 'released'))->toBe('released');
+    } finally {
+        fclose($reader);
+        pcntl_waitpid($pid, $status, WNOHANG);
+        config()->set('database.default', $originalDefault);
+        DB::purge('core_10_lock_process_a');
+        DB::purge('core_10_lock_process_b');
+        File::delete([$symlink, $database]);
+    }
+});
+
+test('schema locks release when the protected callback throws', function () {
+    expect(fn () => SchemaMigrationLock::runForTable('orders', static function (): void {
+        throw new RuntimeException('callback failed');
+    }))->toThrow(RuntimeException::class, 'callback failed');
+
+    expect(SchemaMigrationLock::runForTable('orders', static fn (): string => 'released'))->toBe('released');
+});
+
+test('native schema locks contend across connection aliases and recover after a holder crashes', function (string $driver) {
+    if (! function_exists('pcntl_fork')) {
+        $this->markTestSkipped('pcntl is required for the process contention contract.');
+    }
+
+    $prefix = $driver === 'pgsql' ? 'POSTGRES' : 'MYSQL';
+    $database = getenv("AURA_TEST_{$prefix}_DATABASE") ?: null;
+
+    if (! $database) {
+        $this->markTestSkipped("Set AURA_TEST_{$prefix}_DATABASE to run the {$driver} lock contract.");
+    }
+
+    $configuration = [
+        'driver' => $driver,
+        'host' => getenv("AURA_TEST_{$prefix}_HOST") ?: '127.0.0.1',
+        'port' => getenv("AURA_TEST_{$prefix}_PORT") ?: ($driver === 'mysql' ? '3306' : '5432'),
+        'database' => $database,
+        'username' => getenv("AURA_TEST_{$prefix}_USERNAME") ?: ($driver === 'mysql' ? 'root' : getenv('USER')),
+        'password' => getenv("AURA_TEST_{$prefix}_PASSWORD") ?: '',
+        'prefix' => '',
+    ];
+    $originalDefault = config('database.default');
+    $configuration += $driver === 'mysql'
+        ? ['charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'strict' => true]
+        : ['search_path' => 'public'];
+    $first = "core_10_{$driver}_lock_alias_a";
+    $second = "core_10_{$driver}_lock_alias_b";
+    config()->set("database.connections.{$first}", $configuration);
+    config()->set("database.connections.{$second}", $configuration);
+    config()->set('aura.schema.lock_timeout', 0.1);
+    config()->set('aura.schema.lock_poll_interval_milliseconds', 10);
+
+    [$reader, $writer] = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, 0);
+    $pid = pcntl_fork();
+
+    if ($pid === 0) {
+        fclose($reader);
+        config()->set('database.default', $first);
+        DB::purge($first);
+        SchemaMigrationLock::runForTable('orders', function () use ($writer): void {
+            fwrite($writer, 'locked');
+            fflush($writer);
+            sleep(5);
+        });
+        exit(0);
+    }
+
+    fclose($writer);
+
+    try {
+        expect(stream_get_contents($reader, 6))->toBe('locked');
+        config()->set('database.default', $second);
+        DB::purge($second);
+        expect(SchemaMigrationLock::domain(DB::connection($first), 'orders'))
+            ->toBe(SchemaMigrationLock::domain(DB::connection($second), 'orders'));
+        expect(fn () => SchemaMigrationLock::runForTable('orders', static fn () => null))
+            ->toThrow(RuntimeException::class, 'Timed out acquiring Aura database schema lock');
+
+        posix_kill($pid, SIGKILL);
+        pcntl_waitpid($pid, $status);
+        expect(pcntl_wifsignaled($status))->toBeTrue()
+            ->and(SchemaMigrationLock::runForTable('orders', static fn (): string => 'recovered'))->toBe('recovered');
+    } finally {
+        fclose($reader);
+        pcntl_waitpid($pid, $status, WNOHANG);
+        config()->set('database.default', $originalDefault);
+        DB::purge($first);
+        DB::purge($second);
+    }
+})->with(['mysql', 'pgsql']);
 
 test('schema definitions compare canonical types defaults nullability and attributes', function () {
     $definition = new FieldColumn('dateTime', nullable: false, default: 'CURRENT_TIMESTAMP');
@@ -553,13 +711,36 @@ test('structured schema updates retain decimals and preflight every mutation on 
 
         if ($driver === 'mysql') {
             expect($executedDdl)->toHaveCount(1)
-                ->and(strtolower($executedDdl[0]))->toContain('modify `amount`')
+                ->and(strtolower($executedDdl[0]))->not->toContain('modify `amount`')
                 ->and(strtolower($executedDdl[0]))->toContain('add `added_after_preflight`');
         }
 
         $amount = collect(Schema::getColumns($tableName))->firstWhere('name', 'amount');
 
         expect(strtolower($amount['type'] ?? ''))->toContain($driver === 'mysql' ? 'decimal(12,4)' : 'numeric(12,4)');
+
+        $changedPlan = new SchemaUpdatePlan($tableName, [
+            'amount' => new FieldColumn('decimal', [12, 4], nullable: false, driverTypes: ['sqlite' => 'text']),
+            'added_after_preflight' => new FieldColumn('string'),
+        ]);
+        File::put($path, $changedPlan->embedIn("<?php\n\nreturn new class {};\n"));
+        $executedDdl = [];
+        $captureDdl = true;
+        expect(Artisan::call('aura:schema-update', [
+            'migration' => $path,
+            '--no-interaction' => true,
+        ]))->toBe(0);
+        $captureDdl = false;
+
+        $amount = collect(Schema::getColumns($tableName))->firstWhere('name', 'amount');
+        expect(strtolower($amount['type'] ?? ''))->toContain($driver === 'mysql' ? 'decimal(12,4)' : 'numeric(12,4)')
+            ->and((bool) ($amount['nullable'] ?? true))->toBeFalse();
+
+        if ($driver === 'mysql') {
+            expect(collect($executedDdl)->contains(
+                fn (string $sql): bool => str_contains(strtolower($sql), 'modify `amount`'),
+            ))->toBeTrue();
+        }
 
         Schema::create($failureTable, function (Blueprint $table) {
             $table->id();

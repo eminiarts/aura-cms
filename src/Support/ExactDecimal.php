@@ -30,7 +30,14 @@ final class ExactDecimal
 
         $integer = ltrim($matches[2], '0');
         $integer = $integer === '' ? '0' : $integer;
-        $fraction = rtrim($matches[3] ?? '', '0');
+        $fraction = $matches[3] ?? '';
+        $digitCount = ($integer === '0' ? 0 : strlen($integer)) + strlen($fraction);
+
+        if ($digitCount > 65) {
+            return '3'.$value;
+        }
+
+        $fraction = rtrim($fraction, '0');
         $fraction = str_pad($fraction, 65, '0');
         $negative = $matches[1] === '-' && ($integer !== '0' || trim($fraction, '0') !== '');
 

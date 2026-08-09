@@ -1,9 +1,11 @@
 <?php
 
+use Aura\Base\Exceptions\InvalidFieldValue;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Aura\Base\Tests\Resources\Tag;
+use Illuminate\Support\Facades\DB;
 
 use function Pest\Livewire\livewire;
 
@@ -379,6 +381,77 @@ describe('is operator', function () {
 });
 
 describe('comparison operators', function () {
+    test('numeric filters accept zero for every comparison operator and exclude invalid legacy values', function (string $operator, int|string $value, array $expectedNumbers) {
+        $posts = collect([-1, 0, 1])->mapWithKeys(function (int $number): array {
+            $post = TableFilterModel::create([
+                'title' => "Number {$number}",
+                'content' => 'Numeric comparison',
+                'type' => 'Post',
+                'status' => 'publish',
+                'meta' => (string) $number,
+                'number' => $number,
+            ]);
+
+            return [$number => $post];
+        });
+        $invalid = TableFilterModel::create([
+            'title' => 'Invalid legacy number',
+            'content' => 'Numeric comparison',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'invalid',
+            'number' => 2,
+        ]);
+        DB::table('meta')
+            ->where('metable_id', $invalid->id)
+            ->where('metable_type', $invalid->getMorphClass())
+            ->where('key', 'number')
+            ->update(['value' => 'not-a-number']);
+
+        $component = livewire(Table::class, ['query' => null, 'model' => $posts->first()]);
+        $component->call('addFilterGroup');
+        $component->set('filters.custom.0.filters.0.name', 'number');
+        $component->set('filters.custom.0.filters.0.operator', $operator);
+        $component->set('filters.custom.0.filters.0.value', $value);
+
+        $component->assertViewHas('rows', function ($rows) use ($expectedNumbers, $posts): bool {
+            $expectedIds = collect($expectedNumbers)->map(fn (int $number) => $posts[$number]->id)->sort()->values()->all();
+            $actualIds = collect($rows->items())->pluck('id')->sort()->values()->all();
+
+            return $actualIds === $expectedIds;
+        });
+    })->with([
+        'equals integer zero' => ['equals', 0, [0]],
+        'not equals string zero' => ['not_equals', '0', [-1, 1]],
+        'greater than string zero' => ['greater_than', '0', [1]],
+        'less than integer zero' => ['less_than', 0, [-1]],
+        'greater than or equal string zero' => ['greater_than_or_equal', '0', [0, 1]],
+        'less than or equal integer zero' => ['less_than_or_equal', 0, [-1, 0]],
+    ]);
+
+    test('numeric filters reject genuinely empty and malformed values', function () {
+        $post = TableFilterModel::create([
+            'title' => 'Number zero',
+            'content' => 'Numeric validation',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'zero',
+            'number' => 0,
+        ]);
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
+        $component->call('addFilterGroup');
+        $component->set('filters.custom.0.filters.0.name', 'number');
+        $component->set('filters.custom.0.filters.0.operator', 'equals');
+
+        foreach ([null, '', '   '] as $empty) {
+            $component->set('filters.custom.0.filters.0.value', $empty)
+                ->assertViewHas('rows', fn ($rows): bool => count($rows->items()) === 1);
+        }
+
+        expect(fn () => $component->set('filters.custom.0.filters.0.value', 'not-a-number'))
+            ->toThrow(InvalidFieldValue::class);
+    });
+
     test('filter by meta field with greater_than operator', function () {
         $post = TableFilterModel::create([
             'title' => 'Test Post',

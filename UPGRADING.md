@@ -41,6 +41,8 @@ Meta-backed Number fields require no schema change because Aura meta values are 
 
 SQLite physical decimal columns remain `TEXT` so all 65 configured digits survive. Aura's table filters and sorting use an exact canonical comparison key for these columns and for legacy text meta values; existing exact plain-decimal strings need no rewrite. Before upgrading a customized query, remove float/`CAST(... AS NUMERIC)` comparisons and route it through the Aura table query contract or implement an equally exact decimal comparator.
 
+Malformed legacy number strings and values exceeding the 65-digit portability limit are excluded from every exact numeric comparison. They remain visible without a numeric filter and sort after valid numbers in both ascending and descending order. Before upgrading, audit number-backed physical and meta columns, then either normalize each invalid value to an authorized plain-decimal value or move it to a separate text field; Aura deliberately does not guess or rewrite legacy data during reads.
+
 ## Changing Datetime Columns from TIMESTAMP
 
 Aura Datetime fields store an offset-less wall clock and new generated schemas therefore use Laravel's `dateTime()` column (`DATETIME` on MySQL), not `timestamp()`. MySQL `TIMESTAMP` has a narrower range and applies connection-session timezone conversion, which violates this contract. Existing MySQL physical columns need an application migration after auditing their current timezone interpretation:

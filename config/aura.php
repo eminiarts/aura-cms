@@ -52,6 +52,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Schema Migration Locks
+    |--------------------------------------------------------------------------
+    |
+    | Bound how long schema updates wait for another process that is changing
+    | the same physical database table. Polling applies to PostgreSQL/SQLite;
+    | MySQL delegates the configured timeout to GET_LOCK().
+    |
+    */
+
+    'schema' => [
+        'lock_timeout' => 30,
+        'lock_poll_interval_milliseconds' => 50,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Components
     |--------------------------------------------------------------------------
     |
