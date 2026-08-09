@@ -82,6 +82,16 @@ describe('field plugin', function () {
 
         expect(File::exists("{$pluginDirectory}/src/Customfield.php"))->toBeTrue();
         expect(File::exists("{$pluginDirectory}/src/CustomfieldServiceProvider.php"))->toBeTrue();
+
+        $provider = File::get("{$pluginDirectory}/src/CustomfieldServiceProvider.php");
+
+        expect($provider)
+            ->toContain('use Aura\\Base\\Aura;')
+            ->toContain('public function registeringPackage(): void')
+            ->toContain("key: 'myvendor-customfield'")
+            ->toContain("namespace: 'Myvendor\\\\Customfield'")
+            ->toContain('path: __DIR__')
+            ->toContain('Aura::registerFieldSource(');
     });
 
     it('updates composer.json with field plugin autoload', function () {

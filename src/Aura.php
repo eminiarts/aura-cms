@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\Finder\SplFileInfo;
 
@@ -162,7 +163,7 @@ class Aura
         $configuration = config('aura-settings.paths.fields', []);
 
         if (! is_array($configuration)) {
-            return [];
+            $configuration = [];
         }
 
         $sources = $configuration['discover'] ?? [];
@@ -176,10 +177,26 @@ class Aura
         }
 
         if (isset($configuration['path'], $configuration['namespace'])) {
-            array_unshift($sources, [
+            $sources[] = [
                 'namespace' => $configuration['namespace'],
                 'path' => $configuration['path'],
-            ]);
+            ];
+        }
+
+        $legacyPath = config('aura.fields.path');
+        $legacyNamespace = config('aura.fields.namespace');
+
+        if (is_string($legacyPath) && is_string($legacyNamespace)) {
+            $sources[] = [
+                'namespace' => $legacyNamespace,
+                'path' => $legacyPath,
+            ];
+        }
+
+        $packageSources = config('aura-field-sources', []);
+
+        if (is_array($packageSources)) {
+            $sources = array_merge(array_values($sources), array_values($packageSources));
         }
 
         $fields = collect($sources)
@@ -193,10 +210,21 @@ class Aura
                 rtrim($source['namespace'], '\\'),
             ))
             ->merge(is_array($configuration['register'] ?? null) ? $configuration['register'] : [])
-            ->filter(fn ($field): bool => is_string($field)
-                && class_exists($field)
-                && is_subclass_of($field, AuraField::class))
-            ->unique()
+            ->map(function ($field): ?string {
+                if (! is_string($field) || ! class_exists($field)) {
+                    return null;
+                }
+
+                $reflection = new ReflectionClass($field);
+
+                if (! $reflection->isSubclassOf(AuraField::class) || ! $reflection->isInstantiable()) {
+                    return null;
+                }
+
+                return $reflection->getName();
+            })
+            ->filter()
+            ->uniqueStrict()
             ->values()
             ->all();
 
@@ -241,7 +269,7 @@ class Aura
                     return false;
                 }
 
-                $reflection = new \ReflectionClass($resourceClass);
+                $reflection = new ReflectionClass($resourceClass);
 
                 return $reflection->isSubclassOf('Aura\\Base\\Resource');
             })
@@ -434,6 +462,25 @@ class Aura
     public function registerFields(array $fields): void
     {
         $this->fields = array_merge($this->fields, $fields);
+    }
+
+    /**
+     * Register a package field discovery source without mutating Aura's nested config.
+     */
+    public static function registerFieldSource(string $key, string $namespace, string $path): void
+    {
+        $sources = config('aura-field-sources', []);
+
+        if (! is_array($sources)) {
+            $sources = [];
+        }
+
+        $sources[$key] = [
+            'namespace' => $namespace,
+            'path' => $path,
+        ];
+
+        config()->set('aura-field-sources', $sources);
     }
 
     public function registerInjectView(string $name, Closure $callback): void

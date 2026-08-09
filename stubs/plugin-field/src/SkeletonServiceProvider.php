@@ -2,6 +2,7 @@
 
 namespace VendorName\Skeleton;
 
+use Aura\Base\Aura;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -17,5 +18,14 @@ class SkeletonServiceProvider extends PackageServiceProvider
         $package
             ->name('skeleton')
             ->hasViews(':vendor_slug-skeleton');
+    }
+
+    public function registeringPackage(): void
+    {
+        Aura::registerFieldSource(
+            key: ':vendor_slug-:package_slug',
+            namespace: 'VendorName\\Skeleton',
+            path: __DIR__,
+        );
     }
 }

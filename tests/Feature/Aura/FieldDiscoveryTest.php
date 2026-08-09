@@ -1,7 +1,10 @@
 <?php
 
+use Aura\Base\Aura as AuraManager;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Tests\Fixtures\Plugin\Fields\AbstractPackageField;
 use Aura\Base\Tests\Fixtures\Plugin\Fields\PackageField;
+use Aura\Base\Tests\Fixtures\Plugin\Fields\PrivateConstructorPackageField;
 use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
@@ -80,4 +83,58 @@ test('the previously published single field path remains supported', function ()
         'App\\Aura\\Fields\\ApplicationField',
         PackageField::class,
     ]);
+});
+
+test('the original aura runtime field path remains supported', function () {
+    config()->set('aura-settings.paths.fields', null);
+    config()->set('aura.fields.namespace', 'App\\Aura\\Fields');
+    config()->set('aura.fields.path', app_path('Aura/Fields'));
+
+    expect(Aura::getAppFields())->toBe([
+        'App\\Aura\\Fields\\ApplicationField',
+    ]);
+});
+
+test('field identities are canonicalized before deduplication and ordering', function () {
+    $alias = 'Aura\\Base\\Tests\\Fixtures\\Plugin\\Fields\\PackageFieldAlias';
+
+    if (! class_exists($alias, false)) {
+        class_alias(PackageField::class, $alias);
+    }
+
+    config()->set('aura-settings.paths.fields', [
+        'discover' => [],
+        'register' => [
+            strtolower(PackageField::class),
+            $alias,
+            PackageField::class,
+        ],
+    ]);
+
+    expect(Aura::getAppFields())->toBe([
+        PackageField::class,
+    ]);
+});
+
+test('non-instantiable field subclasses are rejected before registration', function () {
+    config()->set('aura-settings.paths.fields', [
+        'discover' => [
+            'plugin' => [
+                'namespace' => 'Aura\\Base\\Tests\\Fixtures\\Plugin\\Fields',
+                'path' => dirname(__DIR__, 2).'/Fixtures/Plugin/Fields',
+            ],
+        ],
+        'register' => [],
+    ]);
+
+    $fields = Aura::getAppFields();
+
+    expect($fields)
+        ->toContain(PackageField::class)
+        ->not->toContain(AbstractPackageField::class, PrivateConstructorPackageField::class);
+
+    Aura::registerFields($fields);
+
+    expect(fn (): array => app(AuraManager::class)->getFieldsWithGroups())
+        ->not->toThrow(Throwable::class);
 });

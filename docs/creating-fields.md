@@ -430,15 +430,16 @@ public $index = 'fields.rating-index';
 For reusable fields across projects, create a Laravel package:
 
 ```bash
-php artisan aura:field-plugin MyField
+php artisan aura:plugin your-vendor/my-field
 ```
 
-This generates a package structure in `packages/`:
+Choose **Field plugin** when prompted. This generates a package structure in
+`plugins/your-vendor/my-field/`:
 
 ### Package Structure
 
 ```
-packages/my-field/
+plugins/your-vendor/my-field/
 ├── src/
 │   ├── MyField.php
 │   └── MyFieldServiceProvider.php
@@ -485,6 +486,7 @@ class MyField extends Field
 
 namespace YourVendor\MyField;
 
+use Aura\Base\Aura;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -492,13 +494,11 @@ class MyFieldServiceProvider extends PackageServiceProvider
 {
     public function registeringPackage(): void
     {
-        $sources = config('aura-settings.paths.fields.discover', []);
-        $sources['your-vendor-my-field'] = [
-            'namespace' => 'YourVendor\\MyField',
-            'path' => __DIR__,
-        ];
-
-        config()->set('aura-settings.paths.fields.discover', $sources);
+        Aura::registerFieldSource(
+            key: 'your-vendor-my-field',
+            namespace: 'YourVendor\\MyField',
+            path: __DIR__,
+        );
     }
 
     public function configurePackage(Package $package): void
@@ -510,10 +510,10 @@ class MyFieldServiceProvider extends PackageServiceProvider
 }
 ```
 
-Register discovery sources in `registeringPackage()`. Laravel finishes
-registering every provider before Aura scans the configured sources, so this
-works for normal, custom-vendor-directory, and Composer path-repository
-installations.
+Register discovery sources through `Aura::registerFieldSource()` in
+`registeringPackage()`. Laravel finishes registering every provider before Aura
+scans the configured sources, so this works regardless of provider order and
+for normal, custom-vendor-directory, and Composer path-repository installations.
 
 ### Register the Package
 
@@ -527,7 +527,7 @@ Add to your `composer.json`:
     "repositories": [
         {
             "type": "path",
-            "url": "./packages/my-field"
+            "url": "./plugins/your-vendor/my-field"
         }
     ]
 }
