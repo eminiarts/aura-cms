@@ -4,5 +4,5 @@
 @import 'tailwindcss/utilities';
 
 .aura-card {
-    @apply p-5 bg-white rounded-xl shadow-sm ring-1 ring-gray-950/10;
+    @apply p-5 rounded-xl shadow-sm bg-aura-panel ring-1 ring-aura-border;
 }

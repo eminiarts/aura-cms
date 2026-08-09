@@ -3,9 +3,9 @@
         "path": "resources/views/components/layout/app.blade.php",
         "classes": [
             "overflow-hidden",
-            "bg-white",
-            "dark:bg-gray-900",
-            "dark:text-gray-100"
+            "font-sans",
+            "bg-aura-background",
+            "text-aura-text"
         ]
     },
     {
@@ -28,8 +28,27 @@
         "path": "resources/views/components/table/list-view.blade.php",
         "classes": [
             "rounded-xl",
-            "ring-gray-950/10",
-            "dark:ring-white/10"
+            "bg-aura-panel",
+            "ring-aura-border",
+            "divide-aura-border"
+        ]
+    },
+    {
+        "path": "resources/views/components/input/index.blade.php",
+        "classes": [
+            "bg-aura-background",
+            "text-aura-text",
+            "ring-aura-border",
+            "focus:ring-aura-primary"
+        ]
+    },
+    {
+        "path": "resources/views/components/widgets/value.blade.php",
+        "classes": [
+            "bg-aura-success/10",
+            "text-aura-success",
+            "bg-aura-danger/10",
+            "text-aura-danger"
         ]
     },
     {

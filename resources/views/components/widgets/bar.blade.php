@@ -33,7 +33,7 @@
   border-radius: 8px !important; /* Add border-radius to the tooltip */
   padding: 12px !important; /* Adjust the tooltip padding */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important; /* Add a subtle shadow */
-  font-family: 'Inter', system-ui, sans-serif !important;
+  font-family: var(--aura-font-sans) !important;
 }
 
 /* ApexCharts Tooltip Title (X-axis value) */
@@ -49,14 +49,14 @@
 
   color: rgb(var(--gray-800)); /* Change the tooltip title color */
   margin-bottom: 0px !important; /* Adjust the space between the title and content */
-  font-family: 'Inter', system-ui, sans-serif !important;
+  font-family: var(--aura-font-sans) !important;
 }
 .apexcharts-text {
-  font-family: 'Inter', system-ui, sans-serif !important;
+  font-family: var(--aura-font-sans) !important;
   font-size: 12px;
 }
 .apexcharts-tooltip-text {
-  font-family: 'Inter', system-ui, sans-serif !important;
+  font-family: var(--aura-font-sans) !important;
   padding: 0px !important;
   font-size: 13px !important;
   line-height: 13px !important;

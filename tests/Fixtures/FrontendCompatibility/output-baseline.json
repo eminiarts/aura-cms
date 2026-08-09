@@ -1,13 +1,13 @@
 {
     "algorithm": "sha256",
     "tailwind3": {
-        "assertionCount": 486,
-        "bytes": 17433,
-        "sha256": "04ad45cb8cf839010413da6049443347669ab1782aeb83c91ed5aae2b3b221cd"
+        "assertionCount": 544,
+        "bytes": 19301,
+        "sha256": "91bbebf08d4409ebfa26b910cf7aa5f9c073670e8b87ec9300a5daf72317d625"
     },
     "tailwind4": {
-        "assertionCount": 460,
-        "bytes": 20497,
-        "sha256": "b5c57e47318b92d36d276c48b394fbdbb3aa5c83a21fd73d3dc9d2c529a39dfc"
+        "assertionCount": 528,
+        "bytes": 23473,
+        "sha256": "d0c7b066347facdd9d2aac73cda567cde3f3b949322318a78ad0639a7247e20d"
     }
 }

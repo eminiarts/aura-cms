@@ -9,6 +9,7 @@ See [Frontend Compatibility](/frontend-compatibility) for the supported Tailwind
 - [Overview](#overview)
 - [Theme Architecture](#theme-architecture)
 - [Configuration](#configuration)
+- [Semantic Theme Tokens](#semantic-theme-tokens)
 - [Color Palettes](#color-palettes)
 - [Dark Mode](#dark-mode)
 - [Sidebar Themes](#sidebar-themes)
@@ -105,6 +106,123 @@ return [
     ],
 ];
 ```
+
+## Semantic Theme Tokens
+
+Aura's v1 token contract lets a host configure the common application surfaces
+from `config/aura.php`. Publishing Aura's Blade views is not required. Values
+are rendered as CSS custom properties at runtime, so a host-owned Tailwind
+build and Aura's published package build share the same values.
+
+```php
+'theme' => [
+    // Existing palette and layout settings remain available.
+    'color-palette' => 'aura',
+    'gray-color-palette' => 'slate',
+    'darkmode-type' => 'auto',
+
+    'font' => [
+        'family' => [
+            'ui-sans-serif',
+            'system-ui',
+            'sans-serif',
+            'Apple Color Emoji',
+            'Segoe UI Emoji',
+            'Segoe UI Symbol',
+            'Noto Color Emoji',
+        ],
+        'stylesheet' => false,
+    ],
+
+    // Use RGB channels, without rgb(...), so opacity modifiers keep working.
+    'colors' => [
+        'light' => [
+            'primary' => 'var(--primary-600)',
+            'background' => '255 255 255',
+            'panel' => '250 250 250',
+            'border' => '228 228 231',
+            'text' => '24 24 27',
+            'muted' => '82 82 91',
+            'success' => '22 163 74',
+            'warning' => '217 119 6',
+            'danger' => '220 38 38',
+        ],
+        'dark' => [
+            'primary' => 'var(--primary-600)',
+            'background' => '9 9 11',
+            'panel' => '24 24 27',
+            'border' => '63 63 70',
+            'text' => '244 244 245',
+            'muted' => '161 161 170',
+            'success' => '22 163 74',
+            'warning' => '217 119 6',
+            'danger' => '220 38 38',
+        ],
+    ],
+],
+```
+
+The public runtime variables are:
+
+```css
+--aura-font-sans
+--aura-color-primary
+--aura-color-background
+--aura-color-panel
+--aura-color-border
+--aura-color-text
+--aura-color-muted
+--aura-color-success
+--aura-color-warning
+--aura-color-danger
+```
+
+The `.dark` selector changes the dark values. Existing `--primary-*`,
+`--gray-*`, `--sidebar-*`, and their Tailwind utilities remain supported for
+Aura 1.x compatibility.
+
+### Local custom fonts
+
+The default system stack makes no font request. To opt into a custom font,
+serve both the stylesheet and font file from the host application:
+
+```css
+/* public/fonts/acme-sans.css */
+@font-face {
+    font-family: "Acme Sans";
+    src: url("/fonts/acme-sans.woff2") format("woff2");
+    font-display: swap;
+}
+```
+
+```php
+'font' => [
+    'family' => ['Acme Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+    'stylesheet' => 'fonts/acme-sans.css',
+],
+```
+
+`stylesheet` accepts only a host-local public path. Absolute, protocol-relative,
+`data:`, and other external URLs are ignored. Aura does not automatically load
+Inter or any remote font.
+
+### Incremental adoption
+
+Migrate a component when it is next changed; a full design-system rewrite is
+not required.
+
+| Existing intent | Semantic utility |
+|---|---|
+| App canvas | `bg-aura-background text-aura-text` |
+| Card or input surface | `bg-aura-panel` |
+| Divider, outline, ring | `border-aura-border`, `divide-aura-border`, `ring-aura-border` |
+| Secondary copy | `text-aura-muted` |
+| Status feedback | `text-aura-success`, `text-aura-warning`, `text-aura-danger` |
+| Brand action | `bg-aura-primary`, `text-aura-primary`, with opacity modifiers as needed |
+| Configured font stack | `font-sans` |
+
+Legacy `primary-*` utilities can remain beside semantic utilities during this
+transition.
 
 ### Accessing Theme Settings
 
@@ -247,7 +365,7 @@ Dark mode is implemented using:
 
 ```html
 <!-- Automatic dark mode classes -->
-<div class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+<div class="bg-aura-background text-aura-text">
     <!-- Content adapts to theme -->
 </div>
 ```
@@ -471,6 +589,17 @@ module.exports = {
     theme: {
         extend: {
             colors: {
+                aura: {
+                    primary: withOpacityValue('--aura-color-primary'),
+                    background: withOpacityValue('--aura-color-background'),
+                    panel: withOpacityValue('--aura-color-panel'),
+                    border: withOpacityValue('--aura-color-border'),
+                    text: withOpacityValue('--aura-color-text'),
+                    muted: withOpacityValue('--aura-color-muted'),
+                    success: withOpacityValue('--aura-color-success'),
+                    warning: withOpacityValue('--aura-color-warning'),
+                    danger: withOpacityValue('--aura-color-danger'),
+                },
                 // Sidebar colors from CSS variables
                 sidebar: {
                     'bg': withOpacityValue('--sidebar-bg'),
@@ -500,20 +629,44 @@ module.exports = {
 };
 ```
 
+For a Tailwind 4 host entrypoint, keep Aura's runtime bridge and define aliases
+with Tailwind 4 syntax instead of compiling Aura's Tailwind 3 entrypoint:
+
+```css
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+    --font-sans: var(--aura-font-sans);
+    --color-aura-primary: rgb(var(--aura-color-primary));
+    --color-aura-background: rgb(var(--aura-color-background));
+    --color-aura-panel: rgb(var(--aura-color-panel));
+    --color-aura-border: rgb(var(--aura-color-border));
+    --color-aura-text: rgb(var(--aura-color-text));
+    --color-aura-muted: rgb(var(--aura-color-muted));
+    --color-aura-success: rgb(var(--aura-color-success));
+    --color-aura-warning: rgb(var(--aura-color-warning));
+    --color-aura-danger: rgb(var(--aura-color-danger));
+}
+```
+
+See [Frontend Compatibility](/frontend-compatibility) for the exact supported
+entrypoints and the reproducible Tailwind 3/4 contract test.
+
 ### Using Theme Colors
 
 ```html
-<!-- Primary colors -->
-<div class="bg-primary-500 hover:bg-primary-600">
-    <span class="text-primary-100">Themed text</span>
+<!-- Semantic surfaces -->
+<div class="bg-aura-panel text-aura-text ring-1 ring-aura-border">
+    <span class="text-aura-muted">Themed text</span>
 </div>
 
-<!-- Gray colors -->
-<div class="bg-gray-50 dark:bg-gray-900">
-    <p class="text-gray-700 dark:text-gray-300">Adaptive text</p>
+<!-- Semantic status -->
+<div class="bg-aura-success/10">
+    <p class="text-aura-success">Saved</p>
 </div>
 
-<!-- With opacity -->
+<!-- Legacy primary shades remain compatible -->
 <div class="bg-primary-500/20 border-primary-500/50">
     Semi-transparent elements
 </div>

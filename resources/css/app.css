@@ -26,18 +26,11 @@
 }
 
 .aura-card {
-    @apply p-5 bg-white rounded-xl shadow-sm ring-1 ring-gray-950/10;
-}
-
-.dark .aura-card {
-    @apply bg-gray-800 ring-white/10;
+    @apply p-5 rounded-xl shadow-sm bg-aura-panel ring-1 ring-aura-border;
 }
 
 .aura-card-small {
-    @apply p-2 bg-white rounded-lg shadow-sm ring-1 ring-gray-950/10;
-}
-.dark .aura-card-small {
-    @apply bg-gray-800 ring-white/10;
+    @apply p-2 rounded-lg shadow-sm bg-aura-panel ring-1 ring-aura-border;
 }
 
 
@@ -310,7 +303,7 @@
     @apply text-gray-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-team-name {
-    @apply text-gray-500;
+    @apply text-gray-300;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-team-name{
@@ -320,7 +313,7 @@
     @apply dark:text-gray-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-team-name {
-    @apply dark:text-gray-500;
+    @apply dark:text-gray-300;
 }
 
 
@@ -673,4 +666,3 @@
 .aura-sidebar-darkmode-type-dark .aura-sidebar-team-switcher {
     @apply dark:text-gray-200 dark:bg-transparent dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
 }
-

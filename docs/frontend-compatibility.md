@@ -173,7 +173,7 @@ npm run build
 npm run test:frontend-compatibility
 ```
 
-Results on the audit snapshot:
+Current reproducible results (including CORE-24):
 
 - `npm ci`: pass; 190 packages installed.
 - Main build: pass twice from the current locks; each run used Vite `8.1.5`,
@@ -184,11 +184,11 @@ Results on the audit snapshot:
   an unstaged or staged rebuild cannot validate itself merely by making
   `git diff` empty.
 - The manifest is 331 bytes (SHA-256
-  `349e95bb3c759a9d1ffce652ef8397d12f354655692c5c9ff0f8333e3134a699`)
-  and references `assets/app-BzQlU9Hi.css` and
+  `0996c28f876f39a710f12fe3270d8f250c2558f4212edb21f1a1a7b1f7ddb02d`)
+  and references `assets/app-DjUdBHPY.css` and
   `assets/app-ccnW50-_.js`.
-- The reproduced CSS is 213,714 bytes (SHA-256
-  `ac245d6802619eaa6bc8549be8dcc0164909224663931e9dde4c3f2bc4913e08`);
+- The reproduced CSS is 218,091 bytes (SHA-256
+  `a11ad176ccd35c248e9533099afa02543ae741ea4db9ad6e160df7c7690d1164`);
   the reproduced JavaScript is 267,729 bytes (SHA-256
   `9fdf0e55d0f5a74ddb65467a2686701e989bba921de45dfdc339c77f13647253`).
 - Composer dependencies are a build precondition: Aura's Tailwind content
@@ -209,13 +209,14 @@ Results on the audit snapshot:
 npm run test:frontend-compatibility
 ```
 
-The runner snapshots five full, representative Aura sources declared in
-`source-files.json`: the application shell, primary and light buttons, list
-table, and PHP status field. It verifies their expected literal classes before
-copying them. Both compiler lanes scan that same source snapshot plus the
-gate-only semantic probe. The audited source snapshot contains five files and
-uses the fixed, machine-readable expectation in `source-baseline.json`.
-Audited source SHA-256: `8b69df60182ad73ddfc9ae064bd1ffa7e5605fc4e5337d0e895d3a652df57190`.
+The runner snapshots seven full, representative Aura sources declared in
+`source-files.json`: the application shell, primary and light buttons, form
+input, list table, value widget, and PHP status field. It verifies their
+expected literal classes before copying them. Both compiler lanes scan that
+same source snapshot plus the gate-only semantic probe. The audited source
+snapshot contains seven files and uses the fixed, machine-readable expectation
+in `source-baseline.json`.
+Audited source SHA-256: `253ff9b9e7a2153c06d739bcf09016f2e2286c7403f337afa86582dd03573cb9`.
 
 The `aura-source-records-v2-length-prefixed` canonicalization starts with a
 domain identifier and record count. Each manifest-ordered record contains the
@@ -305,13 +306,13 @@ source map. Both the worktree and stage-zero Git index must match that external
 manifest exactly. An intentional production rebuild therefore requires an
 explicitly reviewed baseline update as well as the rebuilt assets.
 
-Results on the audit snapshot:
+Current reproducible results (including CORE-24):
 
-- Tailwind `3.4.19`: pass, 486 parsed assertions, 17,433 output bytes,
-  SHA-256 `04ad45cb8cf839010413da6049443347669ab1782aeb83c91ed5aae2b3b221cd`.
-- Tailwind `4.3.3` through Vite `8.2.1`: pass, 460 parsed assertions,
-  20,497 output bytes, SHA-256
-  `b5c57e47318b92d36d276c48b394fbdbb3aa5c83a21fd73d3dc9d2c529a39dfc`.
+- Tailwind `3.4.19`: pass, 544 parsed assertions, 19,301 output bytes,
+  SHA-256 `91bbebf08d4409ebfa26b910cf7aa5f9c073670e8b87ec9300a5daf72317d625`.
+- Tailwind `4.3.3` through Vite `8.2.1`: pass, 528 parsed assertions,
+  23,473 output bytes, SHA-256
+  `d0c7b066347facdd9d2aac73cda567cde3f3b949322318a78ad0639a7247e20d`.
 
 The v4 lane copies only the committed isolated fixture and shared contract into
 the temporary workspace, runs `npm ci` against its lockfile, and builds its

@@ -20,7 +20,7 @@ module.exports = {
         './vendor/laravel/jetstream/**/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
-        './src/*.php',
+        './src/**/*.php',
     ],
 
     theme: {
@@ -43,6 +43,17 @@ module.exports = {
                 countdown: 'countdown 3s linear 1',
             },
             colors: {
+                aura: {
+                    primary: withOpacityValue('--aura-color-primary'),
+                    background: withOpacityValue('--aura-color-background'),
+                    panel: withOpacityValue('--aura-color-panel'),
+                    border: withOpacityValue('--aura-color-border'),
+                    text: withOpacityValue('--aura-color-text'),
+                    muted: withOpacityValue('--aura-color-muted'),
+                    success: withOpacityValue('--aura-color-success'),
+                    warning: withOpacityValue('--aura-color-warning'),
+                    danger: withOpacityValue('--aura-color-danger'),
+                },
                 sidebar: {
                     'bg' : withOpacityValue('--sidebar-bg'),
                     'bg-hover' : withOpacityValue('--sidebar-bg-hover'),
@@ -80,7 +91,7 @@ module.exports = {
                 }
             },
             fontFamily: {
-                sans: ['Inter', ...defaultTheme.fontFamily.sans],
+                sans: ['var(--aura-font-sans)', ...defaultTheme.fontFamily.sans],
             },
             fontSize: {
                 '2xs': '0.67rem',

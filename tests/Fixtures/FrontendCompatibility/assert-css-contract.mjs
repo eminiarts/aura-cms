@@ -183,15 +183,23 @@ export function assertCssContract(outputPath, major) {
         'PHP source utility',
     );
 
-    const darkGraySelector = '.dark\\:bg-gray-900:where(.dark,.dark *)';
-    expectDeclaration(
-        darkGraySelector,
-        'background-color',
-        major === 3
-            ? 'rgb(var(--gray-900)/var(--tw-bg-opacity,1))'
-            : 'rgb(var(--gray-900))',
-        'selector dark-mode utility',
-    );
+    const darkPrimarySelector = '.dark\\:bg-primary-400\\/10:where(.dark,.dark *)';
+
+    if (major === 3) {
+        expectDeclaration(
+            darkPrimarySelector,
+            'background-color',
+            'rgb(var(--primary-400)/.1)',
+            'selector dark-mode utility',
+        );
+    } else {
+        expectMatchingDeclaration(
+            darkPrimarySelector,
+            'background-color',
+            (value) => normalize(value) === 'color-mix(inoklab,rgb(var(--primary-400))10%,transparent)',
+            'selector dark-mode utility',
+        );
+    }
 
     root.walkDecls((declaration) => {
         assert.doesNotMatch(declaration.value, /url\(\s*['"]?https?:/i, `Remote asset URL in ${declaration.prop}`);

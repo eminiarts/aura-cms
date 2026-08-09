@@ -3,11 +3,6 @@
     "root": "resources/dist",
     "files": [
         {
-            "path": "resources/dist/assets/app-BzQlU9Hi.css",
-            "bytes": 213714,
-            "sha256": "ac245d6802619eaa6bc8549be8dcc0164909224663931e9dde4c3f2bc4913e08"
-        },
-        {
             "path": "resources/dist/assets/app-ccnW50-_.js",
             "bytes": 267729,
             "sha256": "9fdf0e55d0f5a74ddb65467a2686701e989bba921de45dfdc339c77f13647253"
@@ -18,9 +13,14 @@
             "sha256": "0aa12703fc30a3a582336ad2dba842d8a4e6666bb865bc4e0f622de191fc2995"
         },
         {
+            "path": "resources/dist/assets/app-DjUdBHPY.css",
+            "bytes": 218091,
+            "sha256": "a11ad176ccd35c248e9533099afa02543ae741ea4db9ad6e160df7c7690d1164"
+        },
+        {
             "path": "resources/dist/manifest.json",
             "bytes": 331,
-            "sha256": "349e95bb3c759a9d1ffce652ef8397d12f354655692c5c9ff0f8333e3134a699"
+            "sha256": "0996c28f876f39a710f12fe3270d8f250c2558f4212edb21f1a1a7b1f7ddb02d"
         }
     ]
 }
