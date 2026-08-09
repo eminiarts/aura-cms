@@ -5,7 +5,9 @@ namespace Tests\Feature\Fields;
 use Aura\Base\Contracts\EmbeddedLivewireComponent;
 use Aura\Base\Contracts\MapsEmbeddedComponentParameters;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Fields\Field;
 use Aura\Base\Fields\LivewireComponent;
+use Aura\Base\Livewire\EmbeddedComponentAuthorizationHook;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
@@ -17,8 +19,13 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
+use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\ComponentHookRegistry;
+use Livewire\Features\SupportEvents\SupportEvents;
 use Livewire\Livewire;
+use ReflectionClass;
+use ReflectionMethod;
 use stdClass;
 
 use function Pest\Livewire\livewire;
@@ -29,6 +36,10 @@ class Core12EmbeddedComponent extends Component implements EmbeddedLivewireCompo
 
     public static int $mountCount = 0;
 
+    public static int $pingActionCount = 0;
+
+    public static int $protectedListenerCount = 0;
+
     public static int $revokeActionCount = 0;
 
     public static int $sensitiveActionCount = 0;
@@ -38,7 +49,16 @@ class Core12EmbeddedComponent extends Component implements EmbeddedLivewireCompo
         self::$mountCount++;
     }
 
-    public function ping(): void {}
+    public function ping(): void
+    {
+        self::$pingActionCount++;
+    }
+
+    #[On('core12-protected-event')]
+    public function protectedListener(): void
+    {
+        self::$protectedListenerCount++;
+    }
 
     public function render(): string
     {
@@ -98,6 +118,14 @@ class Core12MissingAuthorizationTraitComponent extends Component implements Embe
     public function render(): string
     {
         return '<div>Missing authorization trait</div>';
+    }
+}
+
+class Core12ZeroArgumentIndexField extends Field
+{
+    public function rendersOnIndex(): bool
+    {
+        return true;
     }
 }
 
@@ -188,6 +216,8 @@ beforeEach(function () {
     Livewire::component('core12.unbounded', Core12UnboundedComponent::class);
 
     Core12EmbeddedComponent::$mountCount = 0;
+    Core12EmbeddedComponent::$pingActionCount = 0;
+    Core12EmbeddedComponent::$protectedListenerCount = 0;
     Core12EmbeddedComponent::$revokeActionCount = 0;
     Core12EmbeddedComponent::$sensitiveActionCount = 0;
     Core12ParameterMapper::$mapCount = 0;
@@ -199,6 +229,21 @@ function core12Field(array $overrides = []): array
 }
 
 describe('LivewireComponent field configuration', function () {
+    test('keeps the public rendersOnIndex extension point zero argument compatible', function () {
+        expect((new ReflectionMethod(Field::class, 'rendersOnIndex'))->getNumberOfParameters())
+            ->toBe(0)
+            ->and((new Core12ZeroArgumentIndexField)->rendersConfiguredFieldOnIndex([]))
+            ->toBeTrue();
+    });
+
+    test('registers embedded authorization before Livewire event dispatch support', function () {
+        $reflection = new ReflectionClass(ComponentHookRegistry::class);
+        $hooks = $reflection->getStaticPropertyValue('componentHooks');
+
+        expect(array_search(EmbeddedComponentAuthorizationHook::class, $hooks, true))
+            ->toBeLessThan(array_search(SupportEvents::class, $hooks, true));
+    });
+
     test('declares explicit edit view and index renderers without becoming an input', function () {
         $field = new LivewireComponent;
 
@@ -283,7 +328,7 @@ describe('embedded component resolution', function () {
             ->assertSee('Mapped edit|new|none');
     });
 
-    test('uses a declared bounded fallback for a missing or unsupported context alias', function (array $aliases) {
+    test('uses a declared bounded fallback when the surface alias is not configured', function (array $aliases) {
         $resource = Core12EmbeddedResource::create(['title' => 'Fallback owner']);
 
         $definition = app(EmbeddedComponentResolver::class)->resolve(
@@ -295,10 +340,6 @@ describe('embedded component resolution', function () {
         expect($definition)->not->toBeNull()
             ->and($definition->alias)->toBe('core12.embedded.fallback');
     })->with([
-        'missing alias' => [[
-            'view' => 'core12.does-not-exist',
-            'fallback' => 'core12.embedded.fallback',
-        ]],
         'unsupported context' => [[
             'fallback' => 'core12.embedded.fallback',
         ]],
@@ -319,6 +360,31 @@ describe('embedded component resolution', function () {
         'invalid alias' => [['view' => '<script>']],
         'missing authorization trait' => [['view' => 'core12.missing-authorization-trait']],
         'unbounded' => [['view' => 'core12.unbounded']],
+    ]);
+
+    test('fails closed instead of falling back when an explicit secure alias is malformed', function (array $overrides, EmbeddedComponentSurface $surface) {
+        $resource = Core12EmbeddedResource::create(['title' => 'Malformed secure configuration']);
+
+        expect(app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field($overrides),
+            resource: $resource,
+            surface: $surface,
+        ))->toBeNull();
+    })->with([
+        'invalid explicit view alias does not use secure fallback' => [[
+            'component_aliases' => [
+                'view' => 'core12.does-not-exist',
+                'fallback' => 'core12.embedded.fallback',
+            ],
+        ], EmbeddedComponentSurface::View],
+        'invalid explicit edit configuration does not use legacy component' => [[
+            'component' => 'core12.unbounded',
+            'component_aliases' => ['edit' => ['core12.embedded.edit']],
+        ], EmbeddedComponentSurface::Edit],
+        'invalid aliases container does not use legacy component' => [[
+            'component' => 'core12.unbounded',
+            'component_aliases' => 'core12.embedded.edit',
+        ], EmbeddedComponentSurface::Edit],
     ]);
 
     test('preserves the legacy edit-only component contract without opting it into secure surfaces', function () {
@@ -344,7 +410,7 @@ describe('embedded component resolution', function () {
                 resource: $resource,
                 surface: EmbeddedComponentSurface::View,
             ))->toBeNull()
-            ->and((new LivewireComponent)->rendersOnIndex($field))->toBeFalse();
+            ->and((new LivewireComponent)->rendersConfiguredFieldOnIndex($field))->toBeFalse();
 
         Livewire::test($definition->alias, $definition->parameters)
             ->assertSee('Legacy|'.$resource->getKey().'|legacy_surface');
@@ -436,6 +502,42 @@ describe('embedded component security and identity', function () {
             ->assertForbidden();
     });
 
+    test('expires signed embedded contexts', function () {
+        config(['aura.embedded_components.context_ttl' => 60]);
+        $resource = Core12EmbeddedResource::create(['title' => 'Expiring context']);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+
+        $this->travel(61)->seconds();
+        app()->forgetScopedInstances();
+
+        $component->call('ping')->assertForbidden();
+
+        $this->travelBack();
+    });
+
+    test('invalidates signed embedded contexts when the configured revision changes', function () {
+        config(['aura.embedded_components.context_revision' => 'core12-v1']);
+        $resource = Core12EmbeddedResource::create(['title' => 'Revisioned context']);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+
+        config(['aura.embedded_components.context_revision' => 'core12-v2']);
+        app()->forgetScopedInstances();
+
+        $component->call('ping')->assertForbidden();
+    });
+
     test('reauthorizes before each action in one batched Livewire request', function () {
         $resource = Core12EmbeddedResource::create(['title' => 'Batched authorization']);
         $definition = app(EmbeddedComponentResolver::class)->resolve(
@@ -453,6 +555,26 @@ describe('embedded component security and identity', function () {
 
         expect(Core12EmbeddedComponent::$revokeActionCount)->toBe(1)
             ->and(Core12EmbeddedComponent::$sensitiveActionCount)->toBe(0)
+            ->and($this->user->fresh()->global_admin)->toBeFalse();
+    });
+
+    test('authorizes before a dispatched listener can run in a batched Livewire request', function () {
+        $resource = Core12EmbeddedResource::create(['title' => 'Protected event listener']);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+
+        $component->update(calls: [
+            ['method' => 'revokeAccess', 'params' => [], 'path' => ''],
+            ['method' => '__dispatch', 'params' => ['core12-protected-event', []], 'path' => ''],
+        ])->assertForbidden();
+
+        expect(Core12EmbeddedComponent::$revokeActionCount)->toBe(1)
+            ->and(Core12EmbeddedComponent::$protectedListenerCount)->toBe(0)
             ->and($this->user->fresh()->global_admin)->toBeFalse();
     });
 
@@ -505,11 +627,42 @@ describe('embedded component security and identity', function () {
         app()->forgetScopedInstances();
         $component->call('ping')->assertOk();
 
+        $originalAttributes = $resource->getRawOriginal();
         $resource->delete();
+        DB::table('core12_uuid_embedded_resources')->insert($originalAttributes);
+        app()->forgetScopedInstances();
+
+        $component->call('ping')->assertForbidden();
+    });
+
+    test('signs the canonical fully-loaded row instead of a partial model projection', function () {
+        Schema::create('core12_uuid_embedded_resources', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->string('title')->nullable();
+            $table->foreignId('user_id')->nullable();
+            $table->foreignId('team_id')->nullable();
+            $table->timestamps();
+        });
+
+        $key = '00000000-0000-4000-8000-000000000014';
         Core12UuidEmbeddedResource::create([
             'id' => $key,
-            'title' => 'Replacement row',
+            'title' => 'Canonical title',
         ]);
+        $partialResource = Core12UuidEmbeddedResource::query()
+            ->select('id')
+            ->findOrFail($key);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $partialResource,
+            surface: EmbeddedComponentSurface::View,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+
+        DB::table('core12_uuid_embedded_resources')
+            ->where('id', $key)
+            ->update(['title' => 'Changed outside the projection']);
         app()->forgetScopedInstances();
 
         $component->call('ping')->assertForbidden();
@@ -603,12 +756,80 @@ describe('resource surfaces', function () {
 
             return str_contains($sql, 'from "posts"') || str_contains($sql, 'from `posts`');
         });
+        $incarnationSelects = collect(DB::getQueryLog())->filter(function (array $query): bool {
+            return str_starts_with(strtolower($query['query']), 'select')
+                && str_contains($query['query'], 'aura_embedded_resource_incarnations');
+        });
 
         DB::disableQueryLog();
 
-        expect($ownerSelects)->toHaveCount(2)
+        expect($ownerSelects)->toHaveCount(3)
+            ->and($incarnationSelects)->toHaveCount(2)
             ->and(Core12ParameterMapper::$mapCount)->toBe(10)
             ->and(Core12EmbeddedComponent::$mountCount)->toBe(10)
             ->and($authorizationChecks)->toBeGreaterThanOrEqual(20);
+    });
+
+    test('reauthorizes a bundled second request without per-child owner queries or cross-user cache bleed', function () {
+        $resources = collect(range(1, 10))->map(
+            fn (int $index) => Core12EmbeddedResource::create(['title' => 'Bundled owner '.$index]),
+        );
+        $components = $resources->map(function (Core12EmbeddedResource $resource) {
+            $definition = app(EmbeddedComponentResolver::class)->resolve(
+                field: core12Field(),
+                resource: $resource,
+                surface: EmbeddedComponentSurface::Index,
+            );
+
+            return Livewire::test($definition->alias, $definition->parameters)->assertOk();
+        });
+        $payload = $components->map(fn ($component): array => [
+            'snapshot' => json_encode($component->snapshot, JSON_THROW_ON_ERROR),
+            'updates' => [],
+            'calls' => [['method' => 'ping', 'params' => [], 'path' => '']],
+        ])->all();
+        $authorizationChecks = 0;
+        Gate::after(function (mixed $user, string $ability, mixed $result, array $arguments) use (&$authorizationChecks): void {
+            if (($arguments[0] ?? null) instanceof Core12EmbeddedResource) {
+                $authorizationChecks++;
+            }
+        });
+
+        app()->forgetScopedInstances();
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+
+        $this->withHeader('X-Livewire', 'true')
+            ->postJson(app('livewire')->getUpdateUri(), ['components' => $payload])
+            ->assertOk()
+            ->assertJsonCount(10, 'components');
+
+        $queries = collect(DB::getQueryLog());
+        $ownerSelects = $queries->filter(function (array $query): bool {
+            $sql = strtolower($query['query']);
+
+            return str_starts_with($sql, 'select')
+                && (str_contains($sql, 'from "posts"') || str_contains($sql, 'from `posts`'));
+        });
+        $incarnationSelects = $queries->filter(function (array $query): bool {
+            return str_starts_with(strtolower($query['query']), 'select')
+                && str_contains($query['query'], 'aura_embedded_resource_incarnations');
+        });
+
+        DB::disableQueryLog();
+
+        expect($ownerSelects)->toHaveCount(1)
+            ->and($incarnationSelects)->toHaveCount(1)
+            ->and($authorizationChecks)->toBe(20)
+            ->and(Core12EmbeddedComponent::$pingActionCount)->toBe(10);
+
+        app()->forgetScopedInstances();
+        $this->actingAs(User::factory()->create());
+
+        $this->withHeader('X-Livewire', 'true')
+            ->postJson(app('livewire')->getUpdateUri(), ['components' => $payload])
+            ->assertForbidden();
+
+        expect(Core12EmbeddedComponent::$pingActionCount)->toBe(10);
     });
 });

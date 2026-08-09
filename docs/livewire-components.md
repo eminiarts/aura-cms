@@ -1124,7 +1124,10 @@ The legacy top-level `component` key remains an edit-only alias. Components
 that do not opt into the embedded boundary continue to receive the historical
 `model` and `field` mount parameters. They never create view/index surfaces or
 table columns. New fields should use `component_aliases.edit` so every
-supported surface is explicit.
+supported surface is explicit. Once `component_aliases` is present, Aura treats
+the declaration as secure configuration: a malformed or unresolved explicit
+surface alias fails closed and never falls back to the legacy component. A
+valid `fallback` applies only when that surface key is absent.
 
 ### Map mount parameters
 
@@ -1200,23 +1203,40 @@ The field checks the owner policy before rendering (`create` for an unsaved
 edit model, `update` for a persisted edit model, and `view` for view/index).
 The trait verifies the signed, locked context before component `mount()` code
 runs and again before every action, including every action in one batched
-Livewire request. Unsaved resources may carry preassigned UUID/ULID keys and
-remain create contexts. Persisted contexts include a signed row fingerprint;
-owner changes or delete/recreate reuse make the context stale and require a
-refresh. Component actions should use `embeddedContext()` (or the
-`embeddedResource()` convenience method) instead of trusting duplicate public
-IDs, surface names, field slugs, or read-only flags.
+Livewire request. Aura's authorization hook runs before Livewire event dispatch,
+so a protected `#[On]` listener cannot execute before the same check. Unsaved
+resources may carry preassigned UUID/ULID keys and remain create contexts.
+
+Persisted contexts are signed from a scoped, canonical `table.*` reload rather
+than the caller's possibly partial model projection. They also contain a
+durable row-incarnation token stored in
+`aura_embedded_resource_incarnations`. Publish/run Aura's migrations when
+upgrading. Aura rotates an existing token on Eloquent `deleted` and `restored`
+events, so even a byte-identical delete/recreate with the same UUID is rejected.
+Secure resource deletion must preserve those Eloquent lifecycle events; raw or
+quiet deletion bypasses the incarnation contract. Ordinary owner changes also
+make the fingerprint stale and require a page refresh.
+
+Contexts expire after `aura.embedded_components.context_ttl` seconds (one hour
+by default). Increment `aura.embedded_components.context_revision` to revoke
+every outstanding context after a security-sensitive configuration change.
+Component actions should use `embeddedContext()` (or the `embeddedResource()`
+convenience method) instead of trusting duplicate public IDs, surface names,
+field slugs, or read-only flags.
 
 When a create host cannot provide even an unsaved model, declare
 `'owner_resource' => Quote::class`; Aura instantiates it for the `create` policy
-and passes a null `resourceId`. A missing alias, invalid mapper, failed policy,
-or component outside the boundary renders nothing. If
-`component_aliases.fallback` is declared and valid, Aura uses it for an absent
-or invalid context alias.
+and signs a null resource key. A missing alias, invalid mapper, failed policy,
+or component outside the boundary renders nothing. If a valid
+`component_aliases.fallback` is declared, Aura uses it only when the requested
+surface alias is absent; an explicitly configured invalid alias fails closed.
 
 Keys are deterministic across renders and include the surface, owner, field
 slug, and Aura's nested field ids. For repeated programmatic instances that
 otherwise share those values, set a scalar `component_identity` on the field.
+Table and bundled Livewire requests batch canonical-owner and incarnation
+lookups per request. These caches are container-scoped and never shared across
+users or long-running worker requests.
 
 ## Performance Optimization
 

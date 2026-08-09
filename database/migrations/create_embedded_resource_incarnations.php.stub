@@ -1,0 +1,33 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        if (Schema::hasTable('aura_embedded_resource_incarnations')) {
+            return;
+        }
+
+        Schema::create('aura_embedded_resource_incarnations', function (Blueprint $table): void {
+            $table->id();
+            $table->string('resource_type');
+            $table->char('resource_key_hash', 64);
+            $table->uuid('incarnation');
+            $table->timestamps();
+
+            $table->unique(
+                ['resource_type', 'resource_key_hash'],
+                'aura_embedded_incarnation_resource_unique',
+            );
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('aura_embedded_resource_incarnations');
+    }
+};

@@ -20,6 +20,7 @@ use Aura\Base\Commands\PublishCommand;
 use Aura\Base\Commands\TransferFromPostsToCustomTable;
 use Aura\Base\Commands\TransformTableToResource;
 use Aura\Base\Commands\UpdateSchemaFromMigration;
+use Aura\Base\Contracts\DefinesFields;
 use Aura\Base\Database\Seeders\RoleCatalogSeeder;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
@@ -28,6 +29,7 @@ use Aura\Base\Livewire\BookmarkPage;
 use Aura\Base\Livewire\ChooseTemplate;
 use Aura\Base\Livewire\CreateResource;
 use Aura\Base\Livewire\EditResourceField;
+use Aura\Base\Livewire\EmbeddedComponentAuthorizationHook;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\InviteUser;
 use Aura\Base\Livewire\MediaManager;
@@ -54,7 +56,9 @@ use Aura\Base\Policies\TeamPolicy;
 use Aura\Base\Policies\UserPolicy;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Services\EmbeddedComponentAuthorizer;
 use Aura\Base\Services\EmbeddedComponentContextStore;
+use Aura\Base\Services\EmbeddedResourceIncarnationStore;
 use Aura\Base\Widgets\Bar;
 use Aura\Base\Widgets\Donut;
 use Aura\Base\Widgets\Pie;
@@ -66,6 +70,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Octane\Events\RequestReceived;
@@ -229,7 +234,12 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasViews('aura')
             ->hasAssets()
             ->hasRoutes('web')
-            ->hasMigrations(['create_aura_tables', 'consolidate_per_team_admin_roles', 'add_global_admin_to_users'])
+            ->hasMigrations([
+                'create_aura_tables',
+                'consolidate_per_team_admin_roles',
+                'add_global_admin_to_users',
+                'create_embedded_resource_incarnations',
+            ])
             ->runsMigrations()
             ->hasCommands([
                 InstallConfigCommand::class,
@@ -289,6 +299,17 @@ class AuraServiceProvider extends PackageServiceProvider
     public function packageBooted()
     {
         app('aura')::registerFields(app('aura')::getAppFields());
+
+        Event::listen([
+            'eloquent.deleted: *',
+            'eloquent.restored: *',
+        ], function (string $event, array $models): void {
+            foreach ($models as $model) {
+                if ($model instanceof DefinesFields) {
+                    app(EmbeddedResourceIncarnationStore::class)->rotate($model);
+                }
+            }
+        });
 
         Queue::after(fn () => Aura::flushState());
         Queue::exceptionOccurred(fn () => Aura::flushState());
@@ -397,6 +418,19 @@ class AuraServiceProvider extends PackageServiceProvider
             return new AuraNavigation;
         });
 
+        // Register before Livewire boots its built-in SupportEvents hook. This
+        // lets secure embedded components authorize `__dispatch` before an
+        // event listener can execute, including later calls in one batch.
+        $registerEmbeddedAuthorizationHook = static function ($livewire): void {
+            $livewire->componentHook(EmbeddedComponentAuthorizationHook::class);
+        };
+
+        if ($this->app->bound('livewire')) {
+            $registerEmbeddedAuthorizationHook($this->app->make('livewire'));
+        } else {
+            $this->app->afterResolving('livewire', $registerEmbeddedAuthorizationHook);
+        }
+
         // Bind the concrete Aura instance as a process-persistent singleton so
         // its resource/field registrations and captured baseline survive across
         // requests on a long-running worker (Octane). Octane clears facade and
@@ -406,7 +440,9 @@ class AuraServiceProvider extends PackageServiceProvider
         // reset back to the boot baseline via Aura::flushState() instead.
         $this->app->singleton(\Aura\Base\Aura::class);
 
+        $this->app->scoped(EmbeddedComponentAuthorizer::class);
         $this->app->scoped(EmbeddedComponentContextStore::class);
+        $this->app->scoped(EmbeddedResourceIncarnationStore::class);
 
         $this->app->scoped('aura', function (): Aura {
             return app(Aura::class);

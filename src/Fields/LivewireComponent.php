@@ -2,10 +2,13 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\PreloadsTableDisplay;
+use Aura\Base\Services\EmbeddedComponentContextStore;
 use Aura\Base\Services\EmbeddedComponentResolver;
 use Aura\Base\Services\EmbeddedComponentSurface;
+use Illuminate\Database\Eloquent\Collection;
 
-class LivewireComponent extends Field
+class LivewireComponent extends Field implements PreloadsTableDisplay
 {
     public $edit = 'aura::fields.livewire-component';
 
@@ -74,11 +77,25 @@ class LivewireComponent extends Field
     /**
      * @param  array<string, mixed>  $field
      */
-    public function rendersOnIndex(array $field = []): bool
+    public function preloadTableDisplay(Collection $rows, array $field): void
+    {
+        if (! $this->rendersConfiguredFieldOnIndex($field)) {
+            return;
+        }
+
+        app(EmbeddedComponentContextStore::class)->prime($rows);
+    }
+
+    public function rendersConfiguredFieldOnIndex(array $field): bool
     {
         return app(EmbeddedComponentResolver::class)->supportsSecureSurface(
             $field,
             EmbeddedComponentSurface::Index,
         );
+    }
+
+    public function rendersOnIndex(): bool
+    {
+        return false;
     }
 }

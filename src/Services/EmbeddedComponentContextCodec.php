@@ -4,9 +4,9 @@ namespace Aura\Base\Services;
 
 use Aura\Base\Contracts\DefinesFields;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
 use JsonException;
+use RuntimeException;
 
 final class EmbeddedComponentContextCodec
 {
@@ -16,10 +16,13 @@ final class EmbeddedComponentContextCodec
 
     private const PAYLOAD_KEYS = [
         'version',
+        'issued_at',
+        'expires_at',
+        'config_revision',
         'resource_class',
         'resource_key',
         'persisted',
-        'resource_fingerprint_keys',
+        'resource_incarnation',
         'resource_fingerprint',
         'ability',
         'surface',
@@ -28,7 +31,7 @@ final class EmbeddedComponentContextCodec
         'parameters',
     ];
 
-    private const VERSION = 2;
+    private const VERSION = 3;
 
     public function __construct(
         private readonly EmbeddedComponentContextStore $store,
@@ -39,22 +42,11 @@ final class EmbeddedComponentContextCodec
      */
     public function authorize(array $context, bool $fresh = false): AuthorizedEmbeddedComponentContext
     {
-        abort_unless($this->hasExactContextKeys($context), 403);
+        $payload = $this->verifiedPayload($context);
 
-        $payload = Arr::only($context, self::PAYLOAD_KEYS);
-
-        abort_unless($this->isValidPayload($payload), 403);
-
-        try {
-            $expectedSignature = $this->signature($payload);
-        } catch (JsonException) {
-            abort(403);
-        }
+        abort_unless($payload !== null, 403);
 
         $providedSignature = $context['signature'];
-
-        abort_unless(hash_equals($expectedSignature, $providedSignature), 403);
-
         $resource = $fresh ? null : $this->store->find($providedSignature);
         $resource ??= $this->restoreResource($payload);
 
@@ -86,16 +78,23 @@ final class EmbeddedComponentContextCodec
         array $parameters,
     ): array {
         $persisted = $resource->exists || $resource->wasRecentlyCreated;
-        $resourceFingerprintKeys = $persisted ? $this->resourceFingerprintKeys($resource) : [];
+
+        if ($persisted) {
+            $resource = $this->store->canonical($resource);
+            abort_unless($resource instanceof Model, 500);
+        }
+
+        $issuedAt = now()->getTimestamp();
         $payload = [
             'version' => self::VERSION,
+            'issued_at' => $issuedAt,
+            'expires_at' => $issuedAt + $this->contextTtl(),
+            'config_revision' => $this->configRevision(),
             'resource_class' => $resource::class,
             'resource_key' => $resource->getKey(),
             'persisted' => $persisted,
-            'resource_fingerprint_keys' => $resourceFingerprintKeys,
-            'resource_fingerprint' => $persisted
-                ? $this->resourceFingerprint($resource, $resourceFingerprintKeys)
-                : null,
+            'resource_incarnation' => $persisted ? $this->store->token($resource) : null,
+            'resource_fingerprint' => $persisted ? $this->resourceFingerprint($resource) : null,
             'ability' => $ability,
             'surface' => $surface->value,
             'field_slug' => $fieldSlug,
@@ -103,12 +102,90 @@ final class EmbeddedComponentContextCodec
             'parameters' => $parameters,
         ];
 
-        abort_unless($this->isValidPayload($payload), 500);
+        abort_unless($this->isValidPayloadShape($payload), 500);
 
         $signature = $this->signature($payload);
         $this->store->remember($signature, $resource);
 
         return [...$payload, 'signature' => $signature];
+    }
+
+    /**
+     * Prime canonical owners and incarnation tokens once for every embedded
+     * component included in a bundled Livewire update request.
+     *
+     * @param  array<int, mixed>  $requestPayload
+     */
+    public function primeLivewireRequest(array $requestPayload): void
+    {
+        $identities = [];
+
+        foreach ($requestPayload as $componentPayload) {
+            if (! is_array($componentPayload)
+                || ! is_string($componentPayload['snapshot'] ?? null)
+            ) {
+                continue;
+            }
+
+            try {
+                $snapshot = json_decode(
+                    $componentPayload['snapshot'],
+                    associative: true,
+                    flags: JSON_THROW_ON_ERROR,
+                );
+            } catch (JsonException) {
+                continue;
+            }
+
+            if (! is_array($snapshot)) {
+                continue;
+            }
+
+            $context = $this->unwrapSnapshotValue(
+                $snapshot['data']['auraEmbeddedContext'] ?? null,
+            );
+
+            if (! is_array($context)) {
+                continue;
+            }
+
+            $payload = $this->verifiedPayload($context);
+
+            if ($payload === null || ! $payload['persisted']) {
+                continue;
+            }
+
+            $identities[] = [
+                'resource_class' => $payload['resource_class'],
+                'resource_key' => $payload['resource_key'],
+            ];
+        }
+
+        $this->store->primeIdentities($identities);
+    }
+
+    private function configRevision(): string
+    {
+        $revision = config('aura.embedded_components.context_revision', '1');
+
+        abort_unless(is_string($revision) || is_int($revision), 500);
+
+        $revision = (string) $revision;
+        abort_unless($revision !== '', 500);
+
+        return $revision;
+    }
+
+    private function contextTtl(): int
+    {
+        $ttl = config('aura.embedded_components.context_ttl', 3600);
+
+        abort_unless(is_int($ttl) || (is_string($ttl) && ctype_digit($ttl)), 500);
+
+        $ttl = (int) $ttl;
+        abort_unless($ttl > 0, 500);
+
+        return $ttl;
     }
 
     /**
@@ -156,33 +233,31 @@ final class EmbeddedComponentContextCodec
     }
 
     /**
-     * @param  array<int|string, mixed>  $keys
+     * @param  array<string, mixed>  $payload
      */
-    private function hasValidFingerprintKeys(array $keys): bool
+    private function isCurrentPayload(array $payload): bool
     {
-        if (! array_is_list($keys)) {
-            return false;
-        }
+        $now = now()->getTimestamp();
 
-        foreach ($keys as $key) {
-            if (! is_string($key) || $key === '') {
-                return false;
-            }
-        }
-
-        return count($keys) === count(array_unique($keys));
+        return $payload['config_revision'] === $this->configRevision()
+            && $payload['expires_at'] === $payload['issued_at'] + $this->contextTtl()
+            && $payload['issued_at'] <= $now
+            && $payload['expires_at'] >= $now;
     }
 
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function isValidPayload(array $payload): bool
+    private function isValidPayloadShape(array $payload): bool
     {
         if (array_keys($payload) !== self::PAYLOAD_KEYS
             || ($payload['version'] ?? null) !== self::VERSION
+            || ! is_int($payload['issued_at'] ?? null)
+            || ! is_int($payload['expires_at'] ?? null)
+            || ! is_string($payload['config_revision'] ?? null)
+            || $payload['config_revision'] === ''
             || ! is_string($payload['resource_class'] ?? null)
             || ! is_bool($payload['persisted'] ?? null)
-            || ! is_array($payload['resource_fingerprint_keys'] ?? null)
             || ! in_array($payload['ability'] ?? null, self::ABILITIES, true)
             || EmbeddedComponentSurface::tryFrom($payload['surface'] ?? '') === null
             || ! is_string($payload['field_slug'] ?? null)
@@ -193,62 +268,46 @@ final class EmbeddedComponentContextCodec
             return false;
         }
 
-        $resourceClass = $payload['resource_class'];
         $resourceKey = $payload['resource_key'];
         $persisted = $payload['persisted'];
-        $fingerprintKeys = $payload['resource_fingerprint_keys'];
+        $incarnation = $payload['resource_incarnation'];
         $fingerprint = $payload['resource_fingerprint'];
         $surface = EmbeddedComponentSurface::from($payload['surface']);
 
-        if (! class_exists($resourceClass)
-            || ! is_subclass_of($resourceClass, Model::class)
-            || ! is_subclass_of($resourceClass, DefinesFields::class)
-            || (! is_int($resourceKey) && ! is_string($resourceKey) && $resourceKey !== null)
-            || ! $this->hasValidFingerprintKeys($fingerprintKeys)
+        if ((! is_int($resourceKey) && ! is_string($resourceKey) && $resourceKey !== null)
+            || $payload['expires_at'] <= $payload['issued_at']
         ) {
             return false;
         }
 
         if ($persisted) {
             return $resourceKey !== null
-                && $fingerprintKeys !== []
+                && is_string($incarnation)
+                && preg_match('/^[a-f0-9-]{36}$/', $incarnation) === 1
                 && is_string($fingerprint)
                 && preg_match('/^[a-f0-9]{64}$/', $fingerprint) === 1
                 && (($surface === EmbeddedComponentSurface::Edit && $payload['ability'] === 'update')
                     || ($surface !== EmbeddedComponentSurface::Edit && $payload['ability'] === 'view'));
         }
 
-        return $fingerprintKeys === []
+        return $incarnation === null
             && $fingerprint === null
             && $surface === EmbeddedComponentSurface::Edit
             && $payload['ability'] === 'create';
     }
 
     /**
-     * @param  list<string>  $keys
-     *
      * @throws JsonException
      */
-    private function resourceFingerprint(Model $resource, array $keys): string
+    private function resourceFingerprint(Model $resource): string
     {
-        $attributes = Arr::only($resource->getRawOriginal(), $keys);
+        $attributes = $resource->getRawOriginal();
         ksort($attributes);
 
         return hash(
             'sha256',
             json_encode($attributes, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION),
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function resourceFingerprintKeys(Model $resource): array
-    {
-        $keys = array_keys($resource->getRawOriginal());
-        sort($keys);
-
-        return $keys;
     }
 
     /**
@@ -268,14 +327,9 @@ final class EmbeddedComponentContextCodec
 
         try {
             return ($resource->exists || $resource->wasRecentlyCreated)
-                && hash_equals(
-                    $payload['resource_fingerprint'],
-                    $this->resourceFingerprint(
-                        $resource,
-                        $payload['resource_fingerprint_keys'],
-                    ),
-                );
-        } catch (JsonException) {
+                && hash_equals($payload['resource_incarnation'], $this->store->token($resource))
+                && hash_equals($payload['resource_fingerprint'], $this->resourceFingerprint($resource));
+        } catch (JsonException|RuntimeException) {
             return false;
         }
     }
@@ -299,7 +353,10 @@ final class EmbeddedComponentContextCodec
             return $resource;
         }
 
-        $restoredResource = $resource->newQuery()->find($payload['resource_key']);
+        $restoredResource = $this->store->canonicalIdentity(
+            $resourceClass,
+            $payload['resource_key'],
+        );
 
         abort_unless($restoredResource instanceof Model, 403);
 
@@ -322,5 +379,70 @@ final class EmbeddedComponentContextCodec
             json_encode($payload, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION),
             $key,
         );
+    }
+
+    private function unwrapSnapshotValue(mixed $value, int $depth = 0): mixed
+    {
+        if ($depth > 20 || ! is_array($value)) {
+            return $value;
+        }
+
+        if (array_is_list($value)
+            && count($value) === 2
+            && is_array($value[1])
+            && array_key_exists('s', $value[1])
+        ) {
+            $value = $value[0];
+        }
+
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        foreach ($value as $key => $nestedValue) {
+            $value[$key] = $this->unwrapSnapshotValue($nestedValue, $depth + 1);
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @return array<string, mixed>|null
+     */
+    private function verifiedPayload(array $context): ?array
+    {
+        if (! $this->hasExactContextKeys($context)) {
+            return null;
+        }
+
+        $payload = array_intersect_key($context, array_flip(self::PAYLOAD_KEYS));
+
+        if (! $this->isValidPayloadShape($payload)) {
+            return null;
+        }
+
+        try {
+            $expectedSignature = $this->signature($payload);
+        } catch (JsonException) {
+            return null;
+        }
+
+        if (! hash_equals($expectedSignature, $context['signature'])
+            || ! $this->isCurrentPayload($payload)
+        ) {
+            return null;
+        }
+
+        $resourceClass = $payload['resource_class'];
+
+        if (! class_exists($resourceClass)
+            || ! is_subclass_of($resourceClass, Model::class)
+            || ! is_subclass_of($resourceClass, DefinesFields::class)
+        ) {
+            return null;
+        }
+
+        return $payload;
     }
 }

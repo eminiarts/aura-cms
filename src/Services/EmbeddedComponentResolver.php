@@ -7,7 +7,6 @@ use Aura\Base\Contracts\EmbeddedLivewireComponent;
 use Aura\Base\Contracts\MapsEmbeddedComponentParameters;
 use Aura\Base\Traits\AuthorizesEmbeddedComponent;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
 use JsonException;
 use Livewire\Livewire;
@@ -20,6 +19,7 @@ final class EmbeddedComponentResolver
     public function __construct(
         private readonly DefaultEmbeddedComponentParameterMapper $defaultMapper,
         private readonly EmbeddedComponentContextCodec $contextCodec,
+        private readonly EmbeddedComponentContextStore $contextStore,
     ) {}
 
     /**
@@ -41,6 +41,14 @@ final class EmbeddedComponentResolver
 
         if (! $resource) {
             return null;
+        }
+
+        if ($resource->exists || $resource->wasRecentlyCreated) {
+            $resource = $this->contextStore->canonical($resource);
+
+            if (! $resource) {
+                return null;
+            }
         }
 
         $ability = $this->ability($resource, $surface);
@@ -141,23 +149,6 @@ final class EmbeddedComponentResolver
             && in_array(AuthorizesEmbeddedComponent::class, class_uses_recursive($component), true);
     }
 
-    /**
-     * @param  array<string, mixed>  $field
-     */
-    private function hasConfiguredSecureEditAlias(array $field): bool
-    {
-        foreach ([
-            Arr::get($field, 'component_aliases.edit'),
-            Arr::get($field, 'component_aliases.fallback'),
-        ] as $alias) {
-            if (is_string($alias) && $alias !== '') {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private function hasOnlySerializableValues(mixed $value, int $depth = 0): bool
     {
         if ($depth > self::MAX_PARAMETER_DEPTH) {
@@ -185,6 +176,14 @@ final class EmbeddedComponentResolver
         }
 
         return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     */
+    private function hasSecureAliasConfiguration(array $field): bool
+    {
+        return array_key_exists('component_aliases', $field);
     }
 
     private function isLegacyComponent(mixed $alias): bool
@@ -266,26 +265,29 @@ final class EmbeddedComponentResolver
      */
     private function resolveAlias(array $field, EmbeddedComponentSurface $surface): ?string
     {
-        $configured = Arr::get($field, 'component_aliases.'.$surface->value);
+        $hasAliasConfiguration = $this->hasSecureAliasConfiguration($field);
+        $aliases = $field['component_aliases'] ?? [];
 
-        if ($surface === EmbeddedComponentSurface::Edit && ! is_string($configured)) {
-            $configured = $field['component'] ?? null;
+        if ($hasAliasConfiguration && ! is_array($aliases)) {
+            return null;
         }
 
-        $fallback = Arr::get($field, 'component_aliases.fallback');
+        if (array_key_exists($surface->value, $aliases)) {
+            $alias = $aliases[$surface->value];
 
-        $previousAlias = null;
+            return $this->crossesEmbeddedBoundary($alias) ? $alias : null;
+        }
 
-        foreach ([$configured, $fallback] as $alias) {
-            if ($alias === $previousAlias) {
-                continue;
-            }
+        if (array_key_exists('fallback', $aliases)) {
+            $alias = $aliases['fallback'];
 
-            $previousAlias = $alias;
+            return $this->crossesEmbeddedBoundary($alias) ? $alias : null;
+        }
 
-            if ($this->crossesEmbeddedBoundary($alias)) {
-                return $alias;
-            }
+        if ($surface === EmbeddedComponentSurface::Edit && ! $hasAliasConfiguration) {
+            $alias = $field['component'] ?? null;
+
+            return $this->crossesEmbeddedBoundary($alias) ? $alias : null;
         }
 
         return null;
@@ -300,7 +302,7 @@ final class EmbeddedComponentResolver
         EmbeddedComponentSurface $surface,
     ): ?ResolvedEmbeddedComponent {
         if ($surface !== EmbeddedComponentSurface::Edit
-            || $this->hasConfiguredSecureEditAlias($field)
+            || $this->hasSecureAliasConfiguration($field)
         ) {
             return null;
         }

@@ -125,7 +125,7 @@ trait InputFieldsHelpers
     public function indexHeaderFields()
     {
         return $this->getFieldsBeforeTree()->filter(fn ($item) => in_array($item['field_type'], ['input', 'index'], true)
-            || $item['field']->rendersOnIndex($item));
+            || $item['field']->rendersConfiguredFieldOnIndex($item));
     }
 
     public function inputFields()

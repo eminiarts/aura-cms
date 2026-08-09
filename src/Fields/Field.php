@@ -326,9 +326,17 @@ abstract class Field implements Wireable
     }
 
     /**
+     * Field-aware adapter that preserves the historical zero-argument
+     * rendersOnIndex() extension point for third-party field subclasses.
+     *
      * @param  array<string, mixed>  $field
      */
-    public function rendersOnIndex(array $field = []): bool
+    public function rendersConfiguredFieldOnIndex(array $field): bool
+    {
+        return $this->rendersOnIndex();
+    }
+
+    public function rendersOnIndex(): bool
     {
         return $this->index !== null;
     }

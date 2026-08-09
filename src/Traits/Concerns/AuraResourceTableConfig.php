@@ -15,7 +15,7 @@ trait AuraResourceTableConfig
         if (! $isInputField && $field) {
             $fieldClass = $this->fieldClassBySlug($key);
 
-            if ($fieldClass && $fieldClass->rendersOnIndex($field)) {
+            if ($fieldClass && $fieldClass->rendersConfiguredFieldOnIndex($field)) {
                 return $fieldClass->display($field, null, $this);
             }
         }

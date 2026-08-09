@@ -75,6 +75,9 @@ class TestCase extends Orchestra
 
         $migration = require __DIR__.'/../database/migrations/create_aura_tables.php.stub';
         $migration->up();
+
+        $embeddedIncarnationsMigration = require __DIR__.'/../database/migrations/create_embedded_resource_incarnations.php.stub';
+        $embeddedIncarnationsMigration->up();
     }
 
     protected function defineEnvironment($app)
