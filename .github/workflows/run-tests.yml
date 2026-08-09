@@ -66,6 +66,34 @@ jobs:
       - name: Run teams-off suite
         run: php -d memory_limit=1G vendor/bin/pest --no-coverage -c phpunit-without-teams.xml
 
+  livewire-compatibility:
+    name: Livewire ${{ matrix.livewire }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        livewire: ['4.3.5', '~4.3.5']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo_sqlite, bcmath, intl, gd, exif, iconv, fileinfo
+          coverage: none
+
+      - name: Select Livewire version
+        run: composer require "livewire/livewire:${{ matrix.livewire }}" --no-interaction --no-update
+
+      - name: Install dependencies
+        run: composer update livewire/livewire --with-all-dependencies --prefer-dist --no-interaction --no-progress
+
+      - name: Run Livewire adapter and collision matrix
+        run: php -d memory_limit=1G vendor/bin/pest --no-coverage tests/Feature/Livewire/Livewire43CollisionInspectorTest.php tests/Feature/Livewire/ComponentSlotProviderTest.php
+
   browser:
     name: Browser tests
     runs-on: ubuntu-latest
