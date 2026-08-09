@@ -114,7 +114,7 @@
                                 </svg>
                             </div>
 
-                            <input x-model.debounce.300ms="search" x-ref="searchField" class="py-4 px-2 focus:outline-none relative block w-full rounded-none rounded-t-md bg-transparent focus:z-10 focus:border-0 focus:!border-none sm:text-sm" style="border: none; box-shadow: none;" aria-autocomplete="list" aria-labelledby="docsearch-label" id="docsearch-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="{{ __('Search') }}" maxlength="64" type="search"
+                            <input x-model.debounce.300ms="search" x-ref="searchField" class="py-4 px-2 focus:outline-none relative block w-full rounded-none rounded-t-md bg-transparent focus:z-10 focus:border-0 focus:!border-none sm:text-sm" style="border: none; box-shadow: none;" aria-autocomplete="list" aria-labelledby="docsearch-label" id="docsearch-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="{{ __('Search') }}" maxlength="{{ min(max((int) config('aura.global_search.maximum_query_length', 64), 1), 256) }}" type="search"
 
                                    @keydown.arrow-up.prevent="selectPrevious()"
                                    @keydown.arrow-down.prevent="selectNext()"
@@ -221,7 +221,7 @@
                                                 </div>
 
                                                 <div class="overflow-hidden flex-1 whitespace-nowrap text-ellipsis">
-                                                    <a class="block overflow-hidden text-ellipsis" href="{{ route('aura.' . $result->getSlug() . '.view', ['id' => $result->id]) }}">
+                                                    <a class="block overflow-hidden text-ellipsis" href="{{ $result->getAttribute('view_url') }}">
                                                         #{{ $result->id }} {{ $result->title() }}
                                                     </a>
                                                 </div>

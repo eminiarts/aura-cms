@@ -37,6 +37,11 @@ trait AuraResourceUrls
         return route('aura.'.$this->getSlug().'.index');
     }
 
+    public function globalSearchUrl(): ?string
+    {
+        return $this->viewUrl();
+    }
+
     public function indexUrl()
     {
         $name = 'aura.'.$this->getSlug().'.index';

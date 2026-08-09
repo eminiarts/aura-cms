@@ -38,14 +38,43 @@ return [
 
 When disabled, the GlobalSearch component returns a 403 error and the search interface is not rendered.
 
+### Search Bounds and Ranking
+
+The default search budget is configured separately from the feature toggle:
+
+```php
+'global_search' => [
+    'minimum_query_length' => 2,
+    'maximum_query_length' => 64,
+    'max_resources' => 25,
+    'max_fields_per_resource' => 8,
+    'per_resource_limit' => 5,
+    'global_limit' => 15,
+    'ranking' => [
+        'exact' => 300,
+        'prefix' => 200,
+        'contains' => 100,
+    ],
+],
+```
+
+Each resource query is ranked and limited in SQL before records are hydrated. Aura searches at most the configured number of resources and fields, then applies the global result limit. Package hard caps keep these values bounded even when published configuration is accidentally set much higher: 100 resources, 32 fields per resource, 50 candidates per resource, 100 global results, and 256 query characters.
+
+Ranking is deterministic. A result's score is the configured match-quality score plus its field weight. Equal scores use resource registration order and then the model key in ascending order. `%`, `_`, and Aura's `!` escape character are always treated as literal query input, not caller-controlled SQL wildcards.
+
 ### Resource-Level Configuration
 
-Control whether a resource appears in global search results using the static `$globalSearch` property:
+Control whether a resource participates using the static `$globalSearch` property. The default remains `true` for backward compatibility, so internal or non-navigable resources should opt out explicitly:
 
 ```php
 class Post extends Resource
 {
-    public static $globalSearch = true; // Set to false to exclude from search
+    public static $globalSearch = true;
+}
+
+class InternalAuditLog extends Resource
+{
+    public static $globalSearch = false;
 }
 ```
 
@@ -56,10 +85,7 @@ You can also access this setting programmatically:
 $includeInSearch = Post::getGlobalSearch(); // Returns true or false
 ```
 
-**Default excluded resources**: The following built-in resources are excluded from global search by default:
-- `resource`, `flow`, `flowlog`, `operation`, `flowoperation`, `operationlog`, `option`, `team`, `user`, `product`
-
-Note: While regular User resources are filtered from the resource loop, users are still searchable separately by name and email.
+There is no class-name or slug denylist. Aura only searches registered `Resource` classes for which `getGlobalSearch()` returns `true`, the current user passes the resource's `viewAny` policy, and at least one explicit searchable field exists. Built-in internal resources opt out on their own resource definitions. Users use the same contract as every custom-table resource and remain searchable by name and email.
 
 ## Usage
 
@@ -87,6 +113,22 @@ The search interface provides:
 
 ### Defining Searchable Fields
 
+The preferred explicit contract is the resource's `$searchable` property. List slugs in ranking order or assign integer weights:
+
+```php
+class Post extends Resource
+{
+    protected static array $searchable = [
+        'title' => 20,
+        'content' => 10,
+    ];
+}
+```
+
+Every listed slug must exist in `getFields()`. Higher weights win within the same match quality. You may also put `global_search_weight` on a field definition when using an ordered slug list.
+
+For backward compatibility, a resource with an empty `$searchable` property falls back to fields marked `searchable => true`:
+
 Make fields searchable by adding the `searchable` property in your field definitions:
 
 ```php
@@ -111,7 +153,7 @@ public static function getFields()
             'name' => 'Description',
             'slug' => 'description',
             'type' => 'Aura\\Base\\Fields\\Text',
-            'searchable' => false, // This field won't appear in search results
+            'searchable' => false,
         ]
     ];
 }
@@ -123,21 +165,20 @@ You can retrieve the searchable fields for a resource programmatically:
 
 ```php
 $resource = new Post();
-$searchableFields = $resource->getSearchableFields(); // Returns collection of fields with searchable => true
+$searchableFields = $resource->getGlobalSearchableFields();
 ```
+
+`getGlobalSearchableFields()` is the global-search hook. Override it when a resource needs to derive its searchable field contract dynamically. `getSearchableFields()` remains the lower-level collection of field definitions carrying `searchable => true`.
 
 ### Meta Fields Support
 
-Global Search automatically includes meta fields marked as searchable in your field definitions. The search performs a LEFT JOIN with the `meta` table and searches both:
+Global Search supports both table-backed and meta-backed fields in the explicit contract. Meta values are matched with a bounded correlated subquery, without duplicating resource rows.
 
-1. The `posts.title` column (always searched)
-2. Meta field values where the field is marked as `searchable => true`
-
-Both regular table fields and meta fields are supported as long as they have the `searchable` property set to `true`.
+No `title` column is assumed. Resources that use `name`, a meta field, or another custom-table column can be searched normally, and the resource's existing `title()` method controls the displayed label.
 
 ### User Search
 
-Global Search also searches the User model separately, matching against:
+The built-in User resource declares these searchable fields:
 - `name` field
 - `email` field
 
@@ -146,10 +187,11 @@ Global Search also searches the User model separately, matching against:
 ### Result Structure
 
 Search results are:
-- Limited to 15 results total (across all resource types)
+- Limited to 5 candidates per resource and 15 results globally by default
 - Grouped by resource type after limiting
 - Displayed with relevant icons and metadata
-- Linked directly to the resource view page
+- Returned only when both `viewAny` and record-level `view` authorization pass
+- Linked only when `globalSearchUrl()` returns a non-empty authorized destination
 
 ### Result Display
 
@@ -182,7 +224,32 @@ Note: The `/` and `⌘ + K` shortcuts only work when not focused on an input fie
 
 ## Customization
 
-### Custom Search Logic
+### Resource Query and Destination Hooks
+
+Apply resource-specific scopes without replacing the component:
+
+```php
+use Illuminate\Database\Eloquent\Builder;
+
+public function newGlobalSearchQuery(): Builder
+{
+    return parent::newGlobalSearchQuery()
+        ->where('status', 'published');
+}
+```
+
+The normal Eloquent global scopes, including Aura's team scope, remain active. To use a supported non-standard view destination, override the URL hook:
+
+```php
+public function globalSearchUrl(): ?string
+{
+    return $this->indexUrl();
+}
+```
+
+Aura still requires the current user to pass both `viewAny` for the resource and `view` for the returned record.
+
+### Custom Search Component
 
 You can customize the search behavior by extending the GlobalSearch component:
 
@@ -191,13 +258,13 @@ use Aura\Base\Livewire\GlobalSearch;
 
 class CustomGlobalSearch extends GlobalSearch
 {
-    public function getSearchResultsProperty()
+    public function getSearchResultsProperty(): \Illuminate\Support\Collection
     {
         // Custom search implementation
         // Must return a collection grouped by type
         
-        if (!$this->search || $this->search === '') {
-            return [];
+        if (! $this->search || $this->search === '') {
+            return collect();
         }
         
         // Your custom search logic here
@@ -244,9 +311,9 @@ class Post extends Resource
 ## Best Practices
 
 1. **Performance**
-   - Index searchable fields in your database for faster queries
+   - Index searchable fields where the database can use an appropriate search index
    - Limit the number of searchable fields to essential ones
-   - Consider that meta fields require JOIN operations which can be slower
+   - Consider that meta-field correlated lookups are slower than table-backed fields
    - The search uses `LIKE '%term%'` queries which don't use indexes efficiently
 
 2. **User Experience**

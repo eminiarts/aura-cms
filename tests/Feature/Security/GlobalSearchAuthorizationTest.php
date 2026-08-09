@@ -67,6 +67,27 @@ test('global search hides a resource the user cannot viewAny', function () {
         ->assertDontSee('Secret Needle Beta');
 });
 
+test('global search hides records the user cannot view', function () {
+    $this->actingAs($admin = createAdmin());
+
+    $role = $admin->roles->first();
+    $role->update([
+        'permissions' => [
+            ...$role->permissions,
+            'viewAny-securitysearch' => true,
+            'view-securitysearch' => false,
+        ],
+    ]);
+
+    Cache::flush();
+
+    SecuritySearchModel::create(['title' => 'Record View Denied Needle']);
+
+    Livewire::test(GlobalSearch::class)
+        ->set('search', 'Record View Denied Needle')
+        ->assertDontSee('Record View Denied Needle');
+});
+
 test('global search hides users when the current user cannot view users', function () {
     // Build a role with viewAny-user explicitly denied, then search by email.
     $this->actingAs($admin = createAdmin());
@@ -88,4 +109,14 @@ test('global search hides users when the current user cannot view users', functi
     Livewire::test(GlobalSearch::class)
         ->set('search', $needle)
         ->assertDontSee($needle);
+});
+
+test('global search searches an allowed user through the resource contract', function () {
+    $this->actingAs($user = createSuperAdmin());
+
+    Aura::registerResources([User::class]);
+
+    Livewire::test(GlobalSearch::class)
+        ->set('search', $user->email)
+        ->assertSee($user->name);
 });

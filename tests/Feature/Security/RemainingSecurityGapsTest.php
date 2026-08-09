@@ -181,6 +181,12 @@ it('isolates table reads and edit writes by team', function () {
 it('isolates global search results by team', function () {
     config(['aura.features.global_search' => true]);
 
+    SecurityGapResource::create([
+        'team_id' => $this->user->current_team_id,
+        'type' => SecurityGapResource::$type,
+        'title' => 'Current team global search needle',
+    ]);
+
     SecurityGapResource::withoutGlobalScope(TeamScope::class)->create([
         'team_id' => Team::factory()->createQuietly()->id,
         'type' => SecurityGapResource::$type,
@@ -192,7 +198,8 @@ it('isolates global search results by team', function () {
     Aura::setModel(new SecurityGapResource);
 
     livewire(GlobalSearch::class)
-        ->set('search', 'Other team global search needle')
+        ->set('search', 'team global search needle')
+        ->assertSee('Current team global search needle')
         ->assertDontSee('Other team global search needle');
 })->skip(fn () => ! config('aura.teams'), 'Cross-team search isolation requires teams enabled.');
 

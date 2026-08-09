@@ -174,6 +174,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Global Search
+    |--------------------------------------------------------------------------
+    |
+    | Search work is bounded at the resource, field, candidate, and global
+    | levels. Ranking combines match quality with each searchable field's
+    | configured weight; ties use resource registration order and model key.
+    |
+    */
+
+    'global_search' => [
+        'minimum_query_length' => 2,
+        'maximum_query_length' => 64,
+        'max_resources' => 25,
+        'max_fields_per_resource' => 8,
+        'per_resource_limit' => 5,
+        'global_limit' => 15,
+        'ranking' => [
+            'exact' => 300,
+            'prefix' => 200,
+            'contains' => 100,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Auth
     |--------------------------------------------------------------------------
     |
