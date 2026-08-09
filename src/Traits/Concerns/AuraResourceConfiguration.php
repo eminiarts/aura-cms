@@ -2,7 +2,6 @@
 
 namespace Aura\Base\Traits\Concerns;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 trait AuraResourceConfiguration
@@ -43,6 +42,15 @@ trait AuraResourceConfiguration
 
     protected static bool $title = false;
 
+    /**
+     * Apply resource-specific SQL visibility before the bounded candidate
+     * window is selected. Global model scopes remain active by default.
+     */
+    public function applyGlobalSearchVisibility($query, $user)
+    {
+        return $query;
+    }
+
     public static function getFields()
     {
         return [];
@@ -62,7 +70,7 @@ trait AuraResourceConfiguration
      *
      * @return Collection<int, non-empty-array>
      */
-    public function getGlobalSearchableFields(): Collection
+    public function getGlobalSearchableFields()
     {
         $fields = $this->inputFields()
             ->filter(fn ($field): bool => is_array($field) && is_string($field['slug'] ?? null))
@@ -102,7 +110,34 @@ trait AuraResourceConfiguration
         return [];
     }
 
-    public function newGlobalSearchQuery(): Builder
+    /**
+     * Return the adapter class responsible for bounded candidate discovery.
+     */
+    public function globalSearchAdapter()
+    {
+        return config('aura.global_search.adapter');
+    }
+
+    /**
+     * Explicitly trust searches without a current team. The secure default is
+     * false so TeamScope's historical null-team bypass cannot expose records.
+     */
+    public function globalSearchAllowsMissingTeamContext($user)
+    {
+        return false;
+    }
+
+    /**
+     * Declare only the meta keys and direct BelongsTo relations needed by title().
+     *
+     * @return array{meta: array<int, string>, relations: array<int, string>}
+     */
+    public function globalSearchTitleDependencies()
+    {
+        return ['meta' => [], 'relations' => []];
+    }
+
+    public function newGlobalSearchQuery()
     {
         return static::query();
     }

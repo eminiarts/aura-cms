@@ -28,7 +28,8 @@
 <div
     x-data="aura"
     @keydown.window.slash="$dispatch('search')"
-    @keydown.window.prevent.cmd.k="$dispatch('search')"
+    @keydown.window.prevent.meta.k="$dispatch('search')"
+    @keydown.window.prevent.ctrl.k="$dispatch('search')"
     @keydown.window.escape="closeSearch()"
     @inset-sidebar.window="insetSidebar(event)"
     class="flex overflow-hidden flex-col items-stretch h-screen md:flex-row"

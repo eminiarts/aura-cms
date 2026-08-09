@@ -44,12 +44,19 @@ The default search budget is configured separately from the feature toggle:
 
 ```php
 'global_search' => [
+    'adapter' => Aura\Base\GlobalSearch\DatabaseGlobalSearchAdapter::class,
     'minimum_query_length' => 2,
     'maximum_query_length' => 64,
     'max_resources' => 25,
+    'max_resource_candidates' => 100,
     'max_fields_per_resource' => 8,
+    'candidate_limit' => 100,
     'per_resource_limit' => 5,
     'global_limit' => 15,
+    'max_title_dependencies' => 4,
+    'max_queries_per_resource' => 4,
+    'max_total_queries' => 100,
+    'allowed_route_names' => ['aura.*'],
     'ranking' => [
         'exact' => 300,
         'prefix' => 200,
@@ -58,9 +65,11 @@ The default search budget is configured separately from the feature toggle:
 ],
 ```
 
-Each resource query is ranked and limited in SQL before records are hydrated. Aura searches at most the configured number of resources and fields, then applies the global result limit. Package hard caps keep these values bounded even when published configuration is accidentally set much higher: 100 resources, 32 fields per resource, 50 candidates per resource, 100 global results, and 256 query characters.
+The default database adapter selects a key-ordered window of at most `candidate_limit` visible rows per resource and ranks that window in PHP. It never runs an unbounded `%term%` table scan and never enables a resource's default eager loads. Aura also caps registered-resource inspection, authorized resources, searchable fields, title dependencies, per-resource queries, total queries, returned results, and query characters. Package hard caps still apply if published configuration is accidentally set much higher.
 
-Ranking is deterministic. A result's score is the configured match-quality score plus its field weight. Equal scores use resource registration order and then the model key in ascending order. `%`, `_`, and Aura's `!` escape character are always treated as literal query input, not caller-controlled SQL wildcards.
+This bounded default has an intentional completeness tradeoff: a matching row beyond the key window is not returned. Applications requiring complete or relevance-indexed search should supply an indexed adapter (Scout, Meilisearch, a database full-text index, or equivalent) through `global_search.adapter` or the resource's `globalSearchAdapter()` hook. There is no portable way for Aura to cancel an already-running database query; custom adapters must use indexed queries and their backend's timeout/deadline controls.
+
+Ranking is deterministic inside the candidate window. A result's score is the configured match-quality score plus its field weight. Equal scores use resource registration order and then the model key in ascending order. Matching is exact, prefix, then contains using case-sensitive PHP string semantics. That gives SQLite, MySQL, PostgreSQL, and SQL Server the same codepoint/byte behavior regardless of database collation; composed and decomposed Unicode remain distinct. Query punctuation such as `%`, `_`, and `!` is literal because user input is never interpolated into a `LIKE` expression.
 
 ### Resource-Level Configuration
 
@@ -85,7 +94,9 @@ You can also access this setting programmatically:
 $includeInSearch = Post::getGlobalSearch(); // Returns true or false
 ```
 
-There is no class-name or slug denylist. Aura only searches registered `Resource` classes for which `getGlobalSearch()` returns `true`, the current user passes the resource's `viewAny` policy, and at least one explicit searchable field exists. Built-in internal resources opt out on their own resource definitions. Users use the same contract as every custom-table resource and remain searchable by name and email.
+There is no class-name or slug denylist. Aura only searches registered, concrete, instantiable `Resource` classes for which `getGlobalSearch()` returns `true`, the current user passes the resource's `viewAny` policy, and at least one explicit searchable field exists. `viewAny` is checked before `max_resources` is applied, so denied registrations do not consume searchable-resource slots. Built-in internal resources opt out on their own resource definitions. Users use the same contract as every custom-table resource and remain searchable by name and email.
+
+In teams mode, an unauthenticated user or an authenticated user without a current team receives no results. A trusted resource may deliberately override `globalSearchAllowsMissingTeamContext()` and return `true`, but it must then enforce the intended visibility in `applyGlobalSearchVisibility()`.
 
 ## Usage
 
@@ -172,7 +183,7 @@ $searchableFields = $resource->getGlobalSearchableFields();
 
 ### Meta Fields Support
 
-Global Search supports both table-backed and meta-backed fields in the explicit contract. Meta values are matched with a bounded correlated subquery, without duplicating resource rows.
+Global Search supports both table-backed and meta-backed fields in the explicit contract. The default adapter fetches only configured searchable meta keys for rows inside the bounded candidate window. It does not hydrate the Resource model's unconditional `meta` eager load.
 
 No `title` column is assumed. Resources that use `name`, a meta field, or another custom-table column can be searched normally, and the resource's existing `title()` method controls the displayed label.
 
@@ -187,11 +198,13 @@ The built-in User resource declares these searchable fields:
 ### Result Structure
 
 Search results are:
-- Limited to 5 candidates per resource and 15 results globally by default
+- Selected from at most 100 candidates, limited to 5 results per resource and 15 globally by default
 - Grouped by resource type after limiting
-- Displayed with relevant icons and metadata
+- Converted to immutable, scalar result DTOs before rendering
 - Returned only when both `viewAny` and record-level `view` authorization pass
-- Linked only when `globalSearchUrl()` returns a non-empty authorized destination
+- Linked only to an allowed same-origin named GET route
+
+Record-level policy denials do not consume result slots while candidates remain in the configured window. The policy check remains a defense in depth; row visibility should also be expressed in SQL with `applyGlobalSearchVisibility()` so forbidden candidates do not enter the window at all.
 
 ### Result Display
 
@@ -226,28 +239,63 @@ Note: The `/` and `⌘ + K` shortcuts only work when not focused on an input fie
 
 ### Resource Query and Destination Hooks
 
-Apply resource-specific scopes without replacing the component:
+Apply resource-specific SQL visibility without replacing the component. This hook runs before the candidate window is limited or ranked:
 
 ```php
 use Illuminate\Database\Eloquent\Builder;
 
-public function newGlobalSearchQuery(): Builder
+public function applyGlobalSearchVisibility($query, $user)
 {
-    return parent::newGlobalSearchQuery()
-        ->where('status', 'published');
+    return $query->where('status', 'published');
 }
 ```
 
-The normal Eloquent global scopes, including Aura's team scope, remain active. To use a supported non-standard view destination, override the URL hook:
+The normal Eloquent global scopes, including Aura's team scope, remain active. `newGlobalSearchQuery()` is still available for changing the base query, but visibility belongs in the explicit visibility hook.
+
+Use a named GET route for non-standard result destinations:
 
 ```php
-public function globalSearchUrl(): ?string
+public function globalSearchDestination()
 {
-    return $this->indexUrl();
+    return [
+        'route' => 'aura.orders.view',
+        'parameters' => ['id' => $this->getKey()],
+    ];
 }
 ```
 
-Aura still requires the current user to pass both `viewAny` for the resource and `view` for the returned record.
+Route names must match `allowed_route_names`, support GET, resolve to the application's origin, and receive only declared path parameters. Existing `globalSearchUrl()` overrides remain supported only when they return a query-free, fragment-free relative or same-origin HTTP(S) URL that resolves to an allowed named GET route. External, protocol-relative, `javascript:`, `data:`, unknown-route, and open-redirect-style destinations are rejected. Aura still requires both `viewAny` for the resource and `view` for the returned record.
+
+### Indexed Adapter
+
+Implement `Aura\Base\Contracts\GlobalSearchAdapter` to replace bounded key-window discovery for one resource or globally:
+
+```php
+public function globalSearchAdapter()
+{
+    return App\Search\IndexedOrderSearch::class;
+}
+```
+
+An adapter receives the already-scoped Eloquent query, searchable fields, normalized term, candidate cap, and `GlobalSearchBudget`. It must claim every database/backend operation through the budget, preserve the query's visibility constraints, return no more than the candidate cap, and return `GlobalSearchCandidate` values. Adapter failures are isolated to that resource.
+
+Authorization policies and resource visibility hooks are trusted application code outside the adapter budget. They should not issue per-row queries; express record visibility on the supplied Eloquent query and preload any policy inputs. Aura bounds the candidates passed to row policies, but it cannot cancel or meter arbitrary queries issued inside application hooks.
+
+### Title Dependencies
+
+Candidate models start with `meta` disabled and lazy loading prevented during presentation. Declare the small set of meta keys or direct `BelongsTo` relations required by `title()`:
+
+```php
+public function globalSearchTitleDependencies()
+{
+    return [
+        'meta' => ['display_name'],
+        'relations' => ['company'],
+    ];
+}
+```
+
+Only declared dependencies for authorized, retained candidates are loaded, and those queries consume the resource and global query budgets. Invalid dependencies, lazy-load attempts, non-scalar titles, and presentation exceptions safely omit the affected result.
 
 ### Custom Search Component
 
@@ -258,7 +306,7 @@ use Aura\Base\Livewire\GlobalSearch;
 
 class CustomGlobalSearch extends GlobalSearch
 {
-    public function getSearchResultsProperty(): \Illuminate\Support\Collection
+    public function getSearchResultsProperty()
     {
         // Custom search implementation
         // Must return a collection grouped by type
@@ -311,10 +359,11 @@ class Post extends Resource
 ## Best Practices
 
 1. **Performance**
-   - Index searchable fields where the database can use an appropriate search index
+   - Keep visibility predicates supported by indexes used in the candidate query
    - Limit the number of searchable fields to essential ones
-   - Consider that meta-field correlated lookups are slower than table-backed fields
-   - The search uses `LIKE '%term%'` queries which don't use indexes efficiently
+   - Lower `candidate_limit` for tighter latency; raise it only when the completeness tradeoff is acceptable
+   - Use an indexed adapter when results must be complete across a large resource
+   - Configure backend-specific statement timeouts in custom adapters; Aura cannot portably interrupt a running query
 
 2. **User Experience**
    - Choose searchable fields wisely - only fields users would search for

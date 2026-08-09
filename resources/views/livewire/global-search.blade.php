@@ -33,20 +33,14 @@
             },
 
             openSearch($event) {
-                // Prevent search from opening when typing in input fields
-                console.log($event);
-
-                // Check if the event target is defined and has a tagName property
                 if ($event.target && $event.target.tagName) {
                     const tagName = $event.target.tagName.toLowerCase();
-                    console.log(tagName);
 
                     if (tagName === 'input' || tagName === 'textarea') {
                         return;
                     }
                 }
 
-                console.log('open search');
                 this.show = !this.show;
                 setTimeout(() => {
                     this.$refs.searchField.focus()
@@ -74,25 +68,36 @@
                 const items = this.search ? this.$refs.searchList.querySelectorAll('.select-item') : this.$refs.commandList.querySelectorAll('.select-item');
                 const length = items.length;
 
+                if (length === 0) {
+                    this.selectedIndex = -1;
+                    return;
+                }
+
                 this.selectedIndex > 0 ? this.selectedIndex-- : this.selectedIndex = length - 1;
             },
 
             selectNext() {
                 const items = this.search ? this.$refs.searchList.querySelectorAll('.select-item') : this.$refs.commandList.querySelectorAll('.select-item');
                 const length = items.length;
+
+                if (length === 0) {
+                    this.selectedIndex = -1;
+                    return;
+                }
+
                 this.selectedIndex < length - 1 ? this.selectedIndex++ : this.selectedIndex = 0;
             },
 
-            openSelectedResult(e) {
-                if (this.selectedIndex > -1) {
-                    if (this.$refs.searchList.children.length > 0) {
-                        var link = this.$refs.searchList.querySelectorAll('.select-item')[this.selectedIndex].querySelector('a');
-                        link.click();
-                    } else {
-                        var link = this.$refs.commandList.querySelectorAll('.select-item')[this.selectedIndex].querySelector('a');
-                        link.click();
-                    }
+            openSelectedResult() {
+                const items = this.search ? this.$refs.searchList.querySelectorAll('.select-item') : this.$refs.commandList.querySelectorAll('.select-item');
+                const selected = items[this.selectedIndex];
+
+                if (!selected) {
+                    return;
                 }
+
+                const link = selected.querySelector('a');
+                if (link) link.click();
             },
 
             openBookmark(index) {
@@ -114,7 +119,7 @@
                                 </svg>
                             </div>
 
-                            <input x-model.debounce.300ms="search" x-ref="searchField" class="py-4 px-2 focus:outline-none relative block w-full rounded-none rounded-t-md bg-transparent focus:z-10 focus:border-0 focus:!border-none sm:text-sm" style="border: none; box-shadow: none;" aria-autocomplete="list" aria-labelledby="docsearch-label" id="docsearch-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="{{ __('Search') }}" maxlength="{{ min(max((int) config('aura.global_search.maximum_query_length', 64), 1), 256) }}" type="search"
+                            <input x-model.debounce.300ms="search" x-ref="searchField" class="py-4 px-2 focus:outline-none relative block w-full rounded-none rounded-t-md bg-transparent focus:z-10 focus:border-0 focus:!border-none sm:text-sm" style="border: none; box-shadow: none;" aria-autocomplete="list" aria-labelledby="docsearch-label" id="docsearch-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="{{ __('Search') }}" maxlength="{{ $this->maximumQueryLength }}" type="search"
 
                                    @keydown.arrow-up.prevent="selectPrevious()"
                                    @keydown.arrow-down.prevent="selectNext()"
@@ -217,17 +222,17 @@
 
                                                 <div class="flex justify-center items-center mr-3 rounded-full search-list-icon text-primary-400 shrink-0">
                                                     {{-- SVG Icon Circle --}}
-                                                    {!! $result->getIcon() !!}
+                                                    {!! $result->icon !!}
                                                 </div>
 
                                                 <div class="overflow-hidden flex-1 whitespace-nowrap text-ellipsis">
-                                                    <a class="block overflow-hidden text-ellipsis" href="{{ $result->getAttribute('view_url') }}">
-                                                        #{{ $result->id }} {{ $result->title() }}
+                                                    <a class="block overflow-hidden text-ellipsis" href="{{ $result->url }}">
+                                                        #{{ $result->id }} {{ $result->title }}
                                                     </a>
                                                 </div>
 
                                                 <div>
-                                                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ $result->getType()  }}</span>
+                                                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ $result->type }}</span>
                                                 </div>
 
                                             </li>

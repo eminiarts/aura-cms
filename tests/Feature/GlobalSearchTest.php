@@ -275,7 +275,7 @@ test('requires the configured minimum query length without querying resources', 
     $searchQueries = 0;
 
     DB::listen(function ($query) use (&$searchQueries): void {
-        if (str_contains($query->sql, 'from "posts"') && str_contains(strtolower($query->sql), ' like ')) {
+        if (str_contains($query->sql, 'from "posts"') && str_contains(strtolower($query->sql), ' limit ')) {
             $searchQueries++;
         }
     });
@@ -387,7 +387,7 @@ test('bounds the number of searched resources and resulting query count', functi
     $searchQueries = 0;
 
     DB::listen(function ($query) use (&$searchQueries): void {
-        if (str_contains($query->sql, 'from "posts"') && str_contains(strtolower($query->sql), ' like ')) {
+        if (str_contains($query->sql, 'from "posts"') && str_contains(strtolower($query->sql), ' limit ')) {
             $searchQueries++;
         }
     });
@@ -436,7 +436,7 @@ test('does not materialize a full matching table', function () {
     $results = $component->getSearchResultsProperty();
 
     expect($results->collapse())->toHaveCount(3)
-        ->and($retrieved)->toBe(3);
+        ->and($retrieved)->toBe(0);
 });
 
 test('searches resources whose searchable contract has no title field', function () {
