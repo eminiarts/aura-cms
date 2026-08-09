@@ -1,6 +1,7 @@
 <?php
 
 use Aura\Base\Services\EmbeddedResourceIncarnationStore;
+use Aura\Base\Services\MigrationOwnershipLedger;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -15,19 +16,19 @@ return new class extends Migration
 
     private const LOOKUP_INDEX = 'aura_embedded_incarnation_guard_lookup';
 
-    private const OWNERSHIP_KEY = 'upgrade_embedded_resource_incarnations';
-
-    private const OWNERSHIP_TABLE = 'aura_migration_ownership';
-
     public function up(): void
     {
-        if (! Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE)) {
+        $ledger = app(MigrationOwnershipLedger::class);
+        $ownership = $ledger->readUpgrade();
+
+        if ($ownership !== null) {
+            $this->assertOwnedState($ownership['state']);
+            $this->assertOwnedArtifactsExist($ownership['added_columns'], $ownership['created_indexes']);
+
             return;
         }
 
-        if (Schema::hasTable(self::OWNERSHIP_TABLE)
-            && DB::table(self::OWNERSHIP_TABLE)->where('migration', self::OWNERSHIP_KEY)->exists()
-        ) {
+        if (! Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE)) {
             return;
         }
 
@@ -49,14 +50,10 @@ return new class extends Migration
             return;
         }
 
-        $ownsRegistry = ! Schema::hasTable(self::OWNERSHIP_TABLE);
-
-        if ($ownsRegistry) {
-            Schema::create(self::OWNERSHIP_TABLE, function (Blueprint $table): void {
-                $table->string('migration')->primary();
-                $table->longText('ownership');
-            });
-        }
+        $ownsRegistry = $ledger->ensureRegistry();
+        $ledger->checkpoint('upgrade.registry_ready');
+        $ledger->writeUpgrade('upgrading', $missingColumns, $missingIndexes, $ownsRegistry);
+        $ledger->checkpoint('upgrade.ownership_started');
 
         if ($missingColumns !== []) {
             Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($missingColumns): void {
@@ -72,9 +69,15 @@ return new class extends Migration
                     $table->unsignedBigInteger('version')->default(1);
                 }
             });
+        }
 
+        $ledger->checkpoint('upgrade.columns_added');
+
+        if ($missingColumns !== []) {
             DB::table(EmbeddedResourceIncarnationStore::TABLE)->delete();
         }
+
+        $ledger->checkpoint('upgrade.rows_cleared');
 
         if ($missingIndexes !== []) {
             Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($missingIndexes): void {
@@ -94,70 +97,101 @@ return new class extends Migration
             });
         }
 
-        DB::table(self::OWNERSHIP_TABLE)->updateOrInsert(
-            ['migration' => self::OWNERSHIP_KEY],
-            ['ownership' => json_encode([
-                'added_columns' => $missingColumns,
-                'created_indexes' => $missingIndexes,
-                'owns_registry' => $ownsRegistry,
-            ], JSON_THROW_ON_ERROR)],
-        );
+        $ledger->checkpoint('upgrade.indexes_created');
+        $ledger->writeUpgrade('owned', $missingColumns, $missingIndexes, $ownsRegistry);
+        $ledger->checkpoint('upgrade.ownership_committed');
     }
 
     public function down(): void
     {
-        if (! Schema::hasTable(self::OWNERSHIP_TABLE)) {
+        $ledger = app(MigrationOwnershipLedger::class);
+        $ownership = $ledger->readUpgrade();
+
+        if ($ownership === null) {
             return;
         }
 
-        $record = DB::table(self::OWNERSHIP_TABLE)
-            ->where('migration', self::OWNERSHIP_KEY)
-            ->first();
+        $this->assertOwnedState($ownership['state']);
+        $this->assertOwnedArtifactsExist($ownership['added_columns'], $ownership['created_indexes']);
+        $ledger->writeUpgrade(
+            'rollback_started',
+            $ownership['added_columns'],
+            $ownership['created_indexes'],
+            $ownership['owns_registry'],
+        );
+        $ledger->checkpoint('upgrade.rollback_started');
 
-        if (! $record) {
-            return;
-        }
-
-        $ownership = json_decode($record->ownership, true, flags: JSON_THROW_ON_ERROR);
-
-        if (Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE)) {
-            $ownedIndexes = array_values(array_filter(
-                $ownership['created_indexes'] ?? [],
-                fn (string $index): bool => Schema::hasIndex(EmbeddedResourceIncarnationStore::TABLE, $index),
-            ));
-
-            if ($ownedIndexes !== []) {
-                Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($ownedIndexes): void {
-                    foreach ($ownedIndexes as $index) {
-                        if ($index === self::IDENTITY_INDEX) {
-                            $table->dropUnique($index);
-                        } else {
-                            $table->dropIndex($index);
-                        }
+        if ($ownership['created_indexes'] !== []) {
+            Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($ownership): void {
+                foreach ($ownership['created_indexes'] as $index) {
+                    if ($index === self::IDENTITY_INDEX) {
+                        $table->dropUnique($index);
+                    } else {
+                        $table->dropIndex($index);
                     }
-                });
-            }
+                }
+            });
+        }
 
-            $ownedColumns = array_values(array_filter(
-                $ownership['added_columns'] ?? [],
-                fn (string $column): bool => Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, $column),
-            ));
+        $ledger->checkpoint('upgrade.indexes_dropped');
 
-            if ($ownedColumns !== []) {
-                Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($ownedColumns): void {
-                    $table->dropColumn($ownedColumns);
-                });
+        if ($ownership['added_columns'] !== []) {
+            Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($ownership): void {
+                $table->dropColumn($ownership['added_columns']);
+            });
+        }
+
+        $ledger->checkpoint('upgrade.columns_dropped');
+
+        if ($ownership['owns_registry'] && $ledger->isSoleRecord(MigrationOwnershipLedger::UPGRADE_KEY)) {
+            $ledger->writeUpgrade(
+                'registry_drop_started',
+                $ownership['added_columns'],
+                $ownership['created_indexes'],
+                true,
+            );
+            $ledger->checkpoint('upgrade.registry_drop_started');
+            Schema::drop(MigrationOwnershipLedger::TABLE);
+
+            return;
+        }
+
+        $ledger->delete(MigrationOwnershipLedger::UPGRADE_KEY);
+    }
+
+    private function assertOwnedState(string $state): void
+    {
+        if ($state !== 'owned') {
+            throw new RuntimeException(
+                "Aura migration ownership for [".MigrationOwnershipLedger::UPGRADE_KEY."] is interrupted in state [{$state}].",
+            );
+        }
+    }
+
+    /**
+     * @param  list<string>  $columns
+     * @param  list<string>  $indexes
+     */
+    private function assertOwnedArtifactsExist(array $columns, array $indexes): void
+    {
+        if (! Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE)) {
+            throw new RuntimeException('The table claimed by CORE-12 upgrade migration ownership is missing.');
+        }
+
+        foreach ($columns as $column) {
+            if (! Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, $column)) {
+                throw new RuntimeException("The column [{$column}] claimed by CORE-12 upgrade ownership is missing.");
             }
         }
 
-        DB::table(self::OWNERSHIP_TABLE)
-            ->where('migration', self::OWNERSHIP_KEY)
-            ->delete();
-
-        if (($ownership['owns_registry'] ?? false) === true
-            && DB::table(self::OWNERSHIP_TABLE)->doesntExist()
-        ) {
-            Schema::drop(self::OWNERSHIP_TABLE);
+        foreach ($indexes as $index) {
+            if (! Schema::hasIndex(
+                EmbeddedResourceIncarnationStore::TABLE,
+                $index,
+                $index === self::IDENTITY_INDEX ? 'unique' : null,
+            )) {
+                throw new RuntimeException("The index [{$index}] claimed by CORE-12 upgrade ownership is missing.");
+            }
         }
     }
 };

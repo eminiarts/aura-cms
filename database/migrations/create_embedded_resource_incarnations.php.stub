@@ -1,43 +1,83 @@
 <?php
 
+use Aura\Base\Services\MigrationOwnershipLedger;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    private const OWNERSHIP_KEY = 'create_embedded_resource_incarnations';
-
-    private const OWNERSHIP_TABLE = 'aura_migration_ownership';
+    private const TABLE = 'aura_embedded_resource_incarnations';
 
     public function up(): void
     {
-        if (Schema::hasTable('aura_embedded_resource_incarnations')) {
+        $ledger = app(MigrationOwnershipLedger::class);
+        $ownership = $ledger->readCreate();
+
+        if ($ownership !== null) {
+            $this->assertOwnedState($ownership['state']);
+
+            if (Schema::hasTable(self::TABLE)) {
+                $this->assertOwnedTableExists();
+
+                return;
+            }
+
+            $ledger->writeCreate('creating', $ownership['owns_registry']);
+            $ledger->checkpoint('create.ownership_started');
+            $this->createTable();
+            $ledger->checkpoint('create.table_created');
+            $ledger->writeCreate('owned', $ownership['owns_registry']);
+            $ledger->checkpoint('create.ownership_committed');
+
             return;
         }
 
-        $ownsRegistry = ! Schema::hasTable(self::OWNERSHIP_TABLE);
-        $existingOwnership = null;
-
-        if (! $ownsRegistry) {
-            $record = DB::table(self::OWNERSHIP_TABLE)
-                ->where('migration', self::OWNERSHIP_KEY)
-                ->first();
-
-            if ($record) {
-                $existingOwnership = json_decode($record->ownership, true, flags: JSON_THROW_ON_ERROR);
-            }
+        if (Schema::hasTable(self::TABLE)) {
+            return;
         }
 
-        if ($ownsRegistry) {
-            Schema::create(self::OWNERSHIP_TABLE, function (Blueprint $table): void {
-                $table->string('migration')->primary();
-                $table->longText('ownership');
-            });
+        $ownsRegistry = $ledger->ensureRegistry();
+        $ledger->checkpoint('create.registry_ready');
+        $ledger->writeCreate('creating', $ownsRegistry);
+        $ledger->checkpoint('create.ownership_started');
+        $this->createTable();
+        $ledger->checkpoint('create.table_created');
+        $ledger->writeCreate('owned', $ownsRegistry);
+        $ledger->checkpoint('create.ownership_committed');
+    }
+
+    public function down(): void
+    {
+        $ledger = app(MigrationOwnershipLedger::class);
+        $ownership = $ledger->readCreate();
+
+        if ($ownership === null) {
+            return;
         }
 
-        Schema::create('aura_embedded_resource_incarnations', function (Blueprint $table): void {
+        $this->assertOwnedState($ownership['state']);
+        $this->assertOwnedTableExists();
+
+        $ledger->writeCreate('table_drop_started', $ownership['owns_registry']);
+        $ledger->checkpoint('create.rollback_started');
+        Schema::drop(self::TABLE);
+        $ledger->checkpoint('create.table_dropped');
+
+        if ($ownership['owns_registry'] && $ledger->isSoleRecord(MigrationOwnershipLedger::CREATE_KEY)) {
+            $ledger->writeCreate('registry_drop_started', true);
+            $ledger->checkpoint('create.registry_drop_started');
+            Schema::drop(MigrationOwnershipLedger::TABLE);
+
+            return;
+        }
+
+        $ledger->delete(MigrationOwnershipLedger::CREATE_KEY);
+    }
+
+    private function createTable(): void
+    {
+        Schema::create(self::TABLE, function (Blueprint $table): void {
             $table->id();
             $table->string('resource_type');
             $table->char('resource_key_hash', 64);
@@ -60,44 +100,38 @@ return new class extends Migration
                 'aura_embedded_incarnation_guard_identity_unique',
             );
         });
-
-        DB::table(self::OWNERSHIP_TABLE)->updateOrInsert(
-            ['migration' => self::OWNERSHIP_KEY],
-            ['ownership' => json_encode([
-                'created_table' => true,
-                'owns_registry' => ($existingOwnership['owns_registry'] ?? false) || $ownsRegistry,
-            ], JSON_THROW_ON_ERROR)],
-        );
     }
 
-    public function down(): void
+    private function assertOwnedState(string $state): void
     {
-        if (! Schema::hasTable(self::OWNERSHIP_TABLE)) {
-            return;
+        if ($state !== 'owned') {
+            throw new RuntimeException(
+                "Aura migration ownership for [".MigrationOwnershipLedger::CREATE_KEY."] is interrupted in state [{$state}].",
+            );
         }
+    }
 
-        $record = DB::table(self::OWNERSHIP_TABLE)
-            ->where('migration', self::OWNERSHIP_KEY)
-            ->first();
-
-        if (! $record) {
-            return;
-        }
-
-        $ownership = json_decode($record->ownership, true, flags: JSON_THROW_ON_ERROR);
-
-        if (($ownership['created_table'] ?? false) === true) {
-            Schema::dropIfExists('aura_embedded_resource_incarnations');
-        }
-
-        DB::table(self::OWNERSHIP_TABLE)
-            ->where('migration', self::OWNERSHIP_KEY)
-            ->delete();
-
-        if (($ownership['owns_registry'] ?? false) === true
-            && DB::table(self::OWNERSHIP_TABLE)->doesntExist()
+    private function assertOwnedTableExists(): void
+    {
+        if (! Schema::hasTable(self::TABLE)
+            || ! Schema::hasColumns(self::TABLE, [
+                'id',
+                'resource_type',
+                'resource_key_hash',
+                'resource_key_type',
+                'resource_key',
+                'incarnation',
+                'version',
+                'created_at',
+                'updated_at',
+            ])
+            || ! Schema::hasIndex(self::TABLE, 'aura_embedded_incarnation_resource_unique', 'unique')
+            || ! Schema::hasIndex(self::TABLE, 'aura_embedded_incarnation_guard_lookup')
+            || ! Schema::hasIndex(self::TABLE, 'aura_embedded_incarnation_guard_identity_unique', 'unique')
         ) {
-            Schema::drop(self::OWNERSHIP_TABLE);
+            throw new RuntimeException(
+                'The table claimed by CORE-12 create migration ownership is missing or has an unexpected schema.',
+            );
         }
     }
 };
