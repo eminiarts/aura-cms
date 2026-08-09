@@ -1,9 +1,11 @@
 <?php
 
+use Aura\Base\Aura;
 use Aura\Base\Livewire\ComponentSlots\ComponentSlotCandidateValidator;
+use Aura\Base\Livewire\ComponentSlots\ComponentSlotLifecycleException;
 use Aura\Base\Livewire\ComponentSlots\ComponentSlotRegistry;
+use Aura\Base\Livewire\ComponentSlots\DefaultLivewireComponentSlotBridge;
 use Aura\Base\Livewire\ComponentSlots\Livewire43CollisionInspector;
-use Aura\Base\Livewire\ComponentSlots\LivewireComponentSlotBridge;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\MediaManager;
 use Aura\Base\Tests\Fixtures\ComponentSlots\PluginGlobalSearch;
@@ -12,40 +14,6 @@ use Illuminate\Container\Container;
 use Livewire\Compiler\Compiler;
 use Livewire\Factory\Factory;
 use Livewire\Finder\Finder;
-
-class IsolatedLivewireComponentSlotBridge implements LivewireComponentSlotBridge
-{
-    public function __construct(
-        private readonly Livewire43CollisionInspector $inspector,
-        private readonly Finder $finder,
-        private readonly Factory $factory,
-    ) {}
-
-    public function assertCompatible(): void
-    {
-        $this->inspector->assertCompatible();
-    }
-
-    public function assertUnclaimed(array $identifiers, Closure $auraResolver): void
-    {
-        $this->inspector->assertUnclaimed($identifiers, $auraResolver);
-    }
-
-    public function installMissingResolver(Closure $resolver): void
-    {
-        $this->factory->resolveMissingComponent($resolver);
-    }
-
-    public function register(string $name, string $component): void
-    {
-        $this->finder->addComponent(name: $name, class: $component);
-    }
-
-    public function resolve(string $name): array
-    {
-        return $this->factory->resolveComponentNameAndClass($name);
-    }
-}
 
 function isolatedComponentSlotContainer(): Container
 {
@@ -63,7 +31,7 @@ function isolatedComponentSlotContainer(): Container
     ]);
     $finder = new Finder;
     $factory = new Factory($finder, Mockery::mock(Compiler::class));
-    $bridge = new IsolatedLivewireComponentSlotBridge(
+    $bridge = new DefaultLivewireComponentSlotBridge(
         new Livewire43CollisionInspector($finder, $factory),
         $finder,
         $factory,
@@ -78,11 +46,16 @@ function isolatedComponentSlotContainer(): Container
     $container->instance(Finder::class, $finder);
     $container->instance(Factory::class, $factory);
     $container->instance(ComponentSlotRegistry::class, $registry);
+    $container->instance(Aura::class, new Aura($registry));
 
     return $container;
 }
 
 test('two independent containers receive fresh registries factories caches and aliases', function () {
+    $globalFinder = app('livewire.finder');
+    $globalClassComponents = (function (): array {
+        return $this->classComponents;
+    })->call($globalFinder);
     $first = isolatedComponentSlotContainer();
     $second = isolatedComponentSlotContainer();
     $firstRegistry = $first->make(ComponentSlotRegistry::class);
@@ -90,7 +63,15 @@ test('two independent containers receive fresh registries factories caches and a
 
     $firstRegistry->install();
     $secondRegistry->install();
-    $firstRegistry->register('fixture/component-slots', [
+
+    foreach ([$first, $second] as $container) {
+        foreach (['aura::global-search', 'aura.base.livewire.global-search'] as $alias) {
+            expect(fn () => $container->make(Factory::class)->resolveComponentNameAndClass($alias))
+                ->toThrow(ComponentSlotLifecycleException::class, 'before finalization');
+        }
+    }
+
+    $first->make(Aura::class)->registerComponentSlots('fixture/component-slots', [
         'global-search' => PluginGlobalSearch::class,
     ]);
     $firstRegistry->finalize();
@@ -99,6 +80,9 @@ test('two independent containers receive fresh registries factories caches and a
     expect($firstRegistry)->not->toBe($secondRegistry)
         ->and($first->make(Finder::class))->not->toBe($second->make(Finder::class))
         ->and($first->make(Factory::class))->not->toBe($second->make(Factory::class))
+        ->and((function (): array {
+            return $this->classComponents;
+        })->call($globalFinder))->toBe($globalClassComponents)
         ->and($firstRegistry->winner('global-search'))->toBe(PluginGlobalSearch::class)
         ->and($secondRegistry->winner('global-search'))->toBe(GlobalSearch::class)
         ->and($first->make(Factory::class)->resolveComponentNameAndClass('aura::global-search')[1])

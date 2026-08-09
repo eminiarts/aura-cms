@@ -21,7 +21,7 @@ use Aura\Base\Commands\TransferFromPostsToCustomTable;
 use Aura\Base\Commands\TransformTableToResource;
 use Aura\Base\Commands\UpdateSchemaFromMigration;
 use Aura\Base\Database\Seeders\RoleCatalogSeeder;
-use Aura\Base\Facades\Aura;
+use Aura\Base\Facades\Aura as AuraFacade;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\AttachmentDetails;
 use Aura\Base\Livewire\BookmarkPage;
@@ -75,7 +75,6 @@ use Illuminate\Support\Facades\Queue;
 use Laravel\Octane\Events\RequestReceived;
 use Livewire\Component;
 use Livewire\Livewire;
-use Livewire\LivewireManager;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -91,7 +90,7 @@ class AuraServiceProvider extends PackageServiceProvider
         parent::boot();
 
         $this->app->booted(fn () => $this->app->make(ComponentSlotRegistry::class)->finalize());
-        $this->app->booted(fn () => Aura::captureBaselineState());
+        $this->app->booted(fn () => AuraFacade::captureBaselineState());
     }
 
     public function bootGate()
@@ -288,10 +287,11 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function packageBooted()
     {
-        app('aura')::registerFields(app('aura')::getAppFields());
+        $aura = $this->app->make(Aura::class);
+        $aura->registerFields($aura->getAppFields());
 
-        Queue::after(fn () => Aura::flushState());
-        Queue::exceptionOccurred(fn () => Aura::flushState());
+        Queue::after(fn () => AuraFacade::flushState());
+        Queue::exceptionOccurred(fn () => AuraFacade::flushState());
 
         // Laravel Octane keeps a single PHP process alive across many requests,
         // so Aura's process-level static state (field caches, resource registry,
@@ -308,7 +308,7 @@ class AuraServiceProvider extends PackageServiceProvider
                 'Laravel\Octane\Events\TaskReceived',
                 'Laravel\Octane\Events\TickReceived',
             ] as $octaneEvent) {
-                $events->listen($octaneEvent, fn () => Aura::flushState());
+                $events->listen($octaneEvent, fn () => AuraFacade::flushState());
             }
         }
 
@@ -349,7 +349,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
         // CheckCondition Blade Directive
         Blade::if('checkCondition', function ($model, $field, $post = null) {
-            return \Aura\Base\Aura::checkCondition($model, $field, $post);
+            return Aura::checkCondition($model, $field, $post);
         });
 
         Blade::if('superadmin', function () {
@@ -404,7 +404,7 @@ class AuraServiceProvider extends PackageServiceProvider
         // the facade would re-resolve a fresh, empty Aura and lose every
         // registration after the first request. Per-request mutable state is
         // reset back to the boot baseline via Aura::flushState() instead.
-        $this->app->singleton(\Aura\Base\Aura::class);
+        $this->app->singleton(Aura::class);
 
         $this->app->singleton(ComponentSlotCandidateValidator::class);
         $this->app->singleton(
@@ -422,17 +422,18 @@ class AuraServiceProvider extends PackageServiceProvider
             LivewireComponentSlotBridge::class,
             fn ($app): LivewireComponentSlotBridge => new DefaultLivewireComponentSlotBridge(
                 $app->make(LivewireCollisionInspector::class),
-                $app->make(LivewireManager::class),
+                $app->make('livewire.finder'),
                 $app->make('livewire.factory'),
             ),
         );
         $this->app->singleton(ComponentSlotRegistry::class);
 
-        $this->app->scoped('aura', function (): Aura {
-            return app(Aura::class);
+        $this->app->scoped('aura', function ($app): AuraFacade {
+            return $app->make(AuraFacade::class);
         });
 
-        app('aura')::registerResources([
+        $aura = $this->app->make(Aura::class);
+        $aura->registerResources([
             config('aura.resources.attachment'),
             config('aura.resources.option'),
             config('aura.resources.permission'),
@@ -441,7 +442,7 @@ class AuraServiceProvider extends PackageServiceProvider
         ]);
 
         if (config('aura.teams')) {
-            app('aura')::registerResources([
+            $aura->registerResources([
                 config('aura.resources.team'),
                 config('aura.resources.team-invitation'),
             ]);
@@ -457,11 +458,11 @@ class AuraServiceProvider extends PackageServiceProvider
             ->filter()
             ->toArray();
 
-        app('aura')::registerFields($fields);
+        $aura->registerFields($fields);
 
         // Register App Resources
-        app('aura')::registerResources(app('aura')::getAppResources());
-        app('aura')::registerWidgets(app('aura')::getAppWidgets());
+        $aura->registerResources($aura->getAppResources());
+        $aura->registerWidgets($aura->getAppWidgets());
     }
 
     public function registeringPackage() {}

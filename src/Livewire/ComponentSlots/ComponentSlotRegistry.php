@@ -48,9 +48,9 @@ class ComponentSlotRegistry
      */
     private array $declarations = [];
 
-    private bool $internalAliasResolution = false;
-
     private ?Closure $resolver = null;
+
+    private bool $resolvingAliases = false;
 
     private string $state = 'collecting';
 
@@ -82,13 +82,11 @@ class ComponentSlotRegistry
             $this->assertResolution($definition['transport'], $winner);
 
             foreach ($definition['aliases'] as $alias) {
-                if (! str_contains($alias, '::')) {
-                    $this->bridge->register($alias, $winner);
-                }
+                $this->bridge->register($alias, $winner);
             }
         }
 
-        $this->internalAliasResolution = true;
+        $this->resolvingAliases = true;
 
         try {
             foreach (self::DEFINITIONS as $slot => $definition) {
@@ -97,7 +95,7 @@ class ComponentSlotRegistry
                 }
             }
         } finally {
-            $this->internalAliasResolution = false;
+            $this->resolvingAliases = false;
         }
 
         $this->state = 'finalized';
@@ -114,7 +112,7 @@ class ComponentSlotRegistry
 
         $this->bridge->assertCompatible();
 
-        $this->resolver = function (?string $name) use ($fallbackComponents): string|null {
+        $resolver = function (?string $name) use ($fallbackComponents): string|null {
             $slot = $this->slotForAlias($name);
 
             if ($slot === null) {
@@ -125,13 +123,22 @@ class ComponentSlotRegistry
                 throw new ComponentSlotLifecycleException("Component slot alias [{$name}] cannot resolve before finalization.");
             }
 
-            if ($this->state === 'finalizing' && ! $this->internalAliasResolution) {
+            if ($this->state === 'finalizing' && ! $this->resolvingAliases) {
                 throw new ComponentSlotLifecycleException("Component slot alias [{$name}] cannot resolve during external finalization.");
             }
 
             return $this->winners[$slot] ?? null;
         };
 
+        foreach (self::DEFINITIONS as $definition) {
+            foreach ($definition['aliases'] as $alias) {
+                if (! str_contains($alias, '::')) {
+                    $this->bridge->reserve($alias, $definition['default'], $resolver);
+                }
+            }
+        }
+
+        $this->resolver = $resolver;
         $this->bridge->installMissingResolver($this->resolver);
     }
 
@@ -154,6 +161,8 @@ class ComponentSlotRegistry
 
                 throw new ComponentSlotConflict("Unknown component slot [{$label}] from source [{$source}].");
             }
+
+            $candidate = $this->normalizeCandidate($candidate);
 
             if (array_key_exists($source, $this->declarations[$slot] ?? [])) {
                 if ($this->declarations[$slot][$source] === $candidate) {
@@ -215,6 +224,17 @@ class ComponentSlotRegistry
         }
 
         return $identifiers;
+    }
+
+    private function normalizeCandidate(mixed $candidate): mixed
+    {
+        if (! is_string($candidate)) {
+            return $candidate;
+        }
+
+        $normalized = ltrim($candidate, '\\');
+
+        return class_exists($normalized) ? $normalized : $candidate;
     }
 
     /**

@@ -1,9 +1,12 @@
 <?php
 
 use Aura\Base\Livewire\ComponentSlots\ComponentSlotCollision;
+use Aura\Base\Livewire\ComponentSlots\ComponentSlotRegistry;
 use Aura\Base\Livewire\ComponentSlots\Livewire43CollisionInspector;
 use Aura\Base\Livewire\ComponentSlots\LivewireCollisionInspectorFactory;
 use Aura\Base\Livewire\ComponentSlots\UnsupportedLivewireInternals;
+use Aura\Base\Livewire\GlobalSearch;
+use Aura\Base\Livewire\MediaManager;
 use Aura\Base\Tests\Fixtures\ComponentSlots\CollisionFixture;
 use Illuminate\Support\Facades\File;
 use Livewire\Factory\Factory;
@@ -137,17 +140,6 @@ test('inspector detects conventional class discovery', function () {
         ->toThrow(ComponentSlotCollision::class, 'conventional-class');
 });
 
-test('inspector recognizes Aura default dot aliases as the intrinsic compatibility baseline', function () {
-    [$inspector] = freshCollisionInspector();
-
-    $inspector->assertUnclaimed([
-        'aura.base.livewire.global-search',
-        'aura.base.livewire.media-manager',
-    ], static fn (): null => null);
-
-    expect(true)->toBeTrue();
-});
-
 test('inspector detects single and multi file discovery without compiling or mutating Finder state', function (string $kind) {
     $path = storage_path('framework/testing/core20-'.$kind.'-'.uniqid());
     mkdir($path, 0755, true);
@@ -175,11 +167,27 @@ test('inspector invokes third party missing resolvers but excludes only the exac
     $auraResolver = static fn (): string => CollisionFixture::class;
     $factory->resolveMissingComponent($auraResolver);
 
-    $inspector->assertUnclaimed([$identifier], $auraResolver);
+    $assertUnclaimed = function () use ($auraResolver, $identifier, $inspector): void {
+        $intrinsicComponent = match ($identifier) {
+            'aura.base.livewire.global-search' => GlobalSearch::class,
+            'aura.base.livewire.media-manager' => MediaManager::class,
+            default => null,
+        };
+
+        if ($intrinsicComponent !== null) {
+            $inspector->assertReservable($identifier, $intrinsicComponent, $auraResolver);
+
+            return;
+        }
+
+        $inspector->assertUnclaimed([$identifier], $auraResolver);
+    };
+
+    $assertUnclaimed();
 
     $factory->resolveMissingComponent(static fn (string $name): ?string => $name === $identifier ? CollisionFixture::class : null);
 
-    expect(fn () => $inspector->assertUnclaimed([$identifier], $auraResolver))
+    expect($assertUnclaimed)
         ->toThrow(ComponentSlotCollision::class, 'missing-resolver');
 })->with(protectedComponentSlotIdentifiers());
 
@@ -199,4 +207,37 @@ test('inspector converts errors from third party missing resolvers into collisio
         ['aura::global-search'],
         static fn (): null => null,
     ))->toThrow(ComponentSlotCollision::class, 'missing-resolver-error');
+});
+
+test('inspector rechecks livewire state after every third party resolver side effect', function () {
+    [$inspector, $finder, $factory] = freshCollisionInspector();
+    $factory->resolveMissingComponent(function (string $name) use ($finder): null {
+        $finder->addComponent(name: $name, class: CollisionFixture::class);
+
+        return null;
+    });
+
+    expect(fn () => $inspector->assertUnclaimed(
+        ['aura::global-search'],
+        static fn (): null => null,
+    ))->toThrow(ComponentSlotCollision::class, 'explicit-class');
+});
+
+test('inspector repeats the full protected identifier sweep after resolver side effects', function () {
+    [$inspector, $finder, $factory] = freshCollisionInspector();
+    $factory->resolveMissingComponent(function (string $name) use ($finder): null {
+        if ($name === 'aura::media-manager') {
+            $finder->addComponent(
+                name: ComponentSlotRegistry::GLOBAL_SEARCH_TRANSPORT_ID,
+                class: CollisionFixture::class,
+            );
+        }
+
+        return null;
+    });
+
+    expect(fn () => $inspector->assertUnclaimed([
+        ComponentSlotRegistry::GLOBAL_SEARCH_TRANSPORT_ID,
+        'aura::media-manager',
+    ], static fn (): null => null))->toThrow(ComponentSlotCollision::class, 'explicit-class');
 });

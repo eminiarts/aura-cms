@@ -5,13 +5,13 @@ namespace Aura\Base\Livewire\ComponentSlots;
 use Closure;
 use Livewire\Component;
 use Livewire\Factory\Factory;
-use Livewire\LivewireManager;
+use Livewire\Finder\Finder;
 
 class DefaultLivewireComponentSlotBridge implements LivewireComponentSlotBridge
 {
     public function __construct(
         private readonly LivewireCollisionInspector $inspector,
-        private readonly LivewireManager $livewire,
+        private readonly Finder $finder,
         private readonly Factory $factory,
     ) {}
 
@@ -27,7 +27,7 @@ class DefaultLivewireComponentSlotBridge implements LivewireComponentSlotBridge
 
     public function installMissingResolver(Closure $resolver): void
     {
-        $this->livewire->resolveMissingComponent($resolver);
+        $this->factory->resolveMissingComponent($resolver);
     }
 
     /**
@@ -35,7 +35,13 @@ class DefaultLivewireComponentSlotBridge implements LivewireComponentSlotBridge
      */
     public function register(string $name, string $component): void
     {
-        $this->livewire->component($name, $component);
+        $this->finder->addComponent(name: $name, class: $component);
+    }
+
+    public function reserve(string $name, string $intrinsicComponent, Closure $auraResolver): void
+    {
+        $this->inspector->assertReservable($name, $intrinsicComponent, $auraResolver);
+        $this->finder->addComponent(name: $name, class: ComponentSlotAliasReservation::class);
     }
 
     public function resolve(string $name): array

@@ -21,6 +21,9 @@ interface LivewireComponentSlotBridge
      */
     public function register(string $name, string $component): void;
 
+    /** @param class-string<Component> $intrinsicComponent */
+    public function reserve(string $name, string $intrinsicComponent, Closure $auraResolver): void;
+
     /**
      * @return array{0: string, 1: class-string<Component>}
      */

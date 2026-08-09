@@ -2,8 +2,6 @@
 
 namespace Aura\Base\Livewire\ComponentSlots;
 
-use Aura\Base\Livewire\GlobalSearch;
-use Aura\Base\Livewire\MediaManager;
 use Closure;
 use Livewire\Compiler\Compiler;
 use Livewire\Factory\Factory;
@@ -80,79 +78,32 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         $this->assertCollectionShapes();
     }
 
+    public function assertReservable(string $identifier, string $intrinsicComponent, Closure $auraResolver): void
+    {
+        $this->assertCompatible();
+        $this->assertIdentifierUnclaimed(
+            $identifier,
+            $auraResolver,
+            allowedConventionalClass: $intrinsicComponent,
+            allowAuraReservation: false,
+        );
+    }
+
     public function assertUnclaimed(array $identifiers, Closure $auraResolver): void
     {
         $this->assertCompatible();
 
-        $classComponents = $this->read($this->finder, 'classComponents');
-        $viewComponents = $this->read($this->finder, 'viewComponents');
-        $classNamespaces = $this->read($this->finder, 'classNamespaces');
-        $viewNamespaces = $this->read($this->finder, 'viewNamespaces');
-        $factoryCache = $this->read($this->factory, 'resolvedComponentCache');
-        $resolvers = $this->read($this->factory, 'missingComponentResolvers');
+        foreach ($identifiers as $identifier) {
+            $this->assertIdentifierUnclaimed($identifier, $auraResolver);
+        }
 
         foreach ($identifiers as $identifier) {
-            $normalized = $this->finder->normalizeName($identifier);
-
-            if (! is_string($normalized) || $normalized === '') {
-                throw new UnsupportedLivewireInternals("Livewire could not normalize protected component identifier [{$identifier}].");
-            }
-
-            if (array_key_exists($normalized, $factoryCache)) {
-                $this->collision($identifier, 'factory-cache', $factoryCache[$normalized]);
-            }
-
-            if (array_key_exists($normalized, $classComponents)) {
-                $this->collision($identifier, 'explicit-class', $classComponents[$normalized]);
-            }
-
-            if (array_key_exists($normalized, $viewComponents)) {
-                $this->collision($identifier, 'explicit-view', $viewComponents[$normalized]);
-            }
-
-            [$namespace] = $this->finder->parseNamespaceAndName($normalized);
-
-            if ($namespace !== null && array_key_exists($namespace, $classNamespaces)) {
-                $this->collision($identifier, 'class-namespace', $classNamespaces[$namespace]);
-            }
-
-            if ($namespace !== null && array_key_exists($namespace, $viewNamespaces)) {
-                $this->collision($identifier, 'view-namespace', $viewNamespaces[$namespace]);
-            }
-
-            $class = $this->finder->resolveClassComponentClassName($normalized);
-
-            if ($class !== null && ! $this->isIntrinsicCompatibilityClass($identifier, $class)) {
-                $this->collision($identifier, 'conventional-class', $class);
-            }
-
-            $multiFilePath = $this->finder->resolveMultiFileComponentPath($normalized);
-
-            if ($multiFilePath !== null) {
-                $this->collision($identifier, 'multi-file', $multiFilePath);
-            }
-
-            $singleFilePath = $this->finder->resolveSingleFileComponentPath($normalized);
-
-            if ($singleFilePath !== null) {
-                $this->collision($identifier, 'single-file', $singleFilePath);
-            }
-
-            foreach ($resolvers as $resolver) {
-                if ($resolver === $auraResolver) {
-                    continue;
-                }
-
-                try {
-                    $target = $resolver($normalized);
-                } catch (Throwable $exception) {
-                    $this->collision($identifier, 'missing-resolver-error', $exception::class);
-                }
-
-                if ($target) {
-                    $this->collision($identifier, 'missing-resolver', $target);
-                }
-            }
+            $this->assertStaticClaimsUnclaimed(
+                $identifier,
+                $this->normalizeIdentifier($identifier),
+                allowedConventionalClass: null,
+                allowAuraReservation: true,
+            );
         }
     }
 
@@ -199,6 +150,50 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         foreach ($cache as $name => $class) {
             if (! is_string($name) || ! is_string($class)) {
                 $this->unsupportedShape('resolvedComponentCache');
+            }
+        }
+    }
+
+    private function assertIdentifierUnclaimed(
+        string $identifier,
+        Closure $auraResolver,
+        ?string $allowedConventionalClass = null,
+        bool $allowAuraReservation = true,
+    ): void {
+        $normalized = $this->normalizeIdentifier($identifier);
+        $resolvers = $this->read($this->factory, 'missingComponentResolvers');
+
+        $this->assertStaticClaimsUnclaimed(
+            $identifier,
+            $normalized,
+            $allowedConventionalClass,
+            $allowAuraReservation,
+        );
+
+        foreach ($resolvers as $resolver) {
+            if ($resolver === $auraResolver) {
+                continue;
+            }
+
+            try {
+                $target = $resolver($normalized);
+            } catch (Throwable $exception) {
+                $this->collision($identifier, 'missing-resolver-error', $exception::class);
+            }
+
+            $this->assertStaticClaimsUnclaimed(
+                $identifier,
+                $normalized,
+                $allowedConventionalClass,
+                $allowAuraReservation,
+            );
+
+            if ($target) {
+                $this->collision($identifier, 'missing-resolver', $target);
+            }
+
+            if ($this->read($this->factory, 'missingComponentResolvers') !== $resolvers) {
+                $this->collision($identifier, 'missing-resolver-mutation', 'resolver list changed during inspection');
             }
         }
     }
@@ -251,6 +246,64 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         }
     }
 
+    private function assertStaticClaimsUnclaimed(
+        string $identifier,
+        string $normalized,
+        ?string $allowedConventionalClass,
+        bool $allowAuraReservation,
+    ): void {
+        $factoryCache = $this->read($this->factory, 'resolvedComponentCache');
+
+        if (array_key_exists($normalized, $factoryCache)) {
+            $this->collision($identifier, 'factory-cache', $factoryCache[$normalized]);
+        }
+
+        $classComponents = $this->read($this->finder, 'classComponents');
+
+        if (array_key_exists($normalized, $classComponents)
+            && ! ($allowAuraReservation && $this->isAuraReservation($identifier, $classComponents[$normalized]))) {
+            $this->collision($identifier, 'explicit-class', $classComponents[$normalized]);
+        }
+
+        $viewComponents = $this->read($this->finder, 'viewComponents');
+
+        if (array_key_exists($normalized, $viewComponents)) {
+            $this->collision($identifier, 'explicit-view', $viewComponents[$normalized]);
+        }
+
+        [$namespace] = $this->finder->parseNamespaceAndName($normalized);
+        $classNamespaces = $this->read($this->finder, 'classNamespaces');
+        $viewNamespaces = $this->read($this->finder, 'viewNamespaces');
+
+        if ($namespace !== null && array_key_exists($namespace, $classNamespaces)) {
+            $this->collision($identifier, 'class-namespace', $classNamespaces[$namespace]);
+        }
+
+        if ($namespace !== null && array_key_exists($namespace, $viewNamespaces)) {
+            $this->collision($identifier, 'view-namespace', $viewNamespaces[$namespace]);
+        }
+
+        $class = $this->finder->resolveClassComponentClassName($normalized);
+
+        if ($class !== null
+            && $class !== $allowedConventionalClass
+            && ! ($allowAuraReservation && $this->isAuraReservation($identifier, $class))) {
+            $this->collision($identifier, 'conventional-class', $class);
+        }
+
+        $multiFilePath = $this->finder->resolveMultiFileComponentPath($normalized);
+
+        if ($multiFilePath !== null) {
+            $this->collision($identifier, 'multi-file', $multiFilePath);
+        }
+
+        $singleFilePath = $this->finder->resolveSingleFileComponentPath($normalized);
+
+        if ($singleFilePath !== null) {
+            $this->collision($identifier, 'single-file', $singleFilePath);
+        }
+    }
+
     private function collision(string $identifier, string $kind, mixed $target): never
     {
         $description = match (true) {
@@ -264,13 +317,23 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         );
     }
 
-    private function isIntrinsicCompatibilityClass(string $identifier, string $class): bool
+    private function isAuraReservation(string $identifier, mixed $target): bool
     {
-        return match ($identifier) {
-            'aura.base.livewire.global-search' => $class === GlobalSearch::class,
-            'aura.base.livewire.media-manager' => $class === MediaManager::class,
-            default => false,
-        };
+        return in_array($identifier, [
+            'aura.base.livewire.global-search',
+            'aura.base.livewire.media-manager',
+        ], true) && $target === ComponentSlotAliasReservation::class;
+    }
+
+    private function normalizeIdentifier(string $identifier): string
+    {
+        $normalized = $this->finder->normalizeName($identifier);
+
+        if (! is_string($normalized) || $normalized === '') {
+            throw new UnsupportedLivewireInternals("Livewire could not normalize protected component identifier [{$identifier}].");
+        }
+
+        return $normalized;
     }
 
     private function read(object $target, string $propertyName): mixed

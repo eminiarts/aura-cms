@@ -58,6 +58,11 @@ class FakeLivewireComponentSlotBridge implements LivewireComponentSlotBridge
         $this->registrations[$name] = $component;
     }
 
+    public function reserve(string $name, string $intrinsicComponent, Closure $auraResolver): void
+    {
+        // The fake has no conventional class discovery to suppress.
+    }
+
     public function resolve(string $name): array
     {
         $component = $this->registrations[$name] ?? ($this->resolver)($name);
@@ -112,8 +117,10 @@ test('registry freezes exactly two default slots and keeps all compatibility ali
         ->and($registry->winner('media-manager'))->toBe(MediaManager::class)
         ->and($bridge->registrations)->toBe([
             ComponentSlotRegistry::GLOBAL_SEARCH_TRANSPORT_ID => GlobalSearch::class,
+            'aura::global-search' => GlobalSearch::class,
             'aura.base.livewire.global-search' => GlobalSearch::class,
             ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID => MediaManager::class,
+            'aura::media-manager' => MediaManager::class,
             'aura.base.livewire.media-manager' => MediaManager::class,
         ])
         ->and($bridge->resolve('aura::global-search'))->toBe(['aura::global-search', GlobalSearch::class])
@@ -184,6 +191,16 @@ test('registration rejects malformed sources unknown slots same source conflicts
 
     expect(fn () => $registry->register('other/package', ['global-search' => RegistryOtherSearch::class]))
         ->toThrow(ComponentSlotLifecycleException::class, 'collecting');
+});
+
+test('same source canonical class spellings are idempotent', function () {
+    [$registry] = componentSlotRegistry();
+    $registry->install();
+    $registry->register('vendor/package', ['global-search' => RegistryPluginSearch::class]);
+    $registry->register('vendor/package', ['global-search' => '\\'.RegistryPluginSearch::class]);
+    $registry->finalize();
+
+    expect($registry->winner('global-search'))->toBe(RegistryPluginSearch::class);
 });
 
 test('legacy media config remains a host choice and conflicting new and legacy values fail', function () {
