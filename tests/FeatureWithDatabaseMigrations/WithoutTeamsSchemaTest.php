@@ -4,6 +4,7 @@ use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Permission;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
+use Aura\Base\Tests\Resources\Post;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -150,6 +151,18 @@ describe('model behavior without teams', function () {
         $user = User::factory()->create();
 
         expect($user->current_team_id)->toBeNull();
+    });
+
+    it('defaults an omitted owner but rejects an explicit null owner', function () {
+        $post = Post::create([
+            'title' => 'Owned without teams',
+        ]);
+
+        expect($post->user_id)->toBe($this->user->id)
+            ->and(fn () => Post::create([
+                'title' => 'Explicitly unowned without teams',
+                'user_id' => null,
+            ]))->toThrow(LogicException::class, 'non-null owner');
     });
 
     it('creates role without team_id', function () {

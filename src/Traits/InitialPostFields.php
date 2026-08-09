@@ -91,9 +91,9 @@ trait InitialPostFields
         $hasTenantAttribute = config('aura.teams') && array_key_exists('team_id', $attributes);
         $hasOwnerAttribute = array_key_exists('user_id', $attributes);
 
-        if (config('aura.teams')
-            && ! $post->exists
+        if (! $post->exists
             && $post->isFillable('user_id')
+            && $hasOwnerAttribute
             && $post->getAttribute('user_id') === null
             && ! $globalWrite
             && ! $hasTeamContext

@@ -264,13 +264,13 @@ $builder->where($model->getTable().'.team_id', $currentTeamId);
 
 ### Cache Mechanism
 
-The current team ID is cached per user to avoid repeated database queries. Both an ID and the absence of an ID are cached, so users without a team do not trigger one lookup per scoped query. Aura also keeps a request/job-local snapshot. Queue boundaries clear both Laravel's cached authentication guards and Aura state before and after every job (and after exceptions); synchronous dispatch restores the authenticated caller after the isolated job boundary.
+The current team ID is cached per user to avoid repeated database queries. Both an ID and the absence of an ID are cached for one hour in a connection-qualified random epoch, so users without a team do not trigger one lookup per scoped query. Epoch rotation makes prior values unreachable, while the value TTL bounds retired cache storage. Aura also keeps a request/job-local snapshot. Queue boundaries clear both Laravel's cached authentication guards and Aura state before and after every job (and after exceptions); synchronous dispatch restores the authenticated caller after the isolated job boundary.
 
 Inside a database transaction, TeamScope reads the connection directly and bypasses both cache layers, so nested transactions never publish uncommitted tenant state. A model change clears the process snapshot immediately and registers shared-cache invalidation with `afterCommit`. A rollback discards that callback, leaving the last committed shared value intact; the next process read resolves the rolled-back database value. This lifecycle works on supported Laravel 12 and 13 releases without depending on a rollback-only hook.
 
 ```php
-// Cache key format
-"user_{$userId}_current_team_id"
+// Cache key format (connection identity and random epoch included)
+"aura_current_team_{$connectionIdentity}_user_{$userId}_epoch_{$epoch}"
 ```
 
 > **Important**: Model-based team changes clear both cache layers automatically. Code that changes `current_team_id` through a query builder or raw SQL must call `User::clearCurrentTeamCache($userId)`; clearing only the persistent cache does not change the current request/job snapshot.

@@ -219,7 +219,7 @@ class TeamScope implements Scope
 
         self::afterApplicationCommit($connection, function () use ($cacheKey, $connection, $userId): void {
             unset(self::$currentTeamIds[$cacheKey]);
-            User::incrementCurrentTeamCacheGeneration($userId, $connection);
+            User::rotateCurrentTeamCacheEpoch($userId, $connection);
             Cache::forget($cacheKey);
         });
     }
@@ -339,7 +339,7 @@ class TeamScope implements Scope
         // Direct database query to avoid triggering scopes.
         $currentTeamId = $connection->table('users')->where('id', $userId)->value('current_team_id');
 
-        Cache::forever($cacheKey, $currentTeamId ?? false);
+        Cache::put($cacheKey, $currentTeamId ?? false, now()->addHour());
 
         return self::$currentTeamIds[$cacheKey] = $currentTeamId;
     }

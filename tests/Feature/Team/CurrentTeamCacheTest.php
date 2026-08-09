@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -547,6 +548,30 @@ it('fails closed when an actor or explicit team context queries another connecti
         ))->toBe(0);
 });
 
+it('never reuses a current-team namespace after its epoch marker is evicted', function () {
+    $user = createSuperAdmin();
+    $connection = $user->getConnection();
+    $epochKey = User::connectionScopedCacheKey(
+        'current_team_generation_user_'.$user->getKey(),
+        $connection,
+    );
+
+    Cache::forever($epochKey, 1);
+
+    $oldCacheKey = User::currentTeamCacheKey($user->getKey(), $connection);
+    Cache::put($oldCacheKey, 'surviving stale value', now()->addDay());
+
+    expect(Cache::has($oldCacheKey))->toBeTrue();
+
+    Cache::forget($epochKey);
+    Aura::flushState();
+
+    $newCacheKey = User::currentTeamCacheKey($user->getKey(), $connection);
+
+    expect($newCacheKey)->not->toBe($oldCacheKey)
+        ->and(Cache::get($oldCacheKey))->toBe('surviving stale value');
+});
+
 it('invalidates the current team cache when a persisted user has id zero', function () {
     $tenantConnection = currentTeamTenantConnection();
     $tenantUser = seedCurrentTeamConnection($tenantConnection, 0, 915000, 915001, 'Zero');
@@ -817,6 +842,44 @@ it('rejects global and ordinary Livewire creates when authorization and writes u
 
     expect($tenantConnection->table('permissions')->where('slug', 'cross-connection-global')->exists())
         ->toBeFalse();
+});
+
+it('rejects every resource policy ability before cross-connection admin shortcuts', function () {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedTeamListConnection($defaultConnection, 'Default Policy');
+    $tenant = seedTeamListConnection($tenantConnection, 'Tenant Policy');
+    $tenantPermission = Permission::createGlobalForSystem([
+        'name' => 'Tenant policy permission',
+        'slug' => 'tenant-policy-permission',
+        'group' => 'Security',
+    ], $tenantConnection);
+    $tenantResource = new Permission;
+    $tenantResource->setConnection($tenantConnection->getName());
+
+    foreach (['create', 'createGlobal', 'viewAny'] as $ability) {
+        expect(Gate::forUser($default['global_admin'])->denies($ability, $tenantResource))->toBeTrue();
+    }
+
+    foreach (['view', 'update', 'delete', 'restore', 'forceDelete'] as $ability) {
+        expect(Gate::forUser($default['global_admin'])->denies($ability, $tenantPermission))->toBeTrue()
+            ->and(fn () => Gate::forUser($default['global_admin'])->authorize($ability, $tenantPermission))
+            ->toThrow(AuthorizationException::class);
+    }
+
+    Auth::setUser($default['global_admin']);
+
+    expect(fn () => $tenantPermission->moveGlobalToTeam($tenant['team']->getKey()))
+        ->toThrow(AuthorizationException::class)
+        ->and($tenantPermission->fresh()->team_id)->toBeNull();
+
+    foreach (['create', 'createGlobal', 'viewAny'] as $ability) {
+        expect(Gate::forUser($tenant['global_admin'])->allows($ability, $tenantResource))->toBeTrue();
+    }
+
+    foreach (['view', 'update', 'delete', 'restore', 'forceDelete'] as $ability) {
+        expect(Gate::forUser($tenant['global_admin'])->allows($ability, $tenantPermission))->toBeTrue();
+    }
 });
 
 it('keeps container-connected non-user global search queries on that database', function () {
@@ -1357,6 +1420,47 @@ it('uses the new current team after switching with a warmed team scope cache', f
     expect(Cache::get(User::currentTeamCacheKey($user->id)))->toBe($secondTeam->id);
 });
 
+it('retires bounded namespaces across repeated switches and fresh containers', function () {
+    $user = createSuperAdmin();
+    $firstTeam = Team::findOrFail($user->current_team_id);
+    $secondTeam = Team::create([
+        'name' => 'Repeated Cache Team',
+        'user_id' => $user->id,
+    ]);
+    $retiredCacheKeys = [];
+
+    $this->actingAs($user);
+
+    foreach ([$secondTeam, $firstTeam, $secondTeam, $firstTeam] as $team) {
+        Aura::flushState();
+
+        $retiredCacheKey = User::currentTeamCacheKey($user->id);
+
+        Post::count();
+
+        expect(Cache::has($retiredCacheKey))->toBeTrue()
+            ->and($user->switchTeam($team))->toBeTrue()
+            ->and(Cache::has($retiredCacheKey))->toBeFalse();
+
+        $retiredCacheKeys[] = $retiredCacheKey;
+
+        Aura::flushState();
+
+        expect(User::currentTeamCacheKey($user->id))->not->toBeIn($retiredCacheKeys);
+    }
+
+    $activeCacheKey = User::currentTeamCacheKey($user->id);
+
+    Post::count();
+
+    expect(array_unique($retiredCacheKeys))->toHaveCount(4)
+        ->and(Cache::has($activeCacheKey))->toBeTrue();
+
+    foreach ($retiredCacheKeys as $retiredCacheKey) {
+        expect(Cache::has($retiredCacheKey))->toBeFalse();
+    }
+});
+
 it('clears current team and team list caches for affected users when deleting a team', function () {
     $user = createSuperAdmin();
     $firstTeam = Team::find($user->current_team_id);
@@ -1498,7 +1602,12 @@ it('prevents a cold read from republishing stale null or non-null state after in
     $newCacheKey = User::currentTeamCacheKey($user->id);
 
     expect($interleaved)->toBeTrue()
-        ->and($newCacheKey)->not->toBe($oldCacheKey);
+        ->and($newCacheKey)->not->toBe($oldCacheKey)
+        ->and(Cache::has($oldCacheKey))->toBeTrue();
+
+    $this->travel(2)->hours();
+
+    expect(Cache::has($oldCacheKey))->toBeFalse();
 
     Aura::flushState();
 

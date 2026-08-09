@@ -169,10 +169,13 @@ public function clearFieldsAttributeCache()
 `TeamScope` uses two cache layers for the authenticated user's current team:
 
 1. A process-local snapshot keyed by user ID keeps every scoped query in one request or job on the same tenant.
-2. The shared cache stores the database value in a connection-qualified generation namespace. A `false` sentinel represents a missing current team, so null values are cached as deliberately as team IDs.
+2. The shared cache stores the database value for one hour in a connection-qualified random epoch namespace. A `false` sentinel represents a missing current team, so null values are cached as deliberately as team IDs.
 
 `User::clearCurrentTeamCache($userId)` invalidates both layers. After commit it
-atomically advances the shared generation before retiring the prior value key.
+atomically rotates the shared epoch before retiring the prior value key. If the
+epoch marker is evicted, a fresh random epoch prevents an old surviving value
+from becoming current again. Expiring value keys bound storage even when an
+overlapping cold reader publishes into the retired namespace.
 A cold read that overlaps the update can finish only in its old, unreachable
 namespace, so it cannot permanently re-poison the current value in another
 worker. Aura calls invalidation for model-based current-team changes, and

@@ -67,6 +67,10 @@ class ResourcePolicy
      */
     public function delete($user, $resource)
     {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($this->deniesGlobalSharedResourceWrite($user, $resource)) {
             return false;
         }
@@ -99,6 +103,10 @@ class ResourcePolicy
      */
     public function forceDelete($user, $resource)
     {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($this->deniesGlobalSharedResourceWrite($user, $resource)) {
             return false;
         }
@@ -122,6 +130,10 @@ class ResourcePolicy
      */
     public function restore(User $user, $resource)
     {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($this->deniesGlobalSharedResourceWrite($user, $resource)) {
             return false;
         }
@@ -144,6 +156,10 @@ class ResourcePolicy
      */
     public function update($user, $resource)
     {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($resource::$editEnabled === false) {
             return false;
         }
@@ -180,6 +196,10 @@ class ResourcePolicy
      */
     public function view($user, $resource)
     {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         // Check if the config resource view is enabled
         if (config('aura.resource-view-enabled') === false) {
             return false;
@@ -218,6 +238,10 @@ class ResourcePolicy
      */
     public function viewAny($user, $resource)
     {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($resource::$indexViewEnabled === false) {
             return false;
         }

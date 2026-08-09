@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Lab404\Impersonate\Models\Impersonate;
 use Lab404\Impersonate\Services\ImpersonateManager;
@@ -314,14 +315,24 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         );
     }
 
-    public static function currentTeamCacheGeneration(
+    public static function currentTeamCacheEpoch(
         string|int $userId,
         ?Connection $connection = null,
-    ): int {
-        $generationKey = self::currentTeamCacheGenerationKey($userId, $connection);
-        Cache::add($generationKey, 1, now()->addYears(10));
+    ): string {
+        $epochKey = self::currentTeamCacheEpochKey($userId, $connection);
+        $candidate = Str::random(40);
 
-        return (int) Cache::get($generationKey, 1);
+        Cache::add($epochKey, $candidate);
+
+        $epoch = Cache::get($epochKey);
+
+        if (! is_string($epoch) || $epoch === '') {
+            Cache::forever($epochKey, $candidate);
+
+            return $candidate;
+        }
+
+        return $epoch;
     }
 
     public static function currentTeamCacheKey(
@@ -330,9 +341,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     ): string {
         $connection ??= DB::connection();
         $connectionIdentity = static::connectionCacheIdentity($connection);
-        $generation = static::currentTeamCacheGeneration($userId, $connection);
+        $epoch = static::currentTeamCacheEpoch($userId, $connection);
 
-        return "aura_current_team_{$connectionIdentity}_user_{$userId}_generation_{$generation}";
+        return "aura_current_team_{$connectionIdentity}_user_{$userId}_epoch_{$epoch}";
     }
 
     public function deleteOption($option)
@@ -802,16 +813,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         app(ImpersonateManager::class)->take($impersonator, $this);
     }
 
-    public static function incrementCurrentTeamCacheGeneration(
-        string|int $userId,
-        ?Connection $connection = null,
-    ): int {
-        $generationKey = self::currentTeamCacheGenerationKey($userId, $connection);
-        Cache::add($generationKey, 1, now()->addYears(10));
-
-        return (int) Cache::increment($generationKey);
-    }
-
     public function indexQuery($query)
     {
         if (config('aura.teams')) {
@@ -951,6 +952,17 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             // ->using(TeamUser::class)
             // ->withPivot('team_id')
             ->withTimestamps();
+    }
+
+    public static function rotateCurrentTeamCacheEpoch(
+        string|int $userId,
+        ?Connection $connection = null,
+    ): string {
+        $epoch = Str::random(40);
+
+        Cache::forever(self::currentTeamCacheEpochKey($userId, $connection), $epoch);
+
+        return $epoch;
     }
 
     /**
@@ -1105,7 +1117,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return is_array($permissions) ? $permissions : [];
     }
 
-    private static function currentTeamCacheGenerationKey(
+    private static function currentTeamCacheEpochKey(
         string|int $userId,
         ?Connection $connection = null,
     ): string {
