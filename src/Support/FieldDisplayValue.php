@@ -7,6 +7,8 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\HtmlString;
 use JsonSerializable;
 use Stringable;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
 use Traversable;
 
 final class FieldDisplayValue
@@ -44,6 +46,15 @@ final class FieldDisplayValue
         }
 
         return e(json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '');
+    }
+
+    public static function sanitizedHtml(string $html): Htmlable
+    {
+        $sanitizer = new HtmlSanitizer(
+            (new HtmlSanitizerConfig)->allowSafeElements(),
+        );
+
+        return new HtmlString($sanitizer->sanitize($html));
     }
 
     /**

@@ -23,17 +23,6 @@ class Datetime extends Field
 
     public $view = 'aura::fields.view-value';
 
-    public function displayValue(
-        mixed $value,
-        array $field,
-        ?Model $model,
-        FieldValueContext $context = FieldValueContext::Index,
-    ): mixed {
-        $field['_aura_hydrated'] = true;
-
-        return parent::displayValue($value, $field, $model, $context);
-    }
-
     public function filterOptions()
     {
         return [
@@ -170,6 +159,19 @@ class Datetime extends Field
         FieldValueStorage $storage,
         FieldValueContext $context = FieldValueContext::Model,
     ): mixed {
+        $slug = $field['slug'] ?? null;
+
+        // Native Eloquent datetime casts interpret offset-less database values
+        // in app.timezone before Aura sees them. Physical Aura datetime fields
+        // instead declare their own storage timezone, so the raw column value is
+        // the authoritative wall clock for reconstructing the stored instant.
+        if ($storage === FieldValueStorage::Physical
+            && $model
+            && is_string($slug)
+            && array_key_exists($slug, $model->getAttributes())) {
+            $value = $model->getAttributes()[$slug];
+        }
+
         return TemporalValue::hydrateDatetime($value, $field, $context);
     }
 
@@ -180,6 +182,17 @@ class Datetime extends Field
         FieldValueStorage $storage,
     ): mixed {
         return TemporalValue::normalizeDatetime($value, $field, $model, $storage);
+    }
+
+    public function presentValue(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueContext $context = FieldValueContext::Index,
+    ): mixed {
+        $field['_aura_hydrated'] = true;
+
+        return parent::presentValue($value, $field, $model, $context);
     }
 
     public function set($post, $field, $value)

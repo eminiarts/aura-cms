@@ -21,17 +21,6 @@ class Date extends Field
 
     public $view = 'aura::fields.view-value';
 
-    public function displayValue(
-        mixed $value,
-        array $field,
-        ?Model $model,
-        FieldValueContext $context = FieldValueContext::Index,
-    ): mixed {
-        $field['_aura_hydrated'] = true;
-
-        return parent::displayValue($value, $field, $model, $context);
-    }
-
     public function filterOptions()
     {
         return [
@@ -140,6 +129,17 @@ class Date extends Field
         FieldValueStorage $storage,
     ): mixed {
         return TemporalValue::normalizeDate($value, $field);
+    }
+
+    public function presentValue(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueContext $context = FieldValueContext::Index,
+    ): mixed {
+        $field['_aura_hydrated'] = true;
+
+        return parent::presentValue($value, $field, $model, $context);
     }
 
     public function set($post, $field, $value)

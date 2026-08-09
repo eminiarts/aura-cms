@@ -26,7 +26,7 @@ class TemporalValue
         $date = self::parse(
             $value,
             self::dateFormats($field),
-            self::timezone($field['input_timezone'] ?? null, self::applicationTimezone()),
+            self::timezone($field['input_timezone'] ?? null, self::applicationTimezone(), $field, 'input timezone'),
         );
 
         if (! $date) {
@@ -72,7 +72,7 @@ class TemporalValue
         $date = self::parse(
             $value,
             self::dateFormats($field),
-            self::timezone($field['input_timezone'] ?? null, self::applicationTimezone()),
+            self::timezone($field['input_timezone'] ?? null, self::applicationTimezone(), $field, 'input timezone'),
         );
 
         if (! $date) {
@@ -129,7 +129,7 @@ class TemporalValue
         $date = self::parse(
             $value,
             self::dateFormats($field),
-            self::timezone($field['input_timezone'] ?? null, self::applicationTimezone()),
+            self::timezone($field['input_timezone'] ?? null, self::applicationTimezone(), $field, 'input timezone'),
         );
 
         return $date?->format('Y-m-d') ?? $value;
@@ -216,6 +216,8 @@ class TemporalValue
             is_string($configuredDefault) && $configuredDefault !== ''
                 ? $configuredDefault
                 : self::applicationTimezone(),
+            $field,
+            'display timezone',
         );
     }
 
@@ -249,7 +251,12 @@ class TemporalValue
      */
     private static function inputTimezone(array $field): DateTimeZone
     {
-        return self::timezone($field['input_timezone'] ?? null, self::displayTimezone($field)->getName());
+        return self::timezone(
+            $field['input_timezone'] ?? null,
+            self::displayTimezone($field)->getName(),
+            $field,
+            'input timezone',
+        );
     }
 
     /**
@@ -505,15 +512,27 @@ class TemporalValue
             is_string($configuredDefault) && $configuredDefault !== ''
                 ? $configuredDefault
                 : self::applicationTimezone(),
+            $field,
+            'storage timezone',
         );
     }
 
-    private static function timezone(mixed $configured, string $fallback): DateTimeZone
-    {
+    /** @param  array<string, mixed>  $field */
+    private static function timezone(
+        mixed $configured,
+        string $fallback,
+        array $field,
+        string $setting,
+    ): DateTimeZone {
+        $timezone = is_string($configured) && $configured !== '' ? $configured : $fallback;
+
         try {
-            return new DateTimeZone(is_string($configured) && $configured !== '' ? $configured : $fallback);
+            return new DateTimeZone($timezone);
         } catch (Throwable) {
-            return new DateTimeZone('UTC');
+            throw InvalidFieldValue::forField(
+                $field['slug'] ?? null,
+                "configured {$setting} [{$timezone}] is not a valid timezone",
+            );
         }
     }
 }

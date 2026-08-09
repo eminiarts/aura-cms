@@ -3,8 +3,8 @@
 namespace Aura\Base\Traits;
 
 use Aura\Base\ConditionalLogic;
+use Aura\Base\Contracts\FieldPresentationContract;
 use Aura\Base\Contracts\FieldValueContext;
-use Aura\Base\Contracts\FieldValueContract;
 use Aura\Base\Pipeline\AddIdsToFields;
 use Aura\Base\Pipeline\ApplyParentConditionalLogic;
 use Aura\Base\Pipeline\ApplyParentDisplayAttributes;
@@ -81,8 +81,8 @@ trait InputFields
 
         $fieldClass = $this->fieldClassBySlug($key);
 
-        if ($fieldClass instanceof FieldValueContract) {
-            return $fieldClass->displayValue($value, is_array($field) ? $field : [], $this, $context);
+        if ($fieldClass instanceof FieldPresentationContract) {
+            return $fieldClass->presentValue($value, is_array($field) ? $field : [], $this, $context);
         }
 
         if ($fieldClass) {
@@ -135,7 +135,7 @@ trait InputFields
 
         foreach ($fieldFields as $key => $f) {
             // if no key value pair is set, get the default value from the field
-            if (! isset($field[$f['slug']]) && isset($f['default'])) {
+            if (! array_key_exists($f['slug'], $field) && array_key_exists('default', $f)) {
                 $field[$f['slug']] = $f['default'];
             }
         }

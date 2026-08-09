@@ -218,7 +218,7 @@ Every class extending `Aura\Base\Fields\Field` supports one value contract acros
 
 1. `normalizeForStorage()` converts submitted or imported input immediately before persistence.
 2. `hydrateFromStorage()` converts a stored value to its application/form representation.
-3. `displayValue()` presents an already hydrated value for a declared context.
+3. `presentValue()` presents an already hydrated value for a declared context.
 
 The storage location and presentation context are explicit:
 
@@ -246,7 +246,7 @@ public function hydrateFromStorage(
     return $value;
 }
 
-public function displayValue(
+public function presentValue(
     mixed $value,
     array $field,
     ?Model $model,
@@ -262,7 +262,7 @@ Resources keep the backward-compatible `display($slug)` index API. Use `$resourc
 
 The same compatibility rule applies to `displayFieldValue($key, $value)`, `getMeta($key)`, and `resolveFieldValue($slug, $meta = null)`. Their original signatures remain unchanged. Framework code that needs a form/view context uses the corresponding `*InContext()` method.
 
-Existing custom fields remain compatible: the base class adapts `set()`, `get()`, and `display()` to the new methods. Override the contract methods only when the storage location or UI context matters. Preserve `null`, an empty string, `0`, and `false` as separate values unless the field explicitly defines another domain rule.
+Existing custom fields remain compatible: the base class adapts `set()`, `get()`, and `display()` to the new methods. It also adapts the historically documented `displayValue($value, $model)` hook without declaring an incompatible parent signature. New fields should override `presentValue()` when presentation context matters. Preserve `null`, an empty string, `0`, and `false` as separate values unless the field explicitly defines another domain rule.
 
 For a physical attribute declared in the model's Eloquent casts, the Eloquent cast remains the storage normalizer. Aura does not run the field normalizer a second time over the cast's raw storage value; this preserves existing JSON/array casts and prevents double encoding.
 

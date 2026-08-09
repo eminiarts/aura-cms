@@ -627,6 +627,8 @@ class PriceField extends Field
 }
 ```
 
+The two-argument `displayValue($value, $model)` hook remains supported for existing fields. New fields that need the UI context should override the typed `presentValue($value, $field, $model, $context)` method described in [Creating Fields](creating-fields.md#field-value-lifecycle).
+
 ### Field View Template
 
 ```blade

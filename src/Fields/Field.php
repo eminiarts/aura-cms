@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\FieldPresentationContract;
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Contracts\FieldValueContract;
 use Aura\Base\Contracts\FieldValueStorage;
@@ -16,10 +17,12 @@ use Illuminate\Support\Traits\Macroable;
 use Illuminate\Support\Traits\Tappable;
 use Livewire\Wireable;
 
-abstract class Field implements FieldValueContract, Wireable
+abstract class Field implements FieldPresentationContract, FieldValueContract, Wireable
 {
     use InputFields;
-    use Macroable;
+    use Macroable {
+        __call as macroCall;
+    }
     use Tappable;
 
     public $edit = null;
@@ -54,6 +57,33 @@ abstract class Field implements FieldValueContract, Wireable
     public $wrapper = null;
 
     /**
+     * Preserve calls to the typed displayValue() API without declaring that
+     * method on the base class. Older Aura documentation encouraged subclasses
+     * to declare displayValue($value, $model); a parent signature would make
+     * those classes fail during PHP class loading.
+     *
+     * @param  array<int, mixed>  $parameters
+     */
+    public function __call($method, $parameters)
+    {
+        if ($method === 'displayValue') {
+            $second = $parameters[1] ?? null;
+            $usesLegacyShape = $second instanceof Model || ($second === null && count($parameters) < 3);
+            $field = $usesLegacyShape ? [] : (is_array($second) ? $second : []);
+            $model = $usesLegacyShape
+                ? $second
+                : (($parameters[2] ?? null) instanceof Model ? $parameters[2] : null);
+            $context = ($parameters[3] ?? null) instanceof FieldValueContext
+                ? $parameters[3]
+                : FieldValueContext::Index;
+
+            return $this->presentValue($parameters[0] ?? null, $field, $model, $context);
+        }
+
+        return $this->macroCall($method, $parameters);
+    }
+
+    /**
      * Describe the Laravel Blueprint column used by generated custom-table migrations.
      *
      * @param  array<string, mixed>  $field
@@ -70,7 +100,7 @@ abstract class Field implements FieldValueContract, Wireable
     {
 
         if (optional($field)['display_view']) {
-            return new HtmlString(
+            return FieldDisplayValue::sanitizedHtml(
                 view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render(),
             );
         }
@@ -94,32 +124,6 @@ abstract class Field implements FieldValueContract, Wireable
         }
 
         return FieldDisplayValue::escape($value);
-    }
-
-    public function displayValue(
-        mixed $value,
-        array $field,
-        ?Model $model,
-        FieldValueContext $context = FieldValueContext::Index,
-    ): mixed {
-        $display = $this->display($field, $value, $model);
-
-        if ($display instanceof Htmlable) {
-            return $display;
-        }
-
-        $displayMethod = new \ReflectionMethod($this, 'display');
-
-        // The base implementation escapes all plain values and only emits
-        // template markup as HtmlString. Custom overrides must explicitly
-        // return Htmlable; their plain strings/arrays remain untrusted.
-        if ($displayMethod->getDeclaringClass()->getName() === self::class) {
-            return $display === null || $display === ''
-                ? $display
-                : new HtmlString((string) $display);
-        }
-
-        return FieldDisplayValue::secure($display);
     }
 
     public function edit()
@@ -385,6 +389,35 @@ abstract class Field implements FieldValueContract, Wireable
         return $value;
     }
 
+    public function presentValue(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueContext $context = FieldValueContext::Index,
+    ): mixed {
+        $usesLegacyDisplayValue = method_exists($this, 'displayValue');
+        $display = $usesLegacyDisplayValue
+            ? $this->invokeLegacyDisplayValue($value, $field, $model, $context)
+            : $this->display($field, $value, $model);
+
+        if ($display instanceof Htmlable) {
+            return $display;
+        }
+
+        $displayMethod = new \ReflectionMethod($this, 'display');
+
+        // The base implementation escapes all plain values and only emits
+        // template markup as HtmlString. Custom overrides must explicitly
+        // return Htmlable; their plain strings/arrays remain untrusted.
+        if (! $usesLegacyDisplayValue && $displayMethod->getDeclaringClass()->getName() === self::class) {
+            return $display === null || $display === ''
+                ? $display
+                : new HtmlString((string) $display);
+        }
+
+        return FieldDisplayValue::secure($display);
+    }
+
     public function toLivewire()
     {
         return [
@@ -407,5 +440,31 @@ abstract class Field implements FieldValueContract, Wireable
         if ($this->edit) {
             return $this->edit;
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     */
+    protected function invokeLegacyDisplayValue(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueContext $context,
+    ): mixed {
+        $method = new \ReflectionMethod($this, 'displayValue');
+
+        if ($method->isVariadic() || $method->getNumberOfParameters() >= 4) {
+            return $method->invoke($this, $value, $field, $model, $context);
+        }
+
+        if ($method->getNumberOfParameters() === 3) {
+            return $method->invoke($this, $value, $field, $model);
+        }
+
+        if ($method->getNumberOfParameters() === 2) {
+            return $method->invoke($this, $value, $model);
+        }
+
+        return $method->invoke($this, $value);
     }
 }

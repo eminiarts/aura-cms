@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Fields;
 
+use Aura\Base\Contracts\FieldPresentationContract;
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Contracts\FieldValueContract;
 use Aura\Base\Contracts\FieldValueStorage;
@@ -13,10 +14,12 @@ use Aura\Base\Fields\Datetime;
 use Aura\Base\Fields\Field;
 use Aura\Base\Fields\Number;
 use Aura\Base\Fields\Permissions;
+use Aura\Base\Fields\Tags;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Livewire\Resource\View as ResourceView;
 use Aura\Base\Resource;
+use DateTimeInterface;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -52,6 +55,26 @@ class Core10ContextValueField extends Field
         FieldValueContext $context = FieldValueContext::Index,
     ): mixed {
         return $context->value.':'.$value;
+    }
+}
+
+class Core10DocumentedLegacyDisplayValueField extends Field
+{
+    public function displayValue($value, $model)
+    {
+        return 'legacy-display:'.$value.':'.($model?->getKey() ?? 'new');
+    }
+}
+
+class Core10PrefixNormalizingField extends Field
+{
+    public function normalizeForStorage(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueStorage $storage,
+    ): mixed {
+        return 'normalized:'.$value;
     }
 }
 
@@ -169,6 +192,40 @@ class Core10DstResource extends Resource
     }
 }
 
+class Core10NativeDatetimeCastResource extends Resource
+{
+    public static $customTable = true;
+
+    public static ?string $slug = 'core-10-native-datetime-cast';
+
+    public static string $type = 'Core10NativeDatetimeCast';
+
+    public static bool $usesMeta = false;
+
+    protected $fillable = ['occurred_at'];
+
+    protected $table = 'core_10_dst_values';
+
+    public static function getFields(): array
+    {
+        return [[
+            'name' => 'Occurred at',
+            'slug' => 'occurred_at',
+            'type' => Datetime::class,
+            'format' => 'd.m.Y H:i',
+            'display_format' => 'Y-m-d H:i',
+            'input_timezone' => 'Europe/Zurich',
+            'display_timezone' => 'America/New_York',
+            'storage_timezone' => 'UTC',
+        ]];
+    }
+
+    protected function casts(): array
+    {
+        return ['occurred_at' => 'datetime'];
+    }
+}
+
 class Core10ExactNumberResource extends Resource
 {
     public static $customTable = true;
@@ -231,6 +288,55 @@ class Core10ArrayCastResource extends Resource
     protected function casts(): array
     {
         return ['permissions' => 'array'];
+    }
+}
+
+class Core10PackedProvenanceResource extends Resource
+{
+    public static $customTable = true;
+
+    public static ?string $slug = 'core-10-packed-provenance';
+
+    public static string $type = 'Core10PackedProvenance';
+
+    public static bool $usesMeta = false;
+
+    protected $fillable = ['normalized_value'];
+
+    protected $table = 'core_10_packed_provenance_values';
+
+    public static function getFields(): array
+    {
+        return [[
+            'name' => 'Normalized value',
+            'slug' => 'normalized_value',
+            'type' => Core10PrefixNormalizingField::class,
+        ]];
+    }
+}
+
+class Core10NullDefaultsResource extends Resource
+{
+    public static ?string $slug = 'core-10-null-defaults';
+
+    public static string $type = 'Core10NullDefaults';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Nullable boolean',
+                'slug' => 'nullable_boolean',
+                'type' => Boolean::class,
+                'default' => null,
+            ],
+            [
+                'name' => 'Nullable tags',
+                'slug' => 'nullable_tags',
+                'type' => Tags::class,
+                'default' => null,
+            ],
+        ];
     }
 }
 
@@ -462,6 +568,16 @@ beforeEach(function () {
         });
     }
 
+    if (! Schema::hasTable('core_10_packed_provenance_values')) {
+        Schema::create('core_10_packed_provenance_values', function (Blueprint $table) {
+            $table->id();
+            $table->string('normalized_value')->nullable();
+            $table->foreignId('user_id')->nullable();
+            $table->foreignId('team_id')->nullable();
+            $table->timestamps();
+        });
+    }
+
     Core10BooleanCast::$setValues = [];
     Core10EloquentPipelineResource::$mutatorValues = [];
 });
@@ -475,14 +591,23 @@ test('the value contract adapts legacy set get and display hooks', function () {
         ->and((string) $field->displayValue('value', [], null, FieldValueContext::View))->toBe('displayed:value');
 });
 
+test('documented two argument displayValue subclasses load and use the typed adapter', function () {
+    $field = new Core10DocumentedLegacyDisplayValueField;
+    $model = new Core10ValueResource;
+
+    expect($field)->toBeInstanceOf(FieldPresentationContract::class)
+        ->and((string) $field->presentValue('value', ['slug' => 'legacy'], $model, FieldValueContext::View))
+        ->toBe('legacy-display:value:new');
+});
+
 test('field presentation receives an explicit context', function () {
     $field = new Core10ContextValueField;
 
-    expect($field->displayValue('value', [], null, FieldValueContext::Create))->toBe('create:value')
-        ->and($field->displayValue('value', [], null, FieldValueContext::Edit))->toBe('edit:value')
-        ->and($field->displayValue('value', [], null, FieldValueContext::Index))->toBe('index:value')
-        ->and($field->displayValue('value', [], null, FieldValueContext::Export))->toBe('export:value')
-        ->and($field->displayValue('value', [], null, FieldValueContext::View))->toBe('view:value');
+    expect((string) $field->presentValue('value', [], null, FieldValueContext::Create))->toBe('create:value')
+        ->and((string) $field->presentValue('value', [], null, FieldValueContext::Edit))->toBe('edit:value')
+        ->and((string) $field->presentValue('value', [], null, FieldValueContext::Index))->toBe('index:value')
+        ->and((string) $field->presentValue('value', [], null, FieldValueContext::Export))->toBe('export:value')
+        ->and((string) $field->presentValue('value', [], null, FieldValueContext::View))->toBe('view:value');
 });
 
 test('resource context display preserves legacy single-argument overrides', function () {
@@ -576,6 +701,21 @@ test('physical writes compose Aura normalization before Eloquent casts and mutat
         ->and(DB::table('core_10_eloquent_pipeline_values')->where('id', $resource->id)->value('mutated_boolean'))->toBe('no');
 });
 
+test('packed physical provenance is consumed before a later literal payload on the same instance', function () {
+    $resource = Core10PackedProvenanceResource::create([
+        'normalized_value' => 'first',
+    ]);
+
+    expect(DB::table('core_10_packed_provenance_values')->where('id', $resource->id)->value('normalized_value'))
+        ->toBe('normalized:first');
+
+    $resource->setAttribute('fields', ['normalized_value' => 'second']);
+    $resource->save();
+
+    expect(DB::table('core_10_packed_provenance_values')->where('id', $resource->id)->value('normalized_value'))
+        ->toBe('normalized:second');
+});
+
 test('json field normalization composes with an Eloquent array cast without double encoding', function () {
     $permissions = ['view-post' => true, 'delete-post' => false];
     $resource = Core10ArrayCastResource::create(['permissions' => $permissions])->refresh();
@@ -611,6 +751,15 @@ test('create query parameters retain decimal values until field normalization', 
     Livewire::withQueryParams(['decimal_value' => '3.14'])
         ->test(Create::class, ['slug' => 'core-10-value'])
         ->assertSet('form.fields.decimal_value', '3.14');
+});
+
+test('create treats explicit null defaults as authoritative for boolean and tags fields', function () {
+    Aura::fake();
+    Aura::setModel(new Core10NullDefaultsResource);
+
+    Livewire::test(Create::class, ['slug' => 'core-10-null-defaults'])
+        ->assertSet('form.fields.nullable_boolean', null)
+        ->assertSet('form.fields.nullable_tags', null);
 });
 
 test('decimal overflow is rejected before a database row is written', function () {
@@ -737,6 +886,39 @@ test('datetime rendering converts from storage timezone and honors both index an
     expect(trim(strip_tags($datetime->display($field, '2026-08-09 16:15:00', null))))->toBe('2026-08-09 12:15 EDT')
         ->and(trim(strip_tags($datetime->displayValue('2026-08-09 12:15:00', $field, null, FieldValueContext::View))))->toBe('2026-08-09 12:15 EDT')
         ->and(trim(strip_tags($datetime->displayValue(null, $field, null, FieldValueContext::Index))))->toBe('');
+});
+
+test('physical datetime hydration uses the declared storage timezone before native Eloquent casts', function () {
+    config()->set('app.timezone', 'Europe/Zurich');
+    $id = DB::table('core_10_dst_values')->insertGetId([
+        'occurred_at' => '2026-08-09 16:15:00',
+        'user_id' => $this->user->id,
+        'team_id' => $this->user->current_team_id,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $resource = Core10NativeDatetimeCastResource::findOrFail($id);
+
+    expect($resource->occurred_at)->toBeInstanceOf(DateTimeInterface::class)
+        ->and($resource->resolveFieldValue('occurred_at'))->toBe('2026-08-09 12:15:00')
+        ->and(trim(strip_tags($resource->displayInContext('occurred_at', FieldValueContext::View))))
+        ->toBe('2026-08-09 12:15');
+});
+
+test('invalid configured timezones fail clearly instead of falling back to utc', function () {
+    $datetime = new Datetime;
+    $field = [
+        'slug' => 'occurred_at',
+        'storage_timezone' => 'Europe/Zurih',
+    ];
+
+    expect(fn () => $datetime->hydrateFromStorage(
+        '2026-08-09 16:15:00',
+        $field,
+        null,
+        FieldValueStorage::Meta,
+        FieldValueContext::View,
+    ))->toThrow(InvalidFieldValue::class, 'Europe/Zurih');
 });
 
 test('datetime defaults preserve legacy application-timezone clock values', function () {

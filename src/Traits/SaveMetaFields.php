@@ -75,112 +75,122 @@ trait SaveMetaFields
         }
 
         if (isset($post->attributes['fields'])) {
+            try {
 
-            foreach ($post->attributes['fields'] as $key => $value) {
-                $key = (string) $key;
+                foreach ($post->attributes['fields'] as $key => $value) {
+                    $key = (string) $key;
 
-                $class = $post->fieldClassBySlug($key);
+                    $class = $post->fieldClassBySlug($key);
 
-                // Allow resources/plugins to consume custom form payloads that are
-                // not regular Aura fields, e.g. "translations".
-                $method = 'set'.Str::studly($key).'Field';
+                    // Allow resources/plugins to consume custom form payloads that are
+                    // not regular Aura fields, e.g. "translations".
+                    $method = 'set'.Str::studly($key).'Field';
 
-                if (! $class && method_exists($post, $method)) {
-                    $post->{$method}($value);
+                    if (! $class && method_exists($post, $method)) {
+                        $post->{$method}($value);
 
-                    continue;
-                }
-
-                // Do not continue if the Field is not found
-                if (! $class) {
-                    continue;
-                }
-
-                // if there is a function set{Slug}Field on the model, use it
-                if (method_exists($post, $method)) {
-                    $post->saveMetaField([$key => $value]);
-
-                    // $post = $post->{$method}($value);
-
-                    continue;
-                }
-
-                $field = $post->fieldBySlug($key);
-
-                $storage = $post->isTableField($key)
-                    ? FieldValueStorage::Physical
-                    : FieldValueStorage::Meta;
-
-                if ($storage === FieldValueStorage::Physical) {
-                    // Values copied into `fields` by packFieldAttributes are
-                    // already the raw result of Aura normalization followed by
-                    // the model's mutator/cast. A literal packed payload has not
-                    // run either stage, so route it through setAttribute now.
-                    if (! method_exists($post, 'wasPhysicalFieldPacked') || ! $post->wasPhysicalFieldPacked($key)) {
-                        $post->setAttribute($key, $value);
+                        continue;
                     }
 
-                    $value = $post->getAttributes()[$key] ?? null;
-                } else {
-                    if (isset($field['set']) && $field['set'] instanceof \Closure) {
-                        $value = ($field['set'])($post, $field, $value);
+                    // Do not continue if the Field is not found
+                    if (! $class) {
+                        continue;
                     }
 
-                    if ($class instanceof FieldValueContract) {
-                        $value = $class->normalizeForStorage(
-                            $value,
-                            is_array($field) ? $field : [],
-                            $post,
-                            $storage,
-                        );
-                    } elseif (method_exists($class, 'set')) {
-                        $value = $class->set($post, $field, $value);
-                    }
-                }
+                    // if there is a function set{Slug}Field on the model, use it
+                    if (method_exists($post, $method)) {
+                        $post->saveMetaField([$key => $value]);
 
-                if (method_exists($class, 'saving')) {
-                    // Store the result back to $post
-                    $modifiedPost = $class->saving($post, $field, $value);
+                        // $post = $post->{$method}($value);
 
-                    if ($modifiedPost) {
-                        $post = $modifiedPost;
+                        continue;
                     }
 
-                }
+                    $field = $post->fieldBySlug($key);
 
-                // Check if further processing should be skipped
-                if (method_exists($class, 'shouldSkip') && $class->shouldSkip($post, $field)) {
-                    continue;
-                }
+                    $storage = $post->isTableField($key)
+                        ? FieldValueStorage::Physical
+                        : FieldValueStorage::Meta;
 
-                if ($class instanceof ID) {
-                    // $post->attributes[$key] = $value;
+                    if ($storage === FieldValueStorage::Physical) {
+                        // Values copied into `fields` by packFieldAttributes are
+                        // already the raw result of Aura normalization followed by
+                        // the model's mutator/cast. A literal packed payload has not
+                        // run either stage, so route it through setAttribute now.
+                        $wasPacked = method_exists($post, 'consumePhysicalFieldPacked')
+                            ? $post->consumePhysicalFieldPacked($key)
+                            : (method_exists($post, 'wasPhysicalFieldPacked') && $post->wasPhysicalFieldPacked($key));
 
-                    // unset($post->attributes['fields'][$key]);
+                        if (! $wasPacked) {
+                            $post->setAttribute($key, $value);
+                        }
 
-                    continue;
-                }
+                        $value = $post->getAttributes()[$key] ?? null;
+                    } else {
+                        if (isset($field['set']) && $field['set'] instanceof \Closure) {
+                            $value = ($field['set'])($post, $field, $value);
+                        }
 
-                // Persist every declared physical field back to its model
-                // attribute. It already passed through setAttribute above (or
-                // was copied from its raw post-cast representation), so direct
-                // assignment here would bypass or duplicate Eloquent behavior.
-                if ($post->isTableField($key)) {
-                    continue;
-                }
+                        if ($class instanceof FieldValueContract) {
+                            $value = $class->normalizeForStorage(
+                                $value,
+                                is_array($field) ? $field : [],
+                                $post,
+                                $storage,
+                            );
+                        } elseif (method_exists($class, 'set')) {
+                            $value = $class->set($post, $field, $value);
+                        }
+                    }
 
-                if (in_array($key, $post->getFillable())) {
+                    if (method_exists($class, 'saving')) {
+                        // Store the result back to $post
+                        $modifiedPost = $class->saving($post, $field, $value);
+
+                        if ($modifiedPost) {
+                            $post = $modifiedPost;
+                        }
+
+                    }
+
+                    // Check if further processing should be skipped
+                    if (method_exists($class, 'shouldSkip') && $class->shouldSkip($post, $field)) {
+                        continue;
+                    }
+
+                    if ($class instanceof ID) {
+                        // $post->attributes[$key] = $value;
+
+                        // unset($post->attributes['fields'][$key]);
+
+                        continue;
+                    }
+
+                    // Persist every declared physical field back to its model
+                    // attribute. It already passed through setAttribute above (or
+                    // was copied from its raw post-cast representation), so direct
+                    // assignment here would bypass or duplicate Eloquent behavior.
+                    if ($post->isTableField($key)) {
+                        continue;
+                    }
+
+                    if (in_array($key, $post->getFillable())) {
+                        // Save the meta field to the model, so it can be saved in the Meta table
+                        $post->saveMetaField([$key => $value]);
+                    }
+
                     // Save the meta field to the model, so it can be saved in the Meta table
-                    $post->saveMetaField([$key => $value]);
+                    // $post->saveMetaField([$key => $value]);
                 }
 
-                // Save the meta field to the model, so it can be saved in the Meta table
-                // $post->saveMetaField([$key => $value]);
+                unset($post->attributes['fields']);
+
+                $post->clearFieldsAttributeCache();
+            } finally {
+                if (method_exists($post, 'clearPackedPhysicalFieldValues')) {
+                    $post->clearPackedPhysicalFieldValues();
+                }
             }
-
-            unset($post->attributes['fields']);
-
-            $post->clearFieldsAttributeCache();
         }
     }
 }

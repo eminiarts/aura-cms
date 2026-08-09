@@ -233,6 +233,20 @@ class Resource extends Model implements DefinesFields
 
     }
 
+    public function clearPackedPhysicalFieldValues(): void
+    {
+        $this->packedPhysicalFieldValues = [];
+    }
+
+    public function consumePhysicalFieldPacked(string $slug): bool
+    {
+        $packed = isset($this->packedPhysicalFieldValues[$slug]);
+
+        unset($this->packedPhysicalFieldValues[$slug]);
+
+        return $packed;
+    }
+
     public function getBulkActions()
     {
         return $this->bulkActions;
@@ -582,6 +596,13 @@ class Resource extends Model implements DefinesFields
         }
 
         return parent::setAttribute($key, $value);
+    }
+
+    public function setRawAttributes(array $attributes, $sync = false)
+    {
+        $this->clearPackedPhysicalFieldValues();
+
+        return parent::setRawAttributes($attributes, $sync);
     }
 
     public function setRelation($relation, $value)

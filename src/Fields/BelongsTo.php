@@ -5,6 +5,7 @@ namespace Aura\Base\Fields;
 use Aura\Base\Contracts\PreloadsTableDisplay;
 use Aura\Base\Models\Meta;
 use Aura\Base\Resource;
+use Aura\Base\Support\FieldDisplayValue;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\HtmlString;
 
@@ -95,7 +96,9 @@ class BelongsTo extends Field implements PreloadsTableDisplay
     public function display($field, $value, $model)
     {
         if (optional($field)['display_view']) {
-            return view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render();
+            return FieldDisplayValue::sanitizedHtml(
+                view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render(),
+            );
         }
 
         if ($field['resource'] && $value) {

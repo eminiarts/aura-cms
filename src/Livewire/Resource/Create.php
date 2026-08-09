@@ -219,7 +219,9 @@ class Create extends Component
 
             // First, ensure all fields are initialized (even if to null)
             // This allows params/query parameters to be applied to any field
-            if (! isset($this->form['fields'][$slug])) {
+            $hasDefault = array_key_exists('default', $field);
+
+            if (! array_key_exists($slug, $this->form['fields'])) {
                 $this->form['fields'][$slug] = $this->model->hydrateFieldValueInContext(
                     $slug,
                     null,
@@ -227,20 +229,20 @@ class Create extends Component
                 );
             }
 
-            if ($field['type'] == "Aura\Base\Fields\Boolean" && ! isset($field['default'])) {
+            if ($field['type'] == "Aura\Base\Fields\Boolean" && ! $hasDefault) {
                 $this->form['fields'][$slug] = false;
 
                 continue;
             }
 
             // Initialize Tags field with empty array if no default is set
-            if ($field['type'] == "Aura\Base\Fields\Tags" && ! isset($field['default'])) {
+            if ($field['type'] == "Aura\Base\Fields\Tags" && ! $hasDefault) {
                 $this->form['fields'][$slug] = [];
 
                 continue;
             }
 
-            if (isset($field['default'])) {
+            if ($hasDefault) {
 
                 if ($field['type'] == "Aura\Base\Fields\Checkbox" && isset($field['options']) && is_array($field['options']) && ! is_array($field['default'])) {
                     $field['default'] = [$field['default']];

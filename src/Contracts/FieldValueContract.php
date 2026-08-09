@@ -7,18 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 interface FieldValueContract
 {
     /**
-     * Render a hydrated value for a declared UI context.
-     *
-     * @param  array<string, mixed>  $field
-     */
-    public function displayValue(
-        mixed $value,
-        array $field,
-        ?Model $model,
-        FieldValueContext $context = FieldValueContext::Index,
-    ): mixed;
-
-    /**
      * Convert a value read from a physical column or Aura meta row into its
      * application representation.
      *
