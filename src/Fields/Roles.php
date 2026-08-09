@@ -114,7 +114,7 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
         $roleIds = collect($value)->flatten()->filter()->values()->all();
 
         $currentRoles = $post->roles();
-        $assignableRoles = Role::query();
+        $assignableRoles = Role::on($post->getConnectionName());
 
         if (config('aura.teams')) {
             $teamId = TeamScope::currentContextTeamId()
@@ -154,7 +154,9 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
         if ($changesSuperAdminAccess) {
             $actingUser = auth()->user();
             if ($actingUser && ! method_exists($actingUser, 'isSuperAdmin')) {
-                $actingUser = app(config('aura.resources.user'))->find($actingUser->getAuthIdentifier());
+                $user = app(config('aura.resources.user'));
+                $user->setConnection($post->getConnectionName());
+                $actingUser = $user->newQueryWithoutScopes()->find($actingUser->getAuthIdentifier());
             }
 
             abort_if($actingUser && (! method_exists($actingUser, 'isSuperAdmin') || ! $actingUser->isSuperAdmin()), 403);

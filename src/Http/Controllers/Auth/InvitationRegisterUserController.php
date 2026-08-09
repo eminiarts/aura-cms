@@ -33,7 +33,7 @@ class InvitationRegisterUserController extends Controller
         // An email that already has an account must accept the invitation, not
         // register a second one — refuse the register form outright (the mail
         // routes existing accounts to the accept link anyway).
-        abort_if($this->emailAlreadyRegistered($teamInvitation->email), 403);
+        abort_if($this->emailAlreadyRegistered($teamInvitation->email, $team->getConnectionName()), 403);
 
         return view('aura::auth.user_invitation', [
             'team' => $team,
@@ -64,7 +64,9 @@ class InvitationRegisterUserController extends Controller
         // the team-or-global rule TeamInvitationController::accept applies. A role
         // deleted between invite and acceptance fails like the accept path (404)
         // and, thanks to the transaction below, leaves no orphaned user behind.
-        $role = Role::withoutGlobalScopes()
+        $connectionName = $team->getConnectionName();
+        $role = Role::on($connectionName)
+            ->withoutGlobalScopes()
             ->whereKey($teamInvitation->role)
             ->visibleToTeam($team->id)
             ->first();
@@ -74,13 +76,13 @@ class InvitationRegisterUserController extends Controller
         // An email that already belongs to an account (any casing) must accept the
         // invitation, not register a second account. Refuse rather than mint a
         // case-variant duplicate.
-        abort_if($this->emailAlreadyRegistered($teamInvitation->email), 403);
+        abort_if($this->emailAlreadyRegistered($teamInvitation->email, $connectionName), 403);
 
         // Create the user and consume the invitation atomically: a mid-flight
         // failure (e.g. the Roles field refusing the assignment) rolls the insert
         // back, so a refusal never leaves a half-provisioned, role-less account.
-        $user = DB::transaction(function () use ($request, $team, $teamInvitation, $role) {
-            $user = User::create([
+        $user = DB::connection($connectionName)->transaction(function () use ($connectionName, $request, $team, $teamInvitation, $role) {
+            $user = User::on($connectionName)->create([
                 'name' => $request->name,
                 'email' => $teamInvitation->email,
                 'password' => $request->password,
@@ -104,13 +106,14 @@ class InvitationRegisterUserController extends Controller
      * Whether an account already exists for the given email, compared
      * case-insensitively (consistent with the accept path's strcasecmp match).
      */
-    protected function emailAlreadyRegistered(?string $email): bool
+    protected function emailAlreadyRegistered(?string $email, ?string $connectionName = null): bool
     {
         if ($email === null || $email === '') {
             return false;
         }
 
-        return User::withoutGlobalScopes()
+        return User::on($connectionName)
+            ->withoutGlobalScopes()
             ->whereRaw('lower(email) = ?', [mb_strtolower($email)])
             ->exists();
     }
@@ -124,13 +127,19 @@ class InvitationRegisterUserController extends Controller
      */
     protected function resolveInvitation(mixed $team, mixed $teamInvitation): array
     {
+        $connectionName = $team instanceof Team
+            ? $team->getConnectionName()
+            : ($teamInvitation instanceof TeamInvitation
+                ? $teamInvitation->getConnectionName()
+                : (new Team)->getConnectionName());
         $teamId = $team instanceof Team ? $team->getRouteKey() : $team;
         $invitationId = $teamInvitation instanceof TeamInvitation
             ? $teamInvitation->getRouteKey()
             : $teamInvitation;
 
-        $resolvedTeam = Team::withoutGlobalScopes()->findOrFail($teamId);
-        $resolvedInvitation = TeamInvitation::withoutGlobalScopes()
+        $resolvedTeam = Team::on($connectionName)->withoutGlobalScopes()->findOrFail($teamId);
+        $resolvedInvitation = TeamInvitation::on($connectionName)
+            ->withoutGlobalScopes()
             ->whereKey($invitationId)
             ->where('team_id', $resolvedTeam->getKey())
             ->firstOrFail();

@@ -109,7 +109,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     /**
      * Per-instance memo of resolved (shadow-applied) roles, keyed by
-     * "{teamId|global}:{Role::catalogVersion()}".
+     * "{connection}:{teamId|global}:{Role::catalogVersion()}".
      *
      * @var array<string, Collection>
      */
@@ -176,10 +176,14 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             return collect();
         }
 
+        $connection = $this->getConnection();
+        $connectionName = $connection->getName();
         $teamId = config('aura.teams')
             ? (TeamScope::currentContextTeamId() ?? $this->current_team_id)
             : null;
-        $cacheKey = ($teamId ?? 'global').':'.Role::catalogVersion();
+        $cacheKey = static::connectionCacheIdentity($connection)
+            .':'.($teamId ?? 'global')
+            .':'.Role::catalogVersion($connection);
 
         if (array_key_exists($cacheKey, $this->resolvedRolesCache)) {
             return $this->resolvedRolesCache[$cacheKey];
@@ -191,7 +195,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         // with a null pivot team_id — never an unfiltered read across all teams
         // (which would leak roles from teams the user is not currently in). In
         // Teams-off mode the pivot has no team_id column, so it is a flat read.
-        $roleIds = DB::table('user_role')
+        $roleIds = $connection->table('user_role')
             ->where('user_id', $this->id)
             ->when(
                 config('aura.teams'),
@@ -207,13 +211,14 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
         // The Membership's identity is its role slug; resolve each slug through
         // the catalog seam. Bypass scopes to read slugs of global rows too.
-        $slugs = Role::withoutGlobalScopes()
+        $slugs = Role::on($connectionName)
+            ->withoutGlobalScopes()
             ->whereIn('id', $roleIds)
             ->pluck('slug')
             ->unique();
 
         return $this->resolvedRolesCache[$cacheKey] = $slugs
-            ->map(fn ($slug) => Role::resolveForTeam($slug, $teamId))
+            ->map(fn ($slug) => Role::resolveForTeam($slug, $teamId, $connection))
             ->filter()
             ->unique('id')
             ->values();
@@ -233,7 +238,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         $option = 'user.'.$this->id.'.'.$option;
 
-        Cache::forget($option);
+        Cache::forget(static::connectionScopedCacheKey($option, $this->getConnection()));
     }
 
     public static function clearCurrentTeamCache(
@@ -245,6 +250,29 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         TeamScope::invalidateCurrentTeamId($userId, $connection);
+    }
+
+    public static function connectionCacheIdentity(?Connection $connection = null): string
+    {
+        $connection ??= DB::connection();
+
+        return hash('sha256', implode("\0", [
+            (string) $connection->getName(),
+            $connection->getDriverName(),
+            (string) $connection->getDatabaseName(),
+            (string) $connection->getConfig('host'),
+            (string) $connection->getConfig('port'),
+            (string) $connection->getConfig('username'),
+            (string) $connection->getConfig('schema'),
+            $connection->getTablePrefix(),
+        ]));
+    }
+
+    public static function connectionScopedCacheKey(
+        string $key,
+        ?Connection $connection = null,
+    ): string {
+        return 'aura_connection_'.static::connectionCacheIdentity($connection).'.'.$key;
     }
 
     /**
@@ -280,16 +308,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         ?Connection $connection = null,
     ): string {
         $connection ??= DB::connection();
-        $connectionIdentity = hash('sha256', implode("\0", [
-            (string) $connection->getName(),
-            $connection->getDriverName(),
-            (string) $connection->getDatabaseName(),
-            (string) $connection->getConfig('host'),
-            (string) $connection->getConfig('port'),
-            (string) $connection->getConfig('username'),
-            (string) $connection->getConfig('schema'),
-            $connection->getTablePrefix(),
-        ]));
+        $connectionIdentity = static::connectionCacheIdentity($connection);
 
         return "aura_current_team_{$connectionIdentity}_user_{$userId}";
     }
@@ -297,10 +316,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function deleteOption($option)
     {
         $option = 'user.'.$this->id.'.'.$option;
+        $cacheKey = static::connectionScopedCacheKey($option, $this->getConnection());
 
-        Option::whereName($option)->delete();
+        Option::on($this->getConnection()->getName())->where('name', $option)->delete();
 
-        Cache::forget($option);
+        Cache::forget($cacheKey);
     }
 
     public function getAvatarUrlAttribute()
@@ -495,6 +515,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function getOption($option)
     {
         $option = 'user.'.$this->id.'.'.$option;
+        $connectionName = $this->getConnection()->getName();
+        $cacheKey = static::connectionScopedCacheKey($option, $this->getConnection());
 
         // If there is a * at the end of the option name, it means that it is a wildcard
         // and we need to get all options that match the wildcard
@@ -502,35 +524,38 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             $o = substr($option, 0, -1);
 
             // Cache
-            $options = Cache::remember($option, now()->addHour(), function () use ($o) {
-                return Option::where('name', 'like', $o.'%')->get();
+            $options = Cache::remember($cacheKey, now()->addHour(), function () use ($connectionName, $o) {
+                return Option::on($connectionName)->where('name', 'like', $o.'%')->get();
             });
 
             // Map the options, set the key to the option name (everything after last dot ".") and the value to the option value
             return $options->mapWithKeys(function ($item, $key) {
-                return [str($item->name)->afterLast('.')->toString() => $item->value];
+                return [str($item->name)->afterLast('.')->toString() => $item->getAttribute('value')];
             });
         }
 
         // Cache
-        $model = Cache::remember($option, now()->addHour(), function () use ($option) {
-            return Option::whereName($option)->first();
+        $model = Cache::remember($cacheKey, now()->addHour(), function () use ($connectionName, $option) {
+            return Option::on($connectionName)->where('name', $option)->first();
         });
 
         if ($model) {
-            return $model->value;
+            return $model->getAttribute('value');
         }
     }
 
     public function getOptionBookmarks()
     {
+        $optionName = 'user.'.$this->id.'.bookmarks';
+        $cacheKey = static::connectionScopedCacheKey($optionName, $this->getConnection());
+
         // Cache
-        $option = Cache::remember('user.'.$this->id.'.bookmarks', now()->addHour(), function () {
-            return Option::whereName('user.'.$this->id.'.bookmarks')->first();
+        $option = Cache::remember($cacheKey, now()->addHour(), function () use ($optionName) {
+            return Option::on($this->getConnection()->getName())->where('name', $optionName)->first();
         });
 
         if ($option) {
-            return $option->value;
+            return $option->getAttribute('value');
         }
 
         return [];
@@ -538,13 +563,16 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function getOptionColumns($slug)
     {
+        $optionName = 'user.'.$this->id.'.columns.'.$slug;
+        $cacheKey = static::connectionScopedCacheKey($optionName, $this->getConnection());
+
         // Cache
-        $option = Cache::remember('user.'.$this->id.'.columns.'.$slug, now()->addHour(), function () use ($slug) {
-            return Option::whereName('user.'.$this->id.'.columns.'.$slug)->first();
+        $option = Cache::remember($cacheKey, now()->addHour(), function () use ($optionName) {
+            return Option::on($this->getConnection()->getName())->where('name', $optionName)->first();
         });
 
         if ($option) {
-            return $option->value;
+            return $option->getAttribute('value');
         }
 
         return [];
@@ -552,13 +580,16 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function getOptionSidebar()
     {
+        $optionName = 'user.'.$this->id.'.sidebar';
+        $cacheKey = static::connectionScopedCacheKey($optionName, $this->getConnection());
+
         // Cache
-        $option = Cache::remember('user.'.$this->id.'.sidebar', now()->addHour(), function () {
-            return Option::whereName('user.'.$this->id.'.sidebar')->first();
+        $option = Cache::remember($cacheKey, now()->addHour(), function () use ($optionName) {
+            return Option::on($this->getConnection()->getName())->where('name', $optionName)->first();
         });
 
         if ($option) {
-            return $option->value;
+            return $option->getAttribute('value');
         }
 
         return [];
@@ -566,13 +597,16 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function getOptionSidebarToggled()
     {
+        $optionName = 'user.'.$this->id.'.sidebarToggled';
+        $cacheKey = static::connectionScopedCacheKey($optionName, $this->getConnection());
+
         // Cache
-        $option = Cache::remember('user.'.$this->id.'.sidebarToggled', now()->addHour(), function () {
-            return Option::whereName('user.'.$this->id.'.sidebarToggled')->first();
+        $option = Cache::remember($cacheKey, now()->addHour(), function () use ($optionName) {
+            return Option::on($this->getConnection()->getName())->where('name', $optionName)->first();
         });
 
         if ($option) {
-            return $option->value;
+            return $option->getAttribute('value');
         }
 
         return true;
@@ -604,18 +638,23 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             return;
         }
 
+        $connection = $this->getConnection();
+
         // A Global Admin sees every team in the switcher, not only the teams they
         // are a member of — visitation lets them enter any of them. The list is
         // identical for every Global Admin, so it is cached under one shared key
         // that Team create/delete invalidates (see Team::booted).
         if ($this->isAuraGlobalAdmin()) {
-            return Cache::remember(self::GLOBAL_ADMIN_TEAMS_CACHE_KEY, now()->addHour(), function () {
-                return app(config('aura.resources.team'))::withoutGlobalScopes()->with('meta')->get();
+            return Cache::remember(static::globalAdminTeamsCacheKey($connection), now()->addHour(), function () use ($connection) {
+                $team = app(config('aura.resources.team'));
+                $team->setConnection($connection->getName());
+
+                return $team->newQueryWithoutScopes()->with('meta')->get();
             });
         }
 
         // Return cached teams with meta
-        return Cache::remember('user.'.$this->id.'.teams', now()->addHour(), function () {
+        return Cache::remember(static::teamListCacheKey($this->getKey(), $connection), now()->addHour(), function () {
             return $this->teams()->with('meta')->get();
         });
     }
@@ -623,6 +662,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public static function getWidgets(): array
     {
         return [];
+    }
+
+    public static function globalAdminTeamsCacheKey(?Connection $connection = null): string
+    {
+        return static::connectionScopedCacheKey(static::GLOBAL_ADMIN_TEAMS_CACHE_KEY, $connection);
     }
 
     public function hasAnyRole(array $roles): bool
@@ -842,11 +886,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         } else {
             return $this->hasOne(User::class, 'id', 'id');
         }
-
-        // Cache the resource so we don't have to query the database every time
-        return Cache::remember('user.resource.'.$this->id, now()->addHour(), function () {
-            return User::find($this->id);
-        });
     }
 
     /**
@@ -897,6 +936,13 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return true;
     }
 
+    public static function teamListCacheKey(
+        string|int $userId,
+        ?Connection $connection = null,
+    ): string {
+        return static::connectionScopedCacheKey('user.'.$userId.'.teams', $connection);
+    }
+
     /**
      * Get all of the teams the user belongs to.
      */
@@ -915,20 +961,21 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function updateOption($option, $value)
     {
         $option = 'user.'.$this->id.'.'.$option;
+        $connectionName = $this->getConnection()->getName();
 
         if (config('aura.teams')) {
-            Option::updateOrCreate([
+            Option::on($connectionName)->updateOrCreate([
                 'name' => $option,
                 'team_id' => $this->current_team_id,
             ], ['value' => $value]);
         } else {
-            Option::updateOrCreate([
+            Option::on($connectionName)->updateOrCreate([
                 'name' => $option,
             ], ['value' => $value]);
         }
 
         // Clear the cache
-        Cache::forget($option);
+        Cache::forget(static::connectionScopedCacheKey($option, $this->getConnection()));
     }
 
     public function widgets()
@@ -960,7 +1007,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     protected function getCacheKeyForRoles(): string
     {
-        return $this->current_team_id.'.user.'.$this->id.'.roles';
+        return static::connectionScopedCacheKey(
+            $this->current_team_id.'.user.'.$this->id.'.roles',
+            $this->getConnection(),
+        );
     }
 
     /**

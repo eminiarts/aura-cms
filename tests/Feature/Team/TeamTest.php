@@ -150,7 +150,7 @@ describe('Team Creation Side Effects', function () {
     });
 
     it('clears the user teams cache when team is created', function () {
-        $cacheKey = 'user.'.$this->user->id.'.teams';
+        $cacheKey = User::teamListCacheKey($this->user->id, $this->user->getConnection());
 
         Cache::put($cacheKey, 'test-value');
         expect(Cache::has($cacheKey))->toBeTrue();

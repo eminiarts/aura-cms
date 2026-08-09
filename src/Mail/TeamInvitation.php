@@ -40,7 +40,10 @@ class TeamInvitation extends Mailable
                 'team' => $this->invitation->team,
                 'teamInvitation' => $this->invitation,
             ]),
-            'userExists' => User::withoutGlobalScopes()->where('email', $this->invitation->email)->exists(),
+            'userExists' => User::on($this->invitation->getConnectionName())
+                ->withoutGlobalScopes()
+                ->where('email', $this->invitation->email)
+                ->exists(),
             'acceptUrl' => URL::temporarySignedRoute('aura.team-invitations.accept', $this->expiresAt(), ['invitation' => $this->invitation]),
         ])
             ->subject(__('You have been invited to join the :team team!', ['team' => $this->invitation->team->name]));

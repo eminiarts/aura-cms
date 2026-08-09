@@ -6,6 +6,8 @@ use Aura\Base\Jobs\GenerateAllResourcePermissions;
 use Aura\Base\Models\Meta;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
+use Illuminate\Database\Connection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Gate;
 
@@ -54,7 +56,7 @@ class Role extends Resource
      * invalidates every user's cache lazily — instant shadow effect without
      * paying resolution queries on every permission check.
      */
-    protected static int $catalogVersion = 0;
+    protected static array $catalogVersions = [];
 
     protected static $dropdown = 'Users';
 
@@ -80,9 +82,12 @@ class Role extends Resource
      * writes (which fire no model events) so a Shadow or catalog role created or
      * deleted mid-request takes effect on the next permission check.
      */
-    public static function bumpCatalogVersion(): void
+    public static function bumpCatalogVersion(?Connection $connection = null): void
     {
-        static::$catalogVersion++;
+        $connection = self::resolveCatalogConnection($connection);
+        $connectionIdentity = User::connectionCacheIdentity($connection);
+
+        static::$catalogVersions[$connectionIdentity] = (static::$catalogVersions[$connectionIdentity] ?? 0) + 1;
     }
 
     /**
@@ -121,14 +126,16 @@ class Role extends Resource
      * memo (User::cachedRoles) so creating or deleting a catalog role or Shadow
      * invalidates every user's cache lazily.
      */
-    public static function catalogVersion(): int
+    public static function catalogVersion(?Connection $connection = null): int
     {
-        return static::$catalogVersion;
+        $connection = self::resolveCatalogConnection($connection);
+
+        return static::$catalogVersions[User::connectionCacheIdentity($connection)] ?? 0;
     }
 
     public function createMissingPermissions()
     {
-        GenerateAllResourcePermissions::dispatch();
+        GenerateAllResourcePermissions::dispatch(null, $this->getConnectionName());
     }
 
     /**
@@ -159,17 +166,20 @@ class Role extends Resource
      * which preserves team_id = null without bypassing model events. In Teams-off
      * mode the roles table has no team_id column, so the flat catalog row is used.
      */
-    public static function firstOrCreateCatalogRole(string $slug): self
+    public static function firstOrCreateCatalogRole(string $slug, ?Connection $connection = null): self
     {
+        $connection = self::resolveCatalogConnection($connection);
         $attributes = static::catalogDefaults($slug);
 
         if (config('aura.teams')) {
             unset($attributes['slug']);
 
-            return static::firstOrCreateGlobalForSystem(['slug' => $slug], $attributes);
+            return static::firstOrCreateGlobalForSystem(['slug' => $slug], $attributes, $connection);
         }
 
-        return static::withoutGlobalScopes()->firstOrCreate(['slug' => $slug], $attributes);
+        return static::on($connection->getName())
+            ->withoutGlobalScopes()
+            ->firstOrCreate(['slug' => $slug], $attributes);
     }
 
     /**
@@ -177,9 +187,9 @@ class Role extends Resource
      * the "attach-don't-mint" model: team creation and registration attach the
      * creator to this single role instead of minting a per-team admin row.
      */
-    public static function firstOrCreateGlobalAdmin(): self
+    public static function firstOrCreateGlobalAdmin(?Connection $connection = null): self
     {
-        return static::firstOrCreateCatalogRole('admin');
+        return static::firstOrCreateCatalogRole('admin', $connection);
     }
 
     public static function getFields()
@@ -353,11 +363,16 @@ class Role extends Resource
      * @param  string  $slug  The role slug that identifies the role within a team.
      * @param  int|null  $teamId  The team context to resolve within (null = global/Teams-off).
      */
-    public static function resolveForTeam(string $slug, ?int $teamId = null): ?self
-    {
+    public static function resolveForTeam(
+        string $slug,
+        ?int $teamId = null,
+        ?Connection $connection = null,
+    ): ?self {
+        $connection = self::resolveCatalogConnection($connection);
+
         // Bypass TeamScope (and any other global scopes) so both the current
         // team's rows and the global (team_id = null) rows are considered.
-        $base = static::withoutGlobalScopes();
+        $base = static::on($connection->getName())->withoutGlobalScopes();
 
         // Teams-off mode: the roles table has no team_id column, so there is a
         // single flat catalog. The global role simply is the role.
@@ -453,7 +468,9 @@ class Role extends Resource
      */
     public static function shadowResolvedForCurrentTeam()
     {
-        return static::shadowResolved(static::currentTeamIdForResolution());
+        $connection = self::resolveCatalogConnection();
+
+        return static::on($connection->getName())->shadowResolved(static::currentTeamIdForResolution());
     }
 
     public function teams(): BelongsToMany
@@ -493,7 +510,22 @@ class Role extends Resource
         // Any catalog write (including creating or deleting a Shadow) bumps the
         // Role Catalog version so every user's resolved-roles memo recomputes on
         // its next permission check — instant shadow effect, no per-call queries.
-        static::saved(fn () => static::bumpCatalogVersion());
-        static::deleted(fn () => static::bumpCatalogVersion());
+        static::saved(fn (Role $role) => static::bumpCatalogVersion($role->getConnection()));
+        static::deleted(fn (Role $role) => static::bumpCatalogVersion($role->getConnection()));
+    }
+
+    private static function resolveCatalogConnection(?Connection $connection = null): Connection
+    {
+        if ($connection) {
+            return $connection;
+        }
+
+        $authenticatedUser = auth()->user();
+
+        if ($authenticatedUser instanceof Model) {
+            return $authenticatedUser->getConnection();
+        }
+
+        return app(static::class)->getConnection();
     }
 }

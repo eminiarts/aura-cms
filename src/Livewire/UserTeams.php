@@ -5,9 +5,10 @@ namespace Aura\Base\Livewire;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Aura\Base\Traits\WithLivewireHelpers;
+use Illuminate\Database\Connection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 /**
@@ -238,7 +239,9 @@ class UserTeams extends Component
         $user = $this->user();
         $memberTeamIds = $user->teams()->pluck('teams.id')->map(fn ($id) => (int) $id)->all();
 
-        $teams = app(config('aura.resources.team'))::withoutGlobalScopes()->get();
+        $team = app(config('aura.resources.team'));
+        $team->setConnection($this->connection()->getName());
+        $teams = $team->newQueryWithoutScopes()->get();
 
         return $teams
             ->reject(fn ($team) => in_array((int) $team->getKey(), $memberTeamIds, true))
@@ -276,7 +279,13 @@ class UserTeams extends Component
             return $actor;
         }
 
-        return User::withoutGlobalScopes()->find($actor->getAuthIdentifier());
+        $user = new User;
+
+        if ($actor instanceof Model) {
+            $user->setConnection($actor->getConnectionName());
+        }
+
+        return $user->newQueryWithoutScopes()->find($actor->getAuthIdentifier());
     }
 
     /**
@@ -286,7 +295,7 @@ class UserTeams extends Component
      */
     protected function afterMembershipChange(User $user): void
     {
-        Cache::forget('user.'.$user->id.'.teams');
+        Cache::forget(User::teamListCacheKey($user->getKey(), $user->getConnection()));
         $user->unsetRelation('teams');
         $user->unsetRelation('roles');
 
@@ -301,7 +310,8 @@ class UserTeams extends Component
      */
     protected function assignableRole(int $teamId, int $roleId): ?Role
     {
-        return Role::withoutGlobalScopes()
+        return Role::on($this->connection()->getName())
+            ->withoutGlobalScopes()
             ->shadowResolved($teamId)
             ->visibleToTeam($teamId)
             ->whereKey($roleId)
@@ -327,6 +337,17 @@ class UserTeams extends Component
         }
 
         return (bool) optional($this->resolvedRoleForUser($actor->getKey(), $teamId))->super_admin;
+    }
+
+    protected function connection(): Connection
+    {
+        $actor = auth()->user();
+
+        if ($actor instanceof Model) {
+            return $actor->getConnection();
+        }
+
+        return (new User)->getConnection();
     }
 
     /**
@@ -363,7 +384,8 @@ class UserTeams extends Component
      */
     protected function resolvedRoleForUser($userId, int $teamId): ?Role
     {
-        $pivot = DB::table('user_role')
+        $connection = $this->connection();
+        $pivot = $connection->table('user_role')
             ->where('user_id', $userId)
             ->where('team_id', $teamId)
             ->first();
@@ -372,13 +394,13 @@ class UserTeams extends Component
             return null;
         }
 
-        $role = Role::withoutGlobalScopes()->find($pivot->role_id);
+        $role = Role::on($connection->getName())->withoutGlobalScopes()->find($pivot->role_id);
 
         if (! $role) {
             return null;
         }
 
-        return Role::resolveForTeam($role->getAttribute('slug'), $teamId);
+        return Role::resolveForTeam($role->getAttribute('slug'), $teamId, $connection);
     }
 
     /**
@@ -389,7 +411,8 @@ class UserTeams extends Component
      */
     protected function rolesForTeam(int $teamId): array
     {
-        return Role::withoutGlobalScopes()
+        return Role::on($this->connection()->getName())
+            ->withoutGlobalScopes()
             ->shadowResolved($teamId)
             ->visibleToTeam($teamId)
             ->get()
@@ -417,6 +440,8 @@ class UserTeams extends Component
     /** The viewed user, loaded unscoped so cross-team management works. */
     protected function user(): User
     {
-        return User::withoutGlobalScopes()->findOrFail($this->userId);
+        return User::on($this->connection()->getName())
+            ->withoutGlobalScopes()
+            ->findOrFail($this->userId);
     }
 }

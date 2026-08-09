@@ -377,7 +377,9 @@ describe('Constraints and guards', function () {
         $role = membershipRole($team->id);
         $viewed = User::factory()->create();
 
-        Cache::put('user.'.$viewed->id.'.teams', collect(['stale']), now()->addHour());
+        $cacheKey = User::teamListCacheKey($viewed->id, $viewed->getConnection());
+
+        Cache::put($cacheKey, collect(['stale']), now()->addHour());
 
         livewire(UserTeams::class, ['userId' => $viewed->id])
             ->set('attachTeamId', $team->id)
@@ -385,7 +387,7 @@ describe('Constraints and guards', function () {
             ->call('attach')
             ->assertHasNoErrors();
 
-        expect(Cache::has('user.'.$viewed->id.'.teams'))->toBeFalse();
+        expect(Cache::has($cacheKey))->toBeFalse();
     });
 });
 

@@ -7,6 +7,8 @@ use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Permission;
 use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -18,11 +20,25 @@ class GenerateAllResourcePermissions
 {
     use Dispatchable, InteractsWithQueue, SerializesModels;
 
+    private ?string $connectionName;
+
     private ?int $teamId;
 
-    public function __construct(?int $teamId = null)
+    public function __construct(?int $teamId = null, ?string $connectionName = null)
     {
-        $this->teamId = $teamId ?? auth()->user()?->current_team_id;
+        $authenticatedUser = auth()->user();
+        $this->connectionName = $connectionName ?? ($authenticatedUser instanceof Model
+            ? $authenticatedUser->getConnectionName()
+            : null);
+        $this->teamId = $teamId;
+
+        if ($this->teamId === null
+            && $authenticatedUser instanceof Model
+            && User::connectionCacheIdentity($authenticatedUser->getConnection())
+                === User::connectionCacheIdentity(DB::connection($this->connectionName))
+        ) {
+            $this->teamId = $authenticatedUser->getAttribute('current_team_id');
+        }
     }
 
     public function handle(): void
@@ -30,6 +46,7 @@ class GenerateAllResourcePermissions
         $resources = collect(Aura::getResources())->filter(function ($resource) {
             try {
                 $resourceInstance = app($resource);
+                $resourceInstance->setConnection($this->connectionName);
 
                 return is_subclass_of($resourceInstance, Resource::class) &&
                        ! is_a($resourceInstance, Team::class) &&
@@ -43,9 +60,12 @@ class GenerateAllResourcePermissions
             }
         });
 
-        DB::transaction(function () use ($resources) {
+        DB::connection($this->connectionName)->transaction(function () use ($resources) {
             foreach ($resources as $resource) {
-                $this->generatePermissionsForResource(app($resource));
+                $resourceInstance = app($resource);
+                $resourceInstance->setConnection($this->connectionName);
+
+                $this->generatePermissionsForResource($resourceInstance);
             }
         });
     }
@@ -72,14 +92,23 @@ class GenerateAllResourcePermissions
                 ];
 
                 if (! config('aura.teams')) {
-                    Permission::withoutGlobalScopes()->updateOrCreate(['slug' => $slug], $values);
+                    Permission::on($this->connectionName)
+                        ->withoutGlobalScopes()
+                        ->updateOrCreate(['slug' => $slug], $values);
                 } elseif ($this->teamId === null) {
-                    Permission::updateOrCreateGlobalForSystem(['slug' => $slug], $values);
+                    Permission::updateOrCreateGlobalForSystem(
+                        ['slug' => $slug],
+                        $values,
+                        DB::connection($this->connectionName),
+                    );
                 } else {
-                    TeamScope::forTeam($this->teamId, fn () => Permission::updateOrCreate(
-                        ['slug' => $slug, 'team_id' => $this->teamId],
-                        $values
-                    ));
+                    TeamScope::forTeam(
+                        $this->teamId,
+                        fn () => Permission::on($this->connectionName)->updateOrCreate(
+                            ['slug' => $slug, 'team_id' => $this->teamId],
+                            $values
+                        ),
+                    );
                 }
             } catch (QueryException $e) {
                 // Check if it's a duplicate entry error

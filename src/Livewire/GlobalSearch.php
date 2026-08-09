@@ -4,6 +4,7 @@ namespace Aura\Base\Livewire;
 
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 
@@ -87,7 +88,15 @@ class GlobalSearch extends Component
 
         // Search in User model, but only if the current user may view users.
         if (Gate::allows('viewAny', app(User::class))) {
-            $userResults = User::where('name', 'like', '%'.$this->search.'%')
+            $user = new User;
+            $authenticatedUser = auth()->user();
+
+            if ($authenticatedUser instanceof Model) {
+                $user->setConnection($authenticatedUser->getConnectionName());
+            }
+
+            $userResults = $user->newQuery()
+                ->where('name', 'like', '%'.$this->search.'%')
                 ->orWhere('email', 'like', '%'.$this->search.'%')
                 ->get();
             $searchResults->push(...$userResults);

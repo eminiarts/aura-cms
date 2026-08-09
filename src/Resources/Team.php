@@ -6,7 +6,9 @@ use Aura\Base\Database\Factories\TeamFactory;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -55,7 +57,7 @@ class Team extends Resource
     {
         $option = 'team.'.$this->id.'.'.$option;
 
-        Cache::forget($option);
+        Cache::forget(User::connectionScopedCacheKey($option, $this->getConnection()));
     }
 
     public function customPermissions()
@@ -80,9 +82,9 @@ class Team extends Resource
     {
         $option = 'team.'.$this->id.'.'.$option;
 
-        Option::whereName($option)->delete();
+        Option::on($this->getConnection()->getName())->where('name', $option)->delete();
 
-        Cache::forget($option);
+        Cache::forget(User::connectionScopedCacheKey($option, $this->getConnection()));
     }
 
     public static function getFields()
@@ -187,6 +189,7 @@ class Team extends Resource
     public function getOption($option)
     {
         $option = 'team.'.$this->id.'.'.$option;
+        $connectionName = $this->getConnection()->getName();
 
         // If there is a * at the end of the option name, it means that it is a wildcard
         // and we need to get all options that match the wildcard
@@ -195,18 +198,18 @@ class Team extends Resource
             $o = substr($option, 0, -1);
 
             // Cache
-            $options = Option::where('name', 'like', $o.'%')->orderBy('id')->get();
+            $options = Option::on($connectionName)->where('name', 'like', $o.'%')->orderBy('id')->get();
 
             // Map the options, set the key to the option name (everything after last dot ".") and the value to the option value
             return $options->mapWithKeys(function ($item, $key) {
-                return [str($item->name)->afterLast('.')->toString() => $item->value];
+                return [str($item->name)->afterLast('.')->toString() => $item->getAttribute('value')];
             });
         }
 
-        $model = Option::whereName($option)->first();
+        $model = Option::on($connectionName)->where('name', $option)->first();
 
         if ($model) {
-            return $model->value;
+            return $model->getAttribute('value');
         }
     }
 
@@ -234,9 +237,9 @@ class Team extends Resource
     {
         $option = 'team.'.$this->id.'.'.$option;
 
-        Option::updateOrCreate(['name' => $option], ['value' => $value]);
+        Option::on($this->getConnection()->getName())->updateOrCreate(['name' => $option], ['value' => $value]);
 
-        Cache::forget($option);
+        Cache::forget(User::connectionScopedCacheKey($option, $this->getConnection()));
     }
 
     // public function users()
@@ -264,7 +267,17 @@ class Team extends Resource
         // Admin's switcher should show — drop the shared cache. created/deleted
         // also forget it explicitly, but a plain rename only fires saved.
         static::saved(function ($team) {
-            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
+            $connection = $team->getConnection();
+
+            Cache::forget(User::globalAdminTeamsCacheKey($connection));
+
+            $connection->table('user_role')
+                ->where('team_id', $team->getKey())
+                ->pluck('user_id')
+                ->unique()
+                ->each(function ($userId) use ($connection): void {
+                    Cache::forget(User::teamListCacheKey($userId, $connection));
+                });
         });
 
         static::saving(function ($team) {
@@ -274,20 +287,49 @@ class Team extends Resource
             unset($team->type);
             unset($team->team_id);
 
-            if (($team->user_id === null || $team->user_id === '') && auth()->user()) {
-                $team->user_id = auth()->user()->id;
+            $authenticatedUser = auth()->user();
+            $authenticatedUserId = $authenticatedUser?->getAuthIdentifier();
+
+            if (($team->user_id === null || $team->user_id === '')
+                && $authenticatedUserId !== null
+                && self::authenticatedUserUsesConnection($authenticatedUser, $team->getConnection())
+            ) {
+                $team->user_id = $authenticatedUserId;
             }
         });
 
         static::creating(function ($team) {});
 
         static::created(function ($team) {
+            $connection = $team->getConnection();
+            $connectionName = $connection->getName();
+            $authenticatedUser = auth()->user();
+            $authenticatedUserId = $authenticatedUser?->getAuthIdentifier();
+            $authenticatedUserMatchesConnection = self::authenticatedUserUsesConnection(
+                $authenticatedUser,
+                $connection,
+            );
 
-            if ($user = auth()->user()) {
+            if ($authenticatedUserMatchesConnection && $authenticatedUser instanceof User) {
+                $user = $authenticatedUser;
+            } elseif ($authenticatedUserMatchesConnection && $authenticatedUserId !== null) {
+                $userModel = app(config('aura.resources.user'));
+
+                if (! $userModel instanceof Model) {
+                    $user = null;
+                } else {
+                    $userModel->setConnection($connectionName);
+                    $user = $userModel->newQueryWithoutScopes()->whereKey($authenticatedUserId)->first();
+                }
+            } else {
+                $user = null;
+            }
+
+            if ($user) {
                 // Change the current team id of the user
                 // $user->switchTeam($team);
 
-                $user->current_team_id = $team->id;
+                $user->setAttribute('current_team_id', $team->id);
                 $user->save();
             }
 
@@ -296,22 +338,22 @@ class Team extends Resource
             // Role (team_id = null, super_admin), with the Membership recording
             // the team. The helper self-heals the Global Role when the catalog
             // was never seeded (bare `migrate`, or the test harness).
-            $globalAdmin = Role::firstOrCreateGlobalAdmin();
+            $globalAdmin = Role::firstOrCreateGlobalAdmin($connection);
 
             // Attach the current user to the team via the global admin role.
             if ($user) {
-                $team->users()->attach($user->id, ['role_id' => $globalAdmin->id]);
+                $team->users()->attach($user->getKey(), ['role_id' => $globalAdmin->id]);
 
                 // Clear cache of Cache('user.'.$user->id.'.teams')
-                Cache::forget('user.'.$user->id.'.teams');
+                Cache::forget(User::teamListCacheKey($user->getKey(), $connection));
             }
 
             // A Global Admin's switcher lists every team from one shared cache
             // key — invalidate it so a newly created team appears immediately.
-            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
+            Cache::forget(User::globalAdminTeamsCacheKey($connection));
 
             // Create all permissions for the team
-            GenerateAllResourcePermissions::dispatch($team->id);
+            GenerateAllResourcePermissions::dispatch($team->id, $connectionName);
         });
 
         static::deleted(function ($team) {
@@ -332,7 +374,7 @@ class Team extends Resource
             // Loop through the users and update their current_team_id
             foreach ($users as $user) {
                 $firstTeam = $user->teams()->first();
-                $user->current_team_id = $firstTeam ? $firstTeam->id : null;
+                $user->setAttribute('current_team_id', $firstTeam ? $firstTeam->id : null);
                 $user->save();
 
                 User::clearCurrentTeamCache($user->getKey(), $connection);
@@ -354,7 +396,7 @@ class Team extends Resource
             // The role rows above were removed via a mass delete (no model
             // events), so bump the catalog version explicitly to invalidate every
             // user's resolved-roles memo.
-            Role::bumpCatalogVersion();
+            Role::bumpCatalogVersion($connection);
 
             // Delete all the team's metas
             $team->meta()->delete();
@@ -375,13 +417,13 @@ class Team extends Resource
             $affectedMemberIds
                 ->merge($reassignedUserIds)
                 ->unique()
-                ->each(function ($userId) {
-                    Cache::forget('user.'.$userId.'.teams');
+                ->each(function ($userId) use ($connection) {
+                    Cache::forget(User::teamListCacheKey($userId, $connection));
                 });
 
             // Drop the shared Global Admin switcher cache so the deleted team
             // no longer shows up for Global Admins.
-            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
+            Cache::forget(User::globalAdminTeamsCacheKey($connection));
         });
 
     }
@@ -394,5 +436,12 @@ class Team extends Resource
     protected static function newFactory()
     {
         return TeamFactory::new();
+    }
+
+    private static function authenticatedUserUsesConnection(mixed $authenticatedUser, Connection $connection): bool
+    {
+        return $authenticatedUser instanceof Model
+            && User::connectionCacheIdentity($authenticatedUser->getConnection())
+                === User::connectionCacheIdentity($connection);
     }
 }

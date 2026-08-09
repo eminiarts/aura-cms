@@ -12,6 +12,7 @@ use Aura\Base\Traits\InputFields;
 use Aura\Base\Traits\InteractsWithTable;
 use Aura\Base\Traits\SaveFieldAttributes;
 use Aura\Base\Traits\SaveMetaFields;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -299,17 +300,26 @@ class Resource extends Model implements DefinesFields
      * @param  array<string, mixed>  $attributes
      * @param  array<string, mixed>  $values
      */
-    public static function firstOrCreateGlobalForSystem(array $attributes, array $values = []): static
-    {
+    public static function firstOrCreateGlobalForSystem(
+        array $attributes,
+        array $values = [],
+        ?Connection $connection = null,
+    ): static {
         static::ensureGlobalWriteIsSupported();
 
         return static::withinTrustedOwnerFromAttributes(
             array_merge($attributes, $values),
-            fn (): static => static::withinGlobalWrite(function () use ($attributes, $values): static {
+            fn (): static => static::withinGlobalWrite(function () use ($attributes, $connection, $values): static {
                 $attributes['team_id'] = null;
                 unset($values['team_id']);
 
-                return app(static::class)->newQueryWithoutScopes()->firstOrCreate($attributes, $values);
+                $model = app(static::class);
+
+                if ($connection) {
+                    $model->setConnection($connection->getName());
+                }
+
+                return $model->newQueryWithoutScopes()->firstOrCreate($attributes, $values);
             }),
         );
     }
@@ -657,17 +667,26 @@ class Resource extends Model implements DefinesFields
      * @param  array<string, mixed>  $attributes
      * @param  array<string, mixed>  $values
      */
-    public static function updateOrCreateGlobalForSystem(array $attributes, array $values = []): static
-    {
+    public static function updateOrCreateGlobalForSystem(
+        array $attributes,
+        array $values = [],
+        ?Connection $connection = null,
+    ): static {
         static::ensureGlobalWriteIsSupported();
 
         return static::withinTrustedOwnerFromAttributes(
             array_merge($attributes, $values),
-            fn (): static => static::withinGlobalWrite(function () use ($attributes, $values): static {
+            fn (): static => static::withinGlobalWrite(function () use ($attributes, $connection, $values): static {
                 $attributes['team_id'] = null;
                 unset($values['team_id']);
 
-                return app(static::class)->newQueryWithoutScopes()->updateOrCreate($attributes, $values);
+                $model = app(static::class);
+
+                if ($connection) {
+                    $model->setConnection($connection->getName());
+                }
+
+                return $model->newQueryWithoutScopes()->updateOrCreate($attributes, $values);
             }),
         );
     }

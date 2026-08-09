@@ -7,6 +7,7 @@ use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\TeamInvitation;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -22,13 +23,17 @@ class TeamInvitationController extends Controller
     {
         abort_unless(config('aura.teams'), 404);
 
-        $invitation = TeamInvitation::withoutGlobalScopes()->findOrFail($invitation);
-        $team = Team::withoutGlobalScopes()->findOrFail($invitation->team_id);
-        $userId = $request->user()->getAuthIdentifier();
+        $authenticatedUser = $request->user();
+        $connectionName = $authenticatedUser instanceof Model
+            ? $authenticatedUser->getConnectionName()
+            : (new User)->getConnectionName();
+        $invitation = TeamInvitation::on($connectionName)->withoutGlobalScopes()->findOrFail($invitation);
+        $team = Team::on($connectionName)->withoutGlobalScopes()->findOrFail($invitation->team_id);
+        $userId = $authenticatedUser->getAuthIdentifier();
 
         abort_unless(is_int($userId) || is_string($userId), 403);
 
-        $user = User::withoutGlobalScopes()->whereKey($userId)->firstOrFail();
+        $user = User::on($connectionName)->withoutGlobalScopes()->whereKey($userId)->firstOrFail();
         $userEmail = $user->getAttribute('email');
 
         abort_unless(is_string($userEmail) && strcasecmp($userEmail, $invitation->email) === 0, 403);
@@ -38,13 +43,14 @@ class TeamInvitationController extends Controller
             // Global Role (team_id = null). Accept either, but still refuse a role
             // owned by a different team so invitations cannot inject cross-team
             // access. The Membership records the team via the pivot regardless.
-            $role = Role::withoutGlobalScopes()
+            $role = Role::on($connectionName)
+                ->withoutGlobalScopes()
                 ->whereKey($invitation->role)
                 ->visibleToTeam($team->id)
                 ->firstOrFail();
 
             $user->roles()->attach($role->id, ['team_id' => $team->id]);
-            Cache::forget('user.'.$user->id.'.teams');
+            Cache::forget(User::teamListCacheKey($user->getKey(), $user->getConnection()));
             $user->unsetRelation('teams');
         }
 
@@ -87,7 +93,8 @@ class TeamInvitationController extends Controller
 
     protected function invitationForTeam(Team $team, string|int $invitation): TeamInvitation
     {
-        return TeamInvitation::withoutGlobalScopes()
+        return TeamInvitation::on($team->getConnectionName())
+            ->withoutGlobalScopes()
             ->whereKey($invitation)
             ->where('team_id', $team->id)
             ->firstOrFail();

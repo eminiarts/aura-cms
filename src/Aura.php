@@ -14,6 +14,7 @@ use Aura\Base\Resources\User;
 use Aura\Base\Traits\DefaultFields;
 use Closure;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
@@ -251,9 +252,19 @@ class Aura
 
     public function getOption($name)
     {
-        if (config('aura.teams') && optional(optional(auth()->user())->resource)->currentTeam) {
-            return Cache::remember(auth()->user()->current_team_id.'.aura.'.$name, now()->addHour(), function () use ($name) {
-                $option = auth()->user()->currentTeam->getOption($name);
+        $authenticatedUser = auth()->user();
+        $connection = $authenticatedUser instanceof Model
+            ? $authenticatedUser->getConnection()
+            : null;
+
+        if (config('aura.teams') && optional(optional($authenticatedUser)->resource)->currentTeam) {
+            $cacheKey = User::connectionScopedCacheKey(
+                'team.'.$authenticatedUser->current_team_id.'.'.$name,
+                $connection,
+            );
+
+            return Cache::remember($cacheKey, now()->addHour(), function () use ($authenticatedUser, $name) {
+                $option = $authenticatedUser->currentTeam->getOption($name);
 
                 if ($option) {
                     if (is_string($option)) {
@@ -270,9 +281,11 @@ class Aura
             });
         }
 
-        return Cache::remember('aura.'.$name, now()->addHour(), function () use ($name) {
+        $cacheKey = User::connectionScopedCacheKey('aura.'.$name, $connection);
 
-            $option = Option::where('name', $name)->first();
+        return Cache::remember($cacheKey, now()->addHour(), function () use ($connection, $name) {
+
+            $option = Option::on($connection?->getName())->where('name', $name)->first();
 
             if ($option) {
                 if (is_string($option->value)) {
@@ -321,8 +334,16 @@ class Aura
     public function navigation()
     {
         // Necessary to add TeamIds?
+        $authenticatedUser = auth()->user();
+        $connection = $authenticatedUser instanceof Model
+            ? $authenticatedUser->getConnection()
+            : null;
+        $cacheKey = User::connectionScopedCacheKey(
+            'user-'.auth()->id().'-'.$authenticatedUser->current_team_id.'-navigation',
+            $connection,
+        );
 
-        return Cache::remember('user-'.auth()->id().'-'.auth()->user()->current_team_id.'-navigation', 3600, function () {
+        return Cache::remember($cacheKey, 3600, function () {
 
             $resources = collect($this->getResources());
 
@@ -459,7 +480,16 @@ class Aura
         if (config('aura.teams')) {
             auth()->user()->currentTeam->updateOption($key, $value);
         } else {
-            Option::withoutGlobalScopes([app(TeamScope::class)])->updateOrCreate(['name' => $key], ['value' => $value]);
+            $authenticatedUser = auth()->user();
+            $connection = $authenticatedUser instanceof Model
+                ? $authenticatedUser->getConnection()
+                : null;
+
+            Option::on($connection?->getName())
+                ->withoutGlobalScopes([app(TeamScope::class)])
+                ->updateOrCreate(['name' => $key], ['value' => $value]);
+
+            Cache::forget(User::connectionScopedCacheKey('aura.'.$key, $connection));
         }
     }
 
