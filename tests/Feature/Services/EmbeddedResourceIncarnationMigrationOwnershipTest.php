@@ -71,13 +71,118 @@ function core12StateWriteRecord(string $migration, string $ownership): void
 
 function core12StateCurrentRecord(string $migration, string $state, array $payload): string
 {
+    $payload['generation'] ??= str_repeat('a', 32);
+
     return json_encode([
-        'version' => 1,
+        'version' => 2,
         'migration' => $migration,
         'state' => $state,
         'payload' => $payload,
     ], JSON_THROW_ON_ERROR);
 }
+
+it('rejects valid committed create ownership after a byte-identical host table recreation', function (): void {
+    $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+    $migration->up();
+    Schema::drop(EmbeddedResourceIncarnationStore::TABLE);
+    core12StateCreateCompleteTable();
+
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class)
+        ->and(fn () => $migration->down())->toThrow(RuntimeException::class)
+        ->and(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
+});
+
+it('makes an interrupted missing-target repair permanently non-droppable before host recreation', function (): void {
+    $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+    $migration->up();
+    Schema::drop(EmbeddedResourceIncarnationStore::TABLE);
+    app()->instance(MigrationOwnershipLedger::class, new MigrationOwnershipLedger(
+        static function (string $checkpoint): void {
+            if ($checkpoint === 'create.ownership_started') {
+                throw new RuntimeException('simulated repair crash');
+            }
+        },
+    ));
+
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class, 'simulated repair crash');
+    app()->forgetInstance(MigrationOwnershipLedger::class);
+    core12StateCreateCompleteTable();
+
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class)
+        ->and(fn () => $migration->down())->toThrow(RuntimeException::class)
+        ->and(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
+});
+
+it('rejects missing tampered or wrong create generation proof before destructive DDL', function (string $failure): void {
+    $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+    $migration->up();
+    $record = json_decode(DB::table(CORE12_STATE_OWNERSHIP_TABLE)
+        ->where('migration', CORE12_STATE_CREATE_KEY)
+        ->value('ownership'), true, flags: JSON_THROW_ON_ERROR);
+
+    if ($failure === 'tampered marker') {
+        DB::table(EmbeddedResourceIncarnationStore::TABLE)
+            ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
+            ->update(['resource_key' => 'tampered']);
+    } elseif ($failure === 'wrong ledger token') {
+        $record['payload']['generation'] = str_repeat('f', 32);
+        core12StateWriteRecord(CORE12_STATE_CREATE_KEY, json_encode($record, JSON_THROW_ON_ERROR));
+    } elseif ($failure === 'copied foreign marker') {
+        Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
+            $table->char(MigrationOwnershipLedger::markerColumn(str_repeat('b', 32)), 32)->nullable();
+        });
+    } else {
+        $markerColumn = MigrationOwnershipLedger::markerColumn($record['payload']['generation']);
+        Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($markerColumn): void {
+            $table->dropColumn($markerColumn);
+        });
+    }
+
+    expect(fn () => $migration->down())->toThrow(RuntimeException::class)
+        ->and(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
+})->with(['missing marker', 'tampered marker', 'copied foreign marker', 'wrong ledger token']);
+
+it('rejects valid committed upgrade ownership after byte-identical host artifacts are recreated', function (): void {
+    core12StateCreateLegacyTable();
+    $migration = require dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub';
+    $migration->up();
+    Schema::drop(EmbeddedResourceIncarnationStore::TABLE);
+    core12StateCreateCompleteTable();
+
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class)
+        ->and(fn () => $migration->down())->toThrow(RuntimeException::class)
+        ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
+});
+
+it('rejects missing tampered or wrong upgrade generation proof before destructive DDL', function (string $failure): void {
+    core12StateCreateLegacyTable();
+    $migration = require dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub';
+    $migration->up();
+    $record = json_decode(DB::table(CORE12_STATE_OWNERSHIP_TABLE)
+        ->where('migration', CORE12_STATE_UPGRADE_KEY)
+        ->value('ownership'), true, flags: JSON_THROW_ON_ERROR);
+
+    if ($failure === 'tampered marker') {
+        DB::table(EmbeddedResourceIncarnationStore::TABLE)
+            ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
+            ->update(['resource_key_hash' => str_repeat('0', 64)]);
+    } elseif ($failure === 'wrong ledger token') {
+        $record['payload']['generation'] = str_repeat('f', 32);
+        core12StateWriteRecord(CORE12_STATE_UPGRADE_KEY, json_encode($record, JSON_THROW_ON_ERROR));
+    } elseif ($failure === 'copied foreign marker') {
+        Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
+            $table->char(MigrationOwnershipLedger::markerColumn(str_repeat('b', 32)), 32)->nullable();
+        });
+    } else {
+        $markerColumn = MigrationOwnershipLedger::markerColumn($record['payload']['generation']);
+        Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($markerColumn): void {
+            $table->dropColumn($markerColumn);
+        });
+    }
+
+    expect(fn () => $migration->down())->toThrow(RuntimeException::class)
+        ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
+})->with(['missing marker', 'tampered marker', 'copied foreign marker', 'wrong ledger token']);
 
 it('rejects stale create ownership before every early return and preserves a host table', function (): void {
     core12StateCreateCompleteTable();
@@ -141,23 +246,25 @@ it('rejects invalid upgrade ownership before missing or incomplete target early 
         'owns_registry' => false,
     ], JSON_THROW_ON_ERROR),
     'wrong version' => json_encode([
-        'version' => 2,
+        'version' => 3,
         'migration' => CORE12_STATE_UPGRADE_KEY,
         'state' => 'owned',
         'payload' => [
             'added_columns' => ['version'],
             'created_indexes' => [],
             'owns_registry' => false,
+            'generation' => str_repeat('a', 32),
         ],
     ], JSON_THROW_ON_ERROR),
     'wrong state type' => json_encode([
-        'version' => 1,
+        'version' => 2,
         'migration' => CORE12_STATE_UPGRADE_KEY,
         'state' => true,
         'payload' => [
             'added_columns' => ['version'],
             'created_indexes' => [],
             'owns_registry' => false,
+            'generation' => str_repeat('a', 32),
         ],
     ], JSON_THROW_ON_ERROR),
     'wrong payload type' => core12StateCurrentRecord(CORE12_STATE_UPGRADE_KEY, 'owned', [
@@ -284,6 +391,7 @@ it('records every create up crash phase without granting stale destructive owner
     'registry ready' => ['create.registry_ready', null, false],
     'ownership started' => ['create.ownership_started', 'creating', false],
     'table created' => ['create.table_created', 'creating', true],
+    'marker written' => ['create.marker_written', 'creating', true],
     'ownership committed' => ['create.ownership_committed', 'owned', true],
 ]);
 
@@ -336,6 +444,7 @@ it('records every upgrade up crash phase and never infers ownership from schema'
     'ownership started' => ['upgrade.ownership_started', 'upgrading'],
     'columns added' => ['upgrade.columns_added', 'upgrading'],
     'rows cleared' => ['upgrade.rows_cleared', 'upgrading'],
+    'marker written' => ['upgrade.marker_written', 'upgrading'],
     'indexes created' => ['upgrade.indexes_created', 'upgrading'],
     'ownership committed' => ['upgrade.ownership_committed', 'owned'],
 ]);
@@ -416,6 +525,7 @@ it('keeps recreated upgrade artifacts safe after every destructive down crash ph
         ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
 })->with([
     'rollback started' => ['upgrade.rollback_started'],
+    'marker deleted' => ['upgrade.marker_deleted'],
     'indexes dropped' => ['upgrade.indexes_dropped'],
     'columns dropped' => ['upgrade.columns_dropped'],
 ]);
@@ -423,12 +533,18 @@ it('keeps recreated upgrade artifacts safe after every destructive down crash ph
 it('persists registry ownership separately before dropping the registry', function (string $migrationType): void {
     if ($migrationType === 'create') {
         core12StateCreateCompleteTable();
+        $generation = str_repeat('a', 32);
+        Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($generation): void {
+            $table->char(MigrationOwnershipLedger::markerColumn($generation), 32)->nullable();
+        });
+        app(MigrationOwnershipLedger::class)->writeTargetMarker($generation);
         $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
         $ownershipKey = CORE12_STATE_CREATE_KEY;
         $checkpoint = 'create.registry_drop_started';
         $ownership = core12StateCurrentRecord($ownershipKey, 'owned', [
             'created_table' => true,
             'owns_registry' => true,
+            'generation' => $generation,
         ]);
     } else {
         core12StateCreateLegacyTable();

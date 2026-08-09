@@ -4,6 +4,7 @@ use Aura\Base\BaseResource;
 use Aura\Base\Services\EmbeddedComponentContextStore;
 use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
 use Aura\Base\Services\EmbeddedResourceIncarnationStore;
+use Aura\Base\Services\MigrationOwnershipLedger;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
@@ -122,7 +123,9 @@ test('portable database guards install upgrade invalidate and roll back', functi
             'resource_key',
             'version',
         ]))->toBeTrue()
-            ->and($connection->table(EmbeddedResourceIncarnationStore::TABLE)->count())->toBe(0)
+            ->and($connection->table(EmbeddedResourceIncarnationStore::TABLE)
+                ->where('resource_type', '!=', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
+                ->count())->toBe(0)
             ->and($schema->hasIndex(
                 EmbeddedResourceIncarnationStore::TABLE,
                 'aura_embedded_incarnation_guard_lookup',
@@ -361,6 +364,130 @@ test('first canonical prime locks the owner while a second connection replaces i
 
         if ($driver === 'sqlite' && file_exists($configuration['database'])) {
             unlink($configuration['database']);
+        }
+    }
+})->with(['sqlite', 'mysql', 'mariadb', 'pgsql'])->group('database-guards');
+
+test('portable migration generation markers reject host-recreated targets', function (string $driver): void {
+    if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
+        $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with dedicated MySQL, MariaDB, and PostgreSQL test databases.');
+    }
+
+    $connectionName = 'core12_marker_'.$driver;
+    config(["database.connections.{$connectionName}" => core12ExternalGuardConnection($driver)]);
+    DB::purge($connectionName);
+    $originalConnection = DB::getDefaultConnection();
+    DB::setDefaultConnection($connectionName);
+    $connection = DB::connection($connectionName);
+    $schema = $connection->getSchemaBuilder();
+    $createCompleteTable = static function () use ($schema): void {
+        $schema->create(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
+            $table->id();
+            $table->string('resource_type');
+            $table->char('resource_key_hash', 64);
+            $table->string('resource_key_type', 16);
+            $table->string('resource_key', 191);
+            $table->uuid('incarnation');
+            $table->unsignedBigInteger('version')->default(1);
+            $table->timestamps();
+            $table->unique(
+                ['resource_type', 'resource_key_hash'],
+                'aura_embedded_incarnation_resource_unique',
+            );
+            $table->index(
+                ['resource_type', 'resource_key_type', 'resource_key'],
+                'aura_embedded_incarnation_guard_lookup',
+            );
+            $table->unique(
+                ['resource_type', 'resource_key_type', 'resource_key'],
+                'aura_embedded_incarnation_guard_identity_unique',
+            );
+        });
+    };
+    $createLegacyTable = static function () use ($schema): void {
+        $schema->create(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
+            $table->id();
+            $table->string('resource_type');
+            $table->char('resource_key_hash', 64);
+            $table->uuid('incarnation');
+            $table->timestamps();
+            $table->unique(
+                ['resource_type', 'resource_key_hash'],
+                'aura_embedded_incarnation_resource_unique',
+            );
+        });
+    };
+    $assertMarkerFailures = static function (object $migration, string $ownershipKey) use ($connection, $schema): void {
+        $ownership = $connection->table(MigrationOwnershipLedger::TABLE)
+            ->where('migration', $ownershipKey)
+            ->value('ownership');
+        $record = json_decode($ownership, true, flags: JSON_THROW_ON_ERROR);
+        $generation = $record['payload']['generation'];
+        $foreignGeneration = $generation === str_repeat('b', 32)
+            ? str_repeat('c', 32)
+            : str_repeat('b', 32);
+
+        $connection->table(EmbeddedResourceIncarnationStore::TABLE)
+            ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
+            ->update(['resource_key' => 'tampered']);
+        expect(fn () => $migration->down())->toThrow(RuntimeException::class);
+        $connection->table(EmbeddedResourceIncarnationStore::TABLE)
+            ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
+            ->update(['resource_key' => $generation]);
+
+        $schema->table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($foreignGeneration): void {
+            $table->char(MigrationOwnershipLedger::markerColumn($foreignGeneration), 32)->nullable();
+        });
+        expect(fn () => $migration->down())->toThrow(RuntimeException::class);
+        $schema->table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($foreignGeneration): void {
+            $table->dropColumn(MigrationOwnershipLedger::markerColumn($foreignGeneration));
+        });
+
+        $record['payload']['generation'] = $foreignGeneration;
+        $connection->table(MigrationOwnershipLedger::TABLE)
+            ->where('migration', $ownershipKey)
+            ->update(['ownership' => json_encode($record, JSON_THROW_ON_ERROR)]);
+        expect(fn () => $migration->down())->toThrow(RuntimeException::class);
+        $record['payload']['generation'] = $generation;
+        $connection->table(MigrationOwnershipLedger::TABLE)
+            ->where('migration', $ownershipKey)
+            ->update(['ownership' => json_encode($record, JSON_THROW_ON_ERROR)]);
+    };
+
+    $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+    $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+
+    try {
+        $create = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+        $create->up();
+        $assertMarkerFailures($create, MigrationOwnershipLedger::CREATE_KEY);
+        $schema->drop(EmbeddedResourceIncarnationStore::TABLE);
+        $createCompleteTable();
+
+        expect(fn () => $create->up())->toThrow(RuntimeException::class)
+            ->and(fn () => $create->down())->toThrow(RuntimeException::class)
+            ->and($schema->hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
+
+        $schema->drop(EmbeddedResourceIncarnationStore::TABLE);
+        $schema->drop(MigrationOwnershipLedger::TABLE);
+        $createLegacyTable();
+        $upgrade = require dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub';
+        $upgrade->up();
+        $assertMarkerFailures($upgrade, MigrationOwnershipLedger::UPGRADE_KEY);
+        $schema->drop(EmbeddedResourceIncarnationStore::TABLE);
+        $createCompleteTable();
+
+        expect(fn () => $upgrade->up())->toThrow(RuntimeException::class)
+            ->and(fn () => $upgrade->down())->toThrow(RuntimeException::class)
+            ->and($schema->hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
+    } finally {
+        $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+        $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+        DB::disconnect($connectionName);
+        DB::setDefaultConnection($originalConnection);
+
+        if ($driver === 'sqlite' && file_exists(core12ExternalGuardConnection('sqlite')['database'])) {
+            unlink(core12ExternalGuardConnection('sqlite')['database']);
         }
     }
 })->with(['sqlite', 'mysql', 'mariadb', 'pgsql'])->group('database-guards');

@@ -18,16 +18,18 @@ return new class extends Migration
             $this->assertOwnedState($ownership['state']);
 
             if (Schema::hasTable(self::TABLE)) {
-                $this->assertOwnedTableExists();
+                $this->assertOwnedTableExists($ledger, $ownership['generation']);
 
                 return;
             }
 
-            $ledger->writeCreate('creating', $ownership['owns_registry']);
+            $ledger->writeCreate('creating', $ownership['owns_registry'], $ownership['generation']);
             $ledger->checkpoint('create.ownership_started');
-            $this->createTable();
+            $this->createTable($ownership['generation']);
             $ledger->checkpoint('create.table_created');
-            $ledger->writeCreate('owned', $ownership['owns_registry']);
+            $ledger->writeTargetMarker($ownership['generation']);
+            $ledger->checkpoint('create.marker_written');
+            $ledger->writeCreate('owned', $ownership['owns_registry'], $ownership['generation']);
             $ledger->checkpoint('create.ownership_committed');
 
             return;
@@ -38,12 +40,15 @@ return new class extends Migration
         }
 
         $ownsRegistry = $ledger->ensureRegistry();
+        $generation = $ledger->newGeneration();
         $ledger->checkpoint('create.registry_ready');
-        $ledger->writeCreate('creating', $ownsRegistry);
+        $ledger->writeCreate('creating', $ownsRegistry, $generation);
         $ledger->checkpoint('create.ownership_started');
-        $this->createTable();
+        $this->createTable($generation);
         $ledger->checkpoint('create.table_created');
-        $ledger->writeCreate('owned', $ownsRegistry);
+        $ledger->writeTargetMarker($generation);
+        $ledger->checkpoint('create.marker_written');
+        $ledger->writeCreate('owned', $ownsRegistry, $generation);
         $ledger->checkpoint('create.ownership_committed');
     }
 
@@ -57,15 +62,15 @@ return new class extends Migration
         }
 
         $this->assertOwnedState($ownership['state']);
-        $this->assertOwnedTableExists();
+        $this->assertOwnedTableExists($ledger, $ownership['generation']);
 
-        $ledger->writeCreate('table_drop_started', $ownership['owns_registry']);
+        $ledger->writeCreate('table_drop_started', $ownership['owns_registry'], $ownership['generation']);
         $ledger->checkpoint('create.rollback_started');
         Schema::drop(self::TABLE);
         $ledger->checkpoint('create.table_dropped');
 
         if ($ownership['owns_registry'] && $ledger->isSoleRecord(MigrationOwnershipLedger::CREATE_KEY)) {
-            $ledger->writeCreate('registry_drop_started', true);
+            $ledger->writeCreate('registry_drop_started', true, $ownership['generation']);
             $ledger->checkpoint('create.registry_drop_started');
             Schema::drop(MigrationOwnershipLedger::TABLE);
 
@@ -75,9 +80,9 @@ return new class extends Migration
         $ledger->delete(MigrationOwnershipLedger::CREATE_KEY);
     }
 
-    private function createTable(): void
+    private function createTable(string $generation): void
     {
-        Schema::create(self::TABLE, function (Blueprint $table): void {
+        Schema::create(self::TABLE, function (Blueprint $table) use ($generation): void {
             $table->id();
             $table->string('resource_type');
             $table->char('resource_key_hash', 64);
@@ -85,6 +90,7 @@ return new class extends Migration
             $table->string('resource_key', 191);
             $table->uuid('incarnation');
             $table->unsignedBigInteger('version')->default(1);
+            $table->char(MigrationOwnershipLedger::markerColumn($generation), 32)->nullable();
             $table->timestamps();
 
             $table->unique(
@@ -111,7 +117,7 @@ return new class extends Migration
         }
     }
 
-    private function assertOwnedTableExists(): void
+    private function assertOwnedTableExists(MigrationOwnershipLedger $ledger, string $generation): void
     {
         if (! Schema::hasTable(self::TABLE)
             || ! Schema::hasColumns(self::TABLE, [
@@ -133,5 +139,7 @@ return new class extends Migration
                 'The table claimed by CORE-12 create migration ownership is missing or has an unexpected schema.',
             );
         }
+
+        $ledger->assertTargetMarker($generation);
     }
 };

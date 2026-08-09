@@ -12,6 +12,8 @@ final class MigrationOwnershipLedger
 {
     public const CREATE_KEY = 'create_embedded_resource_incarnations';
 
+    public const MARKER_RESOURCE_TYPE = '__aura_internal_migration_generation__';
+
     public const TABLE = 'aura_migration_ownership';
 
     public const UPGRADE_KEY = 'upgrade_embedded_resource_incarnations';
@@ -19,7 +21,11 @@ final class MigrationOwnershipLedger
     /** @var list<string> */
     private const CREATE_STATES = ['creating', 'owned', 'table_drop_started', 'registry_drop_started'];
 
-    private const FORMAT_VERSION = 1;
+    private const FORMAT_VERSION = 2;
+
+    private const GENERATION_BYTES = 16;
+
+    private const MARKER_COLUMN_PREFIX = 'aura_migration_owned_';
 
     /** @var list<string> */
     private const UPGRADE_COLUMNS = ['resource_key_type', 'resource_key', 'version'];
@@ -35,6 +41,47 @@ final class MigrationOwnershipLedger
 
     public function __construct(private readonly ?Closure $checkpoint = null) {}
 
+    public function assertTargetMarker(string $generation): void
+    {
+        $this->assertGeneration($generation);
+        $expectedColumn = self::markerColumn($generation);
+        $markerColumns = array_values(array_filter(
+            Schema::getColumnListing(EmbeddedResourceIncarnationStore::TABLE),
+            static fn (string $column): bool => str_starts_with($column, self::MARKER_COLUMN_PREFIX),
+        ));
+
+        if ($markerColumns !== [$expectedColumn]) {
+            throw new RuntimeException('The CORE-12 migration target generation marker is missing or unexpected.');
+        }
+
+        $markers = DB::table(EmbeddedResourceIncarnationStore::TABLE)
+            ->where('resource_type', self::MARKER_RESOURCE_TYPE)
+            ->get([
+                'resource_key_hash',
+                'resource_key_type',
+                'resource_key',
+                'incarnation',
+                'version',
+                $expectedColumn,
+            ]);
+
+        if ($markers->count() !== 1) {
+            throw new RuntimeException('The CORE-12 migration target generation marker is missing or duplicated.');
+        }
+
+        $marker = $markers->first();
+
+        if ((string) $marker->resource_key_hash !== hash('sha256', $generation)
+            || (string) $marker->resource_key_type !== 'internal'
+            || (string) $marker->resource_key !== $generation
+            || (string) $marker->incarnation !== $this->markerIncarnation($generation)
+            || (int) $marker->version !== 1
+            || (string) $marker->{$expectedColumn} !== $generation
+        ) {
+            throw new RuntimeException('The CORE-12 migration target generation marker is invalid.');
+        }
+    }
+
     public function checkpoint(string $checkpoint): void
     {
         if ($this->checkpoint !== null) {
@@ -45,6 +92,14 @@ final class MigrationOwnershipLedger
     public function delete(string $migration): void
     {
         DB::table(self::TABLE)->where('migration', $migration)->delete();
+    }
+
+    public function deleteTargetMarker(string $generation): void
+    {
+        $this->assertTargetMarker($generation);
+        DB::table(EmbeddedResourceIncarnationStore::TABLE)
+            ->where('resource_type', self::MARKER_RESOURCE_TYPE)
+            ->delete();
     }
 
     public function ensureRegistry(): bool
@@ -67,8 +122,18 @@ final class MigrationOwnershipLedger
             && DB::table(self::TABLE)->where('migration', $migration)->exists();
     }
 
+    public static function markerColumn(string $generation): string
+    {
+        return self::MARKER_COLUMN_PREFIX.$generation;
+    }
+
+    public function newGeneration(): string
+    {
+        return bin2hex(random_bytes(self::GENERATION_BYTES));
+    }
+
     /**
-     * @return array{state: string, created_table: true, owns_registry: bool}|null
+     * @return array{state: string, created_table: true, owns_registry: bool, generation: string}|null
      */
     public function readCreate(): ?array
     {
@@ -78,10 +143,15 @@ final class MigrationOwnershipLedger
             return null;
         }
 
-        $this->assertExactKeys($record['payload'], ['created_table', 'owns_registry'], self::CREATE_KEY);
+        $this->assertExactKeys(
+            $record['payload'],
+            ['created_table', 'owns_registry', 'generation'],
+            self::CREATE_KEY,
+        );
 
         if (($record['payload']['created_table'] ?? null) !== true
             || ! is_bool($record['payload']['owns_registry'] ?? null)
+            || ! $this->isGeneration($record['payload']['generation'] ?? null)
         ) {
             throw $this->invalidRecord(self::CREATE_KEY, 'payload types');
         }
@@ -90,11 +160,12 @@ final class MigrationOwnershipLedger
             'state' => $record['state'],
             'created_table' => true,
             'owns_registry' => $record['payload']['owns_registry'],
+            'generation' => $record['payload']['generation'],
         ];
     }
 
     /**
-     * @return array{state: string, added_columns: list<string>, created_indexes: list<string>, owns_registry: bool}|null
+     * @return array{state: string, added_columns: list<string>, created_indexes: list<string>, owns_registry: bool, generation: string}|null
      */
     public function readUpgrade(): ?array
     {
@@ -106,7 +177,7 @@ final class MigrationOwnershipLedger
 
         $this->assertExactKeys(
             $record['payload'],
-            ['added_columns', 'created_indexes', 'owns_registry'],
+            ['added_columns', 'created_indexes', 'owns_registry', 'generation'],
             self::UPGRADE_KEY,
         );
 
@@ -118,6 +189,7 @@ final class MigrationOwnershipLedger
             || ! is_array($indexes)
             || ! array_is_list($indexes)
             || ! is_bool($record['payload']['owns_registry'] ?? null)
+            || ! $this->isGeneration($record['payload']['generation'] ?? null)
         ) {
             throw $this->invalidRecord(self::UPGRADE_KEY, 'payload types');
         }
@@ -134,6 +206,7 @@ final class MigrationOwnershipLedger
             'added_columns' => $columns,
             'created_indexes' => $indexes,
             'owns_registry' => $record['payload']['owns_registry'],
+            'generation' => $record['payload']['generation'],
         ];
     }
 
@@ -150,16 +223,39 @@ final class MigrationOwnershipLedger
         return true;
     }
 
-    public function writeCreate(string $state, bool $ownsRegistry): void
+    public function writeCreate(string $state, bool $ownsRegistry, string $generation): void
     {
         if (! in_array($state, self::CREATE_STATES, true)) {
             throw $this->invalidRecord(self::CREATE_KEY, 'state');
         }
 
+        $this->assertGeneration($generation);
+
         $this->write(self::CREATE_KEY, $state, [
             'created_table' => true,
             'owns_registry' => $ownsRegistry,
+            'generation' => $generation,
         ]);
+    }
+
+    public function writeTargetMarker(string $generation): void
+    {
+        $this->assertGeneration($generation);
+        $markerColumn = self::markerColumn($generation);
+
+        DB::table(EmbeddedResourceIncarnationStore::TABLE)->insert([
+            'resource_type' => self::MARKER_RESOURCE_TYPE,
+            'resource_key_hash' => hash('sha256', $generation),
+            'resource_key_type' => 'internal',
+            'resource_key' => $generation,
+            'incarnation' => $this->markerIncarnation($generation),
+            'version' => 1,
+            $markerColumn => $generation,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->assertTargetMarker($generation);
     }
 
     /**
@@ -171,6 +267,7 @@ final class MigrationOwnershipLedger
         array $addedColumns,
         array $createdIndexes,
         bool $ownsRegistry,
+        string $generation,
     ): void {
         if (! in_array($state, self::UPGRADE_STATES, true)) {
             throw $this->invalidRecord(self::UPGRADE_KEY, 'state');
@@ -178,10 +275,12 @@ final class MigrationOwnershipLedger
 
         $this->assertAllowedList($addedColumns, self::UPGRADE_COLUMNS, self::UPGRADE_KEY, 'added_columns');
         $this->assertAllowedList($createdIndexes, self::UPGRADE_INDEXES, self::UPGRADE_KEY, 'created_indexes');
+        $this->assertGeneration($generation);
         $this->write(self::UPGRADE_KEY, $state, [
             'added_columns' => $addedColumns,
             'created_indexes' => $createdIndexes,
             'owns_registry' => $ownsRegistry,
+            'generation' => $generation,
         ]);
     }
 
@@ -214,9 +313,30 @@ final class MigrationOwnershipLedger
         }
     }
 
+    private function assertGeneration(string $generation): void
+    {
+        if (! $this->isGeneration($generation)) {
+            throw new RuntimeException('Invalid CORE-12 migration target generation.');
+        }
+    }
+
     private function invalidRecord(string $migration, string $reason): RuntimeException
     {
         return new RuntimeException("Invalid Aura migration ownership record for [{$migration}]: {$reason}.");
+    }
+
+    private function isGeneration(mixed $generation): bool
+    {
+        return is_string($generation) && preg_match('/\A[0-9a-f]{32}\z/D', $generation) === 1;
+    }
+
+    private function markerIncarnation(string $generation): string
+    {
+        return substr($generation, 0, 8)
+            .'-'.substr($generation, 8, 4)
+            .'-'.substr($generation, 12, 4)
+            .'-'.substr($generation, 16, 4)
+            .'-'.substr($generation, 20, 12);
     }
 
     /**
