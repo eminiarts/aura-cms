@@ -78,7 +78,7 @@ $appWidgets = Aura::getAppWidgets();
 ```php
 // Get an option value (cached, team-aware)
 $settings = Aura::getOption('site-settings');
-// Returns decoded JSON or array
+// Returns the stored value exactly; [] only when the option row is missing
 
 // Update an option
 Aura::updateOption('site-settings', ['logo' => 'path/to/logo.png']);

@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
@@ -45,4 +46,45 @@ it('removes a deleted team\'s Memberships and Team Roles but never the shared gl
 
     // The shared global admin role is never touched.
     expect(Role::withoutGlobalScopes()->whereKey($globalAdmin->id)->whereNull('team_id')->exists())->toBeTrue();
+});
+
+it('deletes all scoped options and invalidates warm caches when reassigning members', function () {
+    $deletedTeam = $this->user->currentTeam;
+    $deletedTeam->updateOption('cleanup', ['team' => 'stale']);
+    $this->user->updateOption('cleanup', ['user' => 'stale']);
+
+    expect($deletedTeam->getOption('cleanup'))->toBe(['team' => 'stale'])
+        ->and($this->user->getOption('cleanup'))->toBe(['user' => 'stale']);
+
+    $replacement = Team::create(['name' => 'Replacement Team']);
+    expect($this->user->switchTeam($deletedTeam))->toBeTrue();
+
+    $deletedTeam->delete();
+
+    $freshUser = User::withoutGlobalScopes()->findOrFail($this->user->id);
+
+    expect($freshUser->current_team_id)->toBe($replacement->id)
+        ->and(Option::withoutGlobalScopes()->where('team_id', $deletedTeam->id)->count())->toBe(0)
+        ->and($deletedTeam->getOption('cleanup'))->toBeNull()
+        ->and($this->user->getOption('cleanup'))->toBeNull()
+        ->and($freshUser->getTeams()->pluck('id'))->not->toContain($deletedTeam->id);
+});
+
+it('deletes all scoped options and clears current team without a replacement', function () {
+    $deletedTeam = $this->user->currentTeam;
+    $deletedTeam->updateOption('cleanup', ['team' => 'stale']);
+    $this->user->updateOption('cleanup', ['user' => 'stale']);
+
+    expect($deletedTeam->getOption('cleanup'))->toBe(['team' => 'stale'])
+        ->and($this->user->getOption('cleanup'))->toBe(['user' => 'stale']);
+
+    $deletedTeam->delete();
+
+    $freshUser = User::withoutGlobalScopes()->findOrFail($this->user->id);
+
+    expect($freshUser->current_team_id)->toBeNull()
+        ->and(Option::withoutGlobalScopes()->where('team_id', $deletedTeam->id)->count())->toBe(0)
+        ->and($deletedTeam->getOption('cleanup'))->toBeNull()
+        ->and($this->user->getOption('cleanup'))->toBeNull()
+        ->and($freshUser->getTeams())->toHaveCount(0);
 });

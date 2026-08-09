@@ -296,8 +296,8 @@ Teams support soft deletes. When a team is deleted:
 1. Users with this team as their `current_team_id` are switched to their first available team
 2. All team meta data is deleted
 3. All team invitations are deleted
-4. All team-specific options are deleted
-5. User team caches are cleared
+4. Every option row owned by the deleted `team_id` is deleted without tenant scopes (including `team.*`, `user.*`, and application-defined names)
+5. Team-option, user-option, per-user team-list, and Global Admin team-list cache generations are invalidated
 6. Users are redirected to the dashboard
 
 ```php

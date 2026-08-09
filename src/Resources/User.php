@@ -3,9 +3,11 @@
 namespace Aura\Base\Resources;
 
 use Aura\Base\Database\Factories\UserFactory;
+use Aura\Base\Models\Meta;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
+use Aura\Base\Services\VersionedCache;
 use Aura\Base\Traits\ProfileFields;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\MustVerifyEmail;
@@ -15,7 +17,6 @@ use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\Access\Authorizable;
@@ -49,10 +50,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public const GLOBAL_ADMIN_GATE = 'AuraGlobalAdmin';
 
-    /**
-     * Shared cache key for the Global Admin team switcher list (identical for
-     * every Global Admin; invalidated on team create/rename/delete).
-     */
+    /** Legacy key cleared during writes for upgrade compatibility. */
     public const GLOBAL_ADMIN_TEAMS_CACHE_KEY = 'aura.global_admin.teams';
 
     public static $customTable = true;
@@ -239,6 +237,27 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         Cache::forget(static::currentTeamCacheKey($userId));
+    }
+
+    public static function clearGlobalAdminTeamsCache(): void
+    {
+        VersionedCache::bump(self::globalAdminTeamsCacheNamespace());
+        Cache::forget(self::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
+    }
+
+    public static function clearOptionCacheForTeam(string|int $userId, string|int $teamId): void
+    {
+        VersionedCache::bump(self::optionCacheNamespaceFor($userId, $teamId));
+    }
+
+    public static function clearTeamsCache(string|int|null $userId): void
+    {
+        if (! $userId) {
+            return;
+        }
+
+        VersionedCache::bump(self::teamsCacheNamespace($userId));
+        Cache::forget('user.'.$userId.'.teams');
     }
 
     /**
@@ -471,52 +490,78 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function getOption($option)
     {
-        $cacheKey = $this->optionCacheKey($option);
-        $option = $this->optionName($option);
+        $optionName = $this->optionName($option);
 
         // If there is a * at the end of the option name, it means that it is a wildcard
         // and we need to get all options that match the wildcard
-        if (substr($option, -1) == '*') {
-            $o = substr($option, 0, -1);
+        if (substr($optionName, -1) == '*') {
+            $wildcardPrefix = substr($optionName, 0, -1);
 
-            $options = Cache::remember($cacheKey, now()->addHour(), function () use ($o) {
-                return $this->optionQuery()
-                    ->where('name', 'like', $o.'%')
-                    ->pluck('value', 'name')
-                    ->mapWithKeys(function ($value, $name) {
-                        return [str($name)->afterLast('.')->toString() => $value];
-                    })
-                    ->all();
-            });
+            $payload = VersionedCache::remember(
+                $this->optionCacheNamespace(),
+                $optionName,
+                now()->addHour(),
+                fn (): array => [
+                    'values' => $this->optionQuery()
+                        ->where('name', 'like', $wildcardPrefix.'%')
+                        ->get(['name', 'value'])
+                        ->mapWithKeys(function (Option $record): array {
+                            $name = (string) $record->getRawOriginal('name');
 
-            return collect($options);
+                            return [
+                                str($name)->afterLast('.')->toString() => $record->getAttributeValue('value'),
+                            ];
+                        })
+                        ->all(),
+                ],
+            );
+
+            return collect($payload['values']);
         }
 
-        $cachedOption = Cache::remember($cacheKey, now()->addHour(), function () use ($option) {
-            return ['value' => $this->optionQuery()->where('name', $option)->value('value')];
-        });
-
-        return $cachedOption['value'];
+        return $this->getOptionEntry($option)['value'];
     }
 
     public function getOptionBookmarks()
     {
-        return $this->getOption('bookmarks') ?? [];
+        return $this->optionValueOrDefault('bookmarks', []);
     }
 
     public function getOptionColumns($slug)
     {
-        return $this->getOption('columns.'.$slug) ?? [];
+        return $this->optionValueOrDefault('columns.'.$slug, []);
+    }
+
+    /**
+     * @return array{found: bool, value: mixed}
+     */
+    public function getOptionEntry($option): array
+    {
+        $optionName = $this->optionName($option);
+
+        return VersionedCache::remember(
+            $this->optionCacheNamespace(),
+            $optionName,
+            now()->addHour(),
+            function () use ($optionName): array {
+                $record = $this->optionQuery()->where('name', $optionName)->first(['value']);
+
+                return [
+                    'found' => $record !== null,
+                    'value' => $record?->getAttributeValue('value'),
+                ];
+            },
+        );
     }
 
     public function getOptionSidebar()
     {
-        return $this->getOption('sidebar') ?? [];
+        return $this->optionValueOrDefault('sidebar', []);
     }
 
     public function getOptionSidebarToggled()
     {
-        return $this->getOption('sidebarToggled') ?? true;
+        return $this->optionValueOrDefault('sidebarToggled', true);
     }
 
     // public function getRolesField()
@@ -547,16 +592,16 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
         // A Global Admin sees every team in the switcher, not only the teams they
         // are a member of — visitation lets them enter any of them. The list is
-        // identical for every Global Admin, so it is cached under one shared key
-        // that Team create/delete invalidates (see Team::booted).
+        // identical for every Global Admin, so it uses one shared generation
+        // namespace that Team writes invalidate (see Team::booted).
         if ($this->isAuraGlobalAdmin()) {
-            return Cache::remember(self::GLOBAL_ADMIN_TEAMS_CACHE_KEY, now()->addHour(), function () {
+            return $this->rememberTeams(self::globalAdminTeamsCacheNamespace(), function () {
                 return app(config('aura.resources.team'))::withoutGlobalScopes()->with('meta')->get();
             });
         }
 
         // Return cached teams with meta
-        return Cache::remember('user.'.$this->id.'.teams', now()->addHour(), function () {
+        return $this->rememberTeams(self::teamsCacheNamespace($this->id), function () {
             return $this->teams()->with('meta')->get();
         });
     }
@@ -780,14 +825,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         // Return \Aura\Base\Resources\User for this user
         if (config('aura.resources.user')) {
             return $this->hasOne(config('aura.resources.user'), 'id', 'id');
-        } else {
-            return $this->hasOne(User::class, 'id', 'id');
         }
 
-        // Cache the resource so we don't have to query the database every time
-        return Cache::remember('user.resource.'.$this->id, now()->addHour(), function () {
-            return User::find($this->id);
-        });
+        return $this->hasOne(User::class, 'id', 'id');
     }
 
     /**
@@ -900,27 +940,17 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     protected function forgetOptionCache(string $option): void
     {
-        Cache::forget($this->optionCacheKey($option));
-
-        $segments = explode('.', $option);
-
-        if (end($segments) === '*') {
-            array_pop($segments);
-        }
-
-        array_pop($segments);
-
-        while ($segments !== []) {
-            Cache::forget($this->optionCacheKey(implode('.', $segments).'.*'));
-            array_pop($segments);
-        }
-
-        Cache::forget($this->optionCacheKey('*'));
+        VersionedCache::bump($this->optionCacheNamespace());
     }
 
     protected function getCacheKeyForRoles(): string
     {
         return $this->current_team_id.'.user.'.$this->id.'.roles';
+    }
+
+    protected static function globalAdminTeamsCacheNamespace(): string
+    {
+        return 'teams.global-admin';
     }
 
     /**
@@ -949,11 +979,16 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return is_array($permissions) ? $permissions : [];
     }
 
-    protected function optionCacheKey(string $option): string
+    protected function optionCacheNamespace(): string
     {
         $teamId = config('aura.teams') ? ($this->current_team_id ?? 'none') : 'global';
 
-        return 'aura.option.user.'.$this->id.'.team.'.$teamId.'.'.$option;
+        return self::optionCacheNamespaceFor($this->id, $teamId);
+    }
+
+    protected static function optionCacheNamespaceFor(string|int $userId, string|int $teamId): string
+    {
+        return 'option.user.'.$userId.'.team.'.$teamId;
     }
 
     protected function optionName(string $option): string
@@ -972,5 +1007,68 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return $query
             ->withoutGlobalScope(TeamScope::class)
             ->where('team_id', $this->getAttribute('current_team_id'));
+    }
+
+    protected function optionValueOrDefault(string $option, mixed $default): mixed
+    {
+        $entry = $this->getOptionEntry($option);
+
+        return $entry['found'] ? $entry['value'] : $default;
+    }
+
+    /**
+     * Cache a scalar snapshot and restore the configured Team models only at
+     * the public boundary. This remains safe when object unserialization is
+     * disabled by the cache store.
+     */
+    protected function rememberTeams(string $namespace, callable $resolver): Collection
+    {
+        $payload = VersionedCache::remember(
+            $namespace,
+            'teams',
+            now()->addHour(),
+            function () use ($resolver): array {
+                return ['teams' => $this->serializeTeams($resolver())];
+            },
+        );
+
+        $teamClass = config('aura.resources.team');
+        $teamPrototype = new $teamClass;
+        $metaPrototype = new Meta;
+
+        $teams = collect($payload['teams'])->map(function (array $snapshot) use ($teamPrototype, $metaPrototype) {
+            $team = $teamPrototype->newFromBuilder(
+                $snapshot['attributes'],
+                $snapshot['connection'] ?? null,
+            );
+
+            $meta = collect($snapshot['meta'] ?? [])->map(fn (array $attributes) => $metaPrototype->newFromBuilder(
+                $attributes,
+                $team->getConnectionName(),
+            ));
+
+            $team->setRelation('meta', $metaPrototype->newCollection($meta->all()));
+
+            return $team;
+        });
+
+        return $teamPrototype->newCollection($teams->all());
+    }
+
+    /**
+     * @return array<int, array{attributes: array<string, mixed>, connection: string|null, meta: array<int, array<string, mixed>>}>
+     */
+    protected function serializeTeams(Collection $teams): array
+    {
+        return $teams->map(fn ($team): array => [
+            'attributes' => $team->getAttributes(),
+            'connection' => $team->getConnectionName(),
+            'meta' => $team->meta->map(fn (Meta $meta): array => $meta->getAttributes())->all(),
+        ])->all();
+    }
+
+    protected static function teamsCacheNamespace(string|int $userId): string
+    {
+        return 'teams.user.'.$userId;
     }
 }

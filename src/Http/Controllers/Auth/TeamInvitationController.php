@@ -10,7 +10,6 @@ use Aura\Base\Resources\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 
 class TeamInvitationController extends Controller
@@ -44,7 +43,7 @@ class TeamInvitationController extends Controller
                 ->firstOrFail();
 
             $user->roles()->attach($role->id, ['team_id' => $team->id]);
-            Cache::forget('user.'.$user->id.'.teams');
+            User::clearTeamsCache($user->id);
             $user->unsetRelation('teams');
         }
 

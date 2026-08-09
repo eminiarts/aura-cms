@@ -4,6 +4,8 @@
 
 namespace Aura\Base\Navigation;
 
+use Aura\Base\Services\VersionedCache;
+
 class Navigation
 {
     public static function add(array $items, ?callable $authCallback = null): void
@@ -12,19 +14,29 @@ class Navigation
             return;
         }
 
-        app('hook_manager')->addHook('navigation', function ($navigation) use ($items) {
-            foreach ($items as $item) {
-                $navigation->push($item);
-            }
+        $fingerprint = VersionedCache::isSafe($items)
+            ? 'navigation.items.'.hash('sha256', serialize($items))
+            : null;
 
-            return $navigation;
-        });
+        app('hook_manager')->addHook(
+            'navigation',
+            function ($navigation) use ($items) {
+                foreach ($items as $item) {
+                    $navigation->push($item);
+                }
+
+                return $navigation;
+            },
+            $fingerprint,
+        );
     }
 
     public static function clear(): void
     {
-        app('hook_manager')->addHook('navigation', function ($navigation) {
-            return collect([]);
-        });
+        app('hook_manager')->addHook(
+            'navigation',
+            fn ($navigation) => collect([]),
+            'navigation.clear.v1',
+        );
     }
 }

@@ -6,6 +6,7 @@ use Aura\Base\Database\Factories\TeamFactory;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
+use Aura\Base\Services\VersionedCache;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -55,6 +56,11 @@ class Team extends Resource
     public function clearCachedOption($option)
     {
         $this->forgetOptionCache($option);
+    }
+
+    public static function clearOptionCacheForTeam(string|int $teamId): void
+    {
+        VersionedCache::bump(self::optionCacheNamespaceFor($teamId));
     }
 
     public function customPermissions()
@@ -188,40 +194,64 @@ class Team extends Resource
 
     public function getOption($option)
     {
-        $cacheKey = $this->optionCacheKey($option);
-        $option = $this->optionName($option);
+        $optionName = $this->optionName($option);
 
         // If there is a * at the end of the option name, it means that it is a wildcard
         // and we need to get all options that match the wildcard
-        if (substr($option, -1) == '*') {
+        if (substr($optionName, -1) == '*') {
 
-            $o = substr($option, 0, -1);
+            $wildcardPrefix = substr($optionName, 0, -1);
 
-            $options = Cache::remember($cacheKey, now()->addHour(), function () use ($o) {
-                return Option::withoutGlobalScope(TeamScope::class)
-                    ->where('team_id', $this->id)
-                    ->where('name', 'like', $o.'%')
-                    ->orderBy('id')
-                    ->pluck('value', 'name')
-                    ->mapWithKeys(function ($value, $name) {
-                        return [str($name)->afterLast('.')->toString() => $value];
-                    })
-                    ->all();
-            });
+            $payload = VersionedCache::remember(
+                $this->optionCacheNamespace(),
+                $optionName,
+                now()->addHour(),
+                fn (): array => [
+                    'values' => Option::withoutGlobalScope(TeamScope::class)
+                        ->where('team_id', $this->id)
+                        ->where('name', 'like', $wildcardPrefix.'%')
+                        ->orderBy('id')
+                        ->get(['name', 'value'])
+                        ->mapWithKeys(function (Option $record): array {
+                            $name = (string) $record->getRawOriginal('name');
 
-            return collect($options);
+                            return [
+                                str($name)->afterLast('.')->toString() => $record->getAttributeValue('value'),
+                            ];
+                        })
+                        ->all(),
+                ],
+            );
+
+            return collect($payload['values']);
         }
 
-        $cachedOption = Cache::remember($cacheKey, now()->addHour(), function () use ($option) {
-            return [
-                'value' => Option::withoutGlobalScope(TeamScope::class)
-                    ->where('team_id', $this->id)
-                    ->where('name', $option)
-                    ->value('value'),
-            ];
-        });
+        return $this->getOptionEntry($option)['value'];
+    }
 
-        return $cachedOption['value'];
+    /**
+     * @return array{found: bool, value: mixed}
+     */
+    public function getOptionEntry($option): array
+    {
+        $optionName = $this->optionName($option);
+
+        return VersionedCache::remember(
+            $this->optionCacheNamespace(),
+            $optionName,
+            now()->addHour(),
+            function () use ($optionName): array {
+                $record = Option::withoutGlobalScope(TeamScope::class)
+                    ->where('team_id', $this->id)
+                    ->where('name', $optionName)
+                    ->first(['value']);
+
+                return [
+                    'found' => $record !== null,
+                    'value' => $record?->getAttributeValue('value'),
+                ];
+            },
+        );
     }
 
     public static function getWidgets(): array
@@ -278,10 +308,9 @@ class Team extends Resource
         parent::booted();
 
         // Any team write (create, rename, restore) can change what a Global
-        // Admin's switcher should show — drop the shared cache. created/deleted
-        // also forget it explicitly, but a plain rename only fires saved.
+        // Admin's switcher should show, so advance the shared generation.
         static::saved(function ($team) {
-            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
+            User::clearGlobalAdminTeamsCache();
         });
 
         static::saving(function ($team) {
@@ -320,21 +349,33 @@ class Team extends Resource
                 $team->users()->attach($user->id, ['role_id' => $globalAdmin->id]);
 
                 // Clear cache of Cache('user.'.$user->id.'.teams')
-                Cache::forget('user.'.$user->id.'.teams');
+                User::clearTeamsCache($user->id);
             }
 
             // A Global Admin's switcher lists every team from one shared cache
-            // key — invalidate it so a newly created team appears immediately.
-            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
+            // namespace; advance it after the Membership is attached.
+            User::clearGlobalAdminTeamsCache();
 
             // Create all permissions for the team
             GenerateAllResourcePermissions::dispatch($team->id);
         });
 
         static::deleted(function ($team) {
-            $affectedMemberIds = $team->users()
-                ->withoutGlobalScopes()
-                ->pluck('users.id');
+            $affectedMemberIds = DB::table('user_role')
+                ->where('team_id', $team->id)
+                ->pluck('user_id');
+
+            $optionNames = Option::withoutGlobalScopes()
+                ->where('team_id', $team->id)
+                ->pluck('name');
+
+            $optionUserIds = $optionNames
+                ->map(function (string $name): ?int {
+                    return preg_match('/^user\.(\d+)\./', $name, $matches) === 1
+                        ? (int) $matches[1]
+                        : null;
+                })
+                ->filter();
 
             // Get all users who had the deleted team as their current team
             $users = User::withoutGlobalScopes()
@@ -344,7 +385,10 @@ class Team extends Resource
 
             // Loop through the users and update their current_team_id
             foreach ($users as $user) {
-                $firstTeam = $user->teams()->first();
+                $firstTeam = $user->teams()
+                    ->withoutGlobalScopes()
+                    ->where('teams.id', '!=', $team->id)
+                    ->first();
                 $user->current_team_id = $firstTeam ? $firstTeam->id : null;
                 $user->save();
 
@@ -372,8 +416,18 @@ class Team extends Resource
             // Delete all the team's invitations
             $team->teamInvitations()->delete();
 
-            // Delete all the team's options
-            Option::where('name', 'like', 'team.'.$team->id.'.%')->delete();
+            // Delete every option physically owned by the team. Names can be
+            // team.*, user.*, or application-defined, so team_id is the only
+            // complete ownership boundary and the query must bypass TeamScope.
+            Option::withoutGlobalScopes()->where('team_id', $team->id)->delete();
+
+            static::clearOptionCacheForTeam($team->id);
+
+            $affectedMemberIds
+                ->merge($reassignedUserIds)
+                ->merge($optionUserIds)
+                ->unique()
+                ->each(fn ($userId) => User::clearOptionCacheForTeam($userId, $team->id));
 
             $reassignedUserIds->each(function ($userId) {
                 User::clearCurrentTeamCache($userId);
@@ -383,34 +437,19 @@ class Team extends Resource
                 ->merge($reassignedUserIds)
                 ->unique()
                 ->each(function ($userId) {
-                    Cache::forget('user.'.$userId.'.teams');
+                    User::clearTeamsCache($userId);
                 });
 
             // Drop the shared Global Admin switcher cache so the deleted team
             // no longer shows up for Global Admins.
-            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
+            User::clearGlobalAdminTeamsCache();
         });
 
     }
 
     protected function forgetOptionCache(string $option): void
     {
-        Cache::forget($this->optionCacheKey($option));
-
-        $segments = explode('.', $option);
-
-        if (end($segments) === '*') {
-            array_pop($segments);
-        }
-
-        array_pop($segments);
-
-        while ($segments !== []) {
-            Cache::forget($this->optionCacheKey(implode('.', $segments).'.*'));
-            array_pop($segments);
-        }
-
-        Cache::forget($this->optionCacheKey('*'));
+        VersionedCache::bump($this->optionCacheNamespace());
     }
 
     /**
@@ -423,9 +462,14 @@ class Team extends Resource
         return TeamFactory::new();
     }
 
-    protected function optionCacheKey(string $option): string
+    protected function optionCacheNamespace(): string
     {
-        return 'aura.option.team.'.$this->id.'.'.$option;
+        return self::optionCacheNamespaceFor($this->id);
+    }
+
+    protected static function optionCacheNamespaceFor(string|int $teamId): string
+    {
+        return 'option.team.'.$teamId;
     }
 
     protected function optionName(string $option): string

@@ -2,15 +2,348 @@
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
+use Aura\Base\Services\VersionedCache;
 use Illuminate\Cache\ArrayStore;
+use Illuminate\Cache\NullStore;
 use Illuminate\Cache\Repository;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 function serializedOptionCacheRepository(): Repository
 {
     return new Repository(new ArrayStore(serializesValues: true, serializableClasses: false));
 }
+
+test('template catalog survives a serialized cache read in a fresh application container', function () {
+    $cache = serializedOptionCacheRepository();
+    Cache::swap($cache);
+    app(Filesystem::class)->ensureDirectoryExists(app_path('Aura/Templates'));
+
+    expect(Aura::templates())->toBeInstanceOf(Collection::class);
+
+    $this->refreshApplication();
+    Cache::swap($cache);
+
+    expect(Aura::templates())->toBeInstanceOf(Collection::class);
+});
+
+test('versioned cache degrades to an uncached read when generations cannot persist', function () {
+    Cache::swap(new Repository(new NullStore));
+    $resolutions = 0;
+
+    $value = VersionedCache::remember(
+        'null-store',
+        'value',
+        60,
+        function () use (&$resolutions): array {
+            $resolutions++;
+
+            return ['value' => 'fresh'];
+        },
+    );
+
+    expect($value)->toBe(['value' => 'fresh'])
+        ->and($resolutions)->toBe(1);
+});
+
+class InterleavingOptionArrayStore extends ArrayStore
+{
+    private ?Closure $beforeValuePut = null;
+
+    private bool $interleaved = false;
+
+    private ?Closure $keyMatcher = null;
+
+    public function beforeNextMatchingPut(Closure $keyMatcher, Closure $callback): void
+    {
+        $this->beforeValuePut = $callback;
+        $this->keyMatcher = $keyMatcher;
+        $this->interleaved = false;
+    }
+
+    public function beforeNextValuePut(Closure $callback): void
+    {
+        $this->beforeValuePut = $callback;
+        $this->keyMatcher = fn (string $key): bool => str_starts_with($key, 'aura.option.')
+            || str_starts_with($key, 'aura.cache.value.');
+        $this->interleaved = false;
+    }
+
+    public function put($key, $value, $seconds)
+    {
+        if (! $this->interleaved
+            && $this->beforeValuePut
+            && $this->keyMatcher
+            && ($this->keyMatcher)($key)) {
+            $this->interleaved = true;
+            ($this->beforeValuePut)();
+        }
+
+        return parent::put($key, $value, $seconds);
+    }
+}
+
+class LengthLimitedArrayStore extends ArrayStore
+{
+    public function forget($key)
+    {
+        $this->assertValidKey($key);
+
+        return parent::forget($key);
+    }
+
+    public function get($key)
+    {
+        $this->assertValidKey($key);
+
+        return parent::get($key);
+    }
+
+    public function put($key, $value, $seconds)
+    {
+        $this->assertValidKey($key);
+
+        return parent::put($key, $value, $seconds);
+    }
+
+    private function assertValidKey(string $key): void
+    {
+        if (strlen($key) > 250) {
+            throw new RuntimeException('Cache key exceeds backend limit.');
+        }
+    }
+}
+
+test('user option cache retries when a write races its first read', function () {
+    $store = new InterleavingOptionArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+
+    $user = createSuperAdmin();
+    $user->updateOption('race', ['version' => 1]);
+
+    $store->beforeNextValuePut(fn () => $user->updateOption('race', ['version' => 2]));
+
+    expect($user->getOption('race'))->toBe(['version' => 2])
+        ->and($user->getOption('race'))->toBe(['version' => 2]);
+});
+
+test('team option cache retries when a write races its first read', function () {
+    $store = new InterleavingOptionArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+
+    $user = createSuperAdmin();
+    $team = $user->currentTeam;
+    $team->updateOption('race', ['version' => 1]);
+
+    $store->beforeNextValuePut(fn () => $team->updateOption('race', ['version' => 2]));
+
+    expect($team->getOption('race'))->toBe(['version' => 2])
+        ->and($team->getOption('race'))->toBe(['version' => 2]);
+})->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
+
+test('global option cache retries when a write races its first read', function () {
+    $store = new InterleavingOptionArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+
+    Aura::updateOption('race', ['version' => 1]);
+
+    $store->beforeNextValuePut(fn () => Aura::updateOption('race', ['version' => 2]));
+
+    expect(Aura::getOption('race'))->toBe(['version' => 2])
+        ->and(Aura::getOption('race'))->toBe(['version' => 2]);
+})->skip(fn () => config('aura.teams'), 'Global option context requires teams-off mode.');
+
+test('long option names use backend-safe fixed-length cache keys', function () {
+    $store = new LengthLimitedArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+
+    $user = createSuperAdmin();
+    $option = str_repeat('long-option-', 20);
+    $user->updateOption($option, ['safe' => true]);
+
+    expect($user->getOption($option))->toBe(['safe' => true]);
+
+    foreach (array_keys($store->all(false)) as $key) {
+        expect(strlen($key))->toBeLessThanOrEqual(250);
+    }
+});
+
+test('regular user team cache retries when team creation races its first read', function () {
+    $store = new InterleavingOptionArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+
+    $user = createSuperAdmin();
+    $newTeam = null;
+    $legacyKey = 'user.'.$user->id.'.teams';
+
+    $store->beforeNextMatchingPut(
+        fn (string $key): bool => $key === $legacyKey || str_starts_with($key, 'aura.cache.value.'),
+        function () use (&$newTeam): void {
+            $newTeam = Team::create(['name' => 'Created during team-list read']);
+        },
+    );
+
+    expect($user->getTeams()->pluck('id'))->toContain($newTeam->id)
+        ->and($user->getTeams()->pluck('id'))->toContain($newTeam->id);
+})->skip(fn () => ! config('aura.teams'), 'Team list context requires teams enabled.');
+
+test('global admin team cache retries when team creation races its first read', function () {
+    $store = new InterleavingOptionArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+
+    $globalAdmin = createGlobalAdmin();
+    $this->actingAs($globalAdmin);
+    $newTeam = null;
+
+    $store->beforeNextMatchingPut(
+        fn (string $key): bool => $key === User::GLOBAL_ADMIN_TEAMS_CACHE_KEY
+            || str_starts_with($key, 'aura.cache.value.'),
+        function () use (&$newTeam): void {
+            $newTeam = Team::create(['name' => 'Created during global team-list read']);
+        },
+    );
+
+    expect($globalAdmin->getTeams()->pluck('id'))->toContain($newTeam->id)
+        ->and($globalAdmin->getTeams()->pluck('id'))->toContain($newTeam->id);
+})->skip(fn () => ! config('aura.teams'), 'Team list context requires teams enabled.');
+
+test('Aura option reads preserve stored falsey values', function (mixed $value) {
+    Cache::swap(serializedOptionCacheRepository());
+
+    if (config('aura.teams')) {
+        createSuperAdmin();
+    }
+
+    Aura::updateOption('falsey', $value);
+
+    expect(Aura::getOption('falsey'))->toBe($value);
+})->with([
+    'false' => false,
+    'zero' => 0,
+    'empty string' => '',
+    'null' => null,
+]);
+
+test('Aura option reads distinguish a missing row from a stored null', function () {
+    Cache::swap(serializedOptionCacheRepository());
+
+    if (config('aura.teams')) {
+        createSuperAdmin();
+    }
+
+    expect(Aura::getOption('missing'))->toBe([]);
+
+    Aura::updateOption('missing', null);
+
+    expect(Aura::getOption('missing'))->toBeNull();
+});
+
+test('exact option cache envelopes retain the found bit for missing and null values', function () {
+    $store = new ArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+    $user = createSuperAdmin();
+
+    expect($user->getOption('missing'))->toBeNull();
+
+    $user->updateOption('stored-null', null);
+    expect($user->getOption('stored-null'))->toBeNull();
+
+    $values = collect($store->all())->pluck('value');
+
+    expect($values->contains(fn ($value): bool => $value === ['found' => false, 'value' => null]))->toBeTrue()
+        ->and($values->contains(fn ($value): bool => $value === ['found' => true, 'value' => null]))->toBeTrue();
+});
+
+test('specialized user options distinguish defaults from a stored null', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+
+    expect($user->getOptionBookmarks())->toBe([])
+        ->and($user->getOptionColumns('Contact'))->toBe([])
+        ->and($user->getOptionSidebar())->toBe([])
+        ->and($user->getOptionSidebarToggled())->toBeTrue();
+
+    $user->updateOption('bookmarks', null);
+    $user->updateOption('columns.Contact', null);
+    $user->updateOption('sidebar', null);
+    $user->updateOption('sidebarToggled', null);
+
+    expect($user->getOptionBookmarks())->toBeNull()
+        ->and($user->getOptionColumns('Contact'))->toBeNull()
+        ->and($user->getOptionSidebar())->toBeNull()
+        ->and($user->getOptionSidebarToggled())->toBeNull();
+});
+
+test('wildcard option reads preserve every stored falsey value', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+
+    $user->updateOption('falsey.false', false);
+    $user->updateOption('falsey.zero', 0);
+    $user->updateOption('falsey.empty', '');
+    $user->updateOption('falsey.null', null);
+
+    expect($user->getOption('falsey.*')->sortKeys()->all())->toBe([
+        'empty' => '',
+        'false' => false,
+        'null' => null,
+        'zero' => 0,
+    ]);
+});
+
+test('regular user teams survive a serialized cache read in a fresh application container', function () {
+    $cache = serializedOptionCacheRepository();
+    Cache::swap($cache);
+
+    $user = createSuperAdmin();
+
+    expect($user->getTeams())
+        ->toBeInstanceOf(EloquentCollection::class)
+        ->each->toBeInstanceOf(Team::class);
+
+    $this->refreshApplication();
+    Cache::swap($cache);
+    $this->actingAs($user);
+    $queries = [];
+    DB::listen(function ($query) use (&$queries): void {
+        $queries[] = $query->sql;
+    });
+
+    expect($user->getTeams())
+        ->toBeInstanceOf(EloquentCollection::class)
+        ->each->toBeInstanceOf(Team::class)
+        ->and($queries)->toBeEmpty();
+})->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
+
+test('global admin teams survive a serialized cache read in a fresh application container', function () {
+    $cache = serializedOptionCacheRepository();
+    Cache::swap($cache);
+
+    $globalAdmin = createGlobalAdmin();
+    $this->actingAs($globalAdmin);
+    Team::factory()->createQuietly();
+
+    expect($globalAdmin->getTeams())
+        ->toBeInstanceOf(EloquentCollection::class)
+        ->each->toBeInstanceOf(Team::class);
+
+    $this->refreshApplication();
+    Cache::swap($cache);
+    $this->actingAs($globalAdmin);
+    $queries = [];
+    DB::listen(function ($query) use (&$queries): void {
+        $queries[] = $query->sql;
+    });
+
+    expect($globalAdmin->getTeams())
+        ->toBeInstanceOf(EloquentCollection::class)
+        ->each->toBeInstanceOf(Team::class)
+        ->and($queries)->toBeEmpty();
+})->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
 
 test('user option survives a serialized cache read in a fresh application container', function () {
     $cache = serializedOptionCacheRepository();

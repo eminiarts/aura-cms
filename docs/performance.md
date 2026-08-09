@@ -32,7 +32,7 @@ Aura CMS implements a multi-layered caching strategy combining Laravel's Cache f
 
 ### Options Caching
 
-Options are automatically cached for 1 hour. Cache keys include the option owner and, for user options, the active team context. The cache stores only arrays and scalar values; Eloquent models and collections are never serialized into the cache.
+Options are automatically cached for 1 hour. Cache namespaces include the option owner and, for user options, the active team context. Physical cache keys are fixed-length SHA-256 hashes, so long option names remain valid on Memcached-compatible backends. Cache entries are scalar/array envelopes; Eloquent models and collections are never serialized into the cache.
 
 ```php
 $value = auth()->user()->getOption('columns.Article');
@@ -42,24 +42,35 @@ auth()->user()->updateOption('columns.Article', ['title', 'status']);
 auth()->user()->deleteOption('columns.Article');
 ```
 
-`updateOption()` and `deleteOption()` invalidate the exact option and any cached wildcard reads containing it. `clearCachedOption()` remains available when an external write needs explicit invalidation. Team option queries use the `Team` instance as their context, independent of whichever team the authenticated user is currently visiting.
+Each namespace has a persistent generation token. `updateOption()`, `deleteOption()`, and `clearCachedOption()` bump it after the database write, invalidating exact and wildcard reads together. Readers compare the generation before and after filling the cache and retry if a write interleaves, so an older reader cannot publish stale data after invalidation. Team option queries use the `Team` instance as their context, independent of whichever team the authenticated user is currently visiting.
+
+Exact entries use `['found' => bool, 'value' => mixed]`. This keeps a missing option distinct from stored `false`, `0`, `''`, and logical `null`; `Aura::getOption()` returns `[]` only for a missing row.
 
 ### Navigation Caching
 
-Navigation is automatically cached per user and team for 1 hour. The key also fingerprints registered resources and the navigation-hook revision, so either kind of registration produces a new cache entry. Authorization-filtered navigation is never shared between users.
+Navigation is automatically cached per user and team for 1 hour. Its context fingerprints the registered resources and the ordered identity of deterministic hooks, so different callbacks cannot collide merely because both containers registered the same number of hooks. Authorization-filtered navigation is never shared between users.
 
 ```php
 // Automatic caching in Aura::navigation() - src/Aura.php
 public function navigation()
 {
-    $payload = Cache::remember($this->navigationCacheKey(), 3600, function () {
-        // Build scalar grouped arrays after applying authorization and hooks.
-    });
+    $payload = VersionedCache::remember(
+        'navigation',
+        $this->navigationCacheContext(),
+        3600,
+        fn () => ['groups' => $this->buildNavigation()],
+    );
 
     // Preserve the existing Collection return type at the public boundary.
-    return collect($payload)->map(fn ($items) => collect($items));
+    return collect($payload['groups'])->map(fn ($items) => collect($items));
 }
 ```
+
+String/static callables and scalar `Navigation::add()` configurations receive stable fingerprints. Closures, object-bound callables, resources, and any recursively non-scalar payload bypass persistent caching. The same recursive safety check runs on the completed navigation payload, preventing nested values from reaching a serializing cache store. A before/after hook revision check retries a build when registration changes while it is in flight.
+
+### Team and Template Catalog Caching
+
+`User::getTeams()` stores scalar snapshots of team attributes and meta rows. It rehydrates the configured Team model and an Eloquent Collection at the public boundary, including on a cache hit where object unserialization is disabled. Membership and team lifecycle writes bump persistent per-user or Global Admin generations. The template catalog follows the same pattern: cached arrays internally, Support Collection externally.
 
 ### Field Caching
 

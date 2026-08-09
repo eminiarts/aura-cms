@@ -6,7 +6,6 @@ use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Aura\Base\Traits\WithLivewireHelpers;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -286,7 +285,7 @@ class UserTeams extends Component
      */
     protected function afterMembershipChange(User $user): void
     {
-        Cache::forget('user.'.$user->id.'.teams');
+        User::clearTeamsCache($user->id);
         $user->unsetRelation('teams');
         $user->unsetRelation('roles');
 

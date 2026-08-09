@@ -68,6 +68,15 @@ class Option extends Resource
     }
 
     /**
+     * Persist logical null as JSON `null` because the option value column is
+     * intentionally non-nullable and SQL null means no stored row to callers.
+     */
+    public function setValueAttribute(mixed $value): void
+    {
+        $this->attributes['value'] = $this->castAttributeAsJson('value', $value);
+    }
+
+    /**
      * The "booted" method of the model.
      *
      * @return void
