@@ -1213,6 +1213,9 @@ durable row-incarnation token and version stored in
 `aura_embedded_resource_incarnations`. Publish and run Aura's create and upgrade
 migrations before deploying secure fields. The upgrade intentionally removes
 old incarnation rows, invalidating contexts issued under the previous contract.
+Both migrations record the exact table, columns, and indexes they create in
+`aura_migration_ownership`; rollback removes only those recorded artifacts and
+preserves a host application's pre-existing sidecar schema.
 
 Every concrete persisted resource class used by a secure embedded field must
 also install its database guard in an application deployment migration:
@@ -1243,16 +1246,28 @@ functions on PostgreSQL); the runtime connection needs permission for the
 trigger to update the incarnation table. Installation, uninstallation, and
 their migrations are idempotent. DDL failures are not suppressed.
 
-The guard contract supports SQLite, MySQL/MariaDB, and PostgreSQL. Its
-insert/delete/update triggers invalidate the old identity and, when a primary
-key changes, the destination identity. This covers normal, quiet, query-builder,
-bulk, raw, replace/upsert, and truncate-then-insert key reuse without relying on
-Eloquent events. A failed trigger update aborts the owner write. Aura never
-installs schema while rendering or issuing a context: a missing declared guard
-renders no persisted embedded component, and a missing guard during an action
-returns `403`. Other database failures remain visible. Ordinary owner changes
-also make the signed fingerprint and incarnation version stale and require a
-page refresh.
+The guard contract supports SQLite, MySQL, MariaDB (through Laravel's native
+`mariadb` driver), and PostgreSQL. Its insert/delete/update triggers atomically
+create or advance the identity and, when a primary key changes, also advance the
+destination identity. This covers normal, quiet, query-builder, bulk, raw,
+replace/upsert, and truncate-then-insert key reuse without relying on Eloquent
+events. A failed trigger write aborts the owner write.
+
+Canonical owner loading and first sidecar priming have one locking invariant:
+Aura starts a transaction, locks and reloads the owner row, then creates or
+loads its sidecar identity before committing. MySQL, MariaDB, and PostgreSQL use
+a row update lock. SQLite acquires its database write reservation before the
+canonical read. Owner writes and their triggers use the same owner-then-sidecar
+order. Therefore a replacement either commits before the canonical reload or
+waits until after the old identity has been captured, at which point its trigger
+advances that identity. A byte-identical replacement can never inherit the
+context being issued for the old row.
+
+Aura never installs schema while rendering or issuing a context: a missing
+declared guard renders no persisted embedded component, and a missing guard
+during an action returns `403`. Other database failures remain visible.
+Ordinary owner changes also make the signed fingerprint and incarnation version
+stale and require a page refresh.
 
 Unsaved create contexts sign a bounded authorization snapshot and restore it
 before every `create` policy check. Aura `Resource` and `BaseResource` include
@@ -1275,6 +1290,18 @@ encrypted, so never include secrets. A model with authorization state but no
 `ProvidesEmbeddedAuthorizationAttributes` contract fails closed. This keeps
 null-model create hosts and preassigned UUID/ULID create owners supported while
 ensuring later requests authorize the same bounded policy subject.
+
+A preassigned create key is checked against the physical owner table on its
+model connection using the write PDO. This deliberately bypasses `TeamScope`,
+`TypeScope`, soft-delete, and application global scopes; a key occupied in any
+tenant or subtype cannot receive a create context.
+
+Mapper output is validated before it is signed or embedded. Parameters may
+contain only finite scalar, null, and array values, with at most 1,024 aggregate
+elements, 10 nesting levels, 191 bytes per string key, 16,384 bytes per string,
+and 65,536 bytes in the final JSON encoding. Invalid mapper output raises an
+actionable `InvalidEmbeddedComponentParameters` exception; untrusted invalid
+contexts fail authorization.
 
 Contexts expire after `aura.embedded_components.context_ttl` seconds (one hour
 by default). Increment `aura.embedded_components.context_revision` to revoke

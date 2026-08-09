@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Services;
 
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Model;
 use JsonException;
 
@@ -18,6 +19,7 @@ final class EmbeddedComponentContextStore
 
     public function __construct(
         private readonly EmbeddedResourceIncarnationStore $incarnations,
+        private readonly EmbeddedResourceIncarnationGuard $guard,
     ) {}
 
     public function canonical(Model $resource): ?Model
@@ -80,6 +82,15 @@ final class EmbeddedComponentContextStore
         unset($this->canonicalResources[$identity], $this->missingResources[$identity]);
     }
 
+    public function physicallyExists(Model $resource, int|string $resourceKey): bool
+    {
+        return $resource->getConnection()
+            ->table($resource->getTable())
+            ->useWritePdo()
+            ->where($resource->getKeyName(), $resourceKey)
+            ->exists();
+    }
+
     /**
      * @param  iterable<int, Model>  $resources
      */
@@ -126,28 +137,48 @@ final class EmbeddedComponentContextStore
             $pending[$identity['resource_class']][] = $identity['resource_key'];
         }
 
-        $loaded = [];
-
         foreach ($pending as $resourceClass => $resourceKeys) {
             $resourceKeys = array_values(array_unique($resourceKeys, SORT_REGULAR));
 
             /** @var Model $prototype */
             $prototype = new $resourceClass;
-            $query = $prototype->newQuery()->whereKey($resourceKeys)->applyScopes();
-            $query->withoutGlobalScopes();
-            $query->withoutEagerLoads();
-            $query->select($prototype->qualifyColumn('*'));
-
-            foreach ($query->get() as $resource) {
-                $key = $resource->getKey();
-
-                if (! is_int($key) && ! is_string($key)) {
-                    continue;
+            $connection = $prototype->getConnection();
+            $this->guard->assertInstalled($prototype);
+            $load = function () use ($connection, $prototype, $resourceKeys): void {
+                if ($connection->getDriverName() === 'sqlite') {
+                    $this->acquireSqliteWriteLock($connection);
                 }
 
-                $cacheKey = $this->identity($resource::class, $key);
-                $this->canonicalResources[$cacheKey] = $resource;
-                $loaded[] = $resource;
+                $query = $prototype->newQuery()->whereKey($resourceKeys)->applyScopes();
+                $query->withoutGlobalScopes();
+                $query->withoutEagerLoads();
+                $query->select($prototype->qualifyColumn('*'));
+
+                if ($connection->getDriverName() !== 'sqlite') {
+                    $query->lockForUpdate();
+                }
+
+                $loaded = [];
+
+                foreach ($query->get() as $resource) {
+                    $key = $resource->getKey();
+
+                    if (! is_int($key) && ! is_string($key)) {
+                        continue;
+                    }
+
+                    $cacheKey = $this->identity($resource::class, $key);
+                    $this->canonicalResources[$cacheKey] = $resource;
+                    $loaded[] = $resource;
+                }
+
+                $this->incarnations->prime($loaded);
+            };
+
+            if ($connection->transactionLevel() > 0) {
+                $load();
+            } else {
+                $connection->transaction($load, 3);
             }
 
             foreach ($resourceKeys as $resourceKey) {
@@ -159,7 +190,6 @@ final class EmbeddedComponentContextStore
             }
         }
 
-        $this->incarnations->prime($loaded);
     }
 
     public function remember(string $signature, Model $resource): void
@@ -175,6 +205,19 @@ final class EmbeddedComponentContextStore
     public function version(Model $resource): int
     {
         return $this->incarnations->version($resource);
+    }
+
+    private function acquireSqliteWriteLock(Connection $connection): void
+    {
+        $grammar = $connection->getQueryGrammar();
+        $version = $grammar->wrap('version');
+
+        $connection->statement(sprintf(
+            'update %s set %s = %s where 1 = 0',
+            $grammar->wrapTable(EmbeddedResourceIncarnationStore::TABLE),
+            $version,
+            $version,
+        ));
     }
 
     /**

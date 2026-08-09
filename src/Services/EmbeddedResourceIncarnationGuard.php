@@ -11,7 +11,7 @@ use RuntimeException;
 
 final class EmbeddedResourceIncarnationGuard
 {
-    private const CONTRACT_VERSION = 1;
+    private const CONTRACT_VERSION = 2;
 
     /** @var array<string, true> */
     private array $verified = [];
@@ -118,6 +118,11 @@ final class EmbeddedResourceIncarnationGuard
                 'incarnation',
                 'version',
             ])
+            || ! $schema->hasIndex(
+                EmbeddedResourceIncarnationStore::TABLE,
+                'aura_embedded_incarnation_guard_identity_unique',
+                'unique',
+            )
         ) {
             throw new RuntimeException('Run the embedded resource incarnation migrations before installing guards.');
         }
@@ -141,32 +146,15 @@ final class EmbeddedResourceIncarnationGuard
         $grammar = $connection->getQueryGrammar();
         $names = $this->triggerNames($resource);
         $ownerTable = $grammar->wrapTable($resource->getTable());
-        $incarnationTable = $grammar->wrapTable(EmbeddedResourceIncarnationStore::TABLE);
         $keyColumn = $grammar->wrap($resource->getKeyName());
-        $resourceType = $this->literal($resource::class);
-        $keyType = $this->literal($this->resourceKeyType($resource));
         $deleteTrigger = $grammar->wrap($names['delete']);
         $insertTrigger = $grammar->wrap($names['insert']);
         $updateTrigger = $grammar->wrap($names['update']);
         $castType = in_array($connection->getDriverName(), ['mysql', 'mariadb'], true) ? 'CHAR' : 'TEXT';
-        $oldRowUpdate = sprintf(
-            'update %s set %s = %s + 1, %s = CURRENT_TIMESTAMP where %s = %s and %s = %s and %s = CAST(OLD.%s AS %s)',
-            $incarnationTable,
-            $grammar->wrap('version'),
-            $grammar->wrap('version'),
-            $grammar->wrap('updated_at'),
-            $grammar->wrap('resource_type'),
-            $resourceType,
-            $grammar->wrap('resource_key_type'),
-            $keyType,
-            $grammar->wrap('resource_key'),
-            $keyColumn,
-            $castType,
-        );
-        $newRowUpdate = str_replace('CAST(OLD.', 'CAST(NEW.', $oldRowUpdate);
-        $destinationRowUpdate = sprintf(
-            '%s and CAST(OLD.%s AS %s) <> CAST(NEW.%s AS %s)',
-            $newRowUpdate,
+        $oldRowTouch = $this->touchStatement($connection, $resource, 'OLD');
+        $newRowTouch = $this->touchStatement($connection, $resource, 'NEW');
+        $keyChanged = sprintf(
+            'CAST(OLD.%s AS %s) <> CAST(NEW.%s AS %s)',
             $keyColumn,
             $castType,
             $keyColumn,
@@ -174,26 +162,28 @@ final class EmbeddedResourceIncarnationGuard
         );
 
         if ($connection->getDriverName() === 'sqlite') {
+            $destinationRowTouch = $this->touchStatement($connection, $resource, 'NEW', $keyChanged);
+
             return [
-                "create trigger {$deleteTrigger} after delete on {$ownerTable} for each row begin {$oldRowUpdate}; end",
-                "create trigger {$insertTrigger} after insert on {$ownerTable} for each row begin {$newRowUpdate}; end",
-                "create trigger {$updateTrigger} after update on {$ownerTable} for each row begin {$oldRowUpdate}; {$destinationRowUpdate}; end",
+                "create trigger {$deleteTrigger} after delete on {$ownerTable} for each row begin {$oldRowTouch}; end",
+                "create trigger {$insertTrigger} after insert on {$ownerTable} for each row begin {$newRowTouch}; end",
+                "create trigger {$updateTrigger} after update on {$ownerTable} for each row begin {$oldRowTouch}; {$destinationRowTouch}; end",
             ];
         }
 
         if (in_array($connection->getDriverName(), ['mysql', 'mariadb'], true)) {
             return [
-                "create trigger {$deleteTrigger} after delete on {$ownerTable} for each row {$oldRowUpdate}",
-                "create trigger {$insertTrigger} after insert on {$ownerTable} for each row {$newRowUpdate}",
-                "create trigger {$updateTrigger} after update on {$ownerTable} for each row begin {$oldRowUpdate}; {$destinationRowUpdate}; end",
+                "create trigger {$deleteTrigger} after delete on {$ownerTable} for each row {$oldRowTouch}",
+                "create trigger {$insertTrigger} after insert on {$ownerTable} for each row {$newRowTouch}",
+                "create trigger {$updateTrigger} after update on {$ownerTable} for each row begin {$oldRowTouch}; if {$keyChanged} then {$newRowTouch}; end if; end",
             ];
         }
 
         if ($connection->getDriverName() === 'pgsql') {
             $function = $grammar->wrap($this->functionName($resource));
             $insertFunction = $grammar->wrap($this->insertFunctionName($resource));
-            $functionStatement = "create or replace function {$function}() returns trigger as \$aura\$ begin {$oldRowUpdate}; if TG_OP = 'UPDATE' then {$destinationRowUpdate}; end if; return OLD; end; \$aura\$ language plpgsql";
-            $insertFunctionStatement = "create or replace function {$insertFunction}() returns trigger as \$aura\$ begin {$newRowUpdate}; return NEW; end; \$aura\$ language plpgsql";
+            $functionStatement = "create or replace function {$function}() returns trigger as \$aura\$ begin {$oldRowTouch}; if TG_OP = 'UPDATE' and {$keyChanged} then {$newRowTouch}; end if; return OLD; end; \$aura\$ language plpgsql";
+            $insertFunctionStatement = "create or replace function {$insertFunction}() returns trigger as \$aura\$ begin {$newRowTouch}; return NEW; end; \$aura\$ language plpgsql";
 
             return [
                 $functionStatement,
@@ -213,33 +203,30 @@ final class EmbeddedResourceIncarnationGuard
     private function dropStatements(Connection $connection, Model $resource): void
     {
         $grammar = $connection->getQueryGrammar();
-        $names = $this->triggerNames($resource);
         $ownerTable = $grammar->wrapTable($resource->getTable());
+        $versions = array_values(array_unique([1, self::CONTRACT_VERSION]));
 
         if ($connection->getDriverName() === 'pgsql') {
-            $connection->unprepared(sprintf(
-                'drop trigger if exists %s on %s',
-                $grammar->wrap($names['delete']),
-                $ownerTable,
-            ));
-            $connection->unprepared(sprintf(
-                'drop trigger if exists %s on %s',
-                $grammar->wrap($names['insert']),
-                $ownerTable,
-            ));
-            $connection->unprepared(sprintf(
-                'drop trigger if exists %s on %s',
-                $grammar->wrap($names['update']),
-                $ownerTable,
-            ));
-            $connection->unprepared(sprintf(
-                'drop function if exists %s()',
-                $grammar->wrap($this->functionName($resource)),
-            ));
-            $connection->unprepared(sprintf(
-                'drop function if exists %s()',
-                $grammar->wrap($this->insertFunctionName($resource)),
-            ));
+            foreach ($versions as $version) {
+                $names = $this->triggerNames($resource, $version);
+
+                foreach ($names as $name) {
+                    $connection->unprepared(sprintf(
+                        'drop trigger if exists %s on %s',
+                        $grammar->wrap($name),
+                        $ownerTable,
+                    ));
+                }
+
+                $connection->unprepared(sprintf(
+                    'drop function if exists %s()',
+                    $grammar->wrap($this->functionName($resource, $version)),
+                ));
+                $connection->unprepared(sprintf(
+                    'drop function if exists %s()',
+                    $grammar->wrap($this->insertFunctionName($resource, $version)),
+                ));
+            }
 
             return;
         }
@@ -251,20 +238,22 @@ final class EmbeddedResourceIncarnationGuard
             ));
         }
 
-        $connection->unprepared('drop trigger if exists '.$grammar->wrap($names['delete']));
-        $connection->unprepared('drop trigger if exists '.$grammar->wrap($names['insert']));
-        $connection->unprepared('drop trigger if exists '.$grammar->wrap($names['update']));
+        foreach ($versions as $version) {
+            foreach ($this->triggerNames($resource, $version) as $name) {
+                $connection->unprepared('drop trigger if exists '.$grammar->wrap($name));
+            }
+        }
     }
 
-    private function functionName(Model $resource): string
+    private function functionName(Model $resource, int $version = self::CONTRACT_VERSION): string
     {
-        return 'aura_emb_fn_'.$this->guardHash($resource);
+        return 'aura_emb_fn_'.$this->guardHash($resource, $version);
     }
 
-    private function guardHash(Model $resource): string
+    private function guardHash(Model $resource, int $version = self::CONTRACT_VERSION): string
     {
         return substr(hash('sha256', implode('|', [
-            self::CONTRACT_VERSION,
+            $version,
             $resource::class,
             $resource->getConnection()->getDatabaseName(),
             $resource->getTable(),
@@ -277,14 +266,34 @@ final class EmbeddedResourceIncarnationGuard
         return $resource->getConnectionName().'|'.$this->guardHash($resource);
     }
 
-    private function insertFunctionName(Model $resource): string
+    private function insertFunctionName(Model $resource, int $version = self::CONTRACT_VERSION): string
     {
-        return 'aura_emb_ins_'.$this->guardHash($resource);
+        return 'aura_emb_ins_'.$this->guardHash($resource, $version);
     }
 
     private function literal(string $value): string
     {
         return "'".str_replace("'", "''", $value)."'";
+    }
+
+    private function randomHashExpression(string $driver): string
+    {
+        return match ($driver) {
+            'sqlite' => 'lower(hex(randomblob(32)))',
+            'mysql', 'mariadb' => 'sha2(concat(uuid(), rand(), current_timestamp(6)), 256)',
+            'pgsql' => 'md5(random()::text || clock_timestamp()::text) || md5(random()::text || clock_timestamp()::text)',
+            default => throw new RuntimeException("Unsupported embedded incarnation guard driver [{$driver}]."),
+        };
+    }
+
+    private function randomIncarnationExpression(string $driver): string
+    {
+        return match ($driver) {
+            'sqlite' => "lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(2)) || '-' || hex(randomblob(6)))",
+            'mysql', 'mariadb' => 'uuid()',
+            'pgsql' => 'gen_random_uuid()',
+            default => throw new RuntimeException("Unsupported embedded incarnation guard driver [{$driver}]."),
+        };
     }
 
     /**
@@ -316,12 +325,82 @@ final class EmbeddedResourceIncarnationGuard
         return $resource->getKeyType() === 'int' ? 'integer' : 'string';
     }
 
+    private function touchStatement(
+        Connection $connection,
+        Model $resource,
+        string $rowReference,
+        ?string $condition = null,
+    ): string {
+        $grammar = $connection->getQueryGrammar();
+        $driver = $connection->getDriverName();
+        $incarnationTable = $grammar->wrapTable(EmbeddedResourceIncarnationStore::TABLE);
+        $keyColumn = $grammar->wrap($resource->getKeyName());
+        $keyCast = in_array($driver, ['mysql', 'mariadb'], true) ? 'CHAR' : 'TEXT';
+        $columns = collect([
+            'resource_type',
+            'resource_key_hash',
+            'resource_key_type',
+            'resource_key',
+            'incarnation',
+            'version',
+            'created_at',
+            'updated_at',
+        ])->map($grammar->wrap(...))->implode(', ');
+        $identityColumns = collect([
+            'resource_type',
+            'resource_key_type',
+            'resource_key',
+        ])->map($grammar->wrap(...))->implode(', ');
+        $version = $grammar->wrap('version');
+        $updatedAt = $grammar->wrap('updated_at');
+        $existingVersion = $driver === 'pgsql'
+            ? $incarnationTable.'.'.$version
+            : $version;
+        $values = implode(', ', [
+            $this->literal($resource::class),
+            $this->randomHashExpression($driver),
+            $this->literal($this->resourceKeyType($resource)),
+            sprintf('CAST(%s.%s AS %s)', $rowReference, $keyColumn, $keyCast),
+            $this->randomIncarnationExpression($driver),
+            '1',
+            'CURRENT_TIMESTAMP',
+            'CURRENT_TIMESTAMP',
+        ]);
+
+        if (in_array($driver, ['mysql', 'mariadb'], true)) {
+            return sprintf(
+                'insert into %s (%s) values (%s) on duplicate key update %s = %s + 1, %s = CURRENT_TIMESTAMP',
+                $incarnationTable,
+                $columns,
+                $values,
+                $version,
+                $version,
+                $updatedAt,
+            );
+        }
+
+        $source = $condition === null
+            ? sprintf('values (%s)', $values)
+            : sprintf('select %s where %s', $values, $condition);
+
+        return sprintf(
+            'insert into %s (%s) %s on conflict (%s) do update set %s = %s + 1, %s = CURRENT_TIMESTAMP',
+            $incarnationTable,
+            $columns,
+            $source,
+            $identityColumns,
+            $version,
+            $existingVersion,
+            $updatedAt,
+        );
+    }
+
     /**
      * @return array{delete: string, insert: string, update: string}
      */
-    private function triggerNames(Model $resource): array
+    private function triggerNames(Model $resource, int $version = self::CONTRACT_VERSION): array
     {
-        $hash = $this->guardHash($resource);
+        $hash = $this->guardHash($resource, $version);
 
         return [
             'delete' => 'aura_emb_'.$hash.'_d',

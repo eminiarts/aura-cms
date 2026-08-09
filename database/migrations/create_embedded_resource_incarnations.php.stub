@@ -2,14 +2,39 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    private const OWNERSHIP_KEY = 'create_embedded_resource_incarnations';
+
+    private const OWNERSHIP_TABLE = 'aura_migration_ownership';
+
     public function up(): void
     {
         if (Schema::hasTable('aura_embedded_resource_incarnations')) {
             return;
+        }
+
+        $ownsRegistry = ! Schema::hasTable(self::OWNERSHIP_TABLE);
+        $existingOwnership = null;
+
+        if (! $ownsRegistry) {
+            $record = DB::table(self::OWNERSHIP_TABLE)
+                ->where('migration', self::OWNERSHIP_KEY)
+                ->first();
+
+            if ($record) {
+                $existingOwnership = json_decode($record->ownership, true, flags: JSON_THROW_ON_ERROR);
+            }
+        }
+
+        if ($ownsRegistry) {
+            Schema::create(self::OWNERSHIP_TABLE, function (Blueprint $table): void {
+                $table->string('migration')->primary();
+                $table->longText('ownership');
+            });
         }
 
         Schema::create('aura_embedded_resource_incarnations', function (Blueprint $table): void {
@@ -30,11 +55,49 @@ return new class extends Migration
                 ['resource_type', 'resource_key_type', 'resource_key'],
                 'aura_embedded_incarnation_guard_lookup',
             );
+            $table->unique(
+                ['resource_type', 'resource_key_type', 'resource_key'],
+                'aura_embedded_incarnation_guard_identity_unique',
+            );
         });
+
+        DB::table(self::OWNERSHIP_TABLE)->updateOrInsert(
+            ['migration' => self::OWNERSHIP_KEY],
+            ['ownership' => json_encode([
+                'created_table' => true,
+                'owns_registry' => ($existingOwnership['owns_registry'] ?? false) || $ownsRegistry,
+            ], JSON_THROW_ON_ERROR)],
+        );
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('aura_embedded_resource_incarnations');
+        if (! Schema::hasTable(self::OWNERSHIP_TABLE)) {
+            return;
+        }
+
+        $record = DB::table(self::OWNERSHIP_TABLE)
+            ->where('migration', self::OWNERSHIP_KEY)
+            ->first();
+
+        if (! $record) {
+            return;
+        }
+
+        $ownership = json_decode($record->ownership, true, flags: JSON_THROW_ON_ERROR);
+
+        if (($ownership['created_table'] ?? false) === true) {
+            Schema::dropIfExists('aura_embedded_resource_incarnations');
+        }
+
+        DB::table(self::OWNERSHIP_TABLE)
+            ->where('migration', self::OWNERSHIP_KEY)
+            ->delete();
+
+        if (($ownership['owns_registry'] ?? false) === true
+            && DB::table(self::OWNERSHIP_TABLE)->doesntExist()
+        ) {
+            Schema::drop(self::OWNERSHIP_TABLE);
+        }
     }
 };

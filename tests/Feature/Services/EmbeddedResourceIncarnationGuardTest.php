@@ -103,6 +103,24 @@ it('invalidates a destination identity when a primary key is moved into it', fun
     expect($incarnations->version($destination))->toBeGreaterThan($version);
 });
 
+it('advances identity when an owner created before guard installation is replaced before first prime', function () {
+    DB::table('core12 guarded-owners')->insert([
+        'select' => 'unprimed-key',
+        'title' => 'Byte-identical owner',
+    ]);
+    $attributes = DB::table('core12 guarded-owners')->where('select', 'unprimed-key')->first();
+    $guard = app(EmbeddedResourceIncarnationGuard::class);
+    $guard->install(Core12QuotedGuardResource::class);
+
+    DB::table('core12 guarded-owners')->where('select', 'unprimed-key')->delete();
+    DB::table('core12 guarded-owners')->insert((array) $attributes);
+
+    $resource = Core12QuotedGuardResource::query()->findOrFail('unprimed-key');
+    $incarnations = app(EmbeddedResourceIncarnationStore::class);
+
+    expect($incarnations->version($resource))->toBeGreaterThan(1);
+});
+
 it('fails closed when a resource guard is absent', function () {
     $resource = new Core12QuotedGuardResource;
     $resource->setAttribute($resource->getKeyName(), 'missing-guard');

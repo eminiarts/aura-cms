@@ -5,6 +5,7 @@ namespace Tests\Feature\Fields;
 use Aura\Base\Contracts\DefinesFields;
 use Aura\Base\Contracts\EmbeddedLivewireComponent;
 use Aura\Base\Contracts\MapsEmbeddedComponentParameters;
+use Aura\Base\Exceptions\InvalidEmbeddedComponentParameters;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Field;
 use Aura\Base\Fields\LivewireComponent;
@@ -19,6 +20,7 @@ use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
 use Aura\Base\Services\EmbeddedResourceIncarnationStore;
 use Aura\Base\Traits\AuthorizesEmbeddedComponent;
 use Closure;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
@@ -166,6 +168,17 @@ class Core12UnsafeParameterMapper implements MapsEmbeddedComponentParameters
     }
 }
 
+class Core12BoundedParameterMapper implements MapsEmbeddedComponentParameters
+{
+    /** @var array<string, mixed> */
+    public static array $output = [];
+
+    public function map(EmbeddedComponentContext $context): array
+    {
+        return self::$output;
+    }
+}
+
 class Core12EmbeddedResource extends Resource
 {
     public static ?string $slug = 'core12-embedded-resource';
@@ -190,6 +203,22 @@ class Core12EmbeddedResource extends Resource
                 'on_index' => true,
             ],
         ];
+    }
+}
+
+class Core12ScopedOccupiedResource extends Core12EmbeddedResource
+{
+    public static ?string $slug = 'core12-scoped-occupied-resource';
+
+    public static string $type = 'Core12ScopedOccupied';
+
+    protected static function booted(): void
+    {
+        parent::booted();
+
+        static::addGlobalScope('core12-visible-status', function (Builder $builder): void {
+            $builder->where('posts.status', 'core12-visible');
+        });
     }
 }
 
@@ -273,6 +302,7 @@ beforeEach(function () {
     Core12EmbeddedComponent::$revokeActionCount = 0;
     Core12EmbeddedComponent::$sensitiveActionCount = 0;
     Core12ParameterMapper::$mapCount = 0;
+    Core12BoundedParameterMapper::$output = [];
 });
 
 function core12Field(array $overrides = []): array
@@ -511,12 +541,61 @@ describe('embedded component security and identity', function () {
     test('rejects mapper output containing model graphs or objects', function () {
         $resource = Core12EmbeddedResource::create(['title' => 'Unsafe owner']);
 
-        expect(app(EmbeddedComponentResolver::class)->resolve(
+        expect(fn () => app(EmbeddedComponentResolver::class)->resolve(
             field: core12Field(['parameter_mapper' => Core12UnsafeParameterMapper::class]),
             resource: $resource,
             surface: EmbeddedComponentSurface::View,
-        ))->toBeNull();
+        ))->toThrow(InvalidEmbeddedComponentParameters::class, 'scalar and array values');
     });
+
+    test('rejects mapper output whose encoded payload exceeds the aggregate byte limit', function () {
+        $resource = Core12EmbeddedResource::create(['title' => 'Oversized mapper bytes']);
+        Core12BoundedParameterMapper::$output = ['payload' => str_repeat('x', 2 * 1024 * 1024)];
+
+        expect(fn () => app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(['parameter_mapper' => Core12BoundedParameterMapper::class]),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        ))->toThrow(InvalidEmbeddedComponentParameters::class, 'string byte limit');
+    });
+
+    test('rejects mapper output whose aggregate element count is unbounded', function () {
+        $resource = Core12EmbeddedResource::create(['title' => 'Oversized mapper elements']);
+        Core12BoundedParameterMapper::$output = ['payload' => array_fill(0, 100_000, 'x')];
+
+        expect(fn () => app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(['parameter_mapper' => Core12BoundedParameterMapper::class]),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        ))->toThrow(InvalidEmbeddedComponentParameters::class, 'element limit');
+    });
+
+    test('rejects mapper output whose aggregate encoding exceeds the context byte limit', function () {
+        $resource = Core12EmbeddedResource::create(['title' => 'Aggregate mapper bytes']);
+        Core12BoundedParameterMapper::$output = array_fill(0, 16, str_repeat('x', 8192));
+
+        expect(fn () => app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(['parameter_mapper' => Core12BoundedParameterMapper::class]),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        ))->toThrow(InvalidEmbeddedComponentParameters::class, 'encoded byte limit');
+    });
+
+    test('rejects mapper output with oversized keys or excessive nesting', function (array $output, string $message) {
+        $resource = Core12EmbeddedResource::create(['title' => 'Structurally unsafe mapper']);
+        Core12BoundedParameterMapper::$output = $output;
+
+        expect(fn () => app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(['parameter_mapper' => Core12BoundedParameterMapper::class]),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        ))->toThrow(InvalidEmbeddedComponentParameters::class, $message);
+    })->with([
+        'oversized key' => [[str_repeat('k', 192) => 'value'], 'key byte limit'],
+        'excessive nesting' => [[
+            'one' => ['two' => ['three' => ['four' => ['five' => ['six' => ['seven' => ['eight' => ['nine' => ['ten' => ['eleven' => 'value']]]]]]]]]],
+        ], 'nesting depth'],
+    ]);
 
     test('reauthorizes the owning resource on every embedded request', function () {
         $resource = Core12EmbeddedResource::create(['title' => 'Changing permissions']);
@@ -724,6 +803,33 @@ describe('embedded component security and identity', function () {
         app()->forgetScopedInstances();
 
         $component->call('ping')->assertOk();
+    });
+
+    test('rejects a preassigned create key occupied outside every Eloquent scope', function () {
+        if (! Schema::hasColumn('users', 'current_team_id')) {
+            $this->markTestSkipped('Cross-tenant occupancy requires the teams schema.');
+        }
+
+        $foreignTeam = foreignTeam();
+        $occupiedKey = DB::table('posts')->insertGetId([
+            'title' => 'Physically occupied elsewhere',
+            'type' => 'OtherResource',
+            'status' => 'hidden',
+            'team_id' => $foreignTeam->getKey(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $resource = new Core12ScopedOccupiedResource([
+            'team_id' => $this->user->getAttribute('current_team_id'),
+        ]);
+        $resource->setAttribute($resource->getKeyName(), $occupiedKey);
+
+        expect(Core12ScopedOccupiedResource::query()->whereKey($occupiedKey)->exists())->toBeFalse()
+            ->and(app(EmbeddedComponentResolver::class)->resolve(
+                field: core12Field(),
+                resource: $resource,
+                surface: EmbeddedComponentSurface::Edit,
+            ))->toBeNull();
     });
 
     test('hydrates saved UUID resources and rejects delete-recreate identity reuse', function () {
@@ -1088,7 +1194,7 @@ describe('resource surfaces', function () {
         DB::disableQueryLog();
 
         expect($ownerSelects)->toHaveCount(3)
-            ->and($incarnationSelects)->toHaveCount(2)
+            ->and($incarnationSelects)->toHaveCount(1)
             ->and(Core12ParameterMapper::$mapCount)->toBe(10)
             ->and(Core12EmbeddedComponent::$mountCount)->toBe(10)
             ->and($authorizationChecks)->toBeGreaterThanOrEqual(20);

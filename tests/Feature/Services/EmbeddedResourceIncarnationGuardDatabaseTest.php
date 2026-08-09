@@ -1,8 +1,10 @@
 <?php
 
 use Aura\Base\BaseResource;
+use Aura\Base\Services\EmbeddedComponentContextStore;
 use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
 use Aura\Base\Services\EmbeddedResourceIncarnationStore;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -25,15 +27,33 @@ class Core12ExternalGuardResource extends BaseResource
 
 function core12ExternalGuardConnection(string $driver): array
 {
-    if ($driver === 'mysql') {
+    if ($driver === 'sqlite') {
+        $database = sys_get_temp_dir().'/aura-core12-guard-'.getmypid().'.sqlite';
+
+        if (! file_exists($database)) {
+            touch($database);
+        }
+
         return [
-            'driver' => 'mysql',
-            'host' => getenv('AURA_TEST_MYSQL_HOST') ?: '127.0.0.1',
-            'port' => getenv('AURA_TEST_MYSQL_PORT') ?: '3306',
-            'database' => getenv('AURA_TEST_MYSQL_DATABASE') ?: 'aura_core12_guard_test',
-            'username' => getenv('AURA_TEST_MYSQL_USERNAME') ?: 'root',
-            'password' => getenv('AURA_TEST_MYSQL_PASSWORD') ?: '',
-            'unix_socket' => getenv('AURA_TEST_MYSQL_SOCKET') ?: '',
+            'driver' => 'sqlite',
+            'database' => $database,
+            'prefix' => '',
+            'foreign_key_constraints' => true,
+            'busy_timeout' => 100,
+        ];
+    }
+
+    if (in_array($driver, ['mysql', 'mariadb'], true)) {
+        $environmentPrefix = $driver === 'mariadb' ? 'MARIADB' : 'MYSQL';
+
+        return [
+            'driver' => $driver,
+            'host' => getenv("AURA_TEST_{$environmentPrefix}_HOST") ?: '127.0.0.1',
+            'port' => getenv("AURA_TEST_{$environmentPrefix}_PORT") ?: ($driver === 'mariadb' ? '3307' : '3306'),
+            'database' => getenv("AURA_TEST_{$environmentPrefix}_DATABASE") ?: 'aura_core12_guard_test',
+            'username' => getenv("AURA_TEST_{$environmentPrefix}_USERNAME") ?: 'root',
+            'password' => getenv("AURA_TEST_{$environmentPrefix}_PASSWORD") ?: '',
+            'unix_socket' => getenv("AURA_TEST_{$environmentPrefix}_SOCKET") ?: '',
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
             'prefix' => '',
@@ -57,7 +77,7 @@ function core12ExternalGuardConnection(string $driver): array
 
 test('portable database guards install upgrade invalidate and roll back', function (string $driver): void {
     if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
-        $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with dedicated MySQL and PostgreSQL test databases.');
+        $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with dedicated MySQL, MariaDB, and PostgreSQL test databases.');
     }
 
     $connectionName = 'core12_'.$driver;
@@ -72,6 +92,7 @@ test('portable database guards install upgrade invalidate and roll back', functi
 
     $schema->dropIfExists($prototype->getTable());
     $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+    $schema->dropIfExists('aura_migration_ownership');
 
     try {
         $schema->create(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
@@ -105,6 +126,10 @@ test('portable database guards install upgrade invalidate and roll back', functi
             ->and($schema->hasIndex(
                 EmbeddedResourceIncarnationStore::TABLE,
                 'aura_embedded_incarnation_guard_lookup',
+            ))->toBeTrue()
+            ->and($schema->hasIndex(
+                EmbeddedResourceIncarnationStore::TABLE,
+                'aura_embedded_incarnation_guard_identity_unique',
             ))->toBeTrue();
 
         $upgrade->down();
@@ -113,6 +138,10 @@ test('portable database guards install upgrade invalidate and roll back', functi
             ->and($schema->hasIndex(
                 EmbeddedResourceIncarnationStore::TABLE,
                 'aura_embedded_incarnation_guard_lookup',
+            ))->toBeFalse()
+            ->and($schema->hasIndex(
+                EmbeddedResourceIncarnationStore::TABLE,
+                'aura_embedded_incarnation_guard_identity_unique',
             ))->toBeFalse();
         $schema->drop(EmbeddedResourceIncarnationStore::TABLE);
 
@@ -203,5 +232,135 @@ test('portable database guards install upgrade invalidate and roll back', functi
         $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
         DB::disconnect($connectionName);
         DB::setDefaultConnection($originalConnection);
+
+        if ($driver === 'sqlite') {
+            unlink(core12ExternalGuardConnection('sqlite')['database']);
+        }
     }
-})->with(['mysql', 'pgsql'])->group('database-guards');
+})->with(['sqlite', 'mysql', 'mariadb', 'pgsql'])->group('database-guards');
+
+test('first canonical prime locks the owner while a second connection replaces it', function (string $driver): void {
+    if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
+        $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with dedicated MySQL, MariaDB, and PostgreSQL test databases.');
+    }
+
+    $connectionName = 'core12_prime_'.$driver;
+    $replacementConnectionName = $connectionName.'_replacement';
+    $configuration = core12ExternalGuardConnection($driver);
+    config([
+        "database.connections.{$connectionName}" => $configuration,
+        "database.connections.{$replacementConnectionName}" => $configuration,
+    ]);
+    DB::purge($connectionName);
+    DB::purge($replacementConnectionName);
+    $originalConnection = DB::getDefaultConnection();
+    DB::setDefaultConnection($connectionName);
+    $connection = DB::connection($connectionName);
+    $replacementConnection = DB::connection($replacementConnectionName);
+    $schema = $connection->getSchemaBuilder();
+    $prototype = (new Core12ExternalGuardResource)->setConnection($connectionName);
+    $guard = app(EmbeddedResourceIncarnationGuard::class);
+    $migration = null;
+
+    $schema->dropIfExists($prototype->getTable());
+    $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+    $schema->dropIfExists('aura_migration_ownership');
+
+    try {
+        $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+        $migration->up();
+        $schema->create($prototype->getTable(), function (Blueprint $table): void {
+            $table->string('select')->primary();
+            $table->string('title')->nullable();
+        });
+        $attributes = [
+            'select' => 'first-prime-key',
+            'title' => 'Byte-identical owner',
+        ];
+        $connection->table($prototype->getTable())->insert($attributes);
+        $resource = $prototype->newQuery()->findOrFail('first-prime-key');
+        $guard->install($prototype);
+
+        match ($driver) {
+            'sqlite' => $replacementConnection->statement('PRAGMA busy_timeout = 100'),
+            'mysql', 'mariadb' => $replacementConnection->statement('SET SESSION innodb_lock_wait_timeout = 1'),
+            'pgsql' => $replacementConnection->statement("SET lock_timeout = '250ms'"),
+        };
+
+        $attemptedDuringCanonicalRead = false;
+        $replacementWasBlocked = false;
+        $listenerEnabled = true;
+        $replaceOwner = function () use ($replacementConnection, $prototype, $attributes): void {
+            $replacementConnection->transaction(function () use ($replacementConnection, $prototype, $attributes): void {
+                $replacementConnection->table($prototype->getTable())
+                    ->where('select', 'first-prime-key')
+                    ->delete();
+                $replacementConnection->table($prototype->getTable())->insert($attributes);
+            });
+        };
+
+        DB::listen(function (QueryExecuted $query) use (
+            &$attemptedDuringCanonicalRead,
+            &$listenerEnabled,
+            &$replacementWasBlocked,
+            $connectionName,
+            $prototype,
+            $replaceOwner,
+        ): void {
+            if (! $listenerEnabled
+                || $attemptedDuringCanonicalRead
+                || $query->connectionName !== $connectionName
+                || ! str_starts_with(strtolower(ltrim($query->sql)), 'select')
+                || ! str_contains($query->sql, $prototype->getTable())
+            ) {
+                return;
+            }
+
+            $attemptedDuringCanonicalRead = true;
+
+            try {
+                $replaceOwner();
+            } catch (QueryException) {
+                $replacementWasBlocked = true;
+            }
+        });
+
+        $canonical = app(EmbeddedComponentContextStore::class)->canonical($resource);
+        $issuedVersion = app(EmbeddedResourceIncarnationStore::class)->version($canonical);
+        $listenerEnabled = false;
+
+        if ($replacementWasBlocked) {
+            $replaceOwner();
+        }
+
+        app()->forgetScopedInstances();
+        $replacement = $prototype->newQuery()->findOrFail('first-prime-key');
+        $currentVersion = app(EmbeddedResourceIncarnationStore::class)->version($replacement);
+
+        expect($attemptedDuringCanonicalRead)->toBeTrue()
+            ->and($replacementWasBlocked)->toBeTrue()
+            ->and($currentVersion)->toBeGreaterThan($issuedVersion);
+    } finally {
+        if ($schema->hasTable($prototype->getTable())) {
+            try {
+                $guard->uninstall($prototype);
+            } catch (Throwable) {
+            }
+
+            $schema->drop($prototype->getTable());
+        }
+
+        if ($migration) {
+            $migration->down();
+        } else {
+            $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+        }
+        DB::disconnect($replacementConnectionName);
+        DB::disconnect($connectionName);
+        DB::setDefaultConnection($originalConnection);
+
+        if ($driver === 'sqlite' && file_exists($configuration['database'])) {
+            unlink($configuration['database']);
+        }
+    }
+})->with(['sqlite', 'mysql', 'mariadb', 'pgsql'])->group('database-guards');

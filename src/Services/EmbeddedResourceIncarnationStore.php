@@ -78,7 +78,8 @@ final class EmbeddedResourceIncarnationStore
         $resource->getConnection()
             ->table(self::TABLE)
             ->where('resource_type', $storedIdentity['resource_type'])
-            ->where('resource_key_hash', $storedIdentity['resource_key_hash'])
+            ->where('resource_key_type', $storedIdentity['resource_key_type'])
+            ->where('resource_key', $storedIdentity['resource_key'])
             ->increment('version', 1, [
                 'incarnation' => (string) Str::uuid(),
                 'updated_at' => now(),
@@ -158,19 +159,42 @@ final class EmbeddedResourceIncarnationStore
             return;
         }
 
+        $cacheIdentities = [];
+
+        foreach ($identities as $cacheIdentity => $identity) {
+            $cacheIdentities[$this->storedIdentityKey($identity)] = $cacheIdentity;
+        }
+
         $query = $connection->table(self::TABLE)->where(function ($query) use ($identities): void {
-            foreach (collect($identities)->groupBy('resource_type') as $resourceType => $group) {
-                $query->orWhere(function ($query) use ($resourceType, $group): void {
-                    $query->where('resource_type', $resourceType)
-                        ->whereIn('resource_key_hash', $group->pluck('resource_key_hash'));
-                });
+            foreach (collect($identities)->groupBy('resource_type') as $resourceType => $resourceGroup) {
+                foreach ($resourceGroup->groupBy('resource_key_type') as $resourceKeyType => $keyGroup) {
+                    $query->orWhere(function ($query) use ($resourceType, $resourceKeyType, $keyGroup): void {
+                        $query->where('resource_type', $resourceType)
+                            ->where('resource_key_type', $resourceKeyType)
+                            ->whereIn('resource_key', $keyGroup->pluck('resource_key'));
+                    });
+                }
             }
         });
 
-        foreach ($query->get(['resource_type', 'resource_key_hash', 'incarnation', 'version']) as $row) {
-            $identity = $this->connectionIdentity($connection)
-                .'|'.$row->resource_type
-                .'|'.$row->resource_key_hash;
+        foreach ($query->get([
+            'resource_type',
+            'resource_key_type',
+            'resource_key',
+            'incarnation',
+            'version',
+        ]) as $row) {
+            $storedIdentity = [
+                'resource_type' => (string) $row->resource_type,
+                'resource_key_type' => (string) $row->resource_key_type,
+                'resource_key' => (string) $row->resource_key,
+            ];
+            $identity = $cacheIdentities[$this->storedIdentityKey($storedIdentity)] ?? null;
+
+            if ($identity === null) {
+                continue;
+            }
+
             $this->incarnations[$identity] = [
                 'incarnation' => (string) $row->incarnation,
                 'version' => (int) $row->version,
@@ -234,5 +258,21 @@ final class EmbeddedResourceIncarnationStore
             'resource_key_type' => $this->resourceKeyType($resource),
             'resource_key' => $this->resourceKey($resourceKey),
         ];
+    }
+
+    /**
+     * @param  array{resource_type: string, resource_key_type: string, resource_key: string}  $identity
+     */
+    private function storedIdentityKey(array $identity): string
+    {
+        try {
+            return json_encode([
+                $identity['resource_type'],
+                $identity['resource_key_type'],
+                $identity['resource_key'],
+            ], JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            throw new RuntimeException('Unable to encode the stored embedded resource identity.', previous: $exception);
+        }
     }
 }

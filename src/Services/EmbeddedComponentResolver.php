@@ -7,6 +7,7 @@ use Aura\Base\Contracts\EmbeddedLivewireComponent;
 use Aura\Base\Contracts\MapsEmbeddedComponentParameters;
 use Aura\Base\Exceptions\InvalidEmbeddedAuthorizationAttributes;
 use Aura\Base\Exceptions\MissingEmbeddedResourceIncarnationGuard;
+use Aura\Base\Exceptions\OccupiedEmbeddedResourceKey;
 use Aura\Base\Traits\AuthorizesEmbeddedComponent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -16,12 +17,11 @@ use Throwable;
 
 final class EmbeddedComponentResolver
 {
-    private const MAX_PARAMETER_DEPTH = 10;
-
     public function __construct(
         private readonly DefaultEmbeddedComponentParameterMapper $defaultMapper,
         private readonly EmbeddedComponentContextCodec $contextCodec,
         private readonly EmbeddedComponentContextStore $contextStore,
+        private readonly EmbeddedComponentParameterValidator $parameterValidator,
     ) {}
 
     /**
@@ -81,7 +81,7 @@ final class EmbeddedComponentResolver
             );
 
             $key = $this->componentKey($field, $resource, $surface, $alias);
-        } catch (InvalidEmbeddedAuthorizationAttributes|JsonException|MissingEmbeddedResourceIncarnationGuard) {
+        } catch (InvalidEmbeddedAuthorizationAttributes|JsonException|MissingEmbeddedResourceIncarnationGuard|OccupiedEmbeddedResourceKey) {
             return null;
         }
 
@@ -153,35 +153,6 @@ final class EmbeddedComponentResolver
 
         return $component instanceof EmbeddedLivewireComponent
             && in_array(AuthorizesEmbeddedComponent::class, class_uses_recursive($component), true);
-    }
-
-    private function hasOnlySerializableValues(mixed $value, int $depth = 0): bool
-    {
-        if ($depth > self::MAX_PARAMETER_DEPTH) {
-            return false;
-        }
-
-        if ($value === null || is_string($value) || is_int($value) || is_bool($value)) {
-            return true;
-        }
-
-        if (is_float($value)) {
-            return is_finite($value);
-        }
-
-        if (! is_array($value)) {
-            return false;
-        }
-
-        foreach ($value as $key => $nestedValue) {
-            if ((! is_int($key) && ! is_string($key))
-                || ! $this->hasOnlySerializableValues($nestedValue, $depth + 1)
-            ) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /**
@@ -257,11 +228,11 @@ final class EmbeddedComponentResolver
             }
         }
 
-        if (array_key_exists('auraEmbeddedContext', $parameters)
-            || ! $this->hasOnlySerializableValues($parameters)
-        ) {
+        if (array_key_exists('auraEmbeddedContext', $parameters)) {
             return null;
         }
+
+        $this->parameterValidator->validate($parameters);
 
         return $parameters;
     }

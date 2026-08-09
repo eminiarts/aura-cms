@@ -5,7 +5,9 @@ namespace Aura\Base\Services;
 use Aura\Base\Contracts\DefinesFields;
 use Aura\Base\Contracts\ProvidesEmbeddedAuthorizationAttributes;
 use Aura\Base\Exceptions\InvalidEmbeddedAuthorizationAttributes;
+use Aura\Base\Exceptions\InvalidEmbeddedComponentParameters;
 use Aura\Base\Exceptions\MissingEmbeddedResourceIncarnationGuard;
+use Aura\Base\Exceptions\OccupiedEmbeddedResourceKey;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use JsonException;
@@ -19,8 +21,6 @@ final class EmbeddedComponentContextCodec
     private const MAX_AUTHORIZATION_ATTRIBUTE_NAME_LENGTH = 191;
 
     private const MAX_AUTHORIZATION_ATTRIBUTES = 16;
-
-    private const MAX_PARAMETER_DEPTH = 10;
 
     private const PAYLOAD_KEYS = [
         'version',
@@ -45,6 +45,7 @@ final class EmbeddedComponentContextCodec
 
     public function __construct(
         private readonly EmbeddedComponentContextStore $store,
+        private readonly EmbeddedComponentParameterValidator $parameterValidator,
     ) {}
 
     /**
@@ -88,6 +89,20 @@ final class EmbeddedComponentContextCodec
         array $parameters,
     ): array {
         $persisted = $resource->exists || $resource->wasRecentlyCreated;
+
+        if (! $persisted) {
+            $resourceKey = $resource->getKey();
+
+            if ((is_int($resourceKey) || is_string($resourceKey))
+                && $this->store->physicallyExists($resource, $resourceKey)
+            ) {
+                throw new OccupiedEmbeddedResourceKey(sprintf(
+                    'Cannot issue an embedded create context because [%s.%s] is already occupied.',
+                    $resource->getTable(),
+                    $resourceKey,
+                ));
+            }
+        }
 
         if ($persisted) {
             $resource = $this->store->canonical($resource);
@@ -284,35 +299,6 @@ final class EmbeddedComponentContextCodec
             && is_string($context['signature'] ?? null);
     }
 
-    private function hasOnlySerializableValues(mixed $value, int $depth = 0): bool
-    {
-        if ($depth > self::MAX_PARAMETER_DEPTH) {
-            return false;
-        }
-
-        if ($value === null || is_string($value) || is_int($value) || is_bool($value)) {
-            return true;
-        }
-
-        if (is_float($value)) {
-            return is_finite($value);
-        }
-
-        if (! is_array($value)) {
-            return false;
-        }
-
-        foreach ($value as $key => $nestedValue) {
-            if ((! is_int($key) && ! is_string($key))
-                || ! $this->hasOnlySerializableValues($nestedValue, $depth + 1)
-            ) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     private function hasValidAuthorizationAttributes(mixed $attributes): bool
     {
         if (! is_array($attributes)
@@ -368,8 +354,13 @@ final class EmbeddedComponentContextCodec
             || ! is_string($payload['field_slug'] ?? null)
             || ! is_string($payload['component_alias'] ?? null)
             || ! is_array($payload['parameters'] ?? null)
-            || ! $this->hasOnlySerializableValues($payload['parameters'])
         ) {
+            return false;
+        }
+
+        try {
+            $this->parameterValidator->validate($payload['parameters']);
+        } catch (InvalidEmbeddedComponentParameters) {
             return false;
         }
 
@@ -463,7 +454,7 @@ final class EmbeddedComponentContextCodec
             $resource->forceFill($payload['resource_authorization_attributes']);
 
             if ($payload['resource_key'] !== null) {
-                abort_if($resource->newQuery()->whereKey($payload['resource_key'])->exists(), 403);
+                abort_if($this->store->physicallyExists($resource, $payload['resource_key']), 403);
                 $resource->setAttribute($resource->getKeyName(), $payload['resource_key']);
             }
 

@@ -11,9 +11,23 @@ return new class extends Migration
     /** @var list<string> */
     private const COLUMNS = ['resource_key_type', 'resource_key', 'version'];
 
+    private const IDENTITY_INDEX = 'aura_embedded_incarnation_guard_identity_unique';
+
+    private const LOOKUP_INDEX = 'aura_embedded_incarnation_guard_lookup';
+
+    private const OWNERSHIP_KEY = 'upgrade_embedded_resource_incarnations';
+
+    private const OWNERSHIP_TABLE = 'aura_migration_ownership';
+
     public function up(): void
     {
         if (! Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE)) {
+            return;
+        }
+
+        if (Schema::hasTable(self::OWNERSHIP_TABLE)
+            && DB::table(self::OWNERSHIP_TABLE)->where('migration', self::OWNERSHIP_KEY)->exists()
+        ) {
             return;
         }
 
@@ -22,13 +36,26 @@ return new class extends Migration
             ->values()
             ->all();
 
-        $hasGuardLookupIndex = Schema::hasIndex(
-            EmbeddedResourceIncarnationStore::TABLE,
-            'aura_embedded_incarnation_guard_lookup',
-        );
+        $missingIndexes = collect([self::LOOKUP_INDEX, self::IDENTITY_INDEX])
+            ->reject(fn (string $index): bool => Schema::hasIndex(
+                EmbeddedResourceIncarnationStore::TABLE,
+                $index,
+                $index === self::IDENTITY_INDEX ? 'unique' : null,
+            ))
+            ->values()
+            ->all();
 
-        if ($missingColumns === [] && $hasGuardLookupIndex) {
+        if ($missingColumns === [] && $missingIndexes === []) {
             return;
+        }
+
+        $ownsRegistry = ! Schema::hasTable(self::OWNERSHIP_TABLE);
+
+        if ($ownsRegistry) {
+            Schema::create(self::OWNERSHIP_TABLE, function (Blueprint $table): void {
+                $table->string('migration')->primary();
+                $table->longText('ownership');
+            });
         }
 
         if ($missingColumns !== []) {
@@ -49,40 +76,88 @@ return new class extends Migration
             DB::table(EmbeddedResourceIncarnationStore::TABLE)->delete();
         }
 
-        if (! $hasGuardLookupIndex) {
-            Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
-                $table->index(
-                    ['resource_type', 'resource_key_type', 'resource_key'],
-                    'aura_embedded_incarnation_guard_lookup',
-                );
+        if ($missingIndexes !== []) {
+            Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($missingIndexes): void {
+                if (in_array(self::LOOKUP_INDEX, $missingIndexes, true)) {
+                    $table->index(
+                        ['resource_type', 'resource_key_type', 'resource_key'],
+                        self::LOOKUP_INDEX,
+                    );
+                }
+
+                if (in_array(self::IDENTITY_INDEX, $missingIndexes, true)) {
+                    $table->unique(
+                        ['resource_type', 'resource_key_type', 'resource_key'],
+                        self::IDENTITY_INDEX,
+                    );
+                }
             });
         }
+
+        DB::table(self::OWNERSHIP_TABLE)->updateOrInsert(
+            ['migration' => self::OWNERSHIP_KEY],
+            ['ownership' => json_encode([
+                'added_columns' => $missingColumns,
+                'created_indexes' => $missingIndexes,
+                'owns_registry' => $ownsRegistry,
+            ], JSON_THROW_ON_ERROR)],
+        );
     }
 
     public function down(): void
     {
-        if (! Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE)) {
+        if (! Schema::hasTable(self::OWNERSHIP_TABLE)) {
             return;
         }
 
-        $existingColumns = collect(self::COLUMNS)
-            ->filter(fn (string $column): bool => Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, $column))
-            ->values()
-            ->all();
+        $record = DB::table(self::OWNERSHIP_TABLE)
+            ->where('migration', self::OWNERSHIP_KEY)
+            ->first();
 
-        if (Schema::hasIndex(
-            EmbeddedResourceIncarnationStore::TABLE,
-            'aura_embedded_incarnation_guard_lookup',
-        )) {
-            Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
-                $table->dropIndex('aura_embedded_incarnation_guard_lookup');
-            });
+        if (! $record) {
+            return;
         }
 
-        if ($existingColumns !== []) {
-            Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($existingColumns): void {
-                $table->dropColumn($existingColumns);
-            });
+        $ownership = json_decode($record->ownership, true, flags: JSON_THROW_ON_ERROR);
+
+        if (Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE)) {
+            $ownedIndexes = array_values(array_filter(
+                $ownership['created_indexes'] ?? [],
+                fn (string $index): bool => Schema::hasIndex(EmbeddedResourceIncarnationStore::TABLE, $index),
+            ));
+
+            if ($ownedIndexes !== []) {
+                Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($ownedIndexes): void {
+                    foreach ($ownedIndexes as $index) {
+                        if ($index === self::IDENTITY_INDEX) {
+                            $table->dropUnique($index);
+                        } else {
+                            $table->dropIndex($index);
+                        }
+                    }
+                });
+            }
+
+            $ownedColumns = array_values(array_filter(
+                $ownership['added_columns'] ?? [],
+                fn (string $column): bool => Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, $column),
+            ));
+
+            if ($ownedColumns !== []) {
+                Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($ownedColumns): void {
+                    $table->dropColumn($ownedColumns);
+                });
+            }
+        }
+
+        DB::table(self::OWNERSHIP_TABLE)
+            ->where('migration', self::OWNERSHIP_KEY)
+            ->delete();
+
+        if (($ownership['owns_registry'] ?? false) === true
+            && DB::table(self::OWNERSHIP_TABLE)->doesntExist()
+        ) {
+            Schema::drop(self::OWNERSHIP_TABLE);
         }
     }
 };
