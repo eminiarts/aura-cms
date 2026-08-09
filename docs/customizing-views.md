@@ -1217,9 +1217,7 @@ repositories and custom vendor directories.
     
     <title>{{ config('app.name', 'Aura CMS') }} - @yield('title', 'Dashboard')</title>
     
-    {{-- Custom fonts --}}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    {{-- Optional fonts must be served locally by the host application. --}}
     
     {{-- Styles --}}
     @vite(['resources/css/app.css'])

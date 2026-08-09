@@ -2,6 +2,8 @@
 
 Aura CMS provides a comprehensive theming system that gives you complete control over the visual appearance of your application. Built with Tailwind CSS and CSS variables, the theme system supports multiple color palettes, dark mode, and extensive customization options.
 
+See [Frontend Compatibility](/frontend-compatibility) for the supported Tailwind 3/4 integration boundary, build ownership, and runtime token contract.
+
 ## Table of Contents
 
 - [Overview](#overview)

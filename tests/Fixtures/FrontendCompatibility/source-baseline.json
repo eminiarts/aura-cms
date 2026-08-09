@@ -1,0 +1,7 @@
+{
+    "manifest": "source-files.json",
+    "algorithm": "sha256",
+    "canonicalization": "aura-source-records-v2-length-prefixed",
+    "sourceBytes": "exact",
+    "expectedDigest": "8b69df60182ad73ddfc9ae064bd1ffa7e5605fc4e5337d0e895d3a652df57190"
+}

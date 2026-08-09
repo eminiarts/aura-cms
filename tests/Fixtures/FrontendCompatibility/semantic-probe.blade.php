@@ -1,0 +1,21 @@
+{{--
+    Gate-only semantic equivalents for the shell, button, and table sources
+    listed in source-files.json. Both compiler lanes also scan the full source
+    files; this probe exercises the proposed runtime-token names.
+--}}
+<div class="font-sans bg-aura-background text-aura-text">
+    <section class="border border-aura-border bg-aura-panel/80 text-aura-muted">
+        <span class="bg-aura-panel"></span>
+        <button class="bg-aura-primary text-white hover:bg-primary-500 focus:ring-2 focus:ring-primary-500">
+            Save
+        </button>
+
+        <p class="text-aura-success">Saved</p>
+        <p class="text-aura-warning">Review required</p>
+        <p class="text-aura-danger">Failed</p>
+
+        <aside class="bg-sidebar-bg text-sidebar-text dark:ring-1 dark:ring-white/10">
+            Navigation
+        </aside>
+    </section>
+</div>

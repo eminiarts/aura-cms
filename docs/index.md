@@ -34,6 +34,7 @@ Welcome to the comprehensive documentation for Aura CMS - a modern, flexible con
 
 ## 🎨 Customization & Extension
 - [Themes](/themes) - Create and customize themes
+- [Frontend Compatibility](/frontend-compatibility) - Tailwind build ownership and theme-token contract
 - [Customizing Views](/customizing-views) - Override default views
 - [Widgets](/widgets) - Dashboard widgets and analytics
 - [Plugins](/plugins) - Extend functionality with plugins
