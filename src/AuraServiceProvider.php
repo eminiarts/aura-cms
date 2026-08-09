@@ -54,6 +54,7 @@ use Aura\Base\Policies\TeamPolicy;
 use Aura\Base\Policies\UserPolicy;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Services\TransactionRollbackCallbacks;
 use Aura\Base\Widgets\Bar;
 use Aura\Base\Widgets\Donut;
 use Aura\Base\Widgets\Pie;
@@ -377,6 +378,8 @@ class AuraServiceProvider extends PackageServiceProvider
     public function packageRegistered()
     {
         parent::packageRegistered();
+
+        $this->app->singleton(TransactionRollbackCallbacks::class);
 
         $this->app->singleton('hook_manager', function ($app) {
             return new HookManager;

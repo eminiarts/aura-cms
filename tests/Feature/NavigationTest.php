@@ -13,6 +13,12 @@ use Illuminate\Support\Facades\DB;
 
 function serializedNavigationCacheRepository(): Repository
 {
+    $constructor = new ReflectionMethod(ArrayStore::class, '__construct');
+
+    if ($constructor->getNumberOfParameters() === 1) {
+        return new Repository(new ArrayStore(serializesValues: true));
+    }
+
     return new Repository(new ArrayStore(serializesValues: true, serializableClasses: false));
 }
 

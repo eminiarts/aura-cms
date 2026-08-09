@@ -21,9 +21,9 @@ final class VersionedCache
     private const VALUE_PREFIX = 'aura.cache.value.';
 
     /**
-     * Register process-local cleanup against every active record owned by the
-     * supplied connection. The first rollback boundary executes it once, while
-     * Laravel's manager-level registration cannot safely select a connection.
+     * Register process-local cleanup against the supplied connection. Laravel
+     * versions with native rollback callbacks own the lifecycle; earlier
+     * versions use connection transaction events with equivalent nesting.
      */
     public static function afterRollback(Connection $connection, Closure $callback): void
     {
@@ -34,6 +34,12 @@ final class VersionedCache
         $transactions = self::transactionRecords($connection);
 
         if ($transactions->isNotEmpty()) {
+            if (! method_exists($transactions->first(), 'addCallbackForRollback')) {
+                app(TransactionRollbackCallbacks::class)->add($connection, $callback);
+
+                return;
+            }
+
             $executed = false;
             $once = static function () use (&$executed, $callback): void {
                 if ($executed) {

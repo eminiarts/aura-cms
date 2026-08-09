@@ -41,34 +41,14 @@ class CollidingOptionUser extends AdversarialOptionUser
     }
 }
 
-class Laravel12CompatibleTransactionsManager extends DatabaseTransactionsManager
-{
-    /**
-     * Laravel 12.65 does not execute rollback callbacks from committed child
-     * records when the surrounding transaction rolls back.
-     */
-    protected function removeAllTransactionsForConnection($connection)
-    {
-        if ($this->currentTransaction) {
-            for ($current = $this->currentTransaction[$connection]; isset($current); $current = $current->parent) {
-                $current->executeCallbacksForRollback();
-            }
-        }
-
-        $this->currentTransaction[$connection] = null;
-
-        $this->pendingTransactions = $this->pendingTransactions->reject(
-            fn ($transaction) => $transaction->connection == $connection
-        )->values();
-
-        $this->committedTransactions = $this->committedTransactions->reject(
-            fn ($transaction) => $transaction->connection == $connection
-        )->values();
-    }
-}
-
 function serializedOptionCacheRepository(): Repository
 {
+    $constructor = new ReflectionMethod(ArrayStore::class, '__construct');
+
+    if ($constructor->getNumberOfParameters() === 1) {
+        return new Repository(new ArrayStore(serializesValues: true));
+    }
+
     return new Repository(new ArrayStore(serializesValues: true, serializableClasses: false));
 }
 
@@ -977,17 +957,14 @@ test('rolled back nested generation bumps leave the committed generation usable'
         ->toBe(['version' => 1]);
 });
 
-test('rollback cleanup survives an inner commit on Laravel 12 transaction records', function () {
-    config()->set('database.connections.laravel12_nested_rollback', [
+test('rollback cleanup survives an inner commit with the installed transaction manager', function () {
+    config()->set('database.connections.installed_manager_nested_rollback', [
         'driver' => 'sqlite',
         'database' => ':memory:',
         'prefix' => '',
     ]);
 
-    $connection = DB::connection('laravel12_nested_rollback');
-    $transactions = new Laravel12CompatibleTransactionsManager;
-    app()->instance('db.transactions', $transactions);
-    $connection->setTransactionManager($transactions);
+    $connection = DB::connection('installed_manager_nested_rollback');
     $rollbacks = 0;
 
     $connection->beginTransaction();
@@ -1007,6 +984,92 @@ test('rollback cleanup survives an inner commit on Laravel 12 transaction record
     }
 
     expect($rollbacks)->toBe(1);
+});
+
+test('rollback cleanup survives a committed inner transaction level being reused', function () {
+    config()->set('database.connections.reused_nested_transaction_level', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+    ]);
+
+    $connection = DB::connection('reused_nested_transaction_level');
+    $rollbacks = 0;
+
+    $connection->beginTransaction();
+    $connection->beginTransaction();
+
+    try {
+        VersionedCache::afterRollback($connection, function () use (&$rollbacks): void {
+            $rollbacks++;
+        });
+
+        $connection->commit();
+        $connection->beginTransaction();
+        $connection->rollBack();
+
+        expect($rollbacks)->toBe(0);
+
+        $connection->rollBack();
+    } finally {
+        while ($connection->transactionLevel() > 0) {
+            $connection->rollBack();
+        }
+    }
+
+    expect($rollbacks)->toBe(1);
+});
+
+test('rollback cleanup is discarded after commit', function () {
+    config()->set('database.connections.committed_rollback_cleanup', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+    ]);
+
+    $connection = DB::connection('committed_rollback_cleanup');
+    $rollbacks = 0;
+
+    $connection->beginTransaction();
+    VersionedCache::afterRollback($connection, function () use (&$rollbacks): void {
+        $rollbacks++;
+    });
+    $connection->commit();
+
+    expect($rollbacks)->toBe(0);
+});
+
+test('rollback cleanup runs only for the rolled back retry attempt', function () {
+    config()->set('database.connections.retried_rollback_cleanup', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+    ]);
+
+    $connection = DB::connection('retried_rollback_cleanup');
+    $attempts = 0;
+    $rollbacks = 0;
+
+    $result = $connection->transaction(
+        function (SQLiteConnection $activeConnection) use (&$attempts, &$rollbacks): string {
+            $attempts++;
+
+            VersionedCache::afterRollback($activeConnection, function () use (&$rollbacks): void {
+                $rollbacks++;
+            });
+
+            if ($attempts === 1) {
+                throw new RuntimeException('database is locked');
+            }
+
+            return 'committed';
+        },
+        attempts: 2,
+    );
+
+    expect($result)->toBe('committed')
+        ->and($attempts)->toBe(2)
+        ->and($rollbacks)->toBe(1);
 });
 
 test('rollback cleanup runs once when an inner transaction rolls back before its outer transaction', function () {
