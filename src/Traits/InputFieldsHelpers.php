@@ -2,7 +2,9 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\FieldCacheManager;
 use Aura\Base\FieldProviderRegistry;
+use Aura\Base\FieldProviderResolution;
 use Illuminate\Pipeline\Pipeline;
 
 trait InputFieldsHelpers
@@ -65,10 +67,7 @@ trait InputFieldsHelpers
     public function fieldsCollection()
     {
         $class = get_class($this);
-        $resolution = app(FieldProviderRegistry::class)->resolve(
-            $class,
-            fn (): array => $this->getFields(),
-        );
+        $resolution = $this->fieldDefinitionResolution();
         $cacheKey = $class.'-'.$resolution->cacheKey;
 
         if (isset(self::$fieldsCollectionCache[$cacheKey])) {
@@ -105,12 +104,19 @@ trait InputFieldsHelpers
      */
     public static function flushFieldCache(): void
     {
+        FieldCacheManager::flush();
+    }
+
+    /**
+     * Clear caches owned by this InputFields hierarchy without recursively
+     * flushing the provider registry or other consumers.
+     *
+     * @internal Called by FieldCacheManager.
+     */
+    public static function flushOwnFieldCache(): void
+    {
         foreach (static::$fieldsBeforeTreeBindings as $binding) {
             app()->offsetUnset($binding);
-        }
-
-        if (app()->bound(FieldProviderRegistry::class)) {
-            app(FieldProviderRegistry::class)->flushResolved();
         }
 
         static::$fieldClassesBySlug = [];
@@ -197,9 +203,24 @@ trait InputFieldsHelpers
 
     protected function fieldDefinitionCacheKey(): string
     {
-        return app(FieldProviderRegistry::class)->resolve(
-            get_class($this),
+        return $this->fieldDefinitionResolution()->cacheKey;
+    }
+
+    protected function fieldDefinitionResolution(): FieldProviderResolution
+    {
+        $class = get_class($this);
+
+        FieldCacheManager::registerConsumer($class);
+
+        $resolution = app(FieldProviderRegistry::class)->resolve(
+            $class,
             fn (): array => $this->getFields(),
-        )->cacheKey;
+        );
+
+        if (method_exists($this, 'synchronizeFieldDefinitionState')) {
+            $this->synchronizeFieldDefinitionState($resolution);
+        }
+
+        return $resolution;
     }
 }

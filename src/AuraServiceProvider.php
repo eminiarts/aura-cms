@@ -289,6 +289,7 @@ class AuraServiceProvider extends PackageServiceProvider
     {
         app('aura')::registerFields(app('aura')::getAppFields());
 
+        Queue::before(fn () => Aura::flushState());
         Queue::after(fn () => Aura::flushState());
         Queue::exceptionOccurred(fn () => Aura::flushState());
 

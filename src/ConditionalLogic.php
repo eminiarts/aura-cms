@@ -2,6 +2,7 @@
 
 namespace Aura\Base;
 
+use Closure;
 use Illuminate\Support\Facades\Auth;
 
 class ConditionalLogic
@@ -22,7 +23,7 @@ class ConditionalLogic
         //     return false;
         // }
 
-        if ($conditions instanceof \Closure) {
+        if ($conditions instanceof Closure) {
             $result = self::executeClosure($conditions, $model, $post);
 
             return $result;
@@ -35,7 +36,7 @@ class ConditionalLogic
 
         foreach ($conditions as $index => $condition) {
 
-            if ($condition instanceof \Closure) {
+            if ($condition instanceof Closure) {
                 $result = self::executeClosure($condition, $model, $post);
 
                 if (! $result) {
@@ -71,7 +72,7 @@ class ConditionalLogic
         return $result;
     }
 
-    public static function clearConditionsCache()
+    public static function clearConditionsCache(): void
     {
         self::$shouldDisplayFieldCache = [];
     }
@@ -98,13 +99,37 @@ class ConditionalLogic
             return true;
         }
 
-        $cacheKey = md5(get_class($model).json_encode($field).json_encode($post).Auth::id());
-
-        if ($field['slug'] === 'prompt') {
+        if (! is_array($field) || ! self::canCacheDecision($model, $field, $post)) {
+            return self::checkCondition($model, $field, $post);
         }
+
+        $cacheKey = hash('sha256', serialize([
+            'model' => $model,
+            'field' => $field,
+            'post' => $post,
+            'user_id' => Auth::id(),
+        ]));
 
         return self::$shouldDisplayFieldCache[$cacheKey]
             ??= self::checkCondition($model, $field, $post);
+    }
+
+    /**
+     * Resource conditions may read mutable model/meta state, provider-captured
+     * closures may close over a team or user, and role membership can change
+     * without the authenticated user's ID changing. Evaluate those decisions
+     * directly rather than collapsing them into an unsafe process-static key.
+     */
+    private static function canCacheDecision($model, array $field, $post): bool
+    {
+        if (! is_array($model) || ! is_array($post)) {
+            return false;
+        }
+
+        return self::isCacheableValue($model)
+            && self::isCacheableValue($field)
+            && self::isCacheableValue($post)
+            && ! self::containsRoleCondition($field['conditional_logic']);
     }
 
     private static function checkRoleCondition($condition)
@@ -118,7 +143,26 @@ class ConditionalLogic
         };
     }
 
-    private static function executeClosure(\Closure $closure, $model, $post = null)
+    private static function containsRoleCondition(mixed $conditions): bool
+    {
+        if (! is_array($conditions)) {
+            return false;
+        }
+
+        if (($conditions['field'] ?? null) === 'role') {
+            return true;
+        }
+
+        foreach ($conditions as $condition) {
+            if (self::containsRoleCondition($condition)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function executeClosure(Closure $closure, $model, $post = null)
     {
         try {
             // If $post is null, create a fields array from the model
@@ -177,5 +221,20 @@ class ConditionalLogic
         }
 
         return self::checkRoleCondition($condition);
+    }
+
+    private static function isCacheableValue(mixed $value): bool
+    {
+        if (is_array($value)) {
+            foreach ($value as $key => $item) {
+                if ((! is_int($key) && ! is_string($key)) || ! self::isCacheableValue($item)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return is_scalar($value) || $value === null;
     }
 }

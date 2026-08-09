@@ -102,9 +102,9 @@ class Aura
         Cache::clear();
     }
 
-    public function clearConditionsCache()
+    public function clearConditionsCache(): void
     {
-        return ConditionalLogic::clearConditionsCache();
+        ConditionalLogic::clearConditionsCache();
     }
 
     public function clearRoutes()
@@ -145,8 +145,7 @@ class Aura
 
     public function flushFieldCache(): void
     {
-        Resource::flushFieldCache();
-        BaseResource::flushFieldCache();
+        FieldCacheManager::flush();
     }
 
     /**
@@ -160,8 +159,7 @@ class Aura
         $this->widgets = $this->baselineWidgets;
         app(FieldProviderRegistry::class)->flushState();
 
-        ConditionalLogic::clearConditionsCache();
-        $this->flushFieldCache();
+        FieldCacheManager::flush(flushProviderResults: false);
         ScopedScope::flushState();
         TeamScope::flushState();
         static::$userModel = User::class;
@@ -466,6 +464,16 @@ class Aura
     public function options()
     {
         return config('aura');
+    }
+
+    /**
+     * Re-read provider versions while retaining field output for unchanged
+     * versions.
+     */
+    public function refreshFieldProviderVersions(): void
+    {
+        app(FieldProviderRegistry::class)->refreshVersions();
+        FieldCacheManager::flush(flushProviderResults: false);
     }
 
     /**

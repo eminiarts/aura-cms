@@ -244,7 +244,7 @@ class ContactPropertyFieldProvider implements FieldProvider
 }
 ```
 
-Register providers during a service provider's `boot()` method. Registration order does not affect output: lower priorities run first, then provider class name breaks non-conflicting ties.
+Register provider class names during a service provider's `boot()` method. Provider objects are rejected because a mutable object cannot be safely reused by a long-running worker. Registration order does not affect output: lower priorities run first, then provider class name breaks non-conflicting ties.
 
 ```php
 use App\Aura\Fields\ContactPropertyFieldProvider;
@@ -260,17 +260,23 @@ Aura::registerFieldProvider(
 );
 ```
 
+Targets must be `Resource`/`BaseResource` classes. The default `['*']` target means every Aura resource; it does not apply providers to field classes or other classes that happen to use `InputFields`.
+
 `Append` adds fields after the declarative list and rejects duplicate slugs. `Replace` replaces matching slugs in place; a higher priority wins when several providers replace the same slug. Equal-priority replacements are rejected as ambiguous, and replacing a missing slug fails explicitly.
 
-The `cacheContext()` result is part of the cache identity and accepts string keys with scalar or null values. Declare every dimension that can change output, such as `team_id`, locale, or `user_id`; a provider must not read user-dependent state without including that dimension. Aura resolves the version and fields once per resource/context during a request or job lifecycle.
+The `cacheContext()` result is part of the cache identity and accepts valid UTF-8 string keys with finite scalar or null values. Nested values, objects, resources, closures, `NAN`, and infinite floats are rejected. Declare every dimension that can change output, such as `team_id`, locale, or `user_id`; a provider must not read user-dependent state without including that dimension. Keep `cacheContext()` cheap and side-effect free. Aura may call it while resolving a definition so it can detect a context switch, but resolves `cacheVersion()` and `fields()` only once per resource/context during a lifecycle.
 
-After changing database-backed definitions, increment the value returned by `cacheVersion()` and invalidate the in-process layers:
+After committing database-backed definition changes, increment `cacheVersion()` and request a version re-read:
 
 ```php
-Aura::flushFieldCache();
+Aura::refreshFieldProviderVersions();
 ```
 
-This clears resolved providers, static field maps, parsed field trees, and their container singleton bindings. Aura also performs the reset at its queue and Octane lifecycle boundaries. Providers registered during application boot are restored for the next lifecycle, while transient runtime registrations are discarded.
+Unchanged versions reuse their version-keyed field output; changed versions query `fields()` once and invalidate every derived field/conditional cache. Use `Aura::flushFieldCache()` for an unconditional reset, such as after changing provider registrations or when a source cannot expose a reliable version.
+
+A reset covers every active `InputFields` consumer, including resource and field classes, parsed trees, container bindings, conditional decisions, and existing `Resource` instances on their next field-related access. When a context switch removes a dynamic field, Aura drops that field's pending unsaved attribute/meta-queue value so it cannot be persisted in the new tenant or user context. Persisted database rows are not deleted.
+
+Aura resets provider instances and process-static state before and after queue jobs and at Octane request/task/tick boundaries. Providers registered during application boot are restored for the next lifecycle, while transient runtime registrations are discarded. Register or invalidate providers only during application boot or another quiescent lifecycle boundary. Standard process-isolated Octane workers are supported; custom overlapping coroutines that share one Laravel container and mutate Aura's static registries are not supported and must use isolated application containers or processes.
 
 ## Resource Properties
 

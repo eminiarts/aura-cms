@@ -64,6 +64,9 @@ Aura::registerFieldProvider(
 
 // Invalidate dynamic, static, parsed-tree, and container field caches
 Aura::flushFieldCache();
+
+// Re-read versions and reuse provider output whose version is unchanged
+Aura::refreshFieldProviderVersions();
 ```
 
 See [Dynamic Field Providers](creating-resources.md#dynamic-field-providers) for the provider interface, context/version contract, ordering, replacement rules, and worker lifecycle.

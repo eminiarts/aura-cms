@@ -7,25 +7,26 @@ use Aura\Base\Contracts\FieldProvider;
 use Aura\Base\Exceptions\FieldProviderConflictException;
 use Closure;
 use InvalidArgumentException;
+use ReflectionClass;
 
 class FieldProviderRegistry
 {
     public const DECLARATIVE_CACHE_KEY = 'declarative';
 
     /**
-     * @var array<string, array{provider: FieldProvider|class-string<FieldProvider>, resources: array<int, class-string<DefinesFields>|string>, mode: FieldProviderMode, priority: int}>
+     * @var array<string, array{provider: class-string<FieldProvider>, resources: array<int, class-string<DefinesFields>|string>, mode: FieldProviderMode, priority: int}>
      */
     protected array $baselineProviders = [];
 
     /**
-     * @var array<string, FieldProvider>
-     */
-    protected array $providerInstances = [];
-
-    /**
-     * @var array<string, array{provider: FieldProvider|class-string<FieldProvider>, resources: array<int, class-string<DefinesFields>|string>, mode: FieldProviderMode, priority: int}>
+     * @var array<string, array{provider: class-string<FieldProvider>, resources: array<int, class-string<DefinesFields>|string>, mode: FieldProviderMode, priority: int}>
      */
     protected array $providers = [];
+
+    /**
+     * @var array<string, string>
+     */
+    protected array $providerVersions = [];
 
     /**
      * @var array<class-string<DefinesFields>, array<string, FieldProviderResolution>>
@@ -33,7 +34,7 @@ class FieldProviderRegistry
     protected array $resolvedDefinitions = [];
 
     /**
-     * @var array<string, array{fields: array<array-key, array<string, mixed>>, version: string}>
+     * @var array<string, array<array-key, array<string, mixed>>>
      */
     protected array $resolvedProviderFields = [];
 
@@ -44,7 +45,7 @@ class FieldProviderRegistry
 
     public function flushResolved(): void
     {
-        $this->providerInstances = [];
+        $this->providerVersions = [];
         $this->resolvedDefinitions = [];
         $this->resolvedProviderFields = [];
     }
@@ -53,6 +54,17 @@ class FieldProviderRegistry
     {
         $this->providers = $this->baselineProviders;
         $this->flushResolved();
+    }
+
+    /**
+     * Forget version snapshots while retaining immutable, version-keyed field
+     * output. Providers whose version did not change avoid another fields()
+     * query; providers with a new version resolve a new output entry.
+     */
+    public function refreshVersions(): void
+    {
+        $this->providerVersions = [];
+        $this->resolvedDefinitions = [];
     }
 
     /**
@@ -65,18 +77,26 @@ class FieldProviderRegistry
         FieldProviderMode $mode = FieldProviderMode::Append,
         int $priority = 0,
     ): void {
-        $id = is_string($provider) ? $provider : $provider::class;
+        if ($provider instanceof FieldProvider) {
+            throw new InvalidArgumentException('Field providers must be registered by class name so workers can build a fresh provider instance.');
+        }
 
-        if (is_string($provider) && ! is_a($provider, FieldProvider::class, true)) {
+        $id = $provider;
+
+        if (! is_a($provider, FieldProvider::class, true)) {
             throw new InvalidArgumentException("Field provider [{$id}] must implement ".FieldProvider::class.'.');
+        }
+
+        if (! (new ReflectionClass($provider))->isInstantiable()) {
+            throw new InvalidArgumentException("Field provider [{$id}] must be an instantiable class name.");
         }
 
         if (isset($this->providers[$id])) {
             throw new InvalidArgumentException("Field provider [{$id}] is already registered.");
         }
 
-        if ($resources === [] || collect($resources)->contains(fn ($resource) => ! is_string($resource))) {
-            throw new InvalidArgumentException('Field provider resources must be a non-empty array of resource class names or [*].');
+        if ($resources === [] || collect($resources)->contains(fn ($resource) => ! $this->isValidResourceTarget($resource))) {
+            throw new InvalidArgumentException('Field provider resources must be a non-empty array of Aura resource class names or [*].');
         }
 
         $this->providers[$id] = [
@@ -87,8 +107,7 @@ class FieldProviderRegistry
         ];
 
         $this->flushResolved();
-        Resource::flushFieldCache();
-        BaseResource::flushFieldCache();
+        FieldCacheManager::flush(flushProviderResults: false);
     }
 
     /**
@@ -100,7 +119,11 @@ class FieldProviderRegistry
         $providers = collect($this->providers)
             ->filter(function (array $registration) use ($resourceClass): bool {
                 return collect($registration['resources'])->contains(function (string $target) use ($resourceClass): bool {
-                    return $target === '*' || is_a($resourceClass, $target, true);
+                    if ($target === '*') {
+                        return $this->isAuraResource($resourceClass);
+                    }
+
+                    return is_a($resourceClass, $target, true);
                 });
             })
             ->map(fn (array $registration, string $id): array => [
@@ -114,30 +137,32 @@ class FieldProviderRegistry
             ->values()
             ->map(function (array $registration) use ($resourceClass): array {
                 $id = $registration['id'];
-                $provider = $this->providerInstance($id, $registration['provider']);
+                $provider = $this->buildProvider($registration['provider']);
                 $context = new FieldProviderContext($resourceClass, $provider->cacheContext($resourceClass));
-                $providerCacheKey = $id.'|'.$context->fingerprint();
+                $contextFingerprint = $context->fingerprint();
+                $versionCacheKey = $this->cacheKey($id, $contextFingerprint);
 
-                if (! isset($this->resolvedProviderFields[$providerCacheKey])) {
-                    $version = (string) $provider->cacheVersion($context);
-                    $fields = array_map(
+                if (! array_key_exists($versionCacheKey, $this->providerVersions)) {
+                    $this->providerVersions[$versionCacheKey] = serialize($provider->cacheVersion($context));
+                }
+
+                $serializedVersion = $this->providerVersions[$versionCacheKey];
+                $providerFieldsCacheKey = $this->cacheKey($id, $contextFingerprint, $serializedVersion);
+
+                if (! array_key_exists($providerFieldsCacheKey, $this->resolvedProviderFields)) {
+                    $this->resolvedProviderFields[$providerFieldsCacheKey] = array_map(
                         fn (array $field): array => $this->normalizeField($field, $id),
                         $provider->fields($context),
                     );
-
-                    $this->resolvedProviderFields[$providerCacheKey] = [
-                        'fields' => $fields,
-                        'version' => $version,
-                    ];
                 }
 
                 return [
                     'id' => $id,
-                    'context' => $context->fingerprint(),
-                    'fields' => $this->resolvedProviderFields[$providerCacheKey]['fields'],
+                    'context' => $contextFingerprint,
+                    'fields' => $this->resolvedProviderFields[$providerFieldsCacheKey],
                     'mode' => $registration['mode'],
                     'priority' => $registration['priority'],
-                    'version' => $this->resolvedProviderFields[$providerCacheKey]['version'],
+                    'version' => $serializedVersion,
                 ];
             })
             ->all();
@@ -218,6 +243,48 @@ class FieldProviderRegistry
     }
 
     /**
+     * Build the top-level provider directly so a host application's singleton
+     * binding cannot leak mutable provider state between worker lifecycles.
+     * Constructor dependencies still resolve through Laravel's container.
+     *
+     * @param  class-string<FieldProvider>  $provider
+     */
+    protected function buildProvider(string $provider): FieldProvider
+    {
+        $instance = app()->build($provider);
+
+        if (! $instance instanceof FieldProvider) {
+            throw new InvalidArgumentException("Field provider [{$provider}] must implement ".FieldProvider::class.'.');
+        }
+
+        return $instance;
+    }
+
+    protected function cacheKey(string ...$parts): string
+    {
+        return hash('sha256', serialize($parts));
+    }
+
+    protected function isAuraResource(string $resourceClass): bool
+    {
+        return is_a($resourceClass, Resource::class, true)
+            || is_a($resourceClass, BaseResource::class, true);
+    }
+
+    protected function isValidResourceTarget(mixed $target): bool
+    {
+        if (! is_string($target)) {
+            return false;
+        }
+
+        if ($target === '*') {
+            return true;
+        }
+
+        return $this->isAuraResource($target);
+    }
+
+    /**
      * @param  array<string, mixed>  $field
      * @return array<string, mixed>
      */
@@ -230,23 +297,5 @@ class FieldProviderRegistry
         }
 
         return $field;
-    }
-
-    /**
-     * @param  FieldProvider|class-string<FieldProvider>  $provider
-     */
-    protected function providerInstance(string $id, FieldProvider|string $provider): FieldProvider
-    {
-        if (! isset($this->providerInstances[$id])) {
-            $instance = is_string($provider) ? app($provider) : $provider;
-
-            if (! $instance instanceof FieldProvider) {
-                throw new InvalidArgumentException("Field provider [{$id}] must implement ".FieldProvider::class.'.');
-            }
-
-            $this->providerInstances[$id] = $instance;
-        }
-
-        return $this->providerInstances[$id];
     }
 }

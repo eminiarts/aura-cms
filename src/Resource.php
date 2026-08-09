@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -66,6 +67,12 @@ class Resource extends Model implements DefinesFields
      */
     protected bool $buildingFieldsAttribute = false;
 
+    protected int $fieldDefinitionGeneration = -1;
+
+    protected ?string $fieldDefinitionStateKey = null;
+
+    protected bool $fieldDefinitionStateReady = false;
+
     protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'team_id', 'created_at', 'updated_at', 'deleted_at'];
 
     protected $hidden = ['meta'];
@@ -76,6 +83,15 @@ class Resource extends Model implements DefinesFields
      * @var Collection|null
      */
     protected $normalizedMetaCache;
+
+    /**
+     * Input-field slugs used to derive this instance's current fillable state.
+     *
+     * @var array<int, string>
+     */
+    protected array $resolvedInputFieldSlugs = [];
+
+    protected bool $synchronizingFieldDefinitionState = false;
 
     /**
      * The table associated with the model.
@@ -101,10 +117,10 @@ class Resource extends Model implements DefinesFields
     {
         parent::__construct($attributes);
 
-        $this->baseFillable = $this->getFillable();
+        $this->baseFillable = parent::getFillable();
+        $this->fieldDefinitionStateReady = true;
 
-        // Merge fillable fields from fields
-        $this->mergeFillable($this->inputFieldsSlugs());
+        $this->ensureFieldDefinitionState();
 
         if ($this->usesMeta()) {
             $this->with[] = 'meta';
@@ -193,6 +209,7 @@ class Resource extends Model implements DefinesFields
 
     public function clearFieldsAttributeCache()
     {
+        $this->ensureFieldDefinitionState();
         $this->fieldsAttributeCache = null;
         $this->normalizedMetaCache = null;
 
@@ -202,6 +219,18 @@ class Resource extends Model implements DefinesFields
 
     }
 
+    /**
+     * Return attributes after synchronizing definition-derived instance state.
+     *
+     * @return array<string, mixed>
+     */
+    public function getAttributes()
+    {
+        $this->ensureFieldDefinitionState();
+
+        return parent::getAttributes();
+    }
+
     public function getBulkActions()
     {
         return $this->bulkActions;
@@ -209,6 +238,8 @@ class Resource extends Model implements DefinesFields
 
     public function getFieldsAttribute()
     {
+        $this->ensureFieldDefinitionState();
+
         if (isset($this->fieldsAttributeCache) && $this->fieldsAttributeCache !== null) {
             return $this->fieldsAttributeCache;
         }
@@ -266,8 +297,20 @@ class Resource extends Model implements DefinesFields
         return $defaultValues->toArray();
     }
 
+    /**
+     * @return array<string>
+     */
+    public function getFillable()
+    {
+        $this->ensureFieldDefinitionState();
+
+        return parent::getFillable();
+    }
+
     public function getMeta($key = null)
     {
+        $this->ensureFieldDefinitionState();
+
         if ($this->usesCustomTable() && ! $this->usesMeta()) {
             return collect();
         }
@@ -324,11 +367,15 @@ class Resource extends Model implements DefinesFields
 
     public function getTableDisplayValue(string $slug): mixed
     {
+        $this->ensureFieldDefinitionState();
+
         return $this->tableDisplayCache[$slug] ?? null;
     }
 
     public function hasTableDisplayValue(string $slug): bool
     {
+        $this->ensureFieldDefinitionState();
+
         return array_key_exists($slug, $this->tableDisplayCache);
     }
 
@@ -447,6 +494,8 @@ class Resource extends Model implements DefinesFields
 
     public function setTableDisplayValue(string $slug, mixed $value): void
     {
+        $this->ensureFieldDefinitionState();
+
         $this->tableDisplayCache[$slug] = $value;
     }
 
@@ -503,6 +552,94 @@ class Resource extends Model implements DefinesFields
         static::saved(function ($model) {
             $model->clearFieldsAttributeCache();
         });
+    }
+
+    protected function clearDefinitionDerivedInstanceCaches(): void
+    {
+        $this->fieldsAttributeCache = null;
+        $this->normalizedMetaCache = null;
+        $this->tableDisplayCache = [];
+        $this->buildingFieldsAttribute = false;
+    }
+
+    /**
+     * Drop unsaved values for fields removed from the active definition. This
+     * prevents a pending value from being persisted under a different tenant
+     * or user context. Persisted meta relation rows are intentionally retained.
+     *
+     * @param  array<int, string>  $removedSlugs
+     */
+    protected function discardRemovedFieldState(array $removedSlugs): void
+    {
+        foreach ($removedSlugs as $slug) {
+            unset(
+                $this->attributes[$slug],
+                $this->original[$slug],
+                $this->changes[$slug],
+                $this->relations[$slug],
+                $this->classCastCache[$slug],
+                $this->attributeCastCache[$slug],
+                $this->metaFields[$slug],
+            );
+
+            if (isset($this->attributes['fields']) && is_array($this->attributes['fields'])) {
+                unset($this->attributes['fields'][$slug]);
+                Arr::forget($this->attributes['fields'], $slug);
+            }
+        }
+    }
+
+    protected function ensureFieldDefinitionState(): void
+    {
+        if (! $this->fieldDefinitionStateReady || $this->synchronizingFieldDefinitionState) {
+            return;
+        }
+
+        $this->fieldDefinitionResolution();
+    }
+
+    /**
+     * Refresh per-instance state when a provider context/version or the global
+     * field-cache generation changes. The resolution is committed only after
+     * its parsed input slugs build successfully.
+     */
+    protected function synchronizeFieldDefinitionState(FieldProviderResolution $resolution): void
+    {
+        if (! $this->fieldDefinitionStateReady || $this->synchronizingFieldDefinitionState) {
+            return;
+        }
+
+        $generation = FieldCacheManager::generation();
+
+        if ($this->fieldDefinitionStateKey === $resolution->cacheKey
+            && $this->fieldDefinitionGeneration === $generation) {
+            return;
+        }
+
+        $this->synchronizingFieldDefinitionState = true;
+
+        try {
+            $previousSlugs = $this->resolvedInputFieldSlugs;
+            $preservedFillable = array_values(array_unique(array_merge(
+                array_diff(parent::getFillable(), $previousSlugs),
+                $this->baseFillable,
+            )));
+
+            $this->clearDefinitionDerivedInstanceCaches();
+
+            $currentSlugs = $this->inputFieldsSlugs();
+            $removedSlugs = array_values(array_diff($previousSlugs, $currentSlugs, $this->baseFillable));
+
+            $this->discardRemovedFieldState($removedSlugs);
+            $this->fillable($preservedFillable);
+            $this->mergeFillable($currentSlugs);
+
+            $this->resolvedInputFieldSlugs = $currentSlugs;
+            $this->fieldDefinitionStateKey = $resolution->cacheKey;
+            $this->fieldDefinitionGeneration = $generation;
+        } finally {
+            $this->synchronizingFieldDefinitionState = false;
+        }
     }
 
     /**

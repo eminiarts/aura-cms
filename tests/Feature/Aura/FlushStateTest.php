@@ -7,6 +7,7 @@ use Aura\Base\Resources\User;
 use Aura\Base\Widgets\ValueWidget;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Event;
 
 class FlushStateResource extends Resource
@@ -47,7 +48,7 @@ it('flushes all request-scoped caches through one public entry point', function 
     Aura::useUserModel(stdClass::class);
 
     expect($resource->fieldsCollection()->pluck('slug')->all())->toBe(['first'])
-        ->and(Aura::checkCondition($resource, $conditionalField))->toBeFalse();
+        ->and(Aura::checkCondition($resource, $conditionalField))->toBeTrue();
 
     Aura::flushState();
 
@@ -60,6 +61,16 @@ it('flushes state after a queue job is processed', function () {
     Aura::useUserModel(stdClass::class);
 
     Event::dispatch(new JobProcessed('sync', Mockery::mock(Job::class), null));
+
+    expect(Aura::userModel())->toBe(User::class);
+});
+
+it('flushes state before a queue job is processed', function () {
+    Aura::useUserModel(stdClass::class);
+    $job = Mockery::mock(Job::class);
+    $job->shouldReceive('payload')->andReturn([]);
+
+    Event::dispatch(new JobProcessing('sync', $job));
 
     expect(Aura::userModel())->toBe(User::class);
 });
