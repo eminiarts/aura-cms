@@ -4,10 +4,12 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\HookManager;
 use Aura\Base\Navigation\Navigation as NavigationRegistry;
 use Aura\Base\Resource;
+use Aura\Base\Resources\Role;
 use Illuminate\Cache\ArrayStore;
 use Illuminate\Cache\Repository;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 function serializedNavigationCacheRepository(): Repository
 {
@@ -167,6 +169,93 @@ test('navigation item is hidden when the Role has no access to it', function () 
     $this->get(route('aura.dashboard'))
         ->assertDontSee('NavigationModels');
 
+});
+
+test('role permission changes invalidate warmed navigation', function () {
+    Cache::swap(serializedNavigationCacheRepository());
+    Aura::registerResources([NavigationModel::class]);
+    $limitedUser = createAdmin();
+    $this->actingAs($limitedUser);
+    $navigationResources = fn () => Aura::navigation()
+        ->flatMap(fn (Collection $items): Collection => $items)
+        ->pluck('resource');
+
+    expect($navigationResources())->not->toContain(NavigationModel::class);
+
+    $role = Role::withoutGlobalScopes()->findOrFail($limitedUser->roles()->firstOrFail()->id);
+    $role->update([
+        'permissions' => array_merge($role->permissions ?? [], [
+            'viewAny-navmodel' => true,
+        ]),
+    ]);
+
+    expect($navigationResources())->toContain(NavigationModel::class);
+});
+
+test('rolled back role permission changes do not poison rebuilt navigation', function () {
+    Cache::swap(serializedNavigationCacheRepository());
+    Aura::registerResources([NavigationModel::class]);
+    $limitedUser = createAdmin();
+    $this->actingAs($limitedUser);
+    $navigationResources = fn () => Aura::navigation()
+        ->flatMap(fn (Collection $items): Collection => $items)
+        ->pluck('resource');
+
+    expect($navigationResources())->not->toContain(NavigationModel::class);
+
+    $role = Role::withoutGlobalScopes()->findOrFail($limitedUser->roles()->firstOrFail()->id);
+    DB::beginTransaction();
+
+    try {
+        $role->update([
+            'permissions' => array_merge($role->permissions ?? [], [
+                'viewAny-navmodel' => true,
+            ]),
+        ]);
+
+        expect($navigationResources())->toContain(NavigationModel::class);
+    } finally {
+        DB::rollBack();
+    }
+
+    Cache::flush();
+
+    expect($navigationResources())->not->toContain(NavigationModel::class);
+});
+
+test('membership role changes invalidate warmed navigation', function () {
+    Cache::swap(serializedNavigationCacheRepository());
+    Aura::registerResources([NavigationModel::class]);
+    $limitedUser = createAdmin();
+    $roleAttributes = [
+        'name' => 'Navigation Viewer',
+        'slug' => 'navigation-viewer',
+        'permissions' => ['viewAny-navmodel' => true],
+        'super_admin' => false,
+    ];
+
+    if (config('aura.teams')) {
+        $roleAttributes['team_id'] = $limitedUser->current_team_id;
+    }
+
+    $allowedRole = Role::create($roleAttributes);
+    $this->actingAs($limitedUser);
+    $navigationResources = fn () => Aura::navigation()
+        ->flatMap(fn (Collection $items): Collection => $items)
+        ->pluck('resource');
+
+    expect($navigationResources())->not->toContain(NavigationModel::class);
+
+    if (config('aura.teams')) {
+        $limitedUser->roles()->syncWithPivotValues(
+            [$allowedRole->id],
+            ['team_id' => $limitedUser->current_team_id],
+        );
+    } else {
+        $limitedUser->roles()->sync([$allowedRole->id]);
+    }
+
+    expect($navigationResources())->toContain(NavigationModel::class);
 });
 
 test('navigation items can be grouped', function () {

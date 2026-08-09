@@ -3,6 +3,7 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
+use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Tag;
 use Illuminate\Support\Facades\DB;
 
@@ -105,7 +106,7 @@ describe('saving filters', function () {
 
         // Verify filter is saved in database
         $db = DB::table('options')
-            ->where('name', 'like', 'user.'.$this->user->id.'.Post.filters.test-filter')
+            ->where('name', User::optionNamePrefixFor($this->user->id).'Post.filters.test-filter')
             ->get();
 
         expect($db)->toHaveCount(1);
@@ -145,7 +146,7 @@ describe('deleting filters', function () {
     test('saved filter can be deleted', function () {
         // Insert a filter directly into the database
         DB::table('options')->insert([
-            'name' => 'user.'.$this->user->id.'.Post.filters.test-filter',
+            'name' => User::optionNamePrefixFor($this->user->id).'Post.filters.test-filter',
             'value' => '{"custom":[{"filters":[{"name":"tags","operator":"contains","value":[303],"options":{"resource_type":"Aura\\\\Base\\\\Resources\\\\Tag"}}]}],"name":"Test Filter","public":false,"global":false,"slug":"test-filter"}',
             ...config('aura.teams') ? ['team_id' => $this->user->currentTeam->id] : [],
         ]);
@@ -204,7 +205,7 @@ describe('filter selection', function () {
     test('selecting saved filter applies its criteria', function () {
         // Insert a filter that matches only resource (metafield = 'B')
         DB::table('options')->insert([
-            'name' => 'user.'.$this->user->id.'.Post.filters.meta-b-filter',
+            'name' => User::optionNamePrefixFor($this->user->id).'Post.filters.meta-b-filter',
             'value' => '{"custom":[{"filters":[{"name":"metafield","operator":"is","value":"B","options":{}}]}],"name":"Meta B Filter","public":false,"global":false,"slug":"meta-b-filter"}',
             ...config('aura.teams') ? ['team_id' => $this->user->currentTeam->id] : [],
         ]);

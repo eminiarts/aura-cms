@@ -83,6 +83,12 @@ $settings = Aura::getOption('site-settings');
 // Update an option
 Aura::updateOption('site-settings', ['logo' => 'path/to/logo.png']);
 
+// Direct Option model/editor writes share the same transaction-aware cache
+// invalidation; deleted options may be restored.
+$option = \Aura\Base\Resources\Option::byName('site-settings');
+$option?->delete();
+$option?->restore();
+
 // Get a specific config value from aura.php
 $value = Aura::option('features.teams');
 

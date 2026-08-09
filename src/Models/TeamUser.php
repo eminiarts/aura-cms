@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Models;
 
+use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
@@ -23,6 +24,8 @@ class TeamUser extends Pivot
 
     private function clearUserTeamsCache(): void
     {
+        Role::bumpCatalogVersion($this->getConnection());
+
         $userId = $this->getAttribute('user_id');
         $teamId = $this->getAttribute('team_id');
 

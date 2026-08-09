@@ -105,6 +105,11 @@ class Aura
         return ConditionalLogic::clearConditionsCache();
     }
 
+    public static function clearGlobalOptionCache(?Connection $connection = null): void
+    {
+        VersionedCache::bump('option.global', $connection);
+    }
+
     public function clearRoutes()
     {
         Route::getRoutes()->refreshNameLookups();
@@ -310,6 +315,8 @@ class Aura
 
     public function navigation()
     {
+        $user = auth()->user();
+
         while (true) {
             $hookManager = app('hook_manager');
             $revision = $hookManager->revision('navigation');
@@ -324,6 +331,7 @@ class Aura
                     $context,
                     3600,
                     fn (): array => ['groups' => $this->buildNavigation()],
+                    $user->getConnection(),
                 );
                 $navigation = $payload['groups'];
             }
@@ -415,7 +423,23 @@ class Aura
             auth()->user()->currentTeam->updateOption($key, $value);
         } else {
             $record = Option::withoutGlobalScopes([app(TeamScope::class)])
-                ->updateOrCreate(['name' => $key], ['value' => $value]);
+                ->withTrashed()
+                ->where('name', $key)
+                ->first();
+
+            if ($record) {
+                $record->fill(['value' => $value]);
+
+                if ($record->trashed()) {
+                    $record->restore();
+                } else {
+                    $record->save();
+                }
+            } else {
+                $record = Option::withoutGlobalScopes([app(TeamScope::class)])
+                    ->updateOrCreate(['name' => $key], ['value' => $value]);
+            }
+
             VersionedCache::bump($this->globalOptionCacheNamespace(), $record->getConnection());
         }
     }

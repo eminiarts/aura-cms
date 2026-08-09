@@ -32,7 +32,7 @@ Aura CMS implements a multi-layered caching strategy combining Laravel's Cache f
 
 ### Options Caching
 
-Options are automatically cached for 1 hour. Cache namespaces include the option owner and, for user options, the active team context. Physical cache keys are fixed-length SHA-256 hashes, so long option names remain valid on Memcached-compatible backends. Cache entries are scalar/array envelopes; Eloquent models and collections are never serialized into the cache.
+Options are automatically cached for 1 hour. Team and user cache scopes use SHA-256 identities built from typed, length-delimited segments. User variants include both the user id and logical option name, so dotted ids and dotted names cannot collapse into one cache entry; the user generation is shared only within the active team/global scope so direct `Option` edits can invalidate every affected reader. Physical cache keys remain fixed length for Memcached-compatible backends. Cache entries are scalar/array envelopes; Eloquent models and collections are never serialized into the cache.
 
 ```php
 $value = auth()->user()->getOption('columns.Article');
@@ -42,7 +42,9 @@ auth()->user()->updateOption('columns.Article', ['title', 'status']);
 auth()->user()->deleteOption('columns.Article');
 ```
 
-Each namespace has a persistent generation token. `updateOption()`, `deleteOption()`, and `clearCachedOption()` bump it after the database write, invalidating exact and wildcard reads together. Inside a database transaction, reads bypass persistent cache lookup and publication, and invalidation waits for the outer commit on that connection. A rollback therefore retains the previously committed generation and value. Outside transactions, readers compare the generation before and after filling the cache and retry if a write interleaves; continuous churn falls back to an uncached resolution after three attempts. If a cache store cannot persist or verify a generation, the call resolves uncached instead of sharing a fallback value key. Team option queries use the `Team` instance as their context, independent of whichever team the authenticated user is currently visiting.
+Each namespace has a persistent generation token. `updateOption()`, `deleteOption()`, `clearCachedOption()`, and direct `Option` create/update/delete/restore events invalidate exact and wildcard reads together. Inside a database transaction, reads bypass persistent cache lookup and publication, and invalidation is attached to the outer transaction record for that exact connection—even when other connections have simultaneous transactions. Rollback discards only that connection's callback. Outside transactions, readers compare the generation before and after filling the cache and retry if a write interleaves; continuous churn falls back to an uncached resolution after three attempts. Failed generation writes disable stale values, while a demonstrably fresh token installed by a concurrent invalidator is accepted. Team option queries use the `Team` instance as their context, independent of whichever team the authenticated user is currently visiting.
+
+User rows use the reserved `aura-user-option-v2:{owner-hash}:{option}` physical identity. Default integer-key users transparently read and migrate legacy `user.{id}.{option}` rows on their next write, and both old and new generations are invalidated during that transition. Ambiguous legacy string-key rows are deliberately not auto-claimed. Scoped option names are unique in the database; the upgrade migration refuses to guess when pre-existing duplicates need operator resolution. Options are soft deletable, and helper writes restore the existing identity instead of inserting a duplicate.
 
 Exact entries use `['found' => bool, 'value' => mixed]`. This keeps a missing option distinct from stored `false`, `0`, `''`, and logical `null`; `Aura::getOption()` returns `[]` only for a missing row.
 
@@ -66,7 +68,7 @@ public function navigation()
 }
 ```
 
-String/static callables and scalar `Navigation::add()` configurations receive stable fingerprints. Closures, object-bound callables, resources, and any recursively non-scalar payload bypass persistent caching. The same recursive safety check runs on the completed navigation payload, preventing nested values from reaching a serializing cache store. A before/after hook revision check retries a build when registration changes while it is in flight.
+String/static callables and scalar `Navigation::add()` configurations receive stable fingerprints. Closures, object-bound callables, resources, and any recursively non-scalar payload bypass persistent caching. The same recursive safety check runs on the completed navigation payload, preventing nested values from reaching a serializing cache store. A before/after hook revision check retries a build when registration changes while it is in flight. Role writes and Membership role changes advance the navigation generation after commit, so permission-filtered menus do not retain the prior grant set. Rollback also advances the process-local role catalog version, discarding permission snapshots resolved from transaction-local data.
 
 ### Team and Template Catalog Caching
 

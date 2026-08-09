@@ -96,7 +96,8 @@ describe('database schema without teams', function () {
         it('has required option columns', function () {
             expect(Schema::hasColumn('options', 'id'))->toBeTrue()
                 ->and(Schema::hasColumn('options', 'name'))->toBeTrue()
-                ->and(Schema::hasColumn('options', 'value'))->toBeTrue();
+                ->and(Schema::hasColumn('options', 'value'))->toBeTrue()
+                ->and(Schema::hasColumn('options', 'deleted_at'))->toBeTrue();
         });
     });
 

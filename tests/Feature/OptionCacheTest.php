@@ -1,6 +1,8 @@
 <?php
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
@@ -8,16 +10,54 @@ use Aura\Base\Services\VersionedCache;
 use Illuminate\Cache\ArrayStore;
 use Illuminate\Cache\NullStore;
 use Illuminate\Cache\Repository;
+use Illuminate\Database\DatabaseTransactionsManager;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\QueryException;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\SQLiteConnection;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+use function Pest\Livewire\livewire;
+
+class AdversarialOptionUser extends User
+{
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    protected $table = 'adversarial_option_users';
+}
 
 function serializedOptionCacheRepository(): Repository
 {
     return new Repository(new ArrayStore(serializesValues: true, serializableClasses: false));
+}
+
+/**
+ * @return array{SQLiteConnection, SQLiteConnection}
+ */
+function overlappingCacheConnections(string $first, string $second): array
+{
+    foreach ([$first, $second] as $name) {
+        config()->set('database.connections.'.$name, [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => '',
+        ]);
+    }
+
+    $firstConnection = DB::connection($first);
+    $secondConnection = DB::connection($second);
+    $transactions = new DatabaseTransactionsManager;
+    app()->instance('db.transactions', $transactions);
+    $firstConnection->setTransactionManager($transactions);
+    $secondConnection->setTransactionManager($transactions);
+
+    return [$firstConnection, $secondConnection];
 }
 
 test('template catalog survives a serialized cache read in a fresh application container', function () {
@@ -50,6 +90,46 @@ test('versioned cache degrades to an uncached read when generations cannot persi
 
     expect($value)->toBe(['value' => 'fresh'])
         ->and($resolutions)->toBe(1);
+});
+
+test('canonical cache identities preserve typed segment boundaries', function () {
+    $identities = [
+        VersionedCache::identity('segments'),
+        VersionedCache::identity('segments', ''),
+        VersionedCache::identity('segments', 1),
+        VersionedCache::identity('segments', '1'),
+        VersionedCache::identity('segments', 'customer', 'eu.secret'),
+        VersionedCache::identity('segments', 'customer.eu', 'secret'),
+        VersionedCache::identity('segments', 'Grüezi 👋'),
+        VersionedCache::identity('segments', "binary-like\0.\x01\x7f"),
+        VersionedCache::identity('segments', str_repeat('long-segment-', 1000)),
+        VersionedCache::identity('segments', 'a', 'bc'),
+        VersionedCache::identity('segments', 'ab', 'c'),
+    ];
+
+    expect(array_unique($identities))->toHaveCount(count($identities));
+
+    foreach ($identities as $identity) {
+        expect($identity)->toMatch('/\A[a-f0-9]{64}\z/');
+    }
+});
+
+test('option physical identities are unique within their database scope', function () {
+    $attributes = [
+        'name' => 'unique-option-identity',
+        'value' => ['version' => 1],
+    ];
+
+    if (config('aura.teams')) {
+        $attributes['team_id'] = createSuperAdmin()->current_team_id;
+    }
+
+    Option::withoutGlobalScopes()->create($attributes);
+
+    expect(fn () => Option::withoutGlobalScopes()->create([
+        ...$attributes,
+        'value' => ['version' => 2],
+    ]))->toThrow(QueryException::class);
 });
 
 class InterleavingOptionArrayStore extends ArrayStore
@@ -179,6 +259,37 @@ class GenerationWriteMisreportingArrayStore extends ArrayStore
         }
 
         return parent::put($key, $value, $seconds);
+    }
+}
+
+class ConcurrentGenerationReplacementStore extends ArrayStore
+{
+    private bool $replaceGeneration = false;
+
+    public function forget($key)
+    {
+        $forgotten = parent::forget($key);
+
+        if ($this->replaceGeneration && str_starts_with($key, 'aura.cache.generation.')) {
+            $this->replaceGeneration = false;
+            parent::put($key, 'concurrent-generation', 3600);
+        }
+
+        return $forgotten;
+    }
+
+    public function put($key, $value, $seconds)
+    {
+        if ($this->replaceGeneration && str_starts_with($key, 'aura.cache.generation.')) {
+            return false;
+        }
+
+        return parent::put($key, $value, $seconds);
+    }
+
+    public function replaceAfterFailedBump(): void
+    {
+        $this->replaceGeneration = true;
     }
 }
 
@@ -317,6 +428,28 @@ test('generation bumps verify persisted writes before retaining cached values', 
     expect($read())->toBe(['version' => 2]);
 });
 
+test('generation bumps accept a concurrent fresh token after a failed write', function () {
+    $store = new ConcurrentGenerationReplacementStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+    $source = ['version' => 1];
+    $read = function () use (&$source): array {
+        return VersionedCache::remember(
+            'concurrent-generation-replacement',
+            'value',
+            60,
+            fn (): array => $source,
+        );
+    };
+
+    expect($read())->toBe(['version' => 1]);
+
+    $source = ['version' => 2];
+    $store->replaceAfterFailedBump();
+    VersionedCache::bump('concurrent-generation-replacement');
+
+    expect($read())->toBe(['version' => 2]);
+});
+
 test('versioned cache does not depend on unsupported generation increments', function () {
     $store = new IncrementRejectingArrayStore(serializesValues: true, serializableClasses: false);
     Cache::swap(new Repository($store));
@@ -435,6 +568,161 @@ test('generation bumps wait for the outer commit while other connections retain 
         ))->toBe(['version' => 2]);
 });
 
+test('a committed connection owns its invalidation while another connection rolls back', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    [$writerA, $writerB] = overlappingCacheConnections('cache_writer_a', 'cache_writer_b');
+    $source = ['version' => 1];
+    $read = function () use (&$source): array {
+        return VersionedCache::remember(
+            'overlapping-connections-a-commit',
+            'value',
+            60,
+            fn (): array => $source,
+        );
+    };
+
+    expect($read())->toBe(['version' => 1]);
+
+    $writerA->beginTransaction();
+    $writerB->beginTransaction();
+
+    try {
+        VersionedCache::bump('overlapping-connections-a-commit', $writerA);
+        $source = ['version' => 2];
+        $writerA->commit();
+
+        expect($read())->toBe(['version' => 2]);
+
+        $writerB->rollBack();
+
+        expect($read())->toBe(['version' => 2]);
+    } finally {
+        while ($writerA->transactionLevel() > 0) {
+            $writerA->rollBack();
+        }
+
+        while ($writerB->transactionLevel() > 0) {
+            $writerB->rollBack();
+        }
+    }
+});
+
+test('an unrelated commit cannot publish a writers uncommitted generation', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    [$writerA, $writerB] = overlappingCacheConnections('early_commit_writer_a', 'early_commit_writer_b');
+    $committedSource = ['version' => 1];
+    $read = function () use (&$committedSource): array {
+        return VersionedCache::remember(
+            'overlapping-connections-early-commit',
+            'value',
+            60,
+            fn (): array => $committedSource,
+        );
+    };
+
+    expect($read())->toBe(['version' => 1]);
+
+    $writerA->beginTransaction();
+    $writerB->beginTransaction();
+
+    try {
+        VersionedCache::bump('overlapping-connections-early-commit', $writerA);
+        $writerB->commit();
+
+        expect($read())->toBe(['version' => 1]);
+
+        $committedSource = ['version' => 2];
+        $writerA->commit();
+
+        expect($read())->toBe(['version' => 2]);
+    } finally {
+        while ($writerA->transactionLevel() > 0) {
+            $writerA->rollBack();
+        }
+
+        while ($writerB->transactionLevel() > 0) {
+            $writerB->rollBack();
+        }
+    }
+});
+
+test('connection callback ownership is independent of connection start order', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    [$writerA, $writerB] = overlappingCacheConnections('reverse_writer_a', 'reverse_writer_b');
+    $source = ['version' => 1];
+    $read = function () use (&$source): array {
+        return VersionedCache::remember(
+            'overlapping-connections-reverse-order',
+            'value',
+            60,
+            fn (): array => $source,
+        );
+    };
+
+    expect($read())->toBe(['version' => 1]);
+
+    $writerB->beginTransaction();
+    $writerA->beginTransaction();
+
+    try {
+        VersionedCache::bump('overlapping-connections-reverse-order', $writerB);
+        $source = ['version' => 2];
+        $writerB->commit();
+
+        expect($read())->toBe(['version' => 2]);
+
+        $writerA->rollBack();
+
+        expect($read())->toBe(['version' => 2]);
+    } finally {
+        while ($writerA->transactionLevel() > 0) {
+            $writerA->rollBack();
+        }
+
+        while ($writerB->transactionLevel() > 0) {
+            $writerB->rollBack();
+        }
+    }
+});
+
+test('a nested rollback discards only its connections invalidation while another transaction is open', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    [$writerA, $writerB] = overlappingCacheConnections('nested_writer_a', 'nested_writer_b');
+    $source = ['version' => 1];
+    $read = function () use (&$source): array {
+        return VersionedCache::remember(
+            'overlapping-connections-nested-rollback',
+            'value',
+            60,
+            fn (): array => $source,
+        );
+    };
+
+    expect($read())->toBe(['version' => 1]);
+
+    $writerA->beginTransaction();
+    $writerB->beginTransaction();
+    $writerA->beginTransaction();
+
+    try {
+        VersionedCache::bump('overlapping-connections-nested-rollback', $writerA);
+        $writerA->rollBack();
+        $writerA->commit();
+        $writerB->rollBack();
+        $source = ['version' => 2];
+
+        expect($read())->toBe(['version' => 1]);
+    } finally {
+        while ($writerA->transactionLevel() > 0) {
+            $writerA->rollBack();
+        }
+
+        while ($writerB->transactionLevel() > 0) {
+            $writerB->rollBack();
+        }
+    }
+});
+
 test('rolled back nested generation bumps leave the committed generation usable', function () {
     $store = new ArrayStore(serializesValues: true, serializableClasses: false);
     Cache::swap(new Repository($store));
@@ -487,6 +775,21 @@ test('transactions on unmanaged connections still bypass persistent cache reads'
             fn (): array => ['version' => 2],
             $connection,
         ))->toBe(['version' => 2]);
+    } finally {
+        $connection->rollBack();
+    }
+});
+
+test('invalidations fail closed when an active transaction has no callback manager', function () {
+    $connection = new SQLiteConnection(new PDO('sqlite::memory:'), 'unmanaged-invalidation-probe');
+    $connection->beginTransaction();
+
+    try {
+        expect(fn () => VersionedCache::bump('unmanaged-invalidation', $connection))
+            ->toThrow(
+                RuntimeException::class,
+                'Unable to bind cache invalidation to the active database transaction.',
+            );
     } finally {
         $connection->rollBack();
     }
@@ -966,6 +1269,307 @@ test('user options do not leak between users', function () {
     $this->actingAs($firstUser);
     expect($firstUser->getOption('columns.Contact'))->toBe(['name']);
 });
+
+test('dotted user ids and option names have distinct physical identities', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    Schema::create('adversarial_option_users', function (Blueprint $table): void {
+        $table->string('id')->primary();
+        $table->unsignedBigInteger('current_team_id')->nullable();
+        $table->timestamps();
+    });
+    config()->set('aura.resources.user', AdversarialOptionUser::class);
+
+    $teamId = config('aura.teams') ? createSuperAdmin()->current_team_id : null;
+    foreach (['customer', 'customer.eu'] as $userId) {
+        DB::table('adversarial_option_users')->insert([
+            'id' => $userId,
+            'current_team_id' => $teamId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    $customer = AdversarialOptionUser::withoutGlobalScopes()->findOrFail('customer');
+    $europeanCustomer = AdversarialOptionUser::withoutGlobalScopes()->findOrFail('customer.eu');
+
+    $customer->updateOption('eu.secret', ['owner' => 'customer']);
+
+    expect($europeanCustomer->getOption('secret'))->toBeNull();
+
+    $europeanCustomer->updateOption('secret', ['owner' => 'customer.eu']);
+
+    expect($customer->getOption('eu.secret'))->toBe(['owner' => 'customer'])
+        ->and($europeanCustomer->getOption('secret'))->toBe(['owner' => 'customer.eu'])
+        ->and(Option::withoutGlobalScopes()->count())->toBe(2);
+});
+
+test('numeric user options migrate legacy rows and invalidate legacy cache generations', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+    $teamId = config('aura.teams') ? $user->current_team_id : 'global';
+    $legacyName = 'user.'.$user->id.'.legacy.setting';
+    $legacyNamespace = 'option.user.'.$user->id.'.team.'.$teamId;
+    $attributes = [
+        'name' => $legacyName,
+        'value' => ['version' => 1],
+    ];
+
+    if (config('aura.teams')) {
+        $attributes['team_id'] = $teamId;
+    }
+
+    Option::withoutGlobalScopes()->create($attributes);
+
+    expect($user->getOption('legacy.setting'))->toBe(['version' => 1])
+        ->and(VersionedCache::remember(
+            $legacyNamespace,
+            $legacyName,
+            60,
+            fn (): array => ['version' => 1],
+        ))->toBe(['version' => 1]);
+
+    $user->updateOption('legacy.setting', ['version' => 2]);
+
+    expect($user->getOption('legacy.setting'))->toBe(['version' => 2])
+        ->and(VersionedCache::remember(
+            $legacyNamespace,
+            $legacyName,
+            60,
+            fn (): array => ['version' => 2],
+        ))->toBe(['version' => 2])
+        ->and(Option::withoutGlobalScopes()->where('name', $legacyName)->exists())->toBeFalse()
+        ->and(Option::withoutGlobalScopes()->count())->toBe(1)
+        ->and(Option::withoutGlobalScopes()->value('name'))->toStartWith('aura-user-option-v2:');
+});
+
+test('canonical numeric user writes remove stale legacy aliases', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+    $user->updateOption('mixed-deployment', ['version' => 1]);
+    $legacyName = 'user.'.$user->id.'.mixed-deployment';
+    $attributes = [
+        'name' => $legacyName,
+        'value' => ['version' => 0],
+    ];
+
+    if (config('aura.teams')) {
+        $attributes['team_id'] = $user->current_team_id;
+    }
+
+    Option::withoutGlobalScopes()->create($attributes);
+    $user->updateOption('mixed-deployment', ['version' => 2]);
+
+    expect($user->getOption('mixed-deployment'))->toBe(['version' => 2])
+        ->and(Option::withoutGlobalScopes()->withTrashed()->where('name', $legacyName)->exists())->toBeFalse()
+        ->and(Option::withoutGlobalScopes()->withTrashed()->count())->toBe(1);
+});
+
+test('direct option model updates invalidate warmed user option values', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+    $user->updateOption('direct-model', ['version' => 1]);
+
+    expect($user->getOption('direct-model'))->toBe(['version' => 1]);
+
+    $option = Option::withoutGlobalScopes()->sole();
+    $option->update(['value' => ['version' => 2]]);
+
+    expect($user->getOption('direct-model'))->toBe(['version' => 2]);
+});
+
+test('the generic resource editor invalidates warmed option values', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+    $user->updateOption('resource-editor', ['version' => 1]);
+    $option = Option::withoutGlobalScopes()->sole();
+
+    expect($user->getOption('resource-editor'))->toBe(['version' => 1]);
+
+    livewire(Edit::class, ['slug' => 'option', 'id' => $option->id])
+        ->set('form.fields.value', ['version' => 2])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($user->getOption('resource-editor'))->toBe(['version' => 2]);
+});
+
+test('direct option model updates invalidate warmed team option values', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $team = createSuperAdmin()->currentTeam;
+    $team->updateOption('direct-model', ['version' => 1]);
+
+    expect($team->getOption('direct-model'))->toBe(['version' => 1]);
+
+    Option::withoutGlobalScopes()->sole()->update(['value' => ['version' => 2]]);
+
+    expect($team->getOption('direct-model'))->toBe(['version' => 2]);
+})->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
+
+test('direct option model updates invalidate warmed global option values', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    Aura::updateOption('direct-model', ['version' => 1]);
+
+    expect(Aura::getOption('direct-model'))->toBe(['version' => 1]);
+
+    Option::withoutGlobalScopes()->sole()->update(['value' => ['version' => 2]]);
+
+    expect(Aura::getOption('direct-model'))->toBe(['version' => 2]);
+})->skip(fn () => config('aura.teams'), 'Global option context requires teams-off mode.');
+
+test('direct option model creation invalidates a cached user option miss', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+
+    expect($user->getOption('direct-create'))->toBeNull();
+
+    $attributes = [
+        'name' => User::optionNamePrefixFor($user->id).'direct-create',
+        'value' => ['created' => true],
+    ];
+
+    if (config('aura.teams')) {
+        $attributes['team_id'] = $user->current_team_id;
+    }
+
+    Option::withoutGlobalScopes()->create($attributes);
+
+    expect($user->getOption('direct-create'))->toBe(['created' => true]);
+});
+
+test('direct option name and user changes invalidate old and new cached identities', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $firstUser = createSuperAdmin();
+    $secondUser = config('aura.teams')
+        ? soleMemberOf($firstUser->currentTeam)
+        : createSuperAdminWithoutTeam();
+    $firstUser->updateOption('direct-owner-change', ['owner' => 'first']);
+
+    expect($firstUser->getOption('direct-owner-change'))->toBe(['owner' => 'first'])
+        ->and($secondUser->getOption('direct-owner-change'))->toBeNull();
+
+    $option = Option::withoutGlobalScopes()->sole();
+    $option->update([
+        'name' => User::optionNamePrefixFor($secondUser->id).'direct-owner-change',
+        'value' => ['owner' => 'second'],
+    ]);
+
+    expect($firstUser->getOption('direct-owner-change'))->toBeNull()
+        ->and($secondUser->getOption('direct-owner-change'))->toBe(['owner' => 'second']);
+});
+
+test('direct option team changes invalidate old and new cached scopes', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+    $firstTeam = $user->currentTeam;
+    $user->updateOption('direct-team-change', ['team' => 'first']);
+    $secondTeam = Team::factory()->create();
+
+    expect($user->switchTeam($firstTeam))->toBeTrue()
+        ->and($user->getOption('direct-team-change'))->toBe(['team' => 'first'])
+        ->and($user->switchTeam($secondTeam))->toBeTrue()
+        ->and($user->getOption('direct-team-change'))->toBeNull();
+
+    $option = Option::withoutGlobalScopes()->sole();
+    $option->update(['team_id' => $secondTeam->id]);
+
+    expect($user->getOption('direct-team-change'))->toBe(['team' => 'first'])
+        ->and($user->switchTeam($firstTeam))->toBeTrue()
+        ->and($user->getOption('direct-team-change'))->toBeNull();
+})->skip(fn () => ! config('aura.teams'), 'Option team changes require teams enabled.');
+
+test('rolled back direct option updates neither publish nor invalidate committed cache state', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+    $user->updateOption('direct-rollback', ['version' => 1]);
+    $option = Option::withoutGlobalScopes()->sole();
+
+    expect($user->getOption('direct-rollback'))->toBe(['version' => 1]);
+
+    DB::beginTransaction();
+
+    try {
+        $option->update(['value' => ['version' => 2]]);
+
+        expect($user->getOption('direct-rollback'))->toBe(['version' => 2]);
+    } finally {
+        DB::rollBack();
+    }
+
+    expect($user->getOption('direct-rollback'))->toBe(['version' => 1]);
+});
+
+test('direct option deletion retains a restorable row while hiding its cached value', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+    $user->updateOption('restorable-model', ['version' => 1]);
+    $option = Option::withoutGlobalScopes()->sole();
+
+    expect($user->getOption('restorable-model'))->toBe(['version' => 1]);
+
+    $option->delete();
+
+    expect($user->getOption('restorable-model'))->toBeNull()
+        ->and(DB::table('options')->where('id', $option->id)->exists())->toBeTrue();
+
+    $option->restore();
+
+    expect($user->getOption('restorable-model'))->toBe(['version' => 1]);
+});
+
+test('direct option force deletion invalidates and removes its cached value', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+    $user->updateOption('force-delete-model', ['version' => 1]);
+    $option = Option::withoutGlobalScopes()->sole();
+
+    expect($user->getOption('force-delete-model'))->toBe(['version' => 1]);
+
+    $option->forceDelete();
+
+    expect($user->getOption('force-delete-model'))->toBeNull()
+        ->and(DB::table('options')->where('id', $option->id)->exists())->toBeFalse();
+});
+
+test('updating a soft deleted user option restores its unique physical identity', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $user = createSuperAdmin();
+    $user->updateOption('restore-on-write', ['version' => 1]);
+    $user->deleteOption('restore-on-write');
+
+    expect($user->getOption('restore-on-write'))->toBeNull();
+
+    $user->updateOption('restore-on-write', ['version' => 2]);
+
+    expect($user->getOption('restore-on-write'))->toBe(['version' => 2])
+        ->and(Option::withoutGlobalScopes()->withTrashed()->count())->toBe(1);
+});
+
+test('updating a soft deleted team option restores its unique physical identity', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    $team = createSuperAdmin()->currentTeam;
+    $team->updateOption('restore-on-write', ['version' => 1]);
+    $team->deleteOption('restore-on-write');
+
+    expect($team->getOption('restore-on-write'))->toBeNull();
+
+    $team->updateOption('restore-on-write', ['version' => 2]);
+
+    expect($team->getOption('restore-on-write'))->toBe(['version' => 2])
+        ->and(Option::withoutGlobalScopes()->withTrashed()->count())->toBe(1);
+})->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
+
+test('updating a soft deleted global option restores its unique physical identity', function () {
+    Cache::swap(serializedOptionCacheRepository());
+    Aura::updateOption('restore-on-write', ['version' => 1]);
+    Option::withoutGlobalScopes()->sole()->delete();
+
+    expect(Aura::getOption('restore-on-write'))->toBe([]);
+
+    Aura::updateOption('restore-on-write', ['version' => 2]);
+
+    expect(Aura::getOption('restore-on-write'))->toBe(['version' => 2])
+        ->and(Option::withoutGlobalScopes()->withTrashed()->count())->toBe(1);
+})->skip(fn () => config('aura.teams'), 'Global option context requires teams-off mode.');
 
 test('user options do not leak between teams', function () {
     Cache::swap(serializedOptionCacheRepository());

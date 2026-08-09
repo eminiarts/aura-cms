@@ -5,6 +5,7 @@
 namespace Aura\Base\Navigation;
 
 use Aura\Base\Services\VersionedCache;
+use Illuminate\Database\Connection;
 
 class Navigation
 {
@@ -38,5 +39,10 @@ class Navigation
             fn ($navigation) => collect([]),
             'navigation.clear.v1',
         );
+    }
+
+    public static function clearCache(?Connection $connection = null): void
+    {
+        VersionedCache::bump('navigation', $connection);
     }
 }

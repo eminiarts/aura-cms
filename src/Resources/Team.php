@@ -15,7 +15,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 
 class Team extends Resource
 {
@@ -63,6 +62,7 @@ class Team extends Resource
     public static function clearOptionCacheForTeam(string|int $teamId, ?Connection $connection = null): void
     {
         VersionedCache::bump(self::optionCacheNamespaceFor($teamId), $connection);
+        VersionedCache::bump(self::legacyOptionCacheNamespaceFor($teamId), $connection);
     }
 
     public function customPermissions()
@@ -281,11 +281,26 @@ class Team extends Resource
     public function updateOption($option, $value)
     {
         $optionName = $this->optionName($option);
+        $attributes = ['name' => $optionName, 'team_id' => $this->id];
+        $record = Option::withoutGlobalScope(TeamScope::class)
+            ->withTrashed()
+            ->where($attributes)
+            ->first();
 
-        $record = Option::withoutGlobalScope(TeamScope::class)->updateOrCreate([
-            'name' => $optionName,
-            'team_id' => $this->id,
-        ], ['value' => $value]);
+        if ($record) {
+            $record->fill(['value' => $value]);
+
+            if ($record->trashed()) {
+                $record->restore();
+            } else {
+                $record->save();
+            }
+        } else {
+            $record = Option::withoutGlobalScope(TeamScope::class)->updateOrCreate(
+                $attributes,
+                ['value' => $value],
+            );
+        }
 
         $this->forgetOptionCache($option, $record->getConnection());
     }
@@ -381,7 +396,7 @@ class Team extends Resource
             $optionUserIds = $userClass::withoutGlobalScopes()
                 ->pluck($userModel->getKeyName())
                 ->filter(fn (string|int $userId): bool => $optionNames->contains(
-                    fn (string $name): bool => Str::startsWith($name, 'user.'.$userId.'.')
+                    fn (string $name): bool => $userClass::optionNameBelongsToUser($name, $userId)
                 ));
 
             // Get all users who had the deleted team as their current team
@@ -415,7 +430,7 @@ class Team extends Resource
             // The role rows above were removed via a mass delete (no model
             // events), so bump the catalog version explicitly to invalidate every
             // user's resolved-roles memo.
-            Role::bumpCatalogVersion();
+            Role::bumpCatalogVersion($connection);
 
             // Delete all the team's metas
             $team->meta()->delete();
@@ -426,15 +441,16 @@ class Team extends Resource
             // Delete every option physically owned by the team. Names can be
             // team.*, user.*, or application-defined, so team_id is the only
             // complete ownership boundary and the query must bypass TeamScope.
-            Option::withoutGlobalScopes()->where('team_id', $team->id)->delete();
+            Option::withoutGlobalScopes()->where('team_id', $team->id)->forceDelete();
 
             static::clearOptionCacheForTeam($team->id, $connection);
+            User::clearOptionCacheForScope($team->id, $connection);
 
             $affectedMemberIds
                 ->merge($reassignedUserIds)
                 ->merge($optionUserIds)
                 ->unique()
-                ->each(fn ($userId) => User::clearOptionCacheForTeam($userId, $team->id, $connection));
+                ->each(fn ($userId) => User::clearLegacyOptionCacheForTeam($userId, $team->id, $connection));
 
             $reassignedUserIds->each(function ($userId) {
                 User::clearCurrentTeamCache($userId);
@@ -456,7 +472,20 @@ class Team extends Resource
 
     protected function forgetOptionCache(string $option, ?Connection $connection = null): void
     {
-        VersionedCache::bump($this->optionCacheNamespace(), $connection ?? $this->optionConnection());
+        $connection ??= $this->optionConnection();
+
+        VersionedCache::bump($this->optionCacheNamespace(), $connection);
+        VersionedCache::bump($this->legacyOptionCacheNamespace(), $connection);
+    }
+
+    protected function legacyOptionCacheNamespace(): string
+    {
+        return self::legacyOptionCacheNamespaceFor($this->id);
+    }
+
+    protected static function legacyOptionCacheNamespaceFor(string|int $teamId): string
+    {
+        return 'option.team.'.$teamId;
     }
 
     /**
@@ -476,7 +505,7 @@ class Team extends Resource
 
     protected static function optionCacheNamespaceFor(string|int $teamId): string
     {
-        return 'option.team.'.$teamId;
+        return 'option.team.v2.'.VersionedCache::identity('option.team.scope', $teamId);
     }
 
     protected function optionConnection(): Connection

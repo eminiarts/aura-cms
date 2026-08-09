@@ -266,6 +266,8 @@ $team->clearCachedOption('setting_name');
 
 Options are stored with the naming convention: `team.{team_id}.{option_name}`
 
+User-scoped options use a reserved v2 physical name with a canonical owner hash, while their public API remains `$user->getOption($name)` / `$user->updateOption($name, $value)`. This prevents dotted string user ids from colliding with dotted option names. Option identities are unique within each team and support soft delete/restore.
+
 ### Team Preferences
 
 Each team can maintain its own:
@@ -296,7 +298,7 @@ Teams support soft deletes. When a team is deleted:
 1. Users with this team as their `current_team_id` are switched to their first available team
 2. All team meta data is deleted
 3. All team invitations are deleted
-4. Every option row owned by the deleted `team_id` is deleted without tenant scopes (including `team.*`, `user.*`, and application-defined names)
+4. Every option row owned by the deleted `team_id` is force-deleted without tenant scopes (including `team.*`, canonical user options, and application-defined names)
 5. Team-option, user-option, per-user team-list, and Global Admin team-list generations are invalidated after commit; rollback retains the prior cached state
 6. Users are redirected to the dashboard
 
