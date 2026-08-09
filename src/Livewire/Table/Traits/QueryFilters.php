@@ -35,13 +35,7 @@ trait QueryFilters
         }
 
         $query->where(function (Builder $query) use ($groups): void {
-            foreach ($groups as $groupIndex => $group) {
-                $method = $groupIndex > 0 && $group['operator'] === 'or' ? 'orWhere' : 'where';
-
-                $query->{$method}(function (Builder $query) use ($group): void {
-                    $this->applyFilterGroup($query, $group);
-                });
-            }
+            $this->applyFilterGroupsLeftAssociatively($query, $groups, count($groups) - 1);
         });
 
         return $query;
@@ -114,6 +108,36 @@ trait QueryFilters
         }
 
         return FilterCapability::hasValue($filter['value'] ?? null);
+    }
+
+    /**
+     * @param  list<array{operator: 'and'|'or', filters: list<array<string, mixed>>}>  $groups
+     */
+    private function applyFilterGroupsLeftAssociatively(Builder $query, array $groups, int $groupIndex): void
+    {
+        if ($groupIndex === 0) {
+            $this->applyFilterGroup($query, $groups[0]);
+
+            return;
+        }
+
+        $query->where(function (Builder $query) use ($groups, $groupIndex): void {
+            $this->applyFilterGroupsLeftAssociatively($query, $groups, $groupIndex - 1);
+        });
+
+        $group = $groups[$groupIndex];
+
+        if ($group['operator'] === 'or') {
+            $query->orWhere(function (Builder $query) use ($group): void {
+                $this->applyFilterGroup($query, $group);
+            });
+
+            return;
+        }
+
+        $query->where(function (Builder $query) use ($group): void {
+            $this->applyFilterGroup($query, $group);
+        });
     }
 
     private function matchNoFilterRows(Builder $query): Builder

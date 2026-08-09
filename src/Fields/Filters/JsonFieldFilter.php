@@ -5,6 +5,7 @@ namespace Aura\Base\Fields\Filters;
 use Aura\Base\Contracts\AppliesFieldFilter;
 use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Grammars\SQLiteGrammar;
 
 final class JsonFieldFilter implements AppliesFieldFilter
 {
@@ -97,6 +98,12 @@ final class JsonFieldFilter implements AppliesFieldFilter
             return;
         }
 
+        if ($query->getQuery()->getGrammar() instanceof SQLiteGrammar) {
+            $this->applySqliteOperator($query, $column, $filter['operator'], $values);
+
+            return;
+        }
+
         if ($filter['operator'] === 'contains') {
             $query->where(function (Builder $query) use ($column, $values): void {
                 foreach ($values as $index => $value) {
@@ -117,5 +124,61 @@ final class JsonFieldFilter implements AppliesFieldFilter
         }
 
         $query->whereRaw('1 = 0');
+    }
+
+    /**
+     * @param  list<mixed>  $values
+     */
+    private function applySqliteOperator(Builder $query, string $column, string $operator, array $values): void
+    {
+        if ($operator === 'contains') {
+            $query->where(function (Builder $query) use ($column, $values): void {
+                foreach ($values as $index => $value) {
+                    [$sql, $bindings] = $this->sqliteJsonContainsExpression($query, $column, $value);
+
+                    if ($index === 0) {
+                        $query->whereRaw($sql, $bindings);
+                    } else {
+                        $query->orWhereRaw($sql, $bindings);
+                    }
+                }
+            });
+
+            return;
+        }
+
+        if ($operator === 'does_not_contain') {
+            foreach ($values as $value) {
+                [$sql, $bindings] = $this->sqliteJsonContainsExpression($query, $column, $value);
+                $query->whereRaw('not '.$sql, $bindings);
+            }
+
+            return;
+        }
+
+        $query->whereRaw('1 = 0');
+    }
+
+    /**
+     * @return array{string, list<mixed>}
+     */
+    private function sqliteJsonContainsExpression(Builder $query, string $column, mixed $value): array
+    {
+        $wrappedColumn = $query->getQuery()->getGrammar()->wrap($column);
+        $jsonType = match (true) {
+            $value === true => 'true',
+            $value === false => 'false',
+            is_int($value) => 'integer',
+            is_float($value) => 'real',
+            default => 'text',
+        };
+
+        return [
+            sprintf(
+                'exists (select 1 from json_each(%s) as "aura_json_value" where "aura_json_value"."type" = ? and "aura_json_value"."value" is ?)',
+                $wrappedColumn,
+            ),
+            [$jsonType, $value],
+        ];
     }
 }

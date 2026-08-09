@@ -96,6 +96,17 @@ class FilterCapabilityResource extends Resource
                 'on_index' => false,
             ],
             [
+                'name' => 'Typed Segments',
+                'slug' => 'typed_segments',
+                'type' => Checkbox::class,
+                'options' => [
+                    ['key' => false, 'value' => 'False'],
+                    ['key' => 0, 'value' => 'Integer zero'],
+                    ['key' => '0', 'value' => 'String zero'],
+                ],
+                'on_index' => false,
+            ],
+            [
                 'name' => 'Stored People',
                 'slug' => 'stored_people',
                 'type' => AdvancedSelect::class,
@@ -547,6 +558,46 @@ test('stored AdvancedSelect filtering uses exact portable JSON membership', func
         ->and($mysqlSql)->toContain('json_contains');
 });
 
+test('sqlite JSON membership preserves boolean integer and string identities', function () {
+    $boolean = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Boolean false segment',
+        'typed_segments' => [false],
+    ]);
+    $integer = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Integer zero segment',
+        'typed_segments' => [0],
+    ]);
+    $string = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'String zero segment',
+        'typed_segments' => ['0'],
+    ]);
+
+    $component = livewire(Table::class, ['model' => $boolean]);
+    $values = $component->instance()->fieldsForFilter()['typed_segments']['filter']['values'];
+
+    expect(array_column($values, 'value'))->toBe([false, 0, '0']);
+
+    foreach ([$boolean, $integer, $string] as $index => $expected) {
+        $component
+            ->set('filters.custom', [[
+                'filters' => [[
+                    'name' => 'typed_segments',
+                    'operator' => 'contains',
+                    'value' => $values[$index]['wire_value'],
+                ]],
+            ]])
+            ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->all() === [$expected->id]);
+    }
+
+    $component
+        ->set('filters.custom.0.filters.0.operator', 'does_not_contain')
+        ->set('filters.custom.0.filters.0.value', $values[0]['wire_value'])
+        ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->sort()->values()->all() === [$integer->id, $string->id]);
+});
+
 test('legacy flat saved filter lists remain queryable', function () {
     $matching = FilterCapabilityResource::create([
         'type' => FilterCapabilityResource::$type,
@@ -566,6 +617,65 @@ test('legacy flat saved filter lists remain queryable', function () {
             'value' => 'draft',
         ]])
         ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->all() === [$matching->id]);
+});
+
+test('filter groups are evaluated left associatively', function () {
+    FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'A only',
+        'stage' => 'draft',
+        'status_choice' => 9,
+        'enabled' => false,
+    ]);
+    $aAndC = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'A and C',
+        'stage' => 'draft',
+        'status_choice' => 9,
+        'enabled' => true,
+    ]);
+    $bAndC = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'B and C',
+        'stage' => 7,
+        'status_choice' => 'open',
+        'enabled' => true,
+    ]);
+    FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'B only',
+        'stage' => 7,
+        'status_choice' => 'open',
+        'enabled' => false,
+    ]);
+
+    livewire(Table::class, ['model' => $aAndC])
+        ->set('filters.custom', [
+            [
+                'filters' => [[
+                    'name' => 'stage',
+                    'operator' => 'is',
+                    'value' => 'draft',
+                ]],
+            ],
+            [
+                'operator' => 'or',
+                'filters' => [[
+                    'name' => 'status_choice',
+                    'operator' => 'is',
+                    'value' => 'open',
+                ]],
+            ],
+            [
+                'operator' => 'and',
+                'filters' => [[
+                    'name' => 'enabled',
+                    'operator' => 'is',
+                    'value' => '1',
+                ]],
+            ],
+        ])
+        ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->sort()->values()->all() === [$aAndC->id, $bAndC->id]);
 });
 
 test('invalid handlers operators and hostile group payloads fail closed', function () {
