@@ -19,6 +19,12 @@ final class ResourceFieldFilter implements AppliesFieldFilter
         array $filter,
         FilterCapability $capability,
     ): void {
+        if (! $this->isValidFilter($field, $filter, $capability)) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
         if ($resource->isMetaField($field['slug'])) {
             $this->applyMetaFilter($query, $filter);
 
@@ -111,24 +117,72 @@ final class ResourceFieldFilter implements AppliesFieldFilter
         };
     }
 
+    private function isScalar(mixed $value): bool
+    {
+        return (is_string($value) && trim($value) !== '')
+            || is_int($value)
+            || is_bool($value)
+            || (is_float($value) && is_finite($value));
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     * @param  array<string, mixed>  $filter
+     */
+    private function isValidFilter(array $field, array $filter, FilterCapability $capability): bool
+    {
+        $slug = $field['slug'] ?? null;
+        $name = $filter['name'] ?? null;
+        $operator = $filter['operator'] ?? null;
+
+        if (! is_string($slug) || trim($slug) === '' || $name !== $slug || ! is_string($operator)) {
+            return false;
+        }
+
+        if (! array_key_exists($operator, $capability->toArray()['operators'])) {
+            return false;
+        }
+
+        if (in_array($operator, ['is_empty', 'is_not_empty', 'date_is_empty', 'date_is_not_empty'], true)) {
+            return true;
+        }
+
+        $value = $filter['value'] ?? null;
+
+        if (in_array($operator, ['in', 'not_in'], true)) {
+            if (! is_array($value) || ! array_is_list($value) || $value === []) {
+                return false;
+            }
+
+            foreach ($value as $item) {
+                if (! $this->isScalar($item)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        if ($operator === 'date_between') {
+            return is_array($value)
+                && array_keys($value) === ['from', 'to']
+                && $this->isScalar($value['from'])
+                && $this->isScalar($value['to']);
+        }
+
+        return $this->isScalar($value);
+    }
+
     /**
      * @return list<mixed>
      */
     private function listValue(mixed $value): array
     {
-        if (is_array($value)) {
-            return array_values($value);
-        }
-
-        return explode(',', (string) $value);
+        return is_array($value) ? $value : [];
     }
 
     private function scalarValue(mixed $value): string
     {
-        if (is_array($value)) {
-            return (string) reset($value);
-        }
-
-        return (string) $value;
+        return is_scalar($value) ? (string) $value : '';
     }
 }

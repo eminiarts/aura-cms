@@ -20,7 +20,14 @@ final class RelationshipFieldFilter implements AppliesFieldFilter
         FilterCapability $capability,
     ): void {
         $context = $capability->context();
-        $values = is_array($filter['value'] ?? null) ? array_values($filter['value']) : [];
+        $values = $filter['value'] ?? null;
+
+        if (! $this->isValidPayload($field, $filter, $context, $values)) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
         $qualifiedKeyName = $query->getModel()->getQualifiedKeyName();
 
         $constraint = function ($subQuery) use ($context, $field, $resource, $values) {
@@ -45,5 +52,36 @@ final class RelationshipFieldFilter implements AppliesFieldFilter
         }
 
         $query->whereRaw('1 = 0');
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     * @param  array<string, mixed>  $filter
+     * @param  array<string, mixed>  $context
+     */
+    private function isValidPayload(array $field, array $filter, array $context, mixed $values): bool
+    {
+        if (! is_string($field['slug'] ?? null)
+            || ($filter['name'] ?? null) !== $field['slug']
+            || ! in_array($filter['operator'] ?? null, ['contains', 'does_not_contain'], true)
+            || ! is_array($values)
+            || ! array_is_list($values)
+            || $values === []) {
+            return false;
+        }
+
+        foreach ($values as $value) {
+            if ((! is_string($value) || trim($value) === '') && ! is_int($value)) {
+                return false;
+            }
+        }
+
+        foreach (['resource_type', 'owner_pivot_key', 'value_pivot_key', 'owner_type_column', 'value_type_column'] as $key) {
+            if (! is_string($context[$key] ?? null) || trim($context[$key]) === '') {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

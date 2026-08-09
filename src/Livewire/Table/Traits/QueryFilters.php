@@ -3,6 +3,7 @@
 namespace Aura\Base\Livewire\Table\Traits;
 
 use Aura\Base\Fields\Field;
+use Aura\Base\Fields\Filters\FieldFilterCapabilityResolver;
 use Aura\Base\Fields\Filters\FilterCapability;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -63,7 +64,7 @@ trait QueryFilters
                 return;
             }
 
-            $fieldInstance->filterCapability($this->model, $field)->apply(
+            (new FieldFilterCapabilityResolver)->resolve($fieldInstance, $this->model, $field)->apply(
                 $query,
                 $this->model,
                 $field,
@@ -103,7 +104,7 @@ trait QueryFilters
             return true;
         }
 
-        if (! array_key_exists($operator, $fieldInstance->filterCapability($this->model, $field)->toArray()['operators'])) {
+        if (! array_key_exists($operator, (new FieldFilterCapabilityResolver)->resolve($fieldInstance, $this->model, $field)->toArray()['operators'])) {
             return true;
         }
 
@@ -138,6 +139,32 @@ trait QueryFilters
         $query->where(function (Builder $query) use ($group): void {
             $this->applyFilterGroup($query, $group);
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $filter
+     */
+    private function isIncompleteFilter(array $filter): bool
+    {
+        $fieldSlug = $filter['name'] ?? null;
+        $operator = $filter['operator'] ?? null;
+        $value = $filter['value'] ?? null;
+
+        if (! is_string($fieldSlug)
+            || ! is_string($operator)
+            || ($value !== null && (! is_string($value) || trim($value) !== ''))) {
+            return false;
+        }
+
+        $field = $this->model->fieldBySlug($fieldSlug);
+        $fieldInstance = $this->model->fieldClassBySlug($fieldSlug);
+
+        return $field
+            && $fieldInstance instanceof Field
+            && array_key_exists(
+                $operator,
+                (new FieldFilterCapabilityResolver)->resolve($fieldInstance, $this->model, $field)->toArray()['operators'],
+            );
     }
 
     private function matchNoFilterRows(Builder $query): Builder
@@ -189,7 +216,12 @@ trait QueryFilters
             if ($missingField && $missingOperator) {
                 $options = $filter['options'] ?? [];
 
-                if (FilterCapability::hasValue($filter['value'] ?? null) || ! is_array($options) || $options !== []) {
+                if (! array_key_exists('name', $filter)
+                    || ! array_key_exists('operator', $filter)
+                    || ($filter['value'] ?? null) !== null
+                    || ! array_key_exists('options', $filter)
+                    || ! is_array($options)
+                    || $options !== []) {
                     return null;
                 }
 
@@ -208,9 +240,15 @@ trait QueryFilters
             $filter['operator'] = trim($filterOperator);
             $filter['main_operator'] = $mainOperator;
 
-            if ($this->isValidFilter($filter)) {
-                $normalized[] = $filter;
+            if (! $this->isValidFilter($filter)) {
+                if ($this->isIncompleteFilter($filter)) {
+                    continue;
+                }
+
+                return null;
             }
+
+            $normalized[] = $filter;
         }
 
         return [
@@ -246,6 +284,10 @@ trait QueryFilters
 
         if ($containsGroups && $containsFlatFilters) {
             return null;
+        }
+
+        if ($customFilters === []) {
+            return [];
         }
 
         $rawGroups = $containsFlatFilters ? [['filters' => $customFilters]] : $customFilters;

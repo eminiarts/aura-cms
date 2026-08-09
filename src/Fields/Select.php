@@ -2,10 +2,11 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\ProvidesFilterCapability;
 use Aura\Base\Fields\Filters\FilterCapability;
 use Aura\Base\Resource;
 
-class Select extends Field
+class Select extends Field implements ProvidesFilterCapability
 {
     public $edit = 'aura::fields.select';
 
@@ -14,11 +15,6 @@ class Select extends Field
     public $optionGroup = 'Choice Fields';
 
     public $view = 'aura::fields.view-value';
-
-    public function filterCapability(Resource $model, array $field): FilterCapability
-    {
-        return $this->optionFilterCapability($model, $field);
-    }
 
     public function filterOptions()
     {
@@ -121,5 +117,10 @@ class Select extends Field
 
         // return the options defined in the field
         return $field['options'] ?? [];
+    }
+
+    public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::scalarOption($this->filterOptions(), $this->getFilterValues($model, $field));
     }
 }

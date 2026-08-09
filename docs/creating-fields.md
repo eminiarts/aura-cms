@@ -248,24 +248,30 @@ public function getFilterValues($model, $field)
 }
 ```
 
-#### `filterCapability($model, $field)`
+#### `ProvidesFilterCapability`
 
 Table filters use a field-owned `FilterCapability` for both their input UI and
-their query behavior. The base `Field` returns a text capability, while choice,
-boolean, date, and relationship fields declare a more specific capability.
-Third-party fields extend filtering by overriding this method; the table does
-not inspect the field class name.
+their query behavior. Fields that do not opt in receive the default text
+capability. Choice, boolean, date, and relationship fields implement
+`ProvidesFilterCapability` to declare a more specific capability. Discovery is
+outside the `Field` inheritance method namespace, so existing package fields may
+keep unrelated legacy methods without signature collisions. The table does not
+inspect the field class name.
 
 ```php
+use Aura\Base\Contracts\ProvidesFilterCapability;
 use Aura\Base\Fields\Filters\FilterCapability;
 use Aura\Base\Resource;
 
-public function filterCapability(Resource $model, array $field): FilterCapability
+class RatingField extends Field implements ProvidesFilterCapability
 {
-    return FilterCapability::scalarOption(
-        operators: $this->filterOptions(),
-        values: $this->getFilterValues($model, $field),
-    );
+    public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::scalarOption(
+            operators: $this->filterOptions(),
+            values: $this->getFilterValues($model, $field),
+        );
+    }
 }
 ```
 
@@ -285,7 +291,8 @@ The available factories are:
 Option capabilities accept both associative `value => label` maps and
 list-style rows such as `['key' => 'open', 'value' => 'Open']`. Aura converts
 them to canonical `value`, `wire_value`, and `label` rows. Empty or malformed
-options are omitted. Null and scalar option containers are treated as empty.
+options are omitted. Capability declarations accept arrays, traversable values, or null;
+other option containers are rejected.
 The original scalar value is restored before the query is applied, so an
 integer option remains an integer even though HTML submits a string. Legacy
 wire values remain unchanged when unambiguous. JSON-backed multiple-value
@@ -348,6 +355,7 @@ component in its service provider and declare a handler implementing
 
 ```php
 use Aura\Base\Contracts\AppliesFieldFilter;
+use Aura\Base\Contracts\ProvidesFilterCapability;
 use Aura\Base\Fields\Filters\FilterCapability;
 use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Builder;
@@ -355,14 +363,17 @@ use Illuminate\Support\Facades\Blade;
 
 Blade::anonymousComponentPath(__DIR__.'/../resources/views/components', 'acme');
 
-public function filterCapability(Resource $model, array $field): FilterCapability
+class PriorityField extends Field implements ProvidesFilterCapability
 {
-    return FilterCapability::custom(
-        component: 'acme::priority-filter',
-        operators: ['is' => __('is')],
-        queryHandler: PriorityFilter::class,
-        values: ['urgent' => __('Urgent'), 'routine' => __('Routine')],
-    );
+    public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::custom(
+            component: 'acme::priority-filter',
+            operators: ['is' => __('is')],
+            queryHandler: PriorityFilter::class,
+            values: ['urgent' => __('Urgent'), 'routine' => __('Routine')],
+        );
+    }
 }
 
 final class PriorityFilter implements AppliesFieldFilter

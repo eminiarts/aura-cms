@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Aura\Base\Fields\Field;
+use Aura\Base\Fields\Filters\FieldFilterCapabilityResolver;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 
@@ -112,7 +114,12 @@ trait Filters
     {
         return $this->fields->mapWithKeys(function ($field) {
             $fieldInstance = app($field['type']);
-            $filter = $fieldInstance->filterCapability($this->model, $field)->toArray();
+
+            if (! $fieldInstance instanceof Field) {
+                return [];
+            }
+
+            $filter = (new FieldFilterCapabilityResolver)->resolve($fieldInstance, $this->model, $field)->toArray();
 
             return [
                 $field['slug'] => [

@@ -7,6 +7,7 @@ use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Builder;
 use InvalidArgumentException;
 use LogicException;
+use Traversable;
 
 final class FilterCapability
 {
@@ -119,19 +120,21 @@ final class FilterCapability
      * @param  array<string, mixed>  $context
      */
     public static function custom(
-        string $component,
-        array $operators,
-        string $queryHandler,
+        mixed $component,
+        mixed $operators,
+        mixed $queryHandler,
         mixed $values = [],
-        array $context = [],
-        bool $multiple = false,
+        mixed $context = [],
+        mixed $multiple = false,
     ): self {
+        self::assertCustomDeclaration($component, $operators, $queryHandler, $values, $context, $multiple);
+
         return new self(
             type: self::CUSTOM,
             component: $component,
             operators: $operators,
             values: (new FilterOptionNormalizer)->normalize($values),
-            context: $context + ['multiple' => $multiple],
+            context: ['multiple' => $multiple] + $context,
             queryHandler: $queryHandler,
         );
     }
@@ -197,18 +200,27 @@ final class FilterCapability
      * @param  array<string, mixed>  $context
      */
     public static function option(
-        array $operators,
+        mixed $operators,
         mixed $values,
-        string $queryHandler = ResourceFieldFilter::class,
-        array $context = [],
-        bool $multiple = false,
+        mixed $queryHandler = ResourceFieldFilter::class,
+        mixed $context = [],
+        mixed $multiple = false,
     ): self {
+        self::assertCustomDeclaration(
+            'aura::fields.filters.option',
+            $operators,
+            $queryHandler,
+            $values,
+            $context,
+            $multiple,
+        );
+
         return new self(
             type: self::OPTION,
             component: 'aura::fields.filters.option',
             operators: $operators,
             values: (new FilterOptionNormalizer)->normalize($values),
-            context: $context + ['multiple' => $multiple],
+            context: ['multiple' => $multiple] + $context,
             queryHandler: $queryHandler,
         );
     }
@@ -300,6 +312,27 @@ final class FilterCapability
         return is_string($timezone) && trim($timezone) !== '' ? $timezone : 'UTC';
     }
 
+    private static function assertCustomDeclaration(
+        mixed $component,
+        mixed $operators,
+        mixed $queryHandler,
+        mixed $values,
+        mixed $context,
+        mixed $multiple,
+    ): void {
+        if (! is_string($component) || trim($component) === '') {
+            throw new InvalidArgumentException('A filter capability component is required.');
+        }
+
+        if (! is_array($operators)
+            || ! is_string($queryHandler)
+            || (! is_array($values) && ! $values instanceof Traversable && $values !== null)
+            || ! is_array($context)
+            || ! is_bool($multiple)) {
+            throw new InvalidArgumentException('Custom filter capability declarations must use the documented shapes.');
+        }
+    }
+
     private function isScalarFilterValue(mixed $value): bool
     {
         if (! is_string($value) && ! is_int($value) && ! is_float($value) && ! is_bool($value)) {
@@ -369,11 +402,19 @@ final class FilterCapability
         }
 
         if ($this->type === self::RELATIONSHIP) {
-            $values = is_array($filter['value'] ?? null) ? $filter['value'] : [$filter['value'] ?? null];
-            $values = array_values(array_filter(
-                $values,
-                fn ($value) => (is_string($value) && trim($value) !== '') || is_int($value),
-            ));
+            $value = $filter['value'] ?? null;
+
+            if (is_array($value) && ! array_is_list($value)) {
+                return null;
+            }
+
+            $values = is_array($value) ? $value : [$value];
+
+            foreach ($values as $relationshipValue) {
+                if ((! is_string($relationshipValue) || trim($relationshipValue) === '') && ! is_int($relationshipValue)) {
+                    return null;
+                }
+            }
 
             if ($values === []) {
                 return null;
@@ -389,7 +430,15 @@ final class FilterCapability
         }
 
         if (! in_array($this->type, [self::OPTION, self::BOOLEAN], true) && ! ($this->type === self::CUSTOM && $this->values !== [])) {
-            return self::hasValue($filter['value'] ?? null) ? $filter : null;
+            $value = $filter['value'] ?? null;
+
+            if (! $this->isScalarFilterValue($value)) {
+                return null;
+            }
+
+            $filter['value'] = is_string($value) ? trim($value) : $value;
+
+            return $filter;
         }
 
         $option = $this->resolveOption($filter['value'] ?? null);
@@ -409,15 +458,21 @@ final class FilterCapability
      */
     private function normalizeMultipleValue(array $filter): ?array
     {
-        $values = is_array($filter['value'] ?? null) ? $filter['value'] : [$filter['value'] ?? null];
+        $value = $filter['value'] ?? null;
+
+        if (is_array($value) && ! array_is_list($value)) {
+            return null;
+        }
+
+        $values = is_array($value) ? $value : [$value];
         $normalized = [];
 
         foreach ($values as $value) {
-            if (is_array($value) || is_object($value) || $value === null || (is_string($value) && trim($value) === '')) {
+            if (! $this->isScalarFilterValue($value)) {
                 return null;
             }
 
-            $resolved = $this->values === [] ? $value : $this->resolveOption($value);
+            $resolved = $this->values === [] ? (is_string($value) ? trim($value) : $value) : $this->resolveOption($value);
 
             if ($resolved === null) {
                 return null;

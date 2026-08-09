@@ -20,6 +20,12 @@ final class JsonFieldFilter implements AppliesFieldFilter
         array $filter,
         FilterCapability $capability,
     ): void {
+        if (! $this->isValidPayload($field, $filter, $capability)) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
         if ($resource->isMetaField($field['slug'])) {
             $this->applyMetaFilter($query, $filter);
 
@@ -157,6 +163,43 @@ final class JsonFieldFilter implements AppliesFieldFilter
         }
 
         $query->whereRaw('1 = 0');
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     * @param  array<string, mixed>  $filter
+     */
+    private function isValidPayload(array $field, array $filter, FilterCapability $capability): bool
+    {
+        $operator = $filter['operator'] ?? null;
+
+        if (! is_string($field['slug'] ?? null)
+            || ($filter['name'] ?? null) !== $field['slug']
+            || ! is_string($operator)
+            || ! array_key_exists($operator, $capability->toArray()['operators'])) {
+            return false;
+        }
+
+        if (in_array($operator, ['is_empty', 'is_not_empty'], true)) {
+            return true;
+        }
+
+        $values = $filter['value'] ?? null;
+
+        if (! is_array($values) || ! array_is_list($values) || $values === []) {
+            return false;
+        }
+
+        foreach ($values as $value) {
+            if ((! is_string($value) || trim($value) === '')
+                && ! is_int($value)
+                && ! is_bool($value)
+                && (! is_float($value) || ! is_finite($value))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

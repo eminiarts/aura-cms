@@ -2,21 +2,15 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\ProvidesFilterCapability;
 use Aura\Base\Fields\Filters\FilterCapability;
 use Aura\Base\Resource;
 
-class Radio extends Field
+class Radio extends Field implements ProvidesFilterCapability
 {
     public $edit = 'aura::fields.radio';
 
     public $optionGroup = 'Choice Fields';
-
-    // public $view = 'components.fields.radio';
-
-    public function filterCapability(Resource $model, array $field): FilterCapability
-    {
-        return $this->optionFilterCapability($model, $field);
-    }
 
     public function filterOptions()
     {
@@ -87,5 +81,12 @@ class Radio extends Field
         }
 
         return $field['options'] ?? [];
+    }
+
+    // public $view = 'components.fields.radio';
+
+    public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::scalarOption($this->filterOptions(), $this->getFilterValues($model, $field));
     }
 }

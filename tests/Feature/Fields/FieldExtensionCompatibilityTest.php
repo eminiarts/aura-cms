@@ -62,3 +62,47 @@ PHP,
     expect($process->isSuccessful())->toBeTrue($process->getErrorOutput().$process->getOutput())
         ->and($process->getOutput())->toBe('loaded');
 });
+
+test('legacy filter capability methods remain outside the Aura inheritance contract', function () {
+    $process = declareLegacyFieldExtensions([
+        <<<'PHP'
+class LegacyBaseFilterCapabilityExtension extends \Aura\Base\Fields\Field
+{
+    public function filterCapability()
+    {
+        return 'legacy';
+    }
+}
+PHP,
+        <<<'PHP'
+class LegacyDateFilterCapabilityExtension extends \Aura\Base\Fields\Date
+{
+    public function filterCapability($configuration)
+    {
+        return $configuration;
+    }
+}
+PHP,
+        <<<'PHP'
+class LegacyDatetimeFilterCapabilityExtension extends \Aura\Base\Fields\Datetime
+{
+    protected function filterCapability()
+    {
+        return null;
+    }
+}
+PHP,
+        <<<'PHP'
+class LegacySelectFilterCapabilityExtension extends \Aura\Base\Fields\Select
+{
+    public static function filterCapability(...$arguments)
+    {
+        return $arguments;
+    }
+}
+PHP,
+    ]);
+
+    expect($process->isSuccessful())->toBeTrue($process->getErrorOutput().$process->getOutput())
+        ->and($process->getOutput())->toBe('loaded');
+});

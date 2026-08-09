@@ -533,7 +533,7 @@ applies filters to regular table fields or meta fields, while relationship and
 package-defined handlers can own their query behavior without adding a switch
 to the table. The older `filterOptions()` and `getFilterValues()` hooks remain
 the inputs used by the built-in capability factories. See
-[Creating Fields](creating-fields.md#filtercapabilitymodel-field) for the
+[Creating Fields](creating-fields.md#providesfiltercapability) for the
 third-party extension contract.
 
 Choice filters restore scalar value types before querying. Scalar choice fields

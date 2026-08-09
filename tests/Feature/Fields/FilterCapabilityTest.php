@@ -1,6 +1,7 @@
 <?php
 
 use Aura\Base\Contracts\AppliesFieldFilter;
+use Aura\Base\Contracts\ProvidesFilterCapability;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\AdvancedSelect;
 use Aura\Base\Fields\Boolean;
@@ -8,8 +9,10 @@ use Aura\Base\Fields\Checkbox;
 use Aura\Base\Fields\Date;
 use Aura\Base\Fields\Datetime;
 use Aura\Base\Fields\Field;
+use Aura\Base\Fields\Filters\FieldFilterCapabilityResolver;
 use Aura\Base\Fields\Filters\FilterCapability;
 use Aura\Base\Fields\Filters\FilterOptionNormalizer;
+use Aura\Base\Fields\Filters\ResourceFieldFilter;
 use Aura\Base\Fields\Radio;
 use Aura\Base\Fields\Select;
 use Aura\Base\Fields\Status;
@@ -169,9 +172,21 @@ class CollidingRadioFilterResource extends Resource
     }
 }
 
-class PackageDateRangeField extends Date
+class ParentScopedFilterCapabilityResource extends FilterCapabilityResource
 {
-    public function filterCapability(Resource $model, array $field): FilterCapability
+    public static ?string $slug = 'parent-scoped-filter-capability-resource';
+
+    public static string $type = 'ParentScopedFilterCapabilityResource';
+
+    public function indexQuery(Builder $query, ?Table $table = null): Builder
+    {
+        return $table?->parent ? $query->whereKey($table->parent->getKey()) : $query;
+    }
+}
+
+class PackageDateRangeField extends Date implements ProvidesFilterCapability
+{
+    public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
     {
         return FilterCapability::dateRange([
             'date_between' => 'is between',
@@ -179,9 +194,9 @@ class PackageDateRangeField extends Date
     }
 }
 
-class PackagePriorityField extends Field
+class PackagePriorityField extends Field implements ProvidesFilterCapability
 {
-    public function filterCapability(Resource $model, array $field): FilterCapability
+    public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
     {
         return FilterCapability::custom(
             component: 'test-filters::priority',
@@ -193,6 +208,11 @@ class PackagePriorityField extends Field
             ],
         );
     }
+}
+
+function resolveTestFilterCapability(Field $field, Resource $resource, array $definition): FilterCapability
+{
+    return (new FieldFilterCapabilityResolver)->resolve($field, $resource, $definition);
 }
 
 class PackagePriorityFilter implements AppliesFieldFilter
@@ -227,8 +247,8 @@ test('choice fields publish canonical option filter capabilities', function () {
 
     expect($select->getFilterValues($resource, $selectField))->toBe($selectField['options'])
         ->and($status->getFilterValues($resource, $statusField))->toBe($statusField['options'])
-        ->and($select->filterCapability($resource, $selectField))->toBeInstanceOf(FilterCapability::class)
-        ->and($select->filterCapability($resource, $selectField)->toArray())->toMatchArray([
+        ->and(resolveTestFilterCapability($select, $resource, $selectField))->toBeInstanceOf(FilterCapability::class)
+        ->and(resolveTestFilterCapability($select, $resource, $selectField)->toArray())->toMatchArray([
             'type' => FilterCapability::OPTION,
             'component' => 'aura::fields.filters.option',
             'values' => [
@@ -236,7 +256,7 @@ test('choice fields publish canonical option filter capabilities', function () {
                 ['value' => 7, 'wire_value' => '7', 'label' => 'Seven'],
             ],
         ])
-        ->and($status->filterCapability($resource, $statusField)->toArray())->toMatchArray([
+        ->and(resolveTestFilterCapability($status, $resource, $statusField)->toArray())->toMatchArray([
             'type' => FilterCapability::OPTION,
             'component' => 'aura::fields.filters.option',
             'values' => [
@@ -257,12 +277,12 @@ test('advanced selects preserve their declared UI for relation and stored-value 
     ];
     $storedField = $relationField + ['polymorphic_relation' => false];
 
-    expect($advancedSelect->filterCapability($resource, $relationField)->toArray())
+    expect(resolveTestFilterCapability($advancedSelect, $resource, $relationField)->toArray())
         ->toMatchArray([
             'type' => FilterCapability::RELATIONSHIP,
             'component' => 'aura::fields.filters.advanced-select',
         ])
-        ->and($advancedSelect->filterCapability($resource, $storedField)->toArray())
+        ->and(resolveTestFilterCapability($advancedSelect, $resource, $storedField)->toArray())
         ->toMatchArray([
             'type' => FilterCapability::CUSTOM,
             'component' => 'aura::fields.filters.advanced-select',
@@ -556,7 +576,7 @@ test('scalar choice filter capabilities reject identities that storage cannot di
     $field = $resource->fieldBySlug('typed_choice');
 
     foreach ([new Radio, new Select, new Status] as $fieldInstance) {
-        expect(fn () => $fieldInstance->filterCapability($resource, $field))
+        expect(fn () => resolveTestFilterCapability($fieldInstance, $resource, $field))
             ->toThrow(InvalidArgumentException::class, 'cannot distinguish scalar option values');
     }
 
@@ -574,7 +594,7 @@ test('scalar text operators reject structured values before executing a real que
     ]);
     $resource = new FilterCapabilityResource;
     $field = $resource->fieldBySlug('summary');
-    $capability = $resource->fieldClassBySlug('summary')->filterCapability($resource, $field);
+    $capability = resolveTestFilterCapability($resource->fieldClassBySlug('summary'), $resource, $field);
 
     foreach (['contains', 'is', 'starts_with', 'equals'] as $operator) {
         foreach ([['needle'], [['needle']], ['value' => 'needle'], new stdClass] as $value) {
@@ -605,7 +625,7 @@ test('text list operators reject nested values while retaining flat lists', func
     ]);
     $resource = new FilterCapabilityResource;
     $field = $resource->fieldBySlug('summary');
-    $capability = $resource->fieldClassBySlug('summary')->filterCapability($resource, $field);
+    $capability = resolveTestFilterCapability($resource->fieldClassBySlug('summary'), $resource, $field);
 
     $flatQuery = $resource->newQueryWithoutScopes();
     $capability->apply($flatQuery, $resource, $field, [
@@ -873,6 +893,143 @@ test('invalid handlers operators and hostile group payloads fail closed', functi
             'unknown' => ['operator' => 'or'],
         ]])
         ->assertViewHas('rows', fn ($rows) => $rows->isEmpty());
+});
+
+test('nonempty malformed payloads fail closed without escaping tenant or parent scopes', function () {
+    $parent = ParentScopedFilterCapabilityResource::create([
+        'type' => ParentScopedFilterCapabilityResource::$type,
+        'title' => 'Scoped canary',
+        'stage' => 'draft',
+    ]);
+    ParentScopedFilterCapabilityResource::create([
+        'type' => ParentScopedFilterCapabilityResource::$type,
+        'title' => 'Same tenant outside parent',
+        'stage' => 'draft',
+    ]);
+    if (config('aura.teams')) {
+        ParentScopedFilterCapabilityResource::withoutGlobalScopes()->create([
+            'type' => ParentScopedFilterCapabilityResource::$type,
+            'title' => 'Other tenant outside parent',
+            'team_id' => $this->user->current_team_id + 1000,
+            'stage' => 'draft',
+        ]);
+    }
+
+    $component = livewire(Table::class, ['model' => $parent, 'parent' => $parent]);
+
+    foreach ([
+        [[]],
+        [['value' => []]],
+        [['filters' => [[]]]],
+        [['filters' => [['value' => []]]]],
+        [['filters' => [['name' => null, 'operator' => null, 'value' => []]]]],
+    ] as $payload) {
+        $component
+            ->set('filters.custom', $payload)
+            ->assertViewHas('rows', fn ($rows) => $rows->isEmpty());
+    }
+
+    $component
+        ->set('filters.custom', [[
+            'filters' => [[
+                'name' => 'stage',
+                'operator' => 'is',
+                'value' => 'draft',
+            ]],
+        ]])
+        ->assertViewHas('rows', fn ($rows) => $rows->pluck('id')->all() === [$parent->id]);
+});
+
+test('relationship and multiple payloads reject associative and mixed members atomically', function () {
+    $tag = Tag::create(['title' => 'Atomic tag']);
+    $record = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Atomic relationship canary',
+        'topics' => [$tag->id],
+        'stored_people' => [1],
+    ]);
+    $component = livewire(Table::class, ['model' => $record]);
+
+    foreach ([
+        ['selected' => $tag->id],
+        [$tag->id, null],
+        [$tag->id, ''],
+        [$tag->id, ['nested']],
+    ] as $value) {
+        $component
+            ->set('filters.custom', [[
+                'filters' => [[
+                    'name' => 'topics',
+                    'operator' => 'contains',
+                    'value' => $value,
+                ]],
+            ]])
+            ->assertViewHas('rows', fn ($rows) => $rows->isEmpty());
+    }
+
+    foreach ([['selected' => 1], [1, null], [1, ''], [1, ['nested']]] as $value) {
+        $component
+            ->set('filters.custom', [[
+                'filters' => [[
+                    'name' => 'stored_people',
+                    'operator' => 'contains',
+                    'value' => $value,
+                ]],
+            ]])
+            ->assertViewHas('rows', fn ($rows) => $rows->isEmpty());
+    }
+
+    foreach (['topics', 'stored_people'] as $slug) {
+        $field = $record->fieldBySlug($slug);
+        $capability = resolveTestFilterCapability($record->fieldClassBySlug($slug), $record, $field);
+        $query = $record->newQueryWithoutScopes();
+
+        $capability->apply($query, $record, $field, [
+            'name' => $slug,
+            'operator' => 'contains',
+            'value' => [1, new stdClass],
+        ]);
+
+        expect($query->toSql())->toContain('1 = 0')
+            ->and($query->get())->toBeEmpty();
+    }
+});
+
+test('public custom and resource filter paths reject malformed declarations and values safely', function () {
+    foreach ([
+        ['component' => new stdClass, 'operators' => ['is' => 'is'], 'handler' => PackagePriorityFilter::class, 'context' => [], 'multiple' => false],
+        ['component' => 'test-filters::priority', 'operators' => new stdClass, 'handler' => PackagePriorityFilter::class, 'context' => [], 'multiple' => false],
+        ['component' => 'test-filters::priority', 'operators' => ['is' => 'is'], 'handler' => new stdClass, 'context' => [], 'multiple' => false],
+        ['component' => 'test-filters::priority', 'operators' => ['is' => 'is'], 'handler' => PackagePriorityFilter::class, 'values' => new stdClass, 'context' => [], 'multiple' => false],
+        ['component' => 'test-filters::priority', 'operators' => ['is' => 'is'], 'handler' => PackagePriorityFilter::class, 'context' => new stdClass, 'multiple' => false],
+        ['component' => 'test-filters::priority', 'operators' => ['is' => 'is'], 'handler' => PackagePriorityFilter::class, 'context' => [], 'multiple' => 'yes'],
+    ] as $declaration) {
+        expect(fn () => FilterCapability::custom(
+            $declaration['component'],
+            $declaration['operators'],
+            $declaration['handler'],
+            values: $declaration['values'] ?? [],
+            context: $declaration['context'],
+            multiple: $declaration['multiple'],
+        ))->toThrow(InvalidArgumentException::class);
+    }
+
+    $resource = new FilterCapabilityResource;
+    $field = $resource->fieldBySlug('summary');
+    $capability = resolveTestFilterCapability($resource->fieldClassBySlug('summary'), $resource, $field);
+
+    foreach ([[['needle']], ['value' => 'needle'], [new stdClass], ['needle', new stdClass]] as $value) {
+        $query = $resource->newQueryWithoutScopes();
+
+        (new ResourceFieldFilter)->apply($query, $resource, $field, [
+            'name' => 'summary',
+            'operator' => 'contains',
+            'value' => $value,
+        ], $capability);
+
+        expect($query->toSql())->toContain('1 = 0')
+            ->and($query->get())->toBeEmpty();
+    }
 });
 
 test('recognized empty filter placeholders remain inert in any group position', function () {

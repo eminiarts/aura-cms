@@ -2,6 +2,7 @@
 
 use Aura\Base\Fields\Date;
 use Aura\Base\Fields\Datetime;
+use Aura\Base\Fields\Filters\FieldFilterCapabilityResolver;
 use Aura\Base\Fields\Filters\FilterCapability;
 use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Builder;
@@ -56,7 +57,7 @@ function nativeTemporalQuery(
 ): Builder {
     $field = $resource->fieldBySlug($fieldSlug);
     $fieldInstance = $resource->fieldClassBySlug($fieldSlug);
-    $capability ??= $fieldInstance->filterCapability($resource, $field);
+    $capability ??= (new FieldFilterCapabilityResolver)->resolve($fieldInstance, $resource, $field);
     $query = $resource->newQueryWithoutScopes();
 
     $capability->apply($query, $resource, $field, [
