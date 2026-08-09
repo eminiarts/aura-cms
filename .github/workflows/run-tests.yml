@@ -11,6 +11,29 @@ on:
       - 'release/**'
 
 jobs:
+  frontend-compatibility:
+    name: Frontend compatibility
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            tests/Fixtures/FrontendCompatibility/v4/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Verify frontend compatibility
+        run: npm run test:frontend-compatibility
+
   test:
     name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }}
     runs-on: ubuntu-latest

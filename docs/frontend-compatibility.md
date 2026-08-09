@@ -170,7 +170,7 @@ composer install
 npm ci
 npm ls --depth=0 tailwindcss postcss vite laravel-vite-plugin autoprefixer postcss-import
 npm run build
-git diff --exit-code -- resources/dist
+npm run test:frontend-compatibility
 ```
 
 Results on the audit snapshot:
@@ -178,6 +178,11 @@ Results on the audit snapshot:
 - `npm ci`: pass; 190 packages installed.
 - Main build: pass twice from the current locks; each run used Vite `8.1.5`,
   transformed 158 modules, and left `resources/dist` byte-for-byte unchanged.
+- `production-output-baseline.json` independently pins the complete committed
+  `resources/dist` file set by path, byte count, and SHA-256. The compatibility
+  gate compares both working-tree bytes and Git-index blobs to those values, so
+  an unstaged or staged rebuild cannot validate itself merely by making
+  `git diff` empty.
 - The manifest is 331 bytes (SHA-256
   `349e95bb3c759a9d1ffce652ef8397d12f354655692c5c9ff0f8333e3134a699`)
   and references `assets/app-BzQlU9Hi.css` and
@@ -220,7 +225,7 @@ big-endian integers. The manifest schema permits only `path` and `classes`, so
 no accepted metadata remains outside the digest. Source line endings are not
 normalized.
 
-The baseline, source manifest, output baseline, and generated Vite manifest are
+The baselines, source and production manifests, and generated Vite manifest are
 decoded as strict UTF-8 and parsed by a JSON parser that rejects duplicate
 decoded member names before an object is constructed. The parser accepts at
 most 1,048,576 bytes and 64 container levels; its file reader never buffers
@@ -238,13 +243,32 @@ identities must both be unique, preventing case variants, symlinks, and
 hardlinks from adding aliases.
 
 The exact authenticated buffers and semantic probe are captured after copying.
-Their files and containing directories are made read-only while each compiler
-runs, and the six-record compiler snapshot is rehashed after every positive and
-negative invocation. A self-test mutates a captured copy after its initial
-write check and proves the post-compiler rehash rejects it. Read-only modes are
-defence in depth; each positive lane also has an exact committed output
-baseline, so a mutation that is reverted before the source rehash still fails
-if it changed generated CSS.
+The runner records the `lstat` type, device/inode identity, link count, and
+original mode of the capture root, every containing directory, and every file.
+Files and directories are made read-only while each compiler runs. Every
+positive and negative compiler invocation checks persistent identity, mode,
+and content drift both before and after execution. Regression lanes replace a
+file with an exact-byte hardlink, substitute the complete root with an
+exact-copy symlink, and change a protected mode; all must fail even though a
+content-only digest can remain unchanged.
+
+Normal cleanup first validates the complete captured tree and restores the
+exact original modes only when every recorded path still has its original type,
+device/inode identity, and link count. If that validation fails, removal
+preparation checks each recorded directory with `lstat` and restores only
+directories whose recorded identities still match. A substituted path is never
+passed to `chmod`; cleanup reports the drift, then normal non-keep runs attempt
+removal of the isolated temporary tree without following substituted symlinks.
+POSIX mode checks are defence in depth; Windows retains the persistent identity
+and content checks.
+
+This fixture is deterministic compatibility evidence, not a security boundary
+against a malicious process running concurrently as the same OS user. A
+same-UID process can race filesystem checks or mutate and restore bytes entirely
+between checkpoints. Those transient attacks are explicitly out of scope. The
+trust boundary is the dedicated CI job's fresh checkout and isolated process;
+do not treat a run beside untrusted same-UID processes as authenticated build
+provenance.
 
 Before either compiler runs, the gate compares the selected real-source digest
 to that committed baseline and checks this documented value for consistency.
@@ -275,6 +299,12 @@ SHA-256 digest for both positive lanes. The CSS contract reads each output once
 and derives all three values from that same buffer. Any intentional compiler or
 fixture change must therefore review and update the output baseline explicitly.
 
+`production-output-baseline.json` separately pins all publishable files under
+`resources/dist`, including the Vite manifest, stylesheet, JavaScript, and
+source map. Both the worktree and stage-zero Git index must match that external
+manifest exactly. An intentional production rebuild therefore requires an
+explicitly reviewed baseline update as well as the rebuilt assets.
+
 Results on the audit snapshot:
 
 - Tailwind `3.4.19`: pass, 486 parsed assertions, 17,433 output bytes,
@@ -287,6 +317,11 @@ The v4 lane copies only the committed isolated fixture and shared contract into
 the temporary workspace, runs `npm ci` against its lockfile, and builds its
 actual Vite HTML/CSS entrypoint. It never performs an unlocked package install
 and does not alter Aura's root lockfile or runtime dependencies.
+
+The `Frontend compatibility` job in `.github/workflows/run-tests.yml` installs
+the locked root dependencies and runs this gate on every supported push and
+pull request. That clean checkout and single-purpose job provide the isolation
+assumed by the gate's threat model.
 
 ### Proved cross-major failures
 

@@ -20,6 +20,7 @@ const fixtureDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(fixtureDirectory, '../../..');
 const documentationPath = path.join(repositoryRoot, 'docs/frontend-compatibility.md');
 const outputBaselinePath = path.join(fixtureDirectory, 'output-baseline.json');
+const productionOutputBaselinePath = path.join(fixtureDirectory, 'production-output-baseline.json');
 const sourceBaselinePath = path.join(fixtureDirectory, 'source-baseline.json');
 const sourceManifestPath = path.join(fixtureDirectory, 'source-files.json');
 const sourceDigestCanonicalization = 'aura-source-records-v2-length-prefixed';
@@ -33,12 +34,14 @@ const tailwindCliPath = path.join(
 );
 const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'aura-frontend-compatibility-'));
 const outputBaseline = await readStrictJsonFile(outputBaselinePath, 'Frontend output baseline');
+const productionOutputBaseline = await readStrictJsonFile(productionOutputBaselinePath, 'Production output baseline');
 const sourceBaseline = await readStrictJsonFile(sourceBaselinePath, 'Frontend source baseline');
 const sourceManifest = await readStrictJsonFile(sourceManifestPath, 'Frontend source manifest');
-const protectedSourceCaptures = [];
+const protectedSourceCaptures = new Set();
 
 assert.ok(npmCliPath, 'Run this fixture through npm run test:frontend-compatibility.');
 validateOutputBaseline(outputBaseline);
+validateProductionOutputBaseline(productionOutputBaseline);
 validateSourceBaseline(sourceBaseline);
 
 async function copyFile(source, destination) {
@@ -53,6 +56,11 @@ function isWithinRoot(rootPath, candidatePath) {
         && relativePath !== '..'
         && ! relativePath.startsWith(`..${path.sep}`)
         && ! path.isAbsolute(relativePath);
+}
+
+function isAtOrWithinRoot(rootPath, candidatePath) {
+    return path.resolve(rootPath) === path.resolve(candidatePath)
+        || isWithinRoot(path.resolve(rootPath), path.resolve(candidatePath));
 }
 
 function toRepositoryRelativePath(rootPath, sourcePath) {
@@ -154,6 +162,45 @@ function validateOutputBaseline(baseline) {
     }
 }
 
+function validateProductionOutputBaseline(baseline) {
+    assert.ok(baseline && typeof baseline === 'object' && ! Array.isArray(baseline), 'Production output baseline must be an object');
+    assert.deepEqual(
+        Object.keys(baseline).sort(),
+        ['algorithm', 'files', 'root'],
+        'Production output baseline must contain exactly algorithm, files, and root',
+    );
+    assert.equal(baseline.algorithm, 'sha256', 'Production output baseline must use SHA-256');
+    assert.equal(baseline.root, 'resources/dist', 'Production output baseline must pin resources/dist');
+    assert.ok(Array.isArray(baseline.files) && baseline.files.length > 0, 'Production output baseline must pin output files');
+
+    const paths = new Set();
+
+    for (const [index, file] of baseline.files.entries()) {
+        assert.ok(file && typeof file === 'object' && ! Array.isArray(file), `Production output record ${index} must be an object`);
+        assert.deepEqual(
+            Object.keys(file).sort(),
+            ['bytes', 'path', 'sha256'],
+            `Production output record ${index} must contain exactly bytes, path, and sha256`,
+        );
+        assert.ok(typeof file.path === 'string' && file.path.length > 0, `Production output record ${index} needs a path`);
+        assertWellFormedUnicode(file.path, `Production output path ${index}`);
+        assert.match(file.path, /^[A-Za-z0-9._/-]+$/, `Production output path must use portable ASCII: ${file.path}`);
+        assert.equal(path.posix.normalize(file.path), file.path, `Production output path must be canonical: ${file.path}`);
+        assert.ok(file.path.startsWith(`${baseline.root}/`), `Production output path must remain under ${baseline.root}: ${file.path}`);
+        assert.equal(file.path.split('/').includes('..'), false, `Production output path cannot traverse upward: ${file.path}`);
+        assert.equal(paths.has(file.path), false, `Production output path must be unique: ${file.path}`);
+        assert.ok(Number.isSafeInteger(file.bytes) && file.bytes > 0, `${file.path} byte count must be a positive safe integer`);
+        assert.match(file.sha256, /^[a-f0-9]{64}$/, `${file.path} must contain a SHA-256 digest`);
+        paths.add(file.path);
+    }
+
+    assert.deepEqual(
+        [...paths],
+        [...paths].sort((left, right) => left.localeCompare(right)),
+        'Production output baseline paths must use stable lexical order',
+    );
+}
+
 function enforceOutputBaseline(result, lane, label) {
     const expectation = outputBaseline[lane];
 
@@ -162,6 +209,123 @@ function enforceOutputBaseline(result, lane, label) {
         Object.entries(expectation).sort(([left], [right]) => left.localeCompare(right)),
         `${label}: compiler output drifted. Review the generated CSS, then update output-baseline.json intentionally.`,
     );
+}
+
+function productionOutputRecord(outputPath, source) {
+    return {
+        path: outputPath,
+        bytes: source.length,
+        sha256: crypto.createHash('sha256').update(source).digest('hex'),
+    };
+}
+
+function enforceProductionOutputBaseline(records, label) {
+    assert.deepEqual(
+        records.map((record) => [record.path, record.bytes, record.sha256]),
+        productionOutputBaseline.files.map((record) => [record.path, record.bytes, record.sha256]),
+        `${label}: committed production output drifted. Review resources/dist, then update production-output-baseline.json intentionally.`,
+    );
+}
+
+async function listWorkingTreeOutputPaths(directory) {
+    const stats = await fs.lstat(directory);
+    assert.ok(stats.isDirectory() && ! stats.isSymbolicLink(), `Production output directory must be a real directory: ${directory}`);
+
+    const files = [];
+
+    for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
+        const entryPath = path.join(directory, entry.name);
+        const entryStats = await fs.lstat(entryPath);
+
+        assert.equal(entryStats.isSymbolicLink(), false, `Production output cannot contain symlinks: ${entryPath}`);
+
+        if (entryStats.isDirectory()) {
+            files.push(...await listWorkingTreeOutputPaths(entryPath));
+
+            continue;
+        }
+
+        assert.ok(entryStats.isFile(), `Production output must contain only regular files: ${entryPath}`);
+        files.push(path.relative(repositoryRoot, entryPath).split(path.sep).join('/'));
+    }
+
+    return files.sort((left, right) => left.localeCompare(right));
+}
+
+async function inspectWorkingTreeProductionOutputs() {
+    const outputRoot = path.join(repositoryRoot, ...productionOutputBaseline.root.split('/'));
+    const paths = await listWorkingTreeOutputPaths(outputRoot);
+
+    return Promise.all(paths.map(async (outputPath) => productionOutputRecord(
+        outputPath,
+        await fs.readFile(path.join(repositoryRoot, ...outputPath.split('/'))),
+    )));
+}
+
+async function inspectIndexProductionOutputs() {
+    const { stdout } = await execFileAsync(
+        'git',
+        ['ls-files', '--stage', '-z', '--', productionOutputBaseline.root],
+        {
+            cwd: repositoryRoot,
+            encoding: 'buffer',
+            maxBuffer: 2 * 1024 * 1024,
+            windowsHide: true,
+        },
+    );
+    const entries = stdout.toString('utf8').split('\0').filter(Boolean).map((record) => {
+        const match = record.match(/^(\d{6}) ([a-f0-9]{40,64}) (\d+)\t(.+)$/);
+
+        assert.ok(match, `Unexpected Git index record for production output: ${record}`);
+        assert.equal(match[1], '100644', `Production output must use regular non-executable Git mode: ${match[4]}`);
+        assert.equal(match[3], '0', `Production output cannot have unresolved index stages: ${match[4]}`);
+
+        return { path: match[4] };
+    });
+
+    entries.sort((left, right) => left.path.localeCompare(right.path));
+
+    return Promise.all(entries.map(async (entry) => {
+        const { stdout: source } = await execFileAsync(
+            'git',
+            ['cat-file', 'blob', `:${entry.path}`],
+            {
+                cwd: repositoryRoot,
+                encoding: 'buffer',
+                maxBuffer: 20 * 1024 * 1024,
+                windowsHide: true,
+            },
+        );
+
+        return productionOutputRecord(entry.path, source);
+    }));
+}
+
+async function assertProductionOutputsPinned(label) {
+    enforceProductionOutputBaseline(await inspectWorkingTreeProductionOutputs(), `${label} working tree`);
+    enforceProductionOutputBaseline(await inspectIndexProductionOutputs(), `${label} Git index`);
+}
+
+function assertProductionOutputDriftIsRejected() {
+    const pinned = productionOutputBaseline.files.map((file) => ({ ...file }));
+
+    enforceProductionOutputBaseline(pinned, 'Production output self-test');
+
+    for (const field of ['path', 'bytes', 'sha256']) {
+        const drifted = pinned.map((file) => ({ ...file }));
+
+        drifted[0][field] = field === 'bytes'
+            ? drifted[0][field] + 1
+            : `drift-${drifted[0][field]}`;
+
+        assert.throws(
+            () => enforceProductionOutputBaseline(drifted, `${field} production output self-test`),
+            /committed production output drifted/,
+            `Production output ${field} drift must be rejected`,
+        );
+    }
+
+    console.log('PASS external production output baseline pins worktree and index paths, bytes, and SHA-256 digests');
 }
 
 function validateSourceBaseline(baseline) {
@@ -366,54 +530,186 @@ function sourceCaptureDirectories(sourceRoot, manifest) {
         }
     }
 
-    return [...directories];
+    return [...directories].sort((left, right) => left.length - right.length || left.localeCompare(right));
+}
+
+function filesystemIdentity(stats) {
+    return `${stats.dev}:${stats.ino}`;
+}
+
+function permissionMode(stats) {
+    return Number(stats.mode & 0o777n);
+}
+
+async function captureFilesystemEntry(sourceRoot, entryPath, kind, protectedMode) {
+    const absolutePath = path.resolve(entryPath);
+
+    assert.ok(isAtOrWithinRoot(sourceRoot, absolutePath), `Captured ${kind} escapes source root: ${absolutePath}`);
+
+    const stats = await fs.lstat(absolutePath, { bigint: true });
+
+    assert.equal(stats.isSymbolicLink(), false, `Captured ${kind} cannot be a symlink: ${absolutePath}`);
+    assert.ok(
+        kind === 'directory' ? stats.isDirectory() : stats.isFile(),
+        `Captured ${kind} has an unexpected filesystem type: ${absolutePath}`,
+    );
+
+    return Object.freeze({
+        absolutePath,
+        identity: filesystemIdentity(stats),
+        initialMode: permissionMode(stats),
+        kind,
+        linkCount: stats.nlink.toString(),
+        protectedMode,
+        relativePath: toRepositoryRelativePath(sourceRoot, absolutePath) || '.',
+    });
+}
+
+async function captureSourceFilesystem(sourceRoot, manifest) {
+    const absoluteRoot = path.resolve(sourceRoot);
+    const directories = [];
+    const files = [];
+
+    for (const directory of sourceCaptureDirectories(absoluteRoot, manifest)) {
+        directories.push(await captureFilesystemEntry(absoluteRoot, directory, 'directory', 0o555));
+    }
+
+    for (const entry of manifest) {
+        files.push(await captureFilesystemEntry(
+            absoluteRoot,
+            path.join(absoluteRoot, ...entry.path.split('/')),
+            'file',
+            0o444,
+        ));
+    }
+
+    return Object.freeze({
+        directories: Object.freeze(directories),
+        files: Object.freeze(files),
+        root: directories[0],
+    });
+}
+
+async function assertCaptureEntry(capture, entry, modeKey, label) {
+    assert.ok(
+        entry === capture.filesystem.root
+            ? path.resolve(entry.absolutePath) === path.resolve(capture.sourceRoot)
+            : isWithinRoot(capture.sourceRoot, entry.absolutePath),
+        `${label}: captured ${entry.kind} path escaped its source root: ${entry.relativePath}`,
+    );
+
+    let stats;
+
+    try {
+        stats = await fs.lstat(entry.absolutePath, { bigint: true });
+    } catch (error) {
+        assert.fail(`${label}: captured ${entry.kind} is unavailable: ${entry.relativePath} (${error.code ?? error.message})`);
+    }
+
+    assert.equal(stats.isSymbolicLink(), false, `${label}: captured ${entry.kind} became a symlink: ${entry.relativePath}`);
+    assert.ok(
+        entry.kind === 'directory' ? stats.isDirectory() : stats.isFile(),
+        `${label}: captured ${entry.kind} changed filesystem type: ${entry.relativePath}`,
+    );
+    assert.equal(
+        filesystemIdentity(stats),
+        entry.identity,
+        `${label}: captured ${entry.kind} identity drifted: ${entry.relativePath}`,
+    );
+    assert.equal(
+        stats.nlink.toString(),
+        entry.linkCount,
+        `${label}: captured ${entry.kind} link count drifted: ${entry.relativePath}`,
+    );
+
+    if (modeKey !== null && process.platform !== 'win32') {
+        assert.equal(
+            permissionMode(stats),
+            entry[modeKey],
+            `${label}: captured ${entry.kind} mode drifted: ${entry.relativePath}`,
+        );
+    }
+}
+
+async function assertSourceCaptureFilesystem(capture, modeKey, label) {
+    await assertCaptureEntry(capture, capture.filesystem.root, modeKey, label);
+
+    for (const entry of capture.filesystem.directories.slice(1)) {
+        await assertCaptureEntry(capture, entry, modeKey, label);
+    }
+
+    for (const entry of capture.filesystem.files) {
+        await assertCaptureEntry(capture, entry, modeKey, label);
+    }
+}
+
+async function chmodCapturedEntry(capture, entry, mode, label) {
+    await assertCaptureEntry(capture, entry, null, label);
+    await fs.chmod(entry.absolutePath, mode);
 }
 
 async function protectSourceCapture(capture) {
-    protectedSourceCaptures.push(capture);
+    protectedSourceCaptures.add(capture);
+    await assertSourceCaptureFilesystem(capture, 'initialMode', 'Source capture pre-protection check');
 
-    for (const entry of capture.manifest) {
-        await fs.chmod(path.join(capture.sourceRoot, entry.path), 0o444);
+    for (const entry of capture.filesystem.files) {
+        await chmodCapturedEntry(capture, entry, entry.protectedMode, 'Source capture file protection');
     }
 
-    for (const directory of [...capture.directories].sort((left, right) => right.length - left.length)) {
-        await fs.chmod(directory, 0o555);
+    for (const entry of [...capture.filesystem.directories].reverse()) {
+        await chmodCapturedEntry(capture, entry, entry.protectedMode, 'Source capture directory protection');
     }
 
-    if (process.platform !== 'win32') {
-        for (const entry of capture.manifest) {
-            const stats = await fs.stat(path.join(capture.sourceRoot, entry.path));
-
-            assert.equal(stats.mode & 0o222, 0, `Captured compiler source must be read-only: ${entry.path}`);
-        }
-
-        for (const directory of capture.directories) {
-            const stats = await fs.stat(directory);
-
-            assert.equal(stats.mode & 0o222, 0, `Captured compiler source directory must be read-only: ${directory}`);
-        }
-    }
+    await assertSourceCaptureFilesystem(capture, 'protectedMode', 'Source capture post-protection check');
 }
 
 async function releaseSourceCapture(capture) {
-    for (const directory of [...capture.directories].sort((left, right) => left.length - right.length)) {
-        await fs.chmod(directory, 0o755).catch((error) => {
-            if (error.code !== 'ENOENT') {
-                throw error;
-            }
-        });
+    if (! protectedSourceCaptures.has(capture)) {
+        return;
     }
 
-    for (const entry of capture.manifest) {
-        await fs.chmod(path.join(capture.sourceRoot, entry.path), 0o644).catch((error) => {
-            if (error.code !== 'ENOENT') {
-                throw error;
-            }
-        });
+    await assertSourceCaptureFilesystem(capture, 'protectedMode', 'Source capture pre-cleanup check');
+
+    for (const entry of capture.filesystem.files) {
+        await chmodCapturedEntry(capture, entry, entry.initialMode, 'Source capture file cleanup');
+    }
+
+    for (const entry of [...capture.filesystem.directories].reverse()) {
+        await chmodCapturedEntry(capture, entry, entry.initialMode, 'Source capture directory cleanup');
+    }
+
+    await assertSourceCaptureFilesystem(capture, 'initialMode', 'Source capture post-cleanup check');
+    protectedSourceCaptures.delete(capture);
+}
+
+async function prepareCaptureDirectoriesForRemoval(capture) {
+    const unsafeDirectories = [];
+
+    for (const entry of capture.filesystem.directories) {
+        const isUnderUnsafeDirectory = unsafeDirectories.some((unsafePath) => (
+            entry.absolutePath === unsafePath || isWithinRoot(unsafePath, entry.absolutePath)
+        ));
+
+        if (isUnderUnsafeDirectory) {
+            continue;
+        }
+
+        try {
+            await assertCaptureEntry(capture, entry, null, 'Source capture removal preparation');
+            await fs.chmod(entry.absolutePath, entry.initialMode);
+        } catch {
+            unsafeDirectories.push(entry.absolutePath);
+        }
     }
 }
 
 async function assertSourceCaptureUnchanged(capture, label) {
+    await assertSourceCaptureFilesystem(capture, 'protectedMode', `${label} persistent identity check`);
+    await assertSourceCaptureContentUnchanged(capture, label);
+    await assertSourceCaptureFilesystem(capture, 'protectedMode', `${label} final persistent identity check`);
+}
+
+async function assertSourceCaptureContentUnchanged(capture, label) {
     const currentSnapshot = await inspectAuraSources(capture.sourceRoot, capture.manifest);
 
     assert.equal(currentSnapshot.count, capture.count, `${label}: compiler source record count changed after capture`);
@@ -430,12 +726,13 @@ async function copyAuraSources(destination, label) {
     );
     const compilerSnapshot = await inspectAuraSources(destination, compilerSourceManifest());
     const manifest = immutableManifestFromSnapshot(compilerSnapshot);
+    const filesystem = await captureSourceFilesystem(destination, manifest);
     const capture = Object.freeze({
         count: compilerSnapshot.count,
         digest: compilerSnapshot.digest,
-        directories: Object.freeze(sourceCaptureDirectories(destination, manifest)),
+        filesystem,
         manifest,
-        sourceRoot: destination,
+        sourceRoot: path.resolve(destination),
     });
 
     await protectSourceCapture(capture);
@@ -841,12 +1138,177 @@ async function assertCapturedSourceMutationIsRejected() {
         '\n<div class="unauthenticated-compiler-input"></div>\n',
     );
     await assert.rejects(
-        assertSourceCaptureUnchanged(capture, 'Post-compiler mutation self-test'),
+        assertSourceCaptureContentUnchanged(capture, 'Post-compiler mutation self-test'),
         /compiler source bytes or metadata changed after capture/,
         'Mutation after the copy verification must fail the post-compiler rehash',
     );
 
     console.log('PASS post-compiler rehash rejects mutation after source capture');
+}
+
+async function reprotectCaptureForSelfTest(capture) {
+    for (const entry of capture.filesystem.files) {
+        await chmodCapturedEntry(capture, entry, entry.protectedMode, 'Persistent drift self-test file repair');
+    }
+
+    for (const entry of [...capture.filesystem.directories].reverse()) {
+        await chmodCapturedEntry(capture, entry, entry.protectedMode, 'Persistent drift self-test directory repair');
+    }
+}
+
+async function assertPersistentCaptureDriftIsRejected() {
+    if (process.platform !== 'win32') {
+        const modeRoot = path.join(temporaryRoot, 'persistent-mode-drift-self-test');
+        const modeCapture = await copyAuraSources(modeRoot, 'Persistent mode drift self-test');
+        const modeEntry = modeCapture.filesystem.files[0];
+
+        try {
+            await fs.chmod(modeEntry.absolutePath, 0o600);
+            await assert.rejects(
+                assertSourceCaptureUnchanged(modeCapture, 'Persistent mode drift self-test'),
+                /mode drifted/,
+                'Persistent compiler-source mode drift must fail its lane checkpoint',
+            );
+            await assert.rejects(
+                releaseSourceCapture(modeCapture),
+                /mode drifted/,
+                'Cleanup must refuse a capture whose mode identity drifted',
+            );
+            await prepareCaptureDirectoriesForRemoval(modeCapture);
+        } finally {
+            if (protectedSourceCaptures.has(modeCapture)) {
+                await reprotectCaptureForSelfTest(modeCapture);
+                await releaseSourceCapture(modeCapture);
+            }
+        }
+    }
+
+    const aliasRoot = path.join(temporaryRoot, 'persistent-hardlink-alias-self-test');
+    const aliasCapture = await copyAuraSources(aliasRoot, 'Persistent hardlink alias self-test');
+    const aliasedEntry = aliasCapture.filesystem.files[0];
+    const aliasPath = path.join(temporaryRoot, 'persistent-hardlink-alias');
+
+    await fs.link(aliasedEntry.absolutePath, aliasPath);
+    const aliasBeforeCleanup = await fs.lstat(aliasPath, { bigint: true });
+
+    try {
+        await assert.rejects(
+            assertSourceCaptureUnchanged(aliasCapture, 'Persistent hardlink alias self-test'),
+            /link count drifted/,
+            'A persistent external hardlink to captured source must fail its lane checkpoint',
+        );
+        await assert.rejects(
+            releaseSourceCapture(aliasCapture),
+            /link count drifted/,
+            'Cleanup must refuse captured source with a new external hardlink',
+        );
+        await prepareCaptureDirectoriesForRemoval(aliasCapture);
+        const aliasAfterCleanup = await fs.lstat(aliasPath, { bigint: true });
+
+        assert.equal(
+            permissionMode(aliasAfterCleanup),
+            permissionMode(aliasBeforeCleanup),
+            'Rejected cleanup must not chmod an external hardlink to captured source',
+        );
+    } finally {
+        if (protectedSourceCaptures.has(aliasCapture)) {
+            await fs.unlink(aliasPath);
+            await reprotectCaptureForSelfTest(aliasCapture);
+            await releaseSourceCapture(aliasCapture);
+        }
+    }
+
+    const hardlinkRoot = path.join(temporaryRoot, 'persistent-hardlink-drift-self-test');
+    const hardlinkCapture = await copyAuraSources(hardlinkRoot, 'Persistent hardlink drift self-test');
+    const replacedEntry = hardlinkCapture.filesystem.files[0];
+    const parentEntry = hardlinkCapture.filesystem.directories.find(
+        (entry) => entry.absolutePath === path.dirname(replacedEntry.absolutePath),
+    );
+    const originalPath = path.join(temporaryRoot, 'persistent-hardlink-original');
+    const externalPath = path.join(temporaryRoot, 'persistent-hardlink-external');
+
+    assert.ok(parentEntry, 'Persistent hardlink self-test must capture the selected file parent');
+    await fs.writeFile(externalPath, await fs.readFile(replacedEntry.absolutePath));
+    await fs.chmod(externalPath, 0o600);
+    await fs.chmod(parentEntry.absolutePath, parentEntry.initialMode | 0o700);
+    await fs.rename(replacedEntry.absolutePath, originalPath);
+    await fs.link(externalPath, replacedEntry.absolutePath);
+    await fs.chmod(parentEntry.absolutePath, parentEntry.protectedMode);
+    const externalBeforeCleanup = await fs.lstat(externalPath, { bigint: true });
+
+    try {
+        await assert.rejects(
+            assertSourceCaptureUnchanged(hardlinkCapture, 'Persistent hardlink drift self-test'),
+            /identity drifted/,
+            'Persistent hardlink replacement must fail its lane checkpoint even when bytes are identical',
+        );
+        await assert.rejects(
+            releaseSourceCapture(hardlinkCapture),
+            /identity drifted/,
+            'Cleanup must refuse a hardlink-replaced capture',
+        );
+        await prepareCaptureDirectoriesForRemoval(hardlinkCapture);
+        const externalAfterCleanup = await fs.lstat(externalPath, { bigint: true });
+
+        assert.equal(
+            permissionMode(externalAfterCleanup),
+            permissionMode(externalBeforeCleanup),
+            'Rejected cleanup must not chmod a hardlink replacement outside the capture',
+        );
+    } finally {
+        if (protectedSourceCaptures.has(hardlinkCapture)) {
+            await fs.chmod(parentEntry.absolutePath, parentEntry.initialMode | 0o700);
+            await fs.unlink(replacedEntry.absolutePath);
+            await fs.rename(originalPath, replacedEntry.absolutePath);
+            await reprotectCaptureForSelfTest(hardlinkCapture);
+            await releaseSourceCapture(hardlinkCapture);
+        }
+    }
+
+    const swappedRoot = path.join(temporaryRoot, 'persistent-root-drift-self-test');
+    const rootCapture = await copyAuraSources(swappedRoot, 'Persistent root drift self-test');
+    const originalRoot = path.join(temporaryRoot, 'persistent-root-original');
+    const externalRoot = path.join(temporaryRoot, 'persistent-root-external');
+    const exactCopySnapshot = await inspectAuraSources(swappedRoot, rootCapture.manifest);
+
+    await writeSourceSnapshot(exactCopySnapshot, externalRoot);
+    await fs.chmod(externalRoot, 0o700);
+    await fs.chmod(rootCapture.filesystem.root.absolutePath, rootCapture.filesystem.root.initialMode);
+    await fs.rename(swappedRoot, originalRoot);
+    await fs.chmod(originalRoot, rootCapture.filesystem.root.protectedMode);
+    await fs.symlink(externalRoot, swappedRoot, process.platform === 'win32' ? 'junction' : 'dir');
+    const externalRootBeforeCleanup = await fs.lstat(externalRoot, { bigint: true });
+
+    try {
+        await assert.rejects(
+            assertSourceCaptureUnchanged(rootCapture, 'Persistent root drift self-test'),
+            /became a symlink|identity drifted/,
+            'Persistent exact-copy root substitution must fail its lane checkpoint',
+        );
+        await assert.rejects(
+            releaseSourceCapture(rootCapture),
+            /became a symlink|identity drifted/,
+            'Cleanup must refuse a substituted capture root',
+        );
+        await prepareCaptureDirectoriesForRemoval(rootCapture);
+        const externalRootAfterCleanup = await fs.lstat(externalRoot, { bigint: true });
+
+        assert.equal(
+            permissionMode(externalRootAfterCleanup),
+            permissionMode(externalRootBeforeCleanup),
+            'Rejected cleanup must not chmod a substituted external root',
+        );
+    } finally {
+        if (protectedSourceCaptures.has(rootCapture)) {
+            await fs.unlink(swappedRoot);
+            await fs.chmod(originalRoot, rootCapture.filesystem.root.initialMode);
+            await fs.rename(originalRoot, swappedRoot);
+            await reprotectCaptureForSelfTest(rootCapture);
+            await releaseSourceCapture(rootCapture);
+        }
+    }
+
+    console.log('PASS persistent mode, hardlink, and root identity drift fail closed without chmodding substitutes');
 }
 
 async function execute(command, args, cwd) {
@@ -857,9 +1319,23 @@ async function execute(command, args, cwd) {
     });
 }
 
-async function expectFailure(command, args, cwd, pattern, label) {
+async function executeWithSourceCapture(command, args, cwd, capture, label) {
+    await assertSourceCaptureUnchanged(capture, `${label} pre-compiler check`);
+
     try {
-        await execute(command, args, cwd);
+        return await execute(command, args, cwd);
+    } finally {
+        await assertSourceCaptureUnchanged(capture, `${label} post-compiler check`);
+    }
+}
+
+async function expectFailure(command, args, cwd, pattern, label, sourceCapture = null) {
+    try {
+        if (sourceCapture === null) {
+            await execute(command, args, cwd);
+        } else {
+            await executeWithSourceCapture(command, args, cwd, sourceCapture, label);
+        }
     } catch (error) {
         const output = `${error.stdout ?? ''}\n${error.stderr ?? ''}\n${error.message}`;
         assert.match(output, pattern, `${label} failed for an unexpected reason`);
@@ -881,12 +1357,13 @@ async function buildTailwind3() {
     const sourceCapture = await copyAuraSources(path.join(directory, 'aura-source'), 'Tailwind 3 source lane');
 
     const outputPath = path.join(directory, 'output.css');
-    await execute(
+    await executeWithSourceCapture(
         process.execPath,
         [tailwindCliPath, '-c', 'tailwind.config.cjs', '-i', 'input.css', '-o', outputPath, '--minify'],
         directory,
+        sourceCapture,
+        'Tailwind 3 source lane',
     );
-    await assertSourceCaptureUnchanged(sourceCapture, 'Tailwind 3 post-compiler source check');
     const result = assertCssContract(outputPath, 3);
     enforceOutputBaseline(result, 'tailwind3', 'Tailwind 3 output check');
 
@@ -906,8 +1383,13 @@ async function prepareTailwind4() {
 }
 
 async function buildTailwind4({ directory, sourceCapture }) {
-    await execute(process.execPath, [npmCliPath, 'run', 'build'], directory);
-    await assertSourceCaptureUnchanged(sourceCapture, 'Tailwind 4 post-compiler source check');
+    await executeWithSourceCapture(
+        process.execPath,
+        [npmCliPath, 'run', 'build'],
+        directory,
+        sourceCapture,
+        'Tailwind 4 source lane',
+    );
 
     const manifest = await readStrictJsonFile(path.join(directory, 'dist/manifest.json'), 'Tailwind 4 Vite manifest');
     const entrypoint = manifest['index.html'];
@@ -940,8 +1422,8 @@ async function checkNegativeBoundaries({ directory: tailwind4Directory, sourceCa
         v3AgainstV4,
         /Failed to find ['"]tailwindcss['"]/,
         'Tailwind 3 rejects the v4 CSS entrypoint',
+        tailwind3SourceCapture,
     );
-    await assertSourceCaptureUnchanged(tailwind3SourceCapture, 'Tailwind 3 negative post-compiler source check');
 
     const auraCss = await fs.readFile(path.join(repositoryRoot, 'resources/css/app.css'), 'utf8');
     const legacyExtract = await fs.readFile(path.join(fixtureDirectory, 'tailwind-v3-source-under-v4.css'), 'utf8');
@@ -966,11 +1448,15 @@ async function checkNegativeBoundaries({ directory: tailwind4Directory, sourceCa
         tailwind4Directory,
         /["']\.\/(?:base|components|utilities)["'] is not exported under the conditions? .*?["']style["']/s,
         'Tailwind 4 Vite rejects Aura\'s v3 CSS entrypoint',
+        tailwind4SourceCapture,
     );
-    await assertSourceCaptureUnchanged(tailwind4SourceCapture, 'Tailwind 4 negative post-compiler source check');
 }
 
+let gateFailure = null;
+
 try {
+    await assertProductionOutputsPinned('Pre-gate production output check');
+    assertProductionOutputDriftIsRejected();
     const sourceSnapshot = await inspectAuraSources(repositoryRoot);
     enforceSourceBaseline(sourceSnapshot, 'Pre-build source check');
     await assertDocumentedSourceBaseline();
@@ -984,20 +1470,50 @@ try {
     await assertSourceDriftIsRejected();
     assertOutputContractIsPinned();
     await assertCapturedSourceMutationIsRejected();
+    await assertPersistentCaptureDriftIsRejected();
     console.log(`Aura source baseline: ${sourceSnapshot.count} files, sha256 ${sourceBaseline.expectedDigest}`);
 
     await buildTailwind3();
     const tailwind4Fixture = await prepareTailwind4();
     await buildTailwind4(tailwind4Fixture);
     await checkNegativeBoundaries(tailwind4Fixture);
+    await assertProductionOutputsPinned('Post-gate production output check');
+} catch (error) {
+    gateFailure = error;
 } finally {
+    const cleanupFailures = [];
+
     for (const capture of [...protectedSourceCaptures].reverse()) {
-        await releaseSourceCapture(capture);
+        try {
+            await releaseSourceCapture(capture);
+        } catch (error) {
+            cleanupFailures.push(error);
+
+            try {
+                await prepareCaptureDirectoriesForRemoval(capture);
+            } catch (preparationError) {
+                cleanupFailures.push(preparationError);
+            }
+        }
     }
 
     if (process.env.AURA_KEEP_FRONTEND_FIXTURE === '1') {
         console.log(`Kept fixture workspace: ${temporaryRoot}`);
     } else {
-        await fs.rm(temporaryRoot, { recursive: true, force: true });
+        try {
+            await fs.rm(temporaryRoot, { recursive: true, force: true });
+        } catch (error) {
+            cleanupFailures.push(error);
+        }
+    }
+
+    const failures = [gateFailure, ...cleanupFailures].filter(Boolean);
+
+    if (failures.length === 1) {
+        throw failures[0];
+    }
+
+    if (failures.length > 1) {
+        throw new AggregateError(failures, 'Frontend compatibility gate and cleanup both failed');
     }
 }
