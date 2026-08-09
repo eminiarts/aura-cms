@@ -46,8 +46,11 @@ Both existing names for each surface are compatibility aliases:
 | `global-search` | `aura::global-search` | `aura.base.livewire.global-search` |
 | `media-manager` | `aura::media-manager` | `aura.base.livewire.media-manager` |
 
-All four aliases track the final host/plugin/default winner through the major
-following CORE-20. Keeping the dot aliases on Aura's default would let
+Let `N` be the Aura major release containing CORE-20. The legacy
+`aura.components.media-manager` key and all four aliases remain supported
+throughout `N` and all of `N+1`; they may be removed no earlier than `N+2`.
+Throughout that support window, all four aliases track the final
+host/plugin/default winner. Keeping the dot aliases on Aura's default would let
 FQCN-derived or saved callers bypass the selected winner, so default-only
 behavior is rejected.
 
@@ -442,8 +445,9 @@ frozen provisional map, and after finalization it returns the frozen winner. All
 other existing map entries retain current behavior.
 
 Aura-owned layouts and modal emitters switch to the transport IDs. All four old
-aliases remain supported through the major following CORE-20 and track the
-**final winner**—host, plugin, or Aura default—on initial mount and hydration.
+aliases remain supported throughout `N` and all of `N+1`, may be removed no
+earlier than `N+2`, and track the **final winner**—host, plugin, or Aura
+default—on initial mount and hydration.
 This is the safest compatibility rule because published views, FQCN-derived
 names, saved snapshots, and existing callers keep addressing the same semantic
 surface. The aliases are compatibility names, not plugin registration hooks;
@@ -470,9 +474,10 @@ adapts and deprecates it without changing its precedence:
 - every legacy custom class must pass the new structural, owner-token, event, and
   authorization conformance contract. There is no slug-only security fallback.
 
-The legacy key and all four compatibility aliases may be removed only in the next
-major after CORE-20. Dashboard, profile, and settings remain under
-`aura.components` because their direct route resolution is already deterministic.
+The legacy key and all four compatibility aliases remain supported throughout
+`N` and all of `N+1` and may be removed no earlier than `N+2`. Dashboard,
+profile, and settings remain under `aura.components` because their direct route
+resolution is already deterministic.
 
 ## Config cache, workers, and multiple containers
 
@@ -504,16 +509,16 @@ authorization/layout ownership are public semver commitments.
 - Removing/renaming a slot or changing precedence or authorization ownership is
   also a major release.
 - Default DOM/CSS/internal events and private transport IDs are not public API.
-- The existing media config key and old aliases have the explicit next-major
-  deprecation window above; the owner-token hardening is a security prerequisite,
-  not an optional legacy mode.
+- The existing media config key and old aliases have the explicit `N`/`N+1`
+  support window and `N+2` earliest-removal boundary above; the owner-token
+  hardening is a security prerequisite, not an optional legacy mode.
 
 The existing legacy media-manager seam accepts slug-only replacements today.
 Requiring the owner/request-token handshake therefore cannot ship as a patch or
-minor under this policy. The safest release vehicle for CORE-20 is the next Aura
-major, with an upgrade error that names the incompatible custom class and links
-to the migration contract. The aliases then remain available until the following
-major as promised above.
+minor under this policy. The safest release vehicle for CORE-20 is major `N`,
+with an upgrade error that names the incompatible custom class and links to the
+migration contract. The legacy media config and aliases remain supported
+throughout `N+1` and may be removed no earlier than `N+2`, as promised above.
 
 ## Tests as design
 
@@ -523,7 +528,7 @@ CORE-20 implementation is not complete until focused tests prove this matrix:
 |---|---|
 | Baseline | Aura registers no `aura` Livewire namespace; the current missing resolver honors a custom legacy media config before migration. |
 | Selection | Defaults; host only; plugin only with provider before/after Aura; host over one/many plugins; duplicate collapse; ambiguous plugins; invalid shadowed declaration. |
-| Compatibility | Both `aura::*` aliases and both `aura.base.livewire.*` dot aliases resolve to the same final default/host/plugin winner and hydrate under that alias through the major following CORE-20; FQCN normalization and existing dashboard/profile/settings routes remain unchanged. |
+| Compatibility | The legacy media config and both `aura::*` aliases and both `aura.base.livewire.*` dot aliases remain supported throughout `N` and all of `N+1`, with removal no earlier than `N+2`; all four aliases resolve to the same final default/host/plugin winner and hydrate under that alias; FQCN normalization and existing dashboard/profile/settings routes remain unchanged. |
 | Collision protocol | Before any registration, separate boot failures for preclaimed explicit class, explicit view, conventional class, class/view namespace, single-file, multi-file, third-party missing resolver, already-resolved Finder entry, and Factory-cache entry for every transport ID and all four aliases; registration followed by exact Factory assertion; no overwrite or fallback. |
 | Livewire adapter | Composer accepts `4.3.5` and latest `4.3.x` but rejects unsupported minors; both supported endpoints pass the adapter shape and full collision matrix; a deliberately altered supported shape raises the dedicated compatibility exception before resolver/registry mutation. |
 | Lifecycle | Unknown slot/source, same-source conflict, pre-finalization resolution, late registry registration, config cache, Octane reuse, and two independent containers. |
@@ -570,10 +575,11 @@ remain required by the project verify loop.
 
 1. Approve exactly `global-search` and `media-manager`, class-string candidates,
    host > unique plugin > Aura default precedence, fail-closed collision checks,
-   and all four existing aliases tracking the final winner through the major
-   following CORE-20?
+   and support for the legacy media config plus all four existing aliases
+   throughout `N` and all of `N+1`, with removal no earlier than `N+2` and the
+   aliases tracking the final winner throughout that window?
 2. Approve the owner/request-token acknowledgement protocol and default-component
    authorization hardening as a CORE-20 release prerequisite, with CORE-20 shipped
-   in the next Aura major because incompatible legacy managers are rejected?
+   in major `N` because incompatible legacy managers are rejected?
 3. Approve `livewire/livewire: ~4.3.5` for the first protected-internals adapter,
    with lowest/latest `4.3.x` CI required before that range may be widened?
