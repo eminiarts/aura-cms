@@ -43,6 +43,8 @@ class Role extends Resource
 
     public static $globalSearch = false;
 
+    public static bool $sharedAcrossTeams = true;
+
     public static ?string $slug = 'role';
 
     public static ?int $sort = 2;
@@ -514,9 +516,9 @@ class Role extends Resource
             }
 
             $actor = auth()->user();
-            $isGlobalAdmin = $actor && Gate::forUser($actor)->allows(User::GLOBAL_ADMIN_GATE);
+            $canCreateGlobalRole = $actor && Gate::forUser($actor)->allows('createGlobal', $role);
 
-            if (! $isGlobalAdmin) {
+            if (! $canCreateGlobalRole) {
                 // Silent refusal: a non-Global-Admin can never produce a Global
                 // Role. If nothing team-scoped it yet, pin it to the actor's
                 // current team so the escalation attempt yields a Team Role.

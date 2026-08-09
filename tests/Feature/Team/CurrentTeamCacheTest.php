@@ -1,10 +1,15 @@
 <?php
 
+use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
+use Illuminate\Contracts\Queue\Job;
+use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 
 beforeEach(function () {
@@ -121,17 +126,25 @@ it('clears current team and team list caches for affected users when deleting a 
     expect(Post::whereKey($secondTeamPost->id)->exists())->toBeFalse();
 });
 
-it('does not cache a missing current team forever before a later team assignment', function () {
+it('caches a missing current team until a later model assignment invalidates it', function () {
     $user = User::factory()->create([
         'current_team_id' => null,
     ]);
     $this->actingAs($user);
 
     $cacheKey = User::currentTeamCacheKey($user->id);
+    $currentTeamQueries = 0;
+
+    DB::listen(function ($query) use (&$currentTeamQueries) {
+        if (str_contains($query->sql, 'current_team_id') && str_contains($query->sql, 'from "users"')) {
+            $currentTeamQueries++;
+        }
+    });
 
     expect(Post::count())->toBe(0);
     expect(Post::count())->toBe(0);
-    expect(Cache::has($cacheKey))->toBeFalse();
+    expect(Cache::has($cacheKey))->toBeTrue()
+        ->and($currentTeamQueries)->toBe(1);
 
     $team = Team::create([
         'name' => 'Later Assigned Team',
@@ -146,4 +159,45 @@ it('does not cache a missing current team forever before a later team assignment
     expect($user->fresh()->current_team_id)->toBe($team->id);
     expect(Post::whereKey($post->id)->exists())->toBeTrue();
     expect(Cache::get($cacheKey))->toBe($team->id);
+});
+
+it('keeps a request-local team snapshot and resets it at a worker boundary', function () {
+    $user = createSuperAdmin();
+    $teamA = Team::findOrFail($user->current_team_id);
+    $teamB = Team::factory()->createQuietly(['user_id' => $user->id]);
+    $postA = createPost(['title' => 'Team A', 'team_id' => $teamA->id]);
+    $postB = createPost(['title' => 'Team B', 'team_id' => $teamB->id]);
+
+    expect(Post::whereKey($postA->id)->exists())->toBeTrue()
+        ->and(Post::whereKey($postB->id)->exists())->toBeFalse();
+
+    DB::table('users')->where('id', $user->id)->update(['current_team_id' => $teamB->id]);
+    Cache::forget(User::currentTeamCacheKey($user->id));
+
+    expect(Post::whereKey($postA->id)->exists())->toBeTrue()
+        ->and(Post::whereKey($postB->id)->exists())->toBeFalse();
+
+    Aura::flushState();
+
+    expect(Post::whereKey($postA->id)->exists())->toBeFalse()
+        ->and(Post::whereKey($postB->id)->exists())->toBeTrue();
+});
+
+it('resets the current-team snapshot after a queue job is processed', function () {
+    $user = createSuperAdmin();
+    $teamA = Team::findOrFail($user->current_team_id);
+    $teamB = Team::factory()->createQuietly(['user_id' => $user->id]);
+    $postA = createPost(['title' => 'Queue Team A', 'team_id' => $teamA->id]);
+    $postB = createPost(['title' => 'Queue Team B', 'team_id' => $teamB->id]);
+
+    expect(Post::whereKey($postA->id)->exists())->toBeTrue()
+        ->and(Post::whereKey($postB->id)->exists())->toBeFalse();
+
+    DB::table('users')->where('id', $user->id)->update(['current_team_id' => $teamB->id]);
+    Cache::forget(User::currentTeamCacheKey($user->id));
+
+    Event::dispatch(new JobProcessed('sync', Mockery::mock(Job::class), null));
+
+    expect(Post::whereKey($postA->id)->exists())->toBeFalse()
+        ->and(Post::whereKey($postB->id)->exists())->toBeTrue();
 });

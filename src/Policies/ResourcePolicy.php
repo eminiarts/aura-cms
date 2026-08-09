@@ -36,6 +36,22 @@ class ResourcePolicy
     }
 
     /**
+     * Determine whether the user can create a row shared with every team.
+     */
+    public function createGlobal($user, $resource): bool
+    {
+        if (! config('aura.teams') || $resource::$createEnabled === false) {
+            return false;
+        }
+
+        if (! $resource::sharesRecordsAcrossTeams()) {
+            return false;
+        }
+
+        return $user->isAuraGlobalAdmin();
+    }
+
+    /**
      * Determine whether the user can delete the model.
      *
      * @param  Post  $resource

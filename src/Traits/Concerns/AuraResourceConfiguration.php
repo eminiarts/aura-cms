@@ -12,6 +12,8 @@ trait AuraResourceConfiguration
 
     public static bool $indexViewEnabled = true;
 
+    public static bool $sharedAcrossTeams = false;
+
     public static $viewEnabled = true;
 
     public array $widgetSettings = [
@@ -53,6 +55,11 @@ trait AuraResourceConfiguration
     public static function getWidgets(): array
     {
         return [];
+    }
+
+    public static function sharesRecordsAcrossTeams(): bool
+    {
+        return static::$sharedAcrossTeams;
     }
 
     public static function usesTitle(): bool

@@ -174,6 +174,7 @@ class Product extends Resource
     // === DATA STORAGE ===
     public static $customTable = false;                  // Use custom table (not posts)
     public static bool $usesMeta = true;                 // Store fields in meta table
+    public static bool $sharedAcrossTeams = false;       // Include global rows in every team
     public static $taxonomy = false;                     // Is taxonomy/category resource
     protected static bool $title = false;                // Uses title field in posts table
     
@@ -949,6 +950,23 @@ Article::withoutGlobalScope(TeamScope::class)->get(); // All teams
 // Can restrict resources to owner based on configuration
 Article::withoutGlobalScope(ScopedScope::class)->get(); // All users
 ```
+
+#### Shared resource catalogs
+
+Resources are team-private by default. A catalog resource can explicitly opt in to sharing rows whose `team_id` is `null`:
+
+```php
+class Status extends Resource
+{
+    public static bool $sharedAcrossTeams = true;
+}
+```
+
+For an authenticated user with a current team, `TeamScope` then returns rows where `team_id` is either the current team ID or `null`. Team-specific and global rows are both returned; Aura does not generically shadow or deduplicate them. An authenticated user without a current team sees only global rows from opted-in resources and no rows from regular resources. `Role` and `Permission` opt in; every other resource remains isolated unless it declares the property.
+
+Global creation is a separate authorization concern. Custom forms, controllers, and actions that deliberately write `team_id => null` must authorize `createGlobal` for the resource. That policy allows only a Global Admin, only while teams are enabled, and only for an opted-in resource with creation enabled. Aura's normal create form does not accept `team_id` from the client.
+
+The initial-field pipeline distinguishes omission from an explicit `null`: omitted `team_id` and `user_id` values default to the authenticated user's team and ID, while explicitly supplied null values remain null for authorized catalog or system workflows.
 
 **Removing Multiple Scopes**
 

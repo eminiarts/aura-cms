@@ -2,7 +2,7 @@
 
 namespace Aura\Base\Models\Scopes;
 
-use Aura\Base\Resources\Role;
+use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +16,9 @@ class TeamScope implements Scope
 {
     // Static flag to prevent recursive calls
     private static $applying = false;
+
+    /** @var array<int|string, int|null> */
+    private static array $currentTeamIds = [];
 
     /**
      * Apply the scope to a given Eloquent query builder.
@@ -42,42 +45,24 @@ class TeamScope implements Scope
 
         try {
             $currentTeamId = $this->getCurrentTeamId();
-            $userId = Auth::id();
-
             // Handle User model specially
             if ($model->getTable() === 'users') {
+                $authUser = Auth::user();
+                $isGlobalAdmin = $authUser && Gate::forUser($authUser)->allows(User::GLOBAL_ADMIN_GATE);
 
-                // Only apply team scoping if teams are enabled
-                if (config('aura.teams') && $currentTeamId) {
-                    // A Global Admin transcends the tenant boundary: their user
-                    // queries are never restricted to current-team members. The
-                    // bypass is gated strictly on the authenticated user being a
-                    // Global Admin, so it never leaks into ordinary requests.
-                    // (Auth::user() is already resolved here; the $applying guard
-                    // above prevents any re-entry while it is read.) The gate is
-                    // consulted directly so the check is host-overridable and safe
-                    // for any authenticatable, not only the Aura User model.
-                    $authUser = Auth::user();
-
-                    if (! ($authUser && Gate::forUser($authUser)->allows(User::GLOBAL_ADMIN_GATE))) {
+                if (! $isGlobalAdmin) {
+                    if ($currentTeamId !== null) {
                         $builder->whereHas('teams', function ($query) use ($currentTeamId) {
                             $query->where('teams.id', $currentTeamId);
                         });
+                    } elseif ($authUser) {
+                        $builder->whereKey($authUser->getAuthIdentifier());
                     }
                 }
 
                 self::$applying = false;
 
                 return;  // Early return is important.
-            }
-
-            // --- Rest of your scope (for other models) ---
-
-            // For team-enabled filtering
-            if (! $currentTeamId) {
-                self::$applying = false;
-
-                return;
             }
 
             // For Team model, don't apply team scope
@@ -87,13 +72,29 @@ class TeamScope implements Scope
                 return;
             }
 
-            // Roles resolve against the Role Catalog: within a team, queries see
-            // both the team's own Team Roles and the shared Global Roles
-            // (team_id = null). The merged/de-duplicated Roles UI is handled
-            // elsewhere; here we only make Global Roles visible at the query
-            // layer. Shadow resolution itself goes through Role::resolveForTeam.
-            if ($model instanceof Role) {
-                $model->scopeVisibleToTeam($builder, $currentTeamId);
+            $sharesRecordsAcrossTeams = $model instanceof Resource
+                && $model::sharesRecordsAcrossTeams();
+
+            if ($currentTeamId === null) {
+                if (Auth::check()) {
+                    if ($sharesRecordsAcrossTeams) {
+                        $builder->whereNull($model->getTable().'.team_id');
+                    } else {
+                        $builder->whereRaw('1 = 0');
+                    }
+                }
+
+                self::$applying = false;
+
+                return;
+            }
+
+            if ($sharesRecordsAcrossTeams) {
+                $column = $model->getTable().'.team_id';
+
+                $builder->where(function (Builder $query) use ($column, $currentTeamId) {
+                    $query->where($column, $currentTeamId)->orWhereNull($column);
+                });
 
                 self::$applying = false;
 
@@ -116,6 +117,16 @@ class TeamScope implements Scope
     public static function flushState(): void
     {
         self::$applying = false;
+        self::$currentTeamIds = [];
+    }
+
+    public static function forgetCurrentTeamId(string|int|null $userId): void
+    {
+        if ($userId === null) {
+            return;
+        }
+
+        unset(self::$currentTeamIds[$userId]);
     }
 
     /**
@@ -130,19 +141,24 @@ class TeamScope implements Scope
         }
 
         $userId = Auth::id();
+
+        if (array_key_exists($userId, self::$currentTeamIds)) {
+            return self::$currentTeamIds[$userId];
+        }
+
         $cacheKey = User::currentTeamCacheKey($userId);
 
         if (Cache::has($cacheKey)) {
-            return Cache::get($cacheKey);
+            $cachedTeamId = Cache::get($cacheKey);
+
+            return self::$currentTeamIds[$userId] = $cachedTeamId === false ? null : $cachedTeamId;
         }
 
         // Direct database query to avoid triggering scopes.
         $currentTeamId = DB::table('users')->where('id', $userId)->value('current_team_id');
 
-        if ($currentTeamId !== null) {
-            Cache::forever($cacheKey, $currentTeamId);
-        }
+        Cache::forever($cacheKey, $currentTeamId ?? false);
 
-        return $currentTeamId;
+        return self::$currentTeamIds[$userId] = $currentTeamId;
     }
 }

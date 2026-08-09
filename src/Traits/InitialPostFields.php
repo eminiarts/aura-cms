@@ -25,16 +25,19 @@ trait InitialPostFields
             return;
         }
 
+        $attributes = $post->getAttributes();
+        $user = auth()->user();
+
         if (! $post->content && ! $post::usesCustomTable()) {
             $post->content = '';
         }
 
-        if (! $post->user_id && auth()->user()) {
-            $post->user_id = auth()->user()->id;
+        if (! array_key_exists('user_id', $attributes) && $user) {
+            $post->user_id = $user->id;
         }
 
-        if (config('aura.teams') && ! isset($post->team_id) && auth()->user()) {
-            $post->team_id = auth()->user()->current_team_id;
+        if (config('aura.teams') && ! array_key_exists('team_id', $attributes) && $user) {
+            $post->team_id = $user->current_team_id;
         }
 
         if (! $post->type && ! $post::usesCustomTable()) {

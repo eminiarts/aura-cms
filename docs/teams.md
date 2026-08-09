@@ -20,7 +20,7 @@ Teams in Aura CMS provide a powerful multi-tenancy solution that allows you to o
 
 Teams functionality in Aura CMS enables:
 
-- Multi-tenant architecture with complete resource isolation
+- Multi-tenant architecture with isolation by default and explicit shared catalogs
 - Automatic scoping of all resources to the current team
 - Team-specific settings and configurations via the Options system
 - User management within teams with role-based access
@@ -148,7 +148,7 @@ The invitation email is sent using the `Aura\Base\Mail\TeamInvitation` mailable,
 <a name="resource-isolation"></a>
 ## Resource Isolation
 
-All resources in Aura CMS are automatically scoped to the current team when teams are enabled. This ensures complete data isolation between teams.
+Resources in Aura CMS are scoped to the current team by default when teams are enabled. A resource must explicitly opt in before global catalog rows can be visible across teams.
 
 ### How It Works
 
@@ -159,6 +159,22 @@ Resources are automatically filtered by the `team_id` column, which is set when 
 $post = Post::create(['title' => 'My Post']);
 // $post->team_id is automatically set to auth()->user()->current_team_id
 ```
+
+The defaults apply only when the keys are omitted. Explicit null values are preserved:
+
+```php
+// Defaults team_id and user_id from the authenticated user.
+$teamPost = Post::create(['title' => 'Team Post']);
+
+// Preserves both null values for an authorized global/system workflow.
+$globalPost = SharedCatalog::create([
+    'title' => 'Global Entry',
+    'team_id' => null,
+    'user_id' => null,
+]);
+```
+
+An explicit `team_id => null` is privileged server-side intent. Any custom form, controller, or action that creates such a row must authorize the `createGlobal` ability. It is limited to Global Admins and resources that opt in with `public static bool $sharedAcrossTeams = true`; the default is `false`. Aura's standard create form does not accept `team_id` from the client.
 
 ### Accessing Team Resources
 
@@ -183,9 +199,11 @@ The `TeamScope` (`Aura\Base\Models\Scopes\TeamScope`) is a global scope that is 
 ### How TeamScope Works
 
 1. **For regular resources**: Filters by `team_id = current_team_id`
-2. **For the User model**: Filters users who belong to the current team via the `user_role` pivot table
-3. **For the Team model**: No team filtering is applied (teams are not scoped to themselves)
-4. **When teams are disabled**: No filtering is applied
+2. **For opted-in shared resources**: Filters by `(team_id = current_team_id OR team_id IS NULL)`
+3. **For an authenticated user without a current team**: Returns only global rows for shared resources and no rows for regular resources
+4. **For the User model**: Filters users who belong to the current team via the `user_role` pivot table; a non-Global-Admin without a team sees only their own user row
+5. **For the Team model**: No team filtering is applied (teams are not scoped to themselves)
+6. **When teams are disabled or no user is authenticated**: No filtering is applied
 
 ```php
 // TeamScope automatically adds this to queries:
@@ -194,14 +212,14 @@ $builder->where($model->getTable().'.team_id', $currentTeamId);
 
 ### Cache Mechanism
 
-The current team ID is cached per user to avoid repeated database queries:
+The current team ID is cached per user to avoid repeated database queries. Both an ID and the absence of an ID are cached, so users without a team do not trigger one lookup per scoped query. Aura also keeps a request/job-local snapshot and clears it through `Aura::flushState()` at queue and Octane worker boundaries.
 
 ```php
 // Cache key format
 "user_{$userId}_current_team_id"
 ```
 
-> **Important**: When changing a user's `current_team_id`, you should clear this cache to ensure the TeamScope uses the updated value.
+> **Important**: Model-based team changes clear both cache layers automatically. Code that changes `current_team_id` through a query builder or raw SQL must call `User::clearCurrentTeamCache($userId)`; clearing only the persistent cache does not change the current request/job snapshot.
 
 <a name="bypassing-team-scope"></a>
 ## Bypassing Team Scope
@@ -381,6 +399,12 @@ $resource->team; // BelongsTo - the team this resource belongs to
 
 // Team ID is automatically set on creation
 $resource->team_id; // The team ID
+
+// Default false; opt a catalog into current-team + global visibility
+public static bool $sharedAcrossTeams = false;
+
+// Inspect the effective resource contract
+$resource::sharesRecordsAcrossTeams();
 ```
 
 ## Testing with Teams

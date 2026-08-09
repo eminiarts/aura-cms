@@ -166,24 +166,12 @@ public function clearFieldsAttributeCache()
 
 ### Team Scope Caching
 
-The current team ID is cached indefinitely to avoid repeated database queries:
+`TeamScope` uses two cache layers for the authenticated user's current team:
 
-```php
-// In TeamScope.php - src/Models/Scopes/TeamScope.php
-private function getCurrentTeamId()
-{
-    if (!Auth::check()) {
-        return null;
-    }
+1. A process-local snapshot keyed by user ID keeps every scoped query in one request or job on the same tenant.
+2. The shared cache stores the database value indefinitely. A `false` sentinel represents a missing current team, so null values are cached as deliberately as team IDs.
 
-    $userId = Auth::id();
-    $cacheKey = "user_{$userId}_current_team_id";
-
-    return Cache::rememberForever($cacheKey, function () use ($userId) {
-        return DB::table('users')->where('id', $userId)->value('current_team_id');
-    });
-}
-```
+`User::clearCurrentTeamCache($userId)` invalidates both layers. Aura calls it for model-based current-team changes, and `Aura::flushState()` clears the process-local snapshots after queue jobs and at each Octane request, task, and tick boundary. Query-builder or raw-SQL updates must call the invalidation method explicitly.
 
 ### User Data Caching
 

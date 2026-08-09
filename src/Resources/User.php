@@ -3,6 +3,7 @@
 namespace Aura\Base\Resources;
 
 use Aura\Base\Database\Factories\UserFactory;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
 use Aura\Base\Traits\ProfileFields;
@@ -238,6 +239,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             return;
         }
 
+        TeamScope::forgetCurrentTeamId($userId);
         Cache::forget(static::currentTeamCacheKey($userId));
     }
 

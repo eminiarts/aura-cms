@@ -11,6 +11,8 @@ class Permission extends Resource
 
     public static $globalSearch = false;
 
+    public static bool $sharedAcrossTeams = true;
+
     public static ?string $slug = 'permission';
 
     public static bool $usesMeta = false;
