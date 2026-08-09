@@ -89,3 +89,30 @@ test('global search hides users when the current user cannot view users', functi
         ->set('search', $needle)
         ->assertDontSee($needle);
 });
+
+test('global search requires authentication on mount and every hydration', function () {
+    Livewire::test(GlobalSearch::class)->assertForbidden();
+
+    $this->actingAs(createSuperAdmin());
+    $search = Livewire::test(GlobalSearch::class);
+    auth()->logout();
+
+    $search->set('search', 'anything')->assertForbidden();
+});
+
+test('global search filters each record even when viewAny is allowed', function () {
+    $this->actingAs($admin = createAdmin());
+    $admin->roles->first()->update([
+        'permissions' => [
+            'viewAny-securitysearch' => true,
+            'view-securitysearch' => false,
+        ],
+    ]);
+    Cache::flush();
+
+    SecuritySearchModel::create(['title' => 'Record-level secret']);
+
+    Livewire::test(GlobalSearch::class)
+        ->set('search', 'Record-level secret')
+        ->assertDontSee('Record-level secret');
+});
