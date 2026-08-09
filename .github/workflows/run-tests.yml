@@ -77,7 +77,7 @@ jobs:
             tests/Feature/Aura/SupportMatrixTest.php \
             tests/Feature/NavigationTest.php \
             tests/Feature/OptionCacheTest.php \
-            --filter='rollback cleanup|team option reads require|teamless user option reads|navigation accepts a legitimate|navigation fails closed|support matrix|pins the Laravel 12 floor'
+            --filter='rollback cleanup|team option reads require|teamless user option reads|navigation accepts a legitimate|navigation fails closed|membership pivot lifecycle|role-side user membership|role-side team attach detach|user-side sync removals|role-side bulk detach|pivot-constrained detach preserves|membership detach invalidation|membership detach closes|support matrix|pins the Laravel 12 floor'
 
   teams-off:
     name: Teams-off

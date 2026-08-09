@@ -10,6 +10,7 @@ use Aura\Base\Models\TeamUser;
 use Aura\Base\Resource;
 use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
 use Aura\Base\Services\VersionedCache;
+use Aura\Base\Traits\HasTeamMemberships;
 use Aura\Base\Traits\ProfileFields;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\MustVerifyEmail;
@@ -43,6 +44,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     use CanResetPassword;
     use HasApiTokens;
     use HasFactory;
+    use HasTeamMemberships;
     use Impersonate;
     use MustVerifyEmail;
     use Notifiable;
@@ -940,13 +942,13 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function roles(): BelongsToMany
     {
         if (config('aura.teams')) {
-            return $this->belongsToMany(Role::class, 'user_role')
+            return $this->teamMembershipsToMany(Role::class, 'user_id', 'role_id', 'roles')
                 ->using(TeamUser::class)
                 ->withPivot('team_id')
                 ->withTimestamps();
         }
 
-        return $this->belongsToMany(Role::class, 'user_role')
+        return $this->teamMembershipsToMany(Role::class, 'user_id', 'role_id', 'roles')
             ->using(TeamUser::class)
             ->withTimestamps();
     }
@@ -987,7 +989,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function teams(): BelongsToMany
     {
-        return $this->belongsToMany(Team::class, 'user_role')
+        return $this->teamMembershipsToMany(Team::class, 'user_id', 'team_id', 'teams')
             ->using(TeamUser::class)
             ->withPivot('role_id')
             ->withTimestamps();

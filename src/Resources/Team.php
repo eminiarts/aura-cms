@@ -8,6 +8,7 @@ use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\TeamUser;
 use Aura\Base\Resource;
 use Aura\Base\Services\VersionedCache;
+use Aura\Base\Traits\HasTeamMemberships;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Cache;
 
 class Team extends Resource
 {
+    use HasTeamMemberships;
     use SoftDeletes;
 
     public static $customTable = true;
@@ -325,7 +327,7 @@ class Team extends Resource
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'user_role')
+        return $this->teamMembershipsToMany(User::class, 'team_id', 'user_id', 'users')
             ->using(TeamUser::class)
             ->withPivot('role_id')
             ->withTimestamps();

@@ -1430,6 +1430,160 @@ test('role-side team attach detach and sync invalidate warmed team snapshots', f
     expect($user->getTeams()->pluck('id'))->not->toContain($team->id);
 });
 
+test('user-side sync removals invalidate warmed team snapshots across fresh model instances', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('User-to-role Memberships require teams enabled.');
+    }
+
+    Cache::swap(serializedOptionCacheRepository());
+    $actor = createSuperAdmin();
+    $team = $actor->currentTeam;
+    $role = Role::factory()->create(['team_id' => $team->id]);
+    $member = User::factory()->create(['current_team_id' => $team->id]);
+
+    $member->roles()->attach($role->id, ['team_id' => $team->id]);
+    expect($member->getTeams()->pluck('id'))->toContain($team->id);
+
+    Aura::flushState();
+    $freshMember = User::withoutGlobalScopes()->findOrFail($member->id);
+    $freshMember->roles()->sync([]);
+
+    expect(User::withoutGlobalScopes()->findOrFail($member->id)->getTeams()->pluck('id'))->not->toContain($team->id);
+});
+
+test('role-side bulk detach invalidates every affected membership without invalidating unrelated users', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Role-to-user Memberships require teams enabled.');
+    }
+
+    Cache::swap(serializedOptionCacheRepository());
+    $actor = createSuperAdmin();
+    $firstTeam = $actor->currentTeam;
+    $secondTeam = Team::factory()->create(['name' => 'Second team']);
+    $role = Role::withoutGlobalScopes()->create([
+        'name' => 'Bulk membership role',
+        'slug' => 'bulk-membership-role',
+        'permissions' => [],
+        'super_admin' => false,
+        'team_id' => $firstTeam->id,
+    ]);
+    $member = User::factory()->create(['current_team_id' => $firstTeam->id]);
+    $unrelatedMember = User::factory()->create(['current_team_id' => $secondTeam->id]);
+
+    $role->users()->attach($member->id, ['team_id' => $firstTeam->id]);
+    $role->users()->attach($member->id, ['team_id' => $secondTeam->id]);
+    $role->users()->attach($unrelatedMember->id, ['team_id' => $secondTeam->id]);
+
+    expect($member->getTeams()->pluck('id')->all())->toEqualCanonicalizing([$firstTeam->id, $secondTeam->id])
+        ->and($unrelatedMember->getTeams()->firstWhere('id', $secondTeam->id)->name)->toBe('Second team');
+
+    $secondTeam->forceFill(['name' => 'Renamed without events'])->saveQuietly();
+    $role->users()->detach($member->id);
+
+    expect($member->getTeams())->toHaveCount(0)
+        ->and($unrelatedMember->getTeams()->firstWhere('id', $secondTeam->id)->name)->toBe('Second team');
+});
+
+test('pivot-constrained detach preserves the same role membership in another team', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Pivot-constrained Memberships require teams enabled.');
+    }
+
+    Cache::swap(serializedOptionCacheRepository());
+    $actor = createSuperAdmin();
+    $firstTeam = $actor->currentTeam;
+    $secondTeam = Team::factory()->create();
+    $role = Role::factory()->create(['team_id' => $firstTeam->id]);
+    $member = User::factory()->create(['current_team_id' => $firstTeam->id]);
+
+    $member->roles()->attach($role->id, ['team_id' => $firstTeam->id]);
+    $member->roles()->attach($role->id, ['team_id' => $secondTeam->id]);
+
+    expect($member->getTeams()->pluck('id')->all())->toEqualCanonicalizing([$firstTeam->id, $secondTeam->id]);
+
+    $member->roles()->wherePivot('team_id', $firstTeam->id)->detach($role->id);
+
+    expect($member->getTeams()->pluck('id')->all())->toBe([$secondTeam->id]);
+    $this->assertDatabaseMissing('user_role', [
+        'team_id' => $firstTeam->id,
+        'user_id' => $member->id,
+        'role_id' => $role->id,
+    ]);
+    $this->assertDatabaseHas('user_role', [
+        'team_id' => $secondTeam->id,
+        'user_id' => $member->id,
+        'role_id' => $role->id,
+    ]);
+});
+
+test('membership detach invalidation follows nested rollback boundaries', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Membership rollback requires teams enabled.');
+    }
+
+    Cache::swap(serializedOptionCacheRepository());
+    $actor = createSuperAdmin();
+    $team = $actor->currentTeam;
+    $role = Role::factory()->create(['team_id' => $team->id]);
+    $member = User::factory()->create(['current_team_id' => $team->id]);
+    $member->roles()->attach($role->id, ['team_id' => $team->id]);
+    $connection = $member->getConnection();
+    $baselineLevel = $connection->transactionLevel();
+
+    expect($member->getTeams()->pluck('id'))->toContain($team->id);
+
+    $connection->beginTransaction();
+    $connection->beginTransaction();
+
+    try {
+        $member->roles()->wherePivot('team_id', $team->id)->detach($role->id);
+        expect($member->getTeams()->pluck('id'))->not->toContain($team->id);
+
+        $connection->commit();
+    } finally {
+        while ($connection->transactionLevel() > $baselineLevel) {
+            $connection->rollBack();
+        }
+    }
+
+    expect($member->getTeams()->pluck('id'))->toContain($team->id);
+});
+
+test('membership detach closes warmed current-team option access and rollback restores it', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Current-team option access requires teams enabled.');
+    }
+
+    Cache::swap(serializedOptionCacheRepository());
+    $actor = createSuperAdmin();
+    $team = $actor->currentTeam;
+    $role = Role::factory()->create(['team_id' => $team->id]);
+    $member = User::factory()->create(['current_team_id' => $team->id]);
+    $member->roles()->attach($role->id, ['team_id' => $team->id]);
+    $this->actingAs($member);
+    $team->updateOption('membership-context', 'visible');
+    $connection = $member->getConnection();
+    $baselineLevel = $connection->transactionLevel();
+
+    expect($team->getOption('membership-context'))->toBe('visible');
+
+    $connection->beginTransaction();
+
+    try {
+        $member->roles()->wherePivot('team_id', $team->id)->detach($role->id);
+
+        Aura::flushState();
+        expect(Team::query()->findOrFail($team->id)->getOption('membership-context'))->toBeNull();
+    } finally {
+        while ($connection->transactionLevel() > $baselineLevel) {
+            $connection->rollBack();
+        }
+    }
+
+    Aura::flushState();
+    expect(Team::query()->findOrFail($team->id)->getOption('membership-context'))->toBe('visible');
+});
+
 test('team snapshots are transaction-local and rollback keeps the prior cached list valid', function () {
     Cache::swap(serializedOptionCacheRepository());
     $user = createSuperAdmin();

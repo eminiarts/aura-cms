@@ -8,12 +8,15 @@ use Aura\Base\Models\TeamUser;
 use Aura\Base\Navigation\Navigation;
 use Aura\Base\Resource;
 use Aura\Base\Services\VersionedCache;
+use Aura\Base\Traits\HasTeamMemberships;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Gate;
 
 class Role extends Resource
 {
+    use HasTeamMemberships;
+
     public array $actions = [
         'createMissingPermissions' => [
             'label' => 'Create Missing Permissions',
@@ -481,7 +484,7 @@ class Role extends Resource
 
     public function teams(): BelongsToMany
     {
-        return $this->belongsToMany(Team::class, 'user_role')
+        return $this->teamMembershipsToMany(Team::class, 'role_id', 'team_id', 'teams')
             ->using(TeamUser::class)
             ->withPivot('user_id')
             ->withTimestamps();
@@ -501,13 +504,13 @@ class Role extends Resource
     public function users(): BelongsToMany
     {
         if (config('aura.teams')) {
-            return $this->belongsToMany(User::class, 'user_role')
+            return $this->teamMembershipsToMany(User::class, 'role_id', 'user_id', 'users')
                 ->using(TeamUser::class)
                 ->withPivot('team_id')
                 ->withTimestamps();
         }
 
-        return $this->belongsToMany(User::class, 'user_role')
+        return $this->teamMembershipsToMany(User::class, 'role_id', 'user_id', 'users')
             ->using(TeamUser::class)
             ->withTimestamps();
     }
