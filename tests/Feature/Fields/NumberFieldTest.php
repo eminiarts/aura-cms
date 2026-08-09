@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Fields;
 
+use Aura\Base\Contracts\FieldValueContext;
+use Aura\Base\Contracts\FieldValueStorage;
+use Aura\Base\Exceptions\InvalidFieldValue;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Number;
 use Aura\Base\Livewire\Resource\Create;
@@ -218,9 +221,56 @@ describe('Number Field Value Handling', function () {
         expect($numberField->set(null, $field, '12.3456'))->toBe('12.346')
             ->and($numberField->set(null, $field, '-0.0049'))->toBe('-0.005')
             ->and($numberField->set(null, $field, '0'))->toBe('0.000')
-            ->and($numberField->set(null, $field, 'legacy'))->toBe('legacy')
             ->and($numberField->set(null, $field, ''))->toBe('')
-            ->and($numberField->set(null, $field, null))->toBeNull();
+            ->and($numberField->set(null, $field, null))->toBeNull()
+            ->and($numberField->hydrateFromStorage('legacy', $field, null, FieldValueStorage::Meta, FieldValueContext::Model))->toBe('legacy');
+
+        expect(fn () => $numberField->set(null, $field, 'legacy'))
+            ->toThrow(InvalidFieldValue::class);
+    });
+
+    test('decimal precision allows scale to consume every digit', function () {
+        $numberField = new Number;
+        $field = [
+            'slug' => 'ratio',
+            'number_type' => 'decimal',
+            'precision' => 1,
+            'scale' => 1,
+        ];
+
+        expect($numberField->set(null, $field, '0.9'))->toBe('0.9')
+            ->and(fn () => $numberField->set(null, $field, '1.0'))->toThrow(InvalidFieldValue::class)
+            ->and(fn () => $numberField->set(null, $field, '0.99'))->toThrow(InvalidFieldValue::class);
+    });
+
+    test('number writes reject floats scientific notation overflow and invalid configuration', function () {
+        $numberField = new Number;
+        $field = [
+            'slug' => 'amount',
+            'number_type' => 'decimal',
+            'precision' => 5,
+            'scale' => 2,
+        ];
+
+        expect(fn () => $numberField->set(null, $field, 0.1))->toThrow(InvalidFieldValue::class)
+            ->and(fn () => $numberField->set(null, $field, '1e3'))->toThrow(InvalidFieldValue::class)
+            ->and(fn () => $numberField->value('1e3'))->toThrow(InvalidFieldValue::class)
+            ->and(fn () => $numberField->set(null, $field, '1000.00'))->toThrow(InvalidFieldValue::class)
+            ->and(fn () => $numberField->set(null, [...$field, 'precision' => 0], '1'))->toThrow(InvalidFieldValue::class)
+            ->and(fn () => $numberField->set(null, [...$field, 'scale' => 6], '1'))->toThrow(InvalidFieldValue::class);
+    });
+
+    test('large decimal normalization remains an exact string', function () {
+        $numberField = new Number;
+        $field = [
+            'slug' => 'amount',
+            'number_type' => 'decimal',
+            'precision' => 65,
+            'scale' => 30,
+        ];
+        $value = '12345678901234567890123456789012345.123456789012345678901234567890';
+
+        expect($numberField->set(null, $field, $value))->toBe($value);
     });
 
     test('filterOptions returns numeric filters', function () {

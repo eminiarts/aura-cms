@@ -168,6 +168,42 @@ class Core10DstResource extends Resource
     }
 }
 
+class Core10ExactNumberResource extends Resource
+{
+    public static $customTable = true;
+
+    public static ?string $slug = 'core-10-exact-number';
+
+    public static string $type = 'Core10ExactNumber';
+
+    public static bool $usesMeta = false;
+
+    protected $fillable = ['exact_integer', 'exact_decimal'];
+
+    protected $table = 'core_10_exact_number_values';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Exact integer',
+                'slug' => 'exact_integer',
+                'type' => Number::class,
+                'number_type' => 'integer',
+                'precision' => 65,
+            ],
+            [
+                'name' => 'Exact decimal',
+                'slug' => 'exact_decimal',
+                'type' => Number::class,
+                'number_type' => 'decimal',
+                'precision' => 65,
+                'scale' => 30,
+            ],
+        ];
+    }
+}
+
 class Core10ValueResource extends Resource
 {
     public static $customTable = true;
@@ -252,6 +288,14 @@ class Core10ValueResource extends Resource
                 'number_type' => 'decimal',
                 'precision' => 12,
                 'scale' => 2,
+            ],
+            [
+                'name' => 'Meta exact decimal',
+                'slug' => 'meta_exact_decimal',
+                'type' => Number::class,
+                'number_type' => 'decimal',
+                'precision' => 65,
+                'scale' => 30,
             ],
         ];
     }
@@ -358,6 +402,20 @@ beforeEach(function () {
         Schema::create('core_10_dst_values', function (Blueprint $table) {
             $table->id();
             $table->timestamp('occurred_at')->nullable();
+            $table->foreignId('user_id')->nullable();
+            $table->foreignId('team_id')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    if (! Schema::hasTable('core_10_exact_number_values')) {
+        $number = new Number;
+        $fields = collect(Core10ExactNumberResource::getFields())->keyBy('slug');
+
+        Schema::create('core_10_exact_number_values', function (Blueprint $table) use ($fields, $number) {
+            $table->id();
+            $number->columnDefinition($fields['exact_integer'])->addTo($table, 'exact_integer');
+            $number->columnDefinition($fields['exact_decimal'])->addTo($table, 'exact_decimal');
             $table->foreignId('user_id')->nullable();
             $table->foreignId('team_id')->nullable();
             $table->timestamps();
@@ -503,6 +561,39 @@ test('create query parameters retain decimal values until field normalization', 
     Livewire::withQueryParams(['decimal_value' => '3.14'])
         ->test(Create::class, ['slug' => 'core-10-value'])
         ->assertSet('form.fields.decimal_value', '3.14');
+});
+
+test('decimal overflow is rejected before a database row is written', function () {
+    $before = DB::table('core_10_values')->count();
+
+    expect(fn () => Core10ValueResource::create(['decimal_value' => '12345678901.00']))
+        ->toThrow(InvalidFieldValue::class)
+        ->and(DB::table('core_10_values')->count())->toBe($before);
+});
+
+test('large meta decimals remain exact strings', function () {
+    $value = '12345678901234567890123456789012345.123456789012345678901234567890';
+    $resource = Core10ValueResource::create(['meta_exact_decimal' => $value])->refresh();
+
+    expect($resource->meta_exact_decimal)->toBe($value)
+        ->and(DB::table('meta')
+            ->where('metable_id', $resource->id)
+            ->where('key', 'meta_exact_decimal')
+            ->value('value'))->toBe($value);
+});
+
+test('large physical integers and decimals remain exact strings', function () {
+    $integer = '12345678901234567890123456789012345678901234567890123456789012345';
+    $decimal = '12345678901234567890123456789012345.123456789012345678901234567890';
+    $resource = Core10ExactNumberResource::create([
+        'exact_integer' => $integer,
+        'exact_decimal' => $decimal,
+    ])->refresh();
+
+    expect($resource->resolveFieldValue('exact_integer'))->toBe($integer)
+        ->and($resource->resolveFieldValue('exact_decimal'))->toBe($decimal)
+        ->and(DB::table('core_10_exact_number_values')->where('id', $resource->id)->value('exact_integer'))->toBe($integer)
+        ->and(DB::table('core_10_exact_number_values')->where('id', $resource->id)->value('exact_decimal'))->toBe($decimal);
 });
 
 test('edit hydration and resource display use their requested contexts once', function () {
