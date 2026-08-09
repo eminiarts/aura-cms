@@ -32,64 +32,32 @@ Aura CMS implements a multi-layered caching strategy combining Laravel's Cache f
 
 ### Options Caching
 
-Options are automatically cached for 1 hour with team-scoped cache keys:
+Options are automatically cached for 1 hour. Cache keys include the option owner and, for user options, the active team context. The cache stores only arrays and scalar values; Eloquent models and collections are never serialized into the cache.
 
 ```php
-// Automatic caching in Aura::getOption() - src/Aura.php
-public function getOption($name)
-{
-    // Team-scoped cache key when teams are enabled
-    if (config('aura.teams') && optional(optional(auth()->user())->resource)->currentTeam) {
-        return Cache::remember(
-            auth()->user()->current_team_id . '.aura.' . $name,
-            now()->addHour(),
-            function () use ($name) {
-                return auth()->user()->currentTeam->getOption($name);
-            }
-        );
-    }
+$value = auth()->user()->getOption('columns.Article');
+$filters = auth()->user()->getOption('Article.filters.*'); // Collection boundary
 
-    // Global cache key when teams are disabled
-    return Cache::remember('aura.' . $name, now()->addHour(), function () use ($name) {
-        $option = Option::where('name', $name)->first();
-        return $option ? json_decode($option->value, true) : [];
-    });
-}
-
-// Update option (cache is NOT automatically cleared - clear manually if needed)
-public function updateOption($key, $value)
-{
-    if (config('aura.teams')) {
-        auth()->user()->currentTeam->updateOption($key, $value);
-    } else {
-        Option::withoutGlobalScopes([app(TeamScope::class)])
-            ->updateOrCreate(['name' => $key], ['value' => $value]);
-    }
-}
+auth()->user()->updateOption('columns.Article', ['title', 'status']);
+auth()->user()->deleteOption('columns.Article');
 ```
+
+`updateOption()` and `deleteOption()` invalidate the exact option and any cached wildcard reads containing it. `clearCachedOption()` remains available when an external write needs explicit invalidation. Team option queries use the `Team` instance as their context, independent of whichever team the authenticated user is currently visiting.
 
 ### Navigation Caching
 
-Navigation is automatically cached per user and team for 1 hour:
+Navigation is automatically cached per user and team for 1 hour. The key also fingerprints registered resources and the navigation-hook revision, so either kind of registration produces a new cache entry. Authorization-filtered navigation is never shared between users.
 
 ```php
 // Automatic caching in Aura::navigation() - src/Aura.php
 public function navigation()
 {
-    return Cache::remember(
-        'user-' . auth()->id() . '-' . auth()->user()->current_team_id . '-navigation',
-        3600,
-        function () {
-            // Filters resources by permission and builds navigation structure
-            $resources = collect($this->getResources())
-                ->filter(fn ($resource) => auth()->user()->can('viewAny', app($resource)))
-                ->map(fn ($r) => app($r)->navigation())
-                ->filter(fn ($r) => $r['showInNavigation'] ?? true)
-                ->sortBy('sort');
-            
-            return collect($resources)->groupBy('group');
-        }
-    );
+    $payload = Cache::remember($this->navigationCacheKey(), 3600, function () {
+        // Build scalar grouped arrays after applying authorization and hooks.
+    });
+
+    // Preserve the existing Collection return type at the public boundary.
+    return collect($payload)->map(fn ($items) => collect($items));
 }
 ```
 
@@ -1360,9 +1328,12 @@ public function boot()
 ### 10. Clear Cache Strategically
 
 ```php
-// Clear specific caches, not everything
-Cache::forget('user.' . $user->id . '.roles');
-Cache::forget($user->current_team_id . '.aura.settings');
+// Option writes clear their exact and related wildcard cache entries.
+$user->updateOption('columns.Article', ['title', 'status']);
+
+// Clear a specific option after an external write.
+$user->clearCachedOption('columns.Article');
+$user->currentTeam->clearCachedOption('settings');
 
 // Or clear all when needed
 Aura::clear();

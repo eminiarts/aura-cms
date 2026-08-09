@@ -3,6 +3,7 @@
 namespace Aura\Base\Resources;
 
 use Aura\Base\Database\Factories\UserFactory;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
 use Aura\Base\Traits\ProfileFields;
@@ -12,6 +13,7 @@ use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -227,9 +229,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function clearCachedOption($option)
     {
-        $option = 'user.'.$this->id.'.'.$option;
-
-        Cache::forget($option);
+        $this->forgetOptionCache($option);
     }
 
     public static function clearCurrentTeamCache(string|int|null $userId): void
@@ -273,11 +273,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function deleteOption($option)
     {
-        $option = 'user.'.$this->id.'.'.$option;
+        $optionName = $this->optionName($option);
 
-        Option::whereName($option)->delete();
+        $this->optionQuery()->where('name', $optionName)->delete();
 
-        Cache::forget($option);
+        $this->forgetOptionCache($option);
     }
 
     public function getAvatarUrlAttribute()
@@ -471,88 +471,52 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function getOption($option)
     {
-        $option = 'user.'.$this->id.'.'.$option;
+        $cacheKey = $this->optionCacheKey($option);
+        $option = $this->optionName($option);
 
         // If there is a * at the end of the option name, it means that it is a wildcard
         // and we need to get all options that match the wildcard
         if (substr($option, -1) == '*') {
             $o = substr($option, 0, -1);
 
-            // Cache
-            $options = Cache::remember($option, now()->addHour(), function () use ($o) {
-                return Option::where('name', 'like', $o.'%')->get();
+            $options = Cache::remember($cacheKey, now()->addHour(), function () use ($o) {
+                return $this->optionQuery()
+                    ->where('name', 'like', $o.'%')
+                    ->pluck('value', 'name')
+                    ->mapWithKeys(function ($value, $name) {
+                        return [str($name)->afterLast('.')->toString() => $value];
+                    })
+                    ->all();
             });
 
-            // Map the options, set the key to the option name (everything after last dot ".") and the value to the option value
-            return $options->mapWithKeys(function ($item, $key) {
-                return [str($item->name)->afterLast('.')->toString() => $item->value];
-            });
+            return collect($options);
         }
 
-        // Cache
-        $model = Cache::remember($option, now()->addHour(), function () use ($option) {
-            return Option::whereName($option)->first();
+        $cachedOption = Cache::remember($cacheKey, now()->addHour(), function () use ($option) {
+            return ['value' => $this->optionQuery()->where('name', $option)->value('value')];
         });
 
-        if ($model) {
-            return $model->value;
-        }
+        return $cachedOption['value'];
     }
 
     public function getOptionBookmarks()
     {
-        // Cache
-        $option = Cache::remember('user.'.$this->id.'.bookmarks', now()->addHour(), function () {
-            return Option::whereName('user.'.$this->id.'.bookmarks')->first();
-        });
-
-        if ($option) {
-            return $option->value;
-        }
-
-        return [];
+        return $this->getOption('bookmarks') ?? [];
     }
 
     public function getOptionColumns($slug)
     {
-        // Cache
-        $option = Cache::remember('user.'.$this->id.'.columns.'.$slug, now()->addHour(), function () use ($slug) {
-            return Option::whereName('user.'.$this->id.'.columns.'.$slug)->first();
-        });
-
-        if ($option) {
-            return $option->value;
-        }
-
-        return [];
+        return $this->getOption('columns.'.$slug) ?? [];
     }
 
     public function getOptionSidebar()
     {
-        // Cache
-        $option = Cache::remember('user.'.$this->id.'.sidebar', now()->addHour(), function () {
-            return Option::whereName('user.'.$this->id.'.sidebar')->first();
-        });
-
-        if ($option) {
-            return $option->value;
-        }
-
-        return [];
+        return $this->getOption('sidebar') ?? [];
     }
 
     public function getOptionSidebarToggled()
     {
-        // Cache
-        $option = Cache::remember('user.'.$this->id.'.sidebarToggled', now()->addHour(), function () {
-            return Option::whereName('user.'.$this->id.'.sidebarToggled')->first();
-        });
-
-        if ($option) {
-            return $option->value;
-        }
-
-        return true;
+        return $this->getOption('sidebarToggled') ?? true;
     }
 
     // public function getRolesField()
@@ -891,21 +855,20 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function updateOption($option, $value)
     {
-        $option = 'user.'.$this->id.'.'.$option;
+        $optionName = $this->optionName($option);
 
         if (config('aura.teams')) {
-            Option::updateOrCreate([
-                'name' => $option,
+            $this->optionQuery()->updateOrCreate([
+                'name' => $optionName,
                 'team_id' => $this->current_team_id,
             ], ['value' => $value]);
         } else {
             Option::updateOrCreate([
-                'name' => $option,
+                'name' => $optionName,
             ], ['value' => $value]);
         }
 
-        // Clear the cache
-        Cache::forget($option);
+        $this->forgetOptionCache($option);
     }
 
     public function widgets()
@@ -933,6 +896,26 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         //         // $user->preventPasswordUpdate = false;
         //     }
         // });
+    }
+
+    protected function forgetOptionCache(string $option): void
+    {
+        Cache::forget($this->optionCacheKey($option));
+
+        $segments = explode('.', $option);
+
+        if (end($segments) === '*') {
+            array_pop($segments);
+        }
+
+        array_pop($segments);
+
+        while ($segments !== []) {
+            Cache::forget($this->optionCacheKey(implode('.', $segments).'.*'));
+            array_pop($segments);
+        }
+
+        Cache::forget($this->optionCacheKey('*'));
     }
 
     protected function getCacheKeyForRoles(): string
@@ -964,5 +947,30 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         return is_array($permissions) ? $permissions : [];
+    }
+
+    protected function optionCacheKey(string $option): string
+    {
+        $teamId = config('aura.teams') ? ($this->current_team_id ?? 'none') : 'global';
+
+        return 'aura.option.user.'.$this->id.'.team.'.$teamId.'.'.$option;
+    }
+
+    protected function optionName(string $option): string
+    {
+        return 'user.'.$this->id.'.'.$option;
+    }
+
+    protected function optionQuery(): Builder
+    {
+        $query = Option::query();
+
+        if (! config('aura.teams')) {
+            return $query;
+        }
+
+        return $query
+            ->withoutGlobalScope(TeamScope::class)
+            ->where('team_id', $this->getAttribute('current_team_id'));
     }
 }

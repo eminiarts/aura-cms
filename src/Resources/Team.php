@@ -4,6 +4,7 @@ namespace Aura\Base\Resources;
 
 use Aura\Base\Database\Factories\TeamFactory;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -53,9 +54,7 @@ class Team extends Resource
 
     public function clearCachedOption($option)
     {
-        $option = 'team.'.$this->id.'.'.$option;
-
-        Cache::forget($option);
+        $this->forgetOptionCache($option);
     }
 
     public function customPermissions()
@@ -78,11 +77,14 @@ class Team extends Resource
 
     public function deleteOption($option)
     {
-        $option = 'team.'.$this->id.'.'.$option;
+        $optionName = $this->optionName($option);
 
-        Option::whereName($option)->delete();
+        Option::withoutGlobalScope(TeamScope::class)
+            ->where('team_id', $this->id)
+            ->where('name', $optionName)
+            ->delete();
 
-        Cache::forget($option);
+        $this->forgetOptionCache($option);
     }
 
     public static function getFields()
@@ -186,7 +188,8 @@ class Team extends Resource
 
     public function getOption($option)
     {
-        $option = 'team.'.$this->id.'.'.$option;
+        $cacheKey = $this->optionCacheKey($option);
+        $option = $this->optionName($option);
 
         // If there is a * at the end of the option name, it means that it is a wildcard
         // and we need to get all options that match the wildcard
@@ -194,20 +197,31 @@ class Team extends Resource
 
             $o = substr($option, 0, -1);
 
-            // Cache
-            $options = Option::where('name', 'like', $o.'%')->orderBy('id')->get();
-
-            // Map the options, set the key to the option name (everything after last dot ".") and the value to the option value
-            return $options->mapWithKeys(function ($item, $key) {
-                return [str($item->name)->afterLast('.')->toString() => $item->value];
+            $options = Cache::remember($cacheKey, now()->addHour(), function () use ($o) {
+                return Option::withoutGlobalScope(TeamScope::class)
+                    ->where('team_id', $this->id)
+                    ->where('name', 'like', $o.'%')
+                    ->orderBy('id')
+                    ->pluck('value', 'name')
+                    ->mapWithKeys(function ($value, $name) {
+                        return [str($name)->afterLast('.')->toString() => $value];
+                    })
+                    ->all();
             });
+
+            return collect($options);
         }
 
-        $model = Option::whereName($option)->first();
+        $cachedOption = Cache::remember($cacheKey, now()->addHour(), function () use ($option) {
+            return [
+                'value' => Option::withoutGlobalScope(TeamScope::class)
+                    ->where('team_id', $this->id)
+                    ->where('name', $option)
+                    ->value('value'),
+            ];
+        });
 
-        if ($model) {
-            return $model->value;
-        }
+        return $cachedOption['value'];
     }
 
     public static function getWidgets(): array
@@ -232,11 +246,14 @@ class Team extends Resource
 
     public function updateOption($option, $value)
     {
-        $option = 'team.'.$this->id.'.'.$option;
+        $optionName = $this->optionName($option);
 
-        Option::updateOrCreate(['name' => $option], ['value' => $value]);
+        Option::withoutGlobalScope(TeamScope::class)->updateOrCreate([
+            'name' => $optionName,
+            'team_id' => $this->id,
+        ], ['value' => $value]);
 
-        Cache::forget($option);
+        $this->forgetOptionCache($option);
     }
 
     // public function users()
@@ -376,6 +393,26 @@ class Team extends Resource
 
     }
 
+    protected function forgetOptionCache(string $option): void
+    {
+        Cache::forget($this->optionCacheKey($option));
+
+        $segments = explode('.', $option);
+
+        if (end($segments) === '*') {
+            array_pop($segments);
+        }
+
+        array_pop($segments);
+
+        while ($segments !== []) {
+            Cache::forget($this->optionCacheKey(implode('.', $segments).'.*'));
+            array_pop($segments);
+        }
+
+        Cache::forget($this->optionCacheKey('*'));
+    }
+
     /**
      * Create a new factory instance for the model.
      *
@@ -384,5 +421,15 @@ class Team extends Resource
     protected static function newFactory()
     {
         return TeamFactory::new();
+    }
+
+    protected function optionCacheKey(string $option): string
+    {
+        return 'aura.option.team.'.$this->id.'.'.$option;
+    }
+
+    protected function optionName(string $option): string
+    {
+        return 'team.'.$this->id.'.'.$option;
     }
 }

@@ -252,40 +252,40 @@ class Aura
     public function getOption($name)
     {
         if (config('aura.teams') && optional(optional(auth()->user())->resource)->currentTeam) {
-            return Cache::remember(auth()->user()->current_team_id.'.aura.'.$name, now()->addHour(), function () use ($name) {
-                $option = auth()->user()->currentTeam->getOption($name);
-
-                if ($option) {
-                    if (is_string($option)) {
-                        $settings = json_decode($option, true);
-                    } else {
-                        $settings = $option;
-                    }
-                } else {
-                    $settings = [];
-                }
-
-                return $settings;
-
-            });
-        }
-
-        return Cache::remember('aura.'.$name, now()->addHour(), function () use ($name) {
-
-            $option = Option::where('name', $name)->first();
+            $option = auth()->user()->currentTeam->getOption($name);
 
             if ($option) {
-                if (is_string($option->value)) {
-                    $settings = json_decode($option->value, true);
+                if (is_string($option)) {
+                    $settings = json_decode($option, true);
                 } else {
-                    $settings = $option->value;
+                    $settings = $option;
                 }
             } else {
                 $settings = [];
             }
 
             return $settings;
+        }
+
+        $cachedOption = Cache::remember($this->globalOptionCacheKey($name), now()->addHour(), function () use ($name) {
+            return [
+                'value' => Option::withoutGlobalScope(TeamScope::class)
+                    ->where('name', $name)
+                    ->value('value'),
+            ];
         });
+
+        if ($cachedOption['value']) {
+            if (is_string($cachedOption['value'])) {
+                $settings = json_decode($cachedOption['value'], true);
+            } else {
+                $settings = $cachedOption['value'];
+            }
+        } else {
+            $settings = [];
+        }
+
+        return $settings;
 
     }
 
@@ -322,7 +322,7 @@ class Aura
     {
         // Necessary to add TeamIds?
 
-        return Cache::remember('user-'.auth()->id().'-'.auth()->user()->current_team_id.'-navigation', 3600, function () {
+        $navigation = Cache::remember($this->navigationCacheKey(), 3600, function () {
 
             $resources = collect($this->getResources());
 
@@ -379,8 +379,13 @@ class Aura
                 return $carry;
             }, []);
 
-            return collect($grouped)->groupBy('group');
+            return collect($grouped)
+                ->groupBy('group')
+                ->map(fn ($items) => $items->values()->all())
+                ->all();
         });
+
+        return collect($navigation)->map(fn ($items) => collect($items));
     }
 
     public function option($key)
@@ -460,6 +465,7 @@ class Aura
             auth()->user()->currentTeam->updateOption($key, $value);
         } else {
             Option::withoutGlobalScopes([app(TeamScope::class)])->updateOrCreate(['name' => $key], ['value' => $value]);
+            Cache::forget($this->globalOptionCacheKey($key));
         }
     }
 
@@ -514,5 +520,20 @@ class Aura
             ->useBuildDirectory('vendor/aura')->withEntryPoints([
                 'resources/css/app.css',
             ]);
+    }
+
+    protected function globalOptionCacheKey(string $name): string
+    {
+        return 'aura.option.global.'.$name;
+    }
+
+    protected function navigationCacheKey(): string
+    {
+        $user = auth()->user();
+        $teamId = config('aura.teams') ? ($user->current_team_id ?? 'none') : 'global';
+        $resources = implode('|', $this->getResources());
+        $navigationVersion = app('hook_manager')->version('navigation');
+
+        return 'aura.navigation.user.'.$user->getAuthIdentifier().'.team.'.$teamId.'.resources.'.hash('sha256', $resources).'.hooks.'.$navigationVersion;
     }
 }

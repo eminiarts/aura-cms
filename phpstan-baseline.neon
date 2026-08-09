@@ -61,19 +61,7 @@ parameters:
 			path: src/Aura.php
 
 		-
-			message: '#^Access to an undefined property Aura\\Base\\Resources\\Option\:\:\$value\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Aura.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$currentTeam\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Aura.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
 			identifier: property.notFound
 			count: 2
 			path: src/Aura.php
@@ -1108,12 +1096,6 @@ parameters:
 			path: src/Resources/Tag.php
 
 		-
-			message: '#^Access to an undefined property Aura\\Base\\Resources\\Option\:\:\$value\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Resources/Team.php
-
-		-
 			message: '#^Access to an undefined property Aura\\Base\\Resources\\User\:\:\$current_team_id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1138,22 +1120,10 @@ parameters:
 			path: src/Resources/Team.php
 
 		-
-			message: '#^Call to an undefined static method Aura\\Base\\Resources\\Option\:\:whereName\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 2
-			path: src/Resources/Team.php
-
-		-
 			message: '#^Non\-static access to static property Aura\\Base\\Resource\:\:\$name\.$#'
 			identifier: staticProperty.nonStaticAccess
-			count: 2
-			path: src/Resources/Team.php
-
-		-
-			message: '#^Access to an undefined property Aura\\Base\\Resources\\Option\:\:\$value\.$#'
-			identifier: property.notFound
 			count: 1
-			path: src/Resources/User.php
+			path: src/Resources/Team.php
 
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Resources\\User\:\:\$current_team_id\.$#'
@@ -1180,12 +1150,6 @@ parameters:
 			path: src/Resources/User.php
 
 		-
-			message: '#^Call to an undefined static method Aura\\Base\\Resources\\Option\:\:whereName\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 6
-			path: src/Resources/User.php
-
-		-
 			message: '#^Method Aura\\Base\\Resources\\User\:\:currentTeam\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo but empty return statement found\.$#'
 			identifier: return.empty
 			count: 1
@@ -1194,7 +1158,7 @@ parameters:
 		-
 			message: '#^Non\-static access to static property Aura\\Base\\Resource\:\:\$name\.$#'
 			identifier: staticProperty.nonStaticAccess
-			count: 3
+			count: 2
 			path: src/Resources/User.php
 
 		-
