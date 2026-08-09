@@ -141,6 +141,41 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         ];
     }
 
+    public static function authenticatedResource(): ?self
+    {
+        $authenticatedUser = auth()->user();
+
+        if ($authenticatedUser instanceof self) {
+            return $authenticatedUser;
+        }
+
+        $resource = optional($authenticatedUser)->resource;
+
+        return $resource instanceof self ? $resource : null;
+    }
+
+    public function authorizedCurrentTeam(): ?Team
+    {
+        $currentTeamId = $this->getAttribute('current_team_id');
+
+        if (! config('aura.teams') || $currentTeamId === null) {
+            return null;
+        }
+
+        if ($this->relationLoaded('currentTeam')
+            && (string) $this->getRelation('currentTeam')?->getKey() !== (string) $currentTeamId) {
+            $this->unsetRelation('currentTeam');
+        }
+
+        $team = $this->currentTeam;
+
+        if (! $team instanceof Team || (string) $team->getKey() !== (string) $currentTeamId) {
+            return null;
+        }
+
+        return $this->isAuraGlobalAdmin() || $this->teams()->whereKey($team->getKey())->exists() ? $team : null;
+    }
+
     /**
      * Determine if the user belongs to the given team.
      *
@@ -527,6 +562,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         $option = (string) $option;
 
+        if (! $this->hasAuthorizedOptionContext()) {
+            return str_ends_with($option, '*') ? collect() : null;
+        }
+
         // If there is a * at the end of the option name, it means that it is a wildcard
         // and we need to get all options that match the wildcard
         if (str_ends_with($option, '*')) {
@@ -566,6 +605,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function getOptionEntry($option): array
     {
         $option = (string) $option;
+
+        if (! $this->hasAuthorizedOptionContext()) {
+            return ['found' => false, 'value' => null];
+        }
 
         $payload = VersionedCache::remember(
             $this->optionCacheNamespace(),
@@ -1014,6 +1057,18 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     protected static function globalAdminTeamsCacheNamespace(): string
     {
         return 'teams.global-admin';
+    }
+
+    protected function hasAuthorizedOptionContext(): bool
+    {
+        if (! config('aura.teams')) {
+            return true;
+        }
+
+        $team = static::authenticatedResource()?->authorizedCurrentTeam();
+
+        return $team !== null
+            && (string) $team->getKey() === (string) $this->getAttribute('current_team_id');
     }
 
     protected function legacyOptionCacheNamespace(): string

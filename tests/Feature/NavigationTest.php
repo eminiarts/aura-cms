@@ -525,3 +525,53 @@ test('navigation retries when a deterministic hook races its first cache write',
         ->and(collect(Aura::navigation()['Racing Group'])->pluck('resource'))
         ->toContain('RacingPage');
 });
+
+test('navigation accepts a legitimate one-time hook mutation', function () {
+    $hookManager = app('hook_manager');
+    $mutated = false;
+    $invocations = 0;
+
+    $hookManager->addHook('navigation', function (Collection $navigation) use ($hookManager, &$mutated, &$invocations): Collection {
+        $invocations++;
+
+        if (! $mutated) {
+            $mutated = true;
+            $hookManager->addHook(
+                'navigation',
+                fn (Collection $items): Collection => $items->push(customNavigationItem('LatePage')),
+                'navigation.late-page.v1',
+            );
+        }
+
+        return $navigation;
+    }, 'navigation.one-time-mutation.v1');
+
+    expect(collect(Aura::navigation()['Custom Group'])->pluck('resource'))
+        ->toContain('LatePage')
+        ->and($invocations)->toBe(2);
+});
+
+test('navigation fails closed after bounded continuous hook mutations', function () {
+    $hookManager = app('hook_manager');
+    $invocations = 0;
+
+    $hookManager->addHook('navigation', function (Collection $navigation) use ($hookManager, &$invocations): Collection {
+        $invocations++;
+
+        if ($invocations > 10) {
+            throw new LogicException('Unbounded navigation retry test guard reached.');
+        }
+
+        $hookManager->addHook(
+            'navigation',
+            fn (Collection $items): Collection => $items,
+            'navigation.continuous-mutation.'.$invocations,
+        );
+
+        return $navigation;
+    }, 'navigation.continuous-mutation.v1');
+
+    expect(fn () => Aura::navigation())
+        ->toThrow(RuntimeException::class, 'Unable to stabilize navigation while hooks are changing.')
+        ->and($invocations)->toBe(3);
+});

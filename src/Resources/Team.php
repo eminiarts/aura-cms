@@ -196,6 +196,10 @@ class Team extends Resource
 
     public function getOption($option)
     {
+        if (! $this->hasAuthorizedOptionContext()) {
+            return str_ends_with((string) $option, '*') ? collect() : null;
+        }
+
         $optionName = $this->optionName($option);
 
         // If there is a * at the end of the option name, it means that it is a wildcard
@@ -237,6 +241,10 @@ class Team extends Resource
      */
     public function getOptionEntry($option): array
     {
+        if (! $this->hasAuthorizedOptionContext()) {
+            return ['found' => false, 'value' => null];
+        }
+
         $optionName = $this->optionName($option);
 
         return VersionedCache::remember(
@@ -476,6 +484,13 @@ class Team extends Resource
 
         VersionedCache::bump($this->optionCacheNamespace(), $connection);
         VersionedCache::bump($this->legacyOptionCacheNamespace(), $connection);
+    }
+
+    protected function hasAuthorizedOptionContext(): bool
+    {
+        $team = User::authenticatedResource()?->authorizedCurrentTeam();
+
+        return $team?->is($this) ?? false;
     }
 
     protected function legacyOptionCacheNamespace(): string

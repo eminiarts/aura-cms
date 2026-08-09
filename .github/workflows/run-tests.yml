@@ -45,6 +45,40 @@ jobs:
       - name: Run tests in parallel
         run: php -d memory_limit=1G vendor/bin/pest --no-coverage --parallel --exclude-testsuite Browser
 
+  laravel-12-floor:
+    name: Laravel 12.0.1 floor
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo_sqlite, bcmath, intl, gd, exif, iconv, fileinfo
+          coverage: none
+
+      - name: Select Laravel 12.0.1 test stack
+        run: |
+          composer remove pestphp/pest-plugin-browser pestphp/pest-plugin-livewire --dev --no-interaction --no-update
+          composer require "laravel/framework:12.0.1" "orchestra/testbench:10.0.0" "pestphp/pest:^3.7.4" "pestphp/pest-plugin-laravel:3.1.0" --dev --no-interaction --no-update
+
+      - name: Install dependencies
+        run: composer update --with-all-dependencies --prefer-lowest --prefer-dist --no-interaction --no-progress
+
+      - name: Verify exact Laravel floor
+        run: composer show laravel/framework --format=json | grep -Fq '"v12.0.1"'
+
+      - name: Run compatibility regressions
+        run: |
+          php -d memory_limit=1G -d error_reporting=6143 vendor/bin/pest --no-coverage \
+            tests/Feature/Aura/SupportMatrixTest.php \
+            tests/Feature/NavigationTest.php \
+            tests/Feature/OptionCacheTest.php \
+            --filter='rollback cleanup|team option reads require|teamless user option reads|navigation accepts a legitimate|navigation fails closed|support matrix|pins the Laravel 12 floor'
+
   teams-off:
     name: Teams-off
     runs-on: ubuntu-latest

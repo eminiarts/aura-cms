@@ -1666,7 +1666,7 @@ test('global admin team snapshots retain soft delete filtering', function () {
     expect($globalAdmin->getTeams()->pluck('id'))->toContain($team->id);
 })->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
 
-test('user option survives a serialized cache read in a fresh application container', function () {
+test('user option reads require persisted authorization in a fresh application container', function () {
     $cache = serializedOptionCacheRepository();
     Cache::swap($cache);
 
@@ -1679,7 +1679,9 @@ test('user option survives a serialized cache read in a fresh application contai
     Cache::swap($cache);
     $this->actingAs($user);
 
-    expect($user->getOption('recent.records'))->toBe(['contact:1']);
+    expect($user->getOption('recent.records'))->toBe(
+        config('aura.teams') ? null : ['contact:1'],
+    );
 });
 
 test('wildcard user options survive serialized cache reads as a collection', function () {
@@ -1731,7 +1733,7 @@ test('specialized user preference getters survive serialized cache reads', funct
     expect($readPreferences())->toBe($expected);
 });
 
-test('team option survives a serialized cache read in a fresh application container', function () {
+test('team option reads fail closed without persisted authorization in a fresh application container', function () {
     $cache = serializedOptionCacheRepository();
     Cache::swap($cache);
 
@@ -1745,7 +1747,7 @@ test('team option survives a serialized cache read in a fresh application contai
     Cache::swap($cache);
     $this->actingAs($user);
 
-    expect($team->getOption('settings'))->toBe(['theme' => 'dark']);
+    expect($team->getOption('settings'))->toBeNull();
 })->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
 
 test('updating a team option invalidates Aura option reads', function () {
@@ -1758,6 +1760,140 @@ test('updating a team option invalidates Aura option reads', function () {
     Aura::updateOption('settings', ['theme' => 'light']);
     expect(Aura::getOption('settings'))->toBe(['theme' => 'light']);
 })->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
+
+test('team option reads require an authorized current team across users and requests', function () {
+    $cache = serializedOptionCacheRepository();
+    Cache::swap($cache);
+
+    $owner = createSuperAdmin();
+    $firstTeam = $owner->currentTeam;
+    $firstTeam->updateOption('tenant-secret', ['team' => 'first']);
+
+    $secondTeam = Team::factory()->create();
+    $secondTeam->updateOption('tenant-secret', ['team' => 'second']);
+    $firstMember = soleMemberOf($firstTeam);
+    $secondMember = soleMemberOf($secondTeam);
+
+    foreach ([$firstTeam, $secondTeam] as $team) {
+        Option::withoutGlobalScopes()->create([
+            'team_id' => $team->id,
+            'name' => 'legacy-unscoped-secret',
+            'value' => ['team' => $team->id],
+        ]);
+    }
+
+    $firstNoTeamUser = User::factory()->create(['current_team_id' => null]);
+    $secondNoTeamUser = User::factory()->create(['current_team_id' => null]);
+    $secondNoTeamUser->forceFill(['current_team_id' => $secondTeam->id])->saveQuietly();
+
+    $this->actingAs($firstMember);
+
+    expect($firstMember->authorizedCurrentTeam()?->is($firstTeam))->toBeTrue()
+        ->and($firstTeam->getOption('tenant-secret'))->toBe(['team' => 'first'])
+        ->and(Aura::getOption('tenant-secret'))->toBe(['team' => 'first'])
+        ->and($secondTeam->getOption('tenant-secret'))->toBeNull();
+
+    $this->actingAs($secondMember);
+
+    expect($secondMember->authorizedCurrentTeam()?->is($secondTeam))->toBeTrue()
+        ->and(Aura::getOption('tenant-secret'))->toBe(['team' => 'second'])
+        ->and($firstTeam->getOption('tenant-secret'))->toBeNull();
+
+    $this->actingAs($firstNoTeamUser);
+
+    expect(Aura::getOption('legacy-unscoped-secret'))->toBe([])
+        ->and($firstTeam->getOption('tenant-secret'))->toBeNull();
+
+    $this->refreshApplication();
+    Cache::swap($cache);
+    $this->actingAs($secondNoTeamUser);
+
+    expect(Aura::getOption('legacy-unscoped-secret'))->toBe([])
+        ->and(Aura::getOption('tenant-secret'))->toBe([])
+        ->and($secondTeam->getOption('tenant-secret'))->toBeNull();
+})->skip(fn () => ! config('aura.teams'), 'Authorized team option context requires teams enabled.');
+
+test('teamless user option reads never expose exact or wildcard legacy rows', function () {
+    $cache = serializedOptionCacheRepository();
+    Cache::swap($cache);
+
+    $owner = createSuperAdmin();
+    $firstTeam = $owner->currentTeam;
+    $secondTeam = Team::factory()->create();
+    $users = collect([
+        soleMemberOf($firstTeam),
+        soleMemberOf($secondTeam),
+    ]);
+
+    foreach ($users as $index => $user) {
+        $this->actingAs($user);
+        $user->updateOption('private.exact', ['user' => $index]);
+        $user->updateOption('private.filters.mine', ['user' => $index]);
+
+        expect($user->getOption('private.exact'))->toBe(['user' => $index])
+            ->and($user->getOption('private.filters.*'))->not->toBeEmpty();
+
+        $user->forceFill(['current_team_id' => null])->save();
+    }
+
+    $this->actingAs($users[0]);
+
+    expect($users[0]->getOption('private.exact'))->toBeNull()
+        ->and($users[0]->getOption('private.filters.*'))->toBeInstanceOf(Collection::class)
+        ->and($users[0]->getOption('private.filters.*'))->toBeEmpty();
+
+    $this->refreshApplication();
+    Cache::swap($cache);
+    $this->actingAs($users[1]);
+
+    expect($users[1]->getOption('private.exact'))->toBeNull()
+        ->and($users[1]->getOption('private.filters.*'))->toBeInstanceOf(Collection::class)
+        ->and($users[1]->getOption('private.filters.*'))->toBeEmpty();
+})->skip(fn () => ! config('aura.teams'), 'Teamless option isolation requires teams enabled.');
+
+test('team option cache remains isolated through updates deletes and fresh requests', function () {
+    $cache = serializedOptionCacheRepository();
+    Cache::swap($cache);
+
+    $user = createSuperAdmin();
+    $firstTeam = $user->currentTeam;
+    $firstTeam->updateOption('settings', ['version' => 'first-1']);
+
+    $secondTeam = Team::factory()->create();
+    $secondTeam->updateOption('settings', ['version' => 'second-1']);
+    expect($user->switchTeam($secondTeam))->toBeTrue();
+
+    expect(Aura::getOption('settings'))->toBe(['version' => 'second-1'])
+        ->and($user->switchTeam($firstTeam))->toBeTrue()
+        ->and(Aura::getOption('settings'))->toBe(['version' => 'first-1']);
+
+    $firstTeam->updateOption('settings', ['version' => 'first-2']);
+
+    expect(Aura::getOption('settings'))->toBe(['version' => 'first-2']);
+
+    $firstTeam->deleteOption('settings');
+
+    expect(Aura::getOption('settings'))->toBe([])
+        ->and($user->switchTeam($secondTeam))->toBeTrue()
+        ->and(Aura::getOption('settings'))->toBe(['version' => 'second-1']);
+
+    $secondTeam->updateOption('settings', ['version' => 'second-2']);
+
+    expect(Aura::getOption('settings'))->toBe(['version' => 'second-2']);
+
+    $secondTeam->deleteOption('settings');
+
+    expect(Aura::getOption('settings'))->toBe([]);
+
+    $secondTeam->updateOption('settings', ['version' => 'second-3']);
+    expect(Aura::getOption('settings'))->toBe(['version' => 'second-3']);
+
+    $this->refreshApplication();
+    Cache::swap($cache);
+    $this->actingAs($user);
+
+    expect(Aura::getOption('settings'))->toBe([]);
+})->skip(fn () => ! config('aura.teams'), 'Team option cache isolation requires teams enabled.');
 
 test('updating a global option invalidates Aura option reads', function () {
     Cache::swap(serializedOptionCacheRepository());
@@ -2263,7 +2399,7 @@ test('user option changes invalidate cached wildcard reads', function () {
     ]);
 });
 
-test('wildcard team options survive serialized cache reads in a fresh application container', function () {
+test('wildcard team options fail closed without persisted authorization in a fresh application container', function () {
     $cache = serializedOptionCacheRepository();
     Cache::swap($cache);
 
@@ -2285,10 +2421,7 @@ test('wildcard team options survive serialized cache reads in a fresh applicatio
 
     expect($team->getOption('Contact.filters.*'))
         ->toBeInstanceOf(Collection::class)
-        ->all()->toBe([
-            'mine' => ['owner' => 'me'],
-            'open' => ['status' => 'open'],
-        ]);
+        ->all()->toBe([]);
 })->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
 
 test('team option reads use the team instance context', function () {
@@ -2303,11 +2436,14 @@ test('team option reads use the team instance context', function () {
 
     $firstTeam->clearCachedOption('settings');
 
-    expect($firstTeam->getOption('settings'))->toBe(['theme' => 'red'])
-        ->and($secondTeam->getOption('settings'))->toBe(['theme' => 'blue']);
+    expect($firstTeam->getOption('settings'))->toBeNull()
+        ->and($secondTeam->getOption('settings'))->toBe(['theme' => 'blue'])
+        ->and($user->switchTeam($firstTeam))->toBeTrue()
+        ->and($firstTeam->getOption('settings'))->toBe(['theme' => 'red'])
+        ->and($secondTeam->getOption('settings'))->toBeNull();
 })->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
 
-test('user option reads use the user and team instance context', function () {
+test('user option reads require the authenticated team context', function () {
     Cache::swap(serializedOptionCacheRepository());
 
     $firstUser = createSuperAdmin();
@@ -2318,6 +2454,10 @@ test('user option reads use the user and team instance context', function () {
     $this->actingAs($secondUser);
 
     $firstUser->clearCachedOption('columns.Contact');
+
+    expect($firstUser->getOption('columns.Contact'))->toBeNull();
+
+    $this->actingAs($firstUser);
 
     expect($firstUser->getOption('columns.Contact'))->toBe(['name']);
 })->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');

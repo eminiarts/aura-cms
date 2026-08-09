@@ -10,6 +10,7 @@ use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Option;
+use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Services\VersionedCache;
 use Aura\Base\Traits\DefaultFields;
@@ -29,6 +30,8 @@ use Symfony\Component\Finder\SplFileInfo;
 class Aura
 {
     use DefaultFields;
+
+    private const MAX_NAVIGATION_STABILIZATION_ATTEMPTS = 3;
 
     /**
      * The user model that should be used by Jetstream.
@@ -258,8 +261,14 @@ class Aura
 
     public function getOption($name)
     {
-        if (config('aura.teams') && optional(optional(auth()->user())->resource)->currentTeam) {
-            $entry = auth()->user()->currentTeam->getOptionEntry($name);
+        if (config('aura.teams')) {
+            $team = $this->authorizedOptionTeam();
+
+            if (! $team) {
+                return [];
+            }
+
+            $entry = $team->getOptionEntry($name);
 
             return $entry['found'] ? $entry['value'] : [];
         }
@@ -317,7 +326,7 @@ class Aura
     {
         $user = auth()->user();
 
-        while (true) {
+        for ($attempt = 0; $attempt < self::MAX_NAVIGATION_STABILIZATION_ATTEMPTS; $attempt++) {
             $hookManager = app('hook_manager');
             $revision = $hookManager->revision('navigation');
             $context = $this->navigationCacheContext();
@@ -342,6 +351,8 @@ class Aura
                 return collect($navigation)->map(fn ($items) => collect($items));
             }
         }
+
+        throw new RuntimeException('Unable to stabilize navigation while hooks are changing.');
     }
 
     public function option($key)
@@ -420,7 +431,7 @@ class Aura
     public function updateOption($key, $value)
     {
         if (config('aura.teams')) {
-            auth()->user()->currentTeam->updateOption($key, $value);
+            $this->authorizedOptionTeam()?->updateOption($key, $value);
         } else {
             $record = Option::withoutGlobalScopes([app(TeamScope::class)])
                 ->withTrashed()
@@ -495,6 +506,13 @@ class Aura
             ->useBuildDirectory('vendor/aura')->withEntryPoints([
                 'resources/css/app.css',
             ]);
+    }
+
+    protected function authorizedOptionTeam(): ?Team
+    {
+        $user = User::authenticatedResource();
+
+        return $user?->authorizedCurrentTeam();
     }
 
     protected function buildNavigation(): array
