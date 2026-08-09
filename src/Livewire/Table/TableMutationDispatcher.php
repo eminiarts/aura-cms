@@ -4,9 +4,12 @@ namespace Aura\Base\Livewire\Table;
 
 use Aura\Base\Contracts\TableResource;
 use BackedEnum;
+use Closure;
 use DateTimeInterface;
 use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Contracts\Database\Query\Expression as ExpressionContract;
+use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\DetectsConcurrencyErrors;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -17,23 +20,20 @@ use Illuminate\Database\Query\JoinClause;
 use Illuminate\Validation\ValidationException;
 use ReflectionMethod;
 use Stringable;
+use Throwable;
 use UnitEnum;
 
 /**
- * Executes table mutations in one locked authorization transaction. Outermost
- * deadlock retries repeat the complete policy and handler unit, so external
- * effects must be idempotent; Laravel surfaces nested deadlocks to the caller.
+ * Executes table mutations in one locked authorization transaction.
  */
 final class TableMutationDispatcher
 {
+    use DetectsConcurrencyErrors;
+
     private const BULK_MODE_COLLECTION = 'collection';
 
     private const BULK_MODE_RECORD = 'record';
 
-    /**
-     * Request up to three outermost deadlock attempts. Each retry repeats the
-     * complete policy and handler closure; nested deadlocks are not retried.
-     */
     private const DEADLOCK_RETRY_ATTEMPTS = 3;
 
     /** @var array<string, string> */
@@ -42,6 +42,41 @@ final class TableMutationDispatcher
         'forceDelete' => 'forceDelete',
         'restore' => 'restore',
         'update' => 'update',
+    ];
+
+    /** @var list<string> */
+    private const SAFE_CALLBACK_HAVING_TYPES = [
+        'basic',
+        'between',
+        'bitwise',
+        'nested',
+        'notnull',
+        'null',
+    ];
+
+    /** @var list<string> */
+    private const SAFE_CALLBACK_WHERE_TYPES = [
+        'basic',
+        'between',
+        'betweencolumns',
+        'bitwise',
+        'column',
+        'date',
+        'day',
+        'in',
+        'inraw',
+        'like',
+        'month',
+        'nested',
+        'notin',
+        'notinraw',
+        'notnull',
+        'null',
+        'nullsafeequals',
+        'rowvalues',
+        'time',
+        'valuebetween',
+        'year',
     ];
 
     public function __construct(private readonly Gate $gate) {}
@@ -84,7 +119,9 @@ final class TableMutationDispatcher
         $descriptor = $this->descriptor($action, $declaredActions);
         $this->assertConditionAvailable($descriptor);
 
-        return $modelDescriptor->connectionInstance()->transaction(function () use (
+        return $this->transactionWithPreLockRetries($modelDescriptor->connectionInstance(), function (
+            Closure $markLockAcquired,
+        ) use (
             $action,
             $descriptor,
             $id,
@@ -98,6 +135,7 @@ final class TableMutationDispatcher
                 $id,
                 $descriptor['trashed'],
                 lockForUpdate: true,
+                markLockAcquired: $markLockAcquired,
             );
 
             if (! $record instanceof TableResource) {
@@ -108,7 +146,7 @@ final class TableMutationDispatcher
             $this->authorize($record, $descriptor['ability']);
 
             return $record->{$action}();
-        }, self::DEADLOCK_RETRY_ATTEMPTS);
+        });
     }
 
     /**
@@ -137,7 +175,9 @@ final class TableMutationDispatcher
 
         $this->assertConditionAvailable($descriptor);
 
-        return $modelDescriptor->connectionInstance()->transaction(function () use (
+        return $this->transactionWithPreLockRetries($modelDescriptor->connectionInstance(), function (
+            Closure $markLockAcquired,
+        ) use (
             $action,
             $descriptor,
             $modelDescriptor,
@@ -152,6 +192,7 @@ final class TableMutationDispatcher
                 $selected,
                 $selectAll,
                 $descriptor['trashed'],
+                $markLockAcquired,
             );
             $receiver = $records->first();
 
@@ -179,7 +220,7 @@ final class TableMutationDispatcher
             }
 
             return $result;
-        }, self::DEADLOCK_RETRY_ATTEMPTS);
+        });
     }
 
     public function dispatchFieldUpdate(
@@ -189,7 +230,9 @@ final class TableMutationDispatcher
         string $fieldSlug,
         mixed $value,
     ): void {
-        $modelDescriptor->connectionInstance()->transaction(function () use (
+        $this->transactionWithPreLockRetries($modelDescriptor->connectionInstance(), function (
+            Closure $markLockAcquired,
+        ) use (
             $fieldSlug,
             $id,
             $modelDescriptor,
@@ -202,6 +245,7 @@ final class TableMutationDispatcher
                 $modelDescriptor,
                 $id,
                 lockForUpdate: true,
+                markLockAcquired: $markLockAcquired,
             );
 
             if (! $record instanceof TableResource) {
@@ -209,7 +253,7 @@ final class TableMutationDispatcher
             }
 
             $this->updateField($record, $fieldSlug, $value);
-        }, self::DEADLOCK_RETRY_ATTEMPTS);
+        });
     }
 
     public function findRecord(
@@ -218,6 +262,7 @@ final class TableMutationDispatcher
         int|string $id,
         ?string $trashed = null,
         bool $lockForUpdate = false,
+        ?Closure $markLockAcquired = null,
     ): Model {
         $modelDescriptor->assertMatches($scope);
         $expectedIdentity = $modelDescriptor->canonicalIdentity($id);
@@ -227,6 +272,7 @@ final class TableMutationDispatcher
             [$expectedIdentity => $id],
             $trashed,
             $lockForUpdate,
+            $markLockAcquired,
         );
         $resolvedIdentities = $this->canonicalIdentities($records, $modelDescriptor);
         $record = $records->first();
@@ -335,6 +381,10 @@ final class TableMutationDispatcher
             $grammar = $query->getGrammar();
             $processor = $query->getProcessor();
             $mandatoryConstraints = $this->mutationConstraintSnapshot($query);
+            $mandatoryHavings = $query->havings ?? [];
+            $mandatoryHavingBindings = $query->bindings['having'];
+            $mandatoryWheres = $query->wheres;
+            $mandatoryWhereBindings = $query->bindings['where'];
 
             $callback($query);
 
@@ -348,22 +398,30 @@ final class TableMutationDispatcher
             }
 
             $this->assertMandatoryConstraintsPreserved($query, $mandatoryConstraints);
+            $this->sealCallbackConstraints(
+                $query,
+                $mandatoryWheres,
+                $mandatoryWhereBindings,
+                $mandatoryHavings,
+                $mandatoryHavingBindings,
+            );
+            $this->assertMandatoryConstraintsPreserved($query, $mandatoryConstraints);
         }
     }
 
     /**
      * @param  list<mixed>  $constraints
+     * @param  list<mixed>  $bindings
      */
-    private function assertAppendedConstraintsAreConjunctive(array $constraints): void
-    {
-        foreach ($constraints as $constraint) {
-            if (
-                ! is_array($constraint)
-                || ! is_string($constraint['boolean'] ?? null)
-                || strtolower($constraint['boolean']) !== 'and'
-            ) {
-                abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
-            }
+    private function assertCallbackBindingParity(
+        array $constraints,
+        array $bindings,
+        bool $having,
+    ): void {
+        $expectedBindings = $this->callbackConstraintBindingCount($constraints, $having);
+
+        if ($expectedBindings !== count($bindings)) {
+            abort(422, 'The table mutation query callback added ambiguous bindings.');
         }
     }
 
@@ -409,20 +467,192 @@ final class TableMutationDispatcher
         ) {
             abort(422, 'The table mutation query callback removed a mandatory scope constraint.');
         }
+    }
 
-        $this->assertAppendedConstraintsAreConjunctive(
-            array_slice($query->wheres, count($mandatoryConstraints['wheres'])),
-        );
-        $this->assertAppendedConstraintsAreConjunctive(
-            array_slice($query->havings ?? [], count($mandatoryConstraints['havings'])),
-        );
+    /**
+     * @param  list<mixed>  $constraints
+     */
+    private function assertSupportedCallbackConstraints(
+        array $constraints,
+        QueryBuilder $query,
+        bool $having,
+    ): void {
+        $supportedTypes = $having
+            ? self::SAFE_CALLBACK_HAVING_TYPES
+            : self::SAFE_CALLBACK_WHERE_TYPES;
+
+        foreach ($constraints as $constraint) {
+            if (
+                ! is_array($constraint)
+                || ! is_string($constraint['type'] ?? null)
+                || ! is_string($constraint['boolean'] ?? null)
+                || ! in_array(strtolower($constraint['boolean']), ['and', 'or'], true)
+                || ! in_array(strtolower($constraint['type']), $supportedTypes, true)
+                || $this->containsCallbackSqlExpression($constraint)
+            ) {
+                abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
+            }
+
+            if (array_key_exists('operator', $constraint)) {
+                $operator = $constraint['operator'];
+                $operators = array_map(
+                    static fn (string $supportedOperator): string => strtolower($supportedOperator),
+                    array_merge(
+                        $query->operators,
+                        $query->bitwiseOperators,
+                        $query->getGrammar()->getOperators(),
+                        $query->getGrammar()->getBitwiseOperators(),
+                    ),
+                );
+
+                if (! is_string($operator) || ! in_array(strtolower($operator), $operators, true)) {
+                    abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
+                }
+            }
+
+            $this->assertSupportedCallbackConstraintShape(
+                $constraint,
+                strtolower($constraint['type']),
+                $having,
+            );
+
+            if (strtolower($constraint['type']) !== 'nested') {
+                continue;
+            }
+
+            $nestedQuery = $constraint['query'] ?? null;
+
+            if (
+                ! $nestedQuery instanceof QueryBuilder
+                || $nestedQuery instanceof JoinClause
+                || $nestedQuery->getConnection() !== $query->getConnection()
+                || $nestedQuery->getGrammar() !== $query->getGrammar()
+                || $nestedQuery->getProcessor() !== $query->getProcessor()
+                || $nestedQuery->beforeQueryCallbacks !== []
+            ) {
+                abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
+            }
+
+            $this->assertSupportedCallbackConstraints(
+                $having ? ($nestedQuery->havings ?? []) : $nestedQuery->wheres,
+                $nestedQuery,
+                $having,
+            );
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $constraint
+     */
+    private function assertSupportedCallbackConstraintShape(
+        array $constraint,
+        string $type,
+        bool $having,
+    ): void {
+        if ($type === 'nested') {
+            return;
+        }
+
+        $columnTypes = $having
+            ? ['basic', 'between', 'bitwise', 'notnull', 'null']
+            : [
+                'basic',
+                'between',
+                'betweencolumns',
+                'bitwise',
+                'date',
+                'day',
+                'in',
+                'inraw',
+                'like',
+                'month',
+                'notin',
+                'notinraw',
+                'notnull',
+                'null',
+                'nullsafeequals',
+                'time',
+                'year',
+            ];
+
+        if (in_array($type, $columnTypes, true) && ! is_string($constraint['column'] ?? null)) {
+            abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
+        }
+
+        if ($type === 'column' && (
+            ! is_string($constraint['first'] ?? null)
+            || ! is_string($constraint['second'] ?? null)
+        )) {
+            abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
+        }
+
+        if (in_array($type, ['between', 'betweencolumns'], true)) {
+            $values = $constraint['values'] ?? null;
+
+            if (! is_array($values) || count($values) !== 2) {
+                abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
+            }
+
+            if ($type === 'betweencolumns' && ! collect($values)->every(is_string(...))) {
+                abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
+            }
+        }
+
+        if (in_array($type, ['in', 'inraw', 'notin', 'notinraw'], true)) {
+            $values = $constraint['values'] ?? null;
+
+            if (! is_array($values) || collect($values)->contains(is_array(...))) {
+                abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
+            }
+
+            if (in_array($type, ['inraw', 'notinraw'], true) && ! collect($values)->every(is_int(...))) {
+                abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
+            }
+        }
+
+        if ($type === 'rowvalues') {
+            $columns = $constraint['columns'] ?? null;
+            $values = $constraint['values'] ?? null;
+
+            if (
+                ! is_array($columns)
+                || ! is_array($values)
+                || count($columns) !== count($values)
+                || ! collect($columns)->every(is_string(...))
+            ) {
+                abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
+            }
+        }
+
+        if ($type === 'valuebetween') {
+            $columns = $constraint['columns'] ?? null;
+
+            if (
+                ! is_array($columns)
+                || count($columns) !== 2
+                || ! collect($columns)->every(is_string(...))
+            ) {
+                abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
+            }
+        }
+
+        if (in_array($type, ['basic', 'bitwise', 'date', 'day', 'month', 'time', 'year'], true)) {
+            if (! array_key_exists('value', $constraint) || ! is_string($constraint['operator'] ?? null)) {
+                abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
+            }
+        }
+
+        if (in_array($type, ['like', 'nullsafeequals'], true) && ! array_key_exists('value', $constraint)) {
+            abort(422, 'The table mutation query callback added an ambiguous scope constraint.');
+        }
     }
 
     /**
      * Select trusted base rows while proving effective-scope membership in the
-     * same statement that locks them. The outer query reapplies mandatory model
-     * scopes; the key subquery retains index, parent, dynamic, and Kanban scope.
-     * Primary-key ordering gives competing bulk mutations a stable lock order.
+     * same statement that locks them. Trusted model scopes are merged into the
+     * effective query so all callbacks execute once. The locking statement
+     * retains every verified predicate on the target row so an MVCC recheck
+     * cannot return a row that left the effective scope while awaiting its lock.
      *
      * @param  array<string, int|string>|null  $expectedKeys
      * @return Collection<int, Model&TableResource>
@@ -433,50 +663,43 @@ final class TableMutationDispatcher
         ?array $expectedKeys,
         ?string $trashed,
         bool $lockForUpdate = false,
+        ?Closure $markLockAcquired = null,
     ): Collection {
         $modelDescriptor->assertMatches($scope);
         $model = $modelDescriptor->model();
         $keyAlias = '__aura_mutation_key';
         $qualifiedKey = $modelDescriptor->table.'.'.$modelDescriptor->keyName;
 
-        $effectiveQuery = $this->applyTrashedMode(clone $scope, $trashed);
+        $effectiveQuery = $model->registerGlobalScopes(clone $scope);
+        $effectiveQuery = $this->applyTrashedMode($effectiveQuery, $trashed);
         $effectiveQuery = $this->applyScopesOnce($effectiveQuery);
         $modelDescriptor->assertMatches($effectiveQuery);
+        $eagerLoads = $effectiveQuery->getEagerLoads();
         $effectiveQuery->setEagerLoads([]);
         $effectiveQuery->select($qualifiedKey.' as '.$keyAlias);
+        $effectiveQuery->reorder($qualifiedKey);
+
+        if ($lockForUpdate) {
+            $effectiveQuery->lockForUpdate();
+        }
+
         $effectiveBaseQuery = $effectiveQuery->getQuery();
         $this->applyVerifiedBeforeQueryCallbacks($effectiveBaseQuery);
         $modelDescriptor->assertMatches($effectiveQuery);
-        $effectiveBaseQuery->select($qualifiedKey.' as '.$keyAlias);
-
-        $authoritativeQuery = $this->applyTrashedMode($model->newQuery(), $trashed);
-        $authoritativeQuery = $this->applyScopesOnce($authoritativeQuery);
-        $modelDescriptor->assertMatches($authoritativeQuery);
-        $eagerLoads = $authoritativeQuery->getEagerLoads();
-        $authoritativeQuery->setEagerLoads([]);
-        $authoritativeQuery->whereIn($qualifiedKey, $effectiveBaseQuery);
-        $authoritativeQuery->select($modelDescriptor->table.'.*');
-        $authoritativeQuery->reorder($qualifiedKey);
+        $effectiveBaseQuery->select($modelDescriptor->table.'.*');
+        $effectiveBaseQuery->reorder($qualifiedKey);
 
         if ($lockForUpdate) {
-            $authoritativeQuery->lockForUpdate();
+            $effectiveBaseQuery->lockForUpdate();
         }
 
-        $authoritativeBaseQuery = $authoritativeQuery->getQuery();
-        $this->applyVerifiedBeforeQueryCallbacks($authoritativeBaseQuery);
-        $modelDescriptor->assertMatches($authoritativeQuery);
-        $authoritativeBaseQuery->select($modelDescriptor->table.'.*');
-        $authoritativeBaseQuery->reorder($qualifiedKey);
-
-        if ($lockForUpdate) {
-            $authoritativeBaseQuery->lockForUpdate();
-        }
-
-        $rows = $authoritativeBaseQuery->getConnection()->select(
-            $authoritativeBaseQuery->toSql(),
-            $authoritativeBaseQuery->getBindings(),
-            ! $authoritativeBaseQuery->useWritePdo,
+        $rows = $effectiveBaseQuery->getConnection()->select(
+            $effectiveBaseQuery->toSql(),
+            $effectiveBaseQuery->getBindings(),
+            ! $effectiveBaseQuery->useWritePdo,
         );
+
+        $markLockAcquired?->__invoke();
 
         $hydratedRecords = [];
 
@@ -495,8 +718,8 @@ final class TableMutationDispatcher
             $hydratedRecords[] = $record;
         }
 
-        $authoritativeQuery->setEagerLoads($eagerLoads);
-        $hydratedRecords = $authoritativeQuery->eagerLoadRelations($hydratedRecords);
+        $effectiveQuery->setEagerLoads($eagerLoads);
+        $hydratedRecords = $effectiveQuery->eagerLoadRelations($hydratedRecords);
         $records = $model->newCollection($hydratedRecords);
 
         $records->each(function (Model $record) use ($modelDescriptor): void {
@@ -504,6 +727,63 @@ final class TableMutationDispatcher
         });
 
         return $this->canonicalizeRecords($records, $modelDescriptor);
+    }
+
+    /**
+     * @param  list<mixed>  $constraints
+     */
+    private function callbackConstraintBindingCount(array $constraints, bool $having): int
+    {
+        $count = 0;
+
+        foreach ($constraints as $constraint) {
+            if (! is_array($constraint) || ! is_string($constraint['type'] ?? null)) {
+                abort(422, 'The table mutation query callback added ambiguous bindings.');
+            }
+
+            $type = strtolower($constraint['type']);
+
+            if ($type === 'nested') {
+                $childQuery = $constraint['query'] ?? null;
+
+                if (! $childQuery instanceof QueryBuilder) {
+                    abort(422, 'The table mutation query callback added ambiguous bindings.');
+                }
+
+                $count += $this->callbackConstraintBindingCount(
+                    $having ? ($childQuery->havings ?? []) : $childQuery->wheres,
+                    $having,
+                );
+
+                continue;
+            }
+
+            $count += match ($type) {
+                'basic',
+                'bitwise',
+                'date',
+                'day',
+                'like',
+                'month',
+                'nullsafeequals',
+                'time',
+                'valuebetween',
+                'year' => 1,
+                'between' => 2,
+                'in',
+                'notin',
+                'rowvalues' => count($constraint['values']),
+                'betweencolumns',
+                'column',
+                'inraw',
+                'notinraw',
+                'notnull',
+                'null' => 0,
+                default => abort(422, 'The table mutation query callback added ambiguous bindings.'),
+            };
+        }
+
+        return $count;
     }
 
     /**
@@ -535,6 +815,25 @@ final class TableMutationDispatcher
                 true,
             )
             ->values();
+    }
+
+    private function containsCallbackSqlExpression(mixed $value): bool
+    {
+        if ($value instanceof ExpressionContract) {
+            return true;
+        }
+
+        if ($value instanceof QueryBuilder || ! is_array($value)) {
+            return false;
+        }
+
+        foreach ($value as $item) {
+            if ($this->containsCallbackSqlExpression($item)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -763,6 +1062,7 @@ final class TableMutationDispatcher
         mixed $selected,
         bool $selectAll,
         ?string $trashed,
+        ?Closure $markLockAcquired = null,
     ): Collection {
         if ($selectAll) {
             $records = $this->authoritativeRecords(
@@ -771,6 +1071,7 @@ final class TableMutationDispatcher
                 null,
                 $trashed,
                 lockForUpdate: true,
+                markLockAcquired: $markLockAcquired,
             );
 
             if ($records->isEmpty()) {
@@ -818,6 +1119,7 @@ final class TableMutationDispatcher
             $expectedKeys,
             $trashed,
             lockForUpdate: true,
+            markLockAcquired: $markLockAcquired,
         );
         $resolvedIdentities = $this->canonicalIdentities($records, $modelDescriptor);
 
@@ -831,5 +1133,99 @@ final class TableMutationDispatcher
         }
 
         return $records;
+    }
+
+    /**
+     * @param  list<mixed>  $mandatoryWheres
+     * @param  list<mixed>  $mandatoryWhereBindings
+     * @param  list<mixed>  $mandatoryHavings
+     * @param  list<mixed>  $mandatoryHavingBindings
+     */
+    private function sealCallbackConstraints(
+        QueryBuilder $query,
+        array $mandatoryWheres,
+        array $mandatoryWhereBindings,
+        array $mandatoryHavings,
+        array $mandatoryHavingBindings,
+    ): void {
+        $appendedWheres = array_slice($query->wheres, count($mandatoryWheres));
+        $appendedWhereBindings = array_slice(
+            $query->bindings['where'],
+            count($mandatoryWhereBindings),
+        );
+        $appendedHavings = array_slice($query->havings ?? [], count($mandatoryHavings));
+        $appendedHavingBindings = array_slice(
+            $query->bindings['having'],
+            count($mandatoryHavingBindings),
+        );
+
+        if (
+            ($appendedWheres === [] && $appendedWhereBindings !== [])
+            || ($appendedHavings === [] && $appendedHavingBindings !== [])
+        ) {
+            abort(422, 'The table mutation query callback added ambiguous bindings.');
+        }
+
+        $this->assertSupportedCallbackConstraints($appendedWheres, $query, having: false);
+        $this->assertSupportedCallbackConstraints($appendedHavings, $query, having: true);
+        $this->assertCallbackBindingParity($appendedWheres, $appendedWhereBindings, having: false);
+        $this->assertCallbackBindingParity($appendedHavings, $appendedHavingBindings, having: true);
+
+        $query->wheres = $mandatoryWheres;
+        $query->bindings['where'] = $mandatoryWhereBindings;
+        $query->havings = $mandatoryHavings === [] ? null : $mandatoryHavings;
+        $query->bindings['having'] = $mandatoryHavingBindings;
+
+        if ($appendedWheres !== []) {
+            $nestedWhere = $query->forNestedWhere();
+            $nestedWhere->wheres = $appendedWheres;
+            $nestedWhere->bindings['where'] = $appendedWhereBindings;
+
+            $query->addNestedWhereQuery($nestedWhere, 'and');
+        }
+
+        if ($appendedHavings !== []) {
+            $nestedHaving = $query->forNestedWhere();
+            $nestedHaving->havings = $appendedHavings;
+            $nestedHaving->bindings['having'] = $appendedHavingBindings;
+
+            $query->addNestedHavingQuery($nestedHaving, 'and');
+        }
+    }
+
+    /**
+     * @param  Closure(Closure(): void): mixed  $callback
+     */
+    private function transactionWithPreLockRetries(
+        ConnectionInterface $connection,
+        Closure $callback,
+    ): mixed {
+        $maximumAttempts = $connection->transactionLevel() === 0
+            ? self::DEADLOCK_RETRY_ATTEMPTS
+            : 1;
+        $attempt = 0;
+
+        while (true) {
+            $attempt++;
+            $lockAcquired = false;
+
+            try {
+                return $connection->transaction(function () use ($callback, &$lockAcquired): mixed {
+                    $markLockAcquired = static function () use (&$lockAcquired): void {
+                        $lockAcquired = true;
+                    };
+
+                    return $callback($markLockAcquired);
+                }, 1);
+            } catch (Throwable $exception) {
+                if (
+                    $lockAcquired
+                    || $attempt >= $maximumAttempts
+                    || ! $this->causedByConcurrencyError($exception)
+                ) {
+                    throw $exception;
+                }
+            }
+        }
     }
 }

@@ -12,6 +12,9 @@ use Aura\Base\Resources\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Database\Query\Grammars\SQLiteGrammar;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -20,6 +23,14 @@ use Illuminate\Support\Str;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 
 use function Pest\Livewire\livewire;
+
+class Core05LockObservingSQLiteGrammar extends SQLiteGrammar
+{
+    protected function compileLock(QueryBuilder $query, $value)
+    {
+        return $value ? '/* core05-lock-for-update */' : '';
+    }
+}
 
 class Core05MutationResource extends Resource
 {
@@ -31,6 +42,10 @@ class Core05MutationResource extends Resource
         'deleteRecord' => [
             'label' => 'Delete',
             'ability' => 'delete',
+        ],
+        'deadlockAfterExternalEffect' => [
+            'label' => 'Deadlock after external effect',
+            'ability' => 'update',
         ],
         'hiddenAction' => [
             'label' => 'Hidden',
@@ -71,6 +86,10 @@ class Core05MutationResource extends Resource
     /** @var array<int, int> */
     public static array $authoritativeReadTransactionLevels = [];
 
+    public static ?Closure $beforeQueryCallback = null;
+
+    public static int $beforeQueryInvocations = 0;
+
     public array $bulkActions = [
         'captureAuthoritativeAttributes' => [
             'label' => 'Capture authoritative attributes',
@@ -86,6 +105,14 @@ class Core05MutationResource extends Resource
             'ability' => 'update',
         ],
     ];
+
+    public static bool $countIndexBeforeQueryInvocations = false;
+
+    public static int $dynamicBeforeQueryInvocations = 0;
+
+    public static int $externalEffects = 0;
+
+    public static int $indexBeforeQueryInvocations = 0;
 
     public static ?string $slug = 'core05-mutation';
 
@@ -117,6 +144,18 @@ class Core05MutationResource extends Resource
     {
         $this->content = 'custom-action-ran';
         $this->save();
+    }
+
+    public function deadlockAfterExternalEffect(): void
+    {
+        static::$externalEffects++;
+
+        $this->content = 'changed-before-deadlock';
+        $this->save();
+
+        if (static::$externalEffects === 1) {
+            throw new PDOException('database is locked');
+        }
     }
 
     public function deleteRecord(): void
@@ -172,6 +211,21 @@ class Core05MutationResource extends Resource
     {
         $query->where($query->getModel()->qualifyColumn('title'), '!=', 'Excluded by indexQuery');
 
+        if (static::$countIndexBeforeQueryInvocations) {
+            $resourceClass = static::class;
+
+            $query->getQuery()->beforeQuery(static function (QueryBuilder $query) use ($resourceClass): void {
+                $isMutationKeyQuery = collect((array) $query->columns)->contains(
+                    fn (mixed $column): bool => is_string($column)
+                        && str_contains($column, '__aura_mutation_key'),
+                );
+
+                if ($isMutationKeyQuery) {
+                    $resourceClass::$indexBeforeQueryInvocations++;
+                }
+            });
+        }
+
         if (static::$useCollidingIndexQuery) {
             $query
                 ->join(
@@ -220,11 +274,40 @@ class Core05MutationResource extends Resource
         ): void {
             $callback = $resourceClass::$authoritativeQueryCallback;
 
-            if ($callback === null && ! $resourceClass::$authoritativeReadCallback instanceof Closure) {
+            if (
+                $callback === null
+                && ! $resourceClass::$authoritativeReadCallback instanceof Closure
+                && ! $resourceClass::$beforeQueryCallback instanceof Closure
+            ) {
                 return;
             }
 
             $baseQuery = $builder->getQuery();
+
+            if ($resourceClass::$beforeQueryCallback instanceof Closure) {
+                $baseQuery->beforeQuery(static function ($query) use ($resourceClass): void {
+                    $isMutationQuery = $query->lock !== null
+                        || collect((array) $query->columns)->contains(
+                            fn (mixed $column): bool => is_string($column)
+                                && str_contains($column, '__aura_mutation_key'),
+                        );
+
+                    if (! $isMutationQuery) {
+                        return;
+                    }
+
+                    $resourceClass::$beforeQueryInvocations++;
+
+                    if ($resourceClass::$beforeQueryCallback instanceof Closure) {
+                        ($resourceClass::$beforeQueryCallback)($query);
+                    }
+                });
+            }
+
+            if ($callback === null && ! $resourceClass::$authoritativeReadCallback instanceof Closure) {
+                return;
+            }
+
             $queryState = (object) ['isAuthoritativeRead' => false];
             $qualifiedWildcard = $builder->getModel()->qualifyColumn('*');
 
@@ -234,7 +317,11 @@ class Core05MutationResource extends Resource
                 $queryState,
                 $resourceClass,
             ): void {
-                $queryState->isAuthoritativeRead = in_array($qualifiedWildcard, (array) $query->columns, true);
+                $queryState->isAuthoritativeRead = in_array($qualifiedWildcard, (array) $query->columns, true)
+                    || collect((array) $query->columns)->contains(
+                        fn (mixed $column): bool => is_string($column)
+                            && str_contains($column, '__aura_mutation_key'),
+                    );
 
                 if (! $queryState->isAuthoritativeRead) {
                     return;
@@ -293,6 +380,35 @@ class Core05MutationResource extends Resource
             'data' => $this->getAttribute('data'),
             'status' => $this->getAttribute('status'),
         ];
+    }
+}
+
+class Core05EagerMutationResource extends Core05MutationResource
+{
+    public static int $relationBeforeQueryInvocations = 0;
+
+    public static ?int $relationExpectedTransactionLevel = null;
+
+    /** @var array<int, string> */
+    protected $with = ['callbackUser'];
+
+    public function callbackUser(): BelongsTo
+    {
+        $resourceClass = static::class;
+        $relation = $this->belongsTo(User::class, 'user_id');
+
+        $relation->getQuery()->getQuery()->beforeQuery(static function (QueryBuilder $query) use (
+            $resourceClass,
+        ): void {
+            if (
+                $resourceClass::$relationExpectedTransactionLevel !== null
+                && $query->getConnection()->transactionLevel() === $resourceClass::$relationExpectedTransactionLevel
+            ) {
+                $resourceClass::$relationBeforeQueryInvocations++;
+            }
+        });
+
+        return $relation;
     }
 }
 
@@ -508,26 +624,6 @@ class Core05TransactionMutationPolicy
     }
 }
 
-class Core05DeadlockRetryPolicy
-{
-    public static int $attempts = 0;
-
-    public function update(User $user, Core05MutationResource $resource): bool
-    {
-        if (! $resource->exists) {
-            return $user->exists;
-        }
-
-        static::$attempts++;
-
-        if (static::$attempts === 1) {
-            throw new PDOException('database is locked');
-        }
-
-        return $user->exists;
-    }
-}
-
 class Core05DenyingMutationPolicy
 {
     public function update(User $user, Core05MutationResource $resource): bool
@@ -616,13 +712,20 @@ beforeEach(function () {
     Core05MorphMutationPolicy::$morphClasses = [];
     Core05MutationBoundaryPolicy::$attempts = 0;
     Core05MutationBoundaryPolicy::$transactionLevels = [];
-    Core05DeadlockRetryPolicy::$attempts = 0;
+    Core05EagerMutationResource::$relationBeforeQueryInvocations = 0;
+    Core05EagerMutationResource::$relationExpectedTransactionLevel = null;
     Core05MutationResource::$authoritativeQueryCallback = null;
     Core05MutationResource::$authoritativeReadCallback = null;
+    Core05MutationResource::$beforeQueryCallback = null;
+    Core05MutationResource::$beforeQueryInvocations = 0;
+    Core05MutationResource::$countIndexBeforeQueryInvocations = false;
+    Core05MutationResource::$dynamicBeforeQueryInvocations = 0;
+    Core05MutationResource::$indexBeforeQueryInvocations = 0;
     Core05MutationResource::$authoritativeReadLocks = [];
     Core05MutationResource::$authoritativeReadOrders = [];
     Core05MutationResource::$authoritativeReadTransactionLevels = [];
     Core05MutationResource::$useCollidingIndexQuery = false;
+    Core05MutationResource::$externalEffects = 0;
     Core05MutationResource::$updateInvocations = 0;
     Core05MutationResource::$updateTransactionLevels = [];
     Core05TransactionMutationPolicy::$transactionLevels = [];
@@ -941,6 +1044,34 @@ function core05CallMutationSurface(
         'Kanban update' => livewire(Table::class, ['query' => $query, 'model' => $mounted])
             ->call('updateCardStatus', $id, 'reviewed'),
     };
+}
+
+/**
+ * @return array<int, array{query: string, bindings: array<int, mixed>, time: float}>
+ */
+function core05CaptureLockedMutationQueries(Closure $callback): array
+{
+    $connection = DB::connection();
+    $originalGrammar = $connection->getQueryGrammar();
+    $queries = [];
+
+    $connection->setQueryGrammar(new Core05LockObservingSQLiteGrammar($connection));
+    $connection->flushQueryLog();
+    $connection->enableQueryLog();
+
+    try {
+        $callback();
+        $queries = $connection->getQueryLog();
+    } finally {
+        $connection->disableQueryLog();
+        $connection->flushQueryLog();
+        $connection->setQueryGrammar($originalGrammar);
+    }
+
+    return array_values(array_filter(
+        $queries,
+        fn (array $query): bool => str_contains($query['query'], '/* core05-lock-for-update */'),
+    ));
 }
 
 test('table action rejects an undeclared model method', function () {
@@ -1634,6 +1765,222 @@ test('before-query callbacks cannot erase mandatory scope predicates', function 
     'Kanban update' => 'Kanban update',
 ]);
 
+test('raw before-query predicates fail closed on every mutation surface', function (
+    string $surface,
+    string $rawVariant,
+) {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+
+    $foreignType = Core05NoKanbanFieldResource::create([
+        'title' => 'Foreign raw callback target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $queryHash = DynamicFunctions::add(
+        fn (): Builder => Core05MutationResource::withoutGlobalScopes()->whereKey($foreignType->getKey())
+    );
+
+    Core05MutationResource::$beforeQueryCallback = static function ($query) use (
+        $foreignType,
+        $rawVariant,
+    ): void {
+        match ($rawVariant) {
+            'raw OR' => $query->whereRaw('1 = 1 OR posts.id = ?', [$foreignType->getKey()]),
+            'raw comment' => $query->whereRaw('1 = 1) OR posts.id = ? --', [$foreignType->getKey()]),
+            'raw subquery' => $query->whereRaw(
+                'EXISTS (SELECT 1) OR posts.id = ?',
+                [$foreignType->getKey()],
+            ),
+            'nested raw' => $query->where(static function ($nested) use ($foreignType): void {
+                $nested->whereRaw('1 = 1 OR posts.id = ?', [$foreignType->getKey()]);
+            }),
+        };
+    };
+
+    core05CallMutationSurface(
+        $surface,
+        $queryHash,
+        new Core05MutationResource,
+        $foreignType->getKey(),
+    )->assertStatus(422);
+
+    Core05MutationResource::$beforeQueryCallback = null;
+
+    expect(Core05MutationResource::$updateInvocations)->toBe(0)
+        ->and($foreignType->fresh()->content)->toBe('unchanged')
+        ->and($foreignType->fresh()->status)->toBe('draft');
+})->with([
+    'single action' => 'single action',
+    'bulk record' => 'bulk record',
+    'bulk collection' => 'bulk collection',
+    'bulk record select all' => 'bulk record select all',
+    'bulk collection select all' => 'bulk collection select all',
+    'Kanban update' => 'Kanban update',
+])->with([
+    'raw OR' => 'raw OR',
+    'raw comment' => 'raw comment',
+    'raw subquery' => 'raw subquery',
+    'nested raw' => 'nested raw',
+]);
+
+test('structured callback OR predicates stay grouped under trusted scope predicates', function (string $surface) {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+
+    $foreignType = Core05NoKanbanFieldResource::create([
+        'title' => 'Foreign structured callback target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $queryHash = DynamicFunctions::add(
+        fn (): Builder => Core05MutationResource::withoutGlobalScopes()->whereKey($foreignType->getKey())
+    );
+
+    Core05MutationResource::$beforeQueryCallback = static function ($query) use ($foreignType): void {
+        $query
+            ->where('posts.status', 'draft')
+            ->orWhere('posts.id', $foreignType->getKey());
+    };
+
+    $result = core05CallMutationSurface(
+        $surface,
+        $queryHash,
+        new Core05MutationResource,
+        $foreignType->getKey(),
+    );
+
+    if (str_contains($surface, 'bulk')) {
+        $result->assertHasErrors(['selected']);
+    } else {
+        $result->assertNotFound();
+    }
+
+    Core05MutationResource::$beforeQueryCallback = null;
+
+    expect(Core05MutationResource::$updateInvocations)->toBe(0)
+        ->and($foreignType->fresh()->content)->toBe('unchanged')
+        ->and($foreignType->fresh()->status)->toBe('draft');
+})->with([
+    'single action' => 'single action',
+    'bulk record' => 'bulk record',
+    'bulk collection' => 'bulk collection',
+    'bulk record select all' => 'bulk record select all',
+    'bulk collection select all' => 'bulk collection select all',
+    'Kanban update' => 'Kanban update',
+]);
+
+test('before-query callback bindings must match their structured predicates', function (string $surface) {
+    $this->actingAs(createSuperAdmin());
+
+    $resource = Core05MutationResource::create([
+        'title' => 'Callback binding parity target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    Core05MutationResource::$beforeQueryCallback = static function (QueryBuilder $query): void {
+        $query->where('posts.status', 'draft');
+        $query->addBinding('detached-binding', 'where');
+    };
+
+    core05CallMutationSurface(
+        $surface,
+        null,
+        new Core05MutationResource,
+        $resource->getKey(),
+    )->assertStatus(422);
+
+    Core05MutationResource::$beforeQueryCallback = null;
+
+    expect(Core05MutationResource::$updateInvocations)->toBe(0)
+        ->and($resource->fresh()->content)->toBe('unchanged')
+        ->and($resource->fresh()->status)->toBe('draft');
+})->with([
+    'single action' => 'single action',
+    'bulk record' => 'bulk record',
+    'bulk collection' => 'bulk collection',
+    'bulk record select all' => 'bulk record select all',
+    'bulk collection select all' => 'bulk collection select all',
+    'Kanban update' => 'Kanban update',
+]);
+
+test('before-query callbacks execute once from every mutation query source', function (
+    string $surface,
+    string $callbackSource,
+) {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+
+    $mounted = $callbackSource === 'eager relation'
+        ? new Core05EagerMutationResource
+        : new Core05MutationResource;
+    $resource = $mounted->newQuery()->create([
+        'title' => 'Callback invocation target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+        'user_id' => $actor->getKey(),
+    ]);
+    $queryHash = null;
+
+    match ($callbackSource) {
+        'model global' => Core05MutationResource::$beforeQueryCallback = static function (
+            QueryBuilder $query,
+        ): void {},
+        'index query' => Core05MutationResource::$countIndexBeforeQueryInvocations = true,
+        'dynamic query' => $queryHash = DynamicFunctions::add(static function (): Builder {
+            $query = Core05MutationResource::query();
+
+            $query->getQuery()->beforeQuery(static function (QueryBuilder $query): void {
+                $isMutationKeyQuery = collect((array) $query->columns)->contains(
+                    fn (mixed $column): bool => is_string($column)
+                        && str_contains($column, '__aura_mutation_key'),
+                );
+
+                if ($isMutationKeyQuery) {
+                    Core05MutationResource::$dynamicBeforeQueryInvocations++;
+                }
+            });
+
+            return $query;
+        }),
+        'eager relation' => Core05EagerMutationResource::$relationExpectedTransactionLevel = DB::connection()
+            ->transactionLevel() + 1,
+    };
+
+    core05CallMutationSurface(
+        $surface,
+        $queryHash,
+        $mounted,
+        $resource->getKey(),
+    )->assertHasNoErrors();
+
+    $beforeQueryInvocations = match ($callbackSource) {
+        'model global' => Core05MutationResource::$beforeQueryInvocations,
+        'index query' => Core05MutationResource::$indexBeforeQueryInvocations,
+        'dynamic query' => Core05MutationResource::$dynamicBeforeQueryInvocations,
+        'eager relation' => Core05EagerMutationResource::$relationBeforeQueryInvocations,
+    };
+
+    Core05MutationResource::$beforeQueryCallback = null;
+    Core05MutationResource::$countIndexBeforeQueryInvocations = false;
+    Core05EagerMutationResource::$relationExpectedTransactionLevel = null;
+
+    expect($beforeQueryInvocations)->toBe(1);
+})->with([
+    'single action' => 'single action',
+    'bulk record' => 'bulk record',
+    'bulk collection' => 'bulk collection',
+    'bulk record select all' => 'bulk record select all',
+    'bulk collection select all' => 'bulk collection select all',
+    'Kanban update' => 'Kanban update',
+])->with([
+    'model global' => 'model global',
+    'index query' => 'index query',
+    'dynamic query' => 'dynamic query',
+    'eager relation' => 'eager relation',
+]);
+
 test('effective-scope callbacks cannot erase dynamic membership predicates', function () {
     $this->actingAs(createSuperAdmin());
     Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
@@ -1925,11 +2272,18 @@ test('mutation selection authorization and handlers share one locked transaction
     Core05MutationResource::$authoritativeQueryCallback = 'observe transaction';
     $expectedTransactionLevel = DB::connection()->transactionLevel() + 1;
 
-    core05CallMutationSurface($surface, null, new Core05MutationResource, $resource->getKey())
-        ->assertHasNoErrors();
+    $mutationQueries = core05CaptureLockedMutationQueries(
+        fn (): mixed => core05CallMutationSurface(
+            $surface,
+            null,
+            new Core05MutationResource,
+            $resource->getKey(),
+        )->assertHasNoErrors(),
+    );
 
-    expect(Core05MutationResource::$authoritativeReadLocks)->not->toBeEmpty()
-        ->and(Core05MutationResource::$authoritativeReadLocks)->each->toBeTrue()
+    expect($mutationQueries)->not->toBeEmpty()
+        ->and(collect($mutationQueries)->pluck('query'))->each->toContain('/* core05-lock-for-update */')
+        ->and(Core05MutationResource::$authoritativeReadTransactionLevels)->not->toBeEmpty()
         ->and(Core05MutationResource::$authoritativeReadTransactionLevels)->each->toBe($expectedTransactionLevel)
         ->and(Core05TransactionMutationPolicy::$transactionLevels)->not->toBeEmpty()
         ->and(Core05TransactionMutationPolicy::$transactionLevels)->toContain($expectedTransactionLevel)
@@ -1939,6 +2293,50 @@ test('mutation selection authorization and handlers share one locked transaction
     'single action' => 'single action',
     'bulk record' => 'bulk record',
     'bulk collection' => 'bulk collection',
+    'Kanban update' => 'Kanban update',
+]);
+
+test('locking statements seal effective predicates directly on target rows', function (string $surface) {
+    $this->actingAs(createSuperAdmin());
+
+    $resource = Core05MutationResource::create([
+        'title' => 'MVCC scope target',
+        'content' => 'eligible-for-mutation',
+        'status' => 'draft',
+    ]);
+    $queryHash = DynamicFunctions::add(
+        fn (): Builder => Core05MutationResource::query()
+            ->where('posts.content', 'eligible-for-mutation')
+    );
+
+    $mutationQueries = core05CaptureLockedMutationQueries(
+        fn (): mixed => core05CallMutationSurface(
+            $surface,
+            $queryHash,
+            new Core05MutationResource,
+            $resource->getKey(),
+        )->assertHasNoErrors(),
+    );
+    $lockingSql = $mutationQueries[0]['query'] ?? null;
+
+    expect($mutationQueries)->toHaveCount(1)
+        ->and($lockingSql)->toBeString()
+        ->toContain('select "posts".* from "posts"')
+        ->toContain('"posts"."content" = ?')
+        ->toContain('"posts"."type" = ?')
+        ->toContain('order by "posts"."id" asc')
+        ->toContain('/* core05-lock-for-update */')
+        ->not->toContain(' in (select ');
+
+    if (config('aura.teams')) {
+        expect($lockingSql)->toContain('"posts"."team_id" = ?');
+    }
+})->with([
+    'single action' => 'single action',
+    'bulk record' => 'bulk record',
+    'bulk collection' => 'bulk collection',
+    'bulk record select all' => 'bulk record select all',
+    'bulk collection select all' => 'bulk collection select all',
     'Kanban update' => 'Kanban update',
 ]);
 
@@ -1974,28 +2372,26 @@ test('bulk mutation locks and dispatches records in deterministic primary-key or
         $component->set('selectAll', true);
     }
 
-    $component->call('bulkCollectionAction', 'captureCollectionAttributes')
-        ->assertHasNoErrors();
+    $mutationQueries = core05CaptureLockedMutationQueries(
+        fn (): mixed => $component->call('bulkCollectionAction', 'captureCollectionAttributes')
+            ->assertHasNoErrors(),
+    );
 
     $receiver = Core05MutationResource::findOrFail($expectedIds[0]);
     $snapshot = json_decode($receiver->content, true, flags: JSON_THROW_ON_ERROR);
 
     expect($snapshot['ids'])->toBe($expectedIds)
-        ->and(Core05MutationResource::$authoritativeReadOrders)->not->toBeEmpty()
-        ->and(collect(Core05MutationResource::$authoritativeReadOrders)->last())->toBe([
-            [
-                'column' => 'posts.id',
-                'direction' => 'asc',
-            ],
-        ]);
+        ->and($mutationQueries)->not->toBeEmpty()
+        ->and(collect($mutationQueries)->pluck('query'))->each->toContain('order by "posts"."id" asc')
+        ->and(collect($mutationQueries)->pluck('query'))->each->toContain('/* core05-lock-for-update */');
 })->with([
     'explicit selection' => false,
     'select all' => true,
 ]);
 
-test('mutation transactions retry the complete authorization unit after a deadlock', function () {
+test('mutation transactions retry a deadlock before lock acquisition', function () {
     $this->actingAs(createSuperAdmin());
-    Gate::policy(Core05MutationResource::class, Core05DeadlockRetryPolicy::class);
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
 
     $mounted = (new Core05MutationResource)->setConnection('core05_mutation_secondary');
     $resource = $mounted->newQuery()->create([
@@ -2003,6 +2399,12 @@ test('mutation transactions retry the complete authorization unit after a deadlo
         'content' => 'unchanged',
         'status' => 'draft',
     ]);
+
+    Core05MutationResource::$beforeQueryCallback = static function ($query): void {
+        if (Core05MutationResource::$beforeQueryInvocations === 1) {
+            throw new PDOException('database is locked');
+        }
+    };
 
     app(TableMutationDispatcher::class)->dispatchAction(
         $mounted->newQuery(),
@@ -2012,9 +2414,36 @@ test('mutation transactions retry the complete authorization unit after a deadlo
         $mounted->getActions(),
     );
 
-    expect(Core05DeadlockRetryPolicy::$attempts)->toBe(2)
+    Core05MutationResource::$beforeQueryCallback = null;
+
+    expect(Core05MutationResource::$beforeQueryInvocations)->toBe(2)
+        ->and(Core05MutationBoundaryPolicy::$attempts)->toBe(1)
         ->and(Core05MutationResource::$updateInvocations)->toBe(1)
         ->and($resource->fresh()->content)->toBe('reviewed-by-action');
+});
+
+test('mutation transactions never retry after a handler effect begins', function () {
+    $this->actingAs(createSuperAdmin());
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+
+    $mounted = (new Core05MutationResource)->setConnection('core05_mutation_secondary');
+    $resource = $mounted->newQuery()->create([
+        'title' => 'Post-handler deadlock target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    expect(fn () => app(TableMutationDispatcher::class)->dispatchAction(
+        $mounted->newQuery(),
+        new TableMutationModelDescriptor($mounted),
+        $resource->getKey(),
+        'deadlockAfterExternalEffect',
+        $mounted->getActions(),
+    ))->toThrow(PDOException::class, 'database is locked');
+
+    expect(Core05MutationResource::$externalEffects)->toBe(1)
+        ->and(Core05MutationResource::$updateInvocations)->toBe(1)
+        ->and($resource->fresh()->content)->toBe('unchanged');
 });
 
 test('a denied mutation rolls back row changes made during authorization', function (string $surface) {
