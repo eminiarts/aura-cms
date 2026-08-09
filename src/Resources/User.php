@@ -172,7 +172,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function cachedRoles(): mixed
     {
-        if (! $this->id) {
+        if ($this->getKey() === null || $this->getKey() === '') {
             return collect();
         }
 
@@ -195,7 +195,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             ->where('user_id', $this->id)
             ->when(
                 config('aura.teams'),
-                fn ($query) => $teamId
+                fn ($query) => $teamId !== null && $teamId !== ''
                     ? $query->where('team_id', $teamId)
                     : $query->whereNull('team_id')
             )
@@ -240,7 +240,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         string|int|null $userId,
         ?Connection $connection = null,
     ): void {
-        if (! $userId) {
+        if ($userId === null || $userId === '') {
             return;
         }
 
@@ -258,7 +258,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             return;
         }
 
-        if (is_null($this->current_team_id) && $this->id) {
+        if (is_null($this->current_team_id)
+            && $this->getKey() !== null
+            && $this->getKey() !== ''
+        ) {
             // Fall back to the user's first Membership. A Global Admin with no
             // Membership has no team here — current team stays null and they
             // operate by visiting a team explicitly via switchTeam().

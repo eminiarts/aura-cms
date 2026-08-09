@@ -141,7 +141,7 @@ class TeamScope implements Scope
         string|int|null $userId,
         ?Connection $connection = null,
     ): void {
-        if ($userId === null) {
+        if ($userId === null || $userId === '') {
             return;
         }
 
@@ -177,7 +177,7 @@ class TeamScope implements Scope
         string|int|null $userId,
         ?Connection $connection = null,
     ): void {
-        if ($userId === null) {
+        if ($userId === null || $userId === '') {
             return;
         }
 

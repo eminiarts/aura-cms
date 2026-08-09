@@ -4,6 +4,7 @@ namespace Aura\Base\Resources;
 
 use Aura\Base\Database\Factories\TeamFactory;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -11,7 +12,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class Team extends Resource
 {
@@ -274,7 +274,7 @@ class Team extends Resource
             unset($team->type);
             unset($team->team_id);
 
-            if (! $team->user_id && auth()->user()) {
+            if (($team->user_id === null || $team->user_id === '') && auth()->user()) {
                 $team->user_id = auth()->user()->id;
             }
         });
@@ -315,13 +315,17 @@ class Team extends Resource
         });
 
         static::deleted(function ($team) {
-            $affectedMemberIds = $team->users()
-                ->withoutGlobalScopes()
-                ->pluck('users.id');
+            $connection = $team->getConnection();
+            $connectionName = $connection->getName();
+            $teamId = $team->getKey();
+            $affectedMemberIds = $connection->table('user_role')
+                ->where('team_id', $teamId)
+                ->pluck('user_id');
 
             // Get all users who had the deleted team as their current team
-            $users = User::withoutGlobalScopes()
-                ->where('current_team_id', $team->id)
+            $users = User::on($connectionName)
+                ->withoutGlobalScopes()
+                ->where('current_team_id', $teamId)
                 ->get();
             $reassignedUserIds = $users->pluck('id');
 
@@ -331,18 +335,21 @@ class Team extends Resource
                 $user->current_team_id = $firstTeam ? $firstTeam->id : null;
                 $user->save();
 
-                User::clearCurrentTeamCache($user->id, $user->getConnection());
+                User::clearCurrentTeamCache($user->getKey(), $connection);
             }
 
             // A team's Memberships and its own Team Roles (including Shadows) die
             // with the team; the shared Global Roles (team_id = null) are never
             // touched. Remove the pivot rows first, then the team-owned roles.
-            DB::table('user_role')->where('team_id', $team->id)->delete();
+            $connection->table('user_role')->where('team_id', $teamId)->delete();
 
             // Bypass TeamScope: by this point the affected users' current team has
             // already been reassigned above, so a scoped query would filter to the
             // wrong team and delete nothing.
-            Role::withoutGlobalScopes()->where('team_id', $team->id)->delete();
+            Role::on($connectionName)
+                ->withoutGlobalScopes()
+                ->where('team_id', $teamId)
+                ->delete();
 
             // The role rows above were removed via a mass delete (no model
             // events), so bump the catalog version explicitly to invalidate every
@@ -353,13 +360,16 @@ class Team extends Resource
             $team->meta()->delete();
 
             // Delete all the team's invitations
-            $team->teamInvitations()->delete();
+            $team->teamInvitations()->withoutGlobalScope(TeamScope::class)->delete();
 
             // Delete all the team's options
-            Option::where('name', 'like', 'team.'.$team->id.'.%')->delete();
+            Option::on($connectionName)
+                ->withoutGlobalScopes()
+                ->where('name', 'like', 'team.'.$teamId.'.%')
+                ->delete();
 
-            $reassignedUserIds->each(function ($userId) use ($team) {
-                User::clearCurrentTeamCache($userId, $team->getConnection());
+            $reassignedUserIds->each(function ($userId) use ($connection) {
+                User::clearCurrentTeamCache($userId, $connection);
             });
 
             $affectedMemberIds

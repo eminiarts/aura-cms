@@ -122,6 +122,14 @@ function currentTeamTenantConnection(): Connection
         $table->longText('value')->nullable();
     });
 
+    Schema::connection('current_team_tenant')->create('options', function (Blueprint $table): void {
+        $table->id();
+        $table->string('name');
+        $table->longText('value');
+        $table->foreignId('team_id');
+        $table->timestamps();
+    });
+
     return $connection;
 }
 
@@ -173,6 +181,132 @@ function seedCurrentTeamConnection(
         ->findOrFail($userId);
 }
 
+/**
+ * @return array{user: User, team: Team, remaining_team_id: int, role_id: int, option_name: string, invitation_id: int, post_id: int}
+ */
+function seedTeamDeletionConnection(Connection $connection, string $label): array
+{
+    $userId = 930000;
+    $teamId = 930010;
+    $remainingTeamId = 930011;
+    $globalRoleId = 930020;
+    $teamRoleId = 930021;
+    $invitationId = 930030;
+    $postId = 930031;
+    $timestamp = now();
+    $optionName = "team.{$teamId}.review-marker";
+
+    $connection->table('users')->insert([
+        'id' => $userId,
+        'name' => $label.' Delete User',
+        'email' => strtolower($label).'-delete@example.test',
+        'password' => 'password',
+        'current_team_id' => $teamId,
+        'global_admin' => false,
+        'created_at' => $timestamp,
+        'updated_at' => $timestamp,
+    ]);
+    $connection->table('teams')->insert([
+        [
+            'id' => $teamId,
+            'user_id' => $userId,
+            'name' => $label.' Deleted Team',
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ],
+        [
+            'id' => $remainingTeamId,
+            'user_id' => $userId,
+            'name' => $label.' Remaining Team',
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ],
+    ]);
+    $connection->table('roles')->insert([
+        [
+            'id' => $globalRoleId,
+            'name' => $label.' Global Role',
+            'slug' => strtolower($label).'-global-role',
+            'super_admin' => false,
+            'permissions' => '[]',
+            'team_id' => null,
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ],
+        [
+            'id' => $teamRoleId,
+            'name' => $label.' Team Role',
+            'slug' => strtolower($label).'-team-role',
+            'super_admin' => false,
+            'permissions' => '[]',
+            'team_id' => $teamId,
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ],
+    ]);
+    $connection->table('user_role')->insert([
+        [
+            'team_id' => $teamId,
+            'user_id' => $userId,
+            'role_id' => $teamRoleId,
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ],
+        [
+            'team_id' => $remainingTeamId,
+            'user_id' => $userId,
+            'role_id' => $globalRoleId,
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ],
+    ]);
+    $connection->table('options')->insert([
+        'name' => $optionName,
+        'value' => '[]',
+        'team_id' => $teamId,
+        'created_at' => $timestamp,
+        'updated_at' => $timestamp,
+    ]);
+    $connection->table('meta')->insert([
+        'metable_type' => Team::class,
+        'metable_id' => $teamId,
+        'key' => 'review-marker',
+        'value' => $label,
+    ]);
+    $connection->table('posts')->insert([
+        [
+            'id' => $invitationId,
+            'title' => $label.' Invitation',
+            'type' => 'teaminvitation',
+            'status' => 'publish',
+            'user_id' => $userId,
+            'team_id' => $teamId,
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ],
+        [
+            'id' => $postId,
+            'title' => $label.' Retained Post',
+            'type' => 'post',
+            'status' => 'publish',
+            'user_id' => $userId,
+            'team_id' => $teamId,
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ],
+    ]);
+
+    return [
+        'user' => User::on($connection->getName())->withoutGlobalScopes()->findOrFail($userId),
+        'team' => Team::on($connection->getName())->withoutGlobalScopes()->findOrFail($teamId),
+        'remaining_team_id' => $remainingTeamId,
+        'role_id' => $teamRoleId,
+        'option_name' => $optionName,
+        'invitation_id' => $invitationId,
+        'post_id' => $postId,
+    ];
+}
+
 beforeEach(function () {
     if (! Schema::hasTable('teams')) {
         $this->markTestSkipped('Team tests require the teams schema.');
@@ -206,6 +340,127 @@ it('isolates current team snapshots and cache keys by the authenticated model co
     expect($defaultCacheKey)->not->toBe($tenantCacheKey)
         ->and(Cache::get($defaultCacheKey))->toBe(910010)
         ->and(Cache::get($tenantCacheKey))->toBe(910020);
+});
+
+it('invalidates the current team cache when a persisted user has id zero', function () {
+    $tenantConnection = currentTeamTenantConnection();
+    $tenantUser = seedCurrentTeamConnection($tenantConnection, 0, 915000, 915001, 'Zero');
+    $cacheKey = User::currentTeamCacheKey(0, $tenantConnection);
+
+    Auth::setUser($tenantUser);
+
+    expect(Post::on($tenantConnection->getName())->pluck('title')->all())
+        ->toBe(['Zero Current'])
+        ->and(Cache::get($cacheKey))->toBe(915000);
+
+    $tenantUser->forceFill(['current_team_id' => 915001])->save();
+
+    expect(Cache::has($cacheKey))->toBeFalse()
+        ->and(Post::on($tenantConnection->getName())->pluck('title')->all())
+        ->toBe(['Zero Other']);
+});
+
+it('keeps team deletion cleanup on the deleted model connection across rollback and commit', function () {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedTeamDeletionConnection($defaultConnection, 'Default');
+    $tenant = seedTeamDeletionConnection($tenantConnection, 'Tenant');
+    $tenantCacheKey = User::currentTeamCacheKey($tenant['user']->getKey(), $tenantConnection);
+    $defaultCacheKey = User::currentTeamCacheKey($default['user']->getKey(), $defaultConnection);
+
+    Cache::put($tenantCacheKey, $tenant['team']->getKey());
+    Cache::put($defaultCacheKey, $default['team']->getKey());
+    Auth::setUser($tenant['user']);
+
+    $tenantConnection->beginTransaction();
+    $tenant['team']->delete();
+
+    expect($tenantConnection->table('users')->where('id', $tenant['user']->getKey())->value('current_team_id'))
+        ->toBe($tenant['remaining_team_id'])
+        ->and($tenantConnection->table('user_role')->where('team_id', $tenant['team']->getKey())->exists())
+        ->toBeFalse()
+        ->and($tenantConnection->table('roles')->where('id', $tenant['role_id'])->exists())
+        ->toBeFalse()
+        ->and($tenantConnection->table('options')->where('name', $tenant['option_name'])->exists())
+        ->toBeFalse()
+        ->and($tenantConnection->table('meta')->where('metable_id', $tenant['team']->getKey())->exists())
+        ->toBeFalse()
+        ->and($tenantConnection->table('posts')->where('id', $tenant['invitation_id'])->whereNull('deleted_at')->exists())
+        ->toBeFalse()
+        ->and($tenantConnection->table('posts')->where('id', $tenant['post_id'])->exists())
+        ->toBeTrue()
+        ->and(Cache::get($tenantCacheKey))->toBe($tenant['team']->getKey())
+        ->and($defaultConnection->table('users')->where('id', $default['user']->getKey())->value('current_team_id'))
+        ->toBe($default['team']->getKey())
+        ->and($defaultConnection->table('user_role')->where('team_id', $default['team']->getKey())->exists())
+        ->toBeTrue()
+        ->and($defaultConnection->table('roles')->where('id', $default['role_id'])->exists())
+        ->toBeTrue()
+        ->and($defaultConnection->table('options')->where('name', $default['option_name'])->exists())
+        ->toBeTrue()
+        ->and($defaultConnection->table('meta')->where('metable_id', $default['team']->getKey())->exists())
+        ->toBeTrue()
+        ->and($defaultConnection->table('posts')->where('id', $default['invitation_id'])->whereNull('deleted_at')->exists())
+        ->toBeTrue()
+        ->and($defaultConnection->table('posts')->where('id', $default['post_id'])->exists())
+        ->toBeTrue()
+        ->and(Cache::get($defaultCacheKey))->toBe($default['team']->getKey());
+
+    $tenantConnection->rollBack();
+
+    expect($tenantConnection->table('users')->where('id', $tenant['user']->getKey())->value('current_team_id'))
+        ->toBe($tenant['team']->getKey())
+        ->and($tenantConnection->table('user_role')->where('team_id', $tenant['team']->getKey())->exists())
+        ->toBeTrue()
+        ->and($tenantConnection->table('roles')->where('id', $tenant['role_id'])->exists())
+        ->toBeTrue()
+        ->and($tenantConnection->table('options')->where('name', $tenant['option_name'])->exists())
+        ->toBeTrue()
+        ->and($tenantConnection->table('meta')->where('metable_id', $tenant['team']->getKey())->exists())
+        ->toBeTrue()
+        ->and($tenantConnection->table('posts')->where('id', $tenant['invitation_id'])->whereNull('deleted_at')->exists())
+        ->toBeTrue()
+        ->and($tenantConnection->table('posts')->where('id', $tenant['post_id'])->exists())
+        ->toBeTrue()
+        ->and(Cache::get($tenantCacheKey))->toBe($tenant['team']->getKey());
+
+    $tenantConnection->beginTransaction();
+    Team::on($tenantConnection->getName())
+        ->withoutGlobalScopes()
+        ->findOrFail($tenant['team']->getKey())
+        ->delete();
+    $tenantConnection->commit();
+
+    expect($tenantConnection->table('users')->where('id', $tenant['user']->getKey())->value('current_team_id'))
+        ->toBe($tenant['remaining_team_id'])
+        ->and($tenantConnection->table('user_role')->where('team_id', $tenant['team']->getKey())->exists())
+        ->toBeFalse()
+        ->and($tenantConnection->table('roles')->where('id', $tenant['role_id'])->exists())
+        ->toBeFalse()
+        ->and($tenantConnection->table('options')->where('name', $tenant['option_name'])->exists())
+        ->toBeFalse()
+        ->and($tenantConnection->table('meta')->where('metable_id', $tenant['team']->getKey())->exists())
+        ->toBeFalse()
+        ->and($tenantConnection->table('posts')->where('id', $tenant['invitation_id'])->whereNull('deleted_at')->exists())
+        ->toBeFalse()
+        ->and($tenantConnection->table('posts')->where('id', $tenant['post_id'])->exists())
+        ->toBeTrue()
+        ->and(Cache::has($tenantCacheKey))->toBeFalse()
+        ->and($defaultConnection->table('users')->where('id', $default['user']->getKey())->value('current_team_id'))
+        ->toBe($default['team']->getKey())
+        ->and($defaultConnection->table('user_role')->where('team_id', $default['team']->getKey())->exists())
+        ->toBeTrue()
+        ->and($defaultConnection->table('roles')->where('id', $default['role_id'])->exists())
+        ->toBeTrue()
+        ->and($defaultConnection->table('options')->where('name', $default['option_name'])->exists())
+        ->toBeTrue()
+        ->and($defaultConnection->table('meta')->where('metable_id', $default['team']->getKey())->exists())
+        ->toBeTrue()
+        ->and($defaultConnection->table('posts')->where('id', $default['invitation_id'])->whereNull('deleted_at')->exists())
+        ->toBeTrue()
+        ->and($defaultConnection->table('posts')->where('id', $default['post_id'])->exists())
+        ->toBeTrue()
+        ->and(Cache::get($defaultCacheKey))->toBe($default['team']->getKey());
 });
 
 it('keeps nested tenant transaction invalidation on its own connection until the outer boundary', function () {
