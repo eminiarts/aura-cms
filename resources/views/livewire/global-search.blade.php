@@ -34,19 +34,15 @@
 
             openSearch($event) {
                 // Prevent search from opening when typing in input fields
-                console.log($event);
-
                 // Check if the event target is defined and has a tagName property
                 if ($event.target && $event.target.tagName) {
                     const tagName = $event.target.tagName.toLowerCase();
-                    console.log(tagName);
 
                     if (tagName === 'input' || tagName === 'textarea') {
                         return;
                     }
                 }
 
-                console.log('open search');
                 this.show = !this.show;
                 setTimeout(() => {
                     this.$refs.searchField.focus()

@@ -67,6 +67,46 @@ test('selecting attachments in the picker persists them on the resource', functi
         ->toBe([$first->id, $second->id]);
 });
 
+test('the picker stays pending until the verified acknowledgement request closes it', function () {
+    $attachment = seedPickerAttachment('acknowledgement.jpg');
+
+    $page = visit('/admin/gallery-page/create');
+
+    $page->click('[data-media-picker-button="gallery"]')->wait(2);
+    $page->click('[data-attachment-card="'.$attachment->id.'"]')->wait(1);
+    $page->script(<<<'JS'
+        window.__core20Acknowledgement = null;
+        window.addEventListener('aura-media-selection-acknowledged', (event) => {
+            window.__core20Acknowledgement = event.detail;
+            event.stopImmediatePropagation();
+        }, { capture: true, once: true });
+    JS);
+
+    $page->click('[data-picker-select]')->wait(2);
+
+    $page->assertVisible('[data-media-picker-root]')
+        ->assertSee('Applying…')
+        ->assertDisabled('[data-picker-select]');
+
+    $acknowledgement = json_decode((string) $page->script(
+        'JSON.stringify(window.__core20Acknowledgement)'
+    ), true);
+
+    expect($acknowledgement)
+        ->toBeArray()
+        ->and($acknowledgement['outcome'] ?? null)->toBe('succeeded')
+        ->and(array_key_exists('errorCode', $acknowledgement))->toBeTrue()
+        ->and($acknowledgement['errorCode'])->toBeNull();
+
+    $page->script("Livewire.dispatch('aura-media-selection-acknowledged', window.__core20Acknowledgement)");
+    $page->wait(2)->assertNotPresent('[data-media-picker-root]');
+
+    $page->press('Save')->wait(3)->assertNoJavaScriptErrors();
+
+    expect(collect(GalleryPage::query()->firstOrFail()->gallery)->map(fn ($id) => (int) $id)->all())
+        ->toBe([$attachment->id]);
+});
+
 test('a single-select field swaps the selection instead of adding', function () {
     $first = seedPickerAttachment('first.jpg');
     $second = seedPickerAttachment('second.jpg');
