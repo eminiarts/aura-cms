@@ -173,7 +173,11 @@ final class FilterCapability
             type: self::DATETIME,
             component: 'aura::fields.filters.datetime',
             operators: $operators,
-            context: ['storage_format' => $storageFormat, 'precision' => 'datetime'],
+            context: [
+                'storage_format' => $storageFormat,
+                'precision' => 'datetime',
+                'timezone' => self::applicationTimezone(),
+            ],
             queryHandler: TemporalFieldFilter::class,
         );
     }
@@ -237,6 +241,25 @@ final class FilterCapability
     }
 
     /**
+     * Declare an option capability for scalar storage that cannot preserve
+     * identities with the same string representation.
+     *
+     * @param  array<string, string>  $operators
+     * @param  class-string<AppliesFieldFilter>  $queryHandler
+     * @param  array<string, mixed>  $context
+     */
+    public static function scalarOption(
+        array $operators,
+        mixed $values,
+        string $queryHandler = ResourceFieldFilter::class,
+        array $context = [],
+    ): self {
+        (new FilterOptionNormalizer)->assertScalarStorageIsUnambiguous($values);
+
+        return self::option($operators, $values, $queryHandler, $context);
+    }
+
+    /**
      * @param  array<string, string>  $operators
      */
     public static function text(array $operators): self
@@ -268,6 +291,26 @@ final class FilterCapability
             'context' => $this->context,
             'query' => $this->queryHandler,
         ];
+    }
+
+    private static function applicationTimezone(): string
+    {
+        $timezone = config('app.timezone', date_default_timezone_get());
+
+        return is_string($timezone) && trim($timezone) !== '' ? $timezone : 'UTC';
+    }
+
+    private function isScalarFilterValue(mixed $value): bool
+    {
+        if (! is_string($value) && ! is_int($value) && ! is_float($value) && ! is_bool($value)) {
+            return false;
+        }
+
+        if (is_string($value) && trim($value) === '') {
+            return false;
+        }
+
+        return ! is_float($value) || is_finite($value);
     }
 
     private function matchNothing(Builder $query): void
@@ -319,6 +362,10 @@ final class FilterCapability
             $filter['value'] = ['from' => $from, 'to' => $to];
 
             return $filter;
+        }
+
+        if ($this->type === self::TEXT) {
+            return $this->normalizeTextValue($filter);
         }
 
         if ($this->type === self::RELATIONSHIP) {
@@ -396,7 +443,63 @@ final class FilterCapability
             $value,
             $includeTime,
             is_string($this->context['storage_format'] ?? null) ? $this->context['storage_format'] : null,
+            $includeTime && is_string($this->context['timezone'] ?? null) ? $this->context['timezone'] : null,
         );
+    }
+
+    /**
+     * @param  array{name: string, operator: string, value?: mixed, options?: array<string, mixed>}  $filter
+     * @return array{name: string, operator: string, value?: mixed, options?: array<string, mixed>}|null
+     */
+    private function normalizeTextValue(array $filter): ?array
+    {
+        $value = $filter['value'] ?? null;
+
+        if (in_array($filter['operator'], ['in', 'not_in'], true)) {
+            if (is_array($value)) {
+                if (! array_is_list($value)) {
+                    return null;
+                }
+
+                $values = $value;
+            } elseif ($this->isScalarFilterValue($value)) {
+                $values = is_string($value) ? explode(',', $value) : [$value];
+            } else {
+                return null;
+            }
+
+            $normalized = [];
+
+            foreach ($values as $item) {
+                if (! $this->isScalarFilterValue($item)) {
+                    return null;
+                }
+
+                if (is_string($item)) {
+                    $item = trim($item);
+                }
+
+                if (! in_array($item, $normalized, true)) {
+                    $normalized[] = $item;
+                }
+            }
+
+            if ($normalized === []) {
+                return null;
+            }
+
+            $filter['value'] = $normalized;
+
+            return $filter;
+        }
+
+        if (! $this->isScalarFilterValue($value)) {
+            return null;
+        }
+
+        $filter['value'] = $value;
+
+        return $filter;
     }
 
     private function resolveOption(mixed $value): string|int|float|bool|null

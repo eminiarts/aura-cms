@@ -540,10 +540,18 @@ Choice filters restore scalar value types before querying. Scalar choice fields
 reject option sets whose values collapse to the same persisted string, while
 JSON-backed multiple-value fields preserve typed identities and use exact
 database JSON membership. Dates and datetimes normalize the browser's ISO
-payload for formatted meta storage or canonical native custom-table columns.
-Invalid field, operator, handler, nested structure, unknown payload key, and
-AND/OR value fail closed. Saved flat filter lists remain supported and are
-normalized to a single group.
+payload for formatted meta storage or native custom-table columns. Scalar text
+operators reject arrays and objects; only `in` and `not_in` accept flat scalar
+lists. Invalid value shape, field, operator, handler, nested structure, unknown
+payload key, and AND/OR value fail closed. Saved flat filter lists remain
+supported and are normalized to a single group.
+
+Datetime filter input is an application-timezone wall time. DST gaps and folds
+fail closed. PostgreSQL and SQLite native timestamps compare that canonical wall
+time; MySQL/MariaDB `TIMESTAMP` compares Unix instants so results do not depend
+on the current database session timezone. MySQL values outside its portable
+1970–2038 `TIMESTAMP` range fail closed. The filter layer does not rewrite
+persisted values; write normalization and migration remain CORE-10 scope.
 
 **Available Filter Operators** (from `QueryFilters` trait):
 

@@ -14,14 +14,13 @@ use Aura\Base\Fields\Radio;
 use Aura\Base\Fields\Select;
 use Aura\Base\Fields\Status;
 use Aura\Base\Fields\Tags;
+use Aura\Base\Fields\Text;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Tag;
 use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Grammars\MySqlGrammar;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 use function Pest\Livewire\livewire;
 
@@ -132,6 +131,12 @@ class FilterCapabilityResource extends Resource
                 'on_index' => false,
             ],
             [
+                'name' => 'Summary',
+                'slug' => 'summary',
+                'type' => Text::class,
+                'on_index' => false,
+            ],
+            [
                 'name' => 'Reviewed On',
                 'slug' => 'reviewed_on',
                 'type' => PackageDateRangeField::class,
@@ -161,28 +166,6 @@ class CollidingRadioFilterResource extends Resource
                 ],
             ],
         ];
-    }
-}
-
-class CollidingCustomTableRadioFilterResource extends Resource
-{
-    public static $customTable = true;
-
-    public static ?string $slug = 'colliding-custom-table-radio-filter-resource';
-
-    public $timestamps = false;
-
-    public static string $type = 'CollidingCustomTableRadioFilterResource';
-
-    public static bool $usesMeta = false;
-
-    protected $fillable = ['typed_choice'];
-
-    protected $table = 'colliding_custom_table_choices';
-
-    public static function getFields(): array
-    {
-        return CollidingRadioFilterResource::getFields();
     }
 }
 
@@ -568,40 +551,83 @@ test('option normalization safely preserves strict scalar identities', function 
         ->and($normalizer->normalize($reservedWireValue)[3]['wire_value'])->not->toBe('__aura_filter:Ym9vbDow');
 });
 
-test('scalar choice fields reject option identities that collapse in form and database storage', function () {
+test('scalar choice filter capabilities reject identities that storage cannot distinguish', function () {
     $resource = new CollidingRadioFilterResource;
     $field = $resource->fieldBySlug('typed_choice');
 
     foreach ([new Radio, new Select, new Status] as $fieldInstance) {
         expect(fn () => $fieldInstance->filterCapability($resource, $field))
-            ->toThrow(InvalidArgumentException::class, 'cannot distinguish scalar option values')
-            ->and(fn () => $fieldInstance->set($resource, $field, false))
             ->toThrow(InvalidArgumentException::class, 'cannot distinguish scalar option values');
     }
 
-    foreach ([false, 0, '0'] as $value) {
-        expect(fn () => CollidingRadioFilterResource::create([
-            'type' => CollidingRadioFilterResource::$type,
-            'title' => 'Rejected scalar choice',
-            'typed_choice' => $value,
-        ]))->toThrow(InvalidArgumentException::class, 'cannot distinguish scalar option values');
+    expect(fn () => FilterCapability::scalarOption(
+        ['is' => 'is'],
+        $field['options'],
+    ))->toThrow(InvalidArgumentException::class, 'cannot distinguish scalar option values');
+});
+
+test('scalar text operators reject structured values before executing a real query', function () {
+    $matching = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Structured value canary',
+        'summary' => 'needle',
+    ]);
+    $resource = new FilterCapabilityResource;
+    $field = $resource->fieldBySlug('summary');
+    $capability = $resource->fieldClassBySlug('summary')->filterCapability($resource, $field);
+
+    foreach (['contains', 'is', 'starts_with', 'equals'] as $operator) {
+        foreach ([['needle'], [['needle']], ['value' => 'needle'], new stdClass] as $value) {
+            $query = $resource->newQueryWithoutScopes();
+
+            $capability->apply($query, $resource, $field, [
+                'name' => 'summary',
+                'operator' => $operator,
+                'value' => $value,
+            ]);
+
+            expect($query->toSql())->toContain('1 = 0')
+                ->and($query->pluck('id')->all())->toBe([], sprintf(
+                    '%s accepted malformed %s input and could match row %d.',
+                    $operator,
+                    get_debug_type($value),
+                    $matching->id,
+                ));
+        }
     }
+});
 
-    expect(CollidingRadioFilterResource::query()->count())->toBe(0);
+test('text list operators reject nested values while retaining flat lists', function () {
+    $matching = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'List value canary',
+        'summary' => 'needle',
+    ]);
+    $resource = new FilterCapabilityResource;
+    $field = $resource->fieldBySlug('summary');
+    $capability = $resource->fieldClassBySlug('summary')->filterCapability($resource, $field);
 
-    Schema::create('colliding_custom_table_choices', function (Blueprint $table): void {
-        $table->id();
-        $table->string('typed_choice')->nullable();
-        $table->foreignId('team_id')->nullable();
-    });
+    $flatQuery = $resource->newQueryWithoutScopes();
+    $capability->apply($flatQuery, $resource, $field, [
+        'name' => 'summary',
+        'operator' => 'in',
+        'value' => ['needle', 'other'],
+    ]);
 
-    try {
-        expect(fn () => CollidingCustomTableRadioFilterResource::create([
-            'typed_choice' => false,
-        ]))->toThrow(InvalidArgumentException::class, 'cannot distinguish scalar option values')
-            ->and(CollidingCustomTableRadioFilterResource::query()->count())->toBe(0);
-    } finally {
-        Schema::dropIfExists('colliding_custom_table_choices');
+    expect($flatQuery->pluck('id')->all())->toBe([$matching->id]);
+
+    foreach (['in', 'not_in'] as $operator) {
+        foreach ([[['needle']], ['needle', new stdClass], ['value' => 'needle']] as $value) {
+            $query = $resource->newQueryWithoutScopes();
+            $capability->apply($query, $resource, $field, [
+                'name' => 'summary',
+                'operator' => $operator,
+                'value' => $value,
+            ]);
+
+            expect($query->toSql())->toContain('1 = 0')
+                ->and($query->pluck('id')->all())->toBe([]);
+        }
     }
 });
 

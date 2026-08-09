@@ -3,9 +3,7 @@
 namespace Aura\Base\Fields;
 
 use Aura\Base\Fields\Filters\FilterCapability;
-use Aura\Base\Fields\Filters\TemporalValueNormalizer;
 use Aura\Base\Resource;
-use InvalidArgumentException;
 
 class Date extends Field
 {
@@ -115,31 +113,8 @@ class Date extends Field
         ]);
     }
 
-    public function set(mixed $post, array $field, mixed $value): mixed
+    public function set($post, $field, $value)
     {
-        if (! $post instanceof Resource || ! $post->isTableField($field['slug'] ?? null)) {
-            return $value;
-        }
-
-        return $this->setTableValue($post, $field, $value);
-    }
-
-    public function setTableValue(mixed $post, array $field, mixed $value): mixed
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        $normalized = (new TemporalValueNormalizer)->normalize(
-            $value,
-            false,
-            is_string($field['format'] ?? null) ? $field['format'] : 'd.m.Y',
-        );
-
-        if ($normalized === null) {
-            throw new InvalidArgumentException('Native Date fields require a valid date value.');
-        }
-
-        return $normalized;
+        return $value;
     }
 }

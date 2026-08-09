@@ -12,6 +12,10 @@ use Illuminate\Database\Query\Grammars\SqlServerGrammar;
 
 final class TemporalFieldFilter implements AppliesFieldFilter
 {
+    private const MYSQL_TIMESTAMP_MAX = 2147483647;
+
+    private const MYSQL_TIMESTAMP_MIN = 1;
+
     /**
      * @param  array<string, mixed>  $field
      * @param  array{name: string, operator: string, value?: mixed, options?: array<string, mixed>}  $filter
@@ -34,6 +38,7 @@ final class TemporalFieldFilter implements AppliesFieldFilter
                 $query,
                 $query->getModel()->qualifyColumn($field['slug']),
                 $filter,
+                $capability,
             );
 
             return;
@@ -165,8 +170,12 @@ final class TemporalFieldFilter implements AppliesFieldFilter
     /**
      * @param  array{name: string, operator: string, value?: mixed, options?: array<string, mixed>}  $filter
      */
-    private function applyNativeOperator(Builder $query, string $column, array $filter): void
-    {
+    private function applyNativeOperator(
+        Builder $query,
+        string $column,
+        array $filter,
+        FilterCapability $capability,
+    ): void {
         if (in_array($filter['operator'], ['is_empty', 'date_is_empty'], true)) {
             $query->whereNull($column);
 
@@ -180,12 +189,27 @@ final class TemporalFieldFilter implements AppliesFieldFilter
         }
 
         $value = $filter['value'] ?? null;
+        $context = $capability->context();
+        $precision = $context['precision'] ?? null;
+        $driver = $this->driver($query);
+
+        if (! in_array($precision, ['date', 'datetime'], true) || $driver === null) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
 
         if ($filter['operator'] === 'date_between' && is_array($value)) {
             $from = $value['from'] ?? null;
             $to = $value['to'] ?? null;
 
-            if (! is_string($from) || ! is_string($to)) {
+            if (
+                $precision !== 'date'
+                || ! is_string($from)
+                || ! is_string($to)
+                || ! $this->nativeDateIsSupported($driver, $from)
+                || ! $this->nativeDateIsSupported($driver, $to)
+            ) {
                 $query->whereRaw('1 = 0');
 
                 return;
@@ -208,6 +232,45 @@ final class TemporalFieldFilter implements AppliesFieldFilter
 
         if ($operator === null || ! is_string($value)) {
             $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        if ($precision === 'date') {
+            if (! $this->nativeDateIsSupported($driver, $value)) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+
+            $query->where($column, $operator, $value);
+
+            return;
+        }
+
+        if (in_array($driver, ['mysql', 'mariadb'], true)) {
+            $timezone = $context['timezone'] ?? null;
+
+            if (! is_string($timezone)) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+
+            $unixTimestamp = (new TemporalValueNormalizer)->unixTimestamp($value, $timezone);
+
+            if (
+                $unixTimestamp === null
+                || $unixTimestamp < self::MYSQL_TIMESTAMP_MIN
+                || $unixTimestamp > self::MYSQL_TIMESTAMP_MAX
+            ) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+
+            $wrappedColumn = $query->getQuery()->getGrammar()->wrap($column);
+            $query->whereRaw(sprintf('unix_timestamp(%s) %s ?', $wrappedColumn, $operator), [$unixTimestamp]);
 
             return;
         }
@@ -331,6 +394,15 @@ final class TemporalFieldFilter implements AppliesFieldFilter
         }
 
         return [$offsets, $position - 1];
+    }
+
+    private function nativeDateIsSupported(string $driver, string $value): bool
+    {
+        if (! in_array($driver, ['mysql', 'mariadb'], true)) {
+            return true;
+        }
+
+        return $value >= '1000-01-01' && $value <= '9999-12-31';
     }
 
     private function substring(string $driver, string $column, int $start, int $length): string

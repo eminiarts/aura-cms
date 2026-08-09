@@ -88,16 +88,4 @@ class Radio extends Field
 
         return $field['options'] ?? [];
     }
-
-    public function set(mixed $post, array $field, mixed $value): mixed
-    {
-        $this->assertScalarOptionStorageIsUnambiguous($this->getFilterValues($post, $field));
-
-        return $value;
-    }
-
-    public function setTableValue(mixed $post, array $field, mixed $value): mixed
-    {
-        return $this->set($post, $field, $value);
-    }
 }

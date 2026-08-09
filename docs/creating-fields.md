@@ -173,20 +173,6 @@ public function set($post, $field, $value)
 }
 ```
 
-#### `setTableValue($post, $field, $value)`
-
-Native custom-table columns normally keep the submitted value unchanged so
-Eloquent casts can serialize it. Override `setTableValue()` when the field must
-normalize or validate a native-column value before Eloquent persists it. Do not
-pre-serialize arrays when the model already declares an `array` or `json` cast.
-
-```php
-public function setTableValue(mixed $post, array $field, mixed $value): mixed
-{
-    return $value === null ? null : (int) $value;
-}
-```
-
 #### `get($class, $value, $field = null)`
 
 Transform the value when retrieving from the database:
@@ -276,7 +262,7 @@ use Aura\Base\Resource;
 
 public function filterCapability(Resource $model, array $field): FilterCapability
 {
-    return FilterCapability::option(
+    return FilterCapability::scalarOption(
         operators: $this->filterOptions(),
         values: $this->getFilterValues($model, $field),
     );
@@ -286,7 +272,9 @@ public function filterCapability(Resource $model, array $field): FilterCapabilit
 The available factories are:
 
 - `text($operators)` for scalar text or number input.
-- `option($operators, $values)` for a fixed set of scalar values.
+- `scalarOption($operators, $values)` for a fixed set stored in a scalar column.
+- `option($operators, $values, ..., $multiple)` for typed values whose storage
+  representation is owned by the supplied handler, including JSON lists.
 - `boolean($operators)` for a typed yes/no value.
 - `date($operators, $storageFormat)`, `datetime($operators, $storageFormat)`,
   and `dateRange($operators, $storageFormat)` for browser ISO input backed by a
@@ -302,21 +290,41 @@ The original scalar value is restored before the query is applied, so an
 integer option remains an integer even though HTML submits a string. Legacy
 wire values remain unchanged when unambiguous. JSON-backed multiple-value
 fields can use stable typed wire values for collisions such as `false`, `0`,
-and `'0'`. Scalar `Select`, `Status`, and `Radio` fields reject option sets whose
-values have the same form/database string representation, because those fields
-cannot persist the identities distinctly. Use unique scalar keys or a
+and `'0'`. `scalarOption()` rejects option sets whose values have the same
+form/database string representation because a scalar query cannot distinguish
+the stored identities. Built-in `Select`, `Status`, and `Radio` filters use this
+opt-in capability. The check happens when building the filter capability; it
+does not alter field write hooks or persistence. Use unique scalar keys or a
 JSON-backed multiple-value field instead. `Select::getFilterValues()` remains
 available, and `Status`, `Radio`, and `Checkbox` expose the same method through
 this shared path.
 
-Date and datetime controls submit ISO values. Meta-backed fields retain the
-declared fixed-width `format`, including the built-in `d.m.Y` and
-`d.m.Y H:i` defaults, and Aura constructs a portable chronological expression
-for that text. Native custom-table `date` and `timestamp` columns are persisted
-canonically as `Y-m-d` and `Y-m-d H:i:s` and compared directly; their empty
-operators use native null semantics. Text storage formats must be fixed-width
-combinations of `Y`, `m`, `d`, `H`, `i`, and optional `s`; an unsupported format
-fails closed.
+Text capabilities accept only scalar values for scalar operators. Structured
+values fail closed before the query handler runs. `in` and `not_in` accept a
+flat scalar list or a comma-separated scalar string; associative, nested, or
+object values fail closed.
+
+Date and datetime controls submit timezone-free ISO values. Datetimes are local
+wall times in `config('app.timezone')`; nonexistent DST-gap times and ambiguous
+DST-fold times fail closed. Meta-backed fields retain the declared fixed-width
+`format`, including the built-in `d.m.Y` and `d.m.Y H:i` defaults, and Aura
+constructs a portable chronological expression for that text. Text storage
+formats must be fixed-width combinations of `Y`, `m`, `d`, `H`, `i`, and
+optional `s`; an unsupported format fails closed.
+
+Native custom-table `date` columns compare canonical `Y-m-d` values directly.
+PostgreSQL `timestamp without time zone` and SQLite timestamp text compare the
+canonical application-local wall time directly. MySQL/MariaDB `TIMESTAMP`
+comparisons use the column's Unix timestamp and an application-timezone instant,
+so changing the MySQL session timezone cannot change the result. Values outside
+MySQL's portable `1970-01-01 00:00:01 UTC` through
+`2038-01-19 03:14:07 UTC` range fail closed. Native empty operators use null
+semantics only.
+
+Filtering does not transform values during writes. Resources must already store
+values in the representation required by their native column and driver, using
+their existing model casts or `set()` hooks. Persistence normalization and data
+migration remain the separate CORE-10 responsibility.
 
 JSON-backed multiple values can opt into exact, portable membership queries:
 
