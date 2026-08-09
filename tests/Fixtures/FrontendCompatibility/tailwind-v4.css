@@ -1,0 +1,22 @@
+@import "tailwindcss" source(none);
+@import "./token-contract.css";
+
+@source "./representative.html";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+    --font-sans: var(--aura-font-sans);
+    --color-aura-primary: rgb(var(--aura-color-primary));
+    --color-aura-background: rgb(var(--aura-color-background));
+    --color-aura-panel: rgb(var(--aura-color-panel));
+    --color-aura-border: rgb(var(--aura-color-border));
+    --color-aura-text: rgb(var(--aura-color-text));
+    --color-aura-muted: rgb(var(--aura-color-muted));
+    --color-aura-success: rgb(var(--aura-color-success));
+    --color-aura-warning: rgb(var(--aura-color-warning));
+    --color-aura-danger: rgb(var(--aura-color-danger));
+    --color-primary-500: rgb(var(--primary-500));
+    --color-primary-600: rgb(var(--primary-600));
+    --color-sidebar-bg: rgb(var(--sidebar-bg));
+    --color-sidebar-text: rgb(var(--sidebar-text));
+}
