@@ -210,13 +210,24 @@ table, and PHP status field. It verifies their expected literal classes before
 copying them. Both compiler lanes scan that same source snapshot plus the
 gate-only semantic probe. The audited source snapshot contains five files and
 uses the fixed, machine-readable expectation in `source-baseline.json`.
-Audited source SHA-256: `a99851e8d838c985066d56a34d00d52fcad5c8fa755a6deab8a08a2abae7f560`.
-The digest includes each selected relative path and LF-normalized file content.
+Audited source SHA-256: `8b69df60182ad73ddfc9ae064bd1ffa7e5605fc4e5337d0e895d3a652df57190`.
+
+The `aura-source-records-v2-length-prefixed` canonicalization starts with a
+domain identifier and record count. Each manifest-ordered record contains the
+length-prefixed UTF-8 path, class count, every length-prefixed expected class,
+and length-prefixed exact file bytes. Lengths and counts are unsigned 64-bit
+big-endian integers. The manifest schema permits only `path` and `classes`, so
+no accepted metadata remains outside the digest. Source line endings are not
+normalized.
 
 Before either compiler runs, the gate compares the selected real-source digest
 to that committed baseline and checks this documented value for consistency.
 Each compiler lane repeats the fixed-baseline check. A self-test mutates a
 temporary copy of a selected source and proves the same check rejects drift.
+Additional regressions reproduce the old record-boundary ambiguity and prove
+the v2 digest separates it, then reject class value, count, and order mutations
+using otherwise valid real-source expectations. Unexpected manifest fields are
+rejected outright.
 Intentional selected-source content changes therefore require a reviewed
 baseline and documentation update; changing the selection also requires a
 manifest update.
@@ -247,12 +258,14 @@ and does not alter Aura's root lockfile or runtime dependencies.
 The same npm script also proves both unsupported boundaries. Compiling the v4
 entrypoint with Aura's v3 CLI exits `1` because v3 cannot resolve the v4
 `tailwindcss` import. Building a source-verified extract of Aura's v3
-entrypoint with the v4 Vite host exits `1` because `tailwindcss/base` is not a
-v4 style export:
+entrypoint with the v4 Vite host exits `1` because the legacy
+`tailwindcss/base`, `components`, and `utilities` subpaths are not v4 style
+exports. Vite resolves these imports in parallel, so any one can be reported
+first:
 
 ```text
 Error: Failed to find 'tailwindcss'
-"./base" is not exported under the conditions ["style", "production", "import"]
+"./<base|components|utilities>" is not exported under the conditions ["style", "production", "import"]
 ```
 
 These failures are why CORE-24 must use the runtime variable bridge and keep

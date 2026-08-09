@@ -1,6 +1,7 @@
 {
     "manifest": "source-files.json",
     "algorithm": "sha256",
-    "lineEndings": "lf",
-    "expectedDigest": "a99851e8d838c985066d56a34d00d52fcad5c8fa755a6deab8a08a2abae7f560"
+    "canonicalization": "aura-source-records-v2-length-prefixed",
+    "sourceBytes": "exact",
+    "expectedDigest": "8b69df60182ad73ddfc9ae064bd1ffa7e5605fc4e5337d0e895d3a652df57190"
 }
