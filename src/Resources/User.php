@@ -10,6 +10,7 @@ use Aura\Base\Traits\ProfileFields;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Cache\FailoverStore;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
@@ -119,6 +120,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     protected static array $searchable = ['name', 'email'];
 
     protected $table = 'users';
+
+    /** @var array<string, string> */
+    private static array $currentTeamProcessEpochs = [];
 
     // public static $showActionsAsButtons = true;
 
@@ -319,7 +323,21 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         string|int $userId,
         ?Connection $connection = null,
     ): string {
+        self::ensureCurrentTeamCacheStoreIsCoherent();
+
         $epochKey = self::currentTeamCacheEpochKey($userId, $connection);
+        $epoch = Cache::get($epochKey);
+
+        if (is_string($epoch) && $epoch !== '') {
+            unset(self::$currentTeamProcessEpochs[$epochKey]);
+
+            return $epoch;
+        }
+
+        if (array_key_exists($epochKey, self::$currentTeamProcessEpochs)) {
+            return self::$currentTeamProcessEpochs[$epochKey];
+        }
+
         $candidate = Str::random(40);
 
         Cache::add($epochKey, $candidate);
@@ -329,7 +347,13 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         if (! is_string($epoch) || $epoch === '') {
             Cache::forever($epochKey, $candidate);
 
-            return $candidate;
+            $epoch = Cache::get($epochKey);
+
+            if (! is_string($epoch) || $epoch === '') {
+                return self::$currentTeamProcessEpochs[$epochKey] = $candidate;
+            }
+
+            unset(self::$currentTeamProcessEpochs[$epochKey]);
         }
 
         return $epoch;
@@ -354,6 +378,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         Option::on($this->getConnection()->getName())->where('name', $option)->delete();
 
         Cache::forget($cacheKey);
+    }
+
+    public static function flushCurrentTeamCacheState(): void
+    {
+        self::$currentTeamProcessEpochs = [];
     }
 
     public function getAvatarUrlAttribute()
@@ -958,9 +987,18 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         string|int $userId,
         ?Connection $connection = null,
     ): string {
+        self::ensureCurrentTeamCacheStoreIsCoherent();
+
+        $epochKey = self::currentTeamCacheEpochKey($userId, $connection);
         $epoch = Str::random(40);
 
-        Cache::forever(self::currentTeamCacheEpochKey($userId, $connection), $epoch);
+        Cache::forever($epochKey, $epoch);
+
+        if (Cache::get($epochKey) === $epoch) {
+            unset(self::$currentTeamProcessEpochs[$epochKey]);
+        } else {
+            self::$currentTeamProcessEpochs[$epochKey] = $epoch;
+        }
 
         return $epoch;
     }
@@ -1125,6 +1163,15 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             "current_team_generation_user_{$userId}",
             $connection,
         );
+    }
+
+    private static function ensureCurrentTeamCacheStoreIsCoherent(): void
+    {
+        if (Cache::getStore() instanceof FailoverStore) {
+            throw new \LogicException(
+                'Failover cache stores are not supported for current-team cache epochs.',
+            );
+        }
     }
 
     private function isTeamOnOwnConnection(mixed $team): bool

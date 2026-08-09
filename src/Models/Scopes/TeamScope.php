@@ -321,7 +321,10 @@ class TeamScope implements Scope
             : $model->getConnection();
 
         if (self::hasActiveApplicationTransaction($connection)) {
-            return $connection->table('users')->where('id', $userId)->value('current_team_id');
+            return $connection->table('users')
+                ->useWritePdo()
+                ->where('id', $userId)
+                ->value('current_team_id');
         }
 
         $cacheKey = User::currentTeamCacheKey($userId, $connection);
@@ -337,7 +340,10 @@ class TeamScope implements Scope
         }
 
         // Direct database query to avoid triggering scopes.
-        $currentTeamId = $connection->table('users')->where('id', $userId)->value('current_team_id');
+        $currentTeamId = $connection->table('users')
+            ->useWritePdo()
+            ->where('id', $userId)
+            ->value('current_team_id');
 
         Cache::put($cacheKey, $currentTeamId ?? false, now()->addHour());
 

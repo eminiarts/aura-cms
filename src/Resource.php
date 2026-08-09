@@ -107,6 +107,9 @@ class Resource extends Model implements DefinesFields
      */
     private static int $globalWriteDepth = 0;
 
+    /** @var list<string> */
+    private static array $trustedDeleteConnections = [];
+
     /** @var list<array{connection: string, owner_id: int|string|null}> */
     private static array $trustedOwnerContexts = [];
 
@@ -322,6 +325,19 @@ class Resource extends Model implements DefinesFields
     }
 
     /**
+     * Delete this resource from trusted infrastructure on its bound connection.
+     *
+     * @return bool|null
+     */
+    public function deleteForSystem()
+    {
+        return static::withinTrustedDelete(
+            $this->getConnection(),
+            fn () => $this->delete(),
+        );
+    }
+
+    /**
      * Resolve or create one shared global row from trusted infrastructure.
      *
      * @param  array<string, mixed>  $attributes
@@ -347,6 +363,19 @@ class Resource extends Model implements DefinesFields
                 );
             }),
             $resource->getConnection(),
+        );
+    }
+
+    /**
+     * Force-delete this resource from trusted infrastructure on its bound connection.
+     *
+     * @return bool|null
+     */
+    public function forceDeleteForSystem()
+    {
+        return static::withinTrustedDelete(
+            $this->getConnection(),
+            fn () => $this->forceDelete(),
         );
     }
 
@@ -807,6 +836,22 @@ class Resource extends Model implements DefinesFields
         }
     }
 
+    /**
+     * Keep connection authorization active even when Eloquent events are muted.
+     *
+     * @param  string  $event
+     * @param  bool  $halt
+     * @return mixed
+     */
+    protected function fireModelEvent($event, $halt = true)
+    {
+        if ($event === 'deleting' || $event === 'forceDeleting') {
+            $this->ensureDeleteUsesAuthenticatedConnection();
+        }
+
+        return parent::fireModelEvent($event, $halt);
+    }
+
     protected static function hasTrustedOwnerContextForConnection(Connection $connection): bool
     {
         if (self::$trustedOwnerContexts === []) {
@@ -870,6 +915,25 @@ class Resource extends Model implements DefinesFields
     /**
      * @template TValue
      *
+     * @param  callable(): TValue  $callback
+     * @return TValue
+     */
+    final protected static function withinTrustedDelete(
+        Connection $connection,
+        callable $callback,
+    ): mixed {
+        self::$trustedDeleteConnections[] = User::connectionCacheIdentity($connection);
+
+        try {
+            return $callback();
+        } finally {
+            array_pop(self::$trustedDeleteConnections);
+        }
+    }
+
+    /**
+     * @template TValue
+     *
      * @param  array<string, mixed>  $attributes
      * @param  callable(): TValue  $callback
      * @return TValue
@@ -893,6 +957,29 @@ class Resource extends Model implements DefinesFields
             return $callback();
         } finally {
             array_pop(self::$trustedOwnerContexts);
+        }
+    }
+
+    private function ensureDeleteUsesAuthenticatedConnection(): void
+    {
+        $connectionIdentity = User::connectionCacheIdentity($this->getConnection());
+
+        if (self::$trustedDeleteConnections !== []
+            && self::$trustedDeleteConnections[array_key_last(self::$trustedDeleteConnections)] === $connectionIdentity) {
+            return;
+        }
+
+        $authenticatedUser = auth()->user();
+
+        if ($authenticatedUser === null) {
+            return;
+        }
+
+        if (! $authenticatedUser instanceof Model
+            || User::connectionCacheIdentity($authenticatedUser->getConnection()) !== $connectionIdentity) {
+            throw new \LogicException(
+                'Authenticated actors cannot delete resources on another database connection.',
+            );
         }
     }
 

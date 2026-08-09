@@ -7,6 +7,7 @@ use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\UserTeams;
 use Aura\Base\Mail\TeamInvitation as TeamInvitationMail;
+use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Permission;
@@ -18,6 +19,8 @@ use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Bus\Queueable;
+use Illuminate\Cache\NullStore;
+use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Connection;
@@ -1795,3 +1798,169 @@ it('survives an inner commit followed by outer rollback and a later committed sw
         ->and(Post::whereKey($postB->id)->exists())->toBeTrue()
         ->and(Cache::get(User::currentTeamCacheKey($user->id)))->toBe($teamB->id);
 });
+
+it('uses the write pdo for a cold current-team lookup after epoch rotation', function () {
+    $connection = currentTeamTenantConnection();
+    $user = seedCurrentTeamConnection($connection, 980000, 980010, 980011, 'Split PDO');
+    $readPdo = new PDO('sqlite::memory:');
+    $readPdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $readPdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, current_team_id INTEGER NULL)');
+    $readPdo->exec('INSERT INTO users (id, current_team_id) VALUES (980000, 980010)');
+
+    $connection->table('users')->where('id', $user->getKey())->update([
+        'current_team_id' => 980011,
+        'global_admin' => true,
+    ]);
+    $user->forceFill(['global_admin' => true]);
+    $connection->setReadPdo($readPdo);
+    Auth::setUser($user);
+    User::rotateCurrentTeamCacheEpoch($user->getKey(), $connection);
+    Aura::flushState();
+
+    expect(Post::on($connection->getName())
+        ->withoutGlobalScope(ScopedScope::class)
+        ->useWritePdo()
+        ->pluck('title')
+        ->all())
+        ->toBe(['Split PDO Other'])
+        ->and(Cache::get(User::currentTeamCacheKey($user->getKey(), $connection)))
+        ->toBe(980011);
+});
+
+it('fails closed for failover cache stores before a recovered primary can revive stale epochs', function () {
+    $originalCache = Cache::getFacadeRoot();
+
+    config([
+        'cache.stores.current_team_primary' => ['driver' => 'array'],
+        'cache.stores.current_team_fallback' => ['driver' => 'array'],
+        'cache.stores.current_team_failover' => [
+            'driver' => 'failover',
+            'stores' => ['current_team_primary', 'current_team_fallback'],
+        ],
+    ]);
+    $cacheManager = app('cache');
+    $failoverCache = $cacheManager->store('current_team_failover');
+    $primaryCache = $cacheManager->store('current_team_primary');
+    $fallbackCache = $cacheManager->store('current_team_fallback');
+    $epochKey = User::connectionScopedCacheKey(
+        'current_team_generation_user_980100',
+        DB::connection(),
+    );
+    $primaryCache->forever($epochKey, 'stale-primary-epoch');
+    $fallbackCache->forever($epochKey, 'authoritative-fallback-epoch');
+
+    try {
+        Cache::swap($failoverCache);
+
+        expect(fn () => User::currentTeamCacheEpoch(980100))
+            ->toThrow(LogicException::class, 'Failover cache stores are not supported for current-team cache epochs.');
+
+        expect(fn () => User::rotateCurrentTeamCacheEpoch(980100))
+            ->toThrow(LogicException::class, 'Failover cache stores are not supported for current-team cache epochs.')
+            ->and($primaryCache->get($epochKey))->toBe('stale-primary-epoch')
+            ->and($fallbackCache->get($epochKey))->toBe('authoritative-fallback-epoch');
+    } finally {
+        Cache::swap($originalCache);
+    }
+});
+
+it('keeps non-persisting cache epochs process-stable and team scope memoization bounded', function () {
+    $originalCache = Cache::getFacadeRoot();
+    $connection = currentTeamTenantConnection();
+    $user = seedCurrentTeamConnection($connection, 980200, 980210, 980211, 'Null Store');
+
+    try {
+        Cache::swap(new CacheRepository(new NullStore));
+        Aura::flushState();
+        Auth::setUser($user);
+
+        $cacheKeys = [];
+
+        for ($lookup = 0; $lookup < 1000; $lookup++) {
+            $cacheKeys[] = User::currentTeamCacheKey($user->getKey(), $connection);
+            Post::on($connection->getName())->useWritePdo()->count();
+        }
+
+        $teamScopeState = (new ReflectionClass(TeamScope::class))
+            ->getStaticPropertyValue('currentTeamIds');
+        $stableCacheKey = $cacheKeys[0];
+
+        expect(array_values(array_unique($cacheKeys)))->toHaveCount(1)
+            ->and($teamScopeState)->toHaveCount(1);
+
+        Aura::flushState();
+
+        expect(User::currentTeamCacheKey($user->getKey(), $connection))
+            ->not->toBe($stableCacheKey);
+    } finally {
+        Cache::swap($originalCache);
+    }
+});
+
+it('rejects direct cross-connection resource deletes before model events or cleanup', function (string $deleteMethod) {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedTeamListConnection($defaultConnection, 'Default Direct Delete');
+    $tenant = seedTeamListConnection($tenantConnection, 'Tenant Direct Delete');
+    $deletingEventFired = false;
+
+    Event::listen('eloquent.deleting: '.Team::class, function () use (&$deletingEventFired): void {
+        $deletingEventFired = true;
+    });
+    Auth::setUser($default['global_admin']);
+
+    expect(fn () => $tenant['team']->{$deleteMethod}())
+        ->toThrow(LogicException::class, 'Authenticated actors cannot delete resources on another database connection.')
+        ->and($deletingEventFired)->toBeFalse()
+        ->and($tenantConnection->table('teams')->where('id', $tenant['team']->getKey())->exists())->toBeTrue()
+        ->and($tenantConnection->table('user_role')->where('team_id', $tenant['team']->getKey())->exists())->toBeTrue();
+})->with([
+    'delete' => 'delete',
+    'quiet delete' => 'deleteQuietly',
+    'force delete' => 'forceDelete',
+    'quiet force delete' => 'forceDeleteQuietly',
+]);
+
+it('allows direct same-connection resource deletes', function (string $deleteMethod) {
+    $connection = currentTeamTenantConnection();
+    $tenant = seedTeamListConnection($connection, 'Same Connection Delete');
+
+    Auth::setUser($tenant['global_admin']);
+
+    expect($tenant['team']->{$deleteMethod}())->toBeTrue();
+
+    $teamQuery = $connection->table('teams')->where('id', $tenant['team']->getKey());
+
+    if (str_starts_with($deleteMethod, 'force')) {
+        expect($teamQuery->exists())->toBeFalse();
+    } else {
+        expect($teamQuery->whereNotNull('deleted_at')->exists())->toBeTrue();
+    }
+})->with([
+    'delete' => 'delete',
+    'quiet delete' => 'deleteQuietly',
+    'force delete' => 'forceDelete',
+    'quiet force delete' => 'forceDeleteQuietly',
+]);
+
+it('provides a narrow trusted-system bypass for a connection-bound resource delete', function (string $deleteMethod) {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedTeamListConnection($defaultConnection, 'Default System Delete');
+    $tenant = seedTeamListConnection($tenantConnection, 'Tenant System Delete');
+
+    Auth::setUser($default['global_admin']);
+
+    expect($tenant['team']->{$deleteMethod}())->toBeTrue();
+
+    $teamQuery = $tenantConnection->table('teams')->where('id', $tenant['team']->getKey());
+
+    if ($deleteMethod === 'forceDeleteForSystem') {
+        expect($teamQuery->exists())->toBeFalse();
+    } else {
+        expect($teamQuery->whereNotNull('deleted_at')->exists())->toBeTrue();
+    }
+})->with([
+    'delete' => 'deleteForSystem',
+    'force delete' => 'forceDeleteForSystem',
+]);

@@ -154,6 +154,7 @@ class Aura
         Resource::flushFieldCache();
         ScopedScope::flushState();
         TeamScope::flushState();
+        User::flushCurrentTeamCacheState();
         static::$userModel = User::class;
     }
 
