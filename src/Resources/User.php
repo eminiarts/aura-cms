@@ -129,6 +129,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             ],
             'impersonateAction' => [
                 'label' => 'Impersonate',
+                'ability' => 'update',
                 'icon-view' => 'aura::components.actions.impersonate',
                 'conditional_logic' => function () {
                     return auth()->user()?->isAuraGlobalAdmin();

@@ -2,8 +2,11 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Livewire\Attributes\Locked;
+
 trait SwitchView
 {
+    #[Locked]
     public $currentView;
 
     public function mountSwitchView()

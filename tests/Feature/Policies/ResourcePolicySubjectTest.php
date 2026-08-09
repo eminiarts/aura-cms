@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Policies\ResourcePolicy;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
@@ -32,6 +33,18 @@ class Core05SpecificResourcePolicy
     public function viewAny(User $user): bool
     {
         return $user->exists;
+    }
+}
+
+class Core05InheritedResourcePolicyWithBefore extends ResourcePolicy
+{
+    public function before(User $user, string $ability, mixed $subject, mixed $context = null): ?bool
+    {
+        if ($ability === 'create' && is_string($subject) && $context === 'deny') {
+            return false;
+        }
+
+        return null;
     }
 }
 
@@ -92,4 +105,14 @@ test('class subject normalization evaluates gate after callbacks once', function
 
     expect(Gate::forUser($user)->allows('viewAny', Core05PolicySubjectResource::class))->toBeTrue()
         ->and($evaluations)->toBe(1);
+});
+
+test('class subject normalization preserves an inherited host policy before hook arguments', function () {
+    $user = createSuperAdmin();
+    Gate::policy(Core05PolicySubjectResource::class, Core05InheritedResourcePolicyWithBefore::class);
+
+    expect(Gate::forUser($user)->allows('create', [Core05PolicySubjectResource::class, 'deny']))
+        ->toBeFalse()
+        ->and(Gate::forUser($user)->allows('create', [Core05PolicySubjectResource::class, 'allow']))
+        ->toBeTrue();
 });

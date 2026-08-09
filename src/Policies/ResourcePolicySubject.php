@@ -22,8 +22,6 @@ final class ResourcePolicySubject
         Resource|string $subject,
         array $arguments,
     ): mixed {
-        $arguments[0] = self::normalize($subject);
-
         if (is_callable([$policy, 'before'])) {
             $result = $policy->before($user, $ability, ...$arguments);
 
@@ -31,6 +29,8 @@ final class ResourcePolicySubject
                 return $result;
             }
         }
+
+        $arguments[0] = self::normalize($subject);
 
         return $policy->{$ability}($user, ...$arguments);
     }

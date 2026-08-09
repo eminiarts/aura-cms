@@ -4,6 +4,7 @@ namespace Aura\Base\Livewire\Table;
 
 use Aura\Base\Contracts\PreloadsTableDisplay;
 use Aura\Base\Contracts\ProvidesTableEagerLoad;
+use Aura\Base\Contracts\TableResource;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Traits\BulkActions;
 use Aura\Base\Livewire\Table\Traits\Filters;
@@ -15,7 +16,6 @@ use Aura\Base\Livewire\Table\Traits\Select;
 use Aura\Base\Livewire\Table\Traits\Settings;
 use Aura\Base\Livewire\Table\Traits\Sorting;
 use Aura\Base\Livewire\Table\Traits\SwitchView;
-use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Closure;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -64,6 +65,7 @@ class Table extends Component
      *
      * @var string
      */
+    #[Locked]
     public $field;
 
     /**
@@ -88,6 +90,7 @@ class Table extends Component
 
     public $loaded = false;
 
+    #[Locked]
     public $model;
 
     /**
@@ -95,8 +98,10 @@ class Table extends Component
      *
      * @var Model
      */
+    #[Locked]
     public $parent;
 
+    #[Locked]
     public $query;
 
     /**
@@ -139,26 +144,33 @@ class Table extends Component
             'id' => $this->mutationIdentifierRules(),
         ])->validate();
 
-        $record = $mutations->findRecord($this->model(), $data['id']);
-
         // return redirect to post view
         if ($data['action'] == 'view') {
+            $record = $mutations->findRecord(clone $this->mutationQuery(), $data['id']);
             $mutations->authorize($record, 'view');
 
             return redirect()->route('aura.'.$this->model()->getSlug().'.view', ['id' => $record->getKey()]);
         }
         // edit
         if ($data['action'] == 'edit') {
+            $record = $mutations->findRecord(clone $this->mutationQuery(), $data['id']);
             $mutations->authorize($record, 'update');
 
             return redirect()->route('aura.'.$this->model()->getSlug().'.edit', ['id' => $record->getKey()]);
         }
 
-        if (! $record instanceof Resource) {
+        $model = $this->model();
+
+        if (! $model instanceof TableResource) {
             abort(422, 'Table mutations require an Aura resource.');
         }
 
-        return $mutations->dispatchAction($record, $data['action'], (array) $record->getActions());
+        return $mutations->dispatchAction(
+            clone $this->mutationQuery(),
+            $data['id'],
+            $data['action'],
+            (array) $model->getActions(),
+        );
     }
 
     public function allTableRows()
@@ -330,7 +342,7 @@ class Table extends Component
     {
         $this->dispatch('openModal', $data['modal'], [
             'action' => $action,
-            'selected' => $this->selectedRowsQuery->pluck('id'),
+            'selected' => $this->getSelectedRowsQueryProperty()->pluck('id'),
             'model' => get_class($this->model),
         ]);
     }
@@ -495,9 +507,9 @@ class Table extends Component
             ],
         ])->validate();
 
-        $card = $mutations->findRecord($this->model(), $data['cardId']);
+        $card = $mutations->findRecord(clone $this->mutationQuery(forKanban: true), $data['cardId']);
 
-        if (! $card instanceof Resource) {
+        if (! $card instanceof TableResource) {
             abort(422, 'Kanban mutations require an Aura resource.');
         }
 
@@ -553,6 +565,25 @@ class Table extends Component
                 }
             },
         ];
+    }
+
+    /**
+     * Security scope for every table mutation.
+     *
+     * Includes model global scopes, resource indexQuery(), parent relationship
+     * constraints, declared dynamic queries, and Kanban constraints. Search,
+     * saved UI filters, and sorting are presentation-only and intentionally
+     * live in rowsQuery() instead.
+     */
+    protected function mutationQuery(bool $forKanban = false)
+    {
+        $query = $this->query();
+
+        if ($forKanban && $this->currentView !== 'kanban') {
+            $query = $this->applyKanbanQuery($query);
+        }
+
+        return $query;
     }
 
     /**

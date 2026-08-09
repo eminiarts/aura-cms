@@ -2,42 +2,50 @@
 
 namespace Aura\Base\Livewire\Table;
 
-use Aura\Base\Resource;
+use Aura\Base\Contracts\TableResource;
 use Illuminate\Contracts\Auth\Access\Gate;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Validation\ValidationException;
 use ReflectionMethod;
 
 final class TableMutationDispatcher
 {
+    private const BULK_MODE_COLLECTION = 'collection';
+
+    private const BULK_MODE_RECORD = 'record';
+
+    /** @var array<string, string> */
+    private const DEFAULT_ABILITIES = [
+        'delete' => 'delete',
+        'forceDelete' => 'forceDelete',
+        'restore' => 'restore',
+        'update' => 'update',
+    ];
+
     public function __construct(private readonly Gate $gate) {}
 
     public function abilityFor(string $action, mixed $definition = null): string
     {
         if (is_array($definition) && array_key_exists('ability', $definition)) {
-            if (! is_string($definition['ability']) || $definition['ability'] === '') {
+            if (
+                ! is_string($definition['ability'])
+                || preg_match('/\A[A-Za-z][A-Za-z0-9._:-]*\z/', $definition['ability']) !== 1
+            ) {
                 abort(422, 'The declared table action ability is invalid.');
             }
 
             return $definition['ability'];
         }
 
-        $normalizedAction = Str::lower($action);
-
-        if (str_contains($normalizedAction, 'forcedelete')) {
-            return 'forceDelete';
+        if (array_key_exists($action, self::DEFAULT_ABILITIES)) {
+            return self::DEFAULT_ABILITIES[$action];
         }
 
-        if (str_contains($normalizedAction, 'restore')) {
-            return 'restore';
-        }
-
-        if (str_contains($normalizedAction, 'delete') || str_contains($normalizedAction, 'trash')) {
-            return 'delete';
-        }
-
-        return 'update';
+        abort(422, 'Custom table actions must declare an ability.');
     }
 
     public function authorize(Model $record, string $ability): void
@@ -48,37 +56,94 @@ final class TableMutationDispatcher
     /**
      * @param  array<string, mixed>  $declaredActions
      */
-    public function dispatchAction(Model $record, string $action, array $declaredActions): mixed
-    {
-        if (! array_key_exists($action, $declaredActions)) {
-            abort(403, 'This table action is not allowed.');
+    public function dispatchAction(
+        Builder $scope,
+        int|string $id,
+        string $action,
+        array $declaredActions,
+    ): mixed {
+        $descriptor = $this->descriptor($action, $declaredActions);
+        $scope = $this->applyTrashedScope($scope, $descriptor);
+        $record = $this->findRecord($scope, $id);
+
+        if (! $record instanceof TableResource) {
+            abort(422, 'Table mutations require an Aura table resource.');
         }
 
-        $actionDefinition = $declaredActions[$action];
-        $this->authorize($record, $this->abilityFor($action, $actionDefinition));
+        $this->assertConditionAvailable($descriptor);
+        $this->mutationMethod($record, $action, self::BULK_MODE_RECORD);
+        $this->authorize($record, $descriptor['ability']);
 
-        $condition = is_array($actionDefinition) ? ($actionDefinition['conditional_logic'] ?? null) : null;
-
-        if ($condition !== null && (! is_callable($condition) || ! $condition())) {
-            abort(403, 'This table action is not available for the record.');
-        }
-
-        if (! method_exists($record, $action)) {
-            abort(422, 'The declared table action cannot be executed.');
-        }
-
-        $method = new ReflectionMethod($record, $action);
-
-        if (! $method->isPublic() || $method->isStatic() || $method->getNumberOfRequiredParameters() > 0) {
-            abort(422, 'The declared table action cannot be executed.');
-        }
-
-        return $record->{$action}();
+        return $record->getConnection()->transaction(fn (): mixed => $record->{$action}());
     }
 
-    public function findRecord(Model $resource, int|string $id): Model
+    /**
+     * Resolve, authorize, and execute one declared bulk mutation atomically.
+     *
+     * A dispatch is constrained to one Eloquent model query and therefore one
+     * database connection. External effects from custom handlers cannot be
+     * rolled back by the database transaction.
+     *
+     * @param  array<string, mixed>  $declaredActions
+     */
+    public function dispatchBulk(
+        Builder $scope,
+        string $action,
+        array $declaredActions,
+        mixed $selected,
+        bool $selectAll,
+        string $expectedMode,
+    ): mixed {
+        $descriptor = $this->descriptor($action, $declaredActions, bulk: true);
+
+        if ($descriptor['mode'] !== $expectedMode) {
+            abort(422, 'The declared bulk action execution mode is invalid.');
+        }
+
+        $scope = $this->applyTrashedScope($scope, $descriptor);
+        $records = $this->resolveExactSelection($scope, $selected, $selectAll);
+        $receiver = $records->first();
+
+        if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
+            abort(422, 'Bulk mutations require an Aura table resource.');
+        }
+
+        $this->assertConditionAvailable($descriptor);
+        $this->mutationMethod($receiver, $action, $descriptor['mode']);
+
+        $records->each(function (Model $record) use ($descriptor): void {
+            $this->authorize($record, $descriptor['ability']);
+        });
+
+        $connection = $receiver->getConnection();
+        $connectionName = $connection->getName();
+
+        $records->each(function (Model $record) use ($connectionName): void {
+            if ($record->getConnection()->getName() !== $connectionName) {
+                abort(422, 'Bulk mutations must use one database connection.');
+            }
+        });
+
+        $ids = $records->map(fn (Model $record): mixed => $record->getKey())->all();
+
+        return $connection->transaction(function () use ($action, $descriptor, $ids, $records, $receiver): mixed {
+            if ($descriptor['mode'] === self::BULK_MODE_COLLECTION) {
+                return $receiver->{$action}($ids);
+            }
+
+            $result = null;
+
+            foreach ($records as $record) {
+                $result = $record->{$action}();
+            }
+
+            return $result;
+        });
+    }
+
+    public function findRecord(Builder $scope, int|string $id): Model
     {
-        $record = $resource->newQuery()->find($id);
+        $record = $scope->whereKey($id)->first();
 
         if (! $record instanceof Model) {
             abort(404);
@@ -87,7 +152,7 @@ final class TableMutationDispatcher
         return $record;
     }
 
-    public function updateField(Resource $record, string $fieldSlug, mixed $value): void
+    public function updateField(Model&TableResource $record, string $fieldSlug, mixed $value): void
     {
         $this->authorize($record, 'update');
 
@@ -128,5 +193,161 @@ final class TableMutationDispatcher
 
         $record->setAttribute($fieldSlug, $matchedValue);
         $record->save();
+    }
+
+    /**
+     * @param  array{ability: string, conditional_logic: mixed, mode: 'collection'|'record', trashed: 'only'|'with'|null}  $descriptor
+     */
+    private function applyTrashedScope(Builder $scope, array $descriptor): Builder
+    {
+        if ($descriptor['trashed'] === null) {
+            return $scope;
+        }
+
+        if (! in_array(SoftDeletes::class, class_uses_recursive($scope->getModel()), true)) {
+            abort(422, 'The declared action requires a soft-deleting resource.');
+        }
+
+        $model = $scope->getModel();
+        $deletedAtConstant = $model::class.'::DELETED_AT';
+        $deletedAtColumn = defined($deletedAtConstant) ? constant($deletedAtConstant) : 'deleted_at';
+
+        if (! is_string($deletedAtColumn) || $deletedAtColumn === '') {
+            abort(422, 'The soft-delete column declaration is invalid.');
+        }
+
+        $scope->withoutGlobalScope(SoftDeletingScope::class);
+
+        return $descriptor['trashed'] === 'only'
+            ? $scope->whereNotNull($model->qualifyColumn($deletedAtColumn))
+            : $scope;
+    }
+
+    /**
+     * @param  array{ability: string, conditional_logic: mixed, mode: 'collection'|'record', trashed: 'only'|'with'|null}  $descriptor
+     */
+    private function assertConditionAvailable(array $descriptor): void
+    {
+        $condition = $descriptor['conditional_logic'];
+
+        if ($condition !== null && (! is_callable($condition) || ! $condition())) {
+            abort(403, 'This table action is not available for the record.');
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $declaredActions
+     * @return array{ability: string, conditional_logic: mixed, mode: 'collection'|'record', trashed: 'only'|'with'|null}
+     */
+    private function descriptor(string $action, array $declaredActions, bool $bulk = false): array
+    {
+        if (! array_key_exists($action, $declaredActions)) {
+            abort(403, $bulk ? 'This bulk action is not allowed.' : 'This table action is not allowed.');
+        }
+
+        $definition = $declaredActions[$action];
+
+        if (! is_array($definition) && ! is_string($definition)) {
+            abort(422, 'The declared table action is invalid.');
+        }
+
+        $mode = $bulk && is_array($definition) && array_key_exists('method', $definition)
+            ? $definition['method']
+            : self::BULK_MODE_RECORD;
+
+        if (! is_string($mode) || ! in_array($mode, [self::BULK_MODE_COLLECTION, self::BULK_MODE_RECORD], true)) {
+            abort(422, 'The declared bulk action execution mode is invalid.');
+        }
+
+        $ability = $this->abilityFor($action, $definition);
+        $trashed = is_array($definition) ? ($definition['trashed'] ?? null) : null;
+
+        if ($trashed !== null && ! in_array($trashed, ['only', 'with'], true)) {
+            abort(422, 'The declared trashed-record scope is invalid.');
+        }
+
+        if ($trashed !== null && ! in_array($ability, ['forceDelete', 'restore'], true)) {
+            abort(422, 'Only restore and force-delete actions may include trashed records.');
+        }
+
+        return [
+            'ability' => $ability,
+            'conditional_logic' => is_array($definition) ? ($definition['conditional_logic'] ?? null) : null,
+            'mode' => $mode,
+            'trashed' => $trashed,
+        ];
+    }
+
+    private function mutationMethod(Model $receiver, string $action, string $mode): ReflectionMethod
+    {
+        if (! method_exists($receiver, $action)) {
+            abort(422, 'The declared table action cannot be executed.');
+        }
+
+        $method = new ReflectionMethod($receiver, $action);
+        $validParameterCount = $mode === self::BULK_MODE_COLLECTION
+            ? $method->getNumberOfParameters() === 1
+            : $method->getNumberOfRequiredParameters() === 0;
+
+        if (! $method->isPublic() || $method->isStatic() || ! $validParameterCount) {
+            abort(422, 'The declared table action cannot be executed.');
+        }
+
+        return $method;
+    }
+
+    /**
+     * @return Collection<int, Model>
+     */
+    private function resolveExactSelection(Builder $scope, mixed $selected, bool $selectAll): Collection
+    {
+        if ($selectAll) {
+            $records = $scope->get();
+
+            if ($records->isEmpty()) {
+                throw ValidationException::withMessages([
+                    'selected' => 'Select at least one record.',
+                ]);
+            }
+
+            return $records;
+        }
+
+        if (! is_array($selected)) {
+            throw ValidationException::withMessages([
+                'selected' => 'The selected records are invalid.',
+            ]);
+        }
+
+        $normalized = [];
+
+        foreach ($selected as $id) {
+            if ((! is_int($id) && ! is_string($id)) || (is_string($id) && $id === '')) {
+                throw ValidationException::withMessages([
+                    'selected' => 'The selected records are invalid.',
+                ]);
+            }
+
+            $normalized[(string) $id] = $id;
+        }
+
+        if ($normalized === []) {
+            throw ValidationException::withMessages([
+                'selected' => 'Select at least one record.',
+            ]);
+        }
+
+        $records = $scope->whereKey(array_values($normalized))->get();
+        $resolvedKeys = $records
+            ->mapWithKeys(fn (Model $record): array => [(string) $record->getKey() => true])
+            ->all();
+
+        if (array_diff_key($normalized, $resolvedKeys) !== [] || count($normalized) !== count($resolvedKeys)) {
+            throw ValidationException::withMessages([
+                'selected' => 'The selected records are invalid.',
+            ]);
+        }
+
+        return $records;
     }
 }

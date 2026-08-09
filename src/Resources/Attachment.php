@@ -29,6 +29,7 @@ class Attachment extends Resource
     public array $actions = [
         'deleteAttachment' => [
             'label' => 'Delete',
+            'ability' => 'delete',
             'icon-view' => 'aura::components.actions.trash',
             'class' => 'hover:text-red-700 text-red-500 font-bold',
             'confirm' => true,
@@ -42,6 +43,7 @@ class Attachment extends Resource
     public array $bulkActions = [
         'deleteSelected' => [
             'label' => 'Delete',
+            'ability' => 'delete',
             'method' => 'collection',
         ],
     ];
