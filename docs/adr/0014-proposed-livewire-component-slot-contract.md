@@ -8,127 +8,220 @@ component-slot contract:
 
 | Stable slot | Aura default | Host config key | Private Livewire transport ID |
 |---|---|---|---|
-| `global-search` | `Aura\Base\Livewire\GlobalSearch` | `aura.component-slots.global-search` | `aura.slot.global-search` |
-| `media-manager` | `Aura\Base\Livewire\MediaManager` | `aura.component-slots.media-manager` | `aura.slot.media-manager` |
+| `global-search` | `Aura\Base\Livewire\GlobalSearch` | `aura.component-slots.global-search` | `aura-slot-5d08acbafc1799908d00c98ba128984f725d8bc43d13679c7689c9e24e2c107c` |
+| `media-manager` | `Aura\Base\Livewire\MediaManager` | `aura.component-slots.media-manager` | `aura-slot-f16ee9c2b47b1df672e85903a69ffc98066ccd885e96e5f18536c737f00c5a88` |
 
 The stable names, config keys, registration and resolution rules, mount inputs,
 required events, and layout/authorization responsibilities below are the public
-contract. The `aura.slot.*` IDs are reserved implementation details: Aura-owned
-views use them, but applications and plugins register against the stable slot
-names and must not register or mount the transport IDs directly.
+contract. The long `aura-slot-*` IDs are fixed SHA-256-derived, non-namespaced
+implementation identifiers. Aura-owned views use them, but applications and
+plugins register against stable slot names and must not register or mount the
+transport IDs directly.
 
-Implementation remains blocked until this contract is approved. In particular,
-the existing documentation must not advertise the proposed keys or registration
-method as available before the runtime and its tests land.
+Implementation remains blocked until this contract is approved. The registry
+must not ship until Aura's three affected defaults also pass the conformance and
+authorization prerequisites below. Existing documentation must not advertise the
+proposed keys or registration method before the runtime and tests land.
+
+## Correct Livewire 4 baseline
+
+Aura does **not** register a Livewire class or view namespace named `aura`.
+`AuraServiceProvider::bootLivewireComponents()` installs a
+`resolveMissingComponent` callback whose map supplies `aura::*` names. In
+Livewire 4.3.5, the Finder first checks a registered namespace; because Aura has
+none, the Factory reaches that callback, adds the returned class to the Finder,
+and caches the resolved name/class pair.
+
+Consequently, `aura.components.media-manager` works today: its value is placed in
+the missing-resolver map for both `aura::media-manager` and the conventional dot
+name. CORE-20 must preserve that host override. The actual gap is deterministic
+plugin participation: a plugin calling `Livewire::component()` or adding another
+missing resolver competes through provider/resolver order, has no provenance or
+conflict diagnostics, and can be masked by the Factory's first-resolution cache.
 
 ## Why the boundary is this small
 
-Livewire 4.3.5 resolves a name containing `::` through its registered class
-namespace before consulting explicitly registered class components. Therefore
-`Livewire::component('aura::global-search', CustomSearch::class)` does not replace
-`Aura\Base\Livewire\GlobalSearch`; the same rule affects every physical
-`aura::*` class. Aura's missing-component resolver runs even later and cannot
-change that result.
-
-This does not make every Aura component a suitable public replacement surface.
-The source inventory shows only two current seams that need the new contract:
-
-- Global search is a documented replacement use case and currently requires a
-  published layout workaround.
-- Media manager already has a documented `aura.components.media-manager`
-  replacement key, but Aura mounts `aura::media-manager`, so the physical Aura
-  class can win before that configured class is consulted.
-
-The other surfaces either already have a working, narrower extension mechanism
-or carry a substantially larger state/security contract. Exposing them now
-would turn implementation details into permanent API without a current use case.
+- Global search is the requested package-level replacement surface and has no
+  equivalent host/plugin arbitration contract today.
+- Media manager already has a working host-only config override. It becomes a
+  slot so a host and enabled plugins can participate with deterministic
+  precedence while the existing host behavior remains compatible.
+- The other surfaces either have a narrower working extension mechanism or carry
+  a substantially larger state/security contract. Exposing them would freeze
+  implementation details without a present use case.
 
 ## Surface inventory
 
 | Surface | Current seam and runtime coupling | CORE-20 decision |
 |---|---|---|
-| Global search | The app layout mounts `aura::global-search` when `aura.features.global_search` is enabled. It receives no mount data and its overlay consumes the browser `search` event emitted by the shell. Search results require per-resource authorization and tenant scoping. | Add `global-search`. |
-| Media manager | The media uploader emits `openModal` for `aura::media-manager` with the target model, field slug, and selected IDs. The modal host adds modal attributes. Confirmation emits `updateField`. The existing config replacement is bypassed by namespaced resolution. | Add `media-manager`. |
-| Dashboard, profile, settings | `routes/web.php` passes `aura.components.dashboard`, `profile`, and `settings` directly as full-page route actions. These replacements do not depend on Livewire name lookup. | Keep the existing direct config API; do not duplicate it as slots. |
+| Global search | The app layout mounts `aura::global-search` behind `aura.features.global_search`. It receives no mount data and its overlay consumes the browser `search` event. Results require resource, record, destination, and current-team authorization. | Add `global-search`; harden the Aura default before release. |
+| Media manager | The existing `aura.components.media-manager` value is returned by Aura's missing resolver. The uploader opens `aura::media-manager` with owner/field/selection data; the modal host adds attributes; confirmation broadcasts `updateField`. | Add `media-manager` for deterministic plugin precedence, preserve the legacy host key, and harden the owner/event boundary before release. |
+| Dashboard, profile, settings | `routes/web.php` passes their `aura.components.*` values directly as full-page route actions. | Keep the direct config API; do not duplicate it as slots. |
 | Resource index/create/edit/view pages | Each Resource exposes `indexComponent()`, `createComponent()`, `editComponent()`, and `viewComponent()` and routes call those FQCNs directly. | Keep the resource hooks; no global slots. |
-| Navigation | Mounted once in the authenticated shell; reads user/team preferences, exposes sidebar state/actions, and emits `NavigationMounted`. Replacing it would freeze a broad preference, navigation, and authorization contract. | Exclude. Continue using resource navigation declarations, hooks, and published views. |
-| Notifications | Mounted behind a feature flag and coupled to the `notifications` slide-over key, `openSlideOver`, `activate()`, authenticated notification relations, and mutation actions. | Exclude until a dedicated notification-provider design exists. |
-| Modal host | Owns the `openModal`/`closeModal` event protocol, modal stack identity, dynamic child resolution, sizing, persistence, and slide-over behavior for every modal. | Exclude. It is infrastructure, not a leaf replacement. |
-| Layout and guest navigation | Blade components/views are configurable or publishable and are not interchangeable Livewire leaf components. | Keep the existing view/layout seams. |
-| Tables, fields, uploaders, attachment details, resource editor, auth/team components | Internal components with parent/property/event coupling. Fields already have a component field type and resources have page hooks. | Exclude. |
-| Widgets and record-page regions | Multi-contributor, ordered, authorized composition rather than one-for-one replacement. CORE-25 and CORE-27 define those contracts separately. | Reserve for those tasks; do not make this registry mergeable. |
+| Navigation | Reads user/team preferences and exposes broad shell state/actions. | Exclude; retain resource navigation declarations, hooks, and published views. |
+| Notifications | Coupled to the notifications slide-over, authenticated relations, and mutation actions. | Exclude pending a dedicated provider contract. |
+| Modal host | Owns dynamic child resolution, stack identity, sizing, persistence, and slide-over behavior for every modal. | Exclude; it is infrastructure, not a leaf replacement. |
+| Layout and guest navigation | Blade components/views are configurable or publishable, not interchangeable Livewire leaves. | Keep existing seams. |
+| Tables, fields, uploader, attachment details, resource editor, auth/team components | Internal parent/property/event coupling. Fields and Resource pages already have extension hooks. | Exclude. `MediaUploader` is hardened as supporting infrastructure, not exposed as a third slot. |
+| Widgets and record-page regions | Multi-contributor, ordered composition belongs to CORE-25/CORE-27. | Reserve for those tasks; slots remain one-for-one. |
 
-## Accepted component type
+## Accepted component type and exact boot validation
 
-Both host and plugin candidates must be PHP class strings. A candidate must:
+Host and plugin candidates are PHP class strings only. Aliases, objects,
+closures, Blade names, and Volt paths are rejected. Every declaration is
+validated, including shadowed candidates; an invalid declaration never falls
+through to another layer. Aura's two defaults must pass the same structural
+validator before release. Every failure names the slot, source (`host`, Composer
+package, or `aura`), candidate class/value, and violated requirement.
 
-- exist at application boot;
-- be concrete and instantiable;
-- extend `Livewire\Component`; and
-- accept the named mount inputs defined for its slot, using Livewire's supported
-  public-property or `mount()` parameter binding.
+For each candidate, boot-time validation must prove all of the following:
 
-Livewire aliases, component instances, closures, Blade view names, and Volt file
-paths are rejected. A bad winning candidate fails application boot with a message
-that names the slot, source, class, and violated requirement. Aura must not
-silently fall through to a lower-precedence candidate.
+1. Trim one optional leading `\`, autoload the class, and require
+   `ReflectionClass::getName()` to equal that canonical, case-correct FQCN.
+2. Require a class—not an interface, trait, enum, or anonymous object—that extends
+   `Livewire\Component`, is non-abstract, and is instantiable.
+3. Require no constructor or a constructor with zero required parameters.
+   Livewire's Factory performs `new $class` and does not constructor-inject.
+4. If `mount()` exists, require it to be public and non-static. For every named
+   slot input, require either a writable public, non-static, non-readonly property
+   declared on the candidate or an ancestor below `Livewire\Component`, or a
+   `mount()` parameter with the same name. If both exist, both must accept the
+   input type. Untyped and `mixed` accept the contract; nullable, union, and
+   intersection types accept it only when every value the slot may supply is
+   valid for that declaration.
+5. Reject any other required `mount()` parameter that is builtin, enum,
+   `UrlRoutable`, union/intersection, or otherwise expects caller data. For an
+   extra named non-builtin dependency, mirror Laravel's `BoundMethod`: use its
+   default only when available and the type is not container-bound; otherwise
+   require `Container::make()` to succeed during validation. An unbound required
+   interface or failed construction fails boot. Other extra parameters must be
+   optional or variadic, so Aura never invents caller data.
+6. If `modalClasses` exists for `media-manager`, require exactly a public static
+   method with zero parameters and declared return type `string`. Invoke it
+   once during validation and require a non-empty value of at most 512 bytes with
+   no ASCII control characters. Absence uses Aura's default modal width.
 
-There is no marker interface in V1. Such an interface could prove only nominal
-membership, not the browser-event, authorization, or layout behavior that makes
-the component compatible. Slot-specific reflection checks plus render/event
-contract tests provide useful validation without creating a hollow second API.
+Type compatibility for supplied values is exact:
+
+| Input | Values Aura may supply | Compatible named types |
+|---|---|---|
+| `model` | canonical Resource class string | `string`, `mixed`, or a union containing `string` |
+| `slug` | non-empty field slug string | `string`, `mixed`, or a union containing `string` |
+| `selected` | `list<int|string>` or `null` | a type accepting both `array` and `null`, or `mixed` |
+| `ownerToken` | non-empty opaque string | `string`, `mixed`, or a union containing `string` |
+| `modalAttributes` | the array shape below | `array`, `iterable`, `mixed`, or a union containing one of them |
+
+These reflection checks establish only mountability. They cannot prove rendered
+DOM, event behavior, or authorization, so the conformance/security suite remains
+a release gate for Aura defaults and a required certification suite for third-
+party candidates.
+
+There is no marker interface in V1. Nominal membership would not prove the
+behavior that matters and would duplicate the concrete checks above.
 
 ## Slot contracts
 
 ### `global-search`
 
-- **Mount inputs:** none. A `mount()` hook may use container injection or optional
-  parameters, but it may not require application-supplied scalar data.
+- **Mount inputs:** none. `mount()` may use resolvable container injection or
+  optional parameters; it may not require caller-supplied data.
 - **Inbound event:** consume the bubbling browser `search` event with no required
   payload. Aura's shell owns keyboard/button dispatch; the component owns overlay
   open/close and focus behavior.
 - **Outbound events:** none required.
-- **Layout:** render one inline Livewire root suitable for one singleton mount in
-  `aura::components.layout.app`; do not apply a full-page Livewire layout. Aura
-  mounts the winner only when `aura.features.global_search` is enabled.
-- **Authorization:** the Aura admin route middleware supplies authentication, but
-  the component must authorize every searchable resource and destination in the
-  current user/team context. The slot registry does not authorize results for a
-  replacement.
+- **Layout:** render one inline Livewire root for one singleton mount in
+  `aura::components.layout.app`; never apply a full-page layout. Aura mounts the
+  winner only while `aura.features.global_search` is enabled.
+- **Authorization:** require an authenticated current actor on initial mount and
+  every hydration. Before any resource query, authorize `viewAny` and apply the
+  current-team visibility boundary. Before emitting every result/destination,
+  authorize `view` on that exact freshly loaded record. A replacement may be
+  stricter, never weaker; route or Livewire persistent middleware is defense in
+  depth, not the authorization implementation.
 
-Aura does not promise the default component's public properties, result shape,
-bookmarks, DOM, CSS classes, or Alpine implementation as part of this slot.
+Aura does not promise the default component's properties, result shape,
+bookmarks, DOM, CSS, or Alpine implementation as part of this slot.
 
 ### `media-manager`
 
 - **Named mount inputs:**
-  - `model`: a `class-string<Aura\Base\Resource>` for the form owner;
-  - `slug`: the target field slug;
-  - `selected`: a list of integer or string attachment IDs, or `null` for an
-    empty field; and
-  - `modalAttributes`: an array containing at least `persistent: bool`,
-    `modalClasses: string`, and `slideOver: bool`, supplied by Aura's modal host.
-- **Required outbound event:** after confirmation, dispatch the Livewire event
-  `updateField` with the named argument
-  `data: ['slug' => string, 'value' => list<string>]`.
+  - `model`: canonical `class-string<Aura\Base\Resource>` for the form owner;
+  - `slug`: target field slug;
+  - `selected`: `list<int|string>|null`;
+  - `ownerToken`: Aura's authenticated opaque owner token described below; and
+  - `modalAttributes`: at least `persistent: bool`, `modalClasses: string`, and
+    `slideOver: bool`, supplied by Aura's modal host.
+- **Required outbound event:** after successful validation and authorization,
+  dispatch `updateField` with named argument
+  `data: ['ownerToken' => string, 'slug' => string, 'value' => list<string>]`.
 - **Other events:** `selectedRows`, `tableMounted`, `selection-changed`,
-  `media-uploaded`, and `media-manager-selected` are implementation details of
-  the current table/uploader composition, not slot requirements.
-- **Layout:** render one inline root inside Aura's modal panel; do not apply a
-  full-page layout. If the class has a public static `modalClasses(): string`,
-  Aura may use it; otherwise the slot default width is used. Confirmation must
-  complete the `updateField` round trip before closing the dialog.
-- **Authorization:** treat all mount/event values as untrusted. The component must
-  validate the resource class and field, honor current team scopes, authorize
-  attachment visibility and every mutation/upload, and never widen access merely
-  because the request passed through the admin middleware.
+  `media-uploaded`, and `media-manager-selected` remain implementation details.
+- **Layout:** render one inline root inside Aura's modal panel. Confirmation must
+  complete the targeted `updateField` round trip before closing.
+- **Authorization:** treat every mount/event value as untrusted. Resolve the token
+  to fresh server state, require `model` and `slug` to match it, authorize the
+  owner action, enforce current-team attachment visibility, and authorize every
+  attachment view or create operation. Admin middleware alone is insufficient.
 
-Aura does not promise the built-in attachment table, uploader, selection-sync
-events, child component tree, DOM, or CSS as part of this slot.
+Aura does not promise the built-in attachment table/uploader, child tree, DOM,
+CSS, or selection-sync events as part of this slot.
+
+## Opaque media owner token
+
+Slug-only global broadcasts are not safe when two forms contain the same field
+slug. CORE-20 therefore includes a token broker and changes Aura's default media
+event path before exposing `media-manager` as a slot.
+
+The owner component issues one cryptographically authenticated and encrypted,
+base64url token per mounted media field. The payload binds a 256-bit random nonce,
+the owner Livewire component ID, canonical Resource class, persisted key or
+`null`, action (`create` or `update`), field slug, authenticated user identifier,
+and current-team identifier. Consumers treat the token as opaque. Possession is
+not authorization: the broker must verify integrity and actor/team binding, then
+the component reloads and authorizes the represented state.
+
+- For `create`, authorize `create` on the owner Resource before accepting field
+  state. For `update`, reload the exact owner through current-team visibility and
+  authorize `update` on the record.
+- The owner keeps a digest of its expected token in a Livewire `#[Locked]`
+  property. Its `updateField` listener compares the presented token digest in
+  constant time, verifies the matching slug, re-resolves the owner context,
+  reauthorizes, validates the attachment ID list, and ignores every event for
+  another token. The locked property is tamper-resistant component state, not a
+  substitute for verifying and authorizing the token again.
+- Media manager requires `viewAny` for Attachment, scopes the listing to the
+  current team, authorizes `view` on every displayed, preselected, and confirmed
+  attachment, and rejects foreign/missing IDs rather than filtering silently.
+- Media uploader performs those same read checks. Before storing bytes or
+  creating a row it also authorizes `create` for Attachment and the token's owner
+  action; denial leaves no stored file and no database row. Standalone library
+  upload receives an Aura-issued library token with the same actor/team binding.
+
+The token broker and locked owner-listener behavior are Aura infrastructure, not
+optional responsibilities that a replacement may bypass. A legacy custom media
+manager must accept/echo `ownerToken` and pass the new conformance suite. A class
+that cannot accept `ownerToken` fails structural boot validation; a class that
+accepts it but still emits the former slug-only event fails conformance. Both
+produce an actionable migration failure, and no insecure fallback is retained.
+
+## Default-component release prerequisite
+
+The current registry proposal must not imply that existing defaults already meet
+the new contract. CORE-20 cannot be released until runtime hardening and tests
+prove:
+
+- Aura `GlobalSearch`: authenticated mount/hydration, `viewAny` before querying,
+  current-team isolation, per-record `view`, and authorized destinations.
+- Aura `MediaManager`: verified owner token/context, owner `create` or `update`,
+  Attachment `viewAny`/`view`, scoped selected IDs, and targeted confirmation.
+- Aura `MediaUploader`: the same owner/read checks plus Attachment `create` before
+  storage or persistence, with no denied/orphaned side effects.
+
+This prerequisite applies even when no host or plugin replacement is configured.
 
 ## Registration and deterministic resolution
 
-The host config is a map whose shipped values are `null`, not Aura's defaults:
+The host config ships with `null` values, not default classes:
 
 ```php
 'component-slots' => [
@@ -137,12 +230,10 @@ The host config is a map whose shipped values are `null`, not Aura's defaults:
 ],
 ```
 
-A non-null value is an explicit host selection. Keeping defaults outside this
-map is necessary: otherwise a package default is indistinguishable from a host
-that deliberately selected the default, and a plugin candidate could never win.
+Non-null means an explicit host choice. Defaults stay outside the map so a
+package default is distinguishable from a host deliberately selecting it.
 
-An enabled plugin registers candidates during its non-deferred service
-provider's `boot()` method:
+An enabled plugin declares candidates from its non-deferred provider's `boot()`:
 
 ```php
 Aura::registerComponentSlots(
@@ -153,135 +244,191 @@ Aura::registerComponentSlots(
 );
 ```
 
-`source` is the plugin's lowercase Composer package name. The proposed public
-method has the signature
-`registerComponentSlots(string $source, array $slots): void`, where `$slots` is
-an array from stable slot name to component class string. Registration does not
-itself resolve or register a Livewire alias.
+`source` is the lowercase Composer package name. The public signature is
+`registerComponentSlots(string $source, array $slots): void`; `$slots` maps stable
+slot names to class strings. Registration only records declarations.
 
 For each slot, resolution is:
 
-1. a non-null host value in `aura.component-slots`;
+1. non-null host value in `aura.component-slots` (or the adapted legacy media
+   host value below);
 2. the single distinct valid plugin candidate;
 3. Aura's internal default.
 
-This is value-based precedence, never service-provider order. All declarations
-are collected, sorted by source for diagnostics, validated, and frozen from an
-`Application::booted` callback after every provider has booted. Registration or
-mutation after freeze throws. Resolution is unavailable during provider boot;
-providers register declarations there and normal requests resolve after boot.
+This is value precedence, never provider order. The registry has three explicit
+states: `collecting`, `finalizing`, and `finalized`. Declarations are accepted only
+while collecting and sorted by source for diagnostics. An
+`Application::booted` callback transitions to finalizing after providers have
+booted, validates/selects/registers the winners, then transitions to finalized.
+Public winner resolution before finalized, and every declaration or mutation
+after collecting, throws a specific exception.
 
 ### Duplicates and conflicts
 
-- The same source registering the same slot/class again is idempotent.
-- The same source registering two different classes for one slot is an error.
-- Different sources registering the same class for one slot collapse to one
-  distinct candidate.
-- Different sources registering different classes are ambiguous and fail boot
-  unless a valid host selection exists. The host selection deliberately resolves
-  that ambiguity and all shadowed candidates remain visible in diagnostics.
-- An unknown slot or invalid source/class fails boot even when a higher layer
-  would otherwise win.
-- No CORE-20 slot is mergeable. A slot always resolves to one class. Ordered
-  panels, widgets, actions, and other multi-contributor extension points require
-  their own definition and conflict rules.
+- Same source + slot + class is idempotent.
+- Same source registering two classes for one slot is an error.
+- Different sources registering the same class collapse to one distinct
+  candidate while retaining all sources in diagnostics.
+- Different plugin classes are ambiguous and fail boot unless a valid host choice
+  wins; shadowed candidates remain visible in diagnostics.
+- Unknown slots, malformed sources, and invalid classes fail boot even when
+  shadowed by a higher-precedence value.
+- Slots are never mergeable. Ordered panels/widgets/actions need their own API.
 
-## Livewire integration boundary
+## Collision-safe Livewire integration
 
-After freezing, Aura registers each winner once under its reserved,
-non-namespaced `aura.slot.*` transport ID, then Aura-owned layouts/emitters mount
-that ID. Livewire 4 checks explicit registrations for these IDs, so this path
-does not depend on provider order, namespaced convention lookup, or
-`resolveMissingComponent`.
+The two transport IDs are full SHA-256 derivations of
+`eminiarts/aura-cms|component-slot:v1|<slot>`. They contain no `::`, cannot be
+selected through config, and are improbable conventional application names.
+Collision resistance reduces accidents; it does not replace detection.
 
-Mounting only the FQCN is not the chosen transport. Livewire normalizes a class
-back to a registered alias when possible; an old explicit `aura::*` registration
-could therefore put the namespaced ID back into the component snapshot and
-reintroduce the same resolver bug on the next request. A reserved explicit
-non-namespaced ID keeps initial mount and hydration on one deterministic path.
+Aura must finalize in this order:
 
-The existing `aura::*` aliases remain compatibility names for Aura's concrete
-components, not override hooks. Directly registering over them is unsupported and
-must be removed from the customization documentation when implementation lands.
+1. Transition from collecting to finalizing, resolve and structurally validate
+   every declaration, select each winner, and freeze that provisional winner map.
+2. Before registering anything, inspect Livewire's current Finder and Factory for
+   each transport ID and the two compatibility aliases. Snapshot the raw explicit
+   class/view registrations, class/view namespaces, locations, resolver list, and
+   Factory cache; run Finder's non-mutating conventional and single-/multi-file
+   discovery; and invoke each pre-existing non-Aura missing resolver directly for
+   the normalized identifier without asking the Factory to resolve or cache it.
+   Detect every explicit, conventional, discoverable, resolver, already-resolved,
+   and cache claim. Aura's known resolver is excluded by identity only. Any
+   other claim fails boot with identifier, collision kind, and resolved target;
+   even a claim for the same class is not silently adopted.
+3. Register `Livewire::component($transportId, $winner)` exactly once.
+4. Immediately resolve the ID through Livewire's Factory and assert both the
+   normalized name and canonical class equal the expected pair. A mismatch fails
+   boot; the successful resolution intentionally pins the Factory cache.
+5. While finalizing, allow only Aura's own missing resolver to read the frozen
+   provisional map. Prime `aura::global-search` and `aura::media-manager` through
+   normal Factory resolution and assert each resolves to the same final winner.
+   Then transition to finalized. Any exception aborts application boot; there is
+   no partially usable registry. Neither preflight nor assertion may delete,
+   overwrite, or reorder a third-party registration or resolver.
+
+Livewire 4.3 has no public API that exposes all Finder registrations and Factory
+cache entries. The implementation therefore needs one narrow, read-only,
+version-tested collision inspector. If the installed Livewire version cannot be
+inspected completely, Aura fails boot rather than attempting best-effort
+registration. Normal resolution is still exercised after the complete preflight
+to assert the post-registration result; it is not the collision detector.
+
+Aura must continue to register **no** Livewire namespace named `aura`. Its missing
+resolver becomes dynamic for the two slot aliases: while collecting it rejects
+early resolution, while finalizing it serves only the internal assertion from the
+frozen provisional map, and after finalization it returns the frozen winner. All
+other existing map entries retain current behavior.
+
+Aura-owned layouts and modal emitters switch to the transport IDs. Both old
+aliases remain supported through the next major and track the **final winner**—
+host, plugin, or Aura default—on initial mount and hydration. This is the safest
+compatibility rule because published views and existing callers keep addressing
+the same semantic surface. The aliases are compatibility names, not plugin
+registration hooks; direct `Livewire::component('aura::*', ...)` remains
+unsupported and a detected pre-finalization claim fails boot.
+
+The high-entropy IDs and pinned Factory cache make an accidental post-finalize
+overwrite ineffective in the running container. Calls through Aura's registry
+after finalization always throw. Direct mutation of Livewire internals after
+application boot is outside the supported extension contract and must never be
+used as a fallback.
 
 ## Legacy media-manager config
 
-`aura.components.media-manager` is already published and documented. The first
-implementation should adapt it without letting the shipped default block plugin
-selection:
+`aura.components.media-manager` is a working, published host override. CORE-20
+adapts and deprecates it without changing its precedence:
 
-- a non-null new `aura.component-slots.media-manager` value is the host choice;
+- non-null `aura.component-slots.media-manager` is the host choice;
 - otherwise, a legacy value different from
-  `Aura\Base\Livewire\MediaManager::class` is treated as the host choice;
-- the shipped/default legacy class means "no host choice";
-- matching new and custom legacy values are accepted; conflicting custom values
-  fail with a migration message.
+  `Aura\Base\Livewire\MediaManager::class` is the host choice;
+- the shipped legacy default means "no host choice" so a unique plugin may win;
+- matching new and custom legacy values are accepted;
+- conflicting custom values fail boot with a migration message; and
+- every legacy custom class must pass the new structural, owner-token, event, and
+  authorization conformance contract. There is no slug-only security fallback.
 
-The legacy key is deprecated when the slot implementation ships and may be
-removed only in the next major release. Dashboard, profile, and settings remain
-under `aura.components` because their direct route resolution is a different,
-working contract.
+The legacy key and both `aura::*` aliases may be removed only in the next major.
+Dashboard, profile, and settings remain under `aura.components` because their
+direct route resolution is already deterministic.
 
 ## Config cache, workers, and multiple containers
 
-- Config and plugin declarations contain strings/arrays only: no closures,
-  objects, container instances, or request/user state.
-- The registry is a singleton owned by one Laravel `Application` container, not
-  static state and not a shared cache-store entry.
-- The frozen resolved map lives only for that container. A second Testbench or
-  application container receives a fresh registry and fresh Livewire Finder;
-  registrations cannot leak between them.
-- An Octane/queue worker may reuse its frozen boot-time map safely because slot
-  selection is deployment configuration, not per-request state. Changing config
-  or plugin declarations requires the normal worker restart/reload.
-- `config:cache` preserves host class strings. Registry finalization and explicit
-  Livewire alias registration still run during each application bootstrap; no
-  serialized registry artifact is required.
+- Config and declarations contain strings/arrays only—no closures, objects,
+  container instances, or request/user state.
+- The registry and collision inspector are scoped to one Laravel `Application`
+  container, never static or cache-store state.
+- A second Testbench/application container receives fresh registry, Finder,
+  Factory, cache inspection, and aliases; state cannot leak.
+- Octane/queue workers reuse one frozen boot map. Config/plugin changes require a
+  normal restart/reload; user/team/token state never enters the registry.
+- `config:cache` preserves class strings. Finalization, collision checks, explicit
+  registration, and assertions run on every application bootstrap.
 
 ## Compatibility policy
 
-The following are public semver commitments once approved and released: stable
-slot names, host config keys, the registration method/signature, accepted
-candidate type, precedence/conflict behavior, named mount inputs, required event
-names/payloads, and layout/authorization ownership.
+Once approved and released, stable slot names, config keys, registration
+signature, precedence/conflict behavior, accepted candidate structure, named
+mount inputs, owner-token/event payloads, and authorization/layout ownership are
+public semver commitments.
 
 - Adding an independent optional slot is a minor release.
-- Fixing validation, diagnostics, or a security defect without weakening the
-  stated contract is a patch release.
-- Removing/renaming a slot, accepting a different candidate category, changing
-  precedence/conflict semantics, or changing a required mount input/event/layout
-  responsibility is a major release.
-- Default component internals, views, DOM/CSS, optional methods/events, and the
-  private `aura.slot.*` transport IDs are not compatibility promises.
+- Tightening validation or fixing a security defect without weakening this
+  contract is a patch release.
+- Removing/renaming a slot, changing candidate categories, precedence, required
+  mount/event data, or authorization ownership is a major release.
+- Default DOM/CSS/internal events and private transport IDs are not public API.
+- The existing media config key and old aliases have the explicit next-major
+  deprecation window above; the owner-token hardening is a security prerequisite,
+  not an optional legacy mode.
 
-## Required implementation proof after approval
+## Tests as design
 
-CORE-20 implementation is not complete until focused tests prove both slots'
-defaults, host-only selection, plugin-only selection with the plugin provider
-both before and after Aura, host-over-plugin precedence, idempotent duplicates,
-ambiguous plugins, invalid/unknown/late declarations, config caching, event/mount
-contracts, feature/auth boundaries, and two independent application containers.
-The normal full non-browser suite, relevant browser coverage, Pint, and PHPStan
+CORE-20 implementation is not complete until focused tests prove this matrix:
+
+| Area | Required proof |
+|---|---|
+| Baseline | Aura registers no `aura` Livewire namespace; the current missing resolver honors a custom legacy media config before migration. |
+| Selection | Defaults; host only; plugin only with provider before/after Aura; host over one/many plugins; duplicate collapse; ambiguous plugins; invalid shadowed declaration. |
+| Compatibility | Both `aura::*` aliases resolve to the final default/host/plugin winner and hydrate under the same alias through the next major; existing dashboard/profile/settings routes remain unchanged. |
+| Collision protocol | Before any registration, separate boot failures for preclaimed explicit class, explicit view, conventional class, class/view namespace, single-file, multi-file, third-party missing resolver, already-resolved Finder entry, and Factory-cache entry for every transport ID/compatibility alias; registration followed by exact Factory assertion; no overwrite or fallback. |
+| Lifecycle | Unknown slot/source, same-source conflict, pre-finalization resolution, late registry registration, config cache, Octane reuse, and two independent containers. |
+| Structural pass | Property-only, mount-only, mixed property/mount inputs, optional extras, resolvable concrete/interface DI, and valid optional `modalClasses`. |
+| Structural fail | Noncanonical/missing/non-component/abstract class, required constructor, readonly/static/private or incompatible property, non-public/static `mount`, incompatible or extra required mount scalar, UrlRoutable/enum/union caller dependency, unresolvable DI, and non-public/non-static/parameterized/untyped/non-string/throwing `modalClasses`. |
+| Global-search security | Guest and forged hydration fail; feature flag; `viewAny` precedes queries; record `view`, destination, and current-team isolation hold for every result and for a second request. |
+| Owner routing | Two simultaneous forms with the same slug receive distinct tokens; confirmation updates only the matching owner; missing, swapped, tampered, cross-user, and cross-team tokens fail closed. |
+| Media read/update | Invalid owner class/field/action/key fails; create owner requires `create`; persisted owner requires fresh current-team load plus `update`; attachment listing/selection requires `viewAny` and per-record `view`; foreign IDs fail. |
+| Upload | Attachment `create` and owner action are checked before storage; denied/failed uploads leave no file or row; standalone library token is actor/team bound; second requests reauthorize. |
+| Browser | Default and one replacement per slot render in the real shell/modal, aliases remain hydratable, targeted confirmation closes only after update, and authorization denials produce no console/JavaScript errors. |
+
+The normal full non-browser suite, relevant browser suite, Pint, and PHPStan
 remain required by the project verify loop.
 
 ## Alternatives rejected
 
-- **Only add `aura.components.global-search`:** fixes one host but has no explicit
-  plugin provenance, duplicate handling, or deterministic host/plugin precedence.
-- **Let plugins call `Livewire::component()` directly:** remains order-dependent,
-  fails for physical `aura::*` names on Livewire 4, and cannot report ambiguity.
-- **Expose every `aura::*` component:** freezes internal state/event contracts and
-  overlaps the dedicated record-region and widget tasks.
-- **Make slots mergeable:** conflates one-for-one replacement with ordered
-  composition and leaves precedence/authorization undefined.
+- **Only add `aura.components.global-search`:** provides a host override but no
+  plugin provenance, ambiguity handling, or deterministic host/plugin precedence.
+- **Claim legacy media config is broken:** false under Livewire 4.3.5; Aura's
+  missing resolver returns the configured class. The slot solves plugin
+  arbitration, not a nonexistent host-config failure.
+- **Let plugins call `Livewire::component()` or add missing resolvers:** remains
+  provider/cache-order dependent and cannot report conflicts.
+- **Keep old aliases tied to Aura defaults:** published callers would bypass a
+  selected host/plugin winner. Tracking the final winner is more compatible.
+- **Use readable internal IDs without collision checks:** risks conventional,
+  discoverable, explicit, or cached collisions and Livewire silently overwrites
+  explicit Finder entries.
+- **Retain slug-only media events:** one form can consume another form's broadcast
+  and the payload carries no authenticated owner/action context.
+- **Expose every `aura::*` component:** freezes internal contracts and overlaps
+  dedicated record-region/widget work.
+- **Make slots mergeable:** conflates replacement with ordered composition.
 
 ## Approval questions
 
-1. Approve the initial public surface as exactly `global-search` and
-   `media-manager`, with navigation, notifications, the modal host, resources,
-   record regions, and widgets excluded?
-2. Approve class-string-only candidates and the frozen
-   `Aura::registerComponentSlots(source, slots)` API with host > unique plugin >
-   Aura default precedence?
-3. Approve the legacy `aura.components.media-manager` adapter through the next
-   major release?
+1. Approve exactly `global-search` and `media-manager`, class-string candidates,
+   host > unique plugin > Aura default precedence, fail-closed collision checks,
+   and both old aliases tracking the final winner through the next major?
+2. Approve owner-token/default-component authorization hardening as a CORE-20
+   release prerequisite, including migration rejection of legacy custom media
+   managers that cannot satisfy the owner-token/event contract?
