@@ -107,18 +107,30 @@ trait SaveMetaFields
 
                 $field = $post->fieldBySlug($key);
 
-                if (isset($field['set']) && $field['set'] instanceof \Closure) {
+                $hasFieldSetClosure = isset($field['set']) && $field['set'] instanceof \Closure;
+
+                if ($hasFieldSetClosure) {
                     $value = call_user_func($field['set'], $post, $field, $value);
                 }
 
-                if ($class instanceof FieldValueContract) {
+                $storage = $post->isTableField($key)
+                    ? FieldValueStorage::Physical
+                    : FieldValueStorage::Meta;
+
+                // An Eloquent cast has already normalized this physical value
+                // into the model's raw storage representation. Running the
+                // field adapter again can double-encode JSON cast attributes.
+                $isNormalizedByEloquent = $storage === FieldValueStorage::Physical
+                    && $post->hasCast($key);
+
+                if ($class instanceof FieldValueContract && ! $isNormalizedByEloquent) {
                     $value = $class->normalizeForStorage(
                         $value,
                         is_array($field) ? $field : [],
                         $post,
-                        $post->isTableField($key) ? FieldValueStorage::Physical : FieldValueStorage::Meta,
+                        $storage,
                     );
-                } elseif (method_exists($class, 'set')) {
+                } elseif (! $isNormalizedByEloquent && method_exists($class, 'set')) {
                     $value = $class->set($post, $field, $value);
                 }
 

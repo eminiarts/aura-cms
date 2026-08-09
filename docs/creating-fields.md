@@ -264,6 +264,8 @@ The same compatibility rule applies to `displayFieldValue($key, $value)`, `getMe
 
 Existing custom fields remain compatible: the base class adapts `set()`, `get()`, and `display()` to the new methods. Override the contract methods only when the storage location or UI context matters. Preserve `null`, an empty string, `0`, and `false` as separate values unless the field explicitly defines another domain rule.
 
+For a physical attribute declared in the model's Eloquent casts, the Eloquent cast remains the storage normalizer. Aura does not run the field normalizer a second time over the cast's raw storage value; this preserves existing JSON/array casts and prevents double encoding.
+
 ### Filter Methods
 
 #### `filterOptions()`
