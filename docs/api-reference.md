@@ -55,7 +55,18 @@ Aura::registerFields([
 
 // Get fields discovered from configured application and package sources
 $appFields = Aura::getAppFields();
+
+// Register a dynamic provider for selected resources
+Aura::registerFieldProvider(
+    \App\Aura\Fields\ContactPropertyFieldProvider::class,
+    resources: [\App\Aura\Resources\Contact::class],
+);
+
+// Invalidate dynamic, static, parsed-tree, and container field caches
+Aura::flushFieldCache();
 ```
+
+See [Dynamic Field Providers](creating-resources.md#dynamic-field-providers) for the provider interface, context/version contract, ordering, replacement rules, and worker lifecycle.
 
 ### Widget Management
 

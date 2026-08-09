@@ -396,6 +396,8 @@ class AuraServiceProvider extends PackageServiceProvider
             return new AuraNavigation;
         });
 
+        $this->app->singleton(FieldProviderRegistry::class);
+
         // Bind the concrete Aura instance as a process-persistent singleton so
         // its resource/field registrations and captured baseline survive across
         // requests on a long-running worker (Octane). Octane clears facade and

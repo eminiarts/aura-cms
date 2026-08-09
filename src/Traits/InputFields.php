@@ -3,6 +3,7 @@
 namespace Aura\Base\Traits;
 
 use Aura\Base\ConditionalLogic;
+use Aura\Base\FieldProviderRegistry;
 use Aura\Base\Pipeline\AddIdsToFields;
 use Aura\Base\Pipeline\ApplyParentConditionalLogic;
 use Aura\Base\Pipeline\ApplyParentDisplayAttributes;
@@ -148,6 +149,11 @@ trait InputFields
     public function getFieldsBeforeTree($fields = null)
     {
         $cacheKey = get_class($this).'-getFieldsBeforeTree';
+        $fieldDefinitionCacheKey = $this->fieldDefinitionCacheKey();
+
+        if ($fieldDefinitionCacheKey !== FieldProviderRegistry::DECLARATIVE_CACHE_KEY) {
+            $cacheKey .= '-'.$fieldDefinitionCacheKey;
+        }
 
         if (! app()->bound($cacheKey)) {
             // If fields is set and is an array, create a collection
@@ -170,6 +176,8 @@ trait InputFields
             app()->singleton($cacheKey, function () use ($fieldsBeforeTree) {
                 return $fieldsBeforeTree;
             });
+
+            static::$fieldsBeforeTreeBindings[$cacheKey] = $cacheKey;
 
         }
 

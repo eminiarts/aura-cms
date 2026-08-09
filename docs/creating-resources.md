@@ -7,6 +7,7 @@ Resources are the foundation of Aura CMS, representing different types of conten
 - [Creating Resources](#creating-resources-1)
 - [Resource Configuration](#resource-configuration)
 - [Defining Fields](#defining-fields)
+- [Dynamic Field Providers](#dynamic-field-providers)
 - [Resource Properties](#resource-properties)
 - [Advanced Configuration](#advanced-configuration)
 - [Custom Methods](#custom-methods)
@@ -202,6 +203,74 @@ public static function getFields()
     ];
 }
 ```
+
+## Dynamic Field Providers
+
+Keep a resource's `getFields()` method as its declarative base definition. Plugins or database-backed property catalogs can add context-aware fields through `Aura\Base\Contracts\FieldProvider`:
+
+```php
+<?php
+
+namespace App\Aura\Fields;
+
+use App\Aura\Resources\Contact;
+use App\Models\ContactProperty;
+use Aura\Base\Contracts\FieldProvider;
+use Aura\Base\FieldProviderContext;
+
+class ContactPropertyFieldProvider implements FieldProvider
+{
+    public function cacheContext(string $resourceClass): array
+    {
+        return ['team_id' => auth()->user()?->current_team_id];
+    }
+
+    public function cacheVersion(FieldProviderContext $context): string|int
+    {
+        return ContactProperty::query()
+            ->where('team_id', $context->value('team_id'))
+            ->max('version') ?? 0;
+    }
+
+    public function fields(FieldProviderContext $context): array
+    {
+        return ContactProperty::query()
+            ->where('team_id', $context->value('team_id'))
+            ->orderBy('position')
+            ->get('definition')
+            ->pluck('definition')
+            ->all();
+    }
+}
+```
+
+Register providers during a service provider's `boot()` method. Registration order does not affect output: lower priorities run first, then provider class name breaks non-conflicting ties.
+
+```php
+use App\Aura\Fields\ContactPropertyFieldProvider;
+use App\Aura\Resources\Contact;
+use Aura\Base\Facades\Aura;
+use Aura\Base\FieldProviderMode;
+
+Aura::registerFieldProvider(
+    ContactPropertyFieldProvider::class,
+    resources: [Contact::class],
+    mode: FieldProviderMode::Append,
+    priority: 100,
+);
+```
+
+`Append` adds fields after the declarative list and rejects duplicate slugs. `Replace` replaces matching slugs in place; a higher priority wins when several providers replace the same slug. Equal-priority replacements are rejected as ambiguous, and replacing a missing slug fails explicitly.
+
+The `cacheContext()` result is part of the cache identity and accepts string keys with scalar or null values. Declare every dimension that can change output, such as `team_id`, locale, or `user_id`; a provider must not read user-dependent state without including that dimension. Aura resolves the version and fields once per resource/context during a request or job lifecycle.
+
+After changing database-backed definitions, increment the value returned by `cacheVersion()` and invalidate the in-process layers:
+
+```php
+Aura::flushFieldCache();
+```
+
+This clears resolved providers, static field maps, parsed field trees, and their container singleton bindings. Aura also performs the reset at its queue and Octane lifecycle boundaries. Providers registered during application boot are restored for the next lifecycle, while transient runtime registrations are discarded.
 
 ## Resource Properties
 

@@ -2,11 +2,14 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\FieldProviderRegistry;
 use Illuminate\Pipeline\Pipeline;
 
 trait InputFieldsHelpers
 {
     protected static $fieldClassesBySlug = [];
+
+    protected static $fieldsBeforeTreeBindings = [];
 
     protected static $fieldsBySlug = [];
 
@@ -20,7 +23,7 @@ trait InputFieldsHelpers
     {
 
         // Construct a unique key using the class name and the slug
-        $key = get_class($this).'-'.$slug;
+        $key = get_class($this).'-'.$this->fieldDefinitionCacheKey().'-'.$slug;
 
         // If this key exists in the static array, return the cached result
         if (isset(self::$fieldsBySlug[$key])) {
@@ -37,7 +40,7 @@ trait InputFieldsHelpers
     public function fieldClassBySlug($slug)
     {
         // Construct a unique key using the class name and the slug
-        $key = get_class($this).'-'.$slug;
+        $key = get_class($this).'-'.$this->fieldDefinitionCacheKey().'-'.$slug;
 
         // If this key exists in the static array, return the cached result
         if (isset(self::$fieldClassesBySlug[$key])) {
@@ -61,16 +64,20 @@ trait InputFieldsHelpers
 
     public function fieldsCollection()
     {
-        // return collect($this->getFields());
         $class = get_class($this);
+        $resolution = app(FieldProviderRegistry::class)->resolve(
+            $class,
+            fn (): array => $this->getFields(),
+        );
+        $cacheKey = $class.'-'.$resolution->cacheKey;
 
-        if (isset(self::$fieldsCollectionCache[$class])) {
-            return self::$fieldsCollectionCache[$class];
+        if (isset(self::$fieldsCollectionCache[$cacheKey])) {
+            return self::$fieldsCollectionCache[$cacheKey];
         }
 
-        self::$fieldsCollectionCache[$class] = collect($this->getFields());
+        self::$fieldsCollectionCache[$cacheKey] = collect($resolution->fields);
 
-        return self::$fieldsCollectionCache[$class];
+        return self::$fieldsCollectionCache[$cacheKey];
     }
 
     public function findBySlug($array, $slug)
@@ -91,15 +98,24 @@ trait InputFieldsHelpers
     /**
      * Reset all process-static field caches.
      *
-     * These caches are keyed only by class name, so they must be flushed
-     * whenever a field definition may change within the same process — most
-     * importantly between tests (to prevent pollution) and in long-lived
-     * workers (Octane) to avoid unbounded growth and stale definitions.
+     * These caches are keyed by resource class and provider resolution, so they
+     * must be flushed whenever a definition changes within the same lifecycle.
+     * Long-lived workers also flush them between requests and jobs to prevent
+     * process state from leaking into the next context.
      */
     public static function flushFieldCache(): void
     {
+        foreach (static::$fieldsBeforeTreeBindings as $binding) {
+            app()->offsetUnset($binding);
+        }
+
+        if (app()->bound(FieldProviderRegistry::class)) {
+            app(FieldProviderRegistry::class)->flushResolved();
+        }
+
         static::$fieldClassesBySlug = [];
         static::$fieldsBySlug = [];
+        static::$fieldsBeforeTreeBindings = [];
         static::$fieldsCollectionCache = [];
         static::$inputFieldSlugs = [];
         static::$mappedFields = [];
@@ -135,7 +151,7 @@ trait InputFieldsHelpers
 
     public function inputFieldsSlugs()
     {
-        $class = get_class($this);
+        $class = get_class($this).'-'.$this->fieldDefinitionCacheKey();
 
         if (isset(self::$inputFieldSlugs[$class])) {
             return self::$inputFieldSlugs[$class];
@@ -154,7 +170,7 @@ trait InputFieldsHelpers
     public function mappedFields()
     {
         // mappedFields
-        $class = get_class($this);
+        $class = get_class($this).'-'.$this->fieldDefinitionCacheKey();
 
         if (isset(self::$mappedFields[$class])) {
             return self::$mappedFields[$class];
@@ -177,5 +193,13 @@ trait InputFieldsHelpers
             ->send(clone $fields)
             ->through($pipes)
             ->thenReturn();
+    }
+
+    protected function fieldDefinitionCacheKey(): string
+    {
+        return app(FieldProviderRegistry::class)->resolve(
+            get_class($this),
+            fn (): array => $this->getFields(),
+        )->cacheKey;
     }
 }

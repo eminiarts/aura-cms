@@ -2,6 +2,7 @@
 
 namespace Aura\Base;
 
+use Aura\Base\Contracts\FieldProvider;
 use Aura\Base\Fields\Field as AuraField;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
@@ -86,6 +87,7 @@ class Aura
         $this->baselineInjectViews = $this->injectViews;
         $this->baselineResources = $this->resources;
         $this->baselineWidgets = $this->widgets;
+        app(FieldProviderRegistry::class)->captureBaselineState();
     }
 
     public static function checkCondition($model, $field, $post = null)
@@ -141,6 +143,12 @@ class Aura
         return app('Aura\Base\Templates\\'.str($slug)->title);
     }
 
+    public function flushFieldCache(): void
+    {
+        Resource::flushFieldCache();
+        BaseResource::flushFieldCache();
+    }
+
     /**
      * Reset process state that may otherwise leak between requests or jobs.
      */
@@ -150,9 +158,10 @@ class Aura
         $this->injectViews = $this->baselineInjectViews;
         $this->resources = $this->baselineResources;
         $this->widgets = $this->baselineWidgets;
+        app(FieldProviderRegistry::class)->flushState();
 
         ConditionalLogic::clearConditionsCache();
-        Resource::flushFieldCache();
+        $this->flushFieldCache();
         ScopedScope::flushState();
         TeamScope::flushState();
         static::$userModel = User::class;
@@ -457,6 +466,19 @@ class Aura
     public function options()
     {
         return config('aura');
+    }
+
+    /**
+     * @param  FieldProvider|class-string<FieldProvider>  $provider
+     * @param  array<int, class-string<Contracts\DefinesFields>|string>  $resources
+     */
+    public function registerFieldProvider(
+        FieldProvider|string $provider,
+        array $resources = ['*'],
+        FieldProviderMode $mode = FieldProviderMode::Append,
+        int $priority = 0,
+    ): void {
+        app(FieldProviderRegistry::class)->register($provider, $resources, $mode, $priority);
     }
 
     public function registerFields(array $fields): void
