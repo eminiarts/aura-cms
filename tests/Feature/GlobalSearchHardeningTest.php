@@ -6,13 +6,23 @@ use Aura\Base\Exceptions\GlobalSearchExecutionUnavailable;
 use Aura\Base\Facades\Aura;
 use Aura\Base\GlobalSearch\DatabaseGlobalSearchAdapter;
 use Aura\Base\GlobalSearch\DatabaseStatementDeadline;
-use Aura\Base\GlobalSearch\ForkedGlobalSearchExecutor;
+use Aura\Base\GlobalSearch\FreshProcessGlobalSearchExecutor;
 use Aura\Base\GlobalSearch\GlobalSearchBudget;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Models\Meta;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessDescriptorProbeResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessPolicy;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessQueryFloodAdapterResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessQueryFloodPolicyResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessQueryFloodVisibilityResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessSlowDiscoveryResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessSlowTitleResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessSpawningResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessStallingResource;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Schema\Blueprint;
@@ -254,6 +264,47 @@ class HardeningMalformedTitleResource extends HardeningSearchResource
     }
 }
 
+class HardeningSlowTitleResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-slow-title';
+
+    public static string $type = 'HardeningSlowTitle';
+
+    public function title()
+    {
+        usleep(750_000);
+
+        return parent::title();
+    }
+}
+
+class HardeningSlowDiscoveryResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-slow-discovery';
+
+    public static string $type = 'HardeningSlowDiscovery';
+
+    public static function getGlobalSearch()
+    {
+        usleep(750_000);
+
+        return true;
+    }
+}
+
+class HardeningHostileIconResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-hostile-icon';
+
+    public static string $type = 'HardeningHostileIcon';
+
+    public function getIcon()
+    {
+        return '<svg class="fixed inset-0" fill="url(https://attacker.example/paint)" onload="alert(1)" viewBox="0 0 10 10"><script>alert(2)</script><path d="M0 0h10v10z" stroke="u&#114;l(javascript:alert(3))" onclick="alert(3)"/></svg>'
+            .str_repeat('A', 20_000);
+    }
+}
+
 class HardeningRelationTitleResource extends HardeningSearchResource
 {
     public static ?string $slug = 'hardening-relation-title';
@@ -486,6 +537,110 @@ function registerHardeningSearchResources(array $resources): void
     if ($firstInstantiable) {
         Aura::setModel(new $firstInstantiable);
     }
+}
+
+/**
+ * @param  array<int, class-string<resource>>  $resources
+ * @return array{database: string, marker: string, user: User}
+ */
+function configureFreshProcessSearchHarness(string $mode, array $resources): array
+{
+    $suffix = getmypid().'-'.bin2hex(random_bytes(8));
+    $databasePath = sys_get_temp_dir()."/aura-global-search-{$suffix}.sqlite";
+    $markerPath = sys_get_temp_dir()."/aura-global-search-marker-{$suffix}";
+    $pdo = new PDO("sqlite:{$databasePath}", null, null, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    ]);
+    $pdo->exec(<<<'SQL'
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    password TEXT NOT NULL,
+    current_team_id INTEGER,
+    global_admin INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT,
+    updated_at TEXT
+);
+CREATE TABLE meta (
+    id INTEGER PRIMARY KEY,
+    metable_type TEXT NOT NULL,
+    metable_id INTEGER NOT NULL,
+    key TEXT,
+    value TEXT
+);
+CREATE TABLE global_search_process_records (
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    team_id INTEGER,
+    user_id INTEGER,
+    created_at TEXT,
+    updated_at TEXT
+);
+INSERT INTO users (id, name, email, password, current_team_id, global_admin)
+VALUES (1, 'Process Search User', 'process-search@example.test', 'unused', 11, 1);
+INSERT INTO global_search_process_records (id, title, team_id, user_id)
+VALUES
+    (1, 'Fresh Process Needle Current Team', 11, 1),
+    (2, 'Fresh Process Needle Other Team', 22, 1);
+SQL);
+    $pdo = null;
+
+    config([
+        'aura.features.global_search' => true,
+        'aura.features.legacy_fields_append' => false,
+        'aura.global_search.execution_backend' => 'process',
+        'aura.global_search.per_resource_timeout_ms' => 650,
+        'aura.global_search.total_timeout_ms' => 3_000,
+        'aura.global_search.max_queries_per_resource' => 8,
+        'aura.global_search.max_total_queries' => 50,
+        'aura.teams' => true,
+        'database.connections.process_search' => [
+            'driver' => 'sqlite',
+            'database' => $databasePath,
+            'prefix' => '',
+            'foreign_key_constraints' => true,
+        ],
+    ]);
+    DB::purge('process_search');
+    app()->instance(FreshProcessGlobalSearchExecutor::class, new FreshProcessGlobalSearchExecutor(
+        realpath(dirname(__DIR__).'/Fixtures/GlobalSearchWorkerArtisan.php') ?: null,
+        [
+            'APP_ENV' => 'testing',
+            'AURA_GLOBAL_SEARCH_DESCENDANT_MARKER' => $markerPath,
+            'AURA_GLOBAL_SEARCH_HOOK_MARKER' => $markerPath,
+            'AURA_GLOBAL_SEARCH_PROCESS_FIXTURE' => '1',
+            'AURA_GLOBAL_SEARCH_FIXTURE_MODE' => $mode,
+            'DB_CONNECTION' => 'sqlite',
+            'DB_DATABASE' => $databasePath,
+        ],
+        dirname(__DIR__, 2),
+    ));
+
+    Aura::fake();
+    Aura::registerResources($resources);
+
+    foreach ($resources as $resource) {
+        Aura::registerRoutes($resource::getSlug(), $resource);
+        Gate::policy($resource, GlobalSearchProcessPolicy::class);
+    }
+
+    Aura::setModel(new $resources[0]);
+    $user = User::on('process_search')->withoutGlobalScopes()->findOrFail(1);
+
+    return [
+        'database' => $databasePath,
+        'marker' => $markerPath,
+        'user' => $user,
+    ];
+}
+
+/** @param array{database: string, marker: string, user: User} $harness */
+function cleanupFreshProcessSearchHarness(array $harness): void
+{
+    DB::purge('process_search');
+    @unlink($harness['database']);
+    @unlink($harness['marker']);
 }
 
 beforeEach(function () {
@@ -762,10 +917,6 @@ test('the total query budget stops later resources', function () {
 });
 
 test('a successful custom adapter returns bounded results through isolation', function () {
-    if (! (new ForkedGlobalSearchExecutor)->isAvailable()) {
-        $this->markTestSkipped('Forked global-search execution is unavailable on this platform.');
-    }
-
     registerHardeningSearchResources([HardeningSuccessfulAdapterResource::class]);
     HardeningSuccessfulAdapterResource::create(['title' => 'Custom Adapter Needle']);
 
@@ -789,117 +940,203 @@ test('a failing resource is isolated from later searchable resources', function 
         ->assertSee('Failure Isolation Needle Healthy');
 });
 
-test('a sleeping adapter cannot delay a healthy later resource', function () {
-    if (! (new ForkedGlobalSearchExecutor)->isAvailable()) {
-        $this->markTestSkipped('Forked global-search execution is unavailable on this platform.');
+test('hostile adapters cannot delay a healthy later resource', function (string $mode) {
+    $harness = configureFreshProcessSearchHarness($mode, [
+        GlobalSearchProcessStallingResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+
+    try {
+        $this->actingAs($harness['user']);
+        $startedAt = hrtime(true);
+
+        Livewire::test(GlobalSearch::class)
+            ->set('search', 'Fresh Process Needle')
+            ->assertSee('Fresh Process Needle Current Team');
+
+        expect((string) file_get_contents($harness['marker']))->toStartWith($mode.'-entered-')
+            ->and((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(1.8);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
     }
+})->with(['sleeping', 'cpu', 'blocking']);
 
-    config([
-        'aura.global_search.per_resource_timeout_ms' => 100,
-        'aura.global_search.total_timeout_ms' => 500,
-    ]);
-    registerHardeningSearchResources([
-        HardeningSleepingAdapterResource::class,
-        HardeningAllowedResource::class,
+test('the hard resource deadline preempts slow title presentation', function () {
+    $harness = configureFreshProcessSearchHarness('slow-title', [
+        GlobalSearchProcessSlowTitleResource::class,
+        GlobalSearchProcessResource::class,
     ]);
 
-    HardeningAllowedResource::create(['title' => 'Deadline Isolation Needle Healthy']);
+    try {
+        $this->actingAs($harness['user']);
+        $startedAt = hrtime(true);
+
+        Livewire::test(GlobalSearch::class)
+            ->set('search', 'Fresh Process Needle')
+            ->assertSee('Fresh Process Needle Current Team');
+
+        expect(file_get_contents($harness['marker']))->toBe('slow-title-entered')
+            ->and((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(1.8);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('the hard total deadline preempts slow resource discovery', function () {
+    $harness = configureFreshProcessSearchHarness('slow-discovery', [
+        GlobalSearchProcessSlowDiscoveryResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+    config(['aura.global_search.total_timeout_ms' => 650]);
+
+    try {
+        $this->actingAs($harness['user']);
+        $component = app(GlobalSearch::class);
+        $component->search = 'Fresh Process Needle';
+        $startedAt = hrtime(true);
+
+        expect($component->getSearchResultsProperty())->toBeEmpty()
+            ->and((string) file_get_contents($harness['marker']))->toStartWith('slow-discovery-entered-')
+            ->and((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(1.2);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh sqlite workers preserve current team isolation and parent connection state', function () {
+    $harness = configureFreshProcessSearchHarness('normal', [GlobalSearchProcessResource::class]);
+
+    try {
+        $this->actingAs($harness['user']);
+        $parentConnection = DB::connection('process_search');
+        expect((int) $parentConnection->table('global_search_process_records')->count())->toBe(2);
+
+        Livewire::test(GlobalSearch::class)
+            ->set('search', 'Fresh Process Needle')
+            ->assertSee('Fresh Process Needle Current Team')
+            ->assertDontSee('Fresh Process Needle Other Team');
+
+        expect((int) $parentConnection->table('global_search_process_records')->count())->toBe(2);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh workers deny descendant spawning and leave no escaped process', function () {
+    $harness = configureFreshProcessSearchHarness('spawning', [
+        GlobalSearchProcessSpawningResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+
+    try {
+        $this->actingAs($harness['user']);
+
+        Livewire::test(GlobalSearch::class)
+            ->set('search', 'Fresh Process Needle')
+            ->assertSee('Fresh Process Needle Current Team');
+
+        usleep(350_000);
+
+        expect(file_exists($harness['marker']))->toBeFalse()
+            ->and((int) DB::connection('process_search')
+                ->table('global_search_process_records')
+                ->count())->toBe(2);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh workers close inherited parent file descriptors before booting PHP', function () {
+    $harness = configureFreshProcessSearchHarness('descriptor-probe', [
+        GlobalSearchProcessDescriptorProbeResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+    $parentDescriptor = fopen(dirname(__DIR__, 2).'/composer.json', 'r');
+
+    try {
+        expect($parentDescriptor)->toBeResource();
+        $this->actingAs($harness['user']);
+
+        Livewire::test(GlobalSearch::class)
+            ->set('search', 'Fresh Process Needle')
+            ->assertSee('Fresh Process Needle Current Team');
+
+        expect(file_exists($harness['marker']))->toBeFalse()
+            ->and(ftell($parentDescriptor))->toBe(0);
+    } finally {
+        if (is_resource($parentDescriptor)) {
+            fclose($parentDescriptor);
+        }
+
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh workers centrally enforce query budgets in hooks and adapters', function (
+    string $mode,
+    string $hostileResource,
+) {
+    $harness = configureFreshProcessSearchHarness($mode, [
+        $hostileResource,
+        GlobalSearchProcessResource::class,
+    ]);
+    config(['aura.global_search.max_queries_per_resource' => 2]);
+
+    try {
+        $this->actingAs($harness['user']);
+
+        Livewire::test(GlobalSearch::class)
+            ->set('search', 'Fresh Process Needle')
+            ->assertSee('Fresh Process Needle Current Team');
+
+        expect((string) file_get_contents($harness['marker']))->toBe('qq');
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+})->with([
+    'custom adapter' => ['query-adapter', GlobalSearchProcessQueryFloodAdapterResource::class],
+    'visibility hook' => ['query-visibility', GlobalSearchProcessQueryFloodVisibilityResource::class],
+    'policy' => ['query-policy', GlobalSearchProcessQueryFloodPolicyResource::class],
+]);
+
+test('malformed route allowlists fail closed and log metadata only', function (array $patterns) {
     Log::spy();
-    $startedAt = hrtime(true);
+    config(['aura.global_search.allowed_route_names' => $patterns]);
+    registerHardeningSearchResources([HardeningAllowedResource::class]);
+    HardeningAllowedResource::create(['title' => 'Malformed Allowlist Needle']);
 
     Livewire::test(GlobalSearch::class)
-        ->set('search', 'Deadline Isolation Needle')
-        ->assertSee('Deadline Isolation Needle Healthy');
-
-    expect((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(0.6);
+        ->set('search', 'Malformed Allowlist Needle')
+        ->assertDontSee('Malformed Allowlist Needle');
 
     Log::shouldHaveReceived('warning')->with(
-        'Aura global search skipped a resource.',
-        Mockery::on(fn (array $context): bool => $context['resource'] === HardeningSleepingAdapterResource::class
-            && $context['reason'] === 'deadline_exceeded'
-            && ! str_contains(json_encode($context, JSON_THROW_ON_ERROR), 'Deadline Isolation Needle')),
-    )->atLeast()->once();
+        'Aura global search configuration failed closed.',
+        ['reason' => 'invalid_allowed_route_names'],
+    )->once();
+})->with([
+    'non-string entry' => [['aura.*', ['invalid']]],
+    'associative list' => [['primary' => 'aura.*']],
+]);
 
-    $secondRequestStartedAt = hrtime(true);
-
-    Livewire::test(GlobalSearch::class)
-        ->set('search', 'Deadline Isolation Needle')
-        ->assertSee('Deadline Isolation Needle Healthy');
-
-    expect((hrtime(true) - $secondRequestStartedAt) / 1_000_000_000)->toBeLessThan(0.6);
-});
-
-test('a CPU-bound adapter cannot delay a healthy later resource', function () {
-    if (! (new ForkedGlobalSearchExecutor)->isAvailable()) {
-        $this->markTestSkipped('Forked global-search execution is unavailable on this platform.');
-    }
-
-    config([
-        'aura.global_search.per_resource_timeout_ms' => 100,
-        'aura.global_search.total_timeout_ms' => 500,
-    ]);
-    registerHardeningSearchResources([
-        HardeningCpuAdapterResource::class,
-        HardeningAllowedResource::class,
-    ]);
-    HardeningAllowedResource::create(['title' => 'CPU Isolation Needle Healthy']);
-    $startedAt = hrtime(true);
+test('global search sanitizes and byte caps resource icons', function () {
+    registerHardeningSearchResources([HardeningHostileIconResource::class]);
+    HardeningHostileIconResource::create(['title' => 'Hostile Icon Needle']);
 
     Livewire::test(GlobalSearch::class)
-        ->set('search', 'CPU Isolation Needle')
-        ->assertSee('CPU Isolation Needle Healthy');
-
-    expect((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(0.6);
+        ->set('search', 'Hostile Icon Needle')
+        ->assertSee('Hostile Icon Needle')
+        ->assertSeeHtml('<path d="M0 0h10v10z"></path>')
+        ->assertDontSeeHtml('<script')
+        ->assertDontSeeHtml('onload=')
+        ->assertDontSeeHtml('onclick=')
+        ->assertDontSeeHtml('class="fixed inset-0"')
+        ->assertDontSeeHtml('url(')
+        ->assertDontSeeHtml('attacker.example')
+        ->assertDontSeeHtml('javascript:')
+        ->assertDontSee(str_repeat('A', 8_193), false);
 });
 
-test('a blocking adapter cannot delay a healthy later resource', function () {
-    if (! (new ForkedGlobalSearchExecutor)->isAvailable()) {
-        $this->markTestSkipped('Forked global-search execution is unavailable on this platform.');
-    }
-
-    config([
-        'aura.global_search.per_resource_timeout_ms' => 100,
-        'aura.global_search.total_timeout_ms' => 500,
-    ]);
-    registerHardeningSearchResources([
-        HardeningBlockingAdapterResource::class,
-        HardeningAllowedResource::class,
-    ]);
-    HardeningAllowedResource::create(['title' => 'Blocking Isolation Needle Healthy']);
-    $startedAt = hrtime(true);
-
-    Livewire::test(GlobalSearch::class)
-        ->set('search', 'Blocking Isolation Needle')
-        ->assertSee('Blocking Isolation Needle Healthy');
-
-    expect((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(0.6);
-});
-
-test('the total execution deadline stops later resources', function () {
-    if (! (new ForkedGlobalSearchExecutor)->isAvailable()) {
-        $this->markTestSkipped('Forked global-search execution is unavailable on this platform.');
-    }
-
-    config([
-        'aura.global_search.per_resource_timeout_ms' => 120,
-        'aura.global_search.total_timeout_ms' => 170,
-    ]);
-    registerHardeningSearchResources([
-        HardeningSleepingAdapterResource::class,
-        HardeningSecondSleepingAdapterResource::class,
-        HardeningAllowedResource::class,
-    ]);
-    HardeningAllowedResource::create(['title' => 'Total Deadline Needle Healthy']);
-    $component = app(GlobalSearch::class);
-    $component->search = 'Total Deadline Needle';
-    $startedAt = hrtime(true);
-    $results = $component->getSearchResultsProperty();
-
-    expect($results)->not->toHaveKey(HardeningAllowedResource::getType())
-        ->and((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(0.6);
-});
-
-test('custom adapters fail closed when process isolation is unavailable', function (string $backend) {
+test('global search fails closed when process isolation is unavailable', function (string $backend) {
     config(['aura.global_search.execution_backend' => $backend]);
     registerHardeningSearchResources([
         HardeningSleepingAdapterResource::class,
@@ -910,106 +1147,165 @@ test('custom adapters fail closed when process isolation is unavailable', functi
 
     Livewire::test(GlobalSearch::class)
         ->set('search', 'Fallback Isolation Needle')
-        ->assertSee('Fallback Isolation Needle Healthy');
+        ->assertDontSee('Fallback Isolation Needle Healthy');
 
     expect((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(0.4);
 })->with(['disabled backend' => 'none', 'invalid backend' => 'invalid']);
 
-test('custom adapters fail closed under an Octane runtime without state bleed', function () {
+test('fresh process search remains isolated under an Octane runtime', function () {
+    $harness = configureFreshProcessSearchHarness('normal', [GlobalSearchProcessResource::class]);
     app()->instance('octane', new stdClass);
 
     try {
-        registerHardeningSearchResources([
-            HardeningSleepingAdapterResource::class,
-            HardeningAllowedResource::class,
-        ]);
-        HardeningAllowedResource::create(['title' => 'Octane Isolation Needle Healthy']);
-        $startedAt = hrtime(true);
+        $this->actingAs($harness['user']);
 
         Livewire::test(GlobalSearch::class)
-            ->set('search', 'Octane Isolation Needle')
-            ->assertSee('Octane Isolation Needle Healthy');
-
-        expect((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(0.4);
+            ->set('search', 'Fresh Process Needle')
+            ->assertSee('Fresh Process Needle Current Team')
+            ->assertDontSee('Fresh Process Needle Other Team');
     } finally {
         app()->forgetInstance('octane');
+        cleanupFreshProcessSearchHarness($harness);
     }
 });
 
-test('isolated execution rejects nesting and preserves parent signal state', function () {
-    $executor = new ForkedGlobalSearchExecutor;
-
-    if (! $executor->isAvailable()) {
-        $this->markTestSkipped('Forked global-search execution is unavailable on this platform.');
-    }
+test('isolated execution uses a fresh contained process and preserves parent signal state', function () {
+    $harness = configureFreshProcessSearchHarness('normal', [GlobalSearchProcessResource::class]);
+    $executor = app(FreshProcessGlobalSearchExecutor::class);
 
     $signalHandler = function_exists('pcntl_signal_get_handler')
         ? pcntl_signal_get_handler(SIGALRM)
         : null;
+    $asynchronousSignals = function_exists('pcntl_async_signals')
+        ? pcntl_async_signals()
+        : null;
 
-    expect($executor->run(
-        fn (): bool => (new ForkedGlobalSearchExecutor)->isAvailable(),
-        100,
-        1_024,
-    ))->toBeFalse()
-        ->and($executor->run(fn (): string => 'healthy', 100, 1_024))->toBe('healthy');
+    try {
+        $result = $executor->run([
+            'operation' => 'discover',
+            'context' => ['guard' => 'web', 'user_id' => 1, 'team_id' => 11],
+            'query_limit' => 50,
+        ], 3_000, 1_048_576);
+
+        expect($result['worker_pid'] ?? null)->toBeInt()
+            ->not->toBe(getmypid())
+            ->and($result['contained'] ?? null)->toBeTrue();
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
 
     if (function_exists('pcntl_signal_get_handler')) {
         expect(pcntl_signal_get_handler(SIGALRM))->toBe($signalHandler);
     }
+
+    if (function_exists('pcntl_async_signals')) {
+        expect(pcntl_async_signals())->toBe($asynchronousSignals);
+    }
 });
 
 test('isolated execution enforces its deadline directly', function () {
-    $executor = new ForkedGlobalSearchExecutor;
-
-    if (! $executor->isAvailable()) {
-        $this->markTestSkipped('Forked global-search execution is unavailable on this platform.');
-    }
-
-    $startedAt = hrtime(true);
-
-    expect(fn () => $executor->run(function (): void {
-        usleep(1_200_000);
-    }, 100, 1_024))->toThrow(GlobalSearchExecutionTimedOut::class);
-
-    expect((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(0.5);
-});
-
-test('database statement deadlines restore nested sqlite session state after exceptions', function () {
-    $connection = DB::connection();
-    $readBusyTimeout = function () use ($connection): int {
-        $row = (array) $connection->selectOne('PRAGMA busy_timeout');
-
-        return (int) (reset($row) ?: 0);
-    };
-    $originalBusyTimeout = $readBusyTimeout();
+    $harness = configureFreshProcessSearchHarness('slow-discovery', [
+        GlobalSearchProcessSlowDiscoveryResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+    $executor = app(FreshProcessGlobalSearchExecutor::class);
 
     try {
-        $connection->statement('PRAGMA busy_timeout = 0');
-        (new DatabaseStatementDeadline)->run($connection, 200, function () use ($readBusyTimeout): void {
-            expect($readBusyTimeout())->toBe(0);
-        });
-        expect($readBusyTimeout())->toBe(0);
+        $startedAt = hrtime(true);
 
-        $connection->statement('PRAGMA busy_timeout = 1234');
-        $deadline = new DatabaseStatementDeadline;
+        expect(fn () => $executor->run([
+            'operation' => 'discover',
+            'context' => ['guard' => 'web', 'user_id' => 1, 'team_id' => 11],
+            'query_limit' => 50,
+        ], 650, 1_048_576))->toThrow(GlobalSearchExecutionTimedOut::class);
 
-        $deadline->run($connection, 200, function () use ($connection, $deadline, $readBusyTimeout): void {
-            expect($readBusyTimeout())->toBe(200);
-
-            expect(fn () => $deadline->run($connection, 50, function () use ($readBusyTimeout): void {
-                expect($readBusyTimeout())->toBe(50);
-
-                throw new RuntimeException('Simulated statement failure.');
-            }))->toThrow(RuntimeException::class, 'Simulated statement failure.');
-
-            expect($readBusyTimeout())->toBe(200);
-        });
-
-        expect($readBusyTimeout())->toBe(1234);
+        expect((string) file_get_contents($harness['marker']))->toStartWith('slow-discovery-entered-')
+            ->and((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(1.2);
     } finally {
-        $connection->statement("PRAGMA busy_timeout = {$originalBusyTimeout}");
+        cleanupFreshProcessSearchHarness($harness);
     }
+});
+
+test('parent SIGTERM cleanup kills and reaps the active fresh worker', function () {
+    if (! function_exists('posix_kill') || ! defined('SIGTERM')) {
+        $this->markTestSkipped('POSIX signals are unavailable on this platform.');
+    }
+
+    $harness = configureFreshProcessSearchHarness('slow-discovery', [
+        GlobalSearchProcessSlowDiscoveryResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+    $projectPath = dirname(__DIR__, 2);
+    $artisanPath = dirname(__DIR__).'/Fixtures/GlobalSearchWorkerArtisan.php';
+    $workerEnvironment = [
+        'APP_ENV' => 'testing',
+        'AURA_GLOBAL_SEARCH_HOOK_MARKER' => $harness['marker'],
+        'AURA_GLOBAL_SEARCH_PROCESS_FIXTURE' => '1',
+        'AURA_GLOBAL_SEARCH_FIXTURE_MODE' => 'slow-discovery',
+        'AURA_GLOBAL_SEARCH_WORKER_ARTISAN' => $artisanPath,
+        'AURA_GLOBAL_SEARCH_WORKING_DIRECTORY' => $projectPath,
+        'DB_CONNECTION' => 'sqlite',
+        'DB_DATABASE' => $harness['database'],
+    ];
+    $outer = new Process(
+        [PHP_BINARY, $artisanPath, 'aura:test-supervise-global-search', '--no-interaction'],
+        $projectPath,
+        $workerEnvironment,
+    );
+
+    try {
+        $outer->start();
+        $markerDeadline = hrtime(true) + 3_000_000_000;
+
+        while (! is_file($harness['marker']) && hrtime(true) < $markerDeadline) {
+            usleep(10_000);
+        }
+
+        expect(is_file($harness['marker']))->toBeTrue($outer->getErrorOutput());
+        $workerProcessId = (int) str()->after(
+            (string) file_get_contents($harness['marker']),
+            'slow-discovery-entered-',
+        );
+        $outerProcessId = $outer->getPid();
+
+        expect($workerProcessId)->toBeGreaterThan(1)
+            ->and($outerProcessId)->toBeInt();
+
+        posix_kill($outerProcessId, SIGTERM);
+
+        try {
+            $outer->wait();
+        } catch (Throwable) {
+            // A signal exit is the expected outcome for the supervised parent.
+        }
+
+        $reapDeadline = hrtime(true) + 1_000_000_000;
+
+        while (@posix_kill($workerProcessId, 0) && hrtime(true) < $reapDeadline) {
+            usleep(10_000);
+        }
+
+        expect(@posix_kill($workerProcessId, 0))->toBeFalse();
+    } finally {
+        if ($outer->isRunning()) {
+            $outer->stop(0);
+        }
+
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('database statement deadlines reject sqlite busy timeout as a statement deadline', function () {
+    $callbackWasCalled = false;
+
+    expect(fn () => (new DatabaseStatementDeadline)->run(
+        DB::connection(),
+        150,
+        function () use (&$callbackWasCalled): void {
+            $callbackWasCalled = true;
+        },
+    ))->toThrow(GlobalSearchExecutionUnavailable::class)
+        ->and($callbackWasCalled)->toBeFalse();
 });
 
 test('database statement deadlines fail closed when a hard bound is unsupported', function (string $driver) {
@@ -1030,11 +1326,19 @@ test('database statement deadlines fail closed when a hard bound is unsupported'
 test('a failed database deadline restoration disconnects the contaminated connection', function () {
     Log::spy();
     $connection = Mockery::mock(Connection::class);
-    $connection->shouldReceive('getDriverName')->twice()->andReturn('sqlite');
-    $connection->shouldReceive('selectOne')->once()->with('PRAGMA busy_timeout')->andReturn((object) [
-        'busy_timeout' => 1_000,
-    ]);
-    $connection->shouldReceive('statement')->twice()->andReturn(true, false);
+    $connection->shouldReceive('getDriverName')->twice()->andReturn('pgsql');
+    $connection->shouldReceive('selectOne')
+        ->once()
+        ->with("SELECT current_setting('statement_timeout') AS value")
+        ->andReturn((object) ['value' => '1000ms']);
+    $connection->shouldReceive('selectOne')
+        ->once()
+        ->with("SELECT set_config('statement_timeout', ?, false)", ['150ms'])
+        ->andReturn((object) ['value' => '150ms']);
+    $connection->shouldReceive('selectOne')
+        ->once()
+        ->with("SELECT set_config('statement_timeout', ?, false)", ['1000ms'])
+        ->andReturnNull();
     $connection->shouldReceive('disconnect')->once();
 
     expect((new DatabaseStatementDeadline)->run(
@@ -1046,7 +1350,7 @@ test('a failed database deadline restoration disconnects the contaminated connec
     Log::shouldHaveReceived('warning')->with(
         'Aura global search disconnected a database connection after deadline restoration failed.',
         [
-            'driver' => 'sqlite',
+            'driver' => 'pgsql',
             'exception' => GlobalSearchExecutionUnavailable::class,
         ],
     )->once();

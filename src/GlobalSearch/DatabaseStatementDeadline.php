@@ -42,7 +42,9 @@ final class DatabaseStatementDeadline
         return match ($connection->getDriverName()) {
             'mysql' => $this->applyMySql($connection, $milliseconds),
             'pgsql' => $this->applyPostgreSql($connection, $milliseconds),
-            'sqlite' => $this->applySqlite($connection, $milliseconds),
+            'sqlite' => throw new GlobalSearchExecutionUnavailable(
+                'SQLite busy_timeout is not a statement execution deadline.',
+            ),
             'sqlsrv' => $this->applySqlServer($connection, $milliseconds),
             default => throw new GlobalSearchExecutionUnavailable('The database driver has no supported global search statement deadline.'),
         };
@@ -118,23 +120,6 @@ final class DatabaseStatementDeadline
             if ($connection->selectOne("SELECT set_config('statement_timeout', ?, false)", [$original]) === null) {
                 throw new GlobalSearchExecutionUnavailable('The PostgreSQL driver could not restore its statement deadline.');
             }
-        };
-    }
-
-    /** @return Closure(): void */
-    private function applySqlite(Connection $connection, int $milliseconds): Closure
-    {
-        $row = (array) $connection->selectOne('PRAGMA busy_timeout');
-        $original = (int) (reset($row) ?: 0);
-
-        if ($original <= $milliseconds) {
-            return static function (): void {};
-        }
-
-        $this->executeStatement($connection, "PRAGMA busy_timeout = {$milliseconds}");
-
-        return function () use ($connection, $original): void {
-            $this->executeStatement($connection, "PRAGMA busy_timeout = {$original}");
         };
     }
 

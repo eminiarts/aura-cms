@@ -51,6 +51,7 @@ class TestCase extends Orchestra
         // Add this before the Factory setup
         config()->set('app.env', 'testing');
         config()->set('filesystems.default', 'local');
+        config()->set('aura.global_search.execution_backend', 'inline-testing');
 
         Factory::guessFactoryNamesUsing(
             fn (string $modelName) => 'Aura\\Base\\Database\\Factories\\'.class_basename($modelName).'Factory'
