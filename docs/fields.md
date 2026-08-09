@@ -438,8 +438,10 @@ Combined date and time picker.
 - Time constraints (minTime, maxTime)
 - Configurable create/edit and display formats
 - Canonical `Y-m-d H:i:s` persistence in the configured storage timezone
+- Writes are rejected when that offset-less storage value would be ambiguous during a DST overlap; use `UTC` or another fixed-offset storage timezone to accept every instant
 - Timezone conversion for edit, index, and view contexts
 - Null-safe shared index/view formatting
+- Unparseable or ambiguous legacy storage values remain visible as their raw value instead of being assigned a guessed timezone offset
 - Week start customization
 
 **Database:** `timestamp` column type

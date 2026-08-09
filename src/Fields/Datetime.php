@@ -5,6 +5,7 @@ namespace Aura\Base\Fields;
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Contracts\FieldValueStorage;
 use Aura\Base\Support\TemporalValue;
+use Aura\Base\Support\UnparsedTemporalValue;
 use Illuminate\Database\Eloquent\Model;
 
 class Datetime extends Field
@@ -91,7 +92,7 @@ class Datetime extends Field
                 'validation' => 'nullable|timezone:all',
                 'slug' => 'storage_timezone',
                 'default' => config('aura.fields.datetime.storage_timezone'),
-                'instructions' => 'Timezone used for persisted timestamp values. Defaults to the application timezone for backward compatibility.',
+                'instructions' => 'Timezone used for persisted timestamp values. Defaults to the application timezone for backward compatibility. Because storage omits the UTC offset, instants in a storage-timezone DST overlap are rejected; use UTC or another fixed-offset timezone to accept every instant.',
             ],
             [
                 'label' => 'Enable Input',
@@ -198,7 +199,7 @@ class Datetime extends Field
         ?Model $model,
         FieldValueContext $context = FieldValueContext::Index,
     ): mixed {
-        $field['_aura_hydrated'] = true;
+        $field['_aura_hydrated'] = ! $value instanceof UnparsedTemporalValue;
 
         return parent::presentValue($value, $field, $model, $context);
     }

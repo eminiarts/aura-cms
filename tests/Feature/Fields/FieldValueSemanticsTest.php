@@ -192,6 +192,47 @@ class Core10DstResource extends Resource
     }
 }
 
+class Core10AmbiguousStorageResource extends Resource
+{
+    public static $customTable = true;
+
+    public static ?string $slug = 'core-10-ambiguous-storage';
+
+    public static string $type = 'Core10AmbiguousStorage';
+
+    public static bool $usesMeta = true;
+
+    protected $fillable = ['physical_occurred_at'];
+
+    protected $table = 'core_10_ambiguous_storage_values';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Physical occurred at',
+                'slug' => 'physical_occurred_at',
+                'type' => Datetime::class,
+                'format' => 'Y-m-d H:i:s',
+                'display_format' => 'Y-m-d H:i P T',
+                'input_timezone' => 'Europe/Zurich',
+                'display_timezone' => 'America/New_York',
+                'storage_timezone' => 'Europe/Zurich',
+            ],
+            [
+                'name' => 'Meta occurred at',
+                'slug' => 'meta_occurred_at',
+                'type' => Datetime::class,
+                'format' => 'Y-m-d H:i:s',
+                'display_format' => 'Y-m-d H:i P T',
+                'input_timezone' => 'Europe/Zurich',
+                'display_timezone' => 'America/New_York',
+                'storage_timezone' => 'Europe/Zurich',
+            ],
+        ];
+    }
+}
+
 class Core10NativeDatetimeCastResource extends Resource
 {
     public static $customTable = true;
@@ -554,6 +595,16 @@ beforeEach(function () {
         Schema::create('core_10_dst_values', function (Blueprint $table) {
             $table->id();
             $table->timestamp('occurred_at')->nullable();
+            $table->foreignId('user_id')->nullable();
+            $table->foreignId('team_id')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    if (! Schema::hasTable('core_10_ambiguous_storage_values')) {
+        Schema::create('core_10_ambiguous_storage_values', function (Blueprint $table) {
+            $table->id();
+            $table->timestamp('physical_occurred_at')->nullable();
             $table->foreignId('user_id')->nullable();
             $table->foreignId('team_id')->nullable();
             $table->timestamps();
@@ -1020,4 +1071,104 @@ test('create accepts an explicit offset and stores the exact instant', function 
 
     expect(DB::table('core_10_dst_values')->orderByDesc('id')->value('occurred_at'))
         ->toBe('2026-10-25 01:30:00');
+});
+
+test('explicit instants in a storage timezone overlap are rejected before physical or meta persistence', function (
+    string $value,
+    string $field,
+) {
+    $rowsBefore = DB::table('core_10_ambiguous_storage_values')->count();
+    $metaBefore = DB::table('meta')->count();
+
+    expect(fn () => Core10AmbiguousStorageResource::create([$field => $value]))
+        ->toThrow(InvalidFieldValue::class, 'cannot be represented unambiguously')
+        ->and(DB::table('core_10_ambiguous_storage_values')->count())->toBe($rowsBefore)
+        ->and(DB::table('meta')->count())->toBe($metaBefore);
+})->with([
+    'summer fold in a physical column' => ['2026-10-25T02:30:00+02:00', 'physical_occurred_at'],
+    'winter fold in a physical column' => ['2026-10-25T02:30:00+01:00', 'physical_occurred_at'],
+    'summer fold in meta' => ['2026-10-25T02:30:00+02:00', 'meta_occurred_at'],
+    'winter fold in meta' => ['2026-10-25T02:30:00+01:00', 'meta_occurred_at'],
+]);
+
+test('ambiguous legacy storage values remain raw across hydration and presentation surfaces', function () {
+    $resource = Core10AmbiguousStorageResource::create([
+        'physical_occurred_at' => '2026-10-25T03:30:00+01:00',
+        'meta_occurred_at' => '2026-10-25T03:30:00+01:00',
+    ]);
+    $legacyValue = '2026-10-25 02:30:00';
+
+    DB::table('core_10_ambiguous_storage_values')
+        ->where('id', $resource->id)
+        ->update(['physical_occurred_at' => $legacyValue]);
+    DB::table('meta')
+        ->where('metable_id', $resource->id)
+        ->where('key', 'meta_occurred_at')
+        ->update(['value' => $legacyValue]);
+
+    $resource = $resource->fresh();
+
+    foreach (['physical_occurred_at', 'meta_occurred_at'] as $slug) {
+        expect($resource->resolveFieldValueInContext($slug, FieldValueContext::Model))->toBe($legacyValue)
+            ->and($resource->resolveFieldValueInContext($slug, FieldValueContext::Edit))->toBe($legacyValue)
+            ->and(trim(strip_tags((string) $resource->displayInContext($slug, FieldValueContext::Index))))->toBe($legacyValue)
+            ->and(trim(strip_tags((string) $resource->displayInContext($slug, FieldValueContext::View))))->toBe($legacyValue)
+            ->and(trim(strip_tags((string) $resource->exportFieldValue($slug))))->toBe($legacyValue);
+    }
+});
+
+test('unambiguous explicit instants survive physical and meta storage and every presentation context', function () {
+    $resource = Core10AmbiguousStorageResource::create([
+        'physical_occurred_at' => '2026-10-25T03:30:00+01:00',
+        'meta_occurred_at' => '2026-10-25T03:30:00+01:00',
+    ])->refresh();
+    $storedValue = '2026-10-25 03:30:00';
+    $hydratedValue = '2026-10-24 22:30:00';
+    $displayValue = '2026-10-24 22:30 -04:00 EDT';
+
+    expect(DB::table('core_10_ambiguous_storage_values')
+        ->where('id', $resource->id)
+        ->value('physical_occurred_at'))->toBe($storedValue)
+        ->and(DB::table('meta')
+            ->where('metable_id', $resource->id)
+            ->where('key', 'meta_occurred_at')
+            ->value('value'))->toBe($storedValue);
+
+    foreach (['physical_occurred_at', 'meta_occurred_at'] as $slug) {
+        expect($resource->resolveFieldValueInContext($slug, FieldValueContext::Model))->toBe($hydratedValue)
+            ->and($resource->resolveFieldValueInContext($slug, FieldValueContext::Edit))->toBe($hydratedValue)
+            ->and(trim(strip_tags((string) $resource->displayInContext($slug, FieldValueContext::Index))))->toBe($displayValue)
+            ->and(trim(strip_tags((string) $resource->displayInContext($slug, FieldValueContext::View))))->toBe($displayValue)
+            ->and(trim(strip_tags((string) $resource->exportFieldValue($slug))))->toBe($displayValue);
+    }
+});
+
+test('null and empty datetimes remain distinct for physical and meta storage adapters', function () {
+    $resource = Core10AmbiguousStorageResource::create([
+        'physical_occurred_at' => null,
+        'meta_occurred_at' => null,
+    ])->refresh();
+    $datetime = new Datetime;
+
+    expect(DB::table('core_10_ambiguous_storage_values')
+        ->where('id', $resource->id)
+        ->value('physical_occurred_at'))->toBeNull()
+        ->and(DB::table('meta')
+            ->where('metable_id', $resource->id)
+            ->where('key', 'meta_occurred_at')
+            ->value('value'))->toBeNull();
+
+    foreach (Core10AmbiguousStorageResource::getFields() as $field) {
+        $storage = $field['slug'] === 'physical_occurred_at'
+            ? FieldValueStorage::Physical
+            : FieldValueStorage::Meta;
+
+        expect($resource->resolveFieldValueInContext($field['slug'], FieldValueContext::Model))->toBeNull()
+            ->and($resource->resolveFieldValueInContext($field['slug'], FieldValueContext::Edit))->toBeNull()
+            ->and(trim(strip_tags((string) $resource->displayInContext($field['slug'], FieldValueContext::Index))))->toBe('')
+            ->and(trim(strip_tags((string) $resource->displayInContext($field['slug'], FieldValueContext::View))))->toBe('')
+            ->and(trim(strip_tags((string) $resource->exportFieldValue($field['slug']))))->toBe('')
+            ->and($datetime->normalizeForStorage('', $field, $resource, $storage))->toBe('')
+            ->and($datetime->hydrateFromStorage('', $field, $resource, $storage, FieldValueContext::View))->toBe('');
+    }
 });

@@ -55,3 +55,7 @@ Older published Aura configuration files can keep working because temporal field
 ```
 
 The application-timezone fallback preserves the interpretation of timestamps written by older Aura versions. Set `storage_timezone` to `UTC` only after confirming existing rows are already UTC or migrating them; otherwise the same stored clock time may display offset after the upgrade.
+
+Datetime persistence remains the portable, offset-less `Y-m-d H:i:s` contract. An exact instant is now rejected before physical or meta persistence when its wall clock is ambiguous in the configured storage timezone, because either DST fold would serialize to the same value. Configure `storage_timezone` as `UTC` or another fixed-offset timezone to accept every instant. This does not change the published configuration default or require a schema migration.
+
+Existing ambiguous or otherwise unparseable datetime rows remain inspectable: edit/model hydration preserves the raw value, and index, view, and export surfaces render it without guessing an offset. Before migrating a DST-observing storage timezone to UTC, disambiguate overlap rows from another authoritative source; the offset-less value alone cannot identify which instant was intended.

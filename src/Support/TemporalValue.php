@@ -41,6 +41,10 @@ class TemporalValue
      */
     public static function displayDatetime(mixed $value, array $field, bool $hydrated = false): string
     {
+        if ($value instanceof UnparsedTemporalValue) {
+            return is_scalar($value->value) ? (string) $value->value : '';
+        }
+
         if ($value === null || $value === '') {
             return '';
         }
@@ -98,6 +102,10 @@ class TemporalValue
         $datetime = self::parseStoredDatetime($value, $field);
 
         if (! $datetime) {
+            if (in_array($context, [FieldValueContext::Export, FieldValueContext::Index, FieldValueContext::View], true)) {
+                return new UnparsedTemporalValue($value);
+            }
+
             return $value;
         }
 
@@ -158,9 +166,12 @@ class TemporalValue
             throw InvalidFieldValue::forField($field['slug'] ?? null, 'expected a datetime string or DateTimeInterface instance');
         }
 
-        return $datetime
-            ->setTimezone(self::storageTimezone($field))
-            ->format('Y-m-d H:i:s');
+        $storageTimezone = self::storageTimezone($field);
+        $stored = $datetime->setTimezone($storageTimezone);
+
+        self::assertPortableStorageDatetime($stored, $storageTimezone, $field);
+
+        return $stored->format('Y-m-d H:i:s');
     }
 
     private static function applicationTimezone(): string
@@ -168,6 +179,36 @@ class TemporalValue
         $timezone = config('app.timezone', 'UTC');
 
         return is_string($timezone) && $timezone !== '' ? $timezone : 'UTC';
+    }
+
+    /**
+     * The portable storage contract omits timezone offsets. Reject an exact
+     * instant when that representation would map back to multiple instants.
+     *
+     * @param  array<string, mixed>  $field
+     */
+    private static function assertPortableStorageDatetime(
+        CarbonImmutable $datetime,
+        DateTimeZone $storageTimezone,
+        array $field,
+    ): void {
+        $wallClock = self::parseStrict(
+            $datetime->format('Y-m-d H:i:s'),
+            ['Y-m-d H:i:s'],
+            new DateTimeZone('UTC'),
+        );
+        $candidates = $wallClock
+            ? self::localDatetimeCandidates($wallClock, $storageTimezone)
+            : [];
+
+        if (count($candidates) === 1) {
+            return;
+        }
+
+        throw InvalidFieldValue::forField(
+            $field['slug'] ?? null,
+            "the instant cannot be represented unambiguously as an offset-less Y-m-d H:i:s value in storage timezone {$storageTimezone->getName()}; configure storage_timezone to UTC or another fixed-offset timezone",
+        );
     }
 
     /**
