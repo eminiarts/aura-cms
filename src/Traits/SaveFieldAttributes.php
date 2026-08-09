@@ -88,6 +88,10 @@ trait SaveFieldAttributes
 
                 if (! array_key_exists($slug, $post->attributes['fields'])) {
                     $post->attributes['fields'][$slug] = $post->attributes[$slug];
+
+                    if ($post->isTableField($slug) && method_exists($post, 'markPhysicalFieldAsPacked')) {
+                        $post->markPhysicalFieldAsPacked($slug);
+                    }
                 }
 
                 // Set the field value into nested fields array if it contains a dot

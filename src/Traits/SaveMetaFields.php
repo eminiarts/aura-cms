@@ -107,31 +107,35 @@ trait SaveMetaFields
 
                 $field = $post->fieldBySlug($key);
 
-                $hasFieldSetClosure = isset($field['set']) && $field['set'] instanceof \Closure;
-
-                if ($hasFieldSetClosure) {
-                    $value = call_user_func($field['set'], $post, $field, $value);
-                }
-
                 $storage = $post->isTableField($key)
                     ? FieldValueStorage::Physical
                     : FieldValueStorage::Meta;
 
-                // An Eloquent cast has already normalized this physical value
-                // into the model's raw storage representation. Running the
-                // field adapter again can double-encode JSON cast attributes.
-                $isNormalizedByEloquent = $storage === FieldValueStorage::Physical
-                    && $post->hasCast($key);
+                if ($storage === FieldValueStorage::Physical) {
+                    // Values copied into `fields` by packFieldAttributes are
+                    // already the raw result of Aura normalization followed by
+                    // the model's mutator/cast. A literal packed payload has not
+                    // run either stage, so route it through setAttribute now.
+                    if (! method_exists($post, 'wasPhysicalFieldPacked') || ! $post->wasPhysicalFieldPacked($key)) {
+                        $post->setAttribute($key, $value);
+                    }
 
-                if ($class instanceof FieldValueContract && ! $isNormalizedByEloquent) {
-                    $value = $class->normalizeForStorage(
-                        $value,
-                        is_array($field) ? $field : [],
-                        $post,
-                        $storage,
-                    );
-                } elseif (! $isNormalizedByEloquent && method_exists($class, 'set')) {
-                    $value = $class->set($post, $field, $value);
+                    $value = $post->getAttributes()[$key] ?? null;
+                } else {
+                    if (isset($field['set']) && $field['set'] instanceof \Closure) {
+                        $value = ($field['set'])($post, $field, $value);
+                    }
+
+                    if ($class instanceof FieldValueContract) {
+                        $value = $class->normalizeForStorage(
+                            $value,
+                            is_array($field) ? $field : [],
+                            $post,
+                            $storage,
+                        );
+                    } elseif (method_exists($class, 'set')) {
+                        $value = $class->set($post, $field, $value);
+                    }
                 }
 
                 if (method_exists($class, 'saving')) {
@@ -158,11 +162,10 @@ trait SaveMetaFields
                 }
 
                 // Persist every declared physical field back to its model
-                // attribute. This includes custom-table resources without meta,
-                // whose fields used to bypass normalization entirely.
+                // attribute. It already passed through setAttribute above (or
+                // was copied from its raw post-cast representation), so direct
+                // assignment here would bypass or duplicate Eloquent behavior.
                 if ($post->isTableField($key)) {
-                    $post->attributes[$key] = $value;
-
                     continue;
                 }
 

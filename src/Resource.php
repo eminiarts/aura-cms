@@ -87,6 +87,21 @@ class Resource extends Model implements DefinesFields
     protected array $normalizedMetaCache = [];
 
     /**
+     * Physical fields currently passing through Aura's write adapter.
+     *
+     * @var array<string, true>
+     */
+    protected array $normalizingPhysicalFieldValues = [];
+
+    /**
+     * Physical values copied into the packed fields payload from Eloquent's
+     * raw attributes. These values have already completed the write pipeline.
+     *
+     * @var array<string, true>
+     */
+    protected array $packedPhysicalFieldValues = [];
+
+    /**
      * The table associated with the model.
      *
      * @var string
@@ -108,7 +123,7 @@ class Resource extends Model implements DefinesFields
 
     public function __construct(array $attributes = [])
     {
-        parent::__construct($attributes);
+        parent::__construct();
 
         $this->baseFillable = $this->getFillable();
 
@@ -126,6 +141,8 @@ class Resource extends Model implements DefinesFields
         if (! config('aura.features.legacy_fields_append', true)) {
             $this->appends = array_values(array_diff($this->appends, ['fields']));
         }
+
+        $this->fill($attributes);
     }
 
     public function __call($method, $parameters)
@@ -387,6 +404,11 @@ class Resource extends Model implements DefinesFields
         return false;
     }
 
+    public function markPhysicalFieldAsPacked(string $slug): void
+    {
+        $this->packedPhysicalFieldValues[$slug] = true;
+    }
+
     /**
      * @return BelongsTo
      */
@@ -421,13 +443,11 @@ class Resource extends Model implements DefinesFields
             return $class->get($class, $this->{$key}, $field);
         }
 
-        // Deliberately meta-BLIND probes: this method COMPUTES the value later
-        // surfaced (meta-aware) via __get/__isset, so it must ask only whether a
-        // *real* Eloquent attribute/relation exists for this slug. parent::__isset()
-        // is the native check (identical to the historical isset($this->{$key})
-        // before Resource declared its own __isset) — using the meta-aware isset()
-        // here would recurse into the fields build and defeat the display fast path.
-        if ($class instanceof FieldValueContract && parent::__isset($key)) {
+        // Deliberately meta-blind probe: hasAttribute() identifies raw columns,
+        // accessors, and casts without interpreting a null result as absence.
+        // The value returned by Eloquent is authoritative even when it is null;
+        // falling back to a raw legacy sentinel would bypass its getter/cast.
+        if ($class instanceof FieldValueContract && $this->hasAttribute($key)) {
             return $class->hydrateFromStorage(
                 parent::__get($key),
                 is_array($field) ? $field : [],
@@ -437,30 +457,12 @@ class Resource extends Model implements DefinesFields
             );
         }
 
-        if ($class && parent::__isset($key) && method_exists($class, 'get')) {
-            return $class->get($class, $this->{$key}, $field);
+        if ($class && $this->hasAttribute($key) && method_exists($class, 'get')) {
+            return $class->get($class, parent::__get($key), $field);
         }
 
-        if (parent::__isset($key)) {
-            return $this->{$key};
-        }
-
-        if ($class instanceof FieldValueContract && array_key_exists($key, $this->attributes)) {
-            return $class->hydrateFromStorage(
-                $this->attributes[$key],
-                is_array($field) ? $field : [],
-                $this,
-                FieldValueStorage::Physical,
-                $context,
-            );
-        }
-
-        if ($class && array_key_exists($key, $this->attributes) && method_exists($class, 'get')) {
-            return $class->get($class, $this->attributes[$key], $field);
-        }
-
-        if (array_key_exists($key, $this->attributes)) {
-            return $this->attributes[$key];
+        if ($this->hasAttribute($key)) {
+            return parent::__get($key);
         }
 
         $method = 'get'.Str::studly($key).'Field';
@@ -500,6 +502,51 @@ class Resource extends Model implements DefinesFields
             ->where('post_type', 'revision');
     }
 
+    /**
+     * Compose field normalization with Eloquent's native write pipeline.
+     *
+     * Aura receives submitted values first. Its normalized result then passes
+     * through the model mutator/cast exactly once before reaching the database.
+     * Meta-backed fields are normalized later by SaveMetaFields.
+     *
+     * @param  string  $key
+     * @return $this
+     */
+    public function setAttribute($key, $value)
+    {
+        if (is_string($key)
+            && ! isset($this->normalizingPhysicalFieldValues[$key])
+            && $this->isTableField($key)) {
+            $field = $this->fieldBySlug($key);
+            $fieldClass = $this->fieldClassBySlug($key);
+
+            if ($fieldClass) {
+                $this->normalizingPhysicalFieldValues[$key] = true;
+
+                try {
+                    if (isset($field['set']) && $field['set'] instanceof \Closure) {
+                        $value = ($field['set'])($this, $field, $value);
+                    }
+
+                    if ($fieldClass instanceof FieldValueContract) {
+                        $value = $fieldClass->normalizeForStorage(
+                            $value,
+                            is_array($field) ? $field : [],
+                            $this,
+                            FieldValueStorage::Physical,
+                        );
+                    } elseif (method_exists($fieldClass, 'set')) {
+                        $value = $fieldClass->set($this, $field, $value);
+                    }
+                } finally {
+                    unset($this->normalizingPhysicalFieldValues[$key]);
+                }
+            }
+        }
+
+        return parent::setAttribute($key, $value);
+    }
+
     public function setRelation($relation, $value)
     {
         if ($relation === 'meta') {
@@ -533,6 +580,11 @@ class Resource extends Model implements DefinesFields
     public function user()
     {
         return $this->belongsTo(config('aura.resources.user'));
+    }
+
+    public function wasPhysicalFieldPacked(string $slug): bool
+    {
+        return isset($this->packedPhysicalFieldValues[$slug]);
     }
 
     public function widgets()

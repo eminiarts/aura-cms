@@ -15,6 +15,8 @@ use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Livewire\Resource\View as ResourceView;
 use Aura\Base\Resource;
+use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -48,6 +50,91 @@ class Core10ContextValueField extends Field
         FieldValueContext $context = FieldValueContext::Index,
     ): mixed {
         return $context->value.':'.$value;
+    }
+}
+
+class Core10BooleanCast implements CastsAttributes
+{
+    public static array $setValues = [];
+
+    public function get(Model $model, string $key, mixed $value, array $attributes): bool
+    {
+        return $value === 'yes';
+    }
+
+    public function set(Model $model, string $key, mixed $value, array $attributes): string
+    {
+        self::$setValues[] = $value;
+
+        return $value ? 'yes' : 'no';
+    }
+}
+
+class Core10NullCast implements CastsAttributes
+{
+    public function get(Model $model, string $key, mixed $value, array $attributes): mixed
+    {
+        return null;
+    }
+
+    public function set(Model $model, string $key, mixed $value, array $attributes): mixed
+    {
+        return $value;
+    }
+}
+
+class Core10EloquentPipelineResource extends Resource
+{
+    public static $customTable = true;
+
+    public static array $mutatorValues = [];
+
+    public static ?string $slug = 'core-10-eloquent-pipeline';
+
+    public static string $type = 'Core10EloquentPipeline';
+
+    public static bool $usesMeta = false;
+
+    protected $fillable = [
+        'cast_boolean',
+        'mutated_boolean',
+        'null_cast_value',
+        'null_accessor_value',
+    ];
+
+    protected $table = 'core_10_eloquent_pipeline_values';
+
+    public static function getFields(): array
+    {
+        return collect([
+            'cast_boolean',
+            'mutated_boolean',
+            'null_cast_value',
+            'null_accessor_value',
+        ])->map(fn (string $slug): array => [
+            'name' => $slug,
+            'slug' => $slug,
+            'type' => Boolean::class,
+        ])->all();
+    }
+
+    public function setMutatedBooleanAttribute(mixed $value): void
+    {
+        self::$mutatorValues[] = $value;
+        $this->attributes['mutated_boolean'] = $value ? 'yes' : 'no';
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'cast_boolean' => Core10BooleanCast::class,
+            'null_cast_value' => Core10NullCast::class,
+        ];
+    }
+
+    protected function nullAccessorValue(): Attribute
+    {
+        return Attribute::make(get: fn (mixed $value): mixed => null);
     }
 }
 
@@ -223,6 +310,22 @@ beforeEach(function () {
             $table->timestamps();
         });
     }
+
+    if (! Schema::hasTable('core_10_eloquent_pipeline_values')) {
+        Schema::create('core_10_eloquent_pipeline_values', function (Blueprint $table) {
+            $table->id();
+            $table->string('cast_boolean')->nullable();
+            $table->string('mutated_boolean')->nullable();
+            $table->string('null_cast_value')->nullable();
+            $table->string('null_accessor_value')->nullable();
+            $table->foreignId('user_id')->nullable();
+            $table->foreignId('team_id')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    Core10BooleanCast::$setValues = [];
+    Core10EloquentPipelineResource::$mutatorValues = [];
 });
 
 test('the value contract adapts legacy set get and display hooks', function () {
@@ -320,6 +423,36 @@ test('physical-only custom tables normalize values before persistence', function
         ->and($resource->resolveFieldValue('boolean_value'))->toBeFalse()
         ->and(DB::table('core_10_physical_values')->where('id', $resource->id)->value('datetime_value'))
         ->toBe('2026-08-09 16:15:00');
+});
+
+test('physical writes compose Aura normalization before Eloquent casts and mutators', function () {
+    $resource = Core10EloquentPipelineResource::create([
+        'cast_boolean' => 'false',
+        'mutated_boolean' => 'false',
+    ]);
+
+    expect(Core10BooleanCast::$setValues)->toBe([false])
+        ->and(Core10EloquentPipelineResource::$mutatorValues)->toBe([false])
+        ->and(DB::table('core_10_eloquent_pipeline_values')->where('id', $resource->id)->value('cast_boolean'))->toBe('no')
+        ->and(DB::table('core_10_eloquent_pipeline_values')->where('id', $resource->id)->value('mutated_boolean'))->toBe('no');
+});
+
+test('null returned by an Eloquent cast or accessor is authoritative during field hydration', function () {
+    $id = DB::table('core_10_eloquent_pipeline_values')->insertGetId([
+        'null_cast_value' => 'legacy-sentinel',
+        'null_accessor_value' => 'legacy-sentinel',
+        'user_id' => $this->user->id,
+        'team_id' => $this->user->current_team_id,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $resource = Core10EloquentPipelineResource::findOrFail($id);
+
+    expect($resource->getRawOriginal('null_cast_value'))->toBe('legacy-sentinel')
+        ->and($resource->getRawOriginal('null_accessor_value'))->toBe('legacy-sentinel')
+        ->and($resource->resolveFieldValue('null_cast_value'))->toBeNull()
+        ->and($resource->resolveFieldValue('null_accessor_value'))->toBeNull();
 });
 
 test('create query parameters retain decimal values until field normalization', function () {
