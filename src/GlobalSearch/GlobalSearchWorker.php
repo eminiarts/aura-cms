@@ -6,7 +6,9 @@ use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Resource;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\StatefulGuard;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 final class GlobalSearchWorker extends GlobalSearch
@@ -29,18 +31,28 @@ final class GlobalSearchWorker extends GlobalSearch
             return [];
         }
 
-        $user = $this->resolveWorkerUser($request['context'] ?? null);
         $queryLimit = $request['query_limit'] ?? null;
 
-        if (! $user instanceof Authenticatable
-            || ! is_int($queryLimit)
+        if (! is_int($queryLimit)
             || $queryLimit < 1
             || $queryLimit > 500) {
             return [];
         }
 
+        $context = (new GlobalSearchWorkerContext)->verify($request['context'] ?? null);
+
+        if ($context === null) {
+            return [];
+        }
+
+        DB::setDefaultConnection($context['connection']);
         $queryGuard = new GlobalSearchQueryGuard($queryLimit);
         $queryGuard->install();
+        $user = $this->resolveWorkerUser($context);
+
+        if (! $user instanceof Authenticatable) {
+            return [];
+        }
 
         return match ($operation) {
             'discover' => $this->discover($user, $queryGuard),
@@ -69,26 +81,20 @@ final class GlobalSearchWorker extends GlobalSearch
         ];
     }
 
-    private function resolveWorkerUser(mixed $context): ?Authenticatable
+    /**
+     * @param  array{guard: string, user_id: int|string, team_id: int|string|null, connection: string}  $context
+     */
+    private function resolveWorkerUser(array $context): ?Authenticatable
     {
-        if (! is_array($context)
-            || ! is_string($context['guard'] ?? null)
-            || $context['guard'] === ''
-            || strlen($context['guard']) > 64
-            || (! is_int($context['user_id'] ?? null) && ! is_string($context['user_id'] ?? null))
-            || (! is_int($context['team_id'] ?? null)
-                && ! is_string($context['team_id'] ?? null)
-                && ($context['team_id'] ?? null) !== null)) {
-            return null;
-        }
-
         try {
             $guard = Auth::guard($context['guard']);
             $provider = $guard->getProvider();
             $user = $provider->retrieveById($context['user_id']);
 
             if (! $user instanceof Authenticatable
+                || ! $user instanceof Model
                 || ! $guard instanceof StatefulGuard
+                || $user->getConnection()->getName() !== $context['connection']
                 || ! $this->sameIdentifier(data_get($user, 'current_team_id'), $context['team_id'])) {
                 return null;
             }

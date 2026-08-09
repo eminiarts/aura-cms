@@ -18,7 +18,39 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
             return;
         }
 
-        config([
+        $fixtureMode = getenv('AURA_GLOBAL_SEARCH_FIXTURE_MODE');
+        $databaseConfiguration = $fixtureMode === 'tenant-collision'
+            ? [
+                'aura.global_search.worker_connections' => [
+                    'process_search_tenant_a',
+                    'process_search_tenant_b',
+                ],
+                'database.default' => 'process_search_tenant_b',
+                'database.connections.process_search_tenant_a' => [
+                    'driver' => 'sqlite',
+                    'database' => getenv('DB_DATABASE_TENANT_A'),
+                    'prefix' => '',
+                    'foreign_key_constraints' => true,
+                ],
+                'database.connections.process_search_tenant_b' => [
+                    'driver' => 'sqlite',
+                    'database' => getenv('DB_DATABASE_TENANT_B'),
+                    'prefix' => '',
+                    'foreign_key_constraints' => true,
+                ],
+            ]
+            : [
+                'aura.global_search.worker_connections' => ['process_search'],
+                'database.default' => 'process_search',
+                'database.connections.process_search' => [
+                    'driver' => 'sqlite',
+                    'database' => getenv('DB_DATABASE'),
+                    'prefix' => '',
+                    'foreign_key_constraints' => true,
+                ],
+            ];
+
+        config(array_merge([
             'aura.features.global_search' => true,
             'aura.features.legacy_fields_append' => false,
             'aura.global_search.execution_backend' => 'process',
@@ -33,16 +65,14 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
             'auth.providers.users.driver' => 'eloquent',
             'auth.providers.users.model' => User::class,
             'cache.default' => 'array',
-            'database.default' => 'process_search',
-            'database.connections.process_search' => [
-                'driver' => 'sqlite',
-                'database' => getenv('DB_DATABASE'),
-                'prefix' => '',
-                'foreign_key_constraints' => true,
-            ],
-        ]);
+        ], $databaseConfiguration));
 
-        $resources = match (getenv('AURA_GLOBAL_SEARCH_FIXTURE_MODE')) {
+        $resources = match ($fixtureMode) {
+            'blocking-discovery' => [
+                GlobalSearchProcessBlockingDiscoveryResource::class,
+                GlobalSearchProcessResource::class,
+            ],
+            'tenant-collision' => [GlobalSearchProcessDefaultConnectionResource::class],
             'slow-title' => [
                 GlobalSearchProcessSlowTitleResource::class,
                 GlobalSearchProcessResource::class,
@@ -73,6 +103,10 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
             ],
             'query-policy' => [
                 GlobalSearchProcessQueryFloodPolicyResource::class,
+                GlobalSearchProcessResource::class,
+            ],
+            'raw-pdo' => [
+                GlobalSearchProcessRawPdoAdapterResource::class,
                 GlobalSearchProcessResource::class,
             ],
             default => [GlobalSearchProcessResource::class],

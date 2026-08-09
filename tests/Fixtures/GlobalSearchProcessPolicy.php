@@ -13,6 +13,10 @@ class GlobalSearchProcessPolicy
 
     public function viewAny(mixed $user, Resource $resource): bool
     {
+        if ($resource instanceof GlobalSearchProcessDefaultConnectionResource) {
+            return data_get($user, 'email') === 'tenant-a@example.test';
+        }
+
         if ($resource instanceof GlobalSearchProcessQueryFloodPolicyResource
             && app()->bound('aura.global_search.worker_operation')
             && app('aura.global_search.worker_operation') === 'search') {

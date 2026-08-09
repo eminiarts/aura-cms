@@ -2,7 +2,10 @@
 
 namespace Aura\Base\Tests\Fixtures;
 
+use Aura\Base\Exceptions\GlobalSearchExecutionUnavailable;
 use Aura\Base\GlobalSearch\FreshProcessGlobalSearchExecutor;
+use Aura\Base\GlobalSearch\GlobalSearchWorkerContext;
+use Aura\Base\Resources\User;
 use Illuminate\Console\Command;
 
 final class GlobalSearchSupervisorFixtureCommand extends Command
@@ -28,6 +31,8 @@ final class GlobalSearchSupervisorFixtureCommand extends Command
             'AURA_GLOBAL_SEARCH_FIXTURE_MODE',
             'DB_CONNECTION',
             'DB_DATABASE',
+            'DB_DATABASE_TENANT_A',
+            'DB_DATABASE_TENANT_B',
         ] as $name) {
             $value = getenv($name);
 
@@ -36,11 +41,24 @@ final class GlobalSearchSupervisorFixtureCommand extends Command
             }
         }
 
-        (new FreshProcessGlobalSearchExecutor($artisanPath, $environment, $workingDirectory))->run([
-            'operation' => 'discover',
-            'context' => ['guard' => 'web', 'user_id' => 1, 'team_id' => 11],
-            'query_limit' => 50,
-        ], 5_000, 1_048_576);
+        $user = User::on(config('database.default'))->withoutGlobalScopes()->find(1);
+        $context = $user === null
+            ? null
+            : (new GlobalSearchWorkerContext)->create($user, 'web');
+
+        if ($context === null) {
+            return 1;
+        }
+
+        try {
+            (new FreshProcessGlobalSearchExecutor($artisanPath, $environment, $workingDirectory))->run([
+                'operation' => 'discover',
+                'context' => $context,
+                'query_limit' => 50,
+            ], 5_000, 1_048_576);
+        } catch (GlobalSearchExecutionUnavailable) {
+            return 1;
+        }
 
         return 0;
     }

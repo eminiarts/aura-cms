@@ -8,6 +8,13 @@ use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Events\ConnectionEstablished;
 use Illuminate\Events\Dispatcher;
 
+/**
+ * Meters statements executed through Laravel-managed database connections.
+ *
+ * Global-search extension points prohibit native PDO and independently created
+ * connections because PHP cannot portably intercept those statements. The
+ * fresh-process deadline remains the containment boundary for violating code.
+ */
 final class GlobalSearchQueryGuard
 {
     /** @var array<int, true> */

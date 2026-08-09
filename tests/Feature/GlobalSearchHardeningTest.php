@@ -1,6 +1,7 @@
 <?php
 
 use Aura\Base\Contracts\GlobalSearchAdapter;
+use Aura\Base\Exceptions\GlobalSearchExecutionFailed;
 use Aura\Base\Exceptions\GlobalSearchExecutionTimedOut;
 use Aura\Base\Exceptions\GlobalSearchExecutionUnavailable;
 use Aura\Base\Facades\Aura;
@@ -8,16 +9,20 @@ use Aura\Base\GlobalSearch\DatabaseGlobalSearchAdapter;
 use Aura\Base\GlobalSearch\DatabaseStatementDeadline;
 use Aura\Base\GlobalSearch\FreshProcessGlobalSearchExecutor;
 use Aura\Base\GlobalSearch\GlobalSearchBudget;
+use Aura\Base\GlobalSearch\GlobalSearchWorkerContext;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Models\Meta;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessBlockingDiscoveryResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessDefaultConnectionResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessDescriptorProbeResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessPolicy;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessQueryFloodAdapterResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessQueryFloodPolicyResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessQueryFloodVisibilityResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessRawPdoAdapterResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessSlowDiscoveryResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessSlowTitleResource;
@@ -591,9 +596,10 @@ SQL);
         'aura.features.legacy_fields_append' => false,
         'aura.global_search.execution_backend' => 'process',
         'aura.global_search.per_resource_timeout_ms' => 650,
-        'aura.global_search.total_timeout_ms' => 3_000,
+        'aura.global_search.total_timeout_ms' => 4_000,
         'aura.global_search.max_queries_per_resource' => 8,
         'aura.global_search.max_total_queries' => 50,
+        'aura.global_search.worker_connections' => ['process_search'],
         'aura.teams' => true,
         'database.connections.process_search' => [
             'driver' => 'sqlite',
@@ -607,6 +613,7 @@ SQL);
         realpath(dirname(__DIR__).'/Fixtures/GlobalSearchWorkerArtisan.php') ?: null,
         [
             'APP_ENV' => 'testing',
+            'APP_KEY' => (string) config('app.key'),
             'AURA_GLOBAL_SEARCH_DESCENDANT_MARKER' => $markerPath,
             'AURA_GLOBAL_SEARCH_HOOK_MARKER' => $markerPath,
             'AURA_GLOBAL_SEARCH_PROCESS_FIXTURE' => '1',
@@ -640,6 +647,132 @@ function cleanupFreshProcessSearchHarness(array $harness): void
 {
     DB::purge('process_search');
     @unlink($harness['database']);
+    @unlink($harness['marker']);
+}
+
+/**
+ * @return array{
+ *     version: int,
+ *     guard: string,
+ *     user_id: int|string,
+ *     team_id: int|string|null,
+ *     connection: string,
+ *     connection_fingerprint: string,
+ *     signature: string
+ * }
+ */
+function signedFreshProcessContext(User $user): array
+{
+    $context = (new GlobalSearchWorkerContext)->create($user, 'web');
+
+    if (! is_array($context)) {
+        throw new RuntimeException('The test worker context could not be signed.');
+    }
+
+    return $context;
+}
+
+/**
+ * @return array{databases: array<int, string>, marker: string, user: User, previous_default: string}
+ */
+function configureCollidingFreshProcessSearchHarness(): array
+{
+    $suffix = getmypid().'-'.bin2hex(random_bytes(8));
+    $tenantAPath = sys_get_temp_dir()."/aura-global-search-tenant-a-{$suffix}.sqlite";
+    $tenantBPath = sys_get_temp_dir()."/aura-global-search-tenant-b-{$suffix}.sqlite";
+    $markerPath = sys_get_temp_dir()."/aura-global-search-marker-{$suffix}";
+
+    foreach ([
+        [$tenantAPath, 'Tenant A User', 'tenant-a@example.test', 'Collision Needle Correct Tenant'],
+        [$tenantBPath, 'Tenant B User', 'tenant-b@example.test', 'Collision Needle Wrong Tenant'],
+    ] as [$databasePath, $name, $email, $title]) {
+        $pdo = new PDO("sqlite:{$databasePath}", null, null, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        ]);
+        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, password TEXT NOT NULL, current_team_id INTEGER, global_admin INTEGER NOT NULL DEFAULT 0, created_at TEXT, updated_at TEXT)');
+        $pdo->exec('CREATE TABLE meta (id INTEGER PRIMARY KEY, metable_type TEXT NOT NULL, metable_id INTEGER NOT NULL, key TEXT, value TEXT)');
+        $pdo->exec('CREATE TABLE global_search_process_records (id INTEGER PRIMARY KEY, title TEXT NOT NULL, team_id INTEGER, user_id INTEGER, created_at TEXT, updated_at TEXT)');
+        $insertUser = $pdo->prepare('INSERT INTO users (id, name, email, password, current_team_id, global_admin) VALUES (1, ?, ?, ?, 11, 1)');
+        $insertUser->execute([$name, $email, 'unused']);
+        $insertRecord = $pdo->prepare('INSERT INTO global_search_process_records (id, title, team_id, user_id) VALUES (1, ?, 11, 1)');
+        $insertRecord->execute([$title]);
+    }
+
+    $previousDefault = DB::getDefaultConnection();
+    $connections = [
+        'process_search_tenant_a' => [
+            'driver' => 'sqlite',
+            'database' => $tenantAPath,
+            'prefix' => '',
+            'foreign_key_constraints' => true,
+        ],
+        'process_search_tenant_b' => [
+            'driver' => 'sqlite',
+            'database' => $tenantBPath,
+            'prefix' => '',
+            'foreign_key_constraints' => true,
+        ],
+    ];
+    config([
+        'aura.features.global_search' => true,
+        'aura.features.legacy_fields_append' => false,
+        'aura.global_search.execution_backend' => 'process',
+        'aura.global_search.per_resource_timeout_ms' => 650,
+        'aura.global_search.total_timeout_ms' => 3_000,
+        'aura.global_search.max_queries_per_resource' => 8,
+        'aura.global_search.max_total_queries' => 50,
+        'aura.global_search.worker_connections' => array_keys($connections),
+        'aura.teams' => true,
+        'database.default' => 'process_search_tenant_a',
+        'database.connections.process_search_tenant_a' => $connections['process_search_tenant_a'],
+        'database.connections.process_search_tenant_b' => $connections['process_search_tenant_b'],
+    ]);
+    DB::setDefaultConnection('process_search_tenant_a');
+    DB::purge('process_search_tenant_a');
+    DB::purge('process_search_tenant_b');
+    app()->instance(FreshProcessGlobalSearchExecutor::class, new FreshProcessGlobalSearchExecutor(
+        realpath(dirname(__DIR__).'/Fixtures/GlobalSearchWorkerArtisan.php') ?: null,
+        [
+            'APP_ENV' => 'testing',
+            'APP_KEY' => (string) config('app.key'),
+            'AURA_GLOBAL_SEARCH_HOOK_MARKER' => $markerPath,
+            'AURA_GLOBAL_SEARCH_PROCESS_FIXTURE' => '1',
+            'AURA_GLOBAL_SEARCH_FIXTURE_MODE' => 'tenant-collision',
+            'DB_DATABASE_TENANT_A' => $tenantAPath,
+            'DB_DATABASE_TENANT_B' => $tenantBPath,
+        ],
+        dirname(__DIR__, 2),
+    ));
+
+    Aura::fake();
+    Aura::registerResources([GlobalSearchProcessDefaultConnectionResource::class]);
+    Aura::registerRoutes(
+        GlobalSearchProcessDefaultConnectionResource::getSlug(),
+        GlobalSearchProcessDefaultConnectionResource::class,
+    );
+    Gate::policy(GlobalSearchProcessDefaultConnectionResource::class, GlobalSearchProcessPolicy::class);
+    Aura::setModel(new GlobalSearchProcessDefaultConnectionResource);
+
+    return [
+        'databases' => [$tenantAPath, $tenantBPath],
+        'marker' => $markerPath,
+        'user' => User::on('process_search_tenant_a')->withoutGlobalScopes()->findOrFail(1),
+        'previous_default' => $previousDefault,
+    ];
+}
+
+/** @param array{databases: array<int, string>, marker: string, user: User, previous_default: string} $harness */
+function cleanupCollidingFreshProcessSearchHarness(array $harness): void
+{
+    DB::purge('process_search_tenant_a');
+    DB::purge('process_search_tenant_b');
+    DB::setDefaultConnection($harness['previous_default']);
+    config(['database.default' => $harness['previous_default']]);
+
+    foreach ($harness['databases'] as $databasePath) {
+        @unlink($databasePath);
+    }
+
     @unlink($harness['marker']);
 }
 
@@ -1080,7 +1213,11 @@ test('fresh workers centrally enforce query budgets in hooks and adapters', func
         $hostileResource,
         GlobalSearchProcessResource::class,
     ]);
-    config(['aura.global_search.max_queries_per_resource' => 2]);
+    config([
+        'aura.global_search.max_queries_per_resource' => 4,
+        'aura.global_search.per_resource_timeout_ms' => 1_500,
+        'aura.global_search.total_timeout_ms' => 6_000,
+    ]);
 
     try {
         $this->actingAs($harness['user']);
@@ -1098,6 +1235,26 @@ test('fresh workers centrally enforce query budgets in hooks and adapters', func
     'visibility hook' => ['query-visibility', GlobalSearchProcessQueryFloodVisibilityResource::class],
     'policy' => ['query-policy', GlobalSearchProcessQueryFloodPolicyResource::class],
 ]);
+
+test('a prohibited native PDO adapter remains contained by the hard resource deadline', function () {
+    $harness = configureFreshProcessSearchHarness('raw-pdo', [
+        GlobalSearchProcessRawPdoAdapterResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+    try {
+        $this->actingAs($harness['user']);
+        $startedAt = hrtime(true);
+
+        Livewire::test(GlobalSearch::class)
+            ->set('search', 'Fresh Process Needle')
+            ->assertSee('Fresh Process Needle Current Team');
+
+        expect((string) file_get_contents($harness['marker']))->toBe(str_repeat('p', 10))
+            ->and((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(1.8);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
 
 test('malformed route allowlists fail closed and log metadata only', function (array $patterns) {
     Log::spy();
@@ -1169,6 +1326,166 @@ test('fresh process search remains isolated under an Octane runtime', function (
     }
 });
 
+test('fresh worker authentication consumes the central query budget', function () {
+    $harness = configureFreshProcessSearchHarness('normal', [GlobalSearchProcessResource::class]);
+    $executor = app(FreshProcessGlobalSearchExecutor::class);
+
+    try {
+        $context = signedFreshProcessContext($harness['user']);
+
+        $result = $executor->run([
+            'operation' => 'discover',
+            'context' => $context,
+            'query_limit' => 50,
+        ], 3_000, 1_048_576);
+
+        expect($result['query_count'] ?? null)->toBe(2);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh worker reports authentication and resource queries together', function () {
+    $harness = configureFreshProcessSearchHarness('normal', [GlobalSearchProcessResource::class]);
+    $executor = app(FreshProcessGlobalSearchExecutor::class);
+
+    try {
+        $result = $executor->run([
+            'operation' => 'search',
+            'context' => signedFreshProcessContext($harness['user']),
+            'query_limit' => 50,
+            'resource' => GlobalSearchProcessResource::class,
+            'resource_order' => 0,
+            'search_term' => 'Fresh Process Needle',
+            'global_limit' => 15,
+            'execution_timeout_ms' => 650,
+        ], 650, 1_048_576);
+
+        expect($result['query_count'] ?? null)->toBe(3);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh workers bind equal user and team identifiers to the signed tenant database', function () {
+    $harness = configureCollidingFreshProcessSearchHarness();
+
+    try {
+        $this->actingAs($harness['user']);
+        $component = app(GlobalSearch::class);
+        $component->search = 'Collision Needle';
+        $titles = $component->getSearchResultsProperty()
+            ->flatten()
+            ->pluck('title');
+
+        expect($titles)->toContain('Collision Needle Correct Tenant')
+            ->not->toContain('Collision Needle Wrong Tenant');
+    } finally {
+        cleanupCollidingFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh workers reject a tampered signed authentication context', function () {
+    $harness = configureFreshProcessSearchHarness('normal', [GlobalSearchProcessResource::class]);
+    $executor = app(FreshProcessGlobalSearchExecutor::class);
+
+    try {
+        $context = signedFreshProcessContext($harness['user']);
+        $context['team_id'] = 22;
+
+        expect(fn () => $executor->run([
+            'operation' => 'discover',
+            'context' => $context,
+            'query_limit' => 50,
+        ], 3_000, 1_048_576))->toThrow(GlobalSearchExecutionFailed::class);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('signed worker contexts reject tenant database bootstrap drift', function () {
+    $harness = configureFreshProcessSearchHarness('normal', [GlobalSearchProcessResource::class]);
+    $configuration = config('database.connections.process_search');
+
+    try {
+        $context = signedFreshProcessContext($harness['user']);
+        config(['database.connections.process_search.database' => $harness['database'].'-different']);
+
+        expect((new GlobalSearchWorkerContext)->verify($context))->toBeNull();
+    } finally {
+        config(['database.connections.process_search' => $configuration]);
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh execution fails closed before launch without an enumerable descriptor directory', function () {
+    $harness = configureFreshProcessSearchHarness('slow-discovery', [
+        GlobalSearchProcessSlowDiscoveryResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+    $descriptorDirectory = sys_get_temp_dir().'/aura-empty-fd-directory-'.bin2hex(random_bytes(8));
+    mkdir($descriptorDirectory, 0700);
+    $executor = new FreshProcessGlobalSearchExecutor(
+        artisanPath: realpath(dirname(__DIR__).'/Fixtures/GlobalSearchWorkerArtisan.php') ?: null,
+        environment: [
+            'APP_ENV' => 'testing',
+            'AURA_GLOBAL_SEARCH_HOOK_MARKER' => $harness['marker'],
+            'AURA_GLOBAL_SEARCH_PROCESS_FIXTURE' => '1',
+            'AURA_GLOBAL_SEARCH_FIXTURE_MODE' => 'slow-discovery',
+            'DB_CONNECTION' => 'sqlite',
+            'DB_DATABASE' => $harness['database'],
+        ],
+        workingDirectory: dirname(__DIR__, 2),
+        descriptorDirectories: [$descriptorDirectory],
+    );
+
+    try {
+        expect($executor->isAvailable())->toBeFalse()
+            ->and(fn () => $executor->run([], 500, 1_048_576))
+            ->toThrow(GlobalSearchExecutionUnavailable::class)
+            ->and(file_exists($harness['marker']))->toBeFalse();
+    } finally {
+        @rmdir($descriptorDirectory);
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh execution fails before launch without required parent supervision primitives', function () {
+    $harness = configureFreshProcessSearchHarness('slow-discovery', [
+        GlobalSearchProcessSlowDiscoveryResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+    $projectPath = dirname(__DIR__, 2);
+    $artisanPath = dirname(__DIR__).'/Fixtures/GlobalSearchWorkerArtisan.php';
+    $outer = new Process([
+        PHP_BINARY,
+        '-d',
+        'disable_functions=pcntl_async_signals,pcntl_signal,pcntl_signal_get_handler,posix_kill',
+        $artisanPath,
+        'aura:test-supervise-global-search',
+        '--no-interaction',
+    ], $projectPath, [
+        'APP_ENV' => 'testing',
+        'APP_KEY' => (string) config('app.key'),
+        'AURA_GLOBAL_SEARCH_HOOK_MARKER' => $harness['marker'],
+        'AURA_GLOBAL_SEARCH_PROCESS_FIXTURE' => '1',
+        'AURA_GLOBAL_SEARCH_FIXTURE_MODE' => 'slow-discovery',
+        'AURA_GLOBAL_SEARCH_WORKER_ARTISAN' => $artisanPath,
+        'AURA_GLOBAL_SEARCH_WORKING_DIRECTORY' => $projectPath,
+        'DB_CONNECTION' => 'sqlite',
+        'DB_DATABASE' => $harness['database'],
+    ], timeout: 3);
+
+    try {
+        $outer->run();
+
+        expect($outer->isSuccessful())->toBeFalse($outer->getOutput().$outer->getErrorOutput())
+            ->and(file_exists($harness['marker']))->toBeFalse();
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
 test('isolated execution uses a fresh contained process and preserves parent signal state', function () {
     $harness = configureFreshProcessSearchHarness('normal', [GlobalSearchProcessResource::class]);
     $executor = app(FreshProcessGlobalSearchExecutor::class);
@@ -1183,7 +1500,7 @@ test('isolated execution uses a fresh contained process and preserves parent sig
     try {
         $result = $executor->run([
             'operation' => 'discover',
-            'context' => ['guard' => 'web', 'user_id' => 1, 'team_id' => 11],
+            'context' => signedFreshProcessContext($harness['user']),
             'query_limit' => 50,
         ], 3_000, 1_048_576);
 
@@ -1212,14 +1529,21 @@ test('isolated execution enforces its deadline directly', function () {
 
     try {
         $startedAt = hrtime(true);
+        $exception = null;
 
-        expect(fn () => $executor->run([
-            'operation' => 'discover',
-            'context' => ['guard' => 'web', 'user_id' => 1, 'team_id' => 11],
-            'query_limit' => 50,
-        ], 650, 1_048_576))->toThrow(GlobalSearchExecutionTimedOut::class);
+        try {
+            $executor->run([
+                'operation' => 'discover',
+                'context' => signedFreshProcessContext($harness['user']),
+                'query_limit' => 50,
+            ], 650, 1_048_576);
+        } catch (GlobalSearchExecutionTimedOut $caughtException) {
+            $exception = $caughtException;
+        }
 
-        expect((string) file_get_contents($harness['marker']))->toStartWith('slow-discovery-entered-')
+        expect($exception)->toBeInstanceOf(GlobalSearchExecutionTimedOut::class)
+            ->and($exception?->getPrevious())->toBeNull()
+            ->and((string) file_get_contents($harness['marker']))->toStartWith('slow-discovery-entered-')
             ->and((hrtime(true) - $startedAt) / 1_000_000_000)->toBeLessThan(1.2);
     } finally {
         cleanupFreshProcessSearchHarness($harness);
@@ -1287,6 +1611,73 @@ test('parent SIGTERM cleanup kills and reaps the active fresh worker', function 
 
         expect(@posix_kill($workerProcessId, 0))->toBeFalse();
     } finally {
+        if ($outer->isRunning()) {
+            $outer->stop(0);
+        }
+
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('a blocking fresh worker cannot outlive a SIGKILLed request parent', function () {
+    if (! function_exists('posix_kill') || ! defined('SIGKILL')) {
+        $this->markTestSkipped('POSIX signals are unavailable on this platform.');
+    }
+
+    $harness = configureFreshProcessSearchHarness('blocking-discovery', [
+        GlobalSearchProcessBlockingDiscoveryResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+    $projectPath = dirname(__DIR__, 2);
+    $artisanPath = dirname(__DIR__).'/Fixtures/GlobalSearchWorkerArtisan.php';
+    $outer = new Process(
+        [PHP_BINARY, $artisanPath, 'aura:test-supervise-global-search', '--no-interaction'],
+        $projectPath,
+        [
+            'APP_ENV' => 'testing',
+            'APP_KEY' => (string) config('app.key'),
+            'AURA_GLOBAL_SEARCH_HOOK_MARKER' => $harness['marker'],
+            'AURA_GLOBAL_SEARCH_PROCESS_FIXTURE' => '1',
+            'AURA_GLOBAL_SEARCH_FIXTURE_MODE' => 'blocking-discovery',
+            'AURA_GLOBAL_SEARCH_WORKER_ARTISAN' => $artisanPath,
+            'AURA_GLOBAL_SEARCH_WORKING_DIRECTORY' => $projectPath,
+            'DB_CONNECTION' => 'sqlite',
+            'DB_DATABASE' => $harness['database'],
+        ],
+    );
+    $workerProcessId = null;
+
+    try {
+        $outer->start();
+        $markerDeadline = hrtime(true) + 3_000_000_000;
+
+        while (! is_file($harness['marker']) && hrtime(true) < $markerDeadline) {
+            usleep(10_000);
+        }
+
+        expect(is_file($harness['marker']))->toBeTrue($outer->getErrorOutput());
+        $workerProcessId = (int) str()->after(
+            (string) file_get_contents($harness['marker']),
+            'blocking-discovery-entered-',
+        );
+        $outerProcessId = $outer->getPid();
+
+        expect($workerProcessId)->toBeGreaterThan(1)
+            ->and($outerProcessId)->toBeInt();
+
+        posix_kill($outerProcessId, SIGKILL);
+        $reapDeadline = hrtime(true) + 1_000_000_000;
+
+        while (@posix_kill($workerProcessId, 0) && hrtime(true) < $reapDeadline) {
+            usleep(10_000);
+        }
+
+        expect(@posix_kill($workerProcessId, 0))->toBeFalse();
+    } finally {
+        if (is_int($workerProcessId) && $workerProcessId > 1 && @posix_kill($workerProcessId, 0)) {
+            @posix_kill($workerProcessId, SIGKILL);
+        }
+
         if ($outer->isRunning()) {
             $outer->stop(0);
         }

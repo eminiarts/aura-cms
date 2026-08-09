@@ -12,6 +12,7 @@ use Aura\Base\GlobalSearch\GlobalSearchBudget;
 use Aura\Base\GlobalSearch\GlobalSearchCandidate;
 use Aura\Base\GlobalSearch\GlobalSearchIconSanitizer;
 use Aura\Base\GlobalSearch\GlobalSearchResult;
+use Aura\Base\GlobalSearch\GlobalSearchWorkerContext;
 use Aura\Base\Models\Meta;
 use Aura\Base\Resource;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -892,15 +893,12 @@ class GlobalSearch extends Component
 
     private function searchInFreshProcesses(string $searchTerm, Authenticatable $user): Collection
     {
-        $identifier = $user->getAuthIdentifier();
-        $teamIdentifier = data_get($user, 'current_team_id');
         $guard = Auth::getDefaultDriver();
+        $context = is_string($guard)
+            ? (new GlobalSearchWorkerContext)->create($user, $guard)
+            : null;
 
-        if ((! is_int($identifier) && ! is_string($identifier))
-            || (! is_int($teamIdentifier) && ! is_string($teamIdentifier) && $teamIdentifier !== null)
-            || ! is_string($guard)
-            || $guard === ''
-            || strlen($guard) > 64) {
+        if ($context === null) {
             $this->logFreshExecutionFailure('invalid_authentication_context');
 
             return collect();
@@ -937,11 +935,6 @@ class GlobalSearch extends Component
             self::DEFAULT_ISOLATED_PAYLOAD_BYTES,
             self::HARD_MAX_ISOLATED_PAYLOAD_BYTES,
         );
-        $context = [
-            'guard' => $guard,
-            'user_id' => $identifier,
-            'team_id' => $teamIdentifier,
-        ];
         $executor = app(FreshProcessGlobalSearchExecutor::class);
 
         try {

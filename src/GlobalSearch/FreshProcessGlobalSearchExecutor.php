@@ -14,18 +14,37 @@ use Throwable;
 final class FreshProcessGlobalSearchExecutor
 {
     private const CLOSE_INHERITED_DESCRIPTORS_SCRIPT = <<<'SH'
-for descriptor_path in /proc/self/fd/* /dev/fd/*; do
+descriptor_directory=$1
+shift
+
+if [ ! -d "$descriptor_directory" ] || [ ! -r "$descriptor_directory" ] || [ ! -x "$descriptor_directory" ]; then
+    exit 126
+fi
+
+descriptor_entries_found=0
+
+for descriptor_path in "$descriptor_directory"/*; do
     descriptor=${descriptor_path##*/}
 
     case "$descriptor" in
-        0|1|2|''|*[!0-9]*) continue ;;
+        ''|*[!0-9]*) continue ;;
     esac
 
-    eval "exec ${descriptor}>&-"
+    descriptor_entries_found=1
+
+    case "$descriptor" in
+        0|1|2) continue ;;
+    esac
+
+    eval "exec ${descriptor}>&-" || exit 126
 done
+
+[ "$descriptor_entries_found" -eq 1 ] || exit 126
 
 exec "$@"
 SH;
+
+    private const DEFAULT_DESCRIPTOR_DIRECTORIES = ['/proc/self/fd', '/dev/fd'];
 
     private const FORBIDDEN_WORKER_FUNCTIONS = [
         'dl',
@@ -44,6 +63,13 @@ SH;
         'system',
     ];
 
+    private const REQUIRED_SUPERVISION_FUNCTIONS = [
+        'pcntl_async_signals',
+        'pcntl_signal',
+        'pcntl_signal_get_handler',
+        'posix_kill',
+    ];
+
     private static ?bool $asynchronousSignalsWereEnabled = null;
 
     /** @var array<int, Process> */
@@ -56,21 +82,26 @@ SH;
 
     /**
      * @param  array<string, string|false>  $environment
+     * @param  array<int, string>|null  $descriptorDirectories
      */
     public function __construct(
         private readonly ?string $artisanPath = null,
         private readonly array $environment = [],
         private readonly ?string $workingDirectory = null,
         private readonly ?string $phpBinary = null,
+        private readonly ?array $descriptorDirectories = null,
     ) {}
 
     public function isAvailable(): bool
     {
         return config('aura.global_search.execution_backend', 'process') === 'process'
             && function_exists('proc_open')
+            && $this->parentRuntimeSupportsSupervision()
             && is_string($this->resolvedShellPath())
             && is_string($this->resolvedPhpBinary())
-            && is_string($this->resolvedArtisanPath());
+            && is_string($this->resolvedArtisanPath())
+            && is_string($this->resolvedSupervisorPath())
+            && is_string($this->resolvedDescriptorDirectory());
     }
 
     /**
@@ -82,12 +113,17 @@ SH;
         $artisanPath = $this->resolvedArtisanPath();
         $phpBinary = $this->resolvedPhpBinary();
         $shellPath = $this->resolvedShellPath();
+        $supervisorPath = $this->resolvedSupervisorPath();
+        $descriptorDirectory = $this->resolvedDescriptorDirectory();
 
         if (config('aura.global_search.execution_backend', 'process') !== 'process'
             || ! function_exists('proc_open')
+            || ! $this->parentRuntimeSupportsSupervision()
             || $shellPath === null
             || $phpBinary === null
-            || $artisanPath === null) {
+            || $artisanPath === null
+            || $supervisorPath === null
+            || $descriptorDirectory === null) {
             throw new GlobalSearchExecutionUnavailable('Fresh global search execution is unavailable.');
         }
 
@@ -105,11 +141,18 @@ SH;
         }
 
         $process = new Process(
-            $this->command($shellPath, $phpBinary, $artisanPath),
+            $this->command(
+                $shellPath,
+                $phpBinary,
+                $artisanPath,
+                $supervisorPath,
+                $descriptorDirectory,
+                hrtime(true) + ($timeoutMilliseconds * 1_000_000),
+            ),
             $this->resolvedWorkingDirectory(),
             $this->environment === [] ? null : $this->environment,
             $input,
-            max(0.001, $timeoutMilliseconds / 1_000),
+            max(0.001, ($timeoutMilliseconds + 250) / 1_000),
         );
         $outputBytes = 0;
         $payloadLimitExceeded = false;
@@ -154,8 +197,16 @@ SH;
             throw new GlobalSearchExecutionFailed('The global search worker exceeded its payload budget.');
         }
 
+        if ($exitCode === 124) {
+            throw new GlobalSearchExecutionTimedOut('Fresh global search execution exceeded its deadline.');
+        }
+
+        if ($exitCode === 126) {
+            throw new GlobalSearchExecutionUnavailable('Fresh global search supervision is unavailable.');
+        }
+
         if ($exitCode !== 0) {
-            throw new GlobalSearchExecutionFailed('The global search worker exited unsuccessfully.');
+            throw new GlobalSearchExecutionFailed("The global search worker exited unsuccessfully ({$exitCode}).");
         }
 
         $markerPosition = strrpos($process->getOutput(), RunGlobalSearchWorker::RESPONSE_MARKER);
@@ -208,22 +259,50 @@ SH;
     }
 
     /** @return array<int, string> */
-    private function command(string $shellPath, string $phpBinary, string $artisanPath): array
-    {
+    private function command(
+        string $shellPath,
+        string $phpBinary,
+        string $artisanPath,
+        string $supervisorPath,
+        string $descriptorDirectory,
+        int $deadlineNanoseconds,
+    ): array {
         return [
             $shellPath,
             '-c',
             self::CLOSE_INHERITED_DESCRIPTORS_SCRIPT,
             'aura-global-search-worker',
+            $descriptorDirectory,
             $phpBinary,
             '-d',
             'ffi.enable=0',
-            '-d',
-            'disable_functions='.implode(',', self::FORBIDDEN_WORKER_FUNCTIONS),
+            '-r',
+            'require $argv[1]; exit(\Aura\Base\GlobalSearch\FreshProcessGlobalSearchSupervisor::run(array_slice($argv, 2)));',
+            '--',
+            $supervisorPath,
+            (string) getmypid(),
+            (string) $deadlineNanoseconds,
+            $phpBinary,
             $artisanPath,
-            'aura:global-search-worker',
-            '--no-interaction',
+            implode(',', self::FORBIDDEN_WORKER_FUNCTIONS),
         ];
+    }
+
+    private function descriptorDirectoryIsEnumerable(string $directory): bool
+    {
+        $entries = @scandir($directory);
+
+        if (! is_array($entries)) {
+            return false;
+        }
+
+        foreach ($entries as $entry) {
+            if (ctype_digit($entry)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static function handleSignal(int $signal): void
@@ -265,6 +344,17 @@ SH;
         }
     }
 
+    private function parentRuntimeSupportsSupervision(): bool
+    {
+        foreach (self::REQUIRED_SUPERVISION_FUNCTIONS as $function) {
+            if (! function_exists($function)) {
+                return false;
+            }
+        }
+
+        return defined('SIGTERM') && defined('SIGINT') && defined('SIGKILL');
+    }
+
     private static function registerProcess(int $processId, Process $process): void
     {
         self::$runningProcesses[$processId] = $process;
@@ -292,6 +382,32 @@ SH;
             : null;
     }
 
+    private function resolvedDescriptorDirectory(): ?string
+    {
+        $directories = $this->descriptorDirectories ?? self::DEFAULT_DESCRIPTOR_DIRECTORIES;
+
+        if (! array_is_list($directories) || $directories === [] || count($directories) > 4) {
+            return null;
+        }
+
+        foreach ($directories as $directory) {
+            if (! is_string($directory)
+                || $directory === ''
+                || strlen($directory) > 4_096
+                || ! str_starts_with($directory, '/')
+                || ! is_dir($directory)
+                || ! is_readable($directory)
+                || ! is_executable($directory)
+                || ! $this->descriptorDirectoryIsEnumerable($directory)) {
+                continue;
+            }
+
+            return $directory;
+        }
+
+        return null;
+    }
+
     private function resolvedPhpBinary(): ?string
     {
         $configured = $this->phpBinary ?? config('aura.global_search.worker_php');
@@ -313,6 +429,15 @@ SH;
         $resolved = realpath('/bin/sh');
 
         return is_string($resolved) && is_file($resolved) && is_executable($resolved)
+            ? $resolved
+            : null;
+    }
+
+    private function resolvedSupervisorPath(): ?string
+    {
+        $resolved = realpath(__DIR__.'/FreshProcessGlobalSearchSupervisor.php');
+
+        return is_string($resolved) && is_file($resolved) && is_readable($resolved)
             ? $resolved
             : null;
     }
