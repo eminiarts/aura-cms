@@ -171,7 +171,7 @@ class UserTeams extends Component
         if ((int) $user->getAttribute('current_team_id') === $teamId) {
             $firstTeam = $user->teams()->first();
             $user->forceFill(['current_team_id' => $firstTeam ? $firstTeam->getKey() : null])->save();
-            User::clearCurrentTeamCache($user->getKey());
+            User::clearCurrentTeamCache($user->getKey(), $user->getConnection());
         }
 
         $this->afterMembershipChange($user);

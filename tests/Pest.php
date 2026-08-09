@@ -9,7 +9,6 @@ use Aura\Base\Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Cache;
 use Pest\Browser\Api\PendingAwaitablePage;
 
 uses(TestCase::class)->in(__DIR__.'/Feature', __DIR__.'/FeatureWithDatabaseMigrations', __DIR__.'/Unit');
@@ -154,8 +153,8 @@ function createSuperAdmin()
     // Set current_team_id of the user
     $user->update(['current_team_id' => $team->id]);
 
-    // Clear the cache for the user's current_team_id to ensure TeamScope uses the updated value
-    Cache::forget("user_{$user->id}_current_team_id");
+    // Clear the connection-specific cache so TeamScope observes the updated value.
+    User::clearCurrentTeamCache($user->id, $user->getConnection());
 
     $user->refresh();
 

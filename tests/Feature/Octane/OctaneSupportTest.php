@@ -6,6 +6,17 @@ use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Octane\Events\RequestHandled;
+use Laravel\Octane\Events\RequestReceived;
+use Laravel\Octane\Events\RequestTerminated;
+use Laravel\Octane\Events\TaskReceived;
+use Laravel\Octane\Events\TaskTerminated;
+use Laravel\Octane\Events\TickReceived;
+use Laravel\Octane\Events\TickTerminated;
+use Laravel\Octane\Events\WorkerErrorOccurred;
+use Symfony\Component\HttpFoundation\Response;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,24 +27,11 @@ use Aura\Base\Resources\User;
 | process-level static state must be reset on every request/task/tick. These
 | tests cover:
 |   (a) Aura::flushState() clears every request-scoped static.
-|   (b) The service provider wires Aura::flushState() onto Octane's lifecycle
-|       events (stubbed below when laravel/octane is not installed).
+|   (b) The service provider clears authentication and Aura state on Octane's
+|       real lifecycle event classes.
 |   (c) Two consecutive simulated requests do not leak registrations.
 |
 */
-
-// Provide stub Octane event classes when laravel/octane is not installed so the
-// service provider's class_exists()-guarded listener wiring activates on boot.
-// These are empty markers; only their fully-qualified names matter. Declaring
-// them here (at collection time) guarantees they exist before the application
-// boots for each test in this file.
-foreach (['RequestReceived', 'TaskReceived', 'TickReceived'] as $octaneEvent) {
-    $fqcn = 'Laravel\\Octane\\Events\\'.$octaneEvent;
-
-    if (! class_exists($fqcn)) {
-        eval('namespace Laravel\\Octane\\Events; class '.$octaneEvent.' {}');
-    }
-}
 
 function readStatic(string $class, string $property): mixed
 {
@@ -52,10 +50,21 @@ function seedStatic(string $class, string $property, mixed $value): void
 
 function octaneEvent(string $short): object
 {
-    // Instantiate without invoking the constructor so this works both with the
-    // stubbed marker classes and with real Octane events (whose constructors
-    // require the worker, sandbox, request and response).
-    return (new ReflectionClass('Laravel\\Octane\\Events\\'.$short))->newInstanceWithoutConstructor();
+    $application = app();
+    $request = Request::create('/octane-boundary');
+    $response = new Response;
+
+    return match ($short) {
+        'RequestReceived' => new RequestReceived($application, $application, $request),
+        'RequestHandled' => new RequestHandled($application, $request, $response),
+        'RequestTerminated' => new RequestTerminated($application, $application, $request, $response),
+        'TaskReceived' => new TaskReceived($application, $application, fn () => null),
+        'TaskTerminated' => new TaskTerminated($application, $application, fn () => null, null),
+        'TickReceived' => new TickReceived($application, $application),
+        'TickTerminated' => new TickTerminated($application, $application),
+        'WorkerErrorOccurred' => new WorkerErrorOccurred(new RuntimeException('Octane boundary'), $application),
+        default => throw new InvalidArgumentException("Unknown Octane event [{$short}]."),
+    };
 }
 
 test('flushState clears request-scoped process statics', function () {
@@ -104,13 +113,20 @@ test('flushState clears request-scoped process statics', function () {
 });
 
 test('the service provider wires flushState onto the octane request lifecycle', function () {
-    // The stub events above make class_exists() pass, so the provider should
-    // have registered a listener for each event during boot.
     $events = app('events');
 
-    expect($events->hasListeners('Laravel\\Octane\\Events\\RequestReceived'))->toBeTrue();
-    expect($events->hasListeners('Laravel\\Octane\\Events\\TaskReceived'))->toBeTrue();
-    expect($events->hasListeners('Laravel\\Octane\\Events\\TickReceived'))->toBeTrue();
+    foreach ([
+        RequestReceived::class,
+        RequestHandled::class,
+        RequestTerminated::class,
+        TaskReceived::class,
+        TaskTerminated::class,
+        TickReceived::class,
+        TickTerminated::class,
+        WorkerErrorOccurred::class,
+    ] as $octaneEvent) {
+        expect($events->hasListeners($octaneEvent))->toBeTrue();
+    }
 
     // Dispatching the event must flush Aura state via the wired listener.
     Aura::registerResources(['App\\Leaky\\ViaEventResource']);
@@ -119,6 +135,44 @@ test('the service provider wires flushState onto the octane request lifecycle', 
     event(octaneEvent('RequestReceived'));
 
     expect(Aura::getResources())->not->toContain('App\\Leaky\\ViaEventResource');
+});
+
+test('octane received boundaries cannot inherit an authenticated caller', function () {
+    $user = createSuperAdmin();
+    Auth::logout();
+    Auth::forgetGuards();
+
+    foreach (['RequestReceived', 'TaskReceived', 'TickReceived'] as $octaneEvent) {
+        Auth::setUser($user);
+        Aura::registerResources(['App\\Leaky\\'.$octaneEvent]);
+
+        event(octaneEvent($octaneEvent));
+
+        expect(Auth::id())->toBeNull()
+            ->and(Aura::getResources())->not->toContain('App\\Leaky\\'.$octaneEvent);
+    }
+});
+
+test('octane completion and error boundaries clear authentication and aura state', function () {
+    $user = createSuperAdmin();
+    Auth::logout();
+    Auth::forgetGuards();
+
+    foreach ([
+        'RequestHandled',
+        'RequestTerminated',
+        'TaskTerminated',
+        'TickTerminated',
+        'WorkerErrorOccurred',
+    ] as $octaneEvent) {
+        Auth::setUser($user);
+        Aura::registerResources(['App\\Leaky\\'.$octaneEvent]);
+
+        event(octaneEvent($octaneEvent));
+
+        expect(Auth::id())->toBeNull()
+            ->and(Aura::getResources())->not->toContain('App\\Leaky\\'.$octaneEvent);
+    }
 });
 
 test('two consecutive simulated octane requests do not leak registrations or fields', function () {

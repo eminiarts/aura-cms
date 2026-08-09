@@ -5,6 +5,8 @@ namespace Aura\Base\Models\Scopes;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Illuminate\Database\Connection;
+use Illuminate\Database\DatabaseTransactionRecord;
+use Illuminate\Database\DatabaseTransactionsManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
@@ -19,7 +21,7 @@ class TeamScope implements Scope
 
     private static int $bypassDepth = 0;
 
-    /** @var array<int|string, int|null> */
+    /** @var array<string, int|string|null> */
     private static array $currentTeamIds = [];
 
     /** @var list<int|string> */
@@ -41,7 +43,7 @@ class TeamScope implements Scope
         self::$applying = true;
 
         try {
-            $currentTeamId = $this->getCurrentTeamId();
+            $currentTeamId = $this->getCurrentTeamId($model);
             $authUser = Auth::user();
             $hasTenantContext = self::$trustedTeamContexts !== [];
 
@@ -135,13 +137,17 @@ class TeamScope implements Scope
         self::$trustedTeamContexts = [];
     }
 
-    public static function forgetCurrentTeamId(string|int|null $userId): void
-    {
+    public static function forgetCurrentTeamId(
+        string|int|null $userId,
+        ?Connection $connection = null,
+    ): void {
         if ($userId === null) {
             return;
         }
 
-        unset(self::$currentTeamIds[$userId]);
+        $connection ??= self::resolveConnection();
+
+        unset(self::$currentTeamIds[User::currentTeamCacheKey($userId, $connection)]);
     }
 
     /**
@@ -167,25 +173,22 @@ class TeamScope implements Scope
      * Invalidate a user's request snapshot now, but preserve the last committed
      * shared-cache value until an open transaction actually commits.
      */
-    public static function invalidateCurrentTeamId(string|int|null $userId): void
-    {
+    public static function invalidateCurrentTeamId(
+        string|int|null $userId,
+        ?Connection $connection = null,
+    ): void {
         if ($userId === null) {
             return;
         }
 
-        self::forgetCurrentTeamId($userId);
+        $connection ??= self::resolveConnection();
+        $cacheKey = User::currentTeamCacheKey($userId, $connection);
 
-        $connection = DB::connection();
+        unset(self::$currentTeamIds[$cacheKey]);
 
-        if (! self::hasActiveApplicationTransaction($connection)) {
-            Cache::forget(User::currentTeamCacheKey($userId));
-
-            return;
-        }
-
-        $connection->afterCommit(function () use ($userId): void {
-            self::forgetCurrentTeamId($userId);
-            Cache::forget(User::currentTeamCacheKey($userId));
+        self::afterApplicationCommit($connection, function () use ($cacheKey): void {
+            unset(self::$currentTeamIds[$cacheKey]);
+            Cache::forget($cacheKey);
         });
     }
 
@@ -208,59 +211,122 @@ class TeamScope implements Scope
         }
     }
 
+    private static function afterApplicationCommit(Connection $connection, callable $callback): void
+    {
+        $transactionsManager = self::transactionsManager();
+
+        if ($transactionsManager) {
+            $transaction = self::applicationTransaction($transactionsManager, $connection);
+
+            if ($transaction) {
+                // Bind to this connection's outer application transaction. The
+                // framework's generic afterCommit() callback attaches to the
+                // most recently opened transaction across every connection,
+                // which can publish tenant state at an unrelated boundary.
+                $transaction->addCallback($callback);
+
+                return;
+            }
+
+            $callback();
+
+            return;
+        }
+
+        if ($connection->transactionLevel() > 0) {
+            $connection->afterCommit($callback);
+
+            return;
+        }
+
+        $callback();
+    }
+
+    private static function applicationTransaction(
+        DatabaseTransactionsManager $transactionsManager,
+        Connection $connection,
+    ): ?DatabaseTransactionRecord {
+        return $transactionsManager
+            ->callbackApplicableTransactions()
+            ->first(fn (DatabaseTransactionRecord $transaction): bool => $transaction->connection === $connection->getName());
+    }
+
     /**
      * Get the current team ID without triggering the scope again.
-     *
-     * @return int|null
      */
-    private function getCurrentTeamId()
+    private function getCurrentTeamId(Model $model): int|string|null
     {
         if (self::$trustedTeamContexts !== []) {
             return self::$trustedTeamContexts[array_key_last(self::$trustedTeamContexts)];
         }
 
-        if (! Auth::check()) {
-            return;
+        $authenticatedUser = Auth::user();
+
+        if (! $authenticatedUser) {
+            return null;
         }
 
-        $userId = Auth::id();
-
-        $connection = DB::connection();
+        $userId = $authenticatedUser->getAuthIdentifier();
+        $connection = $authenticatedUser instanceof Model
+            ? $authenticatedUser->getConnection()
+            : $model->getConnection();
 
         if (self::hasActiveApplicationTransaction($connection)) {
             return $connection->table('users')->where('id', $userId)->value('current_team_id');
         }
 
-        if (array_key_exists($userId, self::$currentTeamIds)) {
-            return self::$currentTeamIds[$userId];
-        }
+        $cacheKey = User::currentTeamCacheKey($userId, $connection);
 
-        $cacheKey = User::currentTeamCacheKey($userId);
+        if (array_key_exists($cacheKey, self::$currentTeamIds)) {
+            return self::$currentTeamIds[$cacheKey];
+        }
 
         if (Cache::has($cacheKey)) {
             $cachedTeamId = Cache::get($cacheKey);
 
-            return self::$currentTeamIds[$userId] = $cachedTeamId === false ? null : $cachedTeamId;
+            return self::$currentTeamIds[$cacheKey] = $cachedTeamId === false ? null : $cachedTeamId;
         }
 
         // Direct database query to avoid triggering scopes.
-        $currentTeamId = DB::table('users')->where('id', $userId)->value('current_team_id');
+        $currentTeamId = $connection->table('users')->where('id', $userId)->value('current_team_id');
 
         Cache::forever($cacheKey, $currentTeamId ?? false);
 
-        return self::$currentTeamIds[$userId] = $currentTeamId;
+        return self::$currentTeamIds[$cacheKey] = $currentTeamId;
     }
 
     private static function hasActiveApplicationTransaction(Connection $connection): bool
     {
-        $transactionLevel = $connection->transactionLevel();
+        $transactionsManager = self::transactionsManager();
 
-        if (app()->runningUnitTests()) {
-            // Laravel's database test traits keep one outer rollback-only
-            // transaction open. Nested levels represent application work.
-            return $transactionLevel > 1;
+        if ($transactionsManager) {
+            return self::applicationTransaction($transactionsManager, $connection) !== null;
         }
 
-        return $transactionLevel > 0;
+        return $connection->transactionLevel() > 0;
+    }
+
+    private static function resolveConnection(): Connection
+    {
+        $authenticatedUser = Auth::user();
+
+        if ($authenticatedUser instanceof Model) {
+            return $authenticatedUser->getConnection();
+        }
+
+        return DB::connection();
+    }
+
+    private static function transactionsManager(): ?DatabaseTransactionsManager
+    {
+        if (! app()->bound('db.transactions')) {
+            return null;
+        }
+
+        $transactionsManager = app('db.transactions');
+
+        return $transactionsManager instanceof DatabaseTransactionsManager
+            ? $transactionsManager
+            : null;
     }
 }

@@ -334,10 +334,15 @@ class AuraServiceProvider extends PackageServiceProvider
 
             foreach ([
                 'Laravel\Octane\Events\RequestReceived',
+                'Laravel\Octane\Events\RequestHandled',
+                'Laravel\Octane\Events\RequestTerminated',
                 'Laravel\Octane\Events\TaskReceived',
+                'Laravel\Octane\Events\TaskTerminated',
                 'Laravel\Octane\Events\TickReceived',
+                'Laravel\Octane\Events\TickTerminated',
+                'Laravel\Octane\Events\WorkerErrorOccurred',
             ] as $octaneEvent) {
-                $events->listen($octaneEvent, fn () => Aura::flushState());
+                $events->listen($octaneEvent, $resetWorkerState);
             }
         }
 

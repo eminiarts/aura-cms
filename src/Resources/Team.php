@@ -331,7 +331,7 @@ class Team extends Resource
                 $user->current_team_id = $firstTeam ? $firstTeam->id : null;
                 $user->save();
 
-                User::clearCurrentTeamCache($user->id);
+                User::clearCurrentTeamCache($user->id, $user->getConnection());
             }
 
             // A team's Memberships and its own Team Roles (including Shadows) die
@@ -358,8 +358,8 @@ class Team extends Resource
             // Delete all the team's options
             Option::where('name', 'like', 'team.'.$team->id.'.%')->delete();
 
-            $reassignedUserIds->each(function ($userId) {
-                User::clearCurrentTeamCache($userId);
+            $reassignedUserIds->each(function ($userId) use ($team) {
+                User::clearCurrentTeamCache($userId, $team->getConnection());
             });
 
             $affectedMemberIds

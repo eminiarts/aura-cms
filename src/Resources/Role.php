@@ -392,15 +392,25 @@ class Role extends Resource
 
         $table = $query->getModel()->getTable();
 
-        return $query->whereNot(function ($inner) use ($table, $teamId) {
-            $inner->whereNull($table.'.team_id')
-                ->whereExists(function ($sub) use ($table, $teamId) {
-                    $sub->selectRaw('1')
-                        ->from($table.' as shadow_roles')
-                        ->whereColumn('shadow_roles.slug', $table.'.slug')
-                        ->where('shadow_roles.team_id', $teamId);
-                });
-        });
+        // The explicit resolution context is authoritative. TeamScope cannot
+        // supply this shape for guests or for a null Global Catalog context.
+        $query->withoutGlobalScope(TeamScope::class);
+
+        if ($teamId === null) {
+            return $query->whereNull($table.'.team_id');
+        }
+
+        return $query
+            ->visibleToTeam($teamId)
+            ->whereNot(function ($inner) use ($table, $teamId) {
+                $inner->whereNull($table.'.team_id')
+                    ->whereExists(function ($sub) use ($table, $teamId) {
+                        $sub->selectRaw('1')
+                            ->from($table.' as shadow_roles')
+                            ->whereColumn('shadow_roles.slug', $table.'.slug')
+                            ->where('shadow_roles.team_id', $teamId);
+                    });
+            });
     }
 
     /**

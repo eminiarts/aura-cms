@@ -13,6 +13,7 @@ use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -235,13 +236,15 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         Cache::forget($option);
     }
 
-    public static function clearCurrentTeamCache(string|int|null $userId): void
-    {
+    public static function clearCurrentTeamCache(
+        string|int|null $userId,
+        ?Connection $connection = null,
+    ): void {
         if (! $userId) {
             return;
         }
 
-        TeamScope::invalidateCurrentTeamId($userId);
+        TeamScope::invalidateCurrentTeamId($userId, $connection);
     }
 
     /**
@@ -269,9 +272,23 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return $this->belongsTo(config('aura.resources.team'), 'current_team_id');
     }
 
-    public static function currentTeamCacheKey(string|int $userId): string
-    {
-        return "user_{$userId}_current_team_id";
+    public static function currentTeamCacheKey(
+        string|int $userId,
+        ?Connection $connection = null,
+    ): string {
+        $connection ??= DB::connection();
+        $connectionIdentity = hash('sha256', implode("\0", [
+            (string) $connection->getName(),
+            $connection->getDriverName(),
+            (string) $connection->getDatabaseName(),
+            (string) $connection->getConfig('host'),
+            (string) $connection->getConfig('port'),
+            (string) $connection->getConfig('username'),
+            (string) $connection->getConfig('schema'),
+            $connection->getTablePrefix(),
+        ]));
+
+        return "aura_current_team_{$connectionIdentity}_user_{$userId}";
     }
 
     public function deleteOption($option)
@@ -924,7 +941,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
         static::saved(function ($user) {
             if ($user->wasChanged('current_team_id')) {
-                static::clearCurrentTeamCache($user->id);
+                static::clearCurrentTeamCache($user->id, $user->getConnection());
             }
         });
 

@@ -814,12 +814,6 @@ parameters:
 			path: src/Models/Scopes/TaxonomyScope.php
 
 		-
-			message: '#^Method Aura\\Base\\Models\\Scopes\\TeamScope\:\:getCurrentTeamId\(\) should return int\|null but empty return statement found\.$#'
-			identifier: return.empty
-			count: 1
-			path: src/Models/Scopes/TeamScope.php
-
-		-
 			message: '#^Call to an undefined static method Illuminate\\Database\\Eloquent\\Model\:\:getType\(\)\.$#'
 			identifier: staticMethod.notFound
 			count: 1

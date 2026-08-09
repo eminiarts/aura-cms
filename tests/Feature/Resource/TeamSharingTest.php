@@ -258,6 +258,41 @@ it('makes explicit nested team contexts authoritative for guests and Global Admi
         ->and($globalEditor->id)->not->toBe($shadowA->id);
 });
 
+it('returns the global role catalog for a null shadow resolution context', function () {
+    $owner = User::factory()->create();
+    $team = Team::factory()->createQuietly(['user_id' => $owner->id]);
+
+    $this->actingAs($owner);
+
+    $globalEditor = Role::createGlobalForSystem([
+        'name' => 'Global Null Editor',
+        'slug' => 'null-context-editor',
+        'permissions' => [],
+    ]);
+    $globalViewer = Role::createGlobalForSystem([
+        'name' => 'Global Null Viewer',
+        'slug' => 'null-context-viewer',
+        'permissions' => [],
+    ]);
+    $shadowEditor = TeamScope::forTeam($team->id, fn () => Role::withoutGlobalScopes()->create([
+        'name' => 'Team Null Editor',
+        'slug' => 'null-context-editor',
+        'team_id' => $team->id,
+        'permissions' => [],
+    ]));
+
+    auth()->logout();
+
+    $resolvedRoles = Role::shadowResolved(null)
+        ->whereIn('slug', ['null-context-editor', 'null-context-viewer'])
+        ->get();
+
+    expect($resolvedRoles->pluck('id')->all())
+        ->toEqualCanonicalizing([$globalEditor->id, $globalViewer->id])
+        ->and($resolvedRoles->pluck('id')->all())->not->toContain($shadowEditor->id)
+        ->and($resolvedRoles->pluck('slug')->all())->toHaveCount(2);
+});
+
 it('restores fail-closed scope state after a background context throws an Error', function () {
     $owner = User::factory()->create();
     $team = Team::factory()->createQuietly(['user_id' => $owner->id]);
