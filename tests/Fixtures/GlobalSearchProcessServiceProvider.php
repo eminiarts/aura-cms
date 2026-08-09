@@ -56,6 +56,7 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
             'aura.global_search.execution_backend' => 'process',
             'aura.global_search.max_queries_per_resource' => 8,
             'aura.global_search.max_total_queries' => 50,
+            'aura.global_search.candidate_limit' => $fixtureMode === 'before-query-mutation' ? 2 : 100,
             'aura.global_search.allowed_route_names' => ['aura.*'],
             'aura.resources.user' => User::class,
             'aura.teams' => true,
@@ -105,6 +106,7 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
                 GlobalSearchProcessQueryFloodPolicyResource::class,
                 GlobalSearchProcessResource::class,
             ],
+            'before-query-mutation' => [GlobalSearchProcessBeforeQueryMutationResource::class],
             'raw-pdo' => [
                 GlobalSearchProcessRawPdoAdapterResource::class,
                 GlobalSearchProcessResource::class,

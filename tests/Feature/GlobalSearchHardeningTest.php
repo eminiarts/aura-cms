@@ -15,6 +15,7 @@ use Aura\Base\Models\Meta;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessBeforeQueryMutationResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessBlockingDiscoveryResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessDefaultConnectionResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessDescriptorProbeResource;
@@ -30,6 +31,7 @@ use Aura\Base\Tests\Fixtures\GlobalSearchProcessSpawningResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessStallingResource;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as BaseQueryBuilder;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -102,6 +104,88 @@ class HardeningSqlVisibilityResource extends HardeningSearchResource
         static::$visibilityApplied = true;
 
         return $query->where('title', 'not like', 'SQL Hidden%');
+    }
+}
+
+class HardeningBeforeQueryMutationResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-before-query-mutation';
+
+    public static string $type = 'HardeningBeforeQueryMutation';
+
+    public function applyGlobalSearchVisibility($query, $user)
+    {
+        $table = $this->getTable();
+
+        return $query->whereExists(function (BaseQueryBuilder $visibilityQuery) use ($table, $user): void {
+            $alias = 'hardening_visible_posts';
+            $visibilityQuery
+                ->from($table.' as '.$alias)
+                ->selectRaw('1')
+                ->whereColumn($alias.'.id', $table.'.id')
+                ->where($alias.'.team_id', data_get($user, 'current_team_id'));
+            $visibilityQuery->beforeQuery(function (BaseQueryBuilder $query): void {
+                $query->wheres = [];
+                $query->bindings['where'] = [];
+            });
+        });
+    }
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('hardening-before-query-mutation', function (Builder $builder): void {
+            $builder->getQuery()->beforeQuery(function (BaseQueryBuilder $query): void {
+                $query->wheres = [];
+                $query->bindings['where'] = [];
+                $query->limit = null;
+            });
+        });
+    }
+}
+
+class HardeningDeniedHooksResource extends HardeningSearchResource
+{
+    public static array $events = [];
+
+    public static ?string $slug = 'hardening-denied-hooks';
+
+    public static string $type = 'HardeningDeniedHooks';
+
+    public static function getGlobalSearch()
+    {
+        DB::table((new static)->getTable())->count();
+        static::$events[] = 'get-global-search';
+
+        return true;
+    }
+
+    public function getGlobalSearchableFields()
+    {
+        static::$events[] = 'searchable-fields-hook';
+
+        throw new RuntimeException('A denied searchable-fields hook must not run.');
+    }
+
+    public function globalSearchAllowsMissingTeamContext($user)
+    {
+        static::$events[] = 'missing-team-hook';
+
+        throw new RuntimeException('A denied missing-team hook must not run.');
+    }
+}
+
+class HardeningDeniedHooksPolicy
+{
+    public function view(User $user, Resource $resource): bool
+    {
+        return false;
+    }
+
+    public function viewAny(User $user, Resource $resource): bool
+    {
+        HardeningDeniedHooksResource::$events[] = 'view-any';
+
+        return false;
     }
 }
 
@@ -835,6 +919,60 @@ test('viewAny authorization happens before the searchable resource cap', functio
         ->assertSee('Authorization Cap Needle Allowed');
 });
 
+test('viewAny authorization runs before every resource-controlled discovery hook', function () {
+    registerHardeningSearchResources([HardeningDeniedHooksResource::class]);
+    Gate::policy(HardeningDeniedHooksResource::class, HardeningDeniedHooksPolicy::class);
+
+    $operator = User::factory()->create(config('aura.teams') ? ['current_team_id' => null] : []);
+    $operator->forceFill(['global_admin' => true])->saveQuietly();
+    $this->actingAs($operator->refresh());
+    HardeningDeniedHooksResource::$events = [];
+
+    $component = app(GlobalSearch::class);
+    $component->search = 'Denied Hook Needle';
+
+    expect($component->getSearchResultsProperty())->toBeEmpty()
+        ->and(HardeningDeniedHooksResource::$events)->toBe(['view-any']);
+});
+
+test('the inline default adapter seals visibility scopes and its candidate limit after callbacks', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('This regression test exercises tenant visibility.');
+    }
+
+    config([
+        'aura.global_search.execution_backend' => 'inline-testing',
+        'aura.global_search.candidate_limit' => 2,
+        'aura.global_search.per_resource_limit' => 5,
+    ]);
+    registerHardeningSearchResources([HardeningBeforeQueryMutationResource::class]);
+    Gate::policy(HardeningBeforeQueryMutationResource::class, HardeningSearchPolicy::class);
+
+    $otherTeam = Team::factory()->createQuietly();
+    HardeningBeforeQueryMutationResource::withoutGlobalScopes()->create([
+        'title' => 'Cross Tenant Callback Needle',
+        'team_id' => $otherTeam->getKey(),
+    ]);
+
+    foreach (range(1, 6) as $index) {
+        HardeningBeforeQueryMutationResource::withoutGlobalScopes()->create([
+            'title' => "Visible Callback Needle {$index}",
+            'team_id' => $this->searchUser->current_team_id,
+        ]);
+    }
+
+    $component = app(GlobalSearch::class);
+    $component->search = 'Callback Needle';
+    $titles = $component->getSearchResultsProperty()->flatten()->pluck('title')->all();
+
+    expect($titles)->toHaveCount(2)
+        ->not->toContain('Cross Tenant Callback Needle')
+        ->toEqualCanonicalizing([
+            'Visible Callback Needle 1',
+            'Visible Callback Needle 2',
+        ]);
+});
+
 test('sql visibility is applied before the candidate limit', function () {
     config([
         'aura.global_search.candidate_limit' => 1,
@@ -1179,6 +1317,28 @@ test('fresh sqlite workers preserve current team isolation and parent connection
             ->assertDontSee('Fresh Process Needle Other Team');
 
         expect((int) $parentConnection->table('global_search_process_records')->count())->toBe(2);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh workers seal visibility scopes and the candidate limit after callbacks', function () {
+    $harness = configureFreshProcessSearchHarness('before-query-mutation', [
+        GlobalSearchProcessBeforeQueryMutationResource::class,
+    ]);
+
+    try {
+        $this->actingAs($harness['user']);
+        $component = app(GlobalSearch::class);
+        $component->search = 'Fresh Process Needle';
+        $titles = $component->getSearchResultsProperty()->flatten()->pluck('title')->all();
+
+        expect($titles)->toBe(['Fresh Process Needle Current Team'])
+            ->not->toContain('Fresh Process Needle Other Team');
+        expect((string) file_get_contents($harness['marker']))
+            ->toContain('before-query-mutated')
+            ->toContain(' where ')
+            ->toContain(' limit 2');
     } finally {
         cleanupFreshProcessSearchHarness($harness);
     }
@@ -1776,6 +1936,130 @@ test('SIGTERM during worker startup cannot orphan the application process', func
         }
     }
 })->repeat(20);
+
+test('SIGKILLing the watcher cannot orphan its published application worker', function () {
+    if (! function_exists('posix_kill') || ! defined('SIGKILL')) {
+        $this->markTestSkipped('POSIX signals are unavailable on this platform.');
+    }
+
+    $projectPath = dirname(__DIR__, 2);
+    $supervisorPath = realpath($projectPath.'/src/GlobalSearch/FreshProcessGlobalSearchSupervisor.php');
+    $workerPath = realpath(dirname(__DIR__).'/Fixtures/GlobalSearchBlockingWorker.php');
+    $markerPath = sys_get_temp_dir().'/aura-global-search-worker-pid-'.bin2hex(random_bytes(8));
+    $processToken = 'aura_global_search_watcher_kill_'.bin2hex(random_bytes(8));
+
+    expect($supervisorPath)->toBeString()
+        ->and($workerPath)->toBeString();
+
+    $outer = new Process([
+        PHP_BINARY,
+        '-r',
+        'require $argv[1]; exit(\Aura\Base\GlobalSearch\FreshProcessGlobalSearchSupervisor::run(array_slice($argv, 2)));',
+        '--',
+        $supervisorPath,
+        (string) getmypid(),
+        (string) (hrtime(true) + 750_000_000),
+        PHP_BINARY,
+        $workerPath,
+        'pcntl_exec,pcntl_fork,posix_kill,proc_open,'.$processToken,
+    ], $projectPath, [
+        'AURA_GLOBAL_SEARCH_WORKER_PID_MARKER' => $markerPath,
+    ], timeout: 3);
+    $workerProcessId = null;
+
+    try {
+        $outer->start();
+        $markerDeadline = hrtime(true) + 1_000_000_000;
+
+        while (! is_file($markerPath) && hrtime(true) < $markerDeadline) {
+            usleep(5_000);
+        }
+
+        expect(is_file($markerPath))->toBeTrue($outer->getErrorOutput());
+        $payload = json_decode((string) file_get_contents($markerPath), true, flags: JSON_THROW_ON_ERROR);
+        $workerProcessId = $payload['worker_pid'] ?? null;
+        $workerParentProcessId = $payload['parent_pid'] ?? null;
+        $outerProcessId = $outer->getPid();
+        $watcherProcessId = collect(processEntriesContaining($processToken))
+            ->first(fn (array $entry): bool => $entry['parent_pid'] === $outerProcessId
+                && $entry['pid'] !== $workerProcessId)['pid'] ?? null;
+
+        expect($workerProcessId)->toBeInt()->toBeGreaterThan(1)
+            ->and($outerProcessId)->toBeInt()
+            ->and($workerParentProcessId)->toBe($outerProcessId)
+            ->and($watcherProcessId)->toBeInt()->toBeGreaterThan(1);
+
+        posix_kill($watcherProcessId, SIGKILL);
+
+        try {
+            $outer->wait();
+        } catch (Throwable) {
+            // The supervisor reports the deliberately killed watcher.
+        }
+
+        $cleanupDeadline = hrtime(true) + 1_000_000_000;
+
+        while (@posix_kill($workerProcessId, 0) && hrtime(true) < $cleanupDeadline) {
+            usleep(10_000);
+        }
+
+        expect(@posix_kill($workerProcessId, 0))->toBeFalse();
+    } finally {
+        if (is_int($workerProcessId) && $workerProcessId > 1 && @posix_kill($workerProcessId, 0)) {
+            @posix_kill($workerProcessId, SIGKILL);
+        }
+
+        foreach (processEntriesContaining($processToken) as $entry) {
+            @posix_kill($entry['pid'], SIGKILL);
+        }
+
+        if ($outer->isRunning()) {
+            $outer->stop(0);
+        }
+
+        @unlink($markerPath);
+    }
+})->repeat(10);
+
+test('supervision fails closed when its PID publication channel is unavailable', function () {
+    $projectPath = dirname(__DIR__, 2);
+    $supervisorPath = realpath($projectPath.'/src/GlobalSearch/FreshProcessGlobalSearchSupervisor.php');
+    $workerPath = realpath(dirname(__DIR__).'/Fixtures/GlobalSearchBlockingWorker.php');
+    $markerPath = sys_get_temp_dir().'/aura-global-search-publication-failure-'.bin2hex(random_bytes(8));
+
+    expect($supervisorPath)->toBeString()
+        ->and($workerPath)->toBeString();
+
+    $outer = new Process([
+        PHP_BINARY,
+        '-d',
+        'disable_functions=stream_socket_pair',
+        '-r',
+        'require $argv[1]; exit(\Aura\Base\GlobalSearch\FreshProcessGlobalSearchSupervisor::run(array_slice($argv, 2)));',
+        '--',
+        $supervisorPath,
+        (string) getmypid(),
+        (string) (hrtime(true) + 300_000_000),
+        PHP_BINARY,
+        $workerPath,
+        'pcntl_exec,pcntl_fork,posix_kill,proc_open',
+    ], $projectPath, [
+        'AURA_GLOBAL_SEARCH_WORKER_PID_MARKER' => $markerPath,
+    ], timeout: 2);
+
+    try {
+        $outer->run();
+
+        expect($outer->getExitCode())->toBe(126)
+            ->and(file_exists($markerPath))->toBeFalse();
+    } finally {
+        if ($outer->isRunning()) {
+            $outer->stop(0);
+        }
+
+        @unlink($markerPath);
+    }
+});
 
 test('a blocking fresh worker cannot outlive a SIGKILLed request parent', function () {
     if (! function_exists('posix_kill') || ! defined('SIGKILL')) {

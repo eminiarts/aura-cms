@@ -26,17 +26,45 @@ final class DatabaseGlobalSearchAdapter implements GlobalSearchAdapter
             return collect();
         }
 
-        $candidateQuery = clone $query;
-        $candidateQuery->setEagerLoads([]);
+        $sealedQuery = clone $query->getQuery();
 
-        $rows = $candidateQuery
+        if ($sealedQuery->beforeQueryCallbacks !== []) {
+            return collect();
+        }
+
+        $sealedQuery
             ->select($resource->getTable().'.*')
             ->distinct()
-            ->reorder()
-            ->orderBy($resource->getQualifiedKeyName())
-            ->limit($candidateLimit)
-            ->toBase()
-            ->get();
+            ->reorder();
+        $sealedQuery->limit = null;
+        $sealedQuery->offset = null;
+        $sealedQuery->unionLimit = null;
+        $sealedQuery->unionOffset = null;
+        $trustedSql = $sealedQuery->toSql();
+        $trustedBindings = $sealedQuery->getBindings();
+        $candidateAlias = 'aura_global_search_candidates';
+        $candidateQuery = $resource->getConnection()
+            ->query()
+            ->fromSub($sealedQuery, $candidateAlias)
+            ->select($candidateAlias.'.*')
+            ->orderBy($candidateAlias.'.'.$resource->getKeyName())
+            ->limit($candidateLimit);
+
+        if ($sealedQuery->beforeQueryCallbacks !== []
+            || $candidateQuery->beforeQueryCallbacks !== []
+            || $candidateQuery->limit !== $candidateLimit
+            || $candidateQuery->offset !== null
+            || $sealedQuery->toSql() !== $trustedSql
+            || $sealedQuery->getBindings() !== $trustedBindings
+            || ($candidateQuery->getRawBindings()['from'] ?? null) !== $trustedBindings) {
+            return collect();
+        }
+
+        $rows = $candidateQuery->get();
+
+        if ($rows->count() > $candidateLimit) {
+            return collect();
+        }
 
         if ($rows->isEmpty()) {
             return collect();

@@ -11,6 +11,7 @@ use Aura\Base\GlobalSearch\FreshProcessGlobalSearchExecutor;
 use Aura\Base\GlobalSearch\GlobalSearchBudget;
 use Aura\Base\GlobalSearch\GlobalSearchCandidate;
 use Aura\Base\GlobalSearch\GlobalSearchIconSanitizer;
+use Aura\Base\GlobalSearch\GlobalSearchQuerySealer;
 use Aura\Base\GlobalSearch\GlobalSearchResult;
 use Aura\Base\GlobalSearch\GlobalSearchWorkerContext;
 use Aura\Base\Models\Meta;
@@ -271,18 +272,18 @@ class GlobalSearch extends Component
     {
         try {
             if (! is_subclass_of($resourceClass, Resource::class)
-                || ! (new ReflectionClass($resourceClass))->isInstantiable()
-                || $resourceClass::getGlobalSearch() !== true) {
+                || ! (new ReflectionClass($resourceClass))->isInstantiable()) {
                 return null;
             }
 
             $resource = app($resourceClass);
 
             if (! $resource instanceof Resource
+                || ! Gate::forUser($user)->allows('viewAny', $resource)
+                || $resourceClass::getGlobalSearch() !== true
                 || (config('aura.teams')
                     && data_get($user, 'current_team_id') === null
-                    && $resource->globalSearchAllowsMissingTeamContext($user) !== true)
-                || ! Gate::forUser($user)->allows('viewAny', $resource)) {
+                    && $resource->globalSearchAllowsMissingTeamContext($user) !== true)) {
                 return null;
             }
 
@@ -371,7 +372,7 @@ class GlobalSearch extends Component
             return collect();
         }
 
-        $query = $resource->applyGlobalSearchVisibility($query, $user);
+        $query = app(GlobalSearchQuerySealer::class)->seal($resource, $query, $user);
 
         if (! $query instanceof Builder) {
             return collect();

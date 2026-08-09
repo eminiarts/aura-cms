@@ -8,6 +8,10 @@ class GlobalSearchProcessPolicy
 {
     public function view(mixed $user, Resource $resource): bool
     {
+        if ($resource instanceof GlobalSearchProcessBeforeQueryMutationResource) {
+            return true;
+        }
+
         return (string) data_get($user, 'current_team_id') === (string) $resource->getAttribute('team_id');
     }
 
