@@ -32,8 +32,7 @@ beforeEach(function () {
     $this->originalIndexViewEnabled = Team::$indexViewEnabled;
 
     // Create owner role with all permissions
-    $ownerRole = Role::create([
-        'team_id' => $this->team->id,
+    $ownerRole = Role::createForTeamForSystem($this->team->id, [
         'type' => 'Role',
         'title' => 'Owner',
         'slug' => 'owner',
@@ -149,8 +148,7 @@ test('team owner can invite users', function () {
 test('user with invite permission can invite users', function () {
     $userWithPermission = User::factory()->create();
 
-    $memberRole = Role::create([
-        'team_id' => $this->team->id,
+    $memberRole = Role::createForTeamForSystem($this->team->id, [
         'type' => 'Role',
         'title' => 'Member',
         'slug' => 'member',
@@ -237,8 +235,7 @@ test('regular user cannot update team member permissions', function () {
 test('team member can view team', function () {
     $teamMember = User::factory()->create();
 
-    $memberRole = Role::create([
-        'team_id' => $this->team->id,
+    $memberRole = Role::createForTeamForSystem($this->team->id, [
         'type' => 'Role',
         'title' => 'Member',
         'slug' => 'member',

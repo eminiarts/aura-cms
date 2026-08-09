@@ -1,6 +1,9 @@
 <?php
 
 use Aura\Base\Resource;
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Schema\Blueprint;
@@ -176,4 +179,116 @@ it('restores the global-write invariant after a model event throws an Error', fu
     ]))->toThrow(Error::class, 'global write failure');
 
     expect(Resource::isGlobalWriteInProgress())->toBeFalse();
+});
+
+it('rejects foreign tenancy and ownership during ordinary post and role creates', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+
+    $otherOwner = User::factory()->create();
+    $otherTeam = Team::factory()->createQuietly(['user_id' => $otherOwner->id]);
+
+    expect(fn () => Post::withoutGlobalScopes()->create([
+        'title' => 'Foreign team injection',
+        'team_id' => $otherTeam->id,
+        'user_id' => $actor->id,
+    ]))->toThrow(LogicException::class);
+
+    expect(fn () => Post::withoutGlobalScopes()->create([
+        'title' => 'Foreign owner injection',
+        'team_id' => $actor->current_team_id,
+        'user_id' => $otherOwner->id,
+    ]))->toThrow(LogicException::class);
+
+    expect(fn () => Role::withoutGlobalScopes()->create([
+        'name' => 'Foreign role',
+        'slug' => 'foreign-role',
+        'team_id' => $otherTeam->id,
+        'permissions' => [],
+    ]))->toThrow(LogicException::class);
+
+    $owned = Post::withoutGlobalScopes()->create([
+        'title' => 'Matching tenant and owner',
+        'team_id' => $actor->current_team_id,
+        'user_id' => $actor->id,
+    ]);
+
+    expect($owned->team_id)->toBe($actor->current_team_id)
+        ->and($owned->user_id)->toBe($actor->id);
+});
+
+it('rejects foreign tenancy and ownership during direct fill and update', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+
+    $otherOwner = User::factory()->create();
+    $otherTeam = Team::factory()->createQuietly(['user_id' => $otherOwner->id]);
+    $first = Post::withoutGlobalScopes()->create([
+        'title' => 'Direct fill target',
+        'team_id' => $actor->current_team_id,
+        'user_id' => $actor->id,
+    ]);
+    $second = Post::withoutGlobalScopes()->create([
+        'title' => 'Direct update target',
+        'team_id' => $actor->current_team_id,
+        'user_id' => $actor->id,
+    ]);
+
+    expect(function () use ($first, $otherTeam, $otherOwner): void {
+        $first->fill([
+            'team_id' => $otherTeam->id,
+            'user_id' => $otherOwner->id,
+        ]);
+        $first->save();
+    })->toThrow(LogicException::class);
+
+    expect(fn () => $second->update([
+        'team_id' => $otherTeam->id,
+        'user_id' => $otherOwner->id,
+    ]))->toThrow(LogicException::class);
+
+    expect($first->fresh()->team_id)->toBe($actor->current_team_id)
+        ->and($first->fresh()->user_id)->toBe($actor->id)
+        ->and($second->fresh()->team_id)->toBe($actor->current_team_id)
+        ->and($second->fresh()->user_id)->toBe($actor->id);
+});
+
+it('supports explicit trusted team creation and movement for infrastructure', function () {
+    $actor = createSuperAdmin();
+    $otherOwner = User::factory()->create();
+    $otherTeam = Team::factory()->createQuietly(['user_id' => $otherOwner->id]);
+
+    auth()->logout();
+
+    $post = Post::createForTeamForSystem($otherTeam->id, [
+        'title' => 'Trusted team post',
+        'user_id' => $otherOwner->id,
+    ]);
+    $role = Role::createForTeamForSystem($otherTeam->id, [
+        'name' => 'Trusted team role',
+        'slug' => 'trusted-team-role',
+        'permissions' => [],
+    ]);
+
+    expect($post->team_id)->toBe($otherTeam->id)
+        ->and($post->user_id)->toBe($otherOwner->id)
+        ->and($role->team_id)->toBe($otherTeam->id);
+
+    expect($post->moveToTeamForSystem($actor->current_team_id, [
+        'user_id' => $actor->id,
+    ]))->toBeTrue();
+
+    expect($post->refresh()->team_id)->toBe($actor->current_team_id)
+        ->and($post->user_id)->toBe($actor->id);
+
+    $this->actingAs($actor);
+
+    $ownerOnly = Post::createForOwnerForSystem($otherOwner->id, [
+        'title' => 'Trusted owner post',
+        'team_id' => $actor->current_team_id,
+    ]);
+
+    expect($ownerOnly->user_id)->toBe($otherOwner->id)
+        ->and($ownerOnly->assignOwnerForSystem($actor->id))->toBeTrue()
+        ->and($ownerOnly->fresh()->user_id)->toBe($actor->id);
 });

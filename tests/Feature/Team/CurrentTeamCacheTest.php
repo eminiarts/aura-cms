@@ -5,12 +5,52 @@ use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\Job;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
+
+class AuthenticateQueueWorkerJob implements ShouldQueue
+{
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
+
+    public function __construct(public int $userId) {}
+
+    public function handle(): void
+    {
+        Auth::setUser(User::withoutGlobalScopes()->findOrFail($this->userId));
+    }
+}
+
+class ObserveGuestQueueWorkerJob implements ShouldQueue
+{
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
+
+    public static int|string|null $authenticatedUserId = null;
+
+    public static ?int $visiblePostCount = null;
+
+    public function handle(): void
+    {
+        self::$authenticatedUserId = Auth::id();
+        self::$visiblePostCount = Post::count();
+    }
+}
 
 beforeEach(function () {
     if (! Schema::hasTable('teams')) {
@@ -21,6 +61,8 @@ beforeEach(function () {
 beforeEach(function () {
     config(['cache.default' => 'array']);
     Cache::flush();
+    ObserveGuestQueueWorkerJob::$authenticatedUserId = null;
+    ObserveGuestQueueWorkerJob::$visiblePostCount = null;
 });
 
 it('uses the new current team after switching with a warmed team scope cache', function () {
@@ -202,6 +244,36 @@ it('resets the current-team snapshot after a queue job is processed', function (
         ->and(Post::whereKey($postB->id)->exists())->toBeTrue();
 });
 
+it('resets the authentication guard before every real queue job boundary', function () {
+    $user = createSuperAdmin();
+
+    createPost([
+        'title' => 'Authenticated worker row',
+        'team_id' => $user->current_team_id,
+        'user_id' => $user->id,
+    ]);
+
+    Auth::logout();
+    Auth::forgetGuards();
+
+    Queue::push(new AuthenticateQueueWorkerJob($user->id));
+    expect(Auth::id())->toBeNull();
+
+    Queue::push(new ObserveGuestQueueWorkerJob);
+
+    expect(ObserveGuestQueueWorkerJob::$authenticatedUserId)->toBeNull()
+        ->and(ObserveGuestQueueWorkerJob::$visiblePostCount)->toBe(0);
+});
+
+it('preserves an authenticated caller around a synchronous queue boundary', function () {
+    $user = createSuperAdmin();
+
+    Queue::push(new ObserveGuestQueueWorkerJob);
+
+    expect(ObserveGuestQueueWorkerJob::$authenticatedUserId)->toBe($user->id)
+        ->and(Auth::id())->toBe($user->id);
+});
+
 it('never publishes an uncommitted current team and restores scope state after rollback', function () {
     $user = createSuperAdmin();
     $teamA = Team::findOrFail($user->current_team_id);
@@ -258,4 +330,46 @@ it('keeps a cold shared cache empty before commit and invalidates process state 
         ->and(Post::whereKey($postB->id)->exists())->toBeTrue()
         ->and(Cache::get($cacheKey))->toBe($teamB->id)
         ->and($teamA->id)->not->toBe($teamB->id);
+});
+
+it('survives an inner commit followed by outer rollback and a later committed switch', function () {
+    $user = createSuperAdmin();
+    $teamA = Team::findOrFail($user->current_team_id);
+    $teamB = Team::factory()->createQuietly(['user_id' => $user->id]);
+    $postA = createPost(['title' => 'Nested rollback team A', 'team_id' => $teamA->id]);
+    $postB = createPost(['title' => 'Nested rollback team B', 'team_id' => $teamB->id]);
+    $cacheKey = User::currentTeamCacheKey($user->id);
+
+    Aura::flushState();
+    Cache::forget($cacheKey);
+
+    expect(Post::whereKey($postA->id)->exists())->toBeTrue()
+        ->and(Cache::get($cacheKey))->toBe($teamA->id);
+
+    DB::beginTransaction();
+    DB::beginTransaction();
+
+    $user->forceFill(['current_team_id' => $teamB->id])->save();
+    DB::commit();
+
+    expect(Post::whereKey($postB->id)->exists())->toBeTrue()
+        ->and(Cache::get($cacheKey))->toBe($teamA->id);
+
+    DB::rollBack();
+
+    expect(Post::whereKey($postA->id)->exists())->toBeTrue()
+        ->and(Post::whereKey($postB->id)->exists())->toBeFalse()
+        ->and(Cache::get($cacheKey))->toBe($teamA->id);
+
+    DB::beginTransaction();
+    User::withoutGlobalScopes()
+        ->findOrFail($user->id)
+        ->forceFill(['current_team_id' => $teamB->id])
+        ->save();
+    DB::commit();
+
+    expect(Cache::has($cacheKey))->toBeFalse()
+        ->and(Post::whereKey($postA->id)->exists())->toBeFalse()
+        ->and(Post::whereKey($postB->id)->exists())->toBeTrue()
+        ->and(Cache::get($cacheKey))->toBe($teamB->id);
 });

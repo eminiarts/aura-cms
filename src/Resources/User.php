@@ -175,7 +175,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             return collect();
         }
 
-        $teamId = config('aura.teams') ? $this->current_team_id : null;
+        $teamId = config('aura.teams')
+            ? (TeamScope::currentContextTeamId() ?? $this->current_team_id)
+            : null;
         $cacheKey = ($teamId ?? 'global').':'.Role::catalogVersion();
 
         if (array_key_exists($cacheKey, $this->resolvedRolesCache)) {

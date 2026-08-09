@@ -91,7 +91,9 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
             // not the role row's team_id. Filtering on roles.team_id would drop
             // Global Roles (team_id = null) the user holds via a Membership, e.g.
             // the shared global admin role. Filter on the pivot's team_id instead.
-            return $model->roles()->wherePivot('team_id', $model->current_team_id);
+            $teamId = TeamScope::currentContextTeamId() ?? $model->current_team_id;
+
+            return $model->roles()->wherePivot('team_id', $teamId);
         }
 
         return $model->roles();
@@ -115,7 +117,9 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
         $assignableRoles = Role::query();
 
         if (config('aura.teams')) {
-            $teamId = $post->current_team_id ?? optional(auth()->user())->current_team_id;
+            $teamId = TeamScope::currentContextTeamId()
+                ?? $post->current_team_id
+                ?? optional(auth()->user())->current_team_id;
             $currentRoles->wherePivot('team_id', $teamId);
 
             // Assignable roles are the current team's own Team Roles plus the
@@ -159,7 +163,7 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
         if (empty($roleIds)) {
             // Remove all roles for this user in the current team
             if (config('aura.teams')) {
-                $post->roles()->wherePivot('team_id', $post->current_team_id)->detach();
+                $post->roles()->wherePivot('team_id', $teamId)->detach();
             } else {
                 $post->roles()->detach();
             }
@@ -172,7 +176,7 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
         // Remove roles
         if (! empty($rolesToRemove)) {
             if (config('aura.teams')) {
-                $post->roles()->wherePivot('team_id', $post->current_team_id)->detach($rolesToRemove);
+                $post->roles()->wherePivot('team_id', $teamId)->detach($rolesToRemove);
             } else {
                 $post->roles()->detach($rolesToRemove);
             }
@@ -181,7 +185,9 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
         // Add new roles
         foreach ($rolesToAdd as $roleId) {
             if (config('aura.teams')) {
-                $currentTeamId = $post->current_team_id ?? optional(auth()->user())->current_team_id;
+                $currentTeamId = TeamScope::currentContextTeamId()
+                    ?? $post->current_team_id
+                    ?? optional(auth()->user())->current_team_id;
 
                 $post->roles()->attach($roleId, ['team_id' => $currentTeamId]);
             } else {

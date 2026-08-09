@@ -62,7 +62,23 @@ uses()->afterEach(function () {
 
 function createPost(array $attributes = []): Post
 {
-    return Post::factory()->create($attributes);
+    if (! config('aura.teams')) {
+        $post = Post::factory()->make($attributes);
+        $ownerId = $post->getAttribute('user_id');
+
+        if ($ownerId === null) {
+            return Post::withoutGlobalScopes()->create($post->getAttributes());
+        }
+
+        return Post::createForOwnerForSystem($ownerId, $post->getAttributes());
+    }
+
+    $post = Post::factory()->make($attributes);
+
+    return Post::createForTeamForSystem(
+        $post->getAttribute('team_id'),
+        $post->getAttributes(),
+    );
 }
 
 /**
@@ -106,8 +122,12 @@ function foreignTeam(): Team
  */
 function soleMemberOf(Team $team): User
 {
-    $role = Role::where('team_id', $team->id)->first()
-        ?? Role::factory()->create(['team_id' => $team->id]);
+    $role = Role::withoutGlobalScopes()->where('team_id', $team->id)->first();
+
+    if (! $role) {
+        $roleAttributes = Role::factory()->make(['team_id' => $team->id])->getAttributes();
+        $role = Role::createForTeamForSystem($team->id, $roleAttributes);
+    }
 
     $member = User::factory()->create();
     $member->roles()->attach($role->id, ['team_id' => $team->id]);
@@ -188,7 +208,7 @@ function createAdmin()
         $user->update(['current_team_id' => $team->id]);
     }
 
-    $role = Role::create([...($team ? ['team_id' => $team->id] : []), 'type' => 'Role', 'title' => 'Editor', 'slug' => 'editor', 'name' => 'Editor', 'description' => 'Editor has limited permissions.', 'super_admin' => false, 'permissions' => [
+    $roleAttributes = ['type' => 'Role', 'title' => 'Editor', 'slug' => 'editor', 'name' => 'Editor', 'description' => 'Editor has limited permissions.', 'super_admin' => false, 'permissions' => [
         'view-attachment' => true,
         'viewAny-attachment' => true,
         'create-attachment' => true,
@@ -253,7 +273,11 @@ function createAdmin()
         'delete-TeamInvitation' => false,
         'forceDelete-TeamInvitation' => false,
         'scope-TeamInvitation' => false,
-    ]]);
+    ]];
+
+    $role = $team
+        ? Role::createForTeamForSystem($team->id, $roleAttributes)
+        : Role::create($roleAttributes);
 
     // Associate the role with the user using the proper relationship
     if (config('aura.teams')) {

@@ -16,13 +16,12 @@ use function Pest\Livewire\livewire;
  */
 function membershipRole(int $teamId, array $attributes = []): Role
 {
-    return Role::withoutGlobalScopes()->create(array_merge([
+    return Role::createForTeamForSystem($teamId, array_merge([
         'type' => 'Role',
         'name' => 'Member',
         'slug' => 'member-'.$teamId.'-'.uniqid(),
         'super_admin' => false,
         'permissions' => [],
-        'team_id' => $teamId,
     ], $attributes));
 }
 

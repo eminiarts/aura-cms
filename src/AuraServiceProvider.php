@@ -62,8 +62,10 @@ use Aura\Base\Widgets\SparklineArea;
 use Aura\Base\Widgets\SparklineBar;
 use Aura\Base\Widgets\ValueWidget;
 use Aura\Base\Widgets\Widgets;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -288,8 +290,37 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function packageBooted()
     {
-        Queue::after(fn () => Aura::flushState());
-        Queue::exceptionOccurred(fn () => Aura::flushState());
+        /** @var array<int, Authenticatable|null> $syncAuthenticatedUsers */
+        $syncAuthenticatedUsers = [];
+        $resetWorkerState = function (): void {
+            Auth::forgetGuards();
+            Aura::flushState();
+        };
+
+        Queue::before(function ($event) use (&$syncAuthenticatedUsers, $resetWorkerState): void {
+            if ($event->connectionName === 'sync') {
+                $syncAuthenticatedUsers[] = Auth::user();
+            }
+
+            $resetWorkerState();
+        });
+
+        $finishWorkerBoundary = function ($event) use (&$syncAuthenticatedUsers, $resetWorkerState): void {
+            $resetWorkerState();
+
+            if ($event->connectionName !== 'sync' || $syncAuthenticatedUsers === []) {
+                return;
+            }
+
+            $authenticatedUser = array_pop($syncAuthenticatedUsers);
+
+            if ($authenticatedUser) {
+                Auth::setUser($authenticatedUser);
+            }
+        };
+
+        Queue::after($finishWorkerBoundary);
+        Queue::exceptionOccurred($finishWorkerBoundary);
 
         // Laravel Octane keeps a single PHP process alive across many requests,
         // so Aura's process-level static state (field caches, resource registry,

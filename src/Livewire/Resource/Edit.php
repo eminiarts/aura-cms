@@ -176,7 +176,7 @@ class Edit extends Component
     #[On('saveModel')]
     public function save()
     {
-        $attributes = $this->validatedFormFields($this->validate());
+        $attributes = $this->validatedFormFields($this->validate(), $this->model->editFields());
         $globalIntent = $this->pullGlobalFormIntent($attributes);
 
         $persistenceAttributes = $this->model->usesCustomTable()

@@ -188,10 +188,23 @@ $globalPost = SharedCatalog::createGlobal([
 Seeders and trusted catalog jobs that have no authenticated actor use the
 deliberately named `createGlobalForSystem()` or
 `firstOrCreateGlobalForSystem()` / `updateOrCreateGlobalForSystem()` contracts.
+Trusted infrastructure that deliberately creates or moves a team-owned row
+uses `createForTeamForSystem($teamId, $attributes)` or
+`$resource->moveToTeamForSystem($teamId, $attributes)`. Owner-only maintenance
+uses `createForOwnerForSystem($ownerId, $attributes)` or
+`$resource->assignOwnerForSystem($ownerId, $attributes)`.
+
+An ordinary non-null `team_id` must match the active `TeamScope::forTeam()`
+context, when present, or the authenticated actor's current team. An ordinary
+non-null `user_id` must match the authenticated actor. This invariant runs on
+model saves as well as Aura forms, so `fill()`, `update()`, unscoped queries,
+and direct mass assignment cannot smuggle a foreign tenant or owner. Use the
+named system APIs for intentional seed, command, import, and repair work.
 An unauthenticated ordinary create that would otherwise produce a global shared
 row throws a `LogicException`. Aura's ordinary create/edit forms persist only
-validated resource fields and never accept ownership, tenancy, or system columns
-from the client.
+the input slugs in that path's actual `createFields()` or `editFields()` tree,
+including `on_forms`, `on_create`, and `on_edit`; hidden fields and ownership,
+tenancy, or system columns are never accepted from the client.
 
 ### Accessing Team Resources
 
@@ -223,6 +236,12 @@ The `TeamScope` (`Aura\Base\Models\Scopes\TeamScope`) is a global scope that is 
 6. **For guests and background workers**: Fails closed with no rows unless the query executes inside an explicit trusted tenant context or bypass
 7. **When teams are disabled**: No team filtering is applied
 
+An explicit `TeamScope::forTeam()` context is authoritative for every Resource,
+including `User`, `Team`, and `Role`, and takes precedence over a Global Admin's
+cross-team bypass. Contexts may be nested; the prior context is restored in
+`finally` after the callback returns or throws. Role Shadow resolution uses the
+same explicit context.
+
 ```php
 // TeamScope automatically adds this to queries:
 $builder->where($model->getTable().'.team_id', $currentTeamId);
@@ -230,7 +249,9 @@ $builder->where($model->getTable().'.team_id', $currentTeamId);
 
 ### Cache Mechanism
 
-The current team ID is cached per user to avoid repeated database queries. Both an ID and the absence of an ID are cached, so users without a team do not trigger one lookup per scoped query. Aura also keeps a request/job-local snapshot and clears it through `Aura::flushState()` at queue and Octane worker boundaries. Inside a database transaction, TeamScope reads the connection directly and never writes an uncommitted value to either cache. Shared-cache invalidation occurs after commit; both commit and rollback clear the process-local snapshot.
+The current team ID is cached per user to avoid repeated database queries. Both an ID and the absence of an ID are cached, so users without a team do not trigger one lookup per scoped query. Aura also keeps a request/job-local snapshot. Queue boundaries clear both Laravel's cached authentication guards and Aura state before and after every job (and after exceptions); synchronous dispatch restores the authenticated caller after the isolated job boundary.
+
+Inside a database transaction, TeamScope reads the connection directly and bypasses both cache layers, so nested transactions never publish uncommitted tenant state. A model change clears the process snapshot immediately and registers shared-cache invalidation with `afterCommit`. A rollback discards that callback, leaving the last committed shared value intact; the next process read resolves the rolled-back database value. This lifecycle works on supported Laravel 12 and 13 releases without depending on a rollback-only hook.
 
 ```php
 // Cache key format

@@ -979,14 +979,30 @@ global-write contract is the narrow exception that preserves intentional nulls
 for both posts storage and custom-table storage. Trusted seeders and background
 catalog synchronization may use `createGlobalForSystem()` or
 `firstOrCreateGlobalForSystem()` / `updateOrCreateGlobalForSystem()`.
+Trusted infrastructure can create a team row with
+`Resource::createForTeamForSystem($teamId, $attributes)` or move an existing row
+with `$resource->moveToTeamForSystem($teamId, $attributes)`. For deliberate
+owner-only operations, use `createForOwnerForSystem($ownerId, $attributes)` or
+`$resource->assignOwnerForSystem($ownerId, $attributes)`.
+
+Ordinary saves enforce non-null ownership. `team_id` must match an active
+`TeamScope::forTeam()` context (which is authoritative even for Global Admins)
+or the authenticated actor's current team; `user_id` must match the actor.
+These checks also cover `fill()`, `update()`, unscoped builders, and direct mass
+assignment. The named system APIs supply the explicit trusted tenant and owner
+context required by seeders, commands, imports, and data repairs.
 Unauthenticated ordinary creation cannot silently create a global shared row.
-Ordinary Livewire forms persist only validated declared fields and strip tenant,
-owner, identity, type, timestamp, and soft-delete columns before persistence.
+Ordinary Livewire forms intersect validated input with the actual path-specific
+`createFields()` or `editFields()` tree, honoring `on_forms`, `on_create`, and
+`on_edit`, then strip tenant, owner, identity, type, timestamp, and soft-delete
+columns before persistence.
 
 Unauthenticated and background `TeamScope` queries fail closed. Execute trusted
 tenant work inside `TeamScope::forTeam($teamId, fn () => ...)`, or use
 `TeamScope::withoutTenantScope(fn () => ...)` for a deliberate cross-tenant
-operation. The callback must execute the query before it returns.
+operation. The callback must execute the query before it returns. Explicit team
+contexts are nested and restored in `finally`; they take precedence over the
+Global Admin bypass and also drive Role Shadow resolution.
 
 **Removing Multiple Scopes**
 

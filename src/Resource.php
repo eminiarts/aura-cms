@@ -105,6 +105,9 @@ class Resource extends Model implements DefinesFields
      */
     private static int $globalWriteDepth = 0;
 
+    /** @var list<int|string|null> */
+    private static array $trustedOwnerContexts = [];
+
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
@@ -183,6 +186,21 @@ class Resource extends Model implements DefinesFields
     }
 
     /**
+     * Assign a deliberate owner from trusted infrastructure.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function assignOwnerForSystem(int|string $ownerId, array $attributes = []): bool
+    {
+        $attributes['user_id'] = $ownerId;
+
+        return static::withinTrustedOwnerFromAttributes(
+            $attributes,
+            fn (): bool => $this->update($attributes),
+        );
+    }
+
+    /**
      * @return HasMany
      */
     public function attachment()
@@ -211,6 +229,41 @@ class Resource extends Model implements DefinesFields
     }
 
     /**
+     * Create a row for a deliberate owner from trusted infrastructure.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public static function createForOwnerForSystem(int|string $ownerId, array $attributes = []): static
+    {
+        $attributes['user_id'] = $ownerId;
+
+        return static::withinTrustedOwnerFromAttributes(
+            $attributes,
+            fn (): static => app(static::class)->newQueryWithoutScopes()->create($attributes),
+        );
+    }
+
+    /**
+     * Create a team-owned row from trusted infrastructure.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public static function createForTeamForSystem(int|string $teamId, array $attributes = []): static
+    {
+        static::ensureTeamWriteIsSupported();
+
+        $attributes['team_id'] = $teamId;
+
+        return static::withinTrustedOwnerFromAttributes(
+            $attributes,
+            fn (): static => TeamScope::forTeam(
+                $teamId,
+                fn (): static => app(static::class)->newQueryWithoutScopes()->create($attributes),
+            ),
+        );
+    }
+
+    /**
      * Create a shared row visible to every team after policy authorization.
      *
      * @param  array<string, mixed>  $attributes
@@ -234,7 +287,10 @@ class Resource extends Model implements DefinesFields
     {
         static::ensureGlobalWriteIsSupported();
 
-        return static::createGlobalRecord($attributes);
+        return static::withinTrustedOwnerFromAttributes(
+            $attributes,
+            fn (): static => static::createGlobalRecord($attributes),
+        );
     }
 
     /**
@@ -247,12 +303,15 @@ class Resource extends Model implements DefinesFields
     {
         static::ensureGlobalWriteIsSupported();
 
-        return static::withinGlobalWrite(function () use ($attributes, $values): static {
-            $attributes['team_id'] = null;
-            unset($values['team_id']);
+        return static::withinTrustedOwnerFromAttributes(
+            array_merge($attributes, $values),
+            fn (): static => static::withinGlobalWrite(function () use ($attributes, $values): static {
+                $attributes['team_id'] = null;
+                unset($values['team_id']);
 
-            return app(static::class)->newQueryWithoutScopes()->firstOrCreate($attributes, $values);
-        });
+                return app(static::class)->newQueryWithoutScopes()->firstOrCreate($attributes, $values);
+            }),
+        );
     }
 
     public function getBulkActions()
@@ -432,10 +491,32 @@ class Resource extends Model implements DefinesFields
 
         Gate::authorize('update', $this);
 
-        $this->fill($attributes);
-        $this->setAttribute('team_id', $teamId);
+        return TeamScope::forTeam($teamId, function () use ($attributes, $teamId): bool {
+            $this->fill($attributes);
+            $this->setAttribute('team_id', $teamId);
 
-        return $this->save();
+            return $this->save();
+        });
+    }
+
+    /**
+     * Move a row to a team from trusted infrastructure.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function moveToTeamForSystem(int|string $teamId, array $attributes = []): bool
+    {
+        static::ensureTeamWriteIsSupported();
+
+        return static::withinTrustedOwnerFromAttributes(
+            $attributes,
+            fn (): bool => TeamScope::forTeam($teamId, function () use ($attributes, $teamId): bool {
+                $this->fill($attributes);
+                $this->setAttribute('team_id', $teamId);
+
+                return $this->save();
+            }),
+        );
     }
 
     /**
@@ -580,12 +661,15 @@ class Resource extends Model implements DefinesFields
     {
         static::ensureGlobalWriteIsSupported();
 
-        return static::withinGlobalWrite(function () use ($attributes, $values): static {
-            $attributes['team_id'] = null;
-            unset($values['team_id']);
+        return static::withinTrustedOwnerFromAttributes(
+            array_merge($attributes, $values),
+            fn (): static => static::withinGlobalWrite(function () use ($attributes, $values): static {
+                $attributes['team_id'] = null;
+                unset($values['team_id']);
 
-            return app(static::class)->newQueryWithoutScopes()->updateOrCreate($attributes, $values);
-        });
+                return app(static::class)->newQueryWithoutScopes()->updateOrCreate($attributes, $values);
+            }),
+        );
     }
 
     /**
@@ -654,6 +738,26 @@ class Resource extends Model implements DefinesFields
         }
     }
 
+    protected static function ensureTeamWriteIsSupported(): void
+    {
+        if (! config('aura.teams')) {
+            throw new \LogicException('Team writes require teams to be enabled.');
+        }
+    }
+
+    protected static function isOwnerWriteAuthorized(int|string $ownerId): bool
+    {
+        if (self::$trustedOwnerContexts !== []) {
+            $trustedOwnerId = self::$trustedOwnerContexts[array_key_last(self::$trustedOwnerContexts)];
+
+            return $trustedOwnerId !== null && (string) $trustedOwnerId === (string) $ownerId;
+        }
+
+        $actorId = auth()->id();
+
+        return $actorId !== null && (string) $actorId === (string) $ownerId;
+    }
+
     /**
      * @template TValue
      *
@@ -668,6 +772,28 @@ class Resource extends Model implements DefinesFields
             return $callback();
         } finally {
             self::$globalWriteDepth--;
+        }
+    }
+
+    /**
+     * @template TValue
+     *
+     * @param  array<string, mixed>  $attributes
+     * @param  callable(): TValue  $callback
+     * @return TValue
+     */
+    final protected static function withinTrustedOwnerFromAttributes(array $attributes, callable $callback): mixed
+    {
+        if (! array_key_exists('user_id', $attributes)) {
+            return $callback();
+        }
+
+        self::$trustedOwnerContexts[] = $attributes['user_id'];
+
+        try {
+            return $callback();
+        } finally {
+            array_pop(self::$trustedOwnerContexts);
         }
     }
 

@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\Fields\Repeater;
+use Illuminate\Support\Arr;
+
 trait InteractsWithFields
 {
     /**
@@ -76,16 +79,73 @@ trait InteractsWithFields
     }
 
     /**
-     * Return only validator-approved resource fields, excluding columns whose
-     * values must come from server-side ownership and lifecycle invariants.
+     * Return only validator-approved fields that are writable on this form
+     * path, excluding server-controlled ownership and lifecycle columns.
      *
      * @param  array<string, mixed>  $validated
+     * @param  array<int, array<string, mixed>>  $formFields
      * @return array<string, mixed>
      */
-    protected function validatedFormFields(array $validated): array
+    protected function validatedFormFields(array $validated, array $formFields): array
     {
-        return collect(data_get($validated, 'form.fields', []))
-            ->except($this->protectedFormColumns)
-            ->all();
+        $validatedFields = data_get($validated, 'form.fields', []);
+
+        if (! is_array($validatedFields)) {
+            return [];
+        }
+
+        $attributes = $this->filterWritableFormValues($validatedFields, $formFields);
+        Arr::forget($attributes, $this->protectedFormColumns);
+
+        return $attributes;
+    }
+
+    /**
+     * Recursively mirror the rendered field tree. Structural wrappers expose
+     * their children at the same payload level, while repeater children live
+     * inside each submitted row and must be filtered there.
+     *
+     * @param  array<string|int, mixed>  $values
+     * @param  array<int, array<string, mixed>>  $fields
+     * @return array<string, mixed>
+     */
+    private function filterWritableFormValues(array $values, array $fields): array
+    {
+        $attributes = [];
+
+        foreach ($fields as $field) {
+            $children = isset($field['fields']) && is_array($field['fields'])
+                ? $field['fields']
+                : [];
+
+            if (($field['field_type'] ?? null) !== 'input') {
+                $attributes = array_replace_recursive(
+                    $attributes,
+                    $this->filterWritableFormValues($values, $children),
+                );
+
+                continue;
+            }
+
+            $slug = $field['slug'] ?? null;
+
+            if (! is_string($slug) || ! Arr::has($values, $slug)) {
+                continue;
+            }
+
+            $value = Arr::get($values, $slug);
+
+            if (($field['field'] ?? null) instanceof Repeater && is_array($value)) {
+                $value = collect($value)
+                    ->filter(fn (mixed $row): bool => is_array($row))
+                    ->map(fn (array $row): array => $this->filterWritableFormValues($row, $children))
+                    ->values()
+                    ->all();
+            }
+
+            Arr::set($attributes, $slug, $value);
+        }
+
+        return $attributes;
     }
 }

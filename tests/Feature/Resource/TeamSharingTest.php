@@ -37,14 +37,12 @@ it('keeps non-shared resources isolated to the current team', function () {
     $userA = User::factory()->create(['current_team_id' => $teamA->id]);
     $userB = User::factory()->create(['current_team_id' => $teamB->id]);
 
-    Post::withoutGlobalScopes()->create([
+    Post::createForTeamForSystem($teamA->id, [
         'title' => 'Team A',
-        'team_id' => $teamA->id,
         'user_id' => $owner->id,
     ]);
-    Post::withoutGlobalScopes()->create([
+    Post::createForTeamForSystem($teamB->id, [
         'title' => 'Team B',
-        'team_id' => $teamB->id,
         'user_id' => $owner->id,
     ]);
 
@@ -66,14 +64,12 @@ it('composes global and current-team rows without leaking another team', functio
         'title' => 'Global',
         'user_id' => $owner->id,
     ]);
-    SharedCatalogPost::withoutGlobalScopes()->create([
+    SharedCatalogPost::createForTeamForSystem($teamA->id, [
         'title' => 'Team A',
-        'team_id' => $teamA->id,
         'user_id' => $owner->id,
     ]);
-    SharedCatalogPost::withoutGlobalScopes()->create([
+    SharedCatalogPost::createForTeamForSystem($teamB->id, [
         'title' => 'Team B',
-        'team_id' => $teamB->id,
         'user_id' => $owner->id,
     ]);
 
@@ -95,14 +91,12 @@ it('shows only global shared rows to an authenticated user without a team', func
         'title' => 'Global',
         'user_id' => $owner->id,
     ]);
-    SharedCatalogPost::withoutGlobalScopes()->create([
+    SharedCatalogPost::createForTeamForSystem($team->id, [
         'title' => 'Team Only',
-        'team_id' => $team->id,
         'user_id' => $owner->id,
     ]);
-    Post::withoutGlobalScopes()->create([
+    Post::createForTeamForSystem($team->id, [
         'title' => 'Private Team Row',
-        'team_id' => $team->id,
         'user_id' => $owner->id,
     ]);
 
@@ -155,14 +149,12 @@ it('fails closed for unauthenticated tenant queries and exposes explicit backgro
     $teamA = Team::factory()->createQuietly(['user_id' => $owner->id]);
     $teamB = Team::factory()->createQuietly(['user_id' => $owner->id]);
 
-    $postA = Post::withoutGlobalScopes()->create([
+    $postA = Post::createForTeamForSystem($teamA->id, [
         'title' => 'Background team A',
-        'team_id' => $teamA->id,
         'user_id' => $owner->id,
     ]);
-    $postB = Post::withoutGlobalScopes()->create([
+    $postB = Post::createForTeamForSystem($teamB->id, [
         'title' => 'Background team B',
-        'team_id' => $teamB->id,
         'user_id' => $owner->id,
     ]);
 
@@ -179,13 +171,99 @@ it('fails closed for unauthenticated tenant queries and exposes explicit backgro
         ->and($allIds)->toEqualCanonicalizing([$postA->id, $postB->id]);
 });
 
+it('makes explicit nested team contexts authoritative for guests and Global Admins', function () {
+    $owner = User::factory()->create();
+    $teamA = Team::factory()->createQuietly(['name' => 'Context A', 'user_id' => $owner->id]);
+    $teamB = Team::factory()->createQuietly(['name' => 'Context B', 'user_id' => $owner->id]);
+    $memberA = User::factory()->create(['current_team_id' => $teamA->id]);
+    $globalAdmin = createGlobalAdmin(['current_team_id' => $teamB->id]);
+    $membershipRole = Role::firstOrCreateGlobalAdmin();
+
+    $this->actingAs($owner);
+
+    $teamA->users()->attach($memberA->id, ['role_id' => $membershipRole->id]);
+    $teamB->users()->attach($globalAdmin->id, ['role_id' => $membershipRole->id]);
+
+    $globalEditor = Role::createGlobalForSystem([
+        'name' => 'Global Editor',
+        'slug' => 'context-editor',
+        'permissions' => [],
+    ]);
+    Role::createGlobalForSystem([
+        'name' => 'Global Viewer',
+        'slug' => 'context-viewer',
+        'permissions' => [],
+    ]);
+    $shadowA = TeamScope::forTeam($teamA->id, fn () => Role::withoutGlobalScopes()->create([
+        'name' => 'Team A Editor',
+        'slug' => 'context-editor',
+        'team_id' => $teamA->id,
+        'permissions' => [],
+    ]));
+
+    SharedCatalogPost::createGlobalForSystem([
+        'title' => 'Context Global',
+        'user_id' => $owner->id,
+    ]);
+    TeamScope::forTeam($teamA->id, fn () => SharedCatalogPost::withoutGlobalScopes()->create([
+        'title' => 'Context A',
+        'team_id' => $teamA->id,
+        'user_id' => $owner->id,
+    ]));
+    TeamScope::forTeam($teamB->id, fn () => SharedCatalogPost::withoutGlobalScopes()->create([
+        'title' => 'Context B',
+        'team_id' => $teamB->id,
+        'user_id' => $owner->id,
+    ]));
+
+    $readContext = function (): array {
+        $roles = Role::query()
+            ->shadowResolved(Role::currentTeamIdForResolution())
+            ->whereIn('slug', ['context-editor', 'context-viewer'])
+            ->get();
+
+        return [
+            'posts' => SharedCatalogPost::pluck('title')->all(),
+            'users' => User::pluck('users.id')->all(),
+            'teams' => Team::pluck('teams.id')->all(),
+            'roles' => $roles->pluck('id')->all(),
+        ];
+    };
+
+    $assertTeamA = function (array $result) use ($teamA, $memberA, $shadowA): void {
+        expect($result['posts'])->toEqualCanonicalizing(['Context Global', 'Context A'])
+            ->and($result['users'])->toBe([$memberA->id])
+            ->and($result['teams'])->toBe([$teamA->id])
+            ->and($result['roles'])->toHaveCount(2)
+            ->and($result['roles'])->toContain($shadowA->id);
+    };
+
+    auth()->logout();
+    $assertTeamA(TeamScope::forTeam($teamA->id, $readContext));
+
+    $this->actingAs($globalAdmin);
+    $assertTeamA(TeamScope::forTeam($teamA->id, $readContext));
+
+    $nested = TeamScope::forTeam($teamA->id, function () use ($teamB): array {
+        $outerBefore = SharedCatalogPost::pluck('title')->all();
+        $inner = TeamScope::forTeam($teamB->id, fn () => SharedCatalogPost::pluck('title')->all());
+        $outerAfter = SharedCatalogPost::pluck('title')->all();
+
+        return compact('outerBefore', 'inner', 'outerAfter');
+    });
+
+    expect($nested['outerBefore'])->toEqualCanonicalizing(['Context Global', 'Context A'])
+        ->and($nested['inner'])->toEqualCanonicalizing(['Context Global', 'Context B'])
+        ->and($nested['outerAfter'])->toEqualCanonicalizing(['Context Global', 'Context A'])
+        ->and($globalEditor->id)->not->toBe($shadowA->id);
+});
+
 it('restores fail-closed scope state after a background context throws an Error', function () {
     $owner = User::factory()->create();
     $team = Team::factory()->createQuietly(['user_id' => $owner->id]);
 
-    Post::withoutGlobalScopes()->create([
+    Post::createForTeamForSystem($team->id, [
         'title' => 'Never leaked',
-        'team_id' => $team->id,
         'user_id' => $owner->id,
     ]);
 

@@ -4,6 +4,7 @@ namespace Aura\Base\Resources;
 
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
 use Aura\Base\Models\Meta;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Gate;
@@ -139,6 +140,12 @@ class Role extends Resource
      */
     public static function currentTeamIdForResolution(): ?int
     {
+        $contextTeamId = TeamScope::currentContextTeamId();
+
+        if ($contextTeamId !== null) {
+            return (int) $contextTeamId;
+        }
+
         return optional(auth()->user())->current_team_id;
     }
 

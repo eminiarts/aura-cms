@@ -146,10 +146,9 @@ it('lets an existing user accept an invitation carrying a team Shadow role id', 
 it('still refuses an invitation whose role belongs to another team', function () {
     $team = $this->user->currentTeam;
     $otherTeam = Team::factory()->createQuietly();
-    $otherTeamRole = Role::create([
+    $otherTeamRole = Role::createForTeamForSystem($otherTeam->id, [
         'name' => 'Other Role',
         'slug' => 'other-role',
-        'team_id' => $otherTeam->id,
         'super_admin' => false,
         'permissions' => [],
     ]);

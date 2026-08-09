@@ -279,7 +279,7 @@ test('BelongsTo preload keeps team scope: cross-team related title stays absent'
     $ownAuthor = PreloadAuthor::create(['name' => 'VisibleAuthor']);
 
     // Cross-team author: force a foreign team_id so TeamScope hides it.
-    $foreignAuthor = PreloadAuthor::create(['name' => 'ForeignAuthor', 'team_id' => 999999]);
+    $foreignAuthor = PreloadAuthor::createForTeamForSystem(999999, ['name' => 'ForeignAuthor']);
 
     PreloadBelongsToProject::create(['name' => 'P1', 'author_id' => $ownAuthor->id]);
     PreloadBelongsToProject::create(['name' => 'P2', 'author_id' => $foreignAuthor->id]);

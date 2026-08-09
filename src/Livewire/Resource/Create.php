@@ -176,7 +176,7 @@ class Create extends Component
 
     public function save()
     {
-        $attributes = $this->validatedFormFields($this->validate());
+        $attributes = $this->validatedFormFields($this->validate(), $this->model->createFields());
         $globalIntent = $this->pullGlobalFormIntent($attributes);
 
         $userClass = config('aura.resources.user');

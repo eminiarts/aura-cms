@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Str;
 
@@ -21,7 +23,7 @@ trait InitialPostFields
             $post->title = '';
         }
 
-        if ($post instanceof User) {
+        if ($post instanceof User || $post instanceof Team) {
             return;
         }
 
@@ -62,6 +64,27 @@ trait InitialPostFields
             && $post->getAttribute('team_id') === null
             && ! $globalWrite) {
             throw new \LogicException('Use createGlobal() or createGlobalForSystem() to create a global shared resource.');
+        }
+
+        $attributes = $post->getAttributes();
+        $hasTenantAttribute = config('aura.teams') && array_key_exists('team_id', $attributes);
+        $hasOwnerAttribute = array_key_exists('user_id', $attributes);
+
+        if ($hasTenantAttribute
+            && (! $post->exists || $post->isDirty('team_id'))
+            && $attributes['team_id'] !== null) {
+            $authorizedTeamId = TeamScope::currentContextTeamId() ?? data_get($user, 'current_team_id');
+
+            if ($authorizedTeamId === null || (string) $authorizedTeamId !== (string) $attributes['team_id']) {
+                throw new \LogicException('Use createForTeamForSystem() or moveToTeamForSystem() for a foreign team assignment.');
+            }
+        }
+
+        if ($hasOwnerAttribute
+            && $attributes['user_id'] !== null
+            && (! $post->exists || $post->isDirty('user_id'))
+            && ! $post::isOwnerWriteAuthorized($attributes['user_id'])) {
+            throw new \LogicException('A resource owner must match the authenticated actor or an explicit trusted owner context.');
         }
 
         if (! $post->type && ! $post::usesCustomTable()) {

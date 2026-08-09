@@ -77,7 +77,10 @@ function mountTeamsTabTable(User $parent): Testable
 /** Attach a user to a team with a fresh Team Role (records a Membership). */
 function attachMembership(User $user, Team $team): void
 {
-    $role = Role::factory()->create(['team_id' => $team->id]);
+    $role = Role::createForTeamForSystem(
+        $team->id,
+        Role::factory()->make()->getAttributes(),
+    );
     $user->roles()->attach($role->id, ['team_id' => $team->id]);
 }
 

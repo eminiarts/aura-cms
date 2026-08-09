@@ -22,9 +22,6 @@ class TeamScope implements Scope
     /** @var array<int|string, int|null> */
     private static array $currentTeamIds = [];
 
-    /** @var array<string, true> */
-    private static array $transactionResetRegistrations = [];
-
     /** @var list<int|string> */
     private static array $trustedTeamContexts = [];
 
@@ -49,6 +46,14 @@ class TeamScope implements Scope
             $hasTenantContext = self::$trustedTeamContexts !== [];
 
             if ($model->getTable() === 'users') {
+                if ($hasTenantContext && $currentTeamId !== null) {
+                    $builder->whereHas('teams', function ($query) use ($currentTeamId) {
+                        $query->where('teams.id', $currentTeamId);
+                    });
+
+                    return;
+                }
+
                 $isGlobalAdmin = $authUser && Gate::forUser($authUser)->allows(User::GLOBAL_ADMIN_GATE);
 
                 if ($isGlobalAdmin) {
@@ -113,13 +118,21 @@ class TeamScope implements Scope
         }
     }
 
+    public static function currentContextTeamId(): int|string|null
+    {
+        if (self::$trustedTeamContexts === []) {
+            return null;
+        }
+
+        return self::$trustedTeamContexts[array_key_last(self::$trustedTeamContexts)];
+    }
+
     public static function flushState(): void
     {
         self::$applying = false;
         self::$bypassDepth = 0;
         self::$currentTeamIds = [];
         self::$trustedTeamContexts = [];
-        self::$transactionResetRegistrations = [];
     }
 
     public static function forgetCurrentTeamId(string|int|null $userId): void
@@ -170,7 +183,10 @@ class TeamScope implements Scope
             return;
         }
 
-        self::registerTransactionReset($connection, $userId);
+        $connection->afterCommit(function () use ($userId): void {
+            self::forgetCurrentTeamId($userId);
+            Cache::forget(User::currentTeamCacheKey($userId));
+        });
     }
 
     /**
@@ -212,8 +228,6 @@ class TeamScope implements Scope
         $connection = DB::connection();
 
         if (self::hasActiveApplicationTransaction($connection)) {
-            self::registerTransactionReset($connection, $userId);
-
             return $connection->table('users')->where('id', $userId)->value('current_team_id');
         }
 
@@ -248,28 +262,5 @@ class TeamScope implements Scope
         }
 
         return $transactionLevel > 0;
-    }
-
-    private static function registerTransactionReset(Connection $connection, string|int $userId): void
-    {
-        $registrationKey = spl_object_id($connection).':'.$userId;
-
-        if (isset(self::$transactionResetRegistrations[$registrationKey])) {
-            return;
-        }
-
-        self::$transactionResetRegistrations[$registrationKey] = true;
-
-        $clearProcessState = function () use ($registrationKey, $userId): void {
-            unset(self::$transactionResetRegistrations[$registrationKey]);
-            self::forgetCurrentTeamId($userId);
-        };
-
-        $connection->afterCommit(function () use ($clearProcessState, $userId): void {
-            $clearProcessState();
-            Cache::forget(User::currentTeamCacheKey($userId));
-        });
-
-        $connection->afterRollBack($clearProcessState);
     }
 }

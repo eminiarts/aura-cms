@@ -49,12 +49,11 @@ function catalogGlobalRole(string $slug, array $attributes = []): Role
  */
 function catalogTeamRole(int $teamId, string $slug, array $attributes = []): Role
 {
-    return Role::withoutGlobalScopes()->create(array_merge([
+    return Role::createForTeamForSystem($teamId, array_merge([
         'name' => ucfirst($slug),
         'slug' => $slug,
         'super_admin' => false,
         'permissions' => [],
-        'team_id' => $teamId,
     ], $attributes));
 }
 
