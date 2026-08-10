@@ -63,6 +63,63 @@ test('renderer emits the semantic variables for both color schemes', function ()
         ->toContain('--aura-color-muted: 161 161 170;');
 });
 
+test('font family serializer removes only matching outer quote pairs', function (array|string $families, string $expected) {
+    expect(ThemeTokens::fontFamily([
+        'font' => ['family' => $families],
+    ]))->toBe($expected);
+})->with([
+    'matching double quote pair and surrounding whitespace' => [
+        ['  "Acme Sans"  ', ' system-ui '],
+        '"Acme Sans", system-ui',
+    ],
+    'matching single quote pair' => [
+        ["'Source Serif 4'", 'serif'],
+        '"Source Serif 4", serif',
+    ],
+    'embedded quotes' => [
+        ['Brand "Quoted"', 'sans-serif'],
+        '"Brand \"Quoted\"", sans-serif',
+    ],
+    'backslashes' => [
+        ['C:\\Fonts\\Acme', 'monospace'],
+        '"C:\\\\Fonts\\\\Acme", monospace',
+    ],
+    'unmatched opening quote' => [
+        ['"Brand Quoted', 'sans-serif'],
+        '"\"Brand Quoted", sans-serif',
+    ],
+    'unmatched closing quote' => [
+        ['Brand Quoted"', 'sans-serif'],
+        '"Brand Quoted\"", sans-serif',
+    ],
+    'mixed outer quotes' => [
+        ['"Brand Quoted\'', 'sans-serif'],
+        '"\"Brand Quoted\'", sans-serif',
+    ],
+    'exactly one matching outer pair' => [
+        ['""Acme Sans""', 'sans-serif'],
+        '"\"Acme Sans\"", sans-serif',
+    ],
+    'comma separated fallback list' => [
+        '  "Acme Sans"  ,  system-ui , sans-serif  ',
+        '"Acme Sans", system-ui, sans-serif',
+    ],
+]);
+
+test('renderer preserves quoted custom font names in the font CSS variable', function () {
+    $html = view('aura::components.layout.colors', [
+        'settings' => [
+            'font' => [
+                'family' => ['Brand "Quoted"', 'C:\\Fonts\\Acme', 'sans-serif'],
+            ],
+        ],
+    ])->render();
+
+    expect($html)->toContain(
+        '--aura-font-sans: "Brand \"Quoted\"", "C:\\\\Fonts\\\\Acme", sans-serif;',
+    );
+});
+
 test('host and stored settings override tokens without losing package defaults', function () {
     config()->set('aura.theme', [
         'color-palette' => 'emerald',

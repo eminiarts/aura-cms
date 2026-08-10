@@ -146,7 +146,16 @@ final class ThemeTokens
             return null;
         }
 
-        $family = trim($family, " \t\n\r\0\x0B\"'");
+        $family = trim($family);
+        $openingQuote = $family[0] ?? '';
+
+        if (
+            strlen($family) >= 2
+            && in_array($openingQuote, ['"', "'"], true)
+            && str_ends_with($family, $openingQuote)
+        ) {
+            $family = substr($family, 1, -1);
+        }
 
         if (
             $family === ''
