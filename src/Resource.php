@@ -944,6 +944,7 @@ class Resource extends Model implements DefinesFields
 
     private function authorizePrivilegedPersistence(
         Connection $connection,
+        Builder $query,
         PDO $writePdo,
         string $table,
         int|string|null $teamId,
@@ -956,7 +957,7 @@ class Resource extends Model implements DefinesFields
             static::ensureGlobalWriteIsSupported();
         }
 
-        $assertIntent = function () use ($connection, $writePdo, $table, $teamId, $ownerId): void {
+        $assertIntent = function () use ($connection, $query, $writePdo, $table, $teamId, $ownerId): void {
             $restoreTransactionState = static function () use ($connection, $writePdo): void {
                 if ($writePdo->inTransaction() && $connection->transactionLevel() === 0) {
                     $transactionsProperty = new \ReflectionProperty(Connection::class, 'transactions');
@@ -975,6 +976,7 @@ class Resource extends Model implements DefinesFields
 
             if ($this->getConnection() !== $connection
                 || $this->getTable() !== $table
+                || $query->getQuery()->from !== $table
                 || ($this->getAttribute('team_id') === null) !== ($teamId === null)
                 || (string) $this->getAttribute('team_id') !== (string) $teamId
                 || $this->getAttribute('user_id') !== $ownerId) {
@@ -1153,6 +1155,7 @@ class Resource extends Model implements DefinesFields
         $attributes = $this->getAttributesForInsert();
         $authorize = fn (): bool => $this->authorizePrivilegedPersistence(
             $connection,
+            $query,
             $writePdo,
             $table,
             $teamId,
@@ -1214,6 +1217,7 @@ class Resource extends Model implements DefinesFields
         $dirty = $this->getDirtyForUpdate();
         $authorize = fn (): bool => $this->authorizePrivilegedPersistence(
             $connection,
+            $query,
             $writePdo,
             $table,
             $teamId,

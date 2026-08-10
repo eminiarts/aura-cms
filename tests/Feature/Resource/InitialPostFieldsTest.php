@@ -167,6 +167,19 @@ class LateBuilderCallbackGlobalResource extends PhysicalWriterGuardedGlobalResou
     }
 }
 
+class RedirectedTableGlobalResource extends PhysicalWriterGuardedGlobalResource
+{
+    public function newModelQuery()
+    {
+        $builder = parent::newModelQuery();
+        $builder->getQuery()->beforeQuery(function (QueryBuilder $query): void {
+            $query->from('redirected_global_resources');
+        });
+
+        return $builder;
+    }
+}
+
 class TouchingGlobalResource extends ExplicitNullSharedCustomResource
 {
     protected $fillable = ['name', 'team_id', 'user_id', 'parent_id'];
@@ -1012,6 +1025,40 @@ it('runs final authorization after builder callbacks register later connection c
 
     expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
         ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
+});
+
+it('rejects a builder callback that redirects a privileged insert or update table', function (): void {
+    Schema::create('redirected_global_resources', function (Blueprint $table): void {
+        $table->id();
+        $table->string('name');
+        $table->foreignId('team_id')->nullable();
+        $table->foreignId('user_id')->nullable();
+        $table->foreignId('parent_id')->nullable();
+        $table->timestamps();
+    });
+
+    try {
+        expect(fn () => RedirectedTableGlobalResource::createGlobalForSystem([
+            'name' => 'Redirected table write',
+        ]))->toThrow(LogicException::class, 'resource, tenancy, owner, or physical database writer');
+
+        expect(DB::table('explicit_null_shared_custom_resources')->count())->toBe(0)
+            ->and(DB::table('redirected_global_resources')->count())->toBe(0);
+
+        $redirectedId = DB::table('redirected_global_resources')->insertGetId([
+            'name' => 'Redirected update target',
+        ]);
+
+        expect(fn () => RedirectedTableGlobalResource::updateOrCreateGlobalForSystem(
+            ['id' => $redirectedId],
+            ['name' => 'Redirected update write'],
+        ))->toThrow(LogicException::class, 'resource, tenancy, owner, or physical database writer');
+
+        expect(DB::table('redirected_global_resources')->where('id', $redirectedId)->value('name'))
+            ->toBe('Redirected update target');
+    } finally {
+        Schema::dropIfExists('redirected_global_resources');
+    }
 });
 
 it('runs final authorization after transaction callbacks register later connection callbacks', function (): void {
