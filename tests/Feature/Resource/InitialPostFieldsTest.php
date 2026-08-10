@@ -7,6 +7,7 @@ use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class ExplicitNullSharedPost extends Resource
@@ -53,6 +54,56 @@ class ThrowingGlobalCustomResource extends ExplicitNullSharedCustomResource
     }
 }
 
+class NestedNonSharedTag extends Resource
+{
+    public static string $type = 'NestedNonSharedTag';
+}
+
+class CrossConnectionNestedNonSharedTag extends Resource
+{
+    public static string $type = 'CrossConnectionNestedNonSharedTag';
+
+    protected $connection = 'nested_global_write';
+}
+
+class SharedGlobalResourceWithTags extends Resource
+{
+    public static bool $sharedAcrossTeams = true;
+
+    public static string $type = 'SharedGlobalResourceWithTags';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Tags',
+                'slug' => 'tags',
+                'type' => 'Aura\\Base\\Fields\\Tags',
+                'resource' => NestedNonSharedTag::class,
+            ],
+        ];
+    }
+}
+
+class CrossConnectionSharedGlobalResourceWithTags extends Resource
+{
+    public static bool $sharedAcrossTeams = true;
+
+    public static string $type = 'CrossConnectionSharedGlobalResourceWithTags';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Tags',
+                'slug' => 'tags',
+                'type' => 'Aura\\Base\\Fields\\Tags',
+                'resource' => CrossConnectionNestedNonSharedTag::class,
+            ],
+        ];
+    }
+}
+
 beforeEach(function () {
     if (! Schema::hasColumn('posts', 'team_id')) {
         $this->markTestSkipped('Initial team defaults require the teams schema.');
@@ -69,6 +120,7 @@ beforeEach(function () {
 
 afterEach(function () {
     Schema::dropIfExists('explicit_null_shared_custom_resources');
+    DB::purge('nested_global_write');
 });
 
 it('rejects explicitly null team and creator values in ordinary creates', function () {
@@ -173,6 +225,86 @@ it('restores the global-write invariant after a model event throws an Error', fu
 
     expect(Resource::isGlobalWriteInProgress())->toBeFalse();
 });
+
+it('does not grant a nested Tags save the parent global-write capability', function (string $api) {
+    if ($api === 'authorized') {
+        $globalAdmin = createGlobalAdmin(['current_team_id' => null]);
+        $this->actingAs($globalAdmin);
+    } else {
+        auth()->logout();
+    }
+
+    $create = fn () => match ($api) {
+        'authorized' => SharedGlobalResourceWithTags::createGlobal([
+            'title' => 'Authorized global parent',
+            'tags' => ['Nested authorized leak'],
+        ]),
+        'system-create' => SharedGlobalResourceWithTags::createGlobalForSystem([
+            'title' => 'System global parent',
+            'tags' => ['Nested system leak'],
+        ]),
+        'system-first-or-create' => SharedGlobalResourceWithTags::firstOrCreateGlobalForSystem(
+            ['title' => 'System first-or-create parent'],
+            ['tags' => ['Nested system first-or-create leak']],
+        ),
+        'system-update-or-create' => SharedGlobalResourceWithTags::updateOrCreateGlobalForSystem(
+            ['title' => 'System update-or-create parent'],
+            ['tags' => ['Nested system update-or-create leak']],
+        ),
+    };
+
+    expect($create)->toThrow(LogicException::class);
+    expect(NestedNonSharedTag::withoutGlobalScopes()
+        ->where('type', NestedNonSharedTag::$type)
+        ->count())->toBe(0);
+})->with(['authorized', 'system-create', 'system-first-or-create', 'system-update-or-create']);
+
+it('does not grant a nested Tags save authority on another connection', function (string $api) {
+    config()->set('database.connections.nested_global_write', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+        'foreign_key_constraints' => false,
+    ]);
+    DB::purge('nested_global_write');
+
+    Schema::connection('nested_global_write')->create('posts', function (Blueprint $table): void {
+        $table->id();
+        $table->text('title')->nullable();
+        $table->longText('content')->nullable();
+        $table->string('slug')->nullable();
+        $table->string('type', 64);
+        $table->string('status', 20)->default('publish')->nullable();
+        $table->foreignId('user_id')->nullable();
+        $table->foreignId('team_id')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+
+    if ($api === 'authorized') {
+        $globalAdmin = createGlobalAdmin(['current_team_id' => null]);
+        $this->actingAs($globalAdmin);
+    } else {
+        auth()->logout();
+    }
+
+    $create = fn () => match ($api) {
+        'authorized' => CrossConnectionSharedGlobalResourceWithTags::createGlobal([
+            'title' => 'Authorized cross-connection parent',
+            'tags' => ['Nested authorized cross-connection leak'],
+        ]),
+        'system' => CrossConnectionSharedGlobalResourceWithTags::createGlobalForSystem([
+            'title' => 'System cross-connection parent',
+            'tags' => ['Nested system cross-connection leak'],
+        ]),
+    };
+
+    expect($create)->toThrow(LogicException::class);
+    expect(DB::connection('nested_global_write')
+        ->table('posts')
+        ->where('type', CrossConnectionNestedNonSharedTag::$type)
+        ->count())->toBe(0);
+})->with(['authorized', 'system']);
 
 it('rejects foreign tenancy and ownership during ordinary post and role creates', function () {
     $actor = createSuperAdmin();

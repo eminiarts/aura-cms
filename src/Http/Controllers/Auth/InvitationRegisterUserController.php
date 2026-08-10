@@ -22,10 +22,8 @@ class InvitationRegisterUserController extends Controller
 {
     /**
      * Display the registration view.
-     *
-     * @return View
      */
-    public function create(Request $request, mixed $team, mixed $teamInvitation)
+    public function create(Request $request, mixed $team, mixed $teamInvitation): View
     {
         // If team registration is disabled, we show a 404 page.
         abort_if(! config('aura.auth.user_invitations'), 404);
@@ -46,47 +44,50 @@ class InvitationRegisterUserController extends Controller
     /**
      * Handle an incoming registration request.
      *
-     * @return RedirectResponse
      *
      * @throws ValidationException
      */
-    public function store(Request $request, mixed $team, mixed $teamInvitation)
+    public function store(Request $request, mixed $team, mixed $teamInvitation): RedirectResponse
     {
         abort_if(! config('aura.auth.user_invitations'), 404);
 
-        [$team, $teamInvitation] = $this->resolveInvitation($request, $team, $teamInvitation);
+        $connection = $this->invitationConnection($request, $team, $teamInvitation);
+        [$teamId, $invitationId] = $this->invitationRouteKeys($team, $teamInvitation);
 
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+        // Resolve and lock every authorization input on the writer inside one
+        // transaction. A lagging replica can therefore never resurrect a revoked
+        // invitation, stale meta or role, nor hide an already-created account.
+        $user = $connection->transaction(function () use ($connection, $invitationId, $request, $teamId) {
+            [$team, $teamInvitation] = $this->resolveInvitationFromWriter(
+                $connection,
+                $teamId,
+                $invitationId,
+                lockForUpdate: true,
+            );
 
-        // The carried role must still exist and be assignable in the inviting team
-        // — its own Team Role or a shared Global Role (team_id = null) — mirroring
-        // the team-or-global rule TeamInvitationController::accept applies. A role
-        // deleted between invite and acceptance fails like the accept path (404)
-        // and, thanks to the transaction below, leaves no orphaned user behind.
-        $connection = $team->getConnection();
-        /** @var Role $roleResource */
-        $roleResource = app(config('aura.resources.role'));
-        $roleResource = $roleResource->newInstance();
-        $roleResource->setConnection($connection->getName());
-        $role = $roleResource->newQueryWithoutScopes()
-            ->whereKey($teamInvitation->role)
-            ->visibleToTeam($team->id)
-            ->first();
+            $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            ]);
 
-        abort_unless($role, 404);
+            /** @var Role $roleResource */
+            $roleResource = app(config('aura.resources.role'));
+            $roleResource = $roleResource->newInstance();
+            $roleResource->setConnection($connection->getName());
+            $role = $roleResource->newQueryWithoutScopes()
+                ->useWritePdo()
+                ->lockForUpdate()
+                ->whereKey($teamInvitation->role)
+                ->visibleToTeam($team->id)
+                ->first();
 
-        // An email that already belongs to an account (any casing) must accept the
-        // invitation, not register a second account. Refuse rather than mint a
-        // case-variant duplicate.
-        abort_if($this->emailAlreadyRegistered($teamInvitation->email, $connection), 403);
+            abort_unless($role, 404);
+            abort_if($this->emailAlreadyRegistered(
+                $teamInvitation->email,
+                $connection,
+                lockForUpdate: true,
+            ), 403);
 
-        // Create the user and consume the invitation atomically: a mid-flight
-        // failure (e.g. the Roles field refusing the assignment) rolls the insert
-        // back, so a refusal never leaves a half-provisioned, role-less account.
-        $user = $connection->transaction(function () use ($connection, $request, $team, $teamInvitation, $role) {
             /** @var User $userResource */
             $userResource = app(config('aura.resources.user'));
             $userResource = $userResource->newInstance();
@@ -115,8 +116,11 @@ class InvitationRegisterUserController extends Controller
      * Whether an account already exists for the given email, compared
      * case-insensitively (consistent with the accept path's strcasecmp match).
      */
-    protected function emailAlreadyRegistered(?string $email, Connection $connection): bool
-    {
+    protected function emailAlreadyRegistered(
+        ?string $email,
+        Connection $connection,
+        bool $lockForUpdate = false,
+    ): bool {
         if ($email === null || $email === '') {
             return false;
         }
@@ -126,9 +130,16 @@ class InvitationRegisterUserController extends Controller
         $user = $user->newInstance();
         $user->setConnection($connection->getName());
 
-        return $user->newQueryWithoutScopes()
-            ->whereRaw('lower(email) = ?', [mb_strtolower($email)])
-            ->exists();
+        $query = $user->newQueryWithoutScopes()
+            ->without('meta')
+            ->useWritePdo()
+            ->whereRaw('lower(email) = ?', [mb_strtolower($email)]);
+
+        if ($lockForUpdate) {
+            return $query->lockForUpdate()->first([$user->getQualifiedKeyName()]) !== null;
+        }
+
+        return $query->exists();
     }
 
     protected function invitationConnection(
@@ -162,6 +173,22 @@ class InvitationRegisterUserController extends Controller
     }
 
     /**
+     * @return array{0: int|string, 1: int|string}
+     */
+    protected function invitationRouteKeys(mixed $team, mixed $teamInvitation): array
+    {
+        $teamId = $team instanceof Team ? $team->getRouteKey() : $team;
+        $invitationId = $teamInvitation instanceof TeamInvitation
+            ? $teamInvitation->getRouteKey()
+            : $teamInvitation;
+
+        abort_unless(is_int($teamId) || is_string($teamId), 404);
+        abort_unless(is_int($invitationId) || is_string($invitationId), 404);
+
+        return [$teamId, $invitationId];
+    }
+
+    /**
      * Signed invitation routes are a narrow, explicit guest lookup bypass.
      * Resolve both records unscoped, then bind the invitation back to the team
      * encoded in the same signed URL.
@@ -174,10 +201,20 @@ class InvitationRegisterUserController extends Controller
         mixed $teamInvitation,
     ): array {
         $connection = $this->invitationConnection($request, $team, $teamInvitation);
-        $teamId = $team instanceof Team ? $team->getRouteKey() : $team;
-        $invitationId = $teamInvitation instanceof TeamInvitation
-            ? $teamInvitation->getRouteKey()
-            : $teamInvitation;
+        [$teamId, $invitationId] = $this->invitationRouteKeys($team, $teamInvitation);
+
+        return $this->resolveInvitationFromWriter($connection, $teamId, $invitationId);
+    }
+
+    /**
+     * @return array{0: Team, 1: TeamInvitation}
+     */
+    protected function resolveInvitationFromWriter(
+        Connection $connection,
+        int|string $teamId,
+        int|string $invitationId,
+        bool $lockForUpdate = false,
+    ): array {
 
         /** @var Team $teamResource */
         $teamResource = app(config('aura.resources.team'));
@@ -189,11 +226,34 @@ class InvitationRegisterUserController extends Controller
         $invitationResource = $invitationResource->newInstance();
         $invitationResource->setConnection($connection->getName());
 
-        $resolvedTeam = $teamResource->newQueryWithoutScopes()->findOrFail($teamId);
-        $resolvedInvitation = $invitationResource->newQueryWithoutScopes()
+        $teamQuery = $teamResource->newQueryWithoutScopes()
+            ->without('meta')
+            ->useWritePdo();
+        $invitationQuery = $invitationResource->newQueryWithoutScopes()
+            ->without('meta')
+            ->useWritePdo();
+
+        if ($lockForUpdate) {
+            $teamQuery->lockForUpdate();
+            $invitationQuery->lockForUpdate();
+        }
+
+        $resolvedTeam = $teamQuery->findOrFail($teamId);
+        $resolvedInvitation = $invitationQuery
             ->whereKey($invitationId)
             ->where('team_id', $resolvedTeam->getKey())
             ->firstOrFail();
+
+        $teamMeta = $resolvedTeam->meta()->useWritePdo();
+        $invitationMeta = $resolvedInvitation->meta()->useWritePdo();
+
+        if ($lockForUpdate) {
+            $teamMeta->lockForUpdate();
+            $invitationMeta->lockForUpdate();
+        }
+
+        $resolvedTeam->setRelation('meta', $teamMeta->get());
+        $resolvedInvitation->setRelation('meta', $invitationMeta->get());
 
         return [$resolvedTeam, $resolvedInvitation];
     }

@@ -37,13 +37,28 @@ class TeamInvitation extends Mailable
      */
     public function build()
     {
+        /** @var TeamInvitationResource $invitationResource */
+        $invitationResource = app(config('aura.resources.team-invitation'));
+        $invitationResource = $invitationResource->newInstance();
+        $invitationResource->setConnection($this->invitation->getConnectionName());
+        $this->invitation = $invitationResource->newQueryWithoutScopes()
+            ->without('meta')
+            ->useWritePdo()
+            ->findOrFail($this->invitation->getKey());
+        $this->invitation->setRelation(
+            'meta',
+            $this->invitation->meta()->useWritePdo()->get(),
+        );
+
         $connectionParameters = app(InvitationConnectionResolver::class)
             ->signedParameters($this->invitation);
         /** @var Team $teamResource */
         $teamResource = app(config('aura.resources.team'));
         $teamResource = $teamResource->newInstance();
         $teamResource->setConnection($this->invitation->getConnectionName());
-        $team = $teamResource->newQueryWithoutScopes()->findOrFail($this->invitation->team_id);
+        $team = $teamResource->newQueryWithoutScopes()
+            ->useWritePdo()
+            ->findOrFail($this->invitation->team_id);
 
         return $this->markdown('aura::emails.team-invitation', [
             'registerUrl' => URL::temporarySignedRoute('aura.invitation.register', $this->expiresAt(), [
@@ -53,7 +68,8 @@ class TeamInvitation extends Mailable
             ]),
             'userExists' => User::on($this->invitation->getConnectionName())
                 ->withoutGlobalScopes()
-                ->where('email', $this->invitation->email)
+                ->useWritePdo()
+                ->whereRaw('lower(email) = ?', [mb_strtolower($this->invitation->email)])
                 ->exists(),
             'acceptUrl' => URL::temporarySignedRoute('aura.team-invitations.accept', $this->expiresAt(), [
                 'invitation' => $this->invitation,

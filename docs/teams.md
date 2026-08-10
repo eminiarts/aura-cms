@@ -194,6 +194,11 @@ uses `createForTeamForSystem($teamId, $attributes)` or
 uses `createForOwnerForSystem($ownerId, $attributes)` or
 `$resource->assignOwnerForSystem($ownerId, $attributes)`.
 
+Global-write authorization is bound to the exact Resource instance and its
+writer connection for the duration of that named API call. Model-event handlers
+and nested field saves do not inherit it; a nested resource must independently
+use its own explicit global or tenant system contract.
+
 Tenant and owner contexts are connection-qualified. An authenticated actor on
 connection A cannot authorize a same-id read or write on connection B. For
 intentional cross-connection system work, pass the target `Connection` to the
@@ -219,7 +224,11 @@ both guest-registration and existing-user acceptance URLs. Only connections in
 TeamInvitation resource connections) resolve. Older links remain valid only on
 `aura.auth.invitation_legacy_connection`, which defaults to the configured
 TeamInvitation resource connection; legacy resolution never probes multiple
-databases by colliding numeric IDs.
+databases by colliding numeric IDs. Guest registration reloads and locks the
+team, invitation, invitation meta, and role on that connection's writer inside
+the same transaction as the existing-user check, user creation, and invitation
+consumption. A lagging replica therefore cannot revive a revoked invitation or
+hide an account that must use the existing-user acceptance path.
 
 ### Accessing Team Resources
 

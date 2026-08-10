@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -101,11 +102,11 @@ class Resource extends Model implements DefinesFields
     protected $with = [];
 
     /**
-     * Process-local depth for the narrow global-write invariant bypass.
-     * Always entered through a named creation/promotion contract and unwound
-     * in finally, including when model events throw an Error.
+     * Exact model instances authorized by a named global-write contract.
+     *
+     * @var \WeakMap<self, array{class: class-string<self>, connection: string, depth: int}>|null
      */
-    private static int $globalWriteDepth = 0;
+    private static ?\WeakMap $globalWriteCapabilities = null;
 
     /** @var list<array{connection: string, owner_id: int|string|null}> */
     private static array $trustedOwnerContexts = [];
@@ -338,14 +339,7 @@ class Resource extends Model implements DefinesFields
 
         return static::withinTrustedOwnerFromAttributes(
             array_merge($attributes, $values),
-            fn (): static => static::withinGlobalWrite(function () use ($attributes, $resource, $values): static {
-                $attributes['team_id'] = null;
-                unset($values['team_id']);
-
-                return static::ensureStaticResource(
-                    $resource->newQueryWithoutScopes()->firstOrCreate($attributes, $values),
-                );
-            }),
+            fn (): static => static::firstOrCreateGlobalRecord($attributes, $values, $resource),
             $resource->getConnection(),
         );
     }
@@ -485,9 +479,18 @@ class Resource extends Model implements DefinesFields
         return in_array($key, $this->baseFillable);
     }
 
-    public static function isGlobalWriteInProgress(): bool
+    public static function isGlobalWriteInProgress(?Resource $resource = null): bool
     {
-        return self::$globalWriteDepth > 0;
+        if ($resource === null
+            || self::$globalWriteCapabilities === null
+            || ! isset(self::$globalWriteCapabilities[$resource])) {
+            return false;
+        }
+
+        $capability = self::$globalWriteCapabilities[$resource];
+
+        return $capability['class'] === $resource::class
+            && $capability['connection'] === User::connectionCacheIdentity($resource->getConnection());
     }
 
     // Override isRelation
@@ -581,7 +584,7 @@ class Resource extends Model implements DefinesFields
         Gate::authorize('update', $this);
         Gate::authorize('createGlobal', $this);
 
-        return static::withinGlobalWrite(function () use ($attributes): bool {
+        return static::withinGlobalWrite($this, function () use ($attributes): bool {
             $this->fill($attributes);
             $this->setAttribute('team_id', null);
 
@@ -705,14 +708,7 @@ class Resource extends Model implements DefinesFields
 
         return static::withinTrustedOwnerFromAttributes(
             array_merge($attributes, $values),
-            fn (): static => static::withinGlobalWrite(function () use ($attributes, $resource, $values): static {
-                $attributes['team_id'] = null;
-                unset($values['team_id']);
-
-                return static::ensureStaticResource(
-                    $resource->newQueryWithoutScopes()->updateOrCreate($attributes, $values),
-                );
-            }),
+            fn (): static => static::updateOrCreateGlobalRecord($attributes, $values, $resource),
             $resource->getConnection(),
         );
     }
@@ -771,16 +767,23 @@ class Resource extends Model implements DefinesFields
     ): static {
         static::ensureGlobalWriteIsSupported();
 
-        return static::withinGlobalWrite(function () use ($attributes, $connection): static {
-            $attributes['team_id'] = null;
+        $resource = static::resourceModelOnConnection($connection);
 
-            $model = clone app(static::class);
+        return static::createGlobalResourceInstance($attributes, $resource);
+    }
 
-            if ($connection) {
-                $model->setConnection($connection->getName());
-            }
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    protected static function createGlobalResourceInstance(array $attributes, Resource $resource): static
+    {
+        $attributes['team_id'] = null;
+        $instance = static::ensureStaticResource($resource->newInstance($attributes));
 
-            return $model->newQueryWithoutScopes()->create($attributes);
+        return static::withinGlobalWrite($instance, function () use ($instance): static {
+            $instance->save();
+
+            return $instance;
         });
     }
 
@@ -835,6 +838,43 @@ class Resource extends Model implements DefinesFields
         return $result;
     }
 
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @param  array<string, mixed>  $values
+     */
+    protected static function firstOrCreateGlobalRecord(
+        array $attributes,
+        array $values,
+        Resource $resource,
+    ): static {
+        $attributes['team_id'] = null;
+        unset($values['team_id']);
+
+        $query = $resource->newQueryWithoutScopes()->useWritePdo();
+        $existing = (clone $query)->where($attributes)->first();
+
+        if ($existing !== null) {
+            return static::ensureStaticResource($existing);
+        }
+
+        $create = fn (): static => static::createGlobalResourceInstance(
+            array_merge($attributes, $values),
+            $resource,
+        );
+
+        try {
+            return $resource->getConnection()->transactionLevel() > 0
+                ? $resource->getConnection()->transaction($create)
+                : $create();
+        } catch (UniqueConstraintViolationException $exception) {
+            $existing = (clone $query)->where($attributes)->first();
+
+            return $existing !== null
+                ? static::ensureStaticResource($existing)
+                : throw $exception;
+        }
+    }
+
     protected static function hasTrustedOwnerContextForConnection(Connection $connection): bool
     {
         if (self::$trustedOwnerContexts === []) {
@@ -879,19 +919,61 @@ class Resource extends Model implements DefinesFields
     }
 
     /**
+     * @param  array<string, mixed>  $attributes
+     * @param  array<string, mixed>  $values
+     */
+    protected static function updateOrCreateGlobalRecord(
+        array $attributes,
+        array $values,
+        Resource $resource,
+    ): static {
+        unset($values['team_id']);
+        $instance = static::firstOrCreateGlobalRecord($attributes, $values, $resource);
+
+        if (! $instance->wasRecentlyCreated) {
+            $instance->fill($values);
+            static::withinGlobalWrite($instance, fn (): bool => $instance->save());
+        }
+
+        return $instance;
+    }
+
+    /**
      * @template TValue
      *
      * @param  callable(): TValue  $callback
      * @return TValue
      */
-    protected static function withinGlobalWrite(callable $callback): mixed
+    protected static function withinGlobalWrite(Resource $resource, callable $callback): mixed
     {
-        self::$globalWriteDepth++;
+        self::$globalWriteCapabilities ??= new \WeakMap;
+
+        $connectionIdentity = User::connectionCacheIdentity($resource->getConnection());
+        $existing = self::$globalWriteCapabilities[$resource] ?? null;
+
+        if ($existing !== null
+            && ($existing['class'] !== $resource::class
+                || $existing['connection'] !== $connectionIdentity)) {
+            throw new \LogicException('A global-write capability cannot change resource or database connection.');
+        }
+
+        self::$globalWriteCapabilities[$resource] = [
+            'class' => $resource::class,
+            'connection' => $connectionIdentity,
+            'depth' => ($existing['depth'] ?? 0) + 1,
+        ];
 
         try {
             return $callback();
         } finally {
-            self::$globalWriteDepth--;
+            $capability = self::$globalWriteCapabilities[$resource] ?? null;
+
+            if ($capability === null || $capability['depth'] <= 1) {
+                unset(self::$globalWriteCapabilities[$resource]);
+            } else {
+                $capability['depth']--;
+                self::$globalWriteCapabilities[$resource] = $capability;
+            }
         }
     }
 

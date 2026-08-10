@@ -241,6 +241,77 @@ function currentTeamTenantConnection(): Connection
     return $connection;
 }
 
+function currentTeamInvitationReplica(
+    int $teamId,
+    int $teamOwnerId,
+    int $invitationId,
+    int $roleId,
+    string $email,
+): PDO {
+    $readPdo = new PDO('sqlite::memory:');
+    $readPdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $readPdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT, password TEXT, current_team_id INTEGER NULL, global_admin INTEGER NOT NULL DEFAULT 0)');
+    $readPdo->exec('CREATE TABLE teams (id INTEGER PRIMARY KEY, user_id INTEGER, name TEXT, created_at TEXT NULL, updated_at TEXT NULL, deleted_at TEXT NULL)');
+    $readPdo->exec('CREATE TABLE posts (id INTEGER PRIMARY KEY, title TEXT NULL, content TEXT NULL, slug TEXT NULL, type TEXT, status TEXT, user_id INTEGER NULL, team_id INTEGER NULL, created_at TEXT NULL, updated_at TEXT NULL, deleted_at TEXT NULL)');
+    $readPdo->exec('CREATE TABLE meta (id INTEGER PRIMARY KEY AUTOINCREMENT, metable_type TEXT, metable_id INTEGER, key TEXT NULL, value TEXT NULL)');
+    $readPdo->exec('CREATE TABLE roles (id INTEGER PRIMARY KEY, name TEXT, slug TEXT, description TEXT NULL, super_admin INTEGER NOT NULL DEFAULT 0, permissions TEXT NULL, user_id INTEGER NULL, team_id INTEGER NULL, created_at TEXT NULL, updated_at TEXT NULL)');
+
+    $teamStatement = $readPdo->prepare('INSERT INTO teams (id, user_id, name) VALUES (?, ?, ?)');
+    $teamStatement->execute([$teamId, $teamOwnerId, 'Stale Invitation Team']);
+
+    $invitationStatement = $readPdo->prepare('INSERT INTO posts (id, type, status, user_id, team_id) VALUES (?, ?, ?, ?, ?)');
+    $invitationStatement->execute([$invitationId, TeamInvitation::$type, 'publish', $teamOwnerId, $teamId]);
+
+    $metaStatement = $readPdo->prepare('INSERT INTO meta (metable_type, metable_id, key, value) VALUES (?, ?, ?, ?)');
+    $metaStatement->execute([TeamInvitation::class, $invitationId, 'email', $email]);
+    $metaStatement->execute([TeamInvitation::class, $invitationId, 'role', (string) $roleId]);
+
+    $roleStatement = $readPdo->prepare('INSERT INTO roles (id, name, slug, super_admin, permissions, team_id) VALUES (?, ?, ?, ?, ?, ?)');
+    $roleStatement->execute([$roleId, 'Stale Invitation Role', 'member', 0, '[]', null]);
+
+    return $readPdo;
+}
+
+/**
+ * @param  array{global_admin: User, member: User, team: Team, role: Role}  $tenant
+ */
+function seedCurrentTeamInvitation(
+    Connection $connection,
+    array $tenant,
+    int $invitationId,
+    string $email,
+): TeamInvitation {
+    $timestamp = now();
+
+    $connection->table('posts')->insert([
+        'id' => $invitationId,
+        'type' => TeamInvitation::$type,
+        'status' => 'publish',
+        'user_id' => $tenant['global_admin']->getKey(),
+        'team_id' => $tenant['team']->getKey(),
+        'created_at' => $timestamp,
+        'updated_at' => $timestamp,
+    ]);
+    $connection->table('meta')->insert([
+        [
+            'metable_type' => TeamInvitation::class,
+            'metable_id' => $invitationId,
+            'key' => 'email',
+            'value' => $email,
+        ],
+        [
+            'metable_type' => TeamInvitation::class,
+            'metable_id' => $invitationId,
+            'key' => 'role',
+            'value' => $tenant['role']->getKey(),
+        ],
+    ]);
+
+    return TeamInvitation::on($connection->getName())
+        ->withoutGlobalScopes()
+        ->findOrFail($invitationId);
+}
+
 function seedCurrentTeamConnection(
     Connection $connection,
     int $userId,
@@ -935,6 +1006,159 @@ it('binds mailed guest invitation links to an allowed signed connection identity
         $url,
     );
     $this->get($tamperedUrl)->assertForbidden();
+});
+
+it('rejects a guest registration whose revoked invitation survives on the read replica', function () {
+    $connection = currentTeamTenantConnection();
+    $tenant = seedTeamListConnection($connection, 'Revoked Writer Invitation');
+    $invitationId = 962030;
+    $email = 'revoked-writer-invitation@example.test';
+    $invitation = seedCurrentTeamInvitation($connection, $tenant, $invitationId, $email);
+
+    config([
+        'aura.auth.user_invitations' => true,
+        'aura.auth.invitation_connections' => [$connection->getName()],
+    ]);
+    $url = (new TeamInvitationMail($invitation))->build()->viewData['registerUrl'];
+    $readPdo = currentTeamInvitationReplica(
+        $tenant['team']->getKey(),
+        $tenant['global_admin']->getKey(),
+        $invitationId,
+        $tenant['role']->getKey(),
+        $email,
+    );
+
+    $connection->table('meta')->where('metable_type', TeamInvitation::class)->where('metable_id', $invitationId)->delete();
+    $connection->table('posts')->where('id', $invitationId)->delete();
+    $connection->setReadPdo($readPdo);
+    Auth::logout();
+    Auth::forgetGuards();
+
+    $this->get($url)->assertNotFound();
+    $this->post($url, [
+        'name' => 'Revoked Replica Guest',
+        'password' => 'Password123!XX',
+        'password_confirmation' => 'Password123!XX',
+    ])->assertNotFound();
+
+    expect($connection->table('users')->useWritePdo()->where('email', $email)->exists())->toBeFalse();
+});
+
+it('rejects registration when writer meta identifies an existing user hidden by the replica', function () {
+    $connection = currentTeamTenantConnection();
+    $tenant = seedTeamListConnection($connection, 'Writer Existing Invitation');
+    $invitationId = 963030;
+    $writerEmail = 'Writer-Existing@Example.Test';
+    $replicaEmail = 'replica-guest@example.test';
+    $invitation = seedCurrentTeamInvitation($connection, $tenant, $invitationId, $writerEmail);
+    $timestamp = now();
+
+    $connection->table('users')->insert([
+        'id' => 963040,
+        'name' => 'Writer Existing User',
+        'email' => 'writer-existing@example.test',
+        'password' => 'password',
+        'current_team_id' => null,
+        'global_admin' => false,
+        'created_at' => $timestamp,
+        'updated_at' => $timestamp,
+    ]);
+
+    config([
+        'aura.auth.user_invitations' => true,
+        'aura.auth.invitation_connections' => [$connection->getName()],
+    ]);
+    $url = (new TeamInvitationMail($invitation))->build()->viewData['registerUrl'];
+    $connection->setReadPdo(currentTeamInvitationReplica(
+        $tenant['team']->getKey(),
+        $tenant['global_admin']->getKey(),
+        $invitationId,
+        $tenant['role']->getKey(),
+        $replicaEmail,
+    ));
+    Auth::logout();
+    Auth::forgetGuards();
+
+    $this->get($url)->assertForbidden();
+    $this->post($url, [
+        'name' => 'Replica Guest',
+        'password' => 'Password123!XX',
+        'password_confirmation' => 'Password123!XX',
+    ])->assertForbidden();
+
+    expect($connection->table('users')->useWritePdo()->whereRaw('lower(email) = ?', [mb_strtolower($writerEmail)])->count())->toBe(1)
+        ->and($connection->table('users')->useWritePdo()->where('email', $replicaEmail)->exists())->toBeFalse()
+        ->and($connection->table('posts')->useWritePdo()->where('id', $invitationId)->exists())->toBeTrue();
+});
+
+it('rejects registration when the invitation role exists only on the read replica', function () {
+    $connection = currentTeamTenantConnection();
+    $tenant = seedTeamListConnection($connection, 'Writer Deleted Role');
+    $invitationId = 964030;
+    $email = 'writer-deleted-role@example.test';
+    $invitation = seedCurrentTeamInvitation($connection, $tenant, $invitationId, $email);
+
+    config([
+        'aura.auth.user_invitations' => true,
+        'aura.auth.invitation_connections' => [$connection->getName()],
+    ]);
+    $url = (new TeamInvitationMail($invitation))->build()->viewData['registerUrl'];
+    $connection->table('roles')->where('id', $tenant['role']->getKey())->delete();
+    $connection->setReadPdo(currentTeamInvitationReplica(
+        $tenant['team']->getKey(),
+        $tenant['global_admin']->getKey(),
+        $invitationId,
+        $tenant['role']->getKey(),
+        $email,
+    ));
+    Auth::logout();
+    Auth::forgetGuards();
+
+    $this->post($url, [
+        'name' => 'Deleted Role Guest',
+        'password' => 'Password123!XX',
+        'password_confirmation' => 'Password123!XX',
+    ])->assertNotFound();
+
+    expect($connection->table('users')->useWritePdo()->where('email', $email)->exists())->toBeFalse()
+        ->and($connection->table('posts')->useWritePdo()->where('id', $invitationId)->exists())->toBeTrue();
+});
+
+it('builds invitation mail from writer state while the read replica is stale', function () {
+    $connection = currentTeamTenantConnection();
+    $tenant = seedTeamListConnection($connection, 'Writer Mail');
+    $invitationId = 965030;
+    $writerEmail = 'writer-mail-existing@example.test';
+    $invitation = seedCurrentTeamInvitation($connection, $tenant, $invitationId, $writerEmail);
+    $timestamp = now();
+
+    $connection->table('users')->insert([
+        'id' => 965040,
+        'name' => 'Writer Mail Existing User',
+        'email' => $writerEmail,
+        'password' => 'password',
+        'current_team_id' => null,
+        'global_admin' => false,
+        'created_at' => $timestamp,
+        'updated_at' => $timestamp,
+    ]);
+
+    config(['aura.auth.invitation_connections' => [$connection->getName()]]);
+    $invitation->unsetRelation('meta');
+    $connection->setReadPdo(currentTeamInvitationReplica(
+        $tenant['team']->getKey(),
+        $tenant['global_admin']->getKey(),
+        $invitationId,
+        $tenant['role']->getKey(),
+        'stale-mail-guest@example.test',
+    ));
+
+    $mail = (new TeamInvitationMail($invitation))->build();
+
+    expect($mail->subject)->toContain('Writer Mail Team')
+        ->and($mail->subject)->not->toContain('Stale Invitation Team')
+        ->and($mail->viewData['userExists'])->toBeTrue()
+        ->and($mail->invitation->email)->toBe($writerEmail);
 });
 
 it('creates an authorized global permission only on the supplied resource connection', function () {
