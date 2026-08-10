@@ -46,6 +46,14 @@ function preferenceGlobalAdmin(): User
     return $user->refresh();
 }
 
+class EmailPreferenceUser extends User
+{
+    public function getAuthIdentifierName(): string
+    {
+        return 'email';
+    }
+}
+
 test('resource and owner precedence is deterministic', function () {
     $user = preferenceGlobalAdmin();
     $team = $user->currentTeam;
@@ -402,6 +410,34 @@ test('authenticated writes authorize the canonical user instead of mutable actor
         ))->toThrow(AuthorizationException::class);
 });
 
+test('non-primary authentication identifiers canonicalize every write scope', function () {
+    $baseUser = preferenceGlobalAdmin();
+    config()->set('aura.resources.user', EmailPreferenceUser::class);
+    $user = EmailPreferenceUser::withoutGlobalScopes()->findOrFail($baseUser->getKey());
+    Auth::login($user);
+    $context = preferenceContext($user, $user->currentTeam);
+
+    foreach (PreferenceScope::cases() as $scope) {
+        preferenceManager()->set('table.view', 'kanban', $scope, $context, $user);
+        expect(preferenceManager()->resolve('table.view', $context)->scope)->toBe($scope);
+        preferenceManager()->reset('table.view', $scope, $context, $user);
+    }
+
+    $forgedActor = (new EmailPreferenceUser)->newFromBuilder(array_replace(
+        $user->getAttributes(),
+        ['global_admin' => true],
+    ));
+    DB::table('users')->where('id', $user->getKey())->update(['global_admin' => false]);
+
+    expect(fn () => preferenceManager()->set(
+        'table.view',
+        'kanban',
+        PreferenceScope::Everyone,
+        $context,
+        $forgedActor,
+    ))->toThrow(AuthorizationException::class);
+});
+
 test('serialized authenticated actors remain valid write assertions', function () {
     $admin = preferenceGlobalAdmin();
     $context = preferenceContext($admin, $admin->currentTeam);
@@ -605,6 +641,86 @@ test('preference float transport is unavailable to generic option APIs', functio
         ->and($user->getOption('generic-object'))->toBeArray()
         ->and($user->getOption('generic-object'))->toHaveKey('value');
 });
+
+test('float model events observe the same exact value committed to storage', function (PreferenceScope $scope) {
+    registerPreference(new PreferenceDefinition(
+        key: 'test.float-events',
+        type: PreferenceValueType::Float,
+        default: 2.5,
+        scopes: PreferenceScope::cases(),
+    ));
+    $user = preferenceGlobalAdmin();
+    $context = preferenceContext($user, $user->currentTeam, null);
+    $observed = [];
+
+    Option::saving(function (Option $option) use (&$observed): void {
+        if (str_contains((string) $option->getAttribute('name'), 'preference.v1.')) {
+            $observed[] = [
+                'raw' => $option->getAttributes()['value'],
+                'value' => $option->getAttributeValue('value'),
+            ];
+        }
+    });
+
+    try {
+        preferenceManager()->set('test.float-events', 1.0, $scope, $context, $user);
+
+        expect($observed)->toBe([['raw' => '1.0', 'value' => 1.0]])
+            ->and(Option::withoutGlobalScopes()->sole()->getRawOriginal('value'))->toBe('1.0');
+    } finally {
+        Option::flushEventListeners();
+        Option::clearBootedModels();
+    }
+})->with([
+    'user scope' => PreferenceScope::User,
+    'team scope' => PreferenceScope::Team,
+    'everyone scope' => PreferenceScope::Everyone,
+]);
+
+test('a float observer veto rolls back storage and cache without a hidden rewrite', function (PreferenceScope $scope) {
+    registerPreference(new PreferenceDefinition(
+        key: 'test.float-veto',
+        type: PreferenceValueType::Float,
+        default: 2.5,
+        scopes: PreferenceScope::cases(),
+    ));
+    $user = preferenceGlobalAdmin();
+    $context = preferenceContext($user, $user->currentTeam, null);
+    $preferences = preferenceManager();
+
+    $preferences->set('test.float-veto', 1.0, $scope, $context, $user);
+
+    Option::updating(function (Option $option): void {
+        if (str_contains((string) $option->getAttribute('name'), 'preference.v1.')) {
+            expect($option->getAttributes()['value'])->toBe('2.0')
+                ->and($option->getAttributeValue('value'))->toBe(2.0);
+
+            throw new RuntimeException('Preference float veto.');
+        }
+    });
+
+    try {
+        expect(fn () => $preferences->set(
+            'test.float-veto',
+            2.0,
+            $scope,
+            $context,
+            $user,
+        ))->toThrow(RuntimeException::class, 'veto')
+            ->and(Option::withoutGlobalScopes()->sole()->getRawOriginal('value'))->toBe('1.0');
+
+        Cache::flush();
+
+        expect($preferences->get('test.float-veto', $context))->toBe(1.0);
+    } finally {
+        Option::flushEventListeners();
+        Option::clearBootedModels();
+    }
+})->with([
+    'user scope' => PreferenceScope::User,
+    'team scope' => PreferenceScope::Team,
+    'everyone scope' => PreferenceScope::Everyone,
+]);
 
 test('float declarations reject integers non-finite values and other invalid types', function (mixed $value) {
     registerPreference(new PreferenceDefinition(

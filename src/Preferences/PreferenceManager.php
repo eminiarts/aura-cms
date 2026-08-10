@@ -3,6 +3,7 @@
 namespace Aura\Base\Preferences;
 
 use Aura\Base\Aura;
+use Aura\Base\Exceptions\OptionOwnerIdentityException;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Team;
@@ -11,6 +12,7 @@ use Aura\Base\Services\VersionedCache;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\SessionGuard;
 use Illuminate\Database\Connection;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
 
@@ -100,17 +102,30 @@ final readonly class PreferenceManager
 
         $authenticatedIdentifier = $this->authenticatedIdentifier();
 
-        if ($authenticatedIdentifier === null
-            || (string) $actor->getKey() !== (string) $authenticatedIdentifier
-            || ($scope === PreferenceScope::User
-                && (string) $context->user?->getKey() !== (string) $authenticatedIdentifier)) {
+        if ($authenticatedIdentifier === null) {
+            throw new AuthorizationException('The explicit preference actor does not match the authenticated principal.');
+        }
+
+        $userPrototype = $this->userPrototype();
+
+        if ($userPrototype === null) {
+            throw new AuthorizationException('The authenticated preference actor is not persisted.');
+        }
+
+        if ($userPrototype->getAuthIdentifierName() === $userPrototype->getKeyName()
+            && ((string) $actor->getKey() !== (string) $authenticatedIdentifier
+                || ($scope === PreferenceScope::User
+                    && (string) $context->user?->getKey() !== (string) $authenticatedIdentifier))) {
             throw new AuthorizationException('The explicit preference actor does not match the authenticated principal.');
         }
 
         $authenticatedUser = $this->persistedUser($authenticatedIdentifier);
 
-        if ($authenticatedUser === null) {
-            throw new AuthorizationException('The authenticated preference actor is not persisted.');
+        if ($authenticatedUser === null
+            || (string) $actor->getKey() !== (string) $authenticatedUser->getKey()
+            || ($scope === PreferenceScope::User
+                && (string) $context->user?->getKey() !== (string) $authenticatedUser->getKey())) {
+            throw new AuthorizationException('The explicit preference actor does not match the authenticated principal.');
         }
 
         return $authenticatedUser;
@@ -363,6 +378,18 @@ final readonly class PreferenceManager
             ->first();
     }
 
+    private function persistEncodedFloat(Option $record, mixed $value): void
+    {
+        if (! is_float($value) || ! is_finite($value)) {
+            throw new InvalidArgumentException('Preference float storage requires a finite float.');
+        }
+
+        $record->setRawAttributes(array_replace(
+            $record->getAttributes(),
+            ['value' => json_encode($value, JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR)],
+        ));
+    }
+
     /** @return array{found: bool, value: mixed, legacy: bool} */
     private function readEntry(
         PreferenceDefinition $definition,
@@ -459,6 +486,22 @@ final readonly class PreferenceManager
         return new $teamClass;
     }
 
+    /** @return array<int, string> */
+    private function userOptionNames(User $user, string $option): array
+    {
+        $userId = $user->getKey();
+        $names = [
+            User::optionNamePrefixFor($userId).$option,
+            'aura-user-option-v2:'.VersionedCache::identity('option.user.owner', $userId).':'.$option,
+        ];
+
+        if ($user->getKeyType() === 'int') {
+            $names[] = 'user.'.$userId.'.'.$option;
+        }
+
+        return array_values(array_unique($names));
+    }
+
     private function userPrototype(): ?User
     {
         $userClass = config('aura.resources.user', User::class);
@@ -470,26 +513,27 @@ final readonly class PreferenceManager
         return new $userClass;
     }
 
-    private function writeEncodedFloat(string $name, string|int|null $teamId, mixed $value): void
+    /** @param array<int, string> $optionNames */
+    private function verifiedUserOption(Option $record, User $user, array $optionNames): Option
     {
-        if (! is_float($value) || ! is_finite($value)) {
-            throw new InvalidArgumentException('Preference float storage requires a finite float.');
+        $expectedOwner = VersionedCache::identity('option.user.owner', $user->getKey());
+        $owner = $record->getRawOriginal('owner_identity');
+
+        if ($owner !== null) {
+            if (! is_string($owner) || ! hash_equals($expectedOwner, $owner)) {
+                throw OptionOwnerIdentityException::forOption($record->getKey());
+            }
+
+            return $record;
         }
 
-        $option = new Option;
-        $query = $this->optionConnection()->table($option->getTable())->where('name', $name);
-
-        if (config('aura.teams')) {
-            $query->where('team_id', $teamId);
+        if (! in_array($record->getRawOriginal('name'), array_slice($optionNames, 1), true)) {
+            throw OptionOwnerIdentityException::forOption($record->getKey());
         }
 
-        if ((clone $query)->count() !== 1) {
-            throw new InvalidArgumentException('Preference float storage target is not canonical.');
-        }
+        $record->setAttribute('owner_identity', $expectedOwner);
 
-        $query->update([
-            'value' => json_encode($value, JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR),
-        ]);
+        return $record;
     }
 
     private function writeEntry(
@@ -542,7 +586,7 @@ final readonly class PreferenceManager
                 $record->setAttribute($record->getDeletedAtColumn(), null);
             }
 
-            $record->saveQuietly();
+            $record->save();
         });
 
         Aura::clearGlobalOptionCache($connection);
@@ -557,16 +601,32 @@ final readonly class PreferenceManager
         $connection = $this->optionConnection();
 
         $connection->transaction(function () use ($context, $storageKey, $value, $preserveFloat): void {
-            $context->team->updateOption($storageKey, $value);
+            if (! $preserveFloat) {
+                $context->team->updateOption($storageKey, $value);
 
-            if ($preserveFloat) {
-                $this->writeEncodedFloat(
-                    'team.'.$context->team->getKey().'.'.$storageKey,
-                    $context->team->getKey(),
-                    $value,
-                );
+                return;
+            }
+
+            $attributes = [
+                'name' => 'team.'.$context->team->getKey().'.'.$storageKey,
+                'team_id' => $context->team->getKey(),
+            ];
+            $record = Option::withoutGlobalScopes()
+                ->withTrashed()
+                ->where($attributes)
+                ->lockForUpdate()
+                ->first() ?? Option::withoutGlobalScopes()->newModelInstance($attributes);
+
+            $this->persistEncodedFloat($record, $value);
+
+            if ($record->trashed()) {
+                $record->restore();
+            } else {
+                $record->save();
             }
         });
+
+        Team::clearOptionCacheForTeam($context->team->getKey(), $connection);
     }
 
     private function writeUserEntry(
@@ -579,15 +639,103 @@ final readonly class PreferenceManager
         $teamId = config('aura.teams') ? $context->team?->getKey() : null;
 
         $connection->transaction(function () use ($context, $storageKey, $value, $preserveFloat, $teamId): void {
-            $context->user->updateOptionForTeam($storageKey, $value, $teamId);
+            if (! $preserveFloat) {
+                $context->user->updateOptionForTeam($storageKey, $value, $teamId);
 
-            if ($preserveFloat) {
-                $this->writeEncodedFloat(
-                    User::optionNamePrefixFor($context->user->getKey()).$storageKey,
-                    $teamId,
-                    $value,
-                );
+                return;
             }
+
+            $optionNames = $this->userOptionNames($context->user, $storageKey);
+            $canonicalName = $optionNames[0];
+            $query = Option::withoutGlobalScopes();
+
+            if (config('aura.teams')) {
+                $query->where('team_id', $teamId);
+            }
+
+            $record = null;
+
+            foreach ($optionNames as $optionName) {
+                $record = (clone $query)
+                    ->withTrashed()
+                    ->where('name', $optionName)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($record !== null) {
+                    break;
+                }
+            }
+
+            if ($record !== null) {
+                $record = $this->verifiedUserOption($record, $context->user, $optionNames);
+                $isCreatingOrRenaming = $record->getRawOriginal('name') !== $canonicalName;
+                $record->setAttribute('name', $canonicalName);
+            } else {
+                $isCreatingOrRenaming = true;
+                $record = (clone $query)->newModelInstance(['name' => $canonicalName]);
+
+                if (config('aura.teams')) {
+                    $record->setAttribute('team_id', $teamId);
+                }
+            }
+
+            $record->setAttribute(
+                'owner_identity',
+                VersionedCache::identity('option.user.owner', $context->user->getKey()),
+            );
+            $this->persistEncodedFloat($record, $value);
+
+            try {
+                if ($record->trashed()) {
+                    $record->restore();
+                } else {
+                    $record->save();
+                }
+            } catch (UniqueConstraintViolationException $exception) {
+                if (! $isCreatingOrRenaming) {
+                    throw $exception;
+                }
+
+                $record = (clone $query)
+                    ->withTrashed()
+                    ->where('name', $canonicalName)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $record instanceof Option) {
+                    throw $exception;
+                }
+
+                $record = $this->verifiedUserOption($record, $context->user, $optionNames);
+                $record->setAttribute(
+                    'owner_identity',
+                    VersionedCache::identity('option.user.owner', $context->user->getKey()),
+                );
+                $this->persistEncodedFloat($record, $value);
+
+                if ($record->trashed()) {
+                    $record->restore();
+                } else {
+                    $record->save();
+                }
+            }
+
+            (clone $query)
+                ->withTrashed()
+                ->whereIn('name', array_slice($optionNames, 1))
+                ->where($record->getKeyName(), '!=', $record->getKey())
+                ->lockForUpdate()
+                ->get()
+                ->each(function (Option $alias) use ($context, $optionNames): void {
+                    $this->verifiedUserOption($alias, $context->user, $optionNames)->forceDelete();
+                });
         });
+
+        User::clearOptionCacheForTeam(
+            $context->user->getKey(),
+            $teamId ?? 'global',
+            $connection,
+        );
     }
 }
