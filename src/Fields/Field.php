@@ -96,6 +96,51 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
         );
     }
 
+    /**
+     * Resolve a value against the field's current option catalog.
+     *
+     * Unknown values are returned unchanged so legacy codes remain visible.
+     *
+     * @param  array<string, mixed>  $field
+     */
+    public function currentOptionLabel(mixed $value, array $field, ?Model $model = null): mixed
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        if (is_array($value)) {
+            return array_map(
+                fn (mixed $item): mixed => $this->currentOptionLabel($item, $field, $model),
+                $value,
+            );
+        }
+
+        $options = $field['options'] ?? [];
+
+        if ($model !== null && method_exists($this, 'options')) {
+            $options = $this->options($model, $field);
+        }
+
+        if (! is_array($options)) {
+            return $value;
+        }
+
+        $labels = [];
+
+        foreach ($options as $key => $option) {
+            if (is_array($option) && array_key_exists('key', $option)) {
+                $labels[$option['key']] = $option['value'] ?? $option['label'] ?? $option['key'];
+            } else {
+                $labels[$key] = $option;
+            }
+        }
+
+        return (is_int($value) || is_string($value) || is_bool($value)) && array_key_exists($value, $labels)
+            ? $labels[$value]
+            : $value;
+    }
+
     public function display($field, $value, $model)
     {
 
@@ -398,7 +443,7 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
         $usesLegacyDisplayValue = method_exists($this, 'displayValue');
         $display = $usesLegacyDisplayValue
             ? $this->invokeLegacyDisplayValue($value, $field, $model, $context)
-            : $this->display($field, $value, $model);
+            : $this->display($field, $this->resolveLabel($value, $field, $model, $context), $model);
 
         if ($display instanceof Htmlable) {
             return $display;
@@ -416,6 +461,41 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
         }
 
         return FieldDisplayValue::secure($display);
+    }
+
+    /**
+     * Return the unformatted stored value supplied by the caller.
+     */
+    public function rawValue(mixed $value): mixed
+    {
+        return $value;
+    }
+
+    /**
+     * Resolve a current or historical label for any presentation surface.
+     *
+     * A `label_resolver` receives raw value, current option label, record,
+     * context, and field definition. Returning null falls back safely to the
+     * current label (or the raw legacy value when no option exists).
+     *
+     * @param  array<string, mixed>  $field
+     */
+    public function resolveLabel(
+        mixed $value,
+        array $field,
+        ?Model $model = null,
+        FieldValueContext $context = FieldValueContext::Index,
+    ): mixed {
+        $currentLabel = $this->currentOptionLabel($value, $field, $model);
+        $resolver = $field['label_resolver'] ?? null;
+
+        if (! is_callable($resolver)) {
+            return $currentLabel;
+        }
+
+        $resolved = $resolver($this->rawValue($value), $currentLabel, $model, $context, $field);
+
+        return $resolved ?? $currentLabel;
     }
 
     public function toLivewire()

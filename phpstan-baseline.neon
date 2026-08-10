@@ -334,12 +334,6 @@ parameters:
 			path: src/Livewire/CreateResource.php
 
 		-
-			message: '#^Call to an undefined method Aura\\Base\\Livewire\\CreateResource\:\:notify\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Livewire/CreateResource.php
-
-		-
 			message: '#^Call to an undefined method Aura\\Base\\Livewire\\CreateResource\:\:usesCustomTable\(\)\.$#'
 			identifier: method.notFound
 			count: 2
@@ -355,12 +349,6 @@ parameters:
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\EditResourceField\:\:\$mappedFields\.$#'
 			identifier: property.notFound
 			count: 1
-			path: src/Livewire/EditResourceField.php
-
-		-
-			message: '#^Call to an undefined method Aura\\Base\\Livewire\\EditResourceField\:\:notify\(\)\.$#'
-			identifier: method.notFound
-			count: 3
 			path: src/Livewire/EditResourceField.php
 
 		-
@@ -383,12 +371,6 @@ parameters:
 
 		-
 			message: '#^Call to an undefined method Aura\\Base\\Livewire\\InviteUser\:\:getMeta\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Livewire/InviteUser.php
-
-		-
-			message: '#^Call to an undefined method Aura\\Base\\Livewire\\InviteUser\:\:notify\(\)\.$#'
 			identifier: method.notFound
 			count: 1
 			path: src/Livewire/InviteUser.php
@@ -484,22 +466,10 @@ parameters:
 			path: src/Livewire/Profile.php
 
 		-
-			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Profile\:\:notify\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Livewire/Profile.php
-
-		-
 			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Profile\:\:usesCustomTable\(\)\.$#'
 			identifier: method.notFound
 			count: 1
 			path: src/Livewire/Profile.php
-
-		-
-			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Resource\\Create\:\:notify\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Livewire/Resource/Create.php
 
 		-
 			message: '#^Call to an undefined static method Livewire\\Component\:\:callMethod\(\)\.$#'
@@ -523,12 +493,6 @@ parameters:
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\ResourceEditor\:\:\$mappedFields\.$#'
 			identifier: property.notFound
 			count: 6
-			path: src/Livewire/ResourceEditor.php
-
-		-
-			message: '#^Call to an undefined method Aura\\Base\\Livewire\\ResourceEditor\:\:notify\(\)\.$#'
-			identifier: method.notFound
-			count: 5
 			path: src/Livewire/ResourceEditor.php
 
 		-
@@ -557,12 +521,6 @@ parameters:
 
 		-
 			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Settings\:\:getMeta\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Livewire/Settings.php
-
-		-
-			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Settings\:\:notify\(\)\.$#'
 			identifier: method.notFound
 			count: 1
 			path: src/Livewire/Settings.php
@@ -619,12 +577,6 @@ parameters:
 			message: '#^Array has 2 duplicate keys with value ''search'' \(''search'', ''search''\)\.$#'
 			identifier: array.duplicateKey
 			count: 1
-			path: src/Livewire/Table/Table.php
-
-		-
-			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Table\\Table\:\:notify\(\)\.$#'
-			identifier: method.notFound
-			count: 7
 			path: src/Livewire/Table/Table.php
 
 		-
@@ -749,12 +701,6 @@ parameters:
 
 		-
 			message: '#^Call to an undefined method Aura\\Base\\Livewire\\UserSettings\:\:getMeta\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Livewire/UserSettings.php
-
-		-
-			message: '#^Call to an undefined method Aura\\Base\\Livewire\\UserSettings\:\:notify\(\)\.$#'
 			identifier: method.notFound
 			count: 1
 			path: src/Livewire/UserSettings.php
