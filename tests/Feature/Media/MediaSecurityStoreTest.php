@@ -83,6 +83,8 @@ function verifyCore20NativeSecurityDatabase(array $connectionConfig): void
     app('db')->purge('core20-native-security');
     app('cache')->forgetDriver('aura-media-security');
     $usesPostgresSearchPath = ($connectionConfig['driver'] ?? null) === 'pgsql';
+    $usesMysqlFamily = in_array($connectionConfig['driver'] ?? null, ['mysql', 'mariadb'], true);
+    $limitedUser = null;
 
     if ($usesPostgresSearchPath) {
         DB::connection('core20-native-security')->statement('CREATE SCHEMA IF NOT EXISTS core20_security_scope');
@@ -104,12 +106,44 @@ function verifyCore20NativeSecurityDatabase(array $connectionConfig): void
     });
 
     try {
+        if ($usesMysqlFamily) {
+            $database = $connectionConfig['database'] ?? null;
+
+            if (! is_string($database) || preg_match('/\A[a-z][a-z0-9_]*\z/D', $database) !== 1) {
+                throw new InvalidArgumentException('CORE20 native database name must be canonical.');
+            }
+
+            $limitedUser = 'core20_limited_'.bin2hex(random_bytes(4));
+            $limitedPassword = bin2hex(random_bytes(16));
+            $rootConnection = DB::connection('core20-native-security');
+            $quotedUser = $rootConnection->getPdo()->quote($limitedUser);
+            $quotedPassword = $rootConnection->getPdo()->quote($limitedPassword);
+            $rootConnection->unprepared("CREATE USER {$quotedUser}@'%' IDENTIFIED BY {$quotedPassword}");
+            $rootConnection->unprepared("GRANT SELECT, INSERT, UPDATE, DELETE ON `{$database}`.* TO {$quotedUser}@'%'");
+            $limitedConfig = [...$connectionConfig, 'username' => $limitedUser, 'password' => $limitedPassword];
+            config()->set('database.connections.core20-native-security-limited', $limitedConfig);
+            config()->set('cache.stores.aura-media-security.connection', 'core20-native-security-limited');
+            config()->set('cache.stores.aura-media-security.lock_connection', 'core20-native-security-limited');
+            app('db')->purge('core20-native-security-limited');
+            app('cache')->forgetDriver('aura-media-security');
+            $limitedSecurity = app(MediaSecurityStore::class);
+
+            expect($limitedSecurity->put('least-privilege-native', 'verified', 60))->toBeTrue()
+                ->and($limitedSecurity->get('least-privilege-native'))->toBe('verified');
+
+            app()->forgetInstance(MediaSecurityStore::class);
+            app('cache')->forgetDriver('aura-media-security');
+            app('db')->purge('core20-native-security-limited');
+            config()->set('cache.stores.aura-media-security.connection', 'core20-native-security');
+            config()->set('cache.stores.aura-media-security.lock_connection', 'core20-native-security');
+        }
+
         $security = app(MediaSecurityStore::class);
 
         expect($security->put('native-relation', 'verified', 60))->toBeTrue()
             ->and($security->get('native-relation'))->toBe('verified');
 
-        if (in_array($connectionConfig['driver'] ?? null, ['mysql', 'mariadb'], true)) {
+        if ($usesMysqlFamily) {
             $schema->drop('core20_security_cache');
             $schema->create('core20_security_cache', function ($table) {
                 $table->string('key')->primary();
@@ -141,6 +175,11 @@ function verifyCore20NativeSecurityDatabase(array $connectionConfig): void
         if ($usesPostgresSearchPath) {
             DB::connection('core20-native-security')->statement('SET search_path TO public');
             DB::connection('core20-native-security')->statement('DROP SCHEMA IF EXISTS core20_security_scope');
+        }
+
+        if (is_string($limitedUser)) {
+            $quotedUser = DB::connection('core20-native-security')->getPdo()->quote($limitedUser);
+            DB::connection('core20-native-security')->unprepared("DROP USER IF EXISTS {$quotedUser}@'%'");
         }
 
         app('db')->purge('core20-native-security');
@@ -560,6 +599,65 @@ test('security cache operation remains bound when a final validation listener cr
     }
 });
 
+test('security cache fails closed when a final validation listener replaces the qualified table', function () {
+    $security = app(MediaSecurityStore::class);
+    $connection = app('db')->connection('media-security-testing');
+    $security->put('final-listener-replacement', 'trusted', 60);
+    $replaced = false;
+
+    app('events')->listen(QueryExecuted::class, function (QueryExecuted $event) use ($connection, &$replaced): void {
+        if ($replaced
+            || $event->connection !== $connection
+            || ! str_contains($event->sql, 'main.sqlite_schema')
+            || ($event->bindings[0] ?? null) !== 'media_security_cache_locks') {
+            return;
+        }
+
+        $replaced = true;
+        $pdo = $connection->getRawPdo();
+        $pdo->exec('DROP TABLE main.media_security_cache');
+        $pdo->exec('CREATE TABLE main.media_security_cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expiration INTEGER NOT NULL)');
+    });
+
+    try {
+        expect(fn () => $security->get('final-listener-replacement'))
+            ->toThrow(InvalidArgumentException::class, 'object-free reads')
+            ->and($replaced)->toBeTrue();
+    } finally {
+        Schema::connection('media-security-testing')->dropIfExists('media_security_cache');
+        Schema::connection('media-security-testing')->create('media_security_cache', function ($table) {
+            $table->string('key')->primary();
+            $table->mediumText('value');
+            $table->integer('expiration');
+        });
+    }
+});
+
+test('security cache fails closed when an operation listener replaces the qualified table after IO', function () {
+    $security = app(MediaSecurityStore::class);
+    $connection = app('db')->connection('media-security-testing');
+    $security->put('operation-listener-replacement', 'trusted', 60);
+    $replaced = false;
+
+    app('events')->listen(QueryExecuted::class, function (QueryExecuted $event) use ($connection, &$replaced): void {
+        if ($replaced
+            || $event->connection->getRawPdo() !== $connection->getRawPdo()
+            || ! str_contains($event->sql, '"main"."media_security_cache"')
+            || ! str_starts_with(strtolower($event->sql), 'select')) {
+            return;
+        }
+
+        $replaced = true;
+        $pdo = $connection->getRawPdo();
+        $pdo->exec('DROP TABLE main.media_security_cache');
+        $pdo->exec('CREATE TABLE main.media_security_cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expiration INTEGER NOT NULL)');
+    });
+
+    expect(fn () => $security->get('operation-listener-replacement'))
+        ->toThrow(InvalidArgumentException::class, 'object-free reads')
+        ->and($replaced)->toBeTrue();
+});
+
 test('security cache rejects a default store connection swapped during alias validation', function () {
     config()->set('cache.default', 'database-default-retarget');
     config()->set('cache.stores.database-default-retarget', [
@@ -812,7 +910,7 @@ test('media security configuration and docs publish the database-only boundary',
         ->toContain('database children')
         ->toContain('unqualified lowercase')
         ->toContain('schema-qualified')
-        ->toContain('dictionary table IDs')
+        ->toContain('persistent identity rows')
         ->toContain('views, temporary tables, and synonyms fail closed')
         ->toContain('Multi-node deployments need one shared network database')
         ->and($componentDocs)
@@ -821,7 +919,7 @@ test('media security configuration and docs publish the database-only boundary',
         ->toContain('same SQLite inode')
         ->toContain('validated write PDO instances')
         ->toContain('schema-qualified')
-        ->toContain('dictionary table IDs')
+        ->toContain('persistent identity rows')
         ->toContain('views, temporary tables, and synonyms fail closed')
         ->toContain('node-local SQLite')
         ->not->toContain('one shared file, database, Redis')
@@ -831,7 +929,7 @@ test('media security configuration and docs publish the database-only boundary',
         ->toContain('same SQLite inode')
         ->toContain('validated write PDO instances')
         ->toContain('schema-qualified')
-        ->toContain('dictionary table IDs')
+        ->toContain('persistent identity rows')
         ->toContain('node-local SQLite')
         ->not->toContain('shared file, database, Redis');
 });

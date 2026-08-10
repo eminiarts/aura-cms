@@ -235,8 +235,10 @@ return [
             // and aliases created by connection prefixes or alternate paths to the
             // same database. Use unqualified lowercase base-table identifiers;
             // Aura binds operations to the validated schema-qualified tables.
-            // MySQL and MariaDB tables must be InnoDB so their dictionary table IDs
-            // can detect same-name replacement. All views, temporary tables, and synonyms fail closed.
+            // Aura maintains reserved persistent identity rows and validates them
+            // under the same transaction as each operation so same-name replacement
+            // fails closed without privileged database metadata access.
+            // All views, temporary tables, and synonyms fail closed.
             // Also set Laravel's global cache.serializable_classes option
             // to false. File, Redis, DynamoDB,
             // Memcached, failover, process-local, custom, and proxied stores fail

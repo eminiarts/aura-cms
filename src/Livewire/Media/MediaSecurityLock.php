@@ -8,42 +8,43 @@ use InvalidArgumentException;
 
 final readonly class MediaSecurityLock implements Lock
 {
-    /** @param Closure(): void $assertSafe */
+    /** @param Closure(Closure(): mixed): mixed $executeSafely */
     public function __construct(
         private Lock $lock,
-        private Closure $assertSafe,
+        private Closure $executeSafely,
     ) {}
 
     public function block($seconds, $callback = null): mixed
     {
-        ($this->assertSafe)();
-
         if ($callback !== null) {
             throw new InvalidArgumentException(
                 'Aura media security locks do not accept callbacks because every lock operation must revalidate the cache boundary.',
             );
         }
 
-        return $this->lock->block($seconds, $callback);
+        return ($this->executeSafely)(
+            fn (): mixed => $this->lock->block($seconds, $callback),
+        );
     }
 
     public function forceRelease(): void
     {
-        ($this->assertSafe)();
-        $this->lock->forceRelease();
+        ($this->executeSafely)(function (): void {
+            $this->lock->forceRelease();
+        });
     }
 
     public function get($callback = null): mixed
     {
-        ($this->assertSafe)();
-
         if ($callback !== null) {
             throw new InvalidArgumentException(
                 'Aura media security locks do not accept callbacks because every lock operation must revalidate the cache boundary.',
             );
         }
 
-        return $this->lock->get($callback);
+        return ($this->executeSafely)(
+            fn (): mixed => $this->lock->get($callback),
+        );
     }
 
     public function owner(): string
@@ -53,8 +54,8 @@ final readonly class MediaSecurityLock implements Lock
 
     public function release(): bool
     {
-        ($this->assertSafe)();
-
-        return $this->lock->release();
+        return ($this->executeSafely)(
+            fn (): bool => $this->lock->release(),
+        );
     }
 }

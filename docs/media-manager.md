@@ -549,16 +549,19 @@ and alternate paths to the same SQLite inode are included in alias
 detection. Table names must be unqualified lowercase base-table identifiers.
 views, temporary tables, and synonyms fail closed. PostgreSQL search-path
 resolution is verified natively; SQL Server relations are resolved through
-`OBJECT_ID`. MySQL and
-MariaDB tables must use InnoDB; engine dictionary table IDs make same-name
-replacement fail closed. File, Redis,
+`OBJECT_ID`. Aura maintains reserved persistent identity rows in both security
+tables and validates them under the same transaction as each operation, making
+same-name replacement fail closed without privileged database metadata access.
+File, Redis,
 Memcached, DynamoDB, failover,
 process-local, custom, subclassed, and proxied stores fail closed.
 
 Aura pins security operations to validated write PDO instances and
 schema-qualified physical tables, disables reconnects on those private
 connections, and rejects separate read or direct PDO targets. Session namespace
-changes therefore cannot redirect an operation after validation.
+changes therefore cannot redirect an operation after validation. Relation
+markers are checked before and after I/O, so injected same-connection DDL fails
+closed before a result is returned.
 
 All web and worker processes must use the same database and tables. Multi-node
 deployments therefore need a shared network database; node-local SQLite does

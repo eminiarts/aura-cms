@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Livewire\Media;
 
+use Closure;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Cache\DatabaseStore;
 use Illuminate\Cache\FailoverStore;
@@ -22,11 +23,16 @@ use Illuminate\Foundation\Application;
 use InvalidArgumentException;
 use JsonException;
 use PDO;
+use PDOException;
 use ReflectionProperty;
 use Throwable;
 
 class MediaSecurityStore implements LockProvider
 {
+    private const DATA_RELATION_MARKER_KEY = '__aura_media_security_data_relation_v1__';
+
+    private const LOCK_RELATION_MARKER_KEY = '__aura_media_security_lock_relation_v1__';
+
     public readonly MediaSecurityStore $cache;
 
     public readonly LockProvider $locks;
@@ -45,6 +51,8 @@ class MediaSecurityStore implements LockProvider
 
     private readonly string $dataQualifiedTable;
 
+    private readonly string $dataRelationMarker;
+
     private readonly string $dataTableIdentity;
 
     private readonly string $lockDatabaseIdentity;
@@ -54,6 +62,8 @@ class MediaSecurityStore implements LockProvider
     private readonly PDO $lockPdo;
 
     private readonly string $lockQualifiedTable;
+
+    private readonly string $lockRelationMarker;
 
     private readonly string $lockTableIdentity;
 
@@ -168,54 +178,85 @@ class MediaSecurityStore implements LockProvider
         $this->cache = $this;
         $this->locks = $this;
         $this->assertSafeBoundary();
+        $this->dataRelationMarker = $this->ensureRelationMarker(
+            $this->dataOperationConnection,
+            $this->dataQualifiedTable,
+            self::DATA_RELATION_MARKER_KEY,
+            'value',
+        );
+        $this->lockRelationMarker = $this->ensureRelationMarker(
+            $this->lockOperationConnection,
+            $this->lockQualifiedTable,
+            self::LOCK_RELATION_MARKER_KEY,
+            'owner',
+        );
     }
 
     public function add(string $key, mixed $value, int $seconds): bool
     {
-        $this->assertSafeBoundary();
+        $this->assertApplicationKey($key);
 
-        return $this->operationRepository->add($key, $value, $seconds);
+        return $this->executeDataOperation(
+            fn (): bool => $this->operationRepository->add($key, $value, $seconds),
+        );
     }
 
     public function forget(string $key): bool
     {
-        $this->assertSafeBoundary();
+        $this->assertApplicationKey($key);
 
-        return $this->operationRepository->forget($key);
+        return $this->executeDataOperation(
+            fn (): bool => $this->operationRepository->forget($key),
+        );
     }
 
     public function get(string $key, mixed $default = null): mixed
     {
-        $this->assertSafeBoundary();
+        $this->assertApplicationKey($key);
 
-        return $this->operationRepository->get($key, $default);
+        return $this->executeDataOperation(
+            fn (): mixed => $this->operationRepository->get($key, $default),
+        );
     }
 
     public function lock($name, $seconds = 0, $owner = null)
     {
+        $this->assertApplicationKey((string) $name);
         $this->assertSafeBoundary();
 
         return new MediaSecurityLock(
             $this->operationStore->lock($name, $seconds, $owner),
-            fn () => $this->assertSafeBoundary(),
+            fn (Closure $operation): mixed => $this->executeLockOperation($operation),
         );
     }
 
     public function put(string $key, mixed $value, int $seconds): bool
     {
-        $this->assertSafeBoundary();
+        $this->assertApplicationKey($key);
 
-        return $this->operationRepository->put($key, $value, $seconds);
+        return $this->executeDataOperation(
+            fn (): bool => $this->operationRepository->put($key, $value, $seconds),
+        );
     }
 
     public function restoreLock($name, $owner)
     {
+        $this->assertApplicationKey((string) $name);
         $this->assertSafeBoundary();
 
         return new MediaSecurityLock(
             $this->operationStore->restoreLock($name, $owner),
-            fn () => $this->assertSafeBoundary(),
+            fn (Closure $operation): mixed => $this->executeLockOperation($operation),
         );
+    }
+
+    private function assertApplicationKey(string $key): void
+    {
+        $physicalKey = $this->operationStore->getPrefix().$key;
+
+        if (in_array($physicalKey, [self::DATA_RELATION_MARKER_KEY, self::LOCK_RELATION_MARKER_KEY], true)) {
+            throw new InvalidArgumentException('Aura media security relation-marker keys are reserved.');
+        }
     }
 
     /** @param array<string, mixed> $storeConfig */
@@ -343,6 +384,27 @@ class MediaSecurityStore implements LockProvider
             throw new InvalidArgumentException(
                 'Aura media security requires dedicated physical database tables that do not alias Laravel\'s default cache data or lock tables.',
             );
+        }
+    }
+
+    private function assertRelationMarker(
+        Connection $connection,
+        string $qualifiedTable,
+        string $markerKey,
+        string $markerColumn,
+        string $marker,
+        bool $lock,
+    ): void {
+        $actual = $this->relationMarker(
+            $connection,
+            $qualifiedTable,
+            $markerKey,
+            $markerColumn,
+            $lock,
+        );
+
+        if (! is_string($actual) || ! hash_equals($marker, $actual)) {
+            $this->rejectConfigurationMutation();
         }
     }
 
@@ -566,6 +628,114 @@ class MediaSecurityStore implements LockProvider
         return $databaseStores;
     }
 
+    private function ensureRelationMarker(
+        Connection $connection,
+        string $qualifiedTable,
+        string $markerKey,
+        string $markerColumn,
+    ): string {
+        $existing = $this->relationMarker($connection, $qualifiedTable, $markerKey, $markerColumn, false);
+
+        if ($existing === false) {
+            $marker = 'aura-v1:'.bin2hex(random_bytes(32));
+            $quotedTable = $this->quoteQualifiedTable($connection, $qualifiedTable);
+            $quotedKey = $this->quoteIdentifier($connection, 'key');
+            $quotedMarker = $this->quoteIdentifier($connection, $markerColumn);
+            $quotedExpiration = $this->quoteIdentifier($connection, 'expiration');
+            $sql = match (get_class($connection)) {
+                SQLiteConnection::class => "INSERT OR IGNORE INTO {$quotedTable} ({$quotedKey}, {$quotedMarker}, {$quotedExpiration}) VALUES (?, ?, ?)",
+                MariaDbConnection::class, MySqlConnection::class => "INSERT IGNORE INTO {$quotedTable} ({$quotedKey}, {$quotedMarker}, {$quotedExpiration}) VALUES (?, ?, ?)",
+                PostgresConnection::class => "INSERT INTO {$quotedTable} ({$quotedKey}, {$quotedMarker}, {$quotedExpiration}) VALUES (?, ?, ?) ON CONFLICT ({$quotedKey}) DO NOTHING",
+                SqlServerConnection::class => "INSERT INTO {$quotedTable} ({$quotedKey}, {$quotedMarker}, {$quotedExpiration}) VALUES (?, ?, ?)",
+                default => $this->rejectConfigurationMutation(),
+            };
+
+            try {
+                $statement = $this->stableWritePdo($connection)->prepare($sql);
+                $statement->execute([$markerKey, $marker, 2147483647]);
+            } catch (PDOException) {
+                // A concurrent process may have installed the marker first.
+            }
+
+            $existing = $this->relationMarker($connection, $qualifiedTable, $markerKey, $markerColumn, false);
+        }
+
+        if (! is_string($existing) || preg_match('/\Aaura-v1:[a-f0-9]{64}\z/D', $existing) !== 1) {
+            $this->rejectConfigurationMutation();
+        }
+
+        return $existing;
+    }
+
+    /** @param Closure(): mixed $operation */
+    private function executeDataOperation(Closure $operation): mixed
+    {
+        return $this->executeOperation(
+            $this->dataOperationConnection,
+            $this->dataQualifiedTable,
+            self::DATA_RELATION_MARKER_KEY,
+            'value',
+            $this->dataRelationMarker,
+            $operation,
+        );
+    }
+
+    /** @param Closure(): mixed $operation */
+    private function executeLockOperation(Closure $operation): mixed
+    {
+        return $this->executeOperation(
+            $this->lockOperationConnection,
+            $this->lockQualifiedTable,
+            self::LOCK_RELATION_MARKER_KEY,
+            'owner',
+            $this->lockRelationMarker,
+            $operation,
+        );
+    }
+
+    /** @param Closure(): mixed $operation */
+    private function executeOperation(
+        Connection $connection,
+        string $qualifiedTable,
+        string $markerKey,
+        string $markerColumn,
+        string $marker,
+        Closure $operation,
+    ): mixed {
+        $this->assertSafeBoundary();
+        $pdo = $this->stableWritePdo($connection);
+
+        if ($pdo->inTransaction() || $connection->transactionLevel() !== 0) {
+            $this->rejectConfigurationMutation();
+        }
+
+        try {
+            $beganTransaction = $connection instanceof SQLiteConnection
+                ? $pdo->exec('BEGIN IMMEDIATE') !== false
+                : $pdo->beginTransaction();
+
+            if (! $beganTransaction) {
+                $this->rejectConfigurationMutation();
+            }
+
+            $this->assertRelationMarker($connection, $qualifiedTable, $markerKey, $markerColumn, $marker, true);
+            $result = $operation();
+            $this->assertRelationMarker($connection, $qualifiedTable, $markerKey, $markerColumn, $marker, true);
+
+            if (! $pdo->inTransaction() || ! $pdo->commit()) {
+                $this->rejectConfigurationMutation();
+            }
+
+            return $result;
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
     private function pathContainsSymlink(string $path): bool
     {
         if (! str_starts_with($path, DIRECTORY_SEPARATOR)) {
@@ -593,12 +763,8 @@ class MediaSecurityStore implements LockProvider
                 'SELECT name AS relation_name, type AS relation_type, CAST(rootpage AS TEXT) AS relation_id FROM main.sqlite_schema WHERE name = ? LIMIT 1',
                 [$table],
             )[0] ?? null,
-            MariaDbConnection::class => $connection->selectFromWriteConnection(
-                "SELECT t.TABLE_SCHEMA AS table_schema, t.TABLE_NAME AS relation_name, t.TABLE_TYPE AS relation_type, CAST(i.TABLE_ID AS CHAR) AS relation_id FROM information_schema.tables t INNER JOIN information_schema.INNODB_SYS_TABLES i ON i.NAME = CONCAT(t.TABLE_SCHEMA, '/', t.TABLE_NAME) WHERE t.TABLE_SCHEMA = DATABASE() AND t.TABLE_NAME = ? LIMIT 1",
-                [$table],
-            )[0] ?? null,
-            MySqlConnection::class => $connection->selectFromWriteConnection(
-                "SELECT t.TABLE_SCHEMA AS table_schema, t.TABLE_NAME AS relation_name, t.TABLE_TYPE AS relation_type, CAST(i.TABLE_ID AS CHAR) AS relation_id FROM information_schema.tables t INNER JOIN information_schema.INNODB_TABLES i ON i.NAME = CONCAT(t.TABLE_SCHEMA, '/', t.TABLE_NAME) WHERE t.TABLE_SCHEMA = DATABASE() AND t.TABLE_NAME = ? LIMIT 1",
+            MariaDbConnection::class, MySqlConnection::class => $connection->selectFromWriteConnection(
+                'SELECT TABLE_SCHEMA AS table_schema, TABLE_NAME AS relation_name, TABLE_TYPE AS relation_type FROM information_schema.tables WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1',
                 [$table],
             )[0] ?? null,
             PostgresConnection::class => $connection->selectFromWriteConnection(
@@ -682,11 +848,66 @@ class MediaSecurityStore implements LockProvider
         }
     }
 
+    private function quoteIdentifier(Connection $connection, string $identifier): string
+    {
+        if (preg_match('/\A[a-z][a-z0-9_]*\z/D', $identifier) !== 1) {
+            $this->rejectConfigurationMutation();
+        }
+
+        return match (get_class($connection)) {
+            MariaDbConnection::class, MySqlConnection::class => '`'.$identifier.'`',
+            SQLiteConnection::class, PostgresConnection::class => '"'.$identifier.'"',
+            SqlServerConnection::class => '['.$identifier.']',
+            default => $this->rejectConfigurationMutation(),
+        };
+    }
+
+    private function quoteQualifiedTable(Connection $connection, string $qualifiedTable): string
+    {
+        $parts = explode('.', $qualifiedTable);
+
+        if (count($parts) !== 2) {
+            $this->rejectConfigurationMutation();
+        }
+
+        return implode('.', array_map(
+            fn (string $identifier): string => $this->quoteIdentifier($connection, $identifier),
+            $parts,
+        ));
+    }
+
     private function rejectConfigurationMutation(): never
     {
         throw new InvalidArgumentException(
             'Aura media security cache configuration changed or no longer guarantees object-free reads.',
         );
+    }
+
+    private function relationMarker(
+        Connection $connection,
+        string $qualifiedTable,
+        string $markerKey,
+        string $markerColumn,
+        bool $lock,
+    ): string|false {
+        $quotedTable = $this->quoteQualifiedTable($connection, $qualifiedTable);
+        $quotedKey = $this->quoteIdentifier($connection, 'key');
+        $quotedMarker = $this->quoteIdentifier($connection, $markerColumn);
+        $lockClause = match (get_class($connection)) {
+            MariaDbConnection::class, MySqlConnection::class => $lock ? ' LOCK IN SHARE MODE' : '',
+            PostgresConnection::class => $lock ? ' FOR SHARE' : '',
+            SQLiteConnection::class, SqlServerConnection::class => '',
+            default => $this->rejectConfigurationMutation(),
+        };
+        $tableClause = $connection instanceof SqlServerConnection && $lock
+            ? $quotedTable.' WITH (HOLDLOCK)'
+            : $quotedTable;
+        $statement = $this->stableWritePdo($connection)->prepare(
+            "SELECT {$quotedMarker} FROM {$tableClause} WHERE {$quotedKey} = ?{$lockClause}",
+        );
+        $statement->execute([$markerKey]);
+
+        return $statement->fetchColumn();
     }
 
     private function setProperty(object $object, string $property, mixed $value): void

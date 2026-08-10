@@ -606,16 +606,19 @@ custom default drivers that resolve to a database store. Table names must be
 unqualified lowercase base-table identifiers; views, temporary tables, and synonyms fail closed.
 PostgreSQL relations are resolved through the active
 search path and SQL Server relations through `OBJECT_ID`. Alternate paths to
-the same SQLite inode are treated as the same database. MySQL and MariaDB
-tables must use InnoDB; Aura records their engine dictionary table IDs so a
-same-name replacement fails closed. Set
+the same SQLite inode are treated as the same database. Aura maintains reserved
+persistent identity rows in both security tables and validates them under the
+same transaction as each operation, so same-name replacement fails closed
+without privileged database metadata access. Set
 `cache.serializable_classes` to `false`; Aura verifies that setting on the
 resolved store before every operation. File, Redis, Memcached, DynamoDB,
 failover, process-local, custom, subclassed, and proxied stores fail closed.
 Aura pins cache I/O to validated write PDO instances and schema-qualified
 physical tables, disables reconnects on those private connections, and rejects
 separate read or direct PDO targets. Session namespace changes therefore cannot
-redirect an operation after validation.
+redirect an operation after validation. Relation markers are checked both before
+and after I/O; an injected same-connection DDL commit fails closed before a
+result is returned.
 
 Every web and worker process must reach the same database and tables. For a
 multi-node deployment, use one shared network database; a node-local SQLite
