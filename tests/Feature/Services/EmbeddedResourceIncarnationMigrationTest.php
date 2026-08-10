@@ -79,6 +79,15 @@ function core12CreateEmbeddedIncarnationTable(bool $includeIdentityIndex = true)
     });
 }
 
+function core12LegacyMarkerIncarnation(string $generation): string
+{
+    return substr($generation, 0, 8)
+        .'-'.substr($generation, 8, 4)
+        .'-'.substr($generation, 12, 4)
+        .'-'.substr($generation, 16, 4)
+        .'-'.substr($generation, 20, 12);
+}
+
 it('records the incarnation table and preserves it during rollback', function () {
     $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
 
@@ -148,7 +157,7 @@ it('keeps migration ownership proof out of the runtime incarnation table', funct
         ->and($owner->incarnations()->firstOrFail()->resource_key)->toBe(str_repeat('a', 32));
 });
 
-it('removes legacy marker rows without dropping a marker column that contains host data', function (): void {
+it('removes only complete legacy marker rows and preserves discriminator collisions', function (): void {
     $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
     $migration->up();
     $record = json_decode(DB::table(CORE12_OWNERSHIP_TABLE)
@@ -162,22 +171,22 @@ it('removes legacy marker rows without dropping a marker column that contains ho
     DB::table(EmbeddedResourceIncarnationStore::TABLE)->insert([
         [
             'resource_type' => MigrationOwnershipLedger::MARKER_RESOURCE_TYPE,
-            'resource_key_hash' => str_repeat('a', 64),
-            'resource_key_type' => 'string',
+            'resource_key_hash' => hash('sha256', $record['payload']['generation']),
+            'resource_key_type' => 'internal',
             'resource_key' => $record['payload']['generation'],
-            'incarnation' => '00000000-0000-4000-8000-000000000090',
+            'incarnation' => core12LegacyMarkerIncarnation($record['payload']['generation']),
             'version' => 1,
             $markerColumn => $record['payload']['generation'],
             'created_at' => now(),
             'updated_at' => now(),
         ],
         [
-            'resource_type' => 'HostResource',
+            'resource_type' => MigrationOwnershipLedger::MARKER_RESOURCE_TYPE,
             'resource_key_hash' => str_repeat('b', 64),
             'resource_key_type' => 'string',
             'resource_key' => 'host-key',
             'incarnation' => '00000000-0000-4000-8000-000000000091',
-            'version' => 1,
+            'version' => 7,
             $markerColumn => 'host-data',
             'created_at' => now(),
             'updated_at' => now(),
@@ -187,12 +196,58 @@ it('removes legacy marker rows without dropping a marker column that contains ho
     $migration->up();
 
     expect(DB::table(EmbeddedResourceIncarnationStore::TABLE)
-        ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
+        ->where('resource_key', $record['payload']['generation'])
         ->doesntExist())->toBeTrue()
         ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, $markerColumn))->toBeTrue()
         ->and(DB::table(EmbeddedResourceIncarnationStore::TABLE)
-            ->where('resource_type', 'HostResource')
+            ->where('resource_key', 'host-key')
             ->value($markerColumn))->toBe('host-data');
+});
+
+it('preserves discriminator collisions during fully pre-existing upgrade cleanup', function (): void {
+    core12CreateEmbeddedIncarnationTable();
+    $generation = str_repeat('c', 32);
+    $markerColumn = MigrationOwnershipLedger::markerColumn($generation);
+    Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($markerColumn): void {
+        $table->char($markerColumn, 32)->nullable();
+    });
+    DB::table(EmbeddedResourceIncarnationStore::TABLE)->insert([
+        [
+            'resource_type' => MigrationOwnershipLedger::MARKER_RESOURCE_TYPE,
+            'resource_key_hash' => hash('sha256', $generation),
+            'resource_key_type' => 'internal',
+            'resource_key' => $generation,
+            'incarnation' => core12LegacyMarkerIncarnation($generation),
+            'version' => 1,
+            $markerColumn => $generation,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'resource_type' => MigrationOwnershipLedger::MARKER_RESOURCE_TYPE,
+            'resource_key_hash' => str_repeat('d', 64),
+            'resource_key_type' => 'host',
+            'resource_key' => 'preserve-host-collision',
+            'incarnation' => '00000000-0000-4000-8000-000000000092',
+            'version' => 9,
+            $markerColumn => 'host-data',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+    ]);
+    $migration = require dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub';
+
+    $migration->up();
+
+    expect(DB::table(EmbeddedResourceIncarnationStore::TABLE)
+        ->where('resource_key', $generation)
+        ->doesntExist())->toBeTrue()
+        ->and(DB::table(EmbeddedResourceIncarnationStore::TABLE)
+            ->where('resource_key', 'preserve-host-collision')
+            ->value($markerColumn))->toBe('host-data')
+        ->and(DB::table(CORE12_OWNERSHIP_TABLE)
+            ->where('migration', CORE12_UPGRADE_OWNERSHIP_KEY)
+            ->doesntExist())->toBeTrue();
 });
 
 it('resumes an interrupted create after the table was created', function (): void {

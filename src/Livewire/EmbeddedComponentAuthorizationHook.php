@@ -12,12 +12,7 @@ final class EmbeddedComponentAuthorizationHook extends ComponentHook
 {
     public function call(): callable
     {
-        $authorizer = app(EmbeddedComponentAuthorizer::class);
-        $context = $authorizer->authorize($this->component, fresh: true);
-
-        return static function () use ($authorizer, $context): void {
-            $authorizer->finishAction($context);
-        };
+        return $this->authorizeOperation();
     }
 
     public static function provide(): void
@@ -30,5 +25,29 @@ final class EmbeddedComponentAuthorizationHook extends ComponentHook
     public function skip(): bool
     {
         return ! app(EmbeddedComponentAuthorizer::class)->supports($this->component);
+    }
+
+    public function update(): callable
+    {
+        $authorizer = app(EmbeddedComponentAuthorizer::class);
+        $component = $this->component;
+        $context = $authorizer->authorize($component, fresh: true);
+
+        return static function () use ($authorizer, $component, $context): void {
+            $authorizer->finishAction($context);
+
+            $updatedContext = $authorizer->authorize($component, fresh: true);
+            $authorizer->finishAction($updatedContext);
+        };
+    }
+
+    private function authorizeOperation(): callable
+    {
+        $authorizer = app(EmbeddedComponentAuthorizer::class);
+        $context = $authorizer->authorize($this->component, fresh: true);
+
+        return static function () use ($authorizer, $context): void {
+            $authorizer->finishAction($context);
+        };
     }
 }

@@ -33,6 +33,7 @@ use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\ComponentHookRegistry;
 use Livewire\Features\SupportEvents\SupportEvents;
+use Livewire\Features\SupportLifecycleHooks\SupportLifecycleHooks;
 use Livewire\Livewire;
 use ReflectionClass;
 use ReflectionMethod;
@@ -52,7 +53,15 @@ class Core12EmbeddedComponent extends Component implements EmbeddedLivewireCompo
 
     public static int $revokeActionCount = 0;
 
+    public string $revokeOnUpdate = '';
+
+    public static int $revokeUpdateCount = 0;
+
     public static int $sensitiveActionCount = 0;
+
+    public string $sensitiveUpdate = '';
+
+    public static int $sensitiveUpdateCount = 0;
 
     public function mount(): void
     {
@@ -96,6 +105,17 @@ class Core12EmbeddedComponent extends Component implements EmbeddedLivewireCompo
     {
         self::$sensitiveActionCount++;
     }
+
+    public function updatedRevokeOnUpdate(): void
+    {
+        self::$revokeUpdateCount++;
+        auth()->user()->forceFill(['global_admin' => false])->saveQuietly();
+    }
+
+    public function updatedSensitiveUpdate(): void
+    {
+        self::$sensitiveUpdateCount++;
+    }
 }
 
 class Core12FallbackEmbeddedComponent extends Core12EmbeddedComponent
@@ -132,6 +152,14 @@ class Core12MissingAuthorizationTraitComponent extends Component implements Embe
 }
 
 class Core12ZeroArgumentIndexField extends Field
+{
+    public function rendersOnIndex()
+    {
+        return true;
+    }
+}
+
+class Core12ZeroArgumentLivewireIndexField extends LivewireComponent
 {
     public function rendersOnIndex()
     {
@@ -301,7 +329,9 @@ beforeEach(function () {
     Core12EmbeddedComponent::$pingActionCount = 0;
     Core12EmbeddedComponent::$protectedListenerCount = 0;
     Core12EmbeddedComponent::$revokeActionCount = 0;
+    Core12EmbeddedComponent::$revokeUpdateCount = 0;
     Core12EmbeddedComponent::$sensitiveActionCount = 0;
+    Core12EmbeddedComponent::$sensitiveUpdateCount = 0;
     Core12ParameterMapper::$mapCount = 0;
     Core12BoundedParameterMapper::$output = [];
 });
@@ -332,12 +362,21 @@ describe('LivewireComponent field configuration', function () {
             ->toBeTrue();
     });
 
-    test('registers embedded authorization before Livewire event dispatch support', function () {
+    test('keeps untyped rendersOnIndex overrides compatible on the Livewire field itself', function (): void {
+        expect((new ReflectionMethod(LivewireComponent::class, 'rendersOnIndex'))->hasReturnType())
+            ->toBeFalse()
+            ->and((new Core12ZeroArgumentLivewireIndexField)->rendersOnIndex())
+            ->toBeTrue();
+    });
+
+    test('registers embedded authorization before Livewire executable hooks', function () {
         $reflection = new ReflectionClass(ComponentHookRegistry::class);
         $hooks = $reflection->getStaticPropertyValue('componentHooks');
 
         expect(array_search(EmbeddedComponentAuthorizationHook::class, $hooks, true))
-            ->toBeLessThan(array_search(SupportEvents::class, $hooks, true));
+            ->toBeLessThan(array_search(SupportEvents::class, $hooks, true))
+            ->and(array_search(EmbeddedComponentAuthorizationHook::class, $hooks, true))
+            ->toBeLessThan(array_search(SupportLifecycleHooks::class, $hooks, true));
     });
 
     test('declares explicit edit view and index renderers without becoming an input', function () {
@@ -682,6 +721,78 @@ describe('embedded component security and identity', function () {
         app()->forgetScopedInstances();
 
         $component->call('ping')->assertForbidden();
+    });
+
+    test('rejects public property updates carrying a stale signed context', function (): void {
+        config(['aura.embedded_components.context_revision' => 'core12-update-v1']);
+        $resource = Core12EmbeddedResource::create(['title' => 'Stale update context']);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+
+        config(['aura.embedded_components.context_revision' => 'core12-update-v2']);
+        app()->forgetScopedInstances();
+
+        $component->set('sensitiveUpdate', 'stale')->assertForbidden();
+
+        expect(Core12EmbeddedComponent::$sensitiveUpdateCount)->toBe(0);
+    });
+
+    test('authorizes public property update hooks', function (): void {
+        $resource = Core12EmbeddedResource::create(['title' => 'Authorized property update']);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+
+        Livewire::test($definition->alias, $definition->parameters)
+            ->update(updates: ['sensitiveUpdate' => 'allowed'])
+            ->assertOk()
+            ->assertSet('sensitiveUpdate', 'allowed');
+
+        expect(Core12EmbeddedComponent::$sensitiveUpdateCount)->toBe(1);
+    });
+
+    test('rejects unauthorized public property updates before their hooks execute', function (): void {
+        $resource = Core12EmbeddedResource::create(['title' => 'Unauthorized property update']);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+
+        $this->actingAs(User::factory()->create());
+
+        $component->set('sensitiveUpdate', 'blocked')->assertForbidden();
+
+        expect(Core12EmbeddedComponent::$sensitiveUpdateCount)->toBe(0);
+    });
+
+    test('reauthorizes before each public property update in one batched request', function (): void {
+        $resource = Core12EmbeddedResource::create(['title' => 'Batched property authorization']);
+        $definition = app(EmbeddedComponentResolver::class)->resolve(
+            field: core12Field(),
+            resource: $resource,
+            surface: EmbeddedComponentSurface::View,
+        );
+        $component = Livewire::test($definition->alias, $definition->parameters)
+            ->assertOk();
+
+        $component->update(updates: [
+            'revokeOnUpdate' => 'revoke',
+            'sensitiveUpdate' => 'blocked',
+        ])->assertForbidden();
+
+        expect(Core12EmbeddedComponent::$revokeUpdateCount)->toBe(1)
+            ->and(Core12EmbeddedComponent::$sensitiveUpdateCount)->toBe(0)
+            ->and($this->user->fresh()->global_admin)->toBeFalse();
     });
 
     test('reauthorizes before each action in one batched Livewire request', function () {

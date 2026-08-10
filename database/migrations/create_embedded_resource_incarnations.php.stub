@@ -13,6 +13,39 @@ return new class extends Migration
 
     private const GENERATION_BYTES = 16;
 
+    /** @var array<string, array{columns: list<string>, unique: bool}> */
+    private const INDEXES = [
+        'aura_embedded_incarnation_resource_unique' => [
+            'columns' => ['resource_type', 'resource_key_hash'],
+            'unique' => true,
+        ],
+        'aura_embedded_incarnation_guard_lookup' => [
+            'columns' => ['resource_type', 'resource_key_type', 'resource_key'],
+            'unique' => false,
+        ],
+        'aura_embedded_incarnation_guard_identity_unique' => [
+            'columns' => ['resource_type', 'resource_key_type', 'resource_key'],
+            'unique' => true,
+        ],
+    ];
+
+    private const RECONCILE_ATTEMPTS = 40;
+
+    private const RECONCILE_DELAY_MICROSECONDS = 50000;
+
+    /** @var list<string> */
+    private const REQUIRED_COLUMNS = [
+        'id',
+        'resource_type',
+        'resource_key_hash',
+        'resource_key_type',
+        'resource_key',
+        'incarnation',
+        'version',
+        'created_at',
+        'updated_at',
+    ];
+
     private const TABLE = 'aura_embedded_resource_incarnations';
 
     public function up(): void
@@ -54,7 +87,7 @@ return new class extends Migration
     {
         if ($ownership['state'] === 'owned') {
             $this->assertOwnedTableExists();
-            $this->cleanupLegacyMarker($ownership['generation']);
+            $this->cleanupLegacyMarkers();
 
             return;
         }
@@ -67,19 +100,25 @@ return new class extends Migration
 
         $ledger->checkpoint('create.ownership_started');
 
-        if (! Schema::hasTable(self::TABLE)) {
-            try {
-                $this->createTable();
-            } catch (QueryException $exception) {
-                if (! Schema::hasTable(self::TABLE)) {
-                    throw $exception;
-                }
-            }
+        $this->reconcileArtifact(
+            fn (): bool => $this->hasOwnedBaseTable(),
+            fn () => $this->createTable(),
+            'base table',
+        );
+        $ledger->checkpoint('create.base_table_created');
+
+        foreach (array_keys(self::INDEXES) as $index) {
+            $this->reconcileArtifact(
+                fn (): bool => $this->hasNamedIndex($index),
+                fn () => $this->createIndex($index),
+                "index [{$index}]",
+            );
+            $ledger->checkpoint("create.index.{$index}");
         }
 
         $ledger->checkpoint('create.table_created');
         $this->assertOwnedTableExists();
-        $this->cleanupLegacyMarker($ownership['generation']);
+        $this->cleanupLegacyMarkers();
         $ledger->checkpoint('create.legacy_markers_cleaned');
         $this->transitionCreate($ownership, 'owned');
         $ledger->checkpoint('create.ownership_committed');
@@ -93,13 +132,32 @@ return new class extends Migration
         ]);
     }
 
-    private function cleanupLegacyMarker(string $generation): void
+    private function cleanupLegacyMarkers(): void
     {
+        foreach ($this->legacyMarkerColumns() as $markerColumn => $generation) {
+            $this->reconcileArtifact(
+                fn (): bool => $this->legacyMarkerCleanupComplete($markerColumn, $generation),
+                fn () => $this->cleanupLegacyMarker($markerColumn, $generation),
+                "legacy marker [{$markerColumn}]",
+            );
+        }
+    }
+
+    private function cleanupLegacyMarker(string $markerColumn, string $generation): void
+    {
+        if (! Schema::hasColumn(self::TABLE, $markerColumn)) {
+            return;
+        }
+
         DB::table(self::TABLE)
             ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
+            ->where('resource_key_hash', hash('sha256', $generation))
+            ->where('resource_key_type', 'internal')
+            ->where('resource_key', $generation)
+            ->where('incarnation', $this->markerIncarnation($generation))
+            ->where('version', 1)
+            ->where($markerColumn, $generation)
             ->delete();
-
-        $markerColumn = MigrationOwnershipLedger::markerColumn($generation);
 
         if (! Schema::hasColumn(self::TABLE, $markerColumn)
             || DB::table(self::TABLE)->whereNotNull($markerColumn)->exists()
@@ -137,71 +195,213 @@ return new class extends Migration
             $table->uuid('incarnation');
             $table->unsignedBigInteger('version')->default(1);
             $table->timestamps();
+        });
+    }
 
-            $table->unique(
-                ['resource_type', 'resource_key_hash'],
-                'aura_embedded_incarnation_resource_unique',
-            );
-            $table->index(
-                ['resource_type', 'resource_key_type', 'resource_key'],
-                'aura_embedded_incarnation_guard_lookup',
-            );
-            $table->unique(
-                ['resource_type', 'resource_key_type', 'resource_key'],
-                'aura_embedded_incarnation_guard_identity_unique',
-            );
+    private function createIndex(string $name): void
+    {
+        $definition = self::INDEXES[$name];
+
+        Schema::table(self::TABLE, function (Blueprint $table) use ($definition, $name): void {
+            if ($definition['unique']) {
+                $table->unique($definition['columns'], $name);
+
+                return;
+            }
+
+            $table->index($definition['columns'], $name);
         });
     }
 
     private function ensureRegistry(MigrationOwnershipLedger $ledger): bool
     {
-        if ($ledger->registryExists()) {
-            return false;
-        }
+        $createdRegistry = false;
+        $lastException = null;
 
-        try {
-            Schema::create(MigrationOwnershipLedger::TABLE, function (Blueprint $table): void {
-                $table->string('migration')->primary();
-                $table->longText('ownership');
-            });
+        for ($attempt = 1; $attempt <= self::RECONCILE_ATTEMPTS; $attempt++) {
+            try {
+                if ($ledger->registryExists()) {
+                    return $createdRegistry;
+                }
 
-            return true;
-        } catch (QueryException $exception) {
-            if (! $ledger->registryExists()) {
-                throw $exception;
+                Schema::create(MigrationOwnershipLedger::TABLE, function (Blueprint $table): void {
+                    $table->string('migration')->primary();
+                    $table->longText('ownership');
+                });
+                $createdRegistry = true;
+
+                if ($ledger->registryExists()) {
+                    return true;
+                }
+            } catch (QueryException $exception) {
+                $lastException = $exception;
+
+                try {
+                    if ($ledger->registryExists()) {
+                        return $createdRegistry;
+                    }
+                } catch (QueryException $verificationException) {
+                    $lastException = $verificationException;
+                }
             }
 
-            return false;
+            if ($attempt < self::RECONCILE_ATTEMPTS) {
+                usleep(self::RECONCILE_DELAY_MICROSECONDS);
+            }
         }
+
+        if ($lastException instanceof QueryException) {
+            throw $lastException;
+        }
+
+        throw new RuntimeException('CORE-12 create migration could not reconcile the ownership registry.');
     }
 
-    private function hasExactIndex(string $name, array $columns, bool $unique): bool
+    private function legacyMarkerCleanupComplete(string $markerColumn, string $generation): bool
     {
+        if (! Schema::hasColumn(self::TABLE, $markerColumn)) {
+            return true;
+        }
+
+        $hasHistoricalMarker = DB::table(self::TABLE)
+            ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
+            ->where('resource_key_hash', hash('sha256', $generation))
+            ->where('resource_key_type', 'internal')
+            ->where('resource_key', $generation)
+            ->where('incarnation', $this->markerIncarnation($generation))
+            ->where('version', 1)
+            ->where($markerColumn, $generation)
+            ->exists();
+
+        return ! $hasHistoricalMarker
+            && DB::table(self::TABLE)->whereNotNull($markerColumn)->exists();
+    }
+
+    private function hasExactIndex(string $name): bool
+    {
+        $expected = self::INDEXES[$name];
+
         return collect(Schema::getIndexes(self::TABLE))->contains(
             static fn (array $index): bool => $index['name'] === $name
-                && $index['columns'] === $columns
-                && (bool) $index['unique'] === $unique,
+                && $index['columns'] === $expected['columns']
+                && (bool) $index['unique'] === $expected['unique'],
         );
+    }
+
+    private function hasNamedIndex(string $name): bool
+    {
+        $matching = collect(Schema::getIndexes(self::TABLE))->firstWhere('name', $name);
+
+        if ($matching === null) {
+            return false;
+        }
+
+        if (! $this->hasExactIndex($name)) {
+            throw new RuntimeException("The index [{$name}] has an unexpected definition.");
+        }
+
+        return true;
+    }
+
+    private function hasOwnedBaseTable(): bool
+    {
+        if (! Schema::hasTable(self::TABLE)) {
+            return false;
+        }
+
+        $this->assertOwnedColumnsExist();
+
+        return true;
+    }
+
+    /** @return array<string, string> */
+    private function legacyMarkerColumns(): array
+    {
+        $markerColumns = [];
+
+        foreach (Schema::getColumnListing(self::TABLE) as $column) {
+            $column = trim($column, "\"'`[]");
+
+            if (preg_match('/\Aaura_migration_owned_([0-9a-f]{32})\z/D', $column, $matches) === 1) {
+                $markerColumns[$column] = $matches[1];
+            }
+        }
+
+        return $markerColumns;
+    }
+
+    private function markerIncarnation(string $generation): string
+    {
+        return substr($generation, 0, 8)
+            .'-'.substr($generation, 8, 4)
+            .'-'.substr($generation, 12, 4)
+            .'-'.substr($generation, 16, 4)
+            .'-'.substr($generation, 20, 12);
+    }
+
+    /**
+     * @param  callable(): bool  $isComplete
+     * @param  callable(): void  $operation
+     */
+    private function reconcileArtifact(callable $isComplete, callable $operation, string $artifact): void
+    {
+        $lastException = null;
+
+        for ($attempt = 1; $attempt <= self::RECONCILE_ATTEMPTS; $attempt++) {
+            try {
+                if ($isComplete()) {
+                    return;
+                }
+
+                $operation();
+
+                if ($isComplete()) {
+                    return;
+                }
+            } catch (QueryException $exception) {
+                $lastException = $exception;
+
+                try {
+                    if ($isComplete()) {
+                        return;
+                    }
+                } catch (QueryException $verificationException) {
+                    $lastException = $verificationException;
+                }
+            }
+
+            if ($attempt < self::RECONCILE_ATTEMPTS) {
+                usleep(self::RECONCILE_DELAY_MICROSECONDS);
+            }
+        }
+
+        if ($lastException instanceof QueryException) {
+            throw $lastException;
+        }
+
+        throw new RuntimeException("CORE-12 create migration could not reconcile {$artifact}.");
+    }
+
+    private function assertOwnedColumnsExist(): void
+    {
+        if (! Schema::hasTable(self::TABLE)
+            || ! Schema::hasColumns(self::TABLE, self::REQUIRED_COLUMNS)
+        ) {
+            $connection = Schema::getConnection()->getName();
+
+            throw new RuntimeException(
+                "The table claimed by CORE-12 create migration ownership is missing or has an unexpected schema on [{$connection}].",
+            );
+        }
     }
 
     private function assertOwnedTableExists(): void
     {
-        if (! Schema::hasTable(self::TABLE)
-            || ! Schema::hasColumns(self::TABLE, [
-                'id',
-                'resource_type',
-                'resource_key_hash',
-                'resource_key_type',
-                'resource_key',
-                'incarnation',
-                'version',
-                'created_at',
-                'updated_at',
-            ])
-            || ! $this->hasExactIndex('aura_embedded_incarnation_resource_unique', ['resource_type', 'resource_key_hash'], true)
-            || ! $this->hasExactIndex('aura_embedded_incarnation_guard_lookup', ['resource_type', 'resource_key_type', 'resource_key'], false)
-            || ! $this->hasExactIndex('aura_embedded_incarnation_guard_identity_unique', ['resource_type', 'resource_key_type', 'resource_key'], true)
-        ) {
+        $this->assertOwnedColumnsExist();
+
+        if (collect(array_keys(self::INDEXES))->contains(
+            fn (string $index): bool => ! $this->hasExactIndex($index),
+        )) {
             $indexes = json_encode(Schema::getIndexes(self::TABLE), JSON_THROW_ON_ERROR);
             $connection = Schema::getConnection()->getName();
 

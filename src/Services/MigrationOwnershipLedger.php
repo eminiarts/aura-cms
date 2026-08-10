@@ -175,7 +175,14 @@ final class MigrationOwnershipLedger
             return false;
         }
 
-        if (! Schema::hasColumns(self::TABLE, ['migration', 'ownership'])) {
+        $hasUniqueMigrationIndex = collect(Schema::getIndexes(self::TABLE))->contains(
+            static fn (array $index): bool => $index['columns'] === ['migration']
+                && ((bool) $index['unique'] || (bool) $index['primary']),
+        );
+
+        if (! Schema::hasColumns(self::TABLE, ['migration', 'ownership'])
+            || ! $hasUniqueMigrationIndex
+        ) {
             throw new RuntimeException('The Aura migration ownership registry has an invalid schema.');
         }
 

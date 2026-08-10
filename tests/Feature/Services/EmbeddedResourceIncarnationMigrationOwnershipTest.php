@@ -61,6 +61,20 @@ function core12StateCreateLegacyTable(): void
     });
 }
 
+function core12StateCreateBaseTable(): void
+{
+    Schema::create(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
+        $table->id();
+        $table->string('resource_type');
+        $table->char('resource_key_hash', 64);
+        $table->string('resource_key_type', 16);
+        $table->string('resource_key', 191);
+        $table->uuid('incarnation');
+        $table->unsignedBigInteger('version')->default(1);
+        $table->timestamps();
+    });
+}
+
 function core12StateWriteRecord(string $migration, string $ownership): void
 {
     DB::table(CORE12_STATE_OWNERSHIP_TABLE)->updateOrInsert(
@@ -310,6 +324,33 @@ it('rejects a null ownership value instead of treating its row as absent', funct
     expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
 });
 
+it('rejects duplicate-capable ownership registry schemas', function (bool $hasWrongUniqueIndex): void {
+    Schema::drop(CORE12_STATE_OWNERSHIP_TABLE);
+    Schema::create(CORE12_STATE_OWNERSHIP_TABLE, function (Blueprint $table) use ($hasWrongUniqueIndex): void {
+        $table->string('migration');
+        $table->longText('ownership');
+        $table->string('claim_group')->nullable();
+
+        if ($hasWrongUniqueIndex) {
+            $table->unique('claim_group', 'aura_migration_ownership_migration_unique');
+        }
+    });
+
+    try {
+        expect(fn () => app(MigrationOwnershipLedger::class)->registryExists())
+            ->toThrow(RuntimeException::class, 'invalid schema');
+    } finally {
+        Schema::drop(CORE12_STATE_OWNERSHIP_TABLE);
+        Schema::create(CORE12_STATE_OWNERSHIP_TABLE, function (Blueprint $table): void {
+            $table->string('migration')->primary();
+            $table->longText('ownership');
+        });
+    }
+})->with([
+    'no unique claim index' => [false],
+    'same-purpose name on wrong column' => [true],
+]);
+
 it('rejects invalid upgrade ownership before missing or incomplete target early returns', function (string $ownership): void {
     core12StateCreateLegacyTable();
     core12StateWriteRecord(CORE12_STATE_UPGRADE_KEY, $ownership);
@@ -380,6 +421,93 @@ it('resumes interrupted forward create but rejects historical rollback states', 
     'creating' => ['creating', true],
     'table drop started' => ['table_drop_started', false],
     'registry drop started' => ['registry_drop_started', false],
+]);
+
+it('reconciles an interrupted create that exposes only the base table', function (): void {
+    core12StateCreateBaseTable();
+    core12StateWriteRecord(CORE12_STATE_CREATE_KEY, core12StateCurrentRecord(
+        CORE12_STATE_CREATE_KEY,
+        'creating',
+        ['created_table' => true, 'owns_registry' => false],
+    ));
+    $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+
+    $migration->up();
+
+    $record = json_decode(DB::table(CORE12_STATE_OWNERSHIP_TABLE)
+        ->where('migration', CORE12_STATE_CREATE_KEY)
+        ->value('ownership'), true, flags: JSON_THROW_ON_ERROR);
+    $indexes = collect(Schema::getIndexes(EmbeddedResourceIncarnationStore::TABLE));
+
+    expect($record['state'])->toBe('owned')
+        ->and($indexes->firstWhere('name', 'aura_embedded_incarnation_resource_unique')['columns'])
+        ->toBe(['resource_type', 'resource_key_hash'])
+        ->and($indexes->firstWhere('name', 'aura_embedded_incarnation_guard_lookup')['columns'])
+        ->toBe(['resource_type', 'resource_key_type', 'resource_key'])
+        ->and($indexes->firstWhere('name', 'aura_embedded_incarnation_guard_identity_unique')['columns'])
+        ->toBe(['resource_type', 'resource_key_type', 'resource_key']);
+});
+
+it('resumes create after a crash at every DDL artifact boundary', function (
+    string $checkpoint,
+    int $expectedSecondaryIndexes,
+): void {
+    $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+    app()->instance(MigrationOwnershipLedger::class, new MigrationOwnershipLedger(
+        static function (string $actualCheckpoint) use ($checkpoint): void {
+            if ($actualCheckpoint === $checkpoint) {
+                throw new RuntimeException('simulated artifact crash');
+            }
+        },
+    ));
+
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class, 'simulated artifact crash');
+
+    $secondaryIndexes = collect(Schema::getIndexes(EmbeddedResourceIncarnationStore::TABLE))
+        ->reject(fn (array $index): bool => (bool) $index['primary']);
+    expect($secondaryIndexes)->toHaveCount($expectedSecondaryIndexes);
+
+    app()->forgetInstance(MigrationOwnershipLedger::class);
+    $migration->up();
+
+    expect(app(MigrationOwnershipLedger::class)->readCreate()['state'])->toBe('owned');
+})->with([
+    'base table' => ['create.base_table_created', 0],
+    'resource hash index' => ['create.index.aura_embedded_incarnation_resource_unique', 1],
+    'lookup index' => ['create.index.aura_embedded_incarnation_guard_lookup', 2],
+    'identity index' => ['create.index.aura_embedded_incarnation_guard_identity_unique', 3],
+]);
+
+it('resumes upgrade after a crash at every owned artifact boundary', function (string $checkpoint): void {
+    core12StateCreateLegacyTable();
+    $migration = require dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub';
+    app()->instance(MigrationOwnershipLedger::class, new MigrationOwnershipLedger(
+        static function (string $actualCheckpoint) use ($checkpoint): void {
+            if ($actualCheckpoint === $checkpoint) {
+                throw new RuntimeException('simulated artifact crash');
+            }
+        },
+    ));
+
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class, 'simulated artifact crash');
+
+    app()->forgetInstance(MigrationOwnershipLedger::class);
+    $migration->up();
+
+    expect(app(MigrationOwnershipLedger::class)->readUpgrade()['state'])->toBe('owned')
+        ->and(Schema::hasColumns(EmbeddedResourceIncarnationStore::TABLE, [
+            'resource_key_type',
+            'resource_key',
+            'version',
+        ]))->toBeTrue()
+        ->and(Schema::hasIndex(EmbeddedResourceIncarnationStore::TABLE, 'aura_embedded_incarnation_guard_lookup'))->toBeTrue()
+        ->and(Schema::hasIndex(EmbeddedResourceIncarnationStore::TABLE, 'aura_embedded_incarnation_guard_identity_unique'))->toBeTrue();
+})->with([
+    'resource key type column' => ['upgrade.column.resource_key_type'],
+    'resource key column' => ['upgrade.column.resource_key'],
+    'version column' => ['upgrade.column.version'],
+    'lookup index' => ['upgrade.index.aura_embedded_incarnation_guard_lookup'],
+    'identity index' => ['upgrade.index.aura_embedded_incarnation_guard_identity_unique'],
 ]);
 
 it('never enters a create rollback transition or invokes destructive checkpoints', function (): void {

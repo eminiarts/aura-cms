@@ -99,7 +99,8 @@ class LivewireComponent extends Field implements PreloadsTableDisplay
         );
     }
 
-    public function rendersOnIndex(): bool
+    /** @return bool */
+    public function rendersOnIndex()
     {
         return false;
     }

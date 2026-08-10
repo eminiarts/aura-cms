@@ -1202,10 +1202,13 @@ final class QuoteLineItems extends Component implements EmbeddedLivewireComponen
 The field checks the owner policy before rendering (`create` for an unsaved
 edit model, `update` for a persisted edit model, and `view` for view/index).
 The trait verifies the signed, locked context before component `mount()` code
-runs and again before every action, including every action in one batched
-Livewire request. Aura's authorization hook runs before Livewire event dispatch,
-so a protected `#[On]` listener cannot execute before the same check. Unsaved
-resources may carry preassigned UUID/ULID keys and remain create contexts.
+runs and again before every action or public-property update, including every
+operation in one batched Livewire request. Property updates are checked before
+the value and `updating*` hooks run, then checked again before Livewire invokes
+`updated*` hooks. Aura's authorization hook runs before Livewire lifecycle and
+event-dispatch support, so neither an update hook nor a protected `#[On]`
+listener can execute before the same fresh check. Unsaved resources may carry
+preassigned UUID/ULID keys and remain create contexts.
 
 Persisted contexts are signed from a scoped, canonical `table.*` reload rather
 than the caller's possibly partial model projection. They also contain a
@@ -1215,14 +1218,19 @@ migrations before deploying secure fields. The upgrade intentionally removes
 old incarnation rows, invalidating contexts issued under the previous contract.
 Both migrations record the exact table, columns, and indexes they create in
 `aura_migration_ownership` using atomic claims and compare-and-swap state
-transitions for fail-closed forward validation. Index validation includes the
-ordered columns and uniqueness, not only the index name. Ownership proof never
-uses runtime incarnation rows or columns; forward runs remove legacy reserved
-marker rows and marker columns when the columns contain no host data. Their
-`down()` methods are intentionally non-destructive because portable database
-metadata cannot distinguish the original objects from exact host-owned copies.
-Rolling back therefore leaves the incarnation table, ownership record, columns,
-and indexes in place; use a forward migration to correct them.
+transitions for fail-closed forward validation. A stale `creating` or
+`upgrading` record is resumed one DDL artifact at a time with bounded retries;
+each artifact is validated after a competing migration or interrupted run can
+have created it. Index validation includes the exact name, ordered columns, and
+uniqueness, not only existence. The ownership registry itself is valid only
+when `migration` has an exact primary or unique index. Ownership proof never
+uses runtime incarnation rows or columns; forward runs remove a legacy marker
+row only when its complete historical marker tuple matches, then remove its
+marker column only when no host value remains. Their `down()` methods are
+intentionally non-destructive because portable database metadata cannot
+distinguish the original objects from exact host-owned copies. Rolling back
+therefore leaves the incarnation table, ownership record, columns, and indexes
+in place; use a forward migration to correct them.
 
 Every concrete persisted resource class used by a secure embedded field must
 also install its database guard in an application deployment migration:

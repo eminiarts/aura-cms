@@ -76,6 +76,154 @@ function core12ExternalGuardConnection(string $driver): array
     ];
 }
 
+/**
+ * @param  list<string>  $barrierCheckpoints
+ * @return list<array{ok: bool, error?: string, exit_code: int|null}>
+ */
+function core12RunConcurrentExternalMigrations(
+    string $driver,
+    string $migrationPath,
+    array $barrierCheckpoints,
+): array {
+    if (! function_exists('pcntl_fork')) {
+        throw new RuntimeException('The pcntl extension is required for migration race tests.');
+    }
+
+    $directory = sys_get_temp_dir().'/aura-core12-migration-race-'.getmypid().'-'.bin2hex(random_bytes(8));
+
+    if (! mkdir($directory, 0700)) {
+        throw new RuntimeException("Unable to create migration race directory [{$directory}].");
+    }
+
+    $pids = [];
+
+    try {
+        foreach ([0, 1] as $worker) {
+            $pid = pcntl_fork();
+
+            if ($pid === -1) {
+                throw new RuntimeException('Unable to fork a migration race worker.');
+            }
+
+            if ($pid === 0) {
+                $resultPath = $directory."/result-{$worker}.json";
+                $readyPath = $directory."/ready-{$worker}";
+                $result = ['ok' => false];
+
+                try {
+                    $connectionName = "core12_race_{$driver}_{$worker}";
+                    config(["database.connections.{$connectionName}" => core12ExternalGuardConnection($driver)]);
+                    DB::purge($connectionName);
+                    DB::setDefaultConnection($connectionName);
+                    Schema::clearResolvedInstance('db.schema');
+                    app()->forgetInstance(MigrationOwnershipLedger::class);
+                    $waited = [];
+                    app()->instance(MigrationOwnershipLedger::class, new MigrationOwnershipLedger(
+                        static function (string $checkpoint) use (
+                            &$waited,
+                            $barrierCheckpoints,
+                            $directory,
+                            $readyPath,
+                        ): void {
+                            $barrier = array_search($checkpoint, $barrierCheckpoints, true);
+
+                            if ($barrier === false || isset($waited[$barrier])) {
+                                return;
+                            }
+
+                            $waited[$barrier] = true;
+                            $barrierReadyPath = $readyPath."-{$barrier}";
+                            $releasePath = $directory."/release-{$barrier}";
+                            file_put_contents($barrierReadyPath, 'ready', LOCK_EX);
+                            $deadline = microtime(true) + 10;
+
+                            while (! file_exists($releasePath)) {
+                                if (microtime(true) >= $deadline) {
+                                    throw new RuntimeException('Timed out waiting for the migration race barrier.');
+                                }
+
+                                usleep(10000);
+                            }
+                        },
+                    ));
+
+                    $migration = require $migrationPath;
+                    $migration->up();
+                    $result = ['ok' => true];
+                } catch (Throwable $exception) {
+                    $result = [
+                        'ok' => false,
+                        'error' => $exception::class.': '.$exception->getMessage(),
+                    ];
+                }
+
+                file_put_contents($resultPath, json_encode($result, JSON_THROW_ON_ERROR), LOCK_EX);
+                exit($result['ok'] ? 0 : 1);
+            }
+
+            $pids[$worker] = $pid;
+        }
+
+        foreach (array_keys($barrierCheckpoints) as $barrier) {
+            $deadline = microtime(true) + 10;
+
+            while (true) {
+                $readyWorkers = collect([0, 1])
+                    ->filter(fn (int $worker): bool => file_exists($directory."/ready-{$worker}-{$barrier}"))
+                    ->count();
+                $failedEarly = collect([0, 1])
+                    ->contains(fn (int $worker): bool => file_exists($directory."/result-{$worker}.json"));
+
+                if ($readyWorkers === 2 || $failedEarly || microtime(true) >= $deadline) {
+                    break;
+                }
+
+                usleep(10000);
+            }
+
+            touch($directory."/release-{$barrier}");
+        }
+        $statuses = [];
+
+        foreach ($pids as $worker => $pid) {
+            pcntl_waitpid($pid, $status);
+            $statuses[$worker] = pcntl_wifexited($status) ? pcntl_wexitstatus($status) : null;
+        }
+
+        return collect([0, 1])->map(function (int $worker) use ($directory, $statuses): array {
+            $resultPath = $directory."/result-{$worker}.json";
+
+            if (! file_exists($resultPath)) {
+                return [
+                    'ok' => false,
+                    'error' => 'Migration race worker did not write a result.',
+                    'exit_code' => $statuses[$worker] ?? null,
+                ];
+            }
+
+            $result = json_decode(file_get_contents($resultPath), true, flags: JSON_THROW_ON_ERROR);
+
+            return [...$result, 'exit_code' => $statuses[$worker] ?? null];
+        })->all();
+    } finally {
+        foreach (array_keys($barrierCheckpoints) as $barrier) {
+            $releasePath = $directory."/release-{$barrier}";
+
+            if (! file_exists($releasePath)) {
+                touch($releasePath);
+            }
+        }
+
+        foreach (scandir($directory) ?: [] as $entry) {
+            if (! in_array($entry, ['.', '..'], true)) {
+                unlink($directory.'/'.$entry);
+            }
+        }
+
+        rmdir($directory);
+    }
+}
+
 test('portable database guards install upgrade invalidate and preserve migration artifacts on rollback', function (string $driver): void {
     if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
         $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with dedicated MySQL, MariaDB, and PostgreSQL test databases.');
@@ -435,3 +583,224 @@ test('portable migration ownership stays outside runtime rows and validates orde
         }
     }
 })->with(['sqlite', 'mysql', 'mariadb', 'pgsql'])->group('database-guards');
+
+test('portable migrations reject duplicate-capable registries and resume after a DDL crash', function (string $driver): void {
+    if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
+        $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with dedicated MySQL, MariaDB, and PostgreSQL test databases.');
+    }
+
+    $connectionName = 'core12_migration_resume_'.$driver;
+    $configuration = core12ExternalGuardConnection($driver);
+    config(["database.connections.{$connectionName}" => $configuration]);
+    DB::purge($connectionName);
+    $originalConnection = DB::getDefaultConnection();
+    DB::setDefaultConnection($connectionName);
+    Schema::clearResolvedInstance('db.schema');
+    $schema = DB::connection($connectionName)->getSchemaBuilder();
+    $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+    $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+
+    try {
+        $schema->create(MigrationOwnershipLedger::TABLE, function (Blueprint $table): void {
+            $table->string('migration');
+            $table->longText('ownership');
+            $table->string('claim_group')->nullable();
+            $table->unique('claim_group', 'aura_migration_ownership_migration_unique');
+        });
+
+        expect(fn () => app(MigrationOwnershipLedger::class)->registryExists())
+            ->toThrow(RuntimeException::class, 'invalid schema');
+
+        $schema->drop(MigrationOwnershipLedger::TABLE);
+        app()->instance(MigrationOwnershipLedger::class, new MigrationOwnershipLedger(
+            static function (string $checkpoint): void {
+                if ($checkpoint === 'create.base_table_created') {
+                    throw new RuntimeException('simulated native DDL crash');
+                }
+            },
+        ));
+        $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+
+        expect(fn () => $migration->up())
+            ->toThrow(RuntimeException::class, 'simulated native DDL crash');
+
+        app()->forgetInstance(MigrationOwnershipLedger::class);
+        $migration->up();
+        $indexes = collect($schema->getIndexes(EmbeddedResourceIncarnationStore::TABLE));
+
+        expect(app(MigrationOwnershipLedger::class)->readCreate()['state'])->toBe('owned')
+            ->and($indexes->firstWhere('name', 'aura_embedded_incarnation_resource_unique')['columns'])
+            ->toBe(['resource_type', 'resource_key_hash'])
+            ->and($indexes->firstWhere('name', 'aura_embedded_incarnation_guard_lookup')['columns'])
+            ->toBe(['resource_type', 'resource_key_type', 'resource_key'])
+            ->and($indexes->firstWhere('name', 'aura_embedded_incarnation_guard_identity_unique')['unique'])
+            ->toBeTrue();
+    } finally {
+        app()->forgetInstance(MigrationOwnershipLedger::class);
+        $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+        $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+        DB::disconnect($connectionName);
+        DB::setDefaultConnection($originalConnection);
+        Schema::clearResolvedInstance('db.schema');
+
+        if ($driver === 'sqlite' && file_exists($configuration['database'])) {
+            unlink($configuration['database']);
+        }
+    }
+})->with(['sqlite', 'mysql', 'mariadb', 'pgsql'])->group('database-guards');
+
+test('mysql concurrent create migrations converge on every DDL artifact', function (): void {
+    if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
+        $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with a dedicated MySQL test database.');
+    }
+
+    if (! function_exists('pcntl_fork')) {
+        $this->markTestSkipped('The pcntl extension is required for native migration race tests.');
+    }
+
+    $driver = 'mysql';
+    $connectionName = 'core12_create_race_mysql';
+    config(["database.connections.{$connectionName}" => core12ExternalGuardConnection($driver)]);
+    DB::purge($connectionName);
+    $originalConnection = DB::getDefaultConnection();
+    DB::setDefaultConnection($connectionName);
+    Schema::clearResolvedInstance('db.schema');
+    $schema = DB::connection($connectionName)->getSchemaBuilder();
+    $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+    $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+    DB::purge($connectionName);
+    Schema::clearResolvedInstance('db.schema');
+
+    try {
+        $results = core12RunConcurrentExternalMigrations(
+            $driver,
+            dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub',
+            ['create.ownership_started'],
+        );
+
+        DB::setDefaultConnection($connectionName);
+        DB::purge($connectionName);
+        Schema::clearResolvedInstance('db.schema');
+        $connection = DB::connection($connectionName);
+        $schema = $connection->getSchemaBuilder();
+        app()->forgetInstance(MigrationOwnershipLedger::class);
+        $indexes = collect($schema->getIndexes(EmbeddedResourceIncarnationStore::TABLE));
+
+        expect(collect($results)->pluck('ok')->all())->toBe([true, true])
+            ->and(collect($results)->pluck('exit_code')->all())->toBe([0, 0])
+            ->and(app(MigrationOwnershipLedger::class)->readCreate()['state'])->toBe('owned')
+            ->and($connection->table(MigrationOwnershipLedger::TABLE)
+                ->where('migration', MigrationOwnershipLedger::CREATE_KEY)
+                ->count())->toBe(1)
+            ->and($indexes->firstWhere('name', 'aura_embedded_incarnation_resource_unique')['columns'])
+            ->toBe(['resource_type', 'resource_key_hash'])
+            ->and($indexes->firstWhere('name', 'aura_embedded_incarnation_guard_lookup')['columns'])
+            ->toBe(['resource_type', 'resource_key_type', 'resource_key'])
+            ->and($indexes->firstWhere('name', 'aura_embedded_incarnation_guard_identity_unique')['unique'])
+            ->toBeTrue();
+    } finally {
+        app()->forgetInstance(MigrationOwnershipLedger::class);
+        DB::setDefaultConnection($connectionName);
+        DB::purge($connectionName);
+        Schema::clearResolvedInstance('db.schema');
+        $schema = DB::connection($connectionName)->getSchemaBuilder();
+        $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+        $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+        DB::disconnect($connectionName);
+        DB::setDefaultConnection($originalConnection);
+        Schema::clearResolvedInstance('db.schema');
+    }
+})->group('database-guards');
+
+test('mysql concurrent upgrade migrations converge on every claimed artifact', function (): void {
+    if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
+        $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with a dedicated MySQL test database.');
+    }
+
+    if (! function_exists('pcntl_fork')) {
+        $this->markTestSkipped('The pcntl extension is required for native migration race tests.');
+    }
+
+    $driver = 'mysql';
+    $connectionName = 'core12_upgrade_race_mysql';
+    config(["database.connections.{$connectionName}" => core12ExternalGuardConnection($driver)]);
+    DB::purge($connectionName);
+    $originalConnection = DB::getDefaultConnection();
+    DB::setDefaultConnection($connectionName);
+    Schema::clearResolvedInstance('db.schema');
+    $schema = DB::connection($connectionName)->getSchemaBuilder();
+    $legacyGeneration = str_repeat('c', 32);
+    $legacyMarkerColumn = MigrationOwnershipLedger::markerColumn($legacyGeneration);
+    $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+    $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+    $schema->create(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($legacyMarkerColumn): void {
+        $table->id();
+        $table->string('resource_type');
+        $table->char('resource_key_hash', 64);
+        $table->uuid('incarnation');
+        $table->char($legacyMarkerColumn, 32)->nullable();
+        $table->timestamps();
+        $table->unique(
+            ['resource_type', 'resource_key_hash'],
+            'aura_embedded_incarnation_resource_unique',
+        );
+    });
+    DB::connection($connectionName)->table(EmbeddedResourceIncarnationStore::TABLE)->insert([
+        'resource_type' => MigrationOwnershipLedger::MARKER_RESOURCE_TYPE,
+        'resource_key_hash' => hash('sha256', $legacyGeneration),
+        'incarnation' => substr($legacyGeneration, 0, 8)
+            .'-'.substr($legacyGeneration, 8, 4)
+            .'-'.substr($legacyGeneration, 12, 4)
+            .'-'.substr($legacyGeneration, 16, 4)
+            .'-'.substr($legacyGeneration, 20, 12),
+        $legacyMarkerColumn => $legacyGeneration,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::purge($connectionName);
+    Schema::clearResolvedInstance('db.schema');
+
+    try {
+        $results = core12RunConcurrentExternalMigrations(
+            $driver,
+            dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub',
+            ['upgrade.ownership_started', 'upgrade.legacy_marker_cleanup_started'],
+        );
+
+        DB::setDefaultConnection($connectionName);
+        DB::purge($connectionName);
+        Schema::clearResolvedInstance('db.schema');
+        $connection = DB::connection($connectionName);
+        $schema = $connection->getSchemaBuilder();
+        app()->forgetInstance(MigrationOwnershipLedger::class);
+        $indexes = collect($schema->getIndexes(EmbeddedResourceIncarnationStore::TABLE));
+
+        expect(collect($results)->pluck('ok')->all())->toBe([true, true])
+            ->and(collect($results)->pluck('exit_code')->all())->toBe([0, 0])
+            ->and(app(MigrationOwnershipLedger::class)->readUpgrade()['state'])->toBe('owned')
+            ->and($connection->table(MigrationOwnershipLedger::TABLE)
+                ->where('migration', MigrationOwnershipLedger::UPGRADE_KEY)
+                ->count())->toBe(1)
+            ->and($schema->hasColumns(EmbeddedResourceIncarnationStore::TABLE, [
+                'resource_key_type',
+                'resource_key',
+                'version',
+            ]))->toBeTrue()
+            ->and($schema->hasColumn(EmbeddedResourceIncarnationStore::TABLE, $legacyMarkerColumn))->toBeFalse()
+            ->and($indexes->firstWhere('name', 'aura_embedded_incarnation_guard_lookup')['columns'])
+            ->toBe(['resource_type', 'resource_key_type', 'resource_key'])
+            ->and($indexes->firstWhere('name', 'aura_embedded_incarnation_guard_identity_unique')['unique'])
+            ->toBeTrue();
+    } finally {
+        app()->forgetInstance(MigrationOwnershipLedger::class);
+        DB::setDefaultConnection($connectionName);
+        DB::purge($connectionName);
+        Schema::clearResolvedInstance('db.schema');
+        $schema = DB::connection($connectionName)->getSchemaBuilder();
+        $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+        $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+        DB::disconnect($connectionName);
+        DB::setDefaultConnection($originalConnection);
+        Schema::clearResolvedInstance('db.schema');
+    }
+})->group('database-guards');
