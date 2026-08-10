@@ -22,14 +22,8 @@ final class TableQueryStateApplier
             return false;
         }
 
-        foreach ($state->filters as $group) {
-            foreach ($group['filters'] as $filter) {
-                $capability = $this->resolveCapability($resource, $filter['name']);
-
-                if ($capability === null || ! $capability->acceptsFilter($filter)) {
-                    return false;
-                }
-            }
+        if (! $this->acceptsFilters($resource, $state)) {
+            return false;
         }
 
         foreach ($state->sorts as $sort) {
@@ -53,7 +47,7 @@ final class TableQueryStateApplier
             $query = $this->parentScopes->apply($query, $resource, $state->parent, $actor);
         }
 
-        if (! $this->acceptsForRead($resource, $state)) {
+        if (! $this->acceptsFilters($resource, $state)) {
             return $query->whereRaw('1 = 0');
         }
 
@@ -64,7 +58,7 @@ final class TableQueryStateApplier
         return $query;
     }
 
-    private function acceptsForRead(Resource $resource, TableQueryState $state): bool
+    private function acceptsFilters(Resource $resource, TableQueryState $state): bool
     {
         foreach ($state->filters as $group) {
             foreach ($group['filters'] as $filter) {

@@ -299,6 +299,36 @@ test('bulk mutations reject an empty forged serialized filter', function () {
     expect($record->fresh()->content)->toBe('unchanged');
 });
 
+test('bulk mutations share read parity for a recognized incomplete filter', function () {
+    $records = collect(['First', 'Second'])->map(fn (string $title): Core22QueryResource => Core22QueryResource::create([
+        'title' => $title,
+        'type' => Core22QueryResource::$type,
+        'status' => 'publish',
+        'content' => 'unchanged',
+    ]));
+    $state = TableQueryState::fromArray([
+        'v' => 1,
+        'filters' => [['filters' => [[
+            'name' => 'title',
+            'operator' => 'contains',
+            'value' => null,
+        ]]]],
+    ]);
+
+    expect((new TableQueryStateApplier)->accepts(new Core22QueryResource, $state))->toBeTrue();
+
+    livewire(Table::class, [
+        'model' => new Core22QueryResource,
+        'query' => null,
+        'tableState' => $state->toQueryString(),
+    ])->set('selectAll', true)
+        ->call('bulkAction', 'markCore22Reviewed')
+        ->assertSuccessful();
+
+    expect($records->map(fn (Core22QueryResource $record): mixed => $record->fresh()->content)->all())
+        ->toBe(['reviewed', 'reviewed']);
+});
+
 test('saved filters persist and restore canonical search and sort state', function () {
     $matching = Core22QueryResource::create([
         'title' => 'Needle A',
