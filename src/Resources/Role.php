@@ -4,12 +4,19 @@ namespace Aura\Base\Resources;
 
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
 use Aura\Base\Models\Meta;
+use Aura\Base\Models\TeamUser;
+use Aura\Base\Navigation\Navigation;
 use Aura\Base\Resource;
+use Aura\Base\Services\VersionedCache;
+use Aura\Base\Traits\HasTeamMemberships;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Gate;
 
 class Role extends Resource
 {
+    use HasTeamMemberships;
+
     public array $actions = [
         'createMissingPermissions' => [
             'label' => 'Create Missing Permissions',
@@ -89,9 +96,16 @@ class Role extends Resource
      * writes (which fire no model events) so a Shadow or catalog role created or
      * deleted mid-request takes effect on the next permission check.
      */
-    public static function bumpCatalogVersion(): void
+    public static function bumpCatalogVersion(?Connection $connection = null): void
     {
         static::$catalogVersion++;
+
+        if ($connection) {
+            VersionedCache::afterRollback($connection, static function (): void {
+                static::$catalogVersion++;
+            });
+            Navigation::clearCache($connection);
+        }
     }
 
     /**
@@ -186,7 +200,7 @@ class Role extends Resource
         $role = static::withoutGlobalScopes()->newModelInstance($attributes);
         $role->saveQuietly();
 
-        static::bumpCatalogVersion();
+        static::bumpCatalogVersion($role->getConnection());
 
         return $role;
     }
@@ -470,7 +484,8 @@ class Role extends Resource
 
     public function teams(): BelongsToMany
     {
-        return $this->belongsToMany(Team::class, 'user_role')
+        return $this->teamMembershipsToMany(Team::class, 'role_id', 'team_id', 'teams')
+            ->using(TeamUser::class)
             ->withPivot('user_id')
             ->withTimestamps();
     }
@@ -489,12 +504,14 @@ class Role extends Resource
     public function users(): BelongsToMany
     {
         if (config('aura.teams')) {
-            return $this->belongsToMany(User::class, 'user_role')
+            return $this->teamMembershipsToMany(User::class, 'role_id', 'user_id', 'users')
+                ->using(TeamUser::class)
                 ->withPivot('team_id')
                 ->withTimestamps();
         }
 
-        return $this->belongsToMany(User::class, 'user_role')
+        return $this->teamMembershipsToMany(User::class, 'role_id', 'user_id', 'users')
+            ->using(TeamUser::class)
             ->withTimestamps();
     }
 
@@ -539,7 +556,11 @@ class Role extends Resource
         // Any catalog write (including creating or deleting a Shadow) bumps the
         // Role Catalog version so every user's resolved-roles memo recomputes on
         // its next permission check — instant shadow effect, no per-call queries.
-        static::saved(fn () => static::bumpCatalogVersion());
-        static::deleted(fn () => static::bumpCatalogVersion());
+        static::saved(function (self $role): void {
+            static::bumpCatalogVersion($role->getConnection());
+        });
+        static::deleted(function (self $role): void {
+            static::bumpCatalogVersion($role->getConnection());
+        });
     }
 }

@@ -12,10 +12,13 @@ use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Option;
+use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Services\VersionedCache;
 use Aura\Base\Traits\DefaultFields;
 use Closure;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Connection;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
@@ -30,6 +33,8 @@ use Symfony\Component\Finder\SplFileInfo;
 class Aura
 {
     use DefaultFields;
+
+    private const MAX_NAVIGATION_STABILIZATION_ATTEMPTS = 3;
 
     /**
      * The user model that should be used by Jetstream.
@@ -105,6 +110,11 @@ class Aura
     public function clearConditionsCache(): void
     {
         ConditionalLogic::clearConditionsCache();
+    }
+
+    public static function clearGlobalOptionCache(?Connection $connection = null): void
+    {
+        VersionedCache::bump('option.global', $connection);
     }
 
     public function clearRoutes()
@@ -324,42 +334,36 @@ class Aura
 
     public function getOption($name)
     {
-        if (config('aura.teams') && optional(optional(auth()->user())->resource)->currentTeam) {
-            return Cache::remember(auth()->user()->current_team_id.'.aura.'.$name, now()->addHour(), function () use ($name) {
-                $option = auth()->user()->currentTeam->getOption($name);
+        if (config('aura.teams')) {
+            $team = $this->authorizedOptionTeam();
 
-                if ($option) {
-                    if (is_string($option)) {
-                        $settings = json_decode($option, true);
-                    } else {
-                        $settings = $option;
-                    }
-                } else {
-                    $settings = [];
-                }
-
-                return $settings;
-
-            });
-        }
-
-        return Cache::remember('aura.'.$name, now()->addHour(), function () use ($name) {
-
-            $option = Option::where('name', $name)->first();
-
-            if ($option) {
-                if (is_string($option->value)) {
-                    $settings = json_decode($option->value, true);
-                } else {
-                    $settings = $option->value;
-                }
-            } else {
-                $settings = [];
+            if (! $team) {
+                return [];
             }
 
-            return $settings;
-        });
+            $entry = $team->getOptionEntry($name);
 
+            return $entry['found'] ? $entry['value'] : [];
+        }
+
+        $entry = VersionedCache::remember(
+            $this->globalOptionCacheNamespace(),
+            $name,
+            now()->addHour(),
+            function () use ($name): array {
+                $record = Option::withoutGlobalScope(TeamScope::class)
+                    ->where('name', $name)
+                    ->first(['value']);
+
+                return [
+                    'found' => $record !== null,
+                    'value' => $record?->getAttributeValue('value'),
+                ];
+            },
+            $this->optionConnection(),
+        );
+
+        return $entry['found'] ? $entry['value'] : [];
     }
 
     public static function getPath($id)
@@ -393,67 +397,35 @@ class Aura
 
     public function navigation()
     {
-        // Necessary to add TeamIds?
+        $user = auth()->user();
 
-        return Cache::remember('user-'.auth()->id().'-'.auth()->user()->current_team_id.'-navigation', 3600, function () {
+        for ($attempt = 0; $attempt < self::MAX_NAVIGATION_STABILIZATION_ATTEMPTS; $attempt++) {
+            $hookManager = app('hook_manager');
+            $revision = $hookManager->revision('navigation');
+            $context = $this->navigationCacheContext();
+            $hookFingerprint = $hookManager->cacheFingerprint('navigation');
 
-            $resources = collect($this->getResources());
+            if ($hookFingerprint === null) {
+                $navigation = $this->buildNavigation();
+            } else {
+                $payload = VersionedCache::remember(
+                    'navigation',
+                    $context,
+                    3600,
+                    fn (): array => ['groups' => $this->buildNavigation()],
+                    $user->getConnection(),
+                );
+                $navigation = $payload['groups'];
+            }
 
-            // filter resources by permission and check if user has viewAny permission
-            $resources = $resources->filter(function ($resource) {
-                if (class_exists($resource)) {
-                    $resource = app($resource);
-                } else {
-                    return false;
-                }
+            if ($hookManager === app('hook_manager')
+                && $revision === $hookManager->revision('navigation')
+                && hash_equals($context, $this->navigationCacheContext())) {
+                return collect($navigation)->map(fn ($items) => collect($items));
+            }
+        }
 
-                return auth()->user()->can('viewAny', $resource);
-            });
-
-            // If a Resource is overriden, we want to remove the original from the navigation
-            $keys = $resources->map(function ($resource) {
-                return Str::afterLast($resource, '\\');
-            })->reverse()->unique()->reverse()->keys();
-
-            $resources = $resources->filter(function ($value, $key) use ($keys) {
-                return $keys->contains($key);
-            })
-                ->map(fn ($r) => app($r)->navigation())
-                ->filter(fn ($r) => $r['showInNavigation'] ?? true)
-                ->sortBy('sort');
-
-            $resources = app('hook_manager')->applyHooks('navigation', $resources->values());
-
-            $resources = $resources->sortBy('sort')->filter(function ($value, $key) {
-                if (isset($value['conditional_logic'])) {
-                    return app('dynamicFunctions')::call($value['conditional_logic']);
-                }
-
-                return true;
-            });
-
-            $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
-                if (isset($item['dropdown']) && $item['dropdown'] !== false) {
-                    if (! isset($carry[$item['dropdown']])) {
-                        $carry[$item['dropdown']] = [];
-                    }
-                    // Check if 'group' key exists before using it
-                    if (isset($item['group'])) {
-                        $carry[$item['dropdown']]['group'] = $item['group'];
-                    } else {
-                        $carry[$item['dropdown']]['group'] = ''; // Default empty group if not set
-                    }
-                    $carry[$item['dropdown']]['dropdown'] = $item['dropdown'];
-                    $carry[$item['dropdown']]['items'][] = $item;
-                } else {
-                    $carry[] = $item;
-                }
-
-                return $carry;
-            }, []);
-
-            return collect($grouped)->groupBy('group');
-        });
+        throw new RuntimeException('Unable to stabilize navigation while hooks are changing.');
     }
 
     public function option($key)
@@ -556,25 +528,45 @@ class Aura
 
     public static function templates()
     {
-        return Cache::remember('aura.templates', now()->addHour(), function () {
-            $filesystem = app(Filesystem::class);
-
-            $files = collect($filesystem->allFiles(app_path('Aura/Templates')))
+        $payload = VersionedCache::remember('templates', 'catalog', now()->addHour(), function (): array {
+            $items = collect(app(Filesystem::class)->allFiles(app_path('Aura/Templates')))
                 ->map(function (SplFileInfo $file): string {
                     return (string) Str::of($file->getRelativePathname())
                         ->replace(['/', '.php'], ['\\', '']);
-                })->filter(fn (string $class): bool => $class != 'Template');
+                })->filter(fn (string $class): bool => $class != 'Template')
+                ->values()
+                ->all();
 
-            return $files;
+            return ['items' => $items];
         });
+
+        return collect($payload['items']);
     }
 
     public function updateOption($key, $value)
     {
         if (config('aura.teams')) {
-            auth()->user()->currentTeam->updateOption($key, $value);
+            $this->authorizedOptionTeam()?->updateOption($key, $value);
         } else {
-            Option::withoutGlobalScopes([app(TeamScope::class)])->updateOrCreate(['name' => $key], ['value' => $value]);
+            $record = Option::withoutGlobalScopes([app(TeamScope::class)])
+                ->withTrashed()
+                ->where('name', $key)
+                ->first();
+
+            if ($record) {
+                $record->fill(['value' => $value]);
+
+                if ($record->trashed()) {
+                    $record->restore();
+                } else {
+                    $record->save();
+                }
+            } else {
+                $record = Option::withoutGlobalScopes([app(TeamScope::class)])
+                    ->updateOrCreate(['name' => $key], ['value' => $value]);
+            }
+
+            VersionedCache::bump($this->globalOptionCacheNamespace(), $record->getConnection());
         }
     }
 
@@ -629,5 +621,99 @@ class Aura
             ->useBuildDirectory('vendor/aura')->withEntryPoints([
                 'resources/css/app.css',
             ]);
+    }
+
+    protected function authorizedOptionTeam(): ?Team
+    {
+        $user = User::authenticatedResource();
+
+        return $user?->authorizedCurrentTeam();
+    }
+
+    protected function buildNavigation(): array
+    {
+        $resources = collect($this->getResources());
+
+        // filter resources by permission and check if user has viewAny permission
+        $resources = $resources->filter(function ($resource) {
+            if (class_exists($resource)) {
+                $resource = app($resource);
+            } else {
+                return false;
+            }
+
+            return auth()->user()->can('viewAny', $resource);
+        });
+
+        // If a Resource is overriden, we want to remove the original from the navigation
+        $keys = $resources->map(function ($resource) {
+            return Str::afterLast($resource, '\\');
+        })->reverse()->unique()->reverse()->keys();
+
+        $resources = $resources->filter(function ($value, $key) use ($keys) {
+            return $keys->contains($key);
+        })
+            ->map(fn ($r) => app($r)->navigation())
+            ->filter(fn ($r) => $r['showInNavigation'] ?? true)
+            ->sortBy('sort');
+
+        $resources = app('hook_manager')->applyHooks('navigation', $resources->values());
+
+        $resources = $resources->sortBy('sort')->filter(function ($value, $key) {
+            if (isset($value['conditional_logic'])) {
+                return app('dynamicFunctions')::call($value['conditional_logic']);
+            }
+
+            return true;
+        });
+
+        $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
+            if (isset($item['dropdown']) && $item['dropdown'] !== false) {
+                if (! isset($carry[$item['dropdown']])) {
+                    $carry[$item['dropdown']] = [];
+                }
+                // Check if 'group' key exists before using it
+                if (isset($item['group'])) {
+                    $carry[$item['dropdown']]['group'] = $item['group'];
+                } else {
+                    $carry[$item['dropdown']]['group'] = ''; // Default empty group if not set
+                }
+                $carry[$item['dropdown']]['dropdown'] = $item['dropdown'];
+                $carry[$item['dropdown']]['items'][] = $item;
+            } else {
+                $carry[] = $item;
+            }
+
+            return $carry;
+        }, []);
+
+        return collect($grouped)
+            ->groupBy('group')
+            ->map(fn ($items) => $items->values()->all())
+            ->all();
+    }
+
+    protected function globalOptionCacheNamespace(): string
+    {
+        return 'option.global';
+    }
+
+    protected function navigationCacheContext(): string
+    {
+        $user = auth()->user();
+        $teamId = config('aura.teams') ? ($user->current_team_id ?? 'none') : 'global';
+        $hookFingerprint = app('hook_manager')->cacheFingerprint('navigation') ?? 'uncacheable';
+
+        return hash('sha256', serialize([
+            'user' => $user->getAuthIdentifier(),
+            'team' => $teamId,
+            'resources' => $this->getResources(),
+            'hooks' => $hookFingerprint,
+        ]));
+    }
+
+    protected function optionConnection(): Connection
+    {
+        return (new Option)->getConnection();
     }
 }

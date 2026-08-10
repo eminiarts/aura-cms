@@ -2,12 +2,16 @@
 
 namespace Aura\Base\Resources;
 
+use Aura\Base\Aura;
 use Aura\Base\Models\Post;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Option extends Resource
 {
+    use SoftDeletes;
+
     public static $customTable = true;
 
     public static $globalSearch = false;
@@ -68,6 +72,15 @@ class Option extends Resource
     }
 
     /**
+     * Persist logical null as JSON `null` because the option value column is
+     * intentionally non-nullable and SQL null means no stored row to callers.
+     */
+    public function setValueAttribute(mixed $value): void
+    {
+        $this->attributes['value'] = $this->castAttributeAsJson('value', $value);
+    }
+
+    /**
      * The "booted" method of the model.
      *
      * @return void
@@ -90,5 +103,39 @@ class Option extends Resource
             unset($option->user_id);
             unset($option->type);
         });
+
+        static::created(fn (Option $option) => $option->invalidateCacheScopes());
+        static::updated(fn (Option $option) => $option->invalidateCacheScopes(includeOriginal: true));
+        static::deleted(fn (Option $option) => $option->invalidateCacheScopes(includeOriginal: true));
+        static::registerModelEvent(
+            'restored',
+            fn (Option $option) => $option->invalidateCacheScopes(includeOriginal: true),
+        );
+    }
+
+    protected function invalidateCacheScopes(bool $includeOriginal = false): void
+    {
+        $connection = $this->getConnection();
+
+        if (! config('aura.teams')) {
+            Aura::clearGlobalOptionCache($connection);
+            User::clearOptionCacheForScope('global', $connection);
+
+            return;
+        }
+
+        $teamIds = collect([$this->getAttribute('team_id')]);
+
+        if ($includeOriginal) {
+            $teamIds->push($this->getRawOriginal('team_id'));
+        }
+
+        $teamIds
+            ->filter(fn ($teamId): bool => $teamId !== null && $teamId !== '')
+            ->unique()
+            ->each(function ($teamId) use ($connection): void {
+                Team::clearOptionCacheForTeam($teamId, $connection);
+                User::clearOptionCacheForScope($teamId, $connection);
+            });
     }
 }

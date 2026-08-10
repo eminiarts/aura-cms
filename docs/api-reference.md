@@ -92,10 +92,16 @@ $appWidgets = Aura::getAppWidgets();
 ```php
 // Get an option value (cached, team-aware)
 $settings = Aura::getOption('site-settings');
-// Returns decoded JSON or array
+// Returns the stored value exactly; [] only when the option row is missing
 
 // Update an option
 Aura::updateOption('site-settings', ['logo' => 'path/to/logo.png']);
+
+// Direct Option model/editor writes share the same transaction-aware cache
+// invalidation; deleted options may be restored.
+$option = \Aura\Base\Resources\Option::byName('site-settings');
+$option?->delete();
+$option?->restore();
 
 // Get a specific config value from aura.php
 $value = Aura::option('features.teams');

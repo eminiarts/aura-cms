@@ -266,6 +266,8 @@ $team->clearCachedOption('setting_name');
 
 Options are stored with the naming convention: `team.{team_id}.{option_name}`
 
+User-scoped options use a reserved v2 physical name with a canonical owner hash, while their public API remains `$user->getOption($name)` / `$user->updateOption($name, $value)`. This prevents dotted string user ids from colliding with dotted option names. Option identities are unique within each team and support soft delete/restore.
+
 ### Team Preferences
 
 Each team can maintain its own:
@@ -283,10 +285,10 @@ Each team can maintain its own:
 When a new team is created, the following happens automatically:
 
 1. The `user_id` is set to the authenticated user (team owner)
-2. A "Super Admin" role is created with full permissions
-3. The creating user is attached to the team with the Super Admin role
+2. The shared `admin` Global Role is found or created; no per-team role is minted
+3. The creating user is attached to the team through a Membership carrying that Global Role
 4. The user's `current_team_id` is updated to the new team
-5. User team cache is cleared
+5. The Membership pivot lifecycle invalidates the user's team-list generation
 6. `GenerateAllResourcePermissions` job is dispatched to create all permissions
 
 ### Team Deletion
@@ -296,8 +298,8 @@ Teams support soft deletes. When a team is deleted:
 1. Users with this team as their `current_team_id` are switched to their first available team
 2. All team meta data is deleted
 3. All team invitations are deleted
-4. All team-specific options are deleted
-5. User team caches are cleared
+4. Every option row owned by the deleted `team_id` is force-deleted without tenant scopes (including `team.*`, canonical user options, and application-defined names)
+5. Team-option, user-option, per-user team-list, and Global Admin team-list generations are invalidated after commit; rollback retains the prior cached state
 6. Users are redirected to the dashboard
 
 ```php
@@ -355,7 +357,7 @@ $user->current_team_id;   // Current team ID
 
 // Team membership
 $user->teams;             // BelongsToMany - all teams user belongs to
-$user->getTeams();        // Cached teams with meta loaded
+$user->getTeams();        // Cached teams with meta and Membership pivot loaded
 $user->belongsToTeam($team); // Check if user belongs to a team
 $user->isCurrentTeam($team); // Check if team is the current team
 $user->ownsTeam($team);   // Check if user owns the team (user_id matches)
@@ -365,7 +367,7 @@ $user->switchTeam($team); // Switch to another team (returns bool)
 
 // Roles (team-aware)
 $user->roles;         // BelongsToMany - includes team_id pivot
-$user->cachedRoles(); // Cached roles for performance
+$user->cachedRoles(); // Request-memoized effective roles for this team context
 $user->isSuperAdmin(); // Check if user has a super_admin role
 $user->hasRole('admin'); // Check for specific role
 $user->hasPermission('view-post'); // Check for specific permission

@@ -54,6 +54,7 @@ use Aura\Base\Policies\TeamPolicy;
 use Aura\Base\Policies\UserPolicy;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Services\TransactionRollbackCallbacks;
 use Aura\Base\Widgets\Bar;
 use Aura\Base\Widgets\Donut;
 use Aura\Base\Widgets\Pie;
@@ -228,7 +229,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasViews('aura')
             ->hasAssets()
             ->hasRoutes('web')
-            ->hasMigrations(['create_aura_tables', 'consolidate_per_team_admin_roles', 'add_global_admin_to_users'])
+            ->hasMigrations(['create_aura_tables', 'consolidate_per_team_admin_roles', 'add_global_admin_to_users', 'add_soft_deletes_to_options', 'enforce_unique_option_identity', 'add_owner_identity_to_options'])
             ->runsMigrations()
             ->hasCommands([
                 InstallConfigCommand::class,
@@ -380,6 +381,8 @@ class AuraServiceProvider extends PackageServiceProvider
     public function packageRegistered()
     {
         parent::packageRegistered();
+
+        $this->app->singleton(TransactionRollbackCallbacks::class);
 
         $this->app->singleton('hook_manager', function ($app) {
             return new HookManager;

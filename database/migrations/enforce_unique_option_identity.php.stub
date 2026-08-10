@@ -1,0 +1,59 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        if (! Schema::hasTable('options')) {
+            return;
+        }
+
+        $hasTeams = Schema::hasColumn('options', 'team_id');
+        $columns = $hasTeams ? ['team_id', 'name'] : ['name'];
+        $index = $hasTeams ? 'options_team_name_unique' : 'options_name_unique';
+
+        if (Schema::hasIndex('options', $index, 'unique')) {
+            return;
+        }
+
+        $duplicates = DB::table('options')
+            ->select($columns)
+            ->groupBy($columns)
+            ->havingRaw('COUNT(*) > 1')
+            ->exists();
+
+        if ($duplicates) {
+            throw new RuntimeException(
+                'Cannot enforce unique option identities while duplicate scoped names exist.'
+            );
+        }
+
+        Schema::table('options', function (Blueprint $table) use ($columns, $index): void {
+            $table->unique($columns, $index);
+        });
+    }
+
+    public function down(): void
+    {
+        if (! Schema::hasTable('options')) {
+            return;
+        }
+
+        $index = Schema::hasColumn('options', 'team_id')
+            ? 'options_team_name_unique'
+            : 'options_name_unique';
+
+        if (! Schema::hasIndex('options', $index, 'unique')) {
+            return;
+        }
+
+        Schema::table('options', function (Blueprint $table) use ($index): void {
+            $table->dropUnique($index);
+        });
+    }
+};

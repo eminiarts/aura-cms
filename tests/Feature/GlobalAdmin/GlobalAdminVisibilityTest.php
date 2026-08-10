@@ -128,15 +128,13 @@ describe('Global Admin sees and can manage all teams', function () {
         $ga = createGlobalAdmin();
         $this->actingAs($ga);
 
-        // Prime the shared cache.
-        $ga->getTeams();
-        expect(Cache::has(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY))->toBeTrue();
+        $before = $ga->getTeams()->pluck('id');
 
-        // A real create fires Team::created, which invalidates the shared cache.
+        // A real create advances the shared Global Admin generation.
         $newTeam = Team::create(['name' => 'Fresh Tenant']);
-        expect(Cache::has(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY))->toBeFalse();
 
-        expect($ga->getTeams()->pluck('id'))->toContain($newTeam->id);
+        expect($before)->not->toContain($newTeam->id)
+            ->and($ga->getTeams()->pluck('id'))->toContain($newTeam->id);
     });
 });
 

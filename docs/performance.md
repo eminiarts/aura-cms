@@ -32,66 +32,47 @@ Aura CMS implements a multi-layered caching strategy combining Laravel's Cache f
 
 ### Options Caching
 
-Options are automatically cached for 1 hour with team-scoped cache keys:
+Options are automatically cached for 1 hour. Team and user cache scopes use SHA-256 identities built from typed, length-delimited segments. User variants include both the user id and logical option name, so dotted ids and dotted names cannot collapse into one cache entry; the user generation is shared only within the active team/global scope so direct `Option` edits can invalidate every affected reader. Physical cache keys remain fixed length for Memcached-compatible backends. Cache entries are scalar/array envelopes; Eloquent models and collections are never serialized into the cache.
 
 ```php
-// Automatic caching in Aura::getOption() - src/Aura.php
-public function getOption($name)
-{
-    // Team-scoped cache key when teams are enabled
-    if (config('aura.teams') && optional(optional(auth()->user())->resource)->currentTeam) {
-        return Cache::remember(
-            auth()->user()->current_team_id . '.aura.' . $name,
-            now()->addHour(),
-            function () use ($name) {
-                return auth()->user()->currentTeam->getOption($name);
-            }
-        );
-    }
+$value = auth()->user()->getOption('columns.Article');
+$filters = auth()->user()->getOption('Article.filters.*'); // Collection boundary
 
-    // Global cache key when teams are disabled
-    return Cache::remember('aura.' . $name, now()->addHour(), function () use ($name) {
-        $option = Option::where('name', $name)->first();
-        return $option ? json_decode($option->value, true) : [];
-    });
-}
-
-// Update option (cache is NOT automatically cleared - clear manually if needed)
-public function updateOption($key, $value)
-{
-    if (config('aura.teams')) {
-        auth()->user()->currentTeam->updateOption($key, $value);
-    } else {
-        Option::withoutGlobalScopes([app(TeamScope::class)])
-            ->updateOrCreate(['name' => $key], ['value' => $value]);
-    }
-}
+auth()->user()->updateOption('columns.Article', ['title', 'status']);
+auth()->user()->deleteOption('columns.Article');
 ```
+
+Each namespace has a persistent generation token. `updateOption()`, `deleteOption()`, `clearCachedOption()`, and direct `Option` create/update/delete/restore events invalidate exact and wildcard reads together. Inside a database transaction, reads bypass persistent cache lookup and publication, and invalidation is attached to the outer transaction record for that exact connection—even when other connections have simultaneous transactions. Rollback discards only that connection's callback. Outside transactions, readers compare the generation before and after filling the cache and retry if a write interleaves; continuous churn falls back to an uncached resolution after three attempts. Failed generation writes disable stale values, while a demonstrably fresh token installed by a concurrent invalidator is accepted. Team option queries use the `Team` instance as their context, independent of whichever team the authenticated user is currently visiting.
+
+User rows use the reserved `aura-user-option-v2:{owner-hash}:{option}` physical identity. Default integer-key users transparently read and migrate legacy `user.{id}.{option}` rows on their next write, and both old and new generations are invalidated during that transition. Ambiguous legacy string-key rows are deliberately not auto-claimed. Scoped option names are unique in the database; the upgrade migration refuses to guess when pre-existing duplicates need operator resolution. Options are soft deletable, and helper writes restore the existing identity instead of inserting a duplicate.
+
+Exact entries use `['found' => bool, 'value' => mixed]`. This keeps a missing option distinct from stored `false`, `0`, `''`, and logical `null`; `Aura::getOption()` returns `[]` only for a missing row.
 
 ### Navigation Caching
 
-Navigation is automatically cached per user and team for 1 hour:
+Navigation is automatically cached per user and team for 1 hour. Its context fingerprints the registered resources and the ordered identity of deterministic hooks, so different callbacks cannot collide merely because both containers registered the same number of hooks. Authorization-filtered navigation is never shared between users.
 
 ```php
 // Automatic caching in Aura::navigation() - src/Aura.php
 public function navigation()
 {
-    return Cache::remember(
-        'user-' . auth()->id() . '-' . auth()->user()->current_team_id . '-navigation',
+    $payload = VersionedCache::remember(
+        'navigation',
+        $this->navigationCacheContext(),
         3600,
-        function () {
-            // Filters resources by permission and builds navigation structure
-            $resources = collect($this->getResources())
-                ->filter(fn ($resource) => auth()->user()->can('viewAny', app($resource)))
-                ->map(fn ($r) => app($r)->navigation())
-                ->filter(fn ($r) => $r['showInNavigation'] ?? true)
-                ->sortBy('sort');
-            
-            return collect($resources)->groupBy('group');
-        }
+        fn () => ['groups' => $this->buildNavigation()],
     );
+
+    // Preserve the existing Collection return type at the public boundary.
+    return collect($payload['groups'])->map(fn ($items) => collect($items));
 }
 ```
+
+String/static callables and scalar `Navigation::add()` configurations receive stable fingerprints. Closures, object-bound callables, resources, and any recursively non-scalar payload bypass persistent caching. The same recursive safety check runs on the completed navigation payload, preventing nested values from reaching a serializing cache store. A before/after hook revision check retries a build when registration changes while it is in flight. Role writes and Membership role changes advance the navigation generation after commit, so permission-filtered menus do not retain the prior grant set. Rollback also advances the process-local role catalog version, discarding permission snapshots resolved from transaction-local data.
+
+### Team and Template Catalog Caching
+
+`User::getTeams()` stores scalar snapshots of team attributes, meta rows, and Membership pivot attributes. It rehydrates the configured Team model, the relationship's current pivot class, and an Eloquent Collection at the public boundary, including on a cache hit where object unserialization is disabled. The `TeamUser` pivot lifecycle invalidates direct attach, detach, sync, and role changes; team rename, create, restore, and delete invalidate the affected per-user and Global Admin generations. These invalidations wait for commit, and list reads inside transactions stay transaction-local. Global Admin resolution removes `TeamScope` only, so Laravel's `SoftDeletingScope` still excludes deleted teams. The template catalog follows the same scalar-payload pattern: cached arrays internally, Support Collection externally.
 
 ### Field Caching
 
@@ -177,39 +158,32 @@ private function getCurrentTeamId()
     }
 
     $userId = Auth::id();
-    $cacheKey = "user_{$userId}_current_team_id";
+    $cacheKey = User::currentTeamCacheKey($userId);
 
-    return Cache::rememberForever($cacheKey, function () use ($userId) {
-        return DB::table('users')->where('id', $userId)->value('current_team_id');
-    });
+    if (Cache::has($cacheKey)) {
+        return Cache::get($cacheKey);
+    }
+
+    $currentTeamId = DB::table('users')->where('id', $userId)->value('current_team_id');
+
+    if ($currentTeamId !== null) {
+        Cache::forever($cacheKey, $currentTeamId);
+    }
+
+    return $currentTeamId;
 }
 ```
 
 ### User Data Caching
 
-User-specific data is cached for 1 hour:
+Effective roles are memoized on the User instance for the current request. The memo key combines the team context with the Role Catalog version, so Shadow changes force recomputation without serializing Role models. User preferences use the scalar option cache described above:
 
 ```php
 // In User.php - src/Resources/User.php
-public function getCacheKeyForRoles()
-{
-    return auth()->user()->current_team_id . '.user.' . $this->id . '.roles';
-}
-
-public function getRolesAttribute()
-{
-    return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
-        return $this->roles()->get();
-    });
-}
-
-// Cache bookmarks, sidebar state, columns, etc.
-public function getBookmarks()
-{
-    return Cache::remember('user.' . $this->id . '.bookmarks', now()->addHour(), function () {
-        return $this->getUserOption('bookmarks') ?? [];
-    });
-}
+$roles = $user->cachedRoles();
+$bookmarks = $user->getOptionBookmarks();
+$columns = $user->getOptionColumns('Article');
+$sidebar = $user->getOptionSidebar();
 ```
 
 ### Resource Caching Example
@@ -1360,9 +1334,12 @@ public function boot()
 ### 10. Clear Cache Strategically
 
 ```php
-// Clear specific caches, not everything
-Cache::forget('user.' . $user->id . '.roles');
-Cache::forget($user->current_team_id . '.aura.settings');
+// Option writes clear their exact and related wildcard cache entries.
+$user->updateOption('columns.Article', ['title', 'status']);
+
+// Clear a specific option after an external write.
+$user->clearCachedOption('columns.Article');
+$user->currentTeam->clearCachedOption('settings');
 
 // Or clear all when needed
 Aura::clear();

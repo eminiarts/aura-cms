@@ -325,16 +325,18 @@ return new class extends Migration
         Schema::create('options', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->char('owner_identity', 64)->nullable();
             $table->longText('value');
             if (config('aura.teams')) {
                 $table->foreignId('team_id');
             }
             $table->timestamps();
+            $table->softDeletes();
 
             if (config('aura.teams')) {
-                $table->index(['team_id', 'name']);
+                $table->unique(['team_id', 'name'], 'options_team_name_unique');
             } else {
-                $table->index(['name']);
+                $table->unique('name', 'options_name_unique');
             }
         });
 

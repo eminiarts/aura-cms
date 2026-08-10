@@ -3,8 +3,14 @@
 namespace Aura\Base\Resources;
 
 use Aura\Base\Database\Factories\UserFactory;
+use Aura\Base\Exceptions\OptionOwnerIdentityException;
+use Aura\Base\Models\Meta;
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Models\TeamUser;
 use Aura\Base\Resource;
 use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
+use Aura\Base\Services\VersionedCache;
+use Aura\Base\Traits\HasTeamMemberships;
 use Aura\Base\Traits\ProfileFields;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\MustVerifyEmail;
@@ -12,10 +18,12 @@ use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Database\Connection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
@@ -36,6 +44,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     use CanResetPassword;
     use HasApiTokens;
     use HasFactory;
+    use HasTeamMemberships;
     use Impersonate;
     use MustVerifyEmail;
     use Notifiable;
@@ -47,10 +56,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public const GLOBAL_ADMIN_GATE = 'AuraGlobalAdmin';
 
-    /**
-     * Shared cache key for the Global Admin team switcher list (identical for
-     * every Global Admin; invalidated on team create/rename/delete).
-     */
+    /** Legacy key cleared during writes for upgrade compatibility. */
     public const GLOBAL_ADMIN_TEAMS_CACHE_KEY = 'aura.global_admin.teams';
 
     public static $customTable = true;
@@ -135,6 +141,41 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 },
             ],
         ];
+    }
+
+    public static function authenticatedResource(): ?self
+    {
+        $authenticatedUser = auth()->user();
+
+        if ($authenticatedUser instanceof self) {
+            return $authenticatedUser;
+        }
+
+        $resource = optional($authenticatedUser)->resource;
+
+        return $resource instanceof self ? $resource : null;
+    }
+
+    public function authorizedCurrentTeam(): ?Team
+    {
+        $currentTeamId = $this->getAttribute('current_team_id');
+
+        if (! config('aura.teams') || $currentTeamId === null) {
+            return null;
+        }
+
+        if ($this->relationLoaded('currentTeam')
+            && (string) $this->getRelation('currentTeam')?->getKey() !== (string) $currentTeamId) {
+            $this->unsetRelation('currentTeam');
+        }
+
+        $team = $this->currentTeam;
+
+        if (! $team instanceof Team || (string) $team->getKey() !== (string) $currentTeamId) {
+            return null;
+        }
+
+        return $this->isAuraGlobalAdmin() || $this->teams()->whereKey($team->getKey())->exists() ? $team : null;
     }
 
     /**
@@ -227,18 +268,56 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function clearCachedOption($option)
     {
-        $option = 'user.'.$this->id.'.'.$option;
-
-        Cache::forget($option);
+        $this->forgetOptionCache($option);
     }
 
     public static function clearCurrentTeamCache(string|int|null $userId): void
     {
-        if (! $userId) {
+        if ($userId === null || $userId === '') {
             return;
         }
 
         Cache::forget(static::currentTeamCacheKey($userId));
+    }
+
+    public static function clearGlobalAdminTeamsCache(?Connection $connection = null): void
+    {
+        VersionedCache::bump(self::globalAdminTeamsCacheNamespace(), $connection);
+        Cache::forget(self::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
+    }
+
+    public static function clearLegacyOptionCacheForTeam(
+        string|int $userId,
+        string|int $teamId,
+        ?Connection $connection = null,
+    ): void {
+        VersionedCache::bump(self::legacyOptionCacheNamespaceFor($userId, $teamId), $connection);
+    }
+
+    public static function clearOptionCacheForScope(
+        string|int $teamId,
+        ?Connection $connection = null,
+    ): void {
+        VersionedCache::bump(self::optionCacheNamespaceForScope($teamId), $connection);
+    }
+
+    public static function clearOptionCacheForTeam(
+        string|int $userId,
+        string|int $teamId,
+        ?Connection $connection = null,
+    ): void {
+        self::clearOptionCacheForScope($teamId, $connection);
+        self::clearLegacyOptionCacheForTeam($userId, $teamId, $connection);
+    }
+
+    public static function clearTeamsCache(string|int|null $userId, ?Connection $connection = null): void
+    {
+        if ($userId === null || $userId === '') {
+            return;
+        }
+
+        VersionedCache::bump(self::teamsCacheNamespace($userId), $connection);
+        Cache::forget('user.'.$userId.'.teams');
     }
 
     /**
@@ -273,11 +352,23 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function deleteOption($option)
     {
-        $option = 'user.'.$this->id.'.'.$option;
+        $option = (string) $option;
+        $connection = $this->optionConnection();
 
-        Option::whereName($option)->delete();
+        $connection->transaction(function () use ($option): void {
+            $records = $this->optionQuery()
+                ->whereIn('name', $this->optionNames($option))
+                ->lockForUpdate()
+                ->get();
 
-        Cache::forget($option);
+            $records = $records->map(fn (Option $record): Option => $this->verifiedOptionRecord($record));
+
+            foreach ($records as $record) {
+                $record->delete();
+            }
+        });
+
+        $this->forgetOptionCache($option, $connection);
     }
 
     public function getAvatarUrlAttribute()
@@ -471,88 +562,100 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function getOption($option)
     {
-        $option = 'user.'.$this->id.'.'.$option;
+        $option = (string) $option;
+
+        if (! $this->hasAuthorizedOptionContext()) {
+            return str_ends_with($option, '*') ? collect() : null;
+        }
 
         // If there is a * at the end of the option name, it means that it is a wildcard
         // and we need to get all options that match the wildcard
-        if (substr($option, -1) == '*') {
-            $o = substr($option, 0, -1);
+        if (str_ends_with($option, '*')) {
+            $wildcardPrefix = substr($option, 0, -1);
 
-            // Cache
-            $options = Cache::remember($option, now()->addHour(), function () use ($o) {
-                return Option::where('name', 'like', $o.'%')->get();
-            });
+            $payload = VersionedCache::remember(
+                $this->optionCacheNamespace(),
+                $this->optionCacheVariant($option),
+                now()->addHour(),
+                fn (): array => [
+                    'values' => $this->optionConnection()->transaction(
+                        fn (): array => $this->resolveWildcardOptionValues($wildcardPrefix),
+                    ),
+                ],
+                $this->optionConnection(),
+            );
 
-            // Map the options, set the key to the option name (everything after last dot ".") and the value to the option value
-            return $options->mapWithKeys(function ($item, $key) {
-                return [str($item->name)->afterLast('.')->toString() => $item->value];
-            });
+            return collect($payload['values']);
         }
 
-        // Cache
-        $model = Cache::remember($option, now()->addHour(), function () use ($option) {
-            return Option::whereName($option)->first();
-        });
-
-        if ($model) {
-            return $model->value;
-        }
+        return $this->getOptionEntry($option)['value'];
     }
 
     public function getOptionBookmarks()
     {
-        // Cache
-        $option = Cache::remember('user.'.$this->id.'.bookmarks', now()->addHour(), function () {
-            return Option::whereName('user.'.$this->id.'.bookmarks')->first();
-        });
-
-        if ($option) {
-            return $option->value;
-        }
-
-        return [];
+        return $this->optionValueOrDefault('bookmarks', []);
     }
 
     public function getOptionColumns($slug)
     {
-        // Cache
-        $option = Cache::remember('user.'.$this->id.'.columns.'.$slug, now()->addHour(), function () use ($slug) {
-            return Option::whereName('user.'.$this->id.'.columns.'.$slug)->first();
-        });
+        return $this->optionValueOrDefault('columns.'.$slug, []);
+    }
 
-        if ($option) {
-            return $option->value;
+    /**
+     * @return array{found: bool, value: mixed}
+     */
+    public function getOptionEntry($option): array
+    {
+        $option = (string) $option;
+
+        if (! $this->hasAuthorizedOptionContext()) {
+            return ['found' => false, 'value' => null];
         }
 
-        return [];
+        $payload = VersionedCache::remember(
+            $this->optionCacheNamespace(),
+            $this->optionCacheVariant($option),
+            now()->addHour(),
+            function () use ($option): array {
+                return $this->optionConnection()->transaction(function () use ($option): array {
+                    $record = null;
+
+                    foreach ($this->optionNames($option) as $name) {
+                        $record = $this->optionQuery()
+                            ->where('name', $name)
+                            ->lockForUpdate()
+                            ->first();
+
+                        if ($record !== null) {
+                            $record = $this->verifiedOptionRecord($record);
+
+                            break;
+                        }
+                    }
+
+                    return [
+                        'found' => $record !== null,
+                        'value' => $record?->getAttributeValue('value'),
+                    ];
+                });
+            },
+            $this->optionConnection(),
+        );
+
+        return [
+            'found' => $payload['found'],
+            'value' => $payload['value'],
+        ];
     }
 
     public function getOptionSidebar()
     {
-        // Cache
-        $option = Cache::remember('user.'.$this->id.'.sidebar', now()->addHour(), function () {
-            return Option::whereName('user.'.$this->id.'.sidebar')->first();
-        });
-
-        if ($option) {
-            return $option->value;
-        }
-
-        return [];
+        return $this->optionValueOrDefault('sidebar', []);
     }
 
     public function getOptionSidebarToggled()
     {
-        // Cache
-        $option = Cache::remember('user.'.$this->id.'.sidebarToggled', now()->addHour(), function () {
-            return Option::whereName('user.'.$this->id.'.sidebarToggled')->first();
-        });
-
-        if ($option) {
-            return $option->value;
-        }
-
-        return true;
+        return $this->optionValueOrDefault('sidebarToggled', true);
     }
 
     // public function getRolesField()
@@ -583,16 +686,16 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
         // A Global Admin sees every team in the switcher, not only the teams they
         // are a member of — visitation lets them enter any of them. The list is
-        // identical for every Global Admin, so it is cached under one shared key
-        // that Team create/delete invalidates (see Team::booted).
+        // identical for every Global Admin, so it uses one shared generation
+        // namespace that Team writes invalidate (see Team::booted).
         if ($this->isAuraGlobalAdmin()) {
-            return Cache::remember(self::GLOBAL_ADMIN_TEAMS_CACHE_KEY, now()->addHour(), function () {
-                return app(config('aura.resources.team'))::withoutGlobalScopes()->with('meta')->get();
+            return $this->rememberTeams(self::globalAdminTeamsCacheNamespace(), function () {
+                return app(config('aura.resources.team'))::withoutGlobalScope(TeamScope::class)->with('meta')->get();
             });
         }
 
         // Return cached teams with meta
-        return Cache::remember('user.'.$this->id.'.teams', now()->addHour(), function () {
+        return $this->rememberTeams(self::teamsCacheNamespace($this->id), function () {
             return $this->teams()->with('meta')->get();
         });
     }
@@ -784,6 +887,18 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return false;
     }
 
+    public static function optionNameBelongsToUser(string $name, string|int $userId): bool
+    {
+        return str_starts_with($name, self::optionNamePrefixFor($userId))
+            || str_starts_with($name, self::versionTwoOptionNamePrefixFor($userId))
+            || (is_int($userId) && str_starts_with($name, 'user.'.$userId.'.'));
+    }
+
+    public static function optionNamePrefixFor(string|int $userId): string
+    {
+        return 'u'.VersionedCache::compactIdentity('option.user.owner', $userId);
+    }
+
     /**
      * Determine if the user owns the given team.
      *
@@ -816,14 +931,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         // Return \Aura\Base\Resources\User for this user
         if (config('aura.resources.user')) {
             return $this->hasOne(config('aura.resources.user'), 'id', 'id');
-        } else {
-            return $this->hasOne(User::class, 'id', 'id');
         }
 
-        // Cache the resource so we don't have to query the database every time
-        return Cache::remember('user.resource.'.$this->id, now()->addHour(), function () {
-            return User::find($this->id);
-        });
+        return $this->hasOne(User::class, 'id', 'id');
     }
 
     /**
@@ -832,14 +942,14 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function roles(): BelongsToMany
     {
         if (config('aura.teams')) {
-            return $this->belongsToMany(Role::class, 'user_role')
+            return $this->teamMembershipsToMany(Role::class, 'user_id', 'role_id', 'roles')
+                ->using(TeamUser::class)
                 ->withPivot('team_id')
                 ->withTimestamps();
         }
 
-        return $this->belongsToMany(Role::class, 'user_role')
-            // ->using(TeamUser::class)
-            // ->withPivot('team_id')
+        return $this->teamMembershipsToMany(Role::class, 'user_id', 'role_id', 'roles')
+            ->using(TeamUser::class)
             ->withTimestamps();
     }
 
@@ -879,7 +989,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function teams(): BelongsToMany
     {
-        return $this->belongsToMany(Team::class, 'user_role')
+        return $this->teamMembershipsToMany(Team::class, 'user_id', 'team_id', 'teams')
+            ->using(TeamUser::class)
             ->withPivot('role_id')
             ->withTimestamps();
     }
@@ -891,21 +1002,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function updateOption($option, $value)
     {
-        $option = 'user.'.$this->id.'.'.$option;
+        $option = (string) $option;
+        $connection = $this->optionConnection();
+        $record = $connection->transaction(fn (): Option => $this->persistOption($option, $value));
 
-        if (config('aura.teams')) {
-            Option::updateOrCreate([
-                'name' => $option,
-                'team_id' => $this->current_team_id,
-            ], ['value' => $value]);
-        } else {
-            Option::updateOrCreate([
-                'name' => $option,
-            ], ['value' => $value]);
-        }
-
-        // Clear the cache
-        Cache::forget($option);
+        $this->forgetOptionCache($option, $record->getConnection());
     }
 
     public function widgets()
@@ -913,6 +1014,13 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return collect($this->getWidgets())->map(function ($item) {
             return $item;
         });
+    }
+
+    protected function assertOptionOwnerIdentity(mixed $ownerIdentity, string|int|null $optionId = null): void
+    {
+        if (! is_string($ownerIdentity) || ! hash_equals($this->optionOwnerIdentity(), $ownerIdentity)) {
+            throw OptionOwnerIdentityException::forOption($optionId);
+        }
     }
 
     protected static function booted()
@@ -935,9 +1043,51 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         // });
     }
 
+    protected function forgetOptionCache(string $option, ?Connection $connection = null): void
+    {
+        $connection ??= $this->optionConnection();
+
+        VersionedCache::bump($this->optionCacheNamespace(), $connection);
+        VersionedCache::bump($this->legacyOptionCacheNamespace(), $connection);
+    }
+
     protected function getCacheKeyForRoles(): string
     {
         return $this->current_team_id.'.user.'.$this->id.'.roles';
+    }
+
+    protected static function globalAdminTeamsCacheNamespace(): string
+    {
+        return 'teams.global-admin';
+    }
+
+    protected function hasAuthorizedOptionContext(): bool
+    {
+        if (! config('aura.teams')) {
+            return true;
+        }
+
+        $team = static::authenticatedResource()?->authorizedCurrentTeam();
+
+        return $team !== null
+            && (string) $team->getKey() === (string) $this->getAttribute('current_team_id');
+    }
+
+    protected function legacyOptionCacheNamespace(): string
+    {
+        $teamId = config('aura.teams') ? ($this->current_team_id ?? 'none') : 'global';
+
+        return self::legacyOptionCacheNamespaceFor($this->id, $teamId);
+    }
+
+    protected static function legacyOptionCacheNamespaceFor(string|int $userId, string|int $teamId): string
+    {
+        return 'option.user.'.$userId.'.team.'.$teamId;
+    }
+
+    protected function legacyOptionName(string $option): string
+    {
+        return 'user.'.$this->id.'.'.$option;
     }
 
     /**
@@ -964,5 +1114,328 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         return is_array($permissions) ? $permissions : [];
+    }
+
+    protected function optionCacheNamespace(): string
+    {
+        $teamId = config('aura.teams') ? ($this->current_team_id ?? 'none') : 'global';
+
+        return self::optionCacheNamespaceForScope($teamId);
+    }
+
+    protected static function optionCacheNamespaceForScope(string|int $teamId): string
+    {
+        return 'option.users.v2.'.VersionedCache::identity('option.users.scope', $teamId);
+    }
+
+    protected function optionCacheVariant(string $option): string
+    {
+        return VersionedCache::identity('option.user.key.v3', $this->getKey(), $option);
+    }
+
+    protected function optionConnection(): Connection
+    {
+        return $this->optionQuery()->getModel()->getConnection();
+    }
+
+    protected function optionName(string $option): string
+    {
+        return $this->optionNamePrefix().$option;
+    }
+
+    protected function optionNamePrefix(): string
+    {
+        return static::optionNamePrefixFor($this->getKey());
+    }
+
+    /**
+     * Canonical name followed by every readable migration alias.
+     *
+     * @return array<int, string>
+     */
+    protected function optionNames(string $option): array
+    {
+        $names = [
+            $this->optionName($option),
+            static::versionTwoOptionNamePrefixFor($this->getKey()).$option,
+        ];
+
+        if ($this->readsLegacyOptionNames()) {
+            $names[] = $this->legacyOptionName($option);
+        }
+
+        return array_values(array_unique($names));
+    }
+
+    protected function optionOwnerIdentity(): string
+    {
+        return VersionedCache::identity('option.user.owner', $this->getKey());
+    }
+
+    /**
+     * @return Builder<Option>
+     */
+    protected function optionQuery(): Builder
+    {
+        $query = Option::query();
+
+        if (! config('aura.teams')) {
+            return $query;
+        }
+
+        return $query
+            ->withoutGlobalScope(TeamScope::class)
+            ->where('team_id', $this->getAttribute('current_team_id'));
+    }
+
+    protected function optionValueOrDefault(string $option, mixed $default): mixed
+    {
+        $entry = $this->getOptionEntry($option);
+
+        return $entry['found'] ? $entry['value'] : $default;
+    }
+
+    protected function persistOption(string $option, mixed $value): Option
+    {
+        $optionName = $this->optionName($option);
+        $record = $this->optionQuery()
+            ->withTrashed()
+            ->where('name', $optionName)
+            ->lockForUpdate()
+            ->first();
+
+        if ($record === null) {
+            foreach (array_slice($this->optionNames($option), 1) as $legacyName) {
+                $record = $this->optionQuery()
+                    ->withTrashed()
+                    ->where('name', $legacyName)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($record !== null) {
+                    break;
+                }
+            }
+        }
+
+        if ($record !== null) {
+            $record = $this->verifiedOptionRecord($record);
+            $isCreatingOrRenaming = $record->getRawOriginal('name') !== $optionName;
+            $record->fill(['name' => $optionName, 'value' => $value]);
+        } else {
+            $isCreatingOrRenaming = true;
+            $record = $this->optionQuery()->newModelInstance([
+                'name' => $optionName,
+                'value' => $value,
+            ]);
+
+            if (config('aura.teams')) {
+                $record->setAttribute('team_id', $this->current_team_id);
+            }
+        }
+
+        $record->setAttribute('owner_identity', $this->optionOwnerIdentity());
+
+        try {
+            if ($record->trashed()) {
+                $record->restore();
+            } else {
+                $record->save();
+            }
+        } catch (UniqueConstraintViolationException $exception) {
+            if (! $isCreatingOrRenaming) {
+                throw $exception;
+            }
+
+            $conflict = $this->optionQuery()
+                ->withTrashed()
+                ->where('name', $optionName)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $conflict instanceof Option) {
+                throw $exception;
+            }
+
+            $record = $this->verifiedOptionRecord($conflict);
+            $record->fill(['value' => $value]);
+            $record->setAttribute('owner_identity', $this->optionOwnerIdentity());
+
+            if ($record->trashed()) {
+                $record->restore();
+            } else {
+                $record->save();
+            }
+        }
+
+        $aliases = $this->optionQuery()
+            ->withTrashed()
+            ->whereIn('name', array_slice($this->optionNames($option), 1))
+            ->where($record->getKeyName(), '!=', $record->getKey())
+            ->lockForUpdate()
+            ->get();
+
+        $aliases = $aliases->map(fn (Option $alias): Option => $this->verifiedOptionRecord($alias));
+
+        foreach ($aliases as $alias) {
+            $alias->forceDelete();
+        }
+
+        return $record;
+    }
+
+    protected function readsLegacyOptionNames(): bool
+    {
+        return $this->getKeyType() === 'int';
+    }
+
+    /**
+     * Cache a scalar snapshot and restore the configured Team models only at
+     * the public boundary. This remains safe when object unserialization is
+     * disabled by the cache store.
+     */
+    protected function rememberTeams(string $namespace, callable $resolver): Collection
+    {
+        $teamClass = config('aura.resources.team');
+        $teamPrototype = new $teamClass;
+        $payload = VersionedCache::remember(
+            $namespace,
+            'teams',
+            now()->addHour(),
+            function () use ($resolver): array {
+                return ['teams' => $this->serializeTeams($resolver())];
+            },
+            $teamPrototype->getConnection(),
+        );
+
+        $metaPrototype = new Meta;
+        $teamsRelation = $this->teams();
+
+        $teams = collect($payload['teams'])->map(function (array $snapshot) use ($teamPrototype, $metaPrototype, $teamsRelation) {
+            $team = $teamPrototype->newFromBuilder(
+                $snapshot['attributes'],
+                $snapshot['connection'] ?? null,
+            );
+
+            $meta = collect($snapshot['meta'] ?? [])->map(fn (array $attributes) => $metaPrototype->newFromBuilder(
+                $attributes,
+                $team->getConnectionName(),
+            ));
+
+            $team->setRelation('meta', $metaPrototype->newCollection($meta->all()));
+
+            if (is_array($snapshot['pivot'] ?? null)) {
+                $team->setRelation('pivot', $teamsRelation->newExistingPivot($snapshot['pivot']));
+            }
+
+            return $team;
+        });
+
+        return $teamPrototype->newCollection($teams->all());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function resolveWildcardOptionValues(string $optionPrefix): array
+    {
+        $values = [];
+
+        if ($this->readsLegacyOptionNames()) {
+            $legacyPrefix = $this->legacyOptionName($optionPrefix);
+            $values = $this->wildcardOptionValuesForPrefix($legacyPrefix);
+        }
+
+        $versionTwoPrefix = static::versionTwoOptionNamePrefixFor($this->getKey()).$optionPrefix;
+        $values = array_replace($values, $this->wildcardOptionValuesForPrefix($versionTwoPrefix));
+        $canonicalPrefix = $this->optionName($optionPrefix);
+
+        return array_replace(
+            $values,
+            $this->wildcardOptionValuesForPrefix($canonicalPrefix),
+        );
+    }
+
+    /**
+     * @return array<int, array{attributes: array<string, mixed>, connection: string|null, meta: array<int, array<string, mixed>>, pivot: array<string, mixed>|null}>
+     */
+    protected function serializeTeams(Collection $teams): array
+    {
+        return $teams->map(fn ($team): array => [
+            'attributes' => $team->getAttributes(),
+            'connection' => $team->getConnectionName(),
+            'meta' => $team->meta->map(fn (Meta $meta): array => $meta->getAttributes())->all(),
+            'pivot' => $team->relationLoaded('pivot') ? $team->pivot->getAttributes() : null,
+        ])->all();
+    }
+
+    protected static function teamsCacheNamespace(string|int $userId): string
+    {
+        return 'teams.user.'.$userId;
+    }
+
+    protected function verifiedOptionRecord(Option $record): Option
+    {
+        $ownerIdentity = $record->getRawOriginal('owner_identity');
+
+        if ($ownerIdentity !== null) {
+            $this->assertOptionOwnerIdentity($ownerIdentity, $record->getKey());
+
+            return $record;
+        }
+
+        $name = (string) $record->getRawOriginal('name');
+        $isVerifiableAlias = str_starts_with(
+            $name,
+            static::versionTwoOptionNamePrefixFor($this->getKey()),
+        ) || ($this->readsLegacyOptionNames() && str_starts_with($name, $this->legacyOptionName('')));
+
+        if (! $isVerifiableAlias) {
+            throw OptionOwnerIdentityException::forOption($record->getKey());
+        }
+
+        $this->optionQuery()
+            ->withTrashed()
+            ->whereKey($record->getKey())
+            ->whereNull('owner_identity')
+            ->update(['owner_identity' => $this->optionOwnerIdentity()]);
+
+        $record = $this->optionQuery()
+            ->withTrashed()
+            ->whereKey($record->getKey())
+            ->first();
+
+        if (! $record instanceof Option) {
+            throw OptionOwnerIdentityException::forOption(null);
+        }
+
+        $this->assertOptionOwnerIdentity($record->getRawOriginal('owner_identity'), $record->getKey());
+
+        return $record;
+    }
+
+    protected static function versionTwoOptionNamePrefixFor(string|int $userId): string
+    {
+        return 'aura-user-option-v2:'.VersionedCache::identity('option.user.owner', $userId).':';
+    }
+
+    /**
+     * @return array<string|int, mixed>
+     */
+    protected function wildcardOptionValuesForPrefix(string $physicalPrefix): array
+    {
+        return $this->optionQuery()
+            ->where('name', 'like', $physicalPrefix.'%')
+            ->lockForUpdate()
+            ->get()
+            ->mapWithKeys(function (Option $record) use ($physicalPrefix): array {
+                $record = $this->verifiedOptionRecord($record);
+                $name = (string) $record->getRawOriginal('name');
+
+                return [
+                    substr($name, strlen($physicalPrefix)) => $record->getAttributeValue('value'),
+                ];
+            })
+            ->all();
     }
 }
