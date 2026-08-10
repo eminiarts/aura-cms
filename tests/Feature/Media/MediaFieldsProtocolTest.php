@@ -35,10 +35,10 @@ class Core20MediaOwnerHarness extends Component
         return '<div>owner</div>';
     }
 
-    public function updateField($data): void
+    protected function applyMediaSelectionValue(string $slug, array $value): void
     {
         $this->applications++;
-        $this->form['fields'][$data['slug']] = $data['value'];
+        $this->form['fields'][$slug] = $value;
     }
 }
 

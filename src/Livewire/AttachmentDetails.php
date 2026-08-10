@@ -2,7 +2,10 @@
 
 namespace Aura\Base\Livewire;
 
+use Aura\Base\Livewire\Media\InvalidMediaOwnerContext;
+use Aura\Base\Livewire\Media\InvalidMediaOwnerToken;
 use Aura\Base\Livewire\Media\MediaAuthorization;
+use Aura\Base\Livewire\Media\MediaDetailsBroker;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Resource;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -42,6 +45,7 @@ class AttachmentDetails extends Component
      *
      * @var array<int, int>
      */
+    #[Locked]
     public array $rowIds = [];
 
     #[Locked]
@@ -109,11 +113,12 @@ class AttachmentDetails extends Component
 
     #[On('open-attachment-details')]
     public function open(
-        int|string $id,
+        int|string|null $id = null,
         array $ids = [],
         ?string $ownerToken = null,
         ?string $componentId = null,
         ?string $fieldSlug = null,
+        ?string $detailsToken = null,
     ): void {
         if ($this->surface === 'picker') {
             $actor = $this->actor();
@@ -122,24 +127,31 @@ class AttachmentDetails extends Component
                 || ! is_string($this->ownerTokenDigest)
                 || ! is_string($this->correlationComponentId)
                 || ! is_string($this->fieldSlug)
-                || ! is_string($ownerToken)
-                || ! is_string($componentId)
-                || ! is_string($fieldSlug)
-                || ! hash_equals($this->ownerTokenDigest, app(MediaOwnerTokenBroker::class)->digest($ownerToken))
-                || ! hash_equals($this->correlationComponentId, $componentId)
-                || ! hash_equals($this->fieldSlug, $fieldSlug)) {
+                || ! is_string($detailsToken)) {
                 return;
             }
 
-            app(MediaAuthorization::class)->authorizeOwner($ownerToken, $actor, expectedSlug: $fieldSlug);
-            $authorizedIds = app(MediaAuthorization::class)
-                ->authorizeAttachments($ids, $actor)
-                ->map(fn (Resource $attachment): string => (string) $attachment->getKey())
-                ->all();
-
-            if (! in_array((string) $id, $authorizedIds, true)) {
+            try {
+                $details = app(MediaDetailsBroker::class)->consume(
+                    $detailsToken,
+                    $this->ownerToken,
+                    $this->correlationComponentId,
+                    $this->fieldSlug,
+                    $actor,
+                );
+                app(MediaAuthorization::class)->authorizeOwner($this->ownerToken, $actor, expectedSlug: $this->fieldSlug);
+                app(MediaAuthorization::class)->authorizeAttachments($details['row_ids'], $actor);
+                app(MediaAuthorization::class)->authorizeAttachments($details['selection_ids'], $actor);
+            } catch (InvalidMediaOwnerContext|InvalidMediaOwnerToken) {
                 return;
             }
+
+            $id = $details['attachment_id'];
+            $ids = $details['row_ids'];
+        }
+
+        if ($id === null) {
+            return;
         }
 
         $this->rowIds = array_map('intval', (array) $ids);

@@ -2,6 +2,7 @@
 
 use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\AttachmentDetails;
+use Aura\Base\Livewire\Media\MediaDetailsBroker;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Role;
@@ -55,7 +56,7 @@ test('opening the panel loads the attachment', function () {
         ->assertSee('2 KB');
 });
 
-test('picker details reject spoofed owner component and field correlations', function () {
+test('picker details consume only a server issued opaque snapshot once', function () {
     $attachment = detailsAttachment('picker.jpg');
     $ownerToken = app(MediaOwnerTokenBroker::class)->issue(
         ownerComponentId: 'form-owner',
@@ -73,26 +74,63 @@ test('picker details reject spoofed owner component and field correlations', fun
         'fieldSlug' => 'image',
     ]);
 
-    foreach ([
-        ['ownerToken' => $ownerToken.'x', 'componentId' => 'picker-owner', 'fieldSlug' => 'image'],
-        ['ownerToken' => $ownerToken, 'componentId' => 'other-picker', 'fieldSlug' => 'image'],
-        ['ownerToken' => $ownerToken, 'componentId' => 'picker-owner', 'fieldSlug' => 'other'],
-    ] as $spoofed) {
-        $details->dispatch('open-attachment-details', ...[
-            'id' => $attachment->id,
-            'ids' => [$attachment->id],
-            ...$spoofed,
-        ])->assertSet('attachmentId', null);
-    }
+    $token = app(MediaDetailsBroker::class)->issue(
+        $ownerToken,
+        'picker-owner',
+        'image',
+        $attachment->id,
+        [$attachment->id],
+        [],
+        $this->user,
+    );
 
-    $details->dispatch(
-        'open-attachment-details',
-        id: $attachment->id,
-        ids: [$attachment->id],
-        ownerToken: $ownerToken,
-        componentId: 'picker-owner',
-        fieldSlug: 'image',
-    )->assertSet('attachmentId', $attachment->id);
+    $details->dispatch('open-attachment-details', id: 999999, ids: [999999], detailsToken: $token)
+        ->assertSet('attachmentId', $attachment->id)
+        ->call('close')
+        ->dispatch('open-attachment-details', detailsToken: $token)
+        ->assertSet('attachmentId', null);
+});
+
+test('picker details row snapshot cannot be changed by hydration', function () {
+    $attachment = detailsAttachment('locked-rows.jpg');
+    $arguments = pickerDetailsArguments($this->user);
+    $token = app(MediaDetailsBroker::class)->issue(
+        $arguments['ownerToken'],
+        'picker-owner',
+        'image',
+        $attachment->id,
+        [$attachment->id],
+        [],
+        $this->user,
+    );
+    $details = livewire(AttachmentDetails::class, $arguments)
+        ->dispatch('open-attachment-details', detailsToken: $token);
+
+    expect(fn () => $details->set('rowIds', [999999]))->toThrow(Exception::class);
+});
+
+test('picker details reject a valid snapshot issued for another picker component', function () {
+    $attachment = detailsAttachment('cross-picker.jpg');
+    $arguments = pickerDetailsArguments($this->user);
+    $token = app(MediaDetailsBroker::class)->issue(
+        $arguments['ownerToken'],
+        'other-picker',
+        'image',
+        $attachment->id,
+        [$attachment->id],
+        [],
+        $this->user,
+    );
+
+    livewire(AttachmentDetails::class, $arguments)
+        ->dispatch('open-attachment-details', detailsToken: $token)
+        ->assertSet('attachmentId', null);
+
+    $arguments['correlationComponentId'] = 'other-picker';
+
+    livewire(AttachmentDetails::class, $arguments)
+        ->dispatch('open-attachment-details', detailsToken: $token)
+        ->assertSet('attachmentId', $attachment->id);
 });
 
 test('the attachment id cannot bypass the view policy', function () {

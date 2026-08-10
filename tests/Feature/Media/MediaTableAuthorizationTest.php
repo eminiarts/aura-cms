@@ -1,14 +1,18 @@
 <?php
 
+use Aura\Base\Contracts\ScopesMediaVisibility;
 use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Livewire\MediaTable;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Tests\Resources\Post;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 
-class Core20AttachmentPolicy
+class Core20AttachmentPolicy implements ScopesMediaVisibility
 {
     public static bool $delete = true;
 
@@ -24,6 +28,13 @@ class Core20AttachmentPolicy
         return self::$delete;
     }
 
+    public function scopeMediaVisibility(Builder $query, Authenticatable $actor, Resource $resource): Builder
+    {
+        return self::$visibleId === null
+            ? $query
+            : $query->whereKey(self::$visibleId);
+    }
+
     public function update(): bool
     {
         return true;
@@ -32,6 +43,19 @@ class Core20AttachmentPolicy
     public function view($user, Attachment $attachment): bool
     {
         return self::$visibleId === null || $attachment->getKey() === self::$visibleId;
+    }
+
+    public function viewAny(): bool
+    {
+        return true;
+    }
+}
+
+class Core20UnscopedAttachmentPolicy
+{
+    public function view(): bool
+    {
+        return true;
     }
 
     public function viewAny(): bool
@@ -75,6 +99,17 @@ test('media table renders only attachments the current actor may view', function
         ->assertViewHas('rows', fn ($rows): bool => $rows->total() === 1);
 
     expect($hidden->exists)->toBeTrue();
+});
+
+test('media table fails closed when a record policy has no sql visibility scope', function () {
+    Gate::policy(Attachment::class, Core20UnscopedAttachmentPolicy::class);
+    Attachment::factory()->create(config('aura.teams') ? ['team_id' => $this->actor->current_team_id] : []);
+
+    Livewire::test(MediaTable::class, [
+        'model' => new Attachment,
+        'field' => $this->field,
+        'ownerToken' => $this->ownerToken,
+    ])->assertViewHas('rows', fn ($rows): bool => $rows->total() === 0);
 });
 
 test('media table rejects undeclared methods and reauthorizes destructive row actions', function () {

@@ -59,6 +59,7 @@ test('selection requests bind both components actor team slug and normalized val
 test('owner processing is atomic successful and idempotent', function () {
     $request = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
     $applications = 0;
+    $effects = 0;
 
     $first = $this->selections->processForOwner(
         requestToken: $request->token,
@@ -67,13 +68,16 @@ test('owner processing is atomic successful and idempotent', function () {
         slug: 'image',
         value: ['9'],
         actor: $this->actor,
-        mutation: function () use (&$applications): MediaSelectionMutation {
+        mutation: function () use (&$applications, &$effects): MediaSelectionMutation {
             return new MediaSelectionMutation(
                 apply: function () use (&$applications): void {
                     $applications++;
                 },
                 rollback: function () use (&$applications): void {
                     $applications--;
+                },
+                afterCommit: function () use (&$effects): void {
+                    $effects++;
                 },
             );
         },
@@ -98,9 +102,68 @@ test('owner processing is atomic successful and idempotent', function () {
     );
 
     expect($applications)->toBe(1)
+        ->and($effects)->toBe(1)
         ->and($first->state)->toBe('succeeded')
         ->and($first->errorCode)->toBeNull()
         ->and($duplicate->state)->toBe('succeeded');
+});
+
+test('only one active request may exist for a manager and owner scope', function () {
+    $request = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
+
+    expect(fn () => $this->selections->begin($this->ownerToken, 'manager', ['10'], $this->actor))
+        ->toThrow(InvalidMediaSelectionRequest::class);
+
+    $this->selections->processForOwner(
+        $request->token,
+        $this->ownerToken,
+        'owner-component',
+        'image',
+        ['9'],
+        $this->actor,
+        fn (): MediaSelectionMutation => new MediaSelectionMutation(
+            apply: static function (): void {},
+            rollback: static function (): void {},
+        ),
+    );
+
+    expect($this->selections->begin($this->ownerToken, 'manager', ['10'], $this->actor)->token)
+        ->not->toBe($request->token);
+});
+
+test('concurrent workers share the active request fence', function () {
+    if (! function_exists('pcntl_fork')) {
+        $this->markTestSkipped('pcntl is required for the concurrent selection proof.');
+    }
+
+    $processId = pcntl_fork();
+
+    if ($processId === 0) {
+        try {
+            app(MediaSelectionBroker::class)->begin($this->ownerToken, 'concurrent-manager', ['9'], $this->actor);
+            exit(0);
+        } catch (InvalidMediaSelectionRequest) {
+            exit(10);
+        } catch (Throwable) {
+            exit(20);
+        }
+    }
+
+    expect($processId)->toBeGreaterThan(0);
+    $parentSucceeded = true;
+
+    try {
+        $this->selections->begin($this->ownerToken, 'concurrent-manager', ['10'], $this->actor);
+    } catch (InvalidMediaSelectionRequest) {
+        $parentSucceeded = false;
+    }
+
+    pcntl_waitpid($processId, $status);
+    $childExit = pcntl_wexitstatus($status);
+
+    expect(pcntl_wifexited($status))->toBeTrue()
+        ->and($childExit)->toBeIn([0, 10])
+        ->and((int) $parentSucceeded + (int) ($childExit === 0))->toBe(1);
 });
 
 test('processing failures settle generically and a retry receives a new token', function () {
@@ -264,4 +327,35 @@ test('a request expiring during application is rolled back and never succeeds', 
     expect($record->state)->toBe('expired')
         ->and($record->errorCode)->toBe('selection_timeout')
         ->and($authoritativeValue)->toBe([]);
+});
+
+test('post commit effects run only after a durable successful settlement', function () {
+    $request = $this->selections->begin($this->ownerToken, 'manager', ['4'], $this->actor);
+    $authoritativeValue = [];
+    $effects = 0;
+
+    $expired = $this->selections->processForOwner(
+        $request->token,
+        $this->ownerToken,
+        'owner-component',
+        'image',
+        ['4'],
+        $this->actor,
+        fn (): MediaSelectionMutation => new MediaSelectionMutation(
+            apply: function () use (&$authoritativeValue): void {
+                $authoritativeValue = ['4'];
+                Carbon::setTestNow(now()->addSeconds(16));
+            },
+            rollback: function () use (&$authoritativeValue): void {
+                $authoritativeValue = [];
+            },
+            afterCommit: function () use (&$effects): void {
+                $effects++;
+            },
+        ),
+    );
+
+    expect($expired->state)->toBe('expired')
+        ->and($authoritativeValue)->toBe([])
+        ->and($effects)->toBe(0);
 });

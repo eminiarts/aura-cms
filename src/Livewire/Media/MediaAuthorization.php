@@ -3,6 +3,7 @@
 namespace Aura\Base\Livewire\Media;
 
 use Aura\Base\Aura;
+use Aura\Base\Contracts\ScopesMediaVisibility;
 use Aura\Base\Fields\File;
 use Aura\Base\Fields\Image;
 use Aura\Base\Resource;
@@ -33,23 +34,13 @@ class MediaAuthorization
         $prototype = $this->attachmentPrototype();
         $actorGate = $this->gate->forUser($actor);
         $actorGate->authorize('viewAny', $prototype);
-        $keyName = $prototype->getKeyName();
-        $qualifiedKey = $prototype->qualifyColumn($keyName);
-        $visibleIds = [];
-        $candidateQuery = clone $query;
-        $candidateQuery->setEagerLoads([])->reorder($qualifiedKey);
+        $policy = $this->gate->getPolicyFor($prototype);
 
-        foreach ($candidateQuery->lazyById(100, $qualifiedKey, $keyName) as $attachment) {
-            if (! $attachment instanceof Resource || $attachment::class !== $prototype::class) {
-                throw new InvalidMediaOwnerContext('The media attachment listing is invalid.');
-            }
-
-            if ($actorGate->allows('view', $attachment)) {
-                $visibleIds[] = $attachment->getKey();
-            }
+        if (! $policy instanceof ScopesMediaVisibility) {
+            return $query->whereRaw('1 = 0');
         }
 
-        return $query->whereKey($visibleIds);
+        return $policy->scopeMediaVisibility($query, $actor, $prototype);
     }
 
     public function authorizeAttachmentCreate(Authenticatable $actor): Resource

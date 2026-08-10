@@ -39,35 +39,58 @@ class MediaSelectionBroker
         }
 
         $normalized = $this->normalizeValue($value);
-        $owner = $this->owners->resolve($ownerToken, $actor);
+        $owner = $this->resolveOwner($ownerToken, $actor);
         $this->authorizeOwnerSelection($ownerToken, $normalized, $actor);
-        $issuedAt = now()->getTimestamp();
-        $deadline = $issuedAt + $this->ttl();
-        $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
-        $digest = $this->digest($token);
-        $record = new MediaSelectionRecord(
-            requestDigest: $digest,
-            ownerTokenDigest: $this->owners->digest($ownerToken),
-            managerComponentId: $managerComponentId,
-            ownerComponentId: $owner->ownerComponentId,
-            actorId: $owner->actorId,
-            teamId: $owner->teamId,
-            slug: $owner->slug,
-            valueDigest: $this->valueDigest($normalized),
-            issuedAt: $issuedAt,
-            deadline: $deadline,
-            state: 'pending',
-            errorCode: null,
-            claimId: null,
-        );
+        $scopeKey = $this->scopeKey($ownerToken, $managerComponentId);
 
-        if (! $this->cache->add($this->recordKey($token), $record->toArray(), $this->ttl() + $this->retention())) {
-            throw new InvalidMediaSelectionRequest('Unable to create a unique media selection request.');
-        }
+        return $this->locks->lock($scopeKey.':lock', 10)->block(5, function () use ($normalized, $owner, $ownerToken, $managerComponentId, $scopeKey): MediaSelectionRequest {
+            $activeToken = $this->cache->get($scopeKey);
 
-        $this->rememberOwnerRequest($ownerToken, $token);
+            if (is_string($activeToken)) {
+                try {
+                    $active = $this->read($activeToken);
+                } catch (InvalidMediaSelectionRequest) {
+                    $active = null;
+                }
 
-        return new MediaSelectionRequest($token, $digest, $record);
+                if ($active instanceof MediaSelectionRecord
+                    && in_array($active->state, ['pending', 'processing'], true)
+                    && now()->getTimestamp() < $active->deadline) {
+                    throw new InvalidMediaSelectionRequest('A media selection request is already active for this picker.');
+                }
+            }
+
+            $issuedAt = now()->getTimestamp();
+            $deadline = $issuedAt + $this->ttl();
+            $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+            $digest = $this->digest($token);
+            $record = new MediaSelectionRecord(
+                requestDigest: $digest,
+                ownerTokenDigest: $this->owners->digest($ownerToken),
+                managerComponentId: $managerComponentId,
+                ownerComponentId: $owner->ownerComponentId,
+                actorId: $owner->actorId,
+                teamId: $owner->teamId,
+                slug: $owner->slug,
+                valueDigest: $this->valueDigest($normalized),
+                issuedAt: $issuedAt,
+                deadline: $deadline,
+                state: 'pending',
+                errorCode: null,
+                claimId: null,
+            );
+
+            $this->cache->put($scopeKey, $token, $this->ttl() + $this->retention());
+            $this->rememberOwnerRequest($ownerToken, $token);
+
+            if (! $this->cache->add($this->recordKey($token), $record->toArray(), $this->ttl() + $this->retention())) {
+                $this->cache->forget($scopeKey);
+
+                throw new InvalidMediaSelectionRequest('Unable to create a unique media selection request.');
+            }
+
+            return new MediaSelectionRequest($token, $digest, $record);
+        });
     }
 
     public function expireForManager(
@@ -215,7 +238,7 @@ class MediaSelectionBroker
             $errorCode = 'processing_failed';
         }
 
-        return $this->withLock($requestToken, function () use (
+        $settled = $this->withLock($requestToken, function () use (
             $requestToken,
             $ownerToken,
             $ownerComponentId,
@@ -282,6 +305,12 @@ class MediaSelectionBroker
 
             return $settled;
         });
+
+        if ($settled->state === 'succeeded' && $application?->afterCommit instanceof Closure) {
+            ($application->afterCommit)();
+        }
+
+        return $settled;
     }
 
     /** @param list<int|string> $value */
@@ -403,6 +432,11 @@ class MediaSelectionBroker
         }
 
         return $retention;
+    }
+
+    private function scopeKey(string $ownerToken, string $managerComponentId): string
+    {
+        return self::CACHE_PREFIX.'scope:'.$this->owners->digest($ownerToken).':'.$this->digest($managerComponentId);
     }
 
     private function store(string $requestToken, MediaSelectionRecord $record): void

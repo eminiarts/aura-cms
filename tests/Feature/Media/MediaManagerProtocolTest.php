@@ -273,6 +273,28 @@ test('global modal close events cannot bypass a pending media dismissal lock', f
     expect($modals->modals)->not->toHaveKey('picker');
 });
 
+test('picker modal security metadata cannot be hydrated away to bypass its dismissal lock', function () {
+    app(MediaSelectionBroker::class)->begin(
+        $this->ownerToken,
+        'manager-component',
+        [(string) $this->attachment->getKey()],
+        $this->actor,
+    );
+
+    $modals = Livewire::test(Modals::class)
+        ->call('openModal', ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID, $this->arguments);
+
+    $id = array_key_first($modals->get('modals'));
+
+    $modals->set("modals.{$id}.name", 'harmless-modal')->assertForbidden();
+
+    $freshModals = Livewire::test(Modals::class)
+        ->call('openModal', ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID, $this->arguments);
+    $freshId = array_key_first($freshModals->get('modals'));
+
+    $freshModals->call('closeModal', $freshId)->assertSet("modals.{$freshId}.active", true);
+});
+
 test('manager accepts upload selection only from its attested owner context', function () {
     app('aura')::registerResources([GalleryPage::class]);
     $uploaded = Attachment::factory()->create(config('aura.teams') ? ['team_id' => $this->actor->current_team_id] : []);

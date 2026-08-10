@@ -9,5 +9,6 @@ final readonly class MediaSelectionMutation
     public function __construct(
         public Closure $apply,
         public Closure $rollback,
+        public ?Closure $afterCommit = null,
     ) {}
 }

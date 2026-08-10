@@ -71,13 +71,13 @@ trait MediaFields
 
                     return new MediaSelectionMutation(
                         apply: function () use ($slug, $authorizedValue): void {
-                            $this->updateField([
-                                'slug' => $slug,
-                                'value' => $authorizedValue,
-                            ]);
+                            $this->applyMediaSelectionValue($slug, $authorizedValue);
                         },
                         rollback: function () use ($originalForm): void {
                             $this->form = $originalForm;
+                        },
+                        afterCommit: function () use ($slug, $authorizedValue): void {
+                            $this->dispatchMediaSelectionEffects($slug, $authorizedValue);
                         },
                     );
                 },
@@ -188,6 +188,24 @@ trait MediaFields
             'slug' => $slug,
             'value' => $ids,
         ]);
+    }
+
+    /** @param list<string> $value */
+    protected function applyMediaSelectionValue(string $slug, array $value): void
+    {
+        $this->form['fields'][$slug] = $value;
+    }
+
+    /** @param list<string> $value */
+    protected function dispatchMediaSelectionEffects(string $slug, array $value): void
+    {
+        $data = [
+            'slug' => $slug,
+            'value' => $value,
+        ];
+
+        $this->dispatch('fieldUpdated', $data);
+        $this->dispatch('selectedMediaUpdated', $data);
     }
 
     protected function updateField($data)

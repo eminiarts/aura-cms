@@ -3,6 +3,7 @@
 namespace Aura\Base\Livewire;
 
 use Aura\Base\Livewire\Media\MediaAuthorization;
+use Aura\Base\Livewire\Media\MediaDetailsBroker;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
@@ -140,19 +141,23 @@ class MediaTable extends Table
             ->map(fn (Resource $row): string => (string) $row->getKey())
             ->all();
         app(MediaAuthorization::class)->authorizeAttachments($rowIds, $actor);
+        app(MediaAuthorization::class)->authorizeAttachments((array) $this->selected, $actor);
 
         if (! is_string($this->detailsComponentId) || $this->detailsComponentId === '') {
             abort(403);
         }
 
-        $this->dispatch(
-            'open-attachment-details',
-            id: (string) $attachment->getKey(),
-            ids: $rowIds,
+        $detailsToken = app(MediaDetailsBroker::class)->issue(
             ownerToken: $this->ownerToken,
             componentId: $this->detailsComponentId,
             fieldSlug: $owner->context->slug,
+            attachmentId: (string) $attachment->getKey(),
+            rowIds: $rowIds,
+            selectionIds: (array) $this->selected,
+            actor: $actor,
         );
+
+        $this->dispatch('open-attachment-details', detailsToken: $detailsToken);
     }
 
     public function render(): View
