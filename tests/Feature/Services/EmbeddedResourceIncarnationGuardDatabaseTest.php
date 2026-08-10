@@ -500,6 +500,7 @@ test('postgres guard ignores same-named triggers on another owner table', functi
     $guard = app(EmbeddedResourceIncarnationGuard::class);
     $foreignTable = 'core12 foreign-owners';
     $foreignFunction = 'aura_core12_foreign_noop';
+    $sharedFunction = null;
 
     $schema->dropIfExists($prototype->getTable());
     $schema->dropIfExists($foreignTable);
@@ -546,6 +547,39 @@ test('postgres guard ignores same-named triggers on another owner table', functi
                 'select count(*) as aggregate from pg_catalog.pg_trigger where not tgisinternal and tgname = ?',
                 [$deleteTrigger],
             )->aggregate)->toBe(2);
+
+        $sharedFunction = (string) $connection->selectOne(
+            <<<'SQL'
+                select p.proname as name
+                from pg_catalog.pg_trigger t
+                join pg_catalog.pg_class c on c.oid = t.tgrelid
+                join pg_catalog.pg_proc p on p.oid = t.tgfoid
+                where not t.tgisinternal
+                  and c.oid = pg_catalog.to_regclass(?)
+                  and t.tgname = ?
+                SQL,
+            ['"core12 guarded-owners"', $deleteTrigger],
+        )->name;
+        $schema->drop($foreignTable);
+        $schema->create($foreignTable, function (Blueprint $table): void {
+            $table->string('select')->primary();
+        });
+        $connection->unprepared(sprintf(
+            'create trigger "%s" after delete on "core12 foreign-owners" for each row execute function "%s"()',
+            str_replace('"', '""', $deleteTrigger),
+            str_replace('"', '""', $sharedFunction),
+        ));
+
+        $guard->uninstall($prototype);
+
+        expect($guard->isInstalled($prototype))->toBeFalse()
+            ->and($connection->selectOne(
+                'select count(*) as aggregate from pg_catalog.pg_trigger where not tgisinternal and tgname = ?',
+                [$deleteTrigger],
+            )->aggregate)->toBe(1)
+            ->and(fn () => $guard->install($prototype))
+            ->toThrow(RuntimeException::class, 'is used by trigger')
+            ->and($guard->isInstalled($prototype))->toBeFalse();
     } finally {
         if ($schema->hasTable($prototype->getTable())) {
             $guard->uninstall($prototype);
@@ -554,6 +588,11 @@ test('postgres guard ignores same-named triggers on another owner table', functi
 
         $schema->dropIfExists($foreignTable);
         $connection->unprepared('drop function if exists "'.$foreignFunction.'"()');
+
+        if ($sharedFunction !== null) {
+            $connection->unprepared('drop function if exists "'.str_replace('"', '""', $sharedFunction).'"()');
+        }
+
         $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
         $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
         DB::disconnect($connectionName);

@@ -41,6 +41,7 @@ final class EmbeddedResourceIncarnationGuard
         }
 
         $this->assertNoForeignTriggerNameConflicts($connection, $resource);
+        $this->assertNoForeignPostgresFunctionDependencies($connection, $resource);
         $this->dropStatements($connection, $resource);
 
         foreach ($this->createStatements($connection, $resource) as $statement) {
@@ -75,6 +76,42 @@ final class EmbeddedResourceIncarnationGuard
         $resource = $this->resource($resource);
         $connection = $resource->getConnection();
         $this->dropStatements($connection, $resource);
+    }
+
+    private function assertNoForeignPostgresFunctionDependencies(Connection $connection, Model $resource): void
+    {
+        if ($connection->getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        $functions = collect(array_values(array_unique([1, self::CONTRACT_VERSION])))
+            ->flatMap(fn (int $version): array => [
+                $this->functionName($resource, $version),
+                $this->insertFunctionName($resource, $version),
+            ])
+            ->all();
+        $foreign = $connection->selectOne(
+            <<<'SQL'
+                select p.proname as function_name, t.tgname as trigger_name
+                from pg_catalog.pg_proc p
+                join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+                join pg_catalog.pg_trigger t on t.tgfoid = p.oid
+                where n.nspname = current_schema()
+                  and p.proname in (?, ?, ?, ?)
+                  and pg_catalog.pg_get_function_identity_arguments(p.oid) = ''
+                  and t.tgrelid <> pg_catalog.to_regclass(?)
+                limit 1
+                SQL,
+            [...$functions, $connection->getQueryGrammar()->wrapTable($resource->getTable())],
+        );
+
+        if ($foreign !== null) {
+            throw new RuntimeException(sprintf(
+                'Cannot install embedded incarnation guard because function [%s] is used by trigger [%s] on another table.',
+                (string) $foreign->function_name,
+                (string) $foreign->trigger_name,
+            ));
+        }
     }
 
     private function assertNoForeignTriggerNameConflicts(Connection $connection, Model $resource): void
@@ -204,6 +241,31 @@ final class EmbeddedResourceIncarnationGuard
         ));
     }
 
+    private function dropPostgresFunctionIfUnused(Connection $connection, string $function): void
+    {
+        $unused = $connection->selectOne(
+            <<<'SQL'
+                select p.oid
+                from pg_catalog.pg_proc p
+                join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+                where n.nspname = current_schema()
+                  and p.proname = ?
+                  and pg_catalog.pg_get_function_identity_arguments(p.oid) = ''
+                  and not exists (
+                      select 1 from pg_catalog.pg_trigger t where t.tgfoid = p.oid
+                  )
+                SQL,
+            [$function],
+        );
+
+        if ($unused !== null) {
+            $connection->unprepared(sprintf(
+                'drop function %s()',
+                $connection->getQueryGrammar()->wrap($function),
+            ));
+        }
+    }
+
     private function dropStatements(Connection $connection, Model $resource): void
     {
         $grammar = $connection->getQueryGrammar();
@@ -222,14 +284,14 @@ final class EmbeddedResourceIncarnationGuard
                     ));
                 }
 
-                $connection->unprepared(sprintf(
-                    'drop function if exists %s()',
-                    $grammar->wrap($this->functionName($resource, $version)),
-                ));
-                $connection->unprepared(sprintf(
-                    'drop function if exists %s()',
-                    $grammar->wrap($this->insertFunctionName($resource, $version)),
-                ));
+                $this->dropPostgresFunctionIfUnused(
+                    $connection,
+                    $this->functionName($resource, $version),
+                );
+                $this->dropPostgresFunctionIfUnused(
+                    $connection,
+                    $this->insertFunctionName($resource, $version),
+                );
             }
 
             return;
