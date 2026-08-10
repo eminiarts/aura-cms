@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Support;
 
+use Aura\Base\Fields\Number;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -17,18 +18,38 @@ final class ExactDecimal
         string $wrappedColumn,
         string $operator,
         mixed $value,
+        ?array $numberConfiguration = null,
     ): void {
         if (! in_array($operator, ['=', '!=', '>', '<', '>=', '<='], true)) {
             throw new InvalidArgumentException("Unsupported exact-decimal operator [{$operator}].");
         }
 
+        $configuration = $numberConfiguration === null
+            ? null
+            : self::validatedConfiguration($numberConfiguration);
+
+        if ($configuration !== null) {
+            $value = self::configuredNormalizedValue($value, $configuration);
+        }
+
         $comparisonKey = self::sortableKey($value);
 
-        if (str_starts_with($comparisonKey, '3')) {
+        if ($value === null || str_starts_with($comparisonKey, '3')) {
             throw new InvalidArgumentException('Exact-decimal comparisons require a valid plain base-10 value.');
         }
 
-        $key = self::sqlSortableKey($connection, $wrappedColumn);
+        $nativeNumber = self::nativeConfiguredNumber($connection, $wrappedColumn, $configuration);
+
+        if ($nativeNumber !== null) {
+            $query->whereRaw(
+                "{$nativeNumber['value']} IS NOT NULL AND {$nativeNumber['value']} {$operator} {$nativeNumber['target']}",
+                [(string) $value],
+            );
+
+            return;
+        }
+
+        $key = self::sqlSortableKey($connection, $wrappedColumn, $configuration);
         $query->whereRaw("{$key} IS NOT NULL AND {$key} {$operator} ?", [$comparisonKey]);
     }
 
@@ -37,6 +58,7 @@ final class ExactDecimal
         Connection $connection,
         string $wrappedColumn,
         string $direction,
+        ?array $numberConfiguration = null,
     ): void {
         $direction = strtolower($direction);
 
@@ -44,7 +66,19 @@ final class ExactDecimal
             throw new InvalidArgumentException("Unsupported exact-decimal sort direction [{$direction}].");
         }
 
-        $key = self::sqlSortableKey($connection, $wrappedColumn);
+        $configuration = $numberConfiguration === null
+            ? null
+            : self::validatedConfiguration($numberConfiguration);
+        $nativeNumber = self::nativeConfiguredNumber($connection, $wrappedColumn, $configuration);
+
+        if ($nativeNumber !== null) {
+            $query->orderByRaw("CASE WHEN {$nativeNumber['value']} IS NULL THEN 1 ELSE 0 END")
+                ->orderByRaw("{$nativeNumber['value']} {$direction}");
+
+            return;
+        }
+
+        $key = self::sqlSortableKey($connection, $wrappedColumn, $configuration);
         $query->orderByRaw("CASE WHEN {$key} IS NULL THEN 1 ELSE 0 END")
             ->orderByRaw("{$key} {$direction}");
     }
@@ -59,6 +93,12 @@ final class ExactDecimal
             'aura_decimal_sort_key',
             self::sortableKey(...),
             1,
+            true,
+        );
+        $connection->getPdo()->sqliteCreateFunction(
+            'aura_number_sort_key',
+            self::configuredSortableKey(...),
+            4,
             true,
         );
     }
@@ -105,6 +145,44 @@ final class ExactDecimal
         return strtr($digits, '0123456789', '9876543210');
     }
 
+    /**
+     * @param  array{mode: 'decimal'|'integer'|'legacy', precision: int|null, scale: int}  $configuration
+     */
+    private static function configuredNormalizedValue(mixed $value, array $configuration): int|string|null
+    {
+        $field = [];
+
+        if ($configuration['mode'] !== 'legacy') {
+            $field['number_type'] = $configuration['mode'];
+        }
+
+        if ($configuration['precision'] !== null) {
+            $field['precision'] = $configuration['precision'];
+        }
+
+        if ($configuration['mode'] === 'decimal') {
+            $field['scale'] = $configuration['scale'];
+        }
+
+        return (new Number)->normalizeForExactQuery($value, $field);
+    }
+
+    private static function configuredSortableKey(
+        mixed $value,
+        string $mode,
+        mixed $precision,
+        mixed $scale,
+    ): string {
+        $configuration = self::validatedConfiguration([
+            'mode' => $mode,
+            'precision' => $precision === null ? null : (int) $precision,
+            'scale' => (int) $scale,
+        ]);
+        $normalized = self::configuredNormalizedValue($value, $configuration);
+
+        return $normalized === null ? '3'.trim((string) $value) : self::sortableKey($normalized);
+    }
+
     private static function mysqlComplement(string $expression): string
     {
         // Replace through non-digit placeholders so 0 -> 9 cannot be changed
@@ -120,6 +198,52 @@ final class ExactDecimal
         }
 
         return $expression;
+    }
+
+    /**
+     * @param  array{mode: 'decimal'|'integer'|'legacy', precision: int|null, scale: int}  $configuration
+     */
+    private static function mysqlConfiguredValue(string $column, array $configuration): string
+    {
+        $value = "TRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CAST({$column} AS CHAR), CHAR(0), ' '), CHAR(9), ' '), CHAR(10), ' '), CHAR(11), ' '), CHAR(13), ' '))";
+        $unsigned = "(CASE WHEN LEFT({$value}, 1) IN ('+', '-') THEN SUBSTRING({$value}, 2) ELSE {$value} END)";
+        $integerRaw = "SUBSTRING_INDEX({$unsigned}, '.', 1)";
+        $fractionRaw = "(CASE WHEN LOCATE('.', {$unsigned}) > 0 THEN SUBSTRING({$unsigned}, LOCATE('.', {$unsigned}) + 1) ELSE '' END)";
+        $integer = "COALESCE(NULLIF(TRIM(LEADING '0' FROM {$integerRaw}), ''), '0')";
+        $integerDigits = "(CASE WHEN {$integer} = '0' THEN 0 ELSE CHAR_LENGTH({$integer}) END)";
+        $digitCount = "({$integerDigits} + CHAR_LENGTH({$fractionRaw}))";
+        $plain = "({$value} REGEXP '^[+-]?[0-9]+([.][0-9]+)?$' AND {$value} NOT REGEXP '[^-+0-9.]' AND {$digitCount} <= ".self::MAX_DIGITS.')';
+        $hasFraction = "(LOCATE('.', {$unsigned}) > 0)";
+
+        if ($configuration['mode'] === 'legacy') {
+            $precision = $configuration['precision'];
+            $valid = $precision === null
+                ? $plain
+                : "({$plain} AND ({$hasFraction} OR CHAR_LENGTH({$integer}) <= {$precision}))";
+
+            return "(CASE WHEN {$valid} THEN {$value} ELSE '' END)";
+        }
+
+        if ($configuration['mode'] === 'integer') {
+            $precision = $configuration['precision'];
+            $valid = "({$plain} AND NOT {$hasFraction}".
+                ($precision === null ? '' : " AND CHAR_LENGTH({$integer}) <= {$precision}").')';
+            $precision ??= self::MAX_DIGITS;
+
+            return "(CASE WHEN {$valid} THEN CAST({$value} AS DECIMAL({$precision}, 0)) ELSE NULL END)";
+        }
+
+        $precision = $configuration['precision'];
+        $scale = $configuration['scale'];
+        $integerCapacity = $precision - $scale;
+        $roundingDigit = "SUBSTRING(RPAD({$fractionRaw}, ".($scale + 1).", '0'), ".($scale + 1).', 1)';
+        $keptFraction = $scale === 0 ? "''" : "LEFT(RPAD({$fractionRaw}, {$scale}, '0'), {$scale})";
+        $maximumInteger = $integerCapacity === 0 ? '0' : str_repeat('9', $integerCapacity);
+        $maximumFraction = $scale === 0 ? '' : str_repeat('9', $scale);
+        $roundingOverflow = "({$roundingDigit} IN ('5', '6', '7', '8', '9') AND {$integer} = '{$maximumInteger}' AND {$keptFraction} = '{$maximumFraction}')";
+        $valid = "({$plain} AND {$integerDigits} <= {$integerCapacity} AND NOT {$roundingOverflow})";
+
+        return "(CASE WHEN {$valid} THEN CAST({$value} AS DECIMAL({$precision}, {$scale})) ELSE NULL END)";
     }
 
     private static function mysqlSortableKey(string $column): string
@@ -142,6 +266,82 @@ final class ExactDecimal
         return "(CASE WHEN {$valid} THEN CAST(CASE WHEN {$zero} THEN '1' WHEN {$negative} THEN {$negativeKey} ELSE {$positiveKey} END AS BINARY) ELSE NULL END)";
     }
 
+    /**
+     * @param  array{mode: 'decimal'|'integer'|'legacy', precision: int|null, scale: int}|null  $configuration
+     * @return array{value: string, target: string}|null
+     */
+    private static function nativeConfiguredNumber(
+        Connection $connection,
+        string $wrappedColumn,
+        ?array $configuration,
+    ): ?array {
+        if ($configuration === null
+            || $configuration['mode'] === 'legacy'
+            || ! in_array($connection->getDriverName(), ['mysql', 'pgsql'], true)) {
+            return null;
+        }
+
+        $precision = $configuration['precision'] ?? self::MAX_DIGITS;
+        $scale = $configuration['scale'];
+
+        return match ($connection->getDriverName()) {
+            'mysql' => [
+                'value' => self::mysqlConfiguredValue($wrappedColumn, $configuration),
+                'target' => "CAST(? AS DECIMAL({$precision}, {$scale}))",
+            ],
+            'pgsql' => [
+                'value' => self::postgresConfiguredValue($wrappedColumn, $configuration),
+                'target' => "CAST(? AS NUMERIC({$precision}, {$scale}))",
+            ],
+        };
+    }
+
+    /**
+     * @param  array{mode: 'decimal'|'integer'|'legacy', precision: int|null, scale: int}  $configuration
+     */
+    private static function postgresConfiguredValue(string $column, array $configuration): string
+    {
+        $value = "BTRIM(REPLACE(REPLACE(REPLACE(REPLACE(CAST({$column} AS TEXT), CHR(9), ' '), CHR(10), ' '), CHR(11), ' '), CHR(13), ' '))";
+        $unsigned = "(CASE WHEN LEFT({$value}, 1) IN ('+', '-') THEN SUBSTRING({$value} FROM 2) ELSE {$value} END)";
+        $integerRaw = "SPLIT_PART({$unsigned}, '.', 1)";
+        $fractionRaw = "(CASE WHEN STRPOS({$unsigned}, '.') > 0 THEN SPLIT_PART({$unsigned}, '.', 2) ELSE '' END)";
+        $integer = "COALESCE(NULLIF(LTRIM({$integerRaw}, '0'), ''), '0')";
+        $integerDigits = "(CASE WHEN {$integer} = '0' THEN 0 ELSE LENGTH({$integer}) END)";
+        $digitCount = "({$integerDigits} + LENGTH({$fractionRaw}))";
+        $plain = "({$value} ~ '^[+-]?[0-9]+([.][0-9]+)?$' AND {$value} !~ '[^-+0-9.]' AND {$digitCount} <= ".self::MAX_DIGITS.')';
+        $hasFraction = "(STRPOS({$unsigned}, '.') > 0)";
+
+        if ($configuration['mode'] === 'legacy') {
+            $precision = $configuration['precision'];
+            $valid = $precision === null
+                ? $plain
+                : "({$plain} AND ({$hasFraction} OR LENGTH({$integer}) <= {$precision}))";
+
+            return "(CASE WHEN {$valid} THEN {$value} ELSE '' END)";
+        }
+
+        if ($configuration['mode'] === 'integer') {
+            $precision = $configuration['precision'];
+            $valid = "({$plain} AND NOT {$hasFraction}".
+                ($precision === null ? '' : " AND LENGTH({$integer}) <= {$precision}").')';
+            $precision ??= self::MAX_DIGITS;
+
+            return "(CASE WHEN {$valid} THEN CAST({$value} AS NUMERIC({$precision}, 0)) ELSE NULL END)";
+        }
+
+        $precision = $configuration['precision'];
+        $scale = $configuration['scale'];
+        $integerCapacity = $precision - $scale;
+        $roundingDigit = "SUBSTRING(RPAD({$fractionRaw}, ".($scale + 1).", '0') FROM ".($scale + 1).' FOR 1)';
+        $keptFraction = $scale === 0 ? "''" : "LEFT(RPAD({$fractionRaw}, {$scale}, '0'), {$scale})";
+        $maximumInteger = $integerCapacity === 0 ? '0' : str_repeat('9', $integerCapacity);
+        $maximumFraction = $scale === 0 ? '' : str_repeat('9', $scale);
+        $roundingOverflow = "({$roundingDigit} IN ('5', '6', '7', '8', '9') AND {$integer} = '{$maximumInteger}' AND {$keptFraction} = '{$maximumFraction}')";
+        $valid = "({$plain} AND {$integerDigits} <= {$integerCapacity} AND NOT {$roundingOverflow})";
+
+        return "(CASE WHEN {$valid} THEN CAST({$value} AS NUMERIC({$precision}, {$scale})) ELSE NULL END)";
+    }
+
     private static function postgresSortableKey(string $column): string
     {
         $value = "BTRIM(REPLACE(REPLACE(REPLACE(REPLACE(CAST({$column} AS TEXT), CHR(9), ' '), CHR(10), ' '), CHR(11), ' '), CHR(13), ' '))";
@@ -162,10 +362,15 @@ final class ExactDecimal
         return "((CASE WHEN {$valid} THEN CASE WHEN {$zero} THEN '1' WHEN {$negative} THEN {$negativeKey} ELSE {$positiveKey} END ELSE NULL END) COLLATE \"C\")";
     }
 
-    private static function sqliteSortableKey(Connection $connection, string $column): string
+    /**
+     * @param  array{mode: 'decimal'|'integer'|'legacy', precision: int|null, scale: int}|null  $configuration
+     */
+    private static function sqliteSortableKey(Connection $connection, string $column, ?array $configuration): string
     {
         self::registerSqliteFunction($connection);
-        $key = "aura_decimal_sort_key({$column})";
+        $key = $configuration === null
+            ? "aura_decimal_sort_key({$column})"
+            : "aura_number_sort_key({$column}, '{$configuration['mode']}', ".($configuration['precision'] ?? 'NULL').", {$configuration['scale']})";
 
         return "(CASE WHEN SUBSTR({$key}, 1, 1) IN ('0', '1', '2') THEN {$key} ELSE NULL END)";
     }
@@ -175,13 +380,54 @@ final class ExactDecimal
      * zero, then positive magnitude. Invalid values become NULL. String
      * operations avoid all float and DECIMAL narrowing.
      */
-    private static function sqlSortableKey(Connection $connection, string $wrappedColumn): string
+    private static function sqlSortableKey(Connection $connection, string $wrappedColumn, ?array $numberConfiguration): string
     {
+        $configuration = $numberConfiguration === null
+            ? null
+            : self::validatedConfiguration($numberConfiguration);
+
+        if ($configuration !== null
+            && $configuration['mode'] === 'legacy'
+            && $configuration['precision'] === null) {
+            $configuration = null;
+        }
+
         return match ($connection->getDriverName()) {
-            'mysql' => self::mysqlSortableKey($wrappedColumn),
-            'pgsql' => self::postgresSortableKey($wrappedColumn),
-            'sqlite' => self::sqliteSortableKey($connection, $wrappedColumn),
+            'mysql' => self::mysqlSortableKey($configuration === null
+                ? $wrappedColumn
+                : self::mysqlConfiguredValue($wrappedColumn, $configuration)),
+            'pgsql' => self::postgresSortableKey($configuration === null
+                ? $wrappedColumn
+                : self::postgresConfiguredValue($wrappedColumn, $configuration)),
+            'sqlite' => self::sqliteSortableKey($connection, $wrappedColumn, $configuration),
             default => throw new InvalidArgumentException("Exact-decimal queries are not supported for database driver [{$connection->getDriverName()}]."),
         };
+    }
+
+    /**
+     * @param  array<string, mixed>  $configuration
+     * @return array{mode: 'decimal'|'integer'|'legacy', precision: int|null, scale: int}
+     */
+    private static function validatedConfiguration(array $configuration): array
+    {
+        $mode = $configuration['mode'] ?? null;
+        $precision = $configuration['precision'] ?? null;
+        $scale = $configuration['scale'] ?? null;
+
+        if (! in_array($mode, ['decimal', 'integer', 'legacy'], true)
+            || ($precision !== null && (! is_int($precision) || $precision < 1 || $precision > self::MAX_DIGITS))
+            || ! is_int($scale)
+            || $scale < 0
+            || $scale > 30
+            || ($mode === 'decimal' && ($precision === null || $scale > $precision))
+            || ($mode !== 'decimal' && $scale !== 0)) {
+            throw new InvalidArgumentException('Invalid exact-number query configuration.');
+        }
+
+        return [
+            'mode' => $mode,
+            'precision' => $precision,
+            'scale' => $scale,
+        ];
     }
 }

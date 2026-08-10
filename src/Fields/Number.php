@@ -6,6 +6,7 @@ use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Contracts\FieldValueStorage;
 use Aura\Base\Exceptions\InvalidFieldValue;
 use Aura\Base\Schema\FieldColumn;
+use Aura\Base\Support\ExactDecimal;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -61,6 +62,31 @@ class Number extends Field
             // MySQL/PostgreSQL continue to use native DECIMAL.
             driverTypes: ['sqlite' => 'text'],
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     * @return array{mode: 'decimal'|'integer'|'legacy', precision: int|null, scale: int}
+     */
+    public function exactQueryConfiguration(array $field): array
+    {
+        if ($this->isDecimal($field)) {
+            [$precision, $scale] = $this->precisionAndScale($field);
+
+            return ['mode' => 'decimal', 'precision' => $precision, 'scale' => $scale];
+        }
+
+        $precision = null;
+
+        if (array_key_exists('precision', $field)) {
+            [$precision] = $this->precisionAndScale([...$field, 'scale' => 0]);
+        }
+
+        return [
+            'mode' => array_key_exists('number_type', $field) ? 'integer' : 'legacy',
+            'precision' => $precision,
+            'scale' => 0,
+        ];
     }
 
     public function filterOptions()
@@ -165,6 +191,23 @@ class Number extends Field
         FieldValueContext $context = FieldValueContext::Model,
     ): mixed {
         return $this->normalize($value, $field, strict: false);
+    }
+
+    /**
+     * Return the strict normalized numeric value used by exact queries, or
+     * null when a tolerant legacy value is outside this field's contract.
+     *
+     * @param  array<string, mixed>  $field
+     */
+    public function normalizeForExactQuery(mixed $value, array $field): int|string|null
+    {
+        try {
+            $normalized = $this->normalize($value, $field, strict: true);
+        } catch (InvalidFieldValue) {
+            return null;
+        }
+
+        return $normalized === null || $normalized === '' ? null : $normalized;
     }
 
     public function normalizeForStorage(
@@ -279,6 +322,20 @@ class Number extends Field
         }
 
         $numeric = is_string($value) ? trim($value) : (string) $value;
+
+        if (preg_match('/^[+-]?(\d+)(?:\.(\d+))?$/', $numeric, $portableMatches) === 1) {
+            $integer = ltrim($portableMatches[1], '0');
+            $digitCount = ($integer === '' ? 0 : strlen($integer)) + strlen($portableMatches[2] ?? '');
+
+            if ($digitCount > ExactDecimal::MAX_DIGITS) {
+                return $this->invalidValue(
+                    $value,
+                    $field,
+                    $strict,
+                    'exceeds the 65-digit portability limit',
+                );
+            }
+        }
 
         if (! $decimal) {
             // Fields created before number_type existed accepted both plain

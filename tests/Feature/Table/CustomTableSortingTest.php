@@ -5,6 +5,7 @@ use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Tag;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 use function Pest\Livewire\livewire;
@@ -20,6 +21,7 @@ beforeEach(function () {
     Schema::create('custom_sort_projects', function (Blueprint $table) {
         $table->id();
         $table->string('name')->nullable();
+        $table->text('amount')->nullable();
         $table->foreignId('user_id');
         $table->foreignId('team_id')->nullable();
         $table->timestamps();
@@ -41,6 +43,7 @@ class CustomTableSortingModel extends Resource
 
     protected $fillable = [
         'name',
+        'amount',
         'user_id',
         'team_id',
         'created_at',
@@ -67,6 +70,14 @@ class CustomTableSortingModel extends Resource
                 'slug' => 'meta_1',
             ],
             [
+                'name' => 'Amount',
+                'type' => 'Aura\\Base\\Fields\\Number',
+                'slug' => 'amount',
+                'number_type' => 'decimal',
+                'precision' => 6,
+                'scale' => 2,
+            ],
+            [
                 'name' => 'Tags',
                 'slug' => 'tags',
                 'type' => 'Aura\\Base\\Fields\\Tags',
@@ -82,6 +93,45 @@ class CustomTableSortingModel extends Resource
         ];
     }
 }
+
+test('physical sqlite number sorting uses a stable primary key tie break in both directions', function () {
+    $first = CustomTableSortingModel::create([
+        'name' => 'First equivalent',
+        'amount' => '2',
+        'user_id' => $this->user->id,
+        ...config('aura.teams') ? ['team_id' => $this->user->current_team_id] : [],
+    ]);
+    $second = CustomTableSortingModel::create([
+        'name' => 'Second equivalent',
+        'amount' => '2',
+        'user_id' => $this->user->id,
+        ...config('aura.teams') ? ['team_id' => $this->user->current_team_id] : [],
+    ]);
+    $firstInvalid = CustomTableSortingModel::create([
+        'name' => 'First invalid',
+        'amount' => '3',
+        'user_id' => $this->user->id,
+        ...config('aura.teams') ? ['team_id' => $this->user->current_team_id] : [],
+    ]);
+    $secondInvalid = CustomTableSortingModel::create([
+        'name' => 'Second invalid',
+        'amount' => '4',
+        'user_id' => $this->user->id,
+        ...config('aura.teams') ? ['team_id' => $this->user->current_team_id] : [],
+    ]);
+    DB::table('custom_sort_projects')->where('id', $first->id)->update(['amount' => '2']);
+    DB::table('custom_sort_projects')->where('id', $second->id)->update(['amount' => '+002.0']);
+    DB::table('custom_sort_projects')->where('id', $firstInvalid->id)->update(['amount' => 'invalid-a']);
+    DB::table('custom_sort_projects')->where('id', $secondInvalid->id)->update(['amount' => 'invalid-b']);
+
+    $component = livewire(Table::class, ['query' => null, 'model' => $first]);
+    $expected = [$second->id, $first->id, $secondInvalid->id, $firstInvalid->id];
+
+    $component->call('sortBy', 'amount')
+        ->assertViewHas('rows', fn ($rows): bool => collect($rows->items())->pluck('id')->all() === $expected);
+    $component->call('sortBy', 'amount')
+        ->assertViewHas('rows', fn ($rows): bool => collect($rows->items())->pluck('id')->all() === $expected);
+});
 
 test('custom table resource can sort by a meta field', function () {
     $projectB = CustomTableSortingModel::create([

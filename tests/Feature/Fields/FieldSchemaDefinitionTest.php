@@ -284,6 +284,137 @@ test('native schema locks contend across connection aliases and recover after a 
     }
 })->with(['mysql', 'pgsql']);
 
+test('native schema locks retain the acquiring session across holder reconnect and purge', function (string $driver) {
+    $prefix = $driver === 'pgsql' ? 'POSTGRES' : 'MYSQL';
+    $database = getenv("AURA_TEST_{$prefix}_DATABASE") ?: null;
+
+    if (! $database) {
+        $this->markTestSkipped("Set AURA_TEST_{$prefix}_DATABASE to run the {$driver} reconnect lock contract.");
+    }
+
+    $configuration = [
+        'driver' => $driver,
+        'host' => getenv("AURA_TEST_{$prefix}_HOST") ?: '127.0.0.1',
+        'port' => getenv("AURA_TEST_{$prefix}_PORT") ?: ($driver === 'mysql' ? '3306' : '5432'),
+        'database' => $database,
+        'username' => getenv("AURA_TEST_{$prefix}_USERNAME") ?: ($driver === 'mysql' ? 'root' : getenv('USER')),
+        'password' => getenv("AURA_TEST_{$prefix}_PASSWORD") ?: '',
+        'prefix' => '',
+    ];
+    $configuration += $driver === 'mysql'
+        ? ['charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'strict' => true]
+        : ['search_path' => 'public'];
+    $first = "core_10_{$driver}_reconnect_holder";
+    $second = "core_10_{$driver}_reconnect_contender";
+    $readDatabase = $driver === 'mysql' ? 'information_schema' : 'postgres';
+    $originalDefault = config('database.default');
+    config()->set("database.connections.{$first}", [
+        ...$configuration,
+        'read' => ['database' => $readDatabase],
+        'write' => ['database' => $database],
+    ]);
+    config()->set("database.connections.{$second}", $configuration);
+    config()->set('database.default', $first);
+    config()->set('aura.schema.lock_timeout', 0.1);
+    config()->set('aura.schema.lock_poll_interval_milliseconds', 10);
+    $holder = DB::connection($first);
+    $databaseQuery = $driver === 'mysql'
+        ? 'SELECT DATABASE() AS database_name'
+        : 'SELECT current_database() AS database_name';
+    $sessionQuery = $driver === 'mysql'
+        ? 'SELECT CONNECTION_ID() AS session_id'
+        : 'SELECT pg_backend_pid() AS session_id';
+
+    expect(data_get($holder->selectOne($databaseQuery, [], true), 'database_name'))->toBe($readDatabase)
+        ->and(data_get($holder->selectOne($databaseQuery, [], false), 'database_name'))->toBe($database);
+
+    $holderSessionId = (int) data_get($holder->selectOne($sessionQuery, [], false), 'session_id');
+
+    try {
+        $result = SchemaMigrationLock::runForTable('orders', function () use ($first, $holder, $second): string {
+            DB::disconnect($first);
+            $reconnected = DB::reconnect($first);
+
+            expect($reconnected)->toBe($holder)
+                ->and(SchemaMigrationLock::runForTable(
+                    'orders',
+                    static fn (): string => 'nested after reconnect',
+                ))->toBe('nested after reconnect');
+
+            DB::purge($first);
+            config()->set('database.default', $second);
+
+            expect(fn () => SchemaMigrationLock::runForTable('orders', static fn () => null))
+                ->toThrow(RuntimeException::class, 'Timed out acquiring Aura database schema lock');
+
+            return 'protected';
+        });
+        $activeSessionQuery = $driver === 'mysql'
+            ? 'SELECT COUNT(*) AS active_sessions FROM information_schema.processlist WHERE id = ?'
+            : 'SELECT COUNT(*) AS active_sessions FROM pg_stat_activity WHERE pid = ?';
+        $activeSessions = (int) data_get(
+            DB::connection($second)->selectOne($activeSessionQuery, [$holderSessionId], false),
+            'active_sessions',
+        );
+
+        expect($result)->toBe('protected')
+            ->and($activeSessions)->toBe(0)
+            ->and(SchemaMigrationLock::runForTable('orders', static fn (): string => 'released'))->toBe('released');
+    } finally {
+        config()->set('database.default', $originalDefault);
+        DB::purge($first);
+        DB::purge($second);
+    }
+})->with(['mysql', 'pgsql']);
+
+test('native retained schema locks release after a reconnected callback throws', function (string $driver) {
+    $prefix = $driver === 'pgsql' ? 'POSTGRES' : 'MYSQL';
+    $database = getenv("AURA_TEST_{$prefix}_DATABASE") ?: null;
+
+    if (! $database) {
+        $this->markTestSkipped("Set AURA_TEST_{$prefix}_DATABASE to run the {$driver} reconnect release contract.");
+    }
+
+    $configuration = [
+        'driver' => $driver,
+        'host' => getenv("AURA_TEST_{$prefix}_HOST") ?: '127.0.0.1',
+        'port' => getenv("AURA_TEST_{$prefix}_PORT") ?: ($driver === 'mysql' ? '3306' : '5432'),
+        'database' => $database,
+        'username' => getenv("AURA_TEST_{$prefix}_USERNAME") ?: ($driver === 'mysql' ? 'root' : getenv('USER')),
+        'password' => getenv("AURA_TEST_{$prefix}_PASSWORD") ?: '',
+        'prefix' => '',
+    ];
+    $configuration += $driver === 'mysql'
+        ? ['charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'strict' => true]
+        : ['search_path' => 'public'];
+    $first = "core_10_{$driver}_reconnect_throw_holder";
+    $second = "core_10_{$driver}_reconnect_throw_contender";
+    $originalDefault = config('database.default');
+    config()->set("database.connections.{$first}", $configuration);
+    config()->set("database.connections.{$second}", $configuration);
+    config()->set('database.default', $first);
+    config()->set('aura.schema.lock_timeout', 0.1);
+    config()->set('aura.schema.lock_poll_interval_milliseconds', 10);
+
+    try {
+        expect(fn () => SchemaMigrationLock::runForTable('orders', function () use ($first, $second): void {
+            DB::disconnect($first);
+            DB::reconnect($first);
+            config()->set('database.default', $second);
+
+            expect(fn () => SchemaMigrationLock::runForTable('orders', static fn () => null))
+                ->toThrow(RuntimeException::class, 'Timed out acquiring Aura database schema lock');
+
+            throw new RuntimeException('reconnected callback failed');
+        }))->toThrow(RuntimeException::class, 'reconnected callback failed')
+            ->and(SchemaMigrationLock::runForTable('orders', static fn (): string => 'released'))->toBe('released');
+    } finally {
+        config()->set('database.default', $originalDefault);
+        DB::purge($first);
+        DB::purge($second);
+    }
+})->with(['mysql', 'pgsql']);
+
 test('native schema lock domains canonicalize endpoint and search path aliases', function (string $driver) {
     $prefix = $driver === 'pgsql' ? 'POSTGRES' : 'MYSQL';
     $database = getenv("AURA_TEST_{$prefix}_DATABASE") ?: null;

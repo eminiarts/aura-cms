@@ -195,7 +195,9 @@ class Project extends Resource
 ],
 ```
 
-MySQL and PostgreSQL coordinate Aura schema updates through database-server advisory locks. SQLite uses a lock file in the local system temporary directory, so its protection is host-local only. A SQLite database shared through NFS or another filesystem across multiple application hosts requires a single designated migration host or external deployment coordination.
+MySQL and PostgreSQL coordinate Aura schema updates through database-server advisory locks. Aura retains the exact write-side PDO session that acquired the lock until the protected callback finishes, so an application-level disconnect, purge, or reconnect cannot release it early. If the database server or network actually terminates that retained session, the server releases its advisory lock; treat the schema update as failed and retry it under deployment coordination.
+
+SQLite uses a lock file in the local system temporary directory, so its protection is host-local only. A SQLite database shared through NFS or another filesystem across multiple application hosts requires a single designated migration host or external deployment coordination.
 
 Existing SQLite files are identified by filesystem device and inode, which makes same-host symlink and hardlink aliases contend. When the database file is missing or deleted, Aura falls back to the canonical absolute path; it cannot recover the prior inode relationship of a missing link. Do not replace or unlink the database during a schema update.
 

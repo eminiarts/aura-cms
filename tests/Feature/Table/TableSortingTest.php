@@ -42,6 +42,14 @@ class MetaSortingModel extends Resource
                 'slug' => 'number',
             ],
             [
+                'name' => 'Configured decimal',
+                'type' => 'Aura\\Base\\Fields\\Number',
+                'slug' => 'configured_decimal',
+                'number_type' => 'decimal',
+                'precision' => 4,
+                'scale' => 2,
+            ],
+            [
                 'name' => 'Tags',
                 'slug' => 'tags',
                 'type' => 'Aura\\Base\\Fields\\Tags',
@@ -142,6 +150,47 @@ describe('default sorting', function () {
 });
 
 describe('meta field sorting', function () {
+    test('configured decimal sorting uses hydrated rounded values with stable ties and overflow last', function () {
+        $rawValues = [
+            'canonical' => '1.23',
+            'rounded equivalent' => '1.234',
+            'rounded higher' => '1.235',
+            'overflow' => '100',
+        ];
+        $posts = collect($rawValues)->mapWithKeys(function (string $rawValue, string $title): array {
+            $post = MetaSortingModel::create([
+                'title' => $title,
+                'content' => 'Configured decimal sorting',
+                'type' => 'Post',
+                'status' => 'publish',
+                'configured_decimal' => '0',
+            ]);
+            DB::table('meta')
+                ->where('metable_id', $post->id)
+                ->where('metable_type', $post->getMorphClass())
+                ->where('key', 'configured_decimal')
+                ->update(['value' => $rawValue]);
+
+            return [$title => $post];
+        });
+        $component = livewire(Table::class, ['query' => null, 'model' => $posts->first()]);
+
+        $component->call('sortBy', 'configured_decimal')
+            ->assertViewHas('rows', fn ($rows): bool => collect($rows->items())->pluck('id')->all() === [
+                $posts['rounded equivalent']->id,
+                $posts['canonical']->id,
+                $posts['rounded higher']->id,
+                $posts['overflow']->id,
+            ]);
+        $component->call('sortBy', 'configured_decimal')
+            ->assertViewHas('rows', fn ($rows): bool => collect($rows->items())->pluck('id')->all() === [
+                $posts['rounded higher']->id,
+                $posts['rounded equivalent']->id,
+                $posts['canonical']->id,
+                $posts['overflow']->id,
+            ]);
+    });
+
     test('can sort by meta text field', function () {
         $post = MetaSortingModel::create([
             'title' => 'Test Post',

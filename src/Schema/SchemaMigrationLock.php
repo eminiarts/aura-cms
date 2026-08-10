@@ -5,6 +5,7 @@ namespace Aura\Base\Schema;
 use Closure;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
+use PDO;
 use RuntimeException;
 use Throwable;
 
@@ -48,29 +49,31 @@ final class SchemaMigrationLock
         $driver = $connection->getDriverName();
 
         if ($driver === 'mysql') {
+            $pdo = $connection->getPdo();
             $name = 'aura:'.substr(hash('sha256', $domain), 0, 59);
-            $result = $connection->selectOne('SELECT GET_LOCK(?, ?) AS acquired', [$name, self::timeoutSeconds()], false);
+            $acquired = self::selectScalar($pdo, 'SELECT GET_LOCK(?, ?) AS acquired', [$name, self::timeoutSeconds()]);
 
-            if ((int) data_get($result, 'acquired') !== 1) {
+            if ((int) $acquired !== 1) {
                 throw self::timeoutException($domain);
             }
 
-            return static fn () => $connection->selectOne('SELECT RELEASE_LOCK(?)', [$name], false);
+            return static fn () => self::selectScalar($pdo, 'SELECT RELEASE_LOCK(?)', [$name]);
         }
 
         if ($driver === 'pgsql') {
+            $pdo = $connection->getPdo();
             [$first, $second] = self::postgresLockIds($domain);
-            $acquired = self::pollUntilTimeout(function () use ($connection, $first, $second): bool {
-                $result = $connection->selectOne('SELECT pg_try_advisory_lock(?, ?) AS acquired', [$first, $second], false);
+            $acquired = self::pollUntilTimeout(function () use ($pdo, $first, $second): bool {
+                $result = self::selectScalar($pdo, 'SELECT pg_try_advisory_lock(?, ?) AS acquired', [$first, $second]);
 
-                return in_array(data_get($result, 'acquired'), [true, 1, '1', 't', 'true'], true);
+                return in_array($result, [true, 1, '1', 't', 'true'], true);
             });
 
             if (! $acquired) {
                 throw self::timeoutException($domain);
             }
 
-            return static fn () => $connection->selectOne('SELECT pg_advisory_unlock(?, ?)', [$first, $second], false);
+            return static fn () => self::selectScalar($pdo, 'SELECT pg_advisory_unlock(?, ?)', [$first, $second]);
         }
 
         if ($driver === 'sqlite') {
@@ -248,7 +251,7 @@ final class SchemaMigrationLock
 
     private static function runOnConnection(Connection $connection, string $domain, Closure $callback): mixed
     {
-        $lockKey = spl_object_id($connection->getPdo()).':'.hash('sha256', $domain);
+        $lockKey = spl_object_id($connection).':'.hash('sha256', $domain);
 
         if (isset(self::$heldLocks[$lockKey])) {
             self::$heldLocks[$lockKey]++;
@@ -271,6 +274,22 @@ final class SchemaMigrationLock
             unset(self::$heldLocks[$lockKey]);
             $release();
         }
+    }
+
+    /**
+     * @param  array<int, mixed>  $bindings
+     */
+    private static function selectScalar(PDO $pdo, string $query, array $bindings): mixed
+    {
+        $statement = $pdo->prepare($query);
+
+        if ($statement === false) {
+            throw new RuntimeException('Unable to prepare Aura database schema lock statement.');
+        }
+
+        $statement->execute($bindings);
+
+        return $statement->fetchColumn();
     }
 
     private static function signedInt32(string $hex): int

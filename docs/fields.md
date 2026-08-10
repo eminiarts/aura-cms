@@ -270,7 +270,8 @@ Numeric input with validation and formatting.
 - Explicit integer or fixed-precision decimal normalization
 - Decimal strings are not truncated through an unconditional integer cast
 - Preserves null, empty string, zero, negative, and invalid legacy values distinctly
-- Filters and sorts text-backed meta values through the same exact sign/length/digit key on SQLite, MySQL, and PostgreSQL
+- Filters and sorts text-backed meta values with the field's integer/decimal, precision, scale, and rounding rules on SQLite, MySQL, and PostgreSQL
+- Uses validated configured `DECIMAL(precision, scale)` / `NUMERIC(precision, scale)` expressions on MySQL/PostgreSQL and exact string keys for legacy unconfigured numbers, without float conversion
 - Treats equivalent plain-decimal spellings equally; scientific notation and malformed or over-65-digit legacy values are not numeric
 - Excludes invalid legacy values from numeric comparisons and places them last in both sort directions
 - Default value support
@@ -447,7 +448,7 @@ Combined date and time picker.
 - Unparseable or ambiguous legacy storage values remain visible as their raw value instead of being assigned a guessed timezone offset
 - Week start customization
 
-**Database:** `timestamp` column type
+**Database:** Laravel `dateTime()` column (`DATETIME` on MySQL)
 
 **Filter Options:**
 - is / is_not

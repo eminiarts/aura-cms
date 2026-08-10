@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Aura\Base\Fields\Number;
 use Aura\Base\Support\ExactDecimal;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -97,7 +98,7 @@ trait Sorting
                         ->where('meta.key', '=', "$field");
                 })
                     ->select($table.'.*')
-                    ->when($this->model->isNumberField($field), function ($query) use ($direction) {
+                    ->when($this->model->isNumberField($field), function ($query) use ($direction, $field) {
                         $connection = DB::connection($this->model->getConnectionName());
 
                         if (! ExactDecimal::supportsSql($connection)) {
@@ -107,7 +108,18 @@ trait Sorting
                         }
 
                         $column = $query->getQuery()->getGrammar()->wrap('meta.value');
-                        ExactDecimal::applySorting($query, $connection, $column, $direction);
+                        $fieldDefinition = $this->model->fieldBySlug($field);
+                        $fieldClass = $this->model->fieldClassBySlug($field);
+
+                        ExactDecimal::applySorting(
+                            $query,
+                            $connection,
+                            $column,
+                            $direction,
+                            $fieldClass instanceof Number
+                                ? $fieldClass->exactQueryConfiguration(is_array($fieldDefinition) ? $fieldDefinition : [])
+                                : null,
+                        );
                     })
                     ->when(! $this->model->isNumberField($field), function ($query) use ($direction) {
                         $query->orderByRaw('CAST(meta.value AS CHAR) '.$direction);
@@ -119,7 +131,18 @@ trait Sorting
                 if ($this->model->isNumberField($field) && DB::connection($this->model->getConnectionName())->getDriverName() === 'sqlite') {
                     $connection = DB::connection($this->model->getConnectionName());
                     $column = $query->getQuery()->getGrammar()->wrap($field);
-                    ExactDecimal::applySorting($query, $connection, $column, $direction);
+                    $fieldDefinition = $this->model->fieldBySlug($field);
+                    $fieldClass = $this->model->fieldClassBySlug($field);
+                    ExactDecimal::applySorting(
+                        $query,
+                        $connection,
+                        $column,
+                        $direction,
+                        $fieldClass instanceof Number
+                            ? $fieldClass->exactQueryConfiguration(is_array($fieldDefinition) ? $fieldDefinition : [])
+                            : null,
+                    );
+                    $query->orderBy($qualifiedKeyName, 'desc');
 
                     return $query;
                 }

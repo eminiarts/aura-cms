@@ -454,6 +454,7 @@ trait QueryFilters
             $wrapped,
             $operators[$filter['operator']],
             $value,
+            $fieldClass->exactQueryConfiguration(is_array($field) ? $field : []),
         );
 
         return true;

@@ -1004,6 +1004,21 @@ test('invalid legacy values remain inspectable instead of becoming fabricated va
         ->and($resource->meta_date)->toBe('legacy-date');
 });
 
+test('number normalization preserves over portability legacy values and rejects new writes before rounding', function () {
+    $number = new Number;
+    $field = [
+        'slug' => 'amount',
+        'number_type' => 'decimal',
+        'precision' => 4,
+        'scale' => 2,
+    ];
+    $value = '0.'.str_repeat('1', 66);
+
+    expect($number->hydrateFromStorage($value, $field, null, FieldValueStorage::Meta))->toBe($value)
+        ->and(fn () => $number->normalizeForStorage($value, $field, null, FieldValueStorage::Meta))
+        ->toThrow(InvalidFieldValue::class, '65-digit portability limit');
+});
+
 test('date rendering is null safe and date only values never shift timezones', function () {
     config()->set('app.timezone', 'Pacific/Kiritimati');
 
