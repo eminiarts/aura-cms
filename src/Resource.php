@@ -952,12 +952,23 @@ class Resource extends Model implements DefinesFields
         ?User $authenticatedUser,
         bool $authorizeUpdate,
         bool $globalWrite,
+        ?array $expectedWheres = null,
+        array $expectedWhereBindings = [],
     ): bool {
         if ($globalWrite) {
             static::ensureGlobalWriteIsSupported();
         }
 
-        $assertIntent = function () use ($connection, $query, $writePdo, $table, $teamId, $ownerId): void {
+        $assertIntent = function () use (
+            $connection,
+            $query,
+            $writePdo,
+            $table,
+            $teamId,
+            $ownerId,
+            $expectedWheres,
+            $expectedWhereBindings,
+        ): void {
             $restoreTransactionState = static function () use ($connection, $writePdo): void {
                 if ($writePdo->inTransaction() && $connection->transactionLevel() === 0) {
                     $transactionsProperty = new \ReflectionProperty(Connection::class, 'transactions');
@@ -977,6 +988,10 @@ class Resource extends Model implements DefinesFields
             if ($this->getConnection() !== $connection
                 || $this->getTable() !== $table
                 || $query->getQuery()->from !== $table
+                || ($expectedWheres !== null && (
+                    $query->getQuery()->wheres !== $expectedWheres
+                    || $query->getQuery()->getRawBindings()['where'] !== $expectedWhereBindings
+                ))
                 || ($this->getAttribute('team_id') === null) !== ($teamId === null)
                 || (string) $this->getAttribute('team_id') !== (string) $teamId
                 || $this->getAttribute('user_id') !== $ownerId) {
@@ -1215,6 +1230,9 @@ class Resource extends Model implements DefinesFields
         }
 
         $dirty = $this->getDirtyForUpdate();
+        $saveQuery = $this->setKeysForSaveQuery($query);
+        $expectedWheres = $saveQuery->getQuery()->wheres;
+        $expectedWhereBindings = $saveQuery->getQuery()->getRawBindings()['where'];
         $authorize = fn (): bool => $this->authorizePrivilegedPersistence(
             $connection,
             $query,
@@ -1225,15 +1243,17 @@ class Resource extends Model implements DefinesFields
             $authenticatedUser,
             $authorizeUpdate,
             $globalWrite,
+            $expectedWheres,
+            $expectedWhereBindings,
         );
 
         if ($dirty !== []) {
-            $query->getQuery()->applyBeforeQueryCallbacks();
+            $saveQuery->getQuery()->applyBeforeQueryCallbacks();
             $this->executeWithFinalConnectionAuthorization(
                 $connection,
                 $writePdo,
                 $authorize,
-                fn (): int => $this->setKeysForSaveQuery($query)->update($dirty),
+                fn (): int => $saveQuery->update($dirty),
             );
             $this->syncChanges();
             parent::fireModelEvent('updated', false);

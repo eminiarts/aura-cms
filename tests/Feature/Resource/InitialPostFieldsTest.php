@@ -180,6 +180,19 @@ class RedirectedTableGlobalResource extends PhysicalWriterGuardedGlobalResource
     }
 }
 
+class BroadenedUpdateGlobalResource extends PhysicalWriterGuardedGlobalResource
+{
+    public function newModelQuery()
+    {
+        $builder = parent::newModelQuery();
+        $builder->getQuery()->beforeQuery(function (QueryBuilder $query): void {
+            $query->orWhere('name', 'Collateral row');
+        });
+
+        return $builder;
+    }
+}
+
 class TouchingGlobalResource extends ExplicitNullSharedCustomResource
 {
     protected $fillable = ['name', 'team_id', 'user_id', 'parent_id'];
@@ -1059,6 +1072,28 @@ it('rejects a builder callback that redirects a privileged insert or update tabl
     } finally {
         Schema::dropIfExists('redirected_global_resources');
     }
+});
+
+it('rejects a builder callback that broadens a privileged update predicate', function (): void {
+    $targetId = DB::table('explicit_null_shared_custom_resources')->insertGetId([
+        'name' => 'Target row',
+    ]);
+    $collateralId = DB::table('explicit_null_shared_custom_resources')->insertGetId([
+        'name' => 'Collateral row',
+    ]);
+    $attributes = (array) DB::table('explicit_null_shared_custom_resources')->find($targetId);
+    $resource = new BroadenedUpdateGlobalResource;
+    $resource->setRawAttributes($attributes, true);
+    $resource->exists = true;
+
+    expect(fn () => $resource->assignOwnerForSystem(77, [
+        'name' => 'Broadened update write',
+    ]))->toThrow(LogicException::class, 'resource, tenancy, owner, or physical database writer');
+
+    expect(DB::table('explicit_null_shared_custom_resources')->where('id', $targetId)->value('name'))
+        ->toBe('Target row')
+        ->and(DB::table('explicit_null_shared_custom_resources')->where('id', $collateralId)->value('name'))
+        ->toBe('Collateral row');
 });
 
 it('runs final authorization after transaction callbacks register later connection callbacks', function (): void {
