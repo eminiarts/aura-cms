@@ -115,7 +115,7 @@ class Create extends Component
             ];
         }
 
-        $this->hydrateResourceFormFields(FieldValueContext::Create);
+        $this->initializeFieldsWithDefaults();
 
         // Get all URL parameters
         $urlParameters = request()->query();
@@ -198,5 +198,10 @@ class Create extends Component
     public function setModel($model)
     {
         $this->model = $model;
+    }
+
+    protected function initializeFieldsWithDefaults(): void
+    {
+        $this->hydrateResourceFormFields(FieldValueContext::Create);
     }
 }

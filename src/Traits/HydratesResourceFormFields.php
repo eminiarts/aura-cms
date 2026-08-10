@@ -6,6 +6,8 @@ use Aura\Base\ConditionalLogic;
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Fields\Boolean;
 use Aura\Base\Fields\Checkbox;
+use Aura\Base\Fields\File;
+use Aura\Base\Fields\Image;
 use Aura\Base\Fields\Slug;
 use Aura\Base\Fields\Tags;
 use Illuminate\Support\Arr;
@@ -135,6 +137,10 @@ trait HydratesResourceFormFields
 
         if ($field['field'] instanceof Tags) {
             return [true, []];
+        }
+
+        if ($field['field'] instanceof File || $field['field'] instanceof Image) {
+            return [true, null];
         }
 
         return [false, null];
