@@ -7,6 +7,7 @@ use Aura\Base\Resource;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -63,6 +64,31 @@ class Core06BulkResource extends Resource
             'label' => 'Invalid download',
             'method' => 'collection',
         ],
+        'invalidTypedDownload' => [
+            'ability' => 'view',
+            'download' => [
+                'content_type' => 'text/plain',
+                'filename' => 'invalid-typed.txt',
+            ],
+            'label' => 'Invalid typed download',
+            'method' => 'collection',
+        ],
+        'invalidParameterMapDownload' => [
+            'ability' => 'view',
+            'download' => [
+                'content_type' => 'text/plain',
+                'filename' => 'invalid-parameters.txt',
+            ],
+            'label' => 'Invalid parameter map download',
+            'method' => 'collection',
+            'parameters' => [
+                'prefix' => [
+                    'label' => 'Prefix',
+                    'rules' => ['required', 'string'],
+                    'type' => 'string',
+                ],
+            ],
+        ],
         'smallDownload' => [
             'ability' => 'view',
             'label' => 'Small download',
@@ -103,6 +129,11 @@ class Core06BulkResource extends Resource
                 'slug' => 'title',
                 'type' => 'Aura\\Base\\Fields\\Text',
             ],
+            [
+                'name' => 'Duplicate rank',
+                'slug' => 'duplicate_rank',
+                'type' => 'Aura\\Base\\Fields\\Text',
+            ],
         ];
     }
 
@@ -116,12 +147,34 @@ class Core06BulkResource extends Resource
         return 'must not run';
     }
 
+    public function invalidParameterMapDownload(array $ids, string $parameters): string
+    {
+        return implode(',', $ids).$parameters;
+    }
+
+    public function invalidTypedDownload(string $ids): string
+    {
+        return $ids;
+    }
+
     public function smallDownload(array $ids): StreamedResponse
     {
         return response()->streamDownload(
             static fn () => print implode("\n", $ids)."\n",
             'small.txt',
         );
+    }
+
+    public function sort_duplicate_rank(Builder $query, string $direction): void
+    {
+        $duplicates = DB::query()
+            ->selectRaw('1 as duplicate_marker')
+            ->unionAll(DB::query()->selectRaw('2 as duplicate_marker'));
+
+        $query->crossJoinSub($duplicates, 'core06_sorted_duplicates')
+            ->orderBy('duplicate_marker', $direction)
+            ->orderByRaw('CASE WHEN posts.title = ? THEN 0 ELSE 1 END', ['Bravo'])
+            ->orderBy($this->qualifyColumn('title'), 'desc');
     }
 }
 
@@ -208,6 +261,63 @@ test('large download scopes de-duplicate in SQL before bounded streaming', funct
         ->toBe([25, 25, 10]);
 });
 
+test('signed downloads preserve custom display sorting while de-duplicating non-adjacent joins', function () {
+    config()->set('aura.security.bulk_downloads.cache_store', 'file');
+    collect(['Alpha', 'Charlie', 'Bravo'])->each(fn (string $title) => Core06BulkResource::create([
+        'title' => $title,
+    ]));
+
+    $component = livewire(Table::class, ['query' => null, 'model' => new Core06BulkResource])
+        ->set('sorts', ['duplicate_rank' => 'desc'])
+        ->call('selectAllRows')
+        ->call('bulkCollectionAction', 'downloadCsv', ['prefix' => 'ordered'])
+        ->assertRedirect();
+
+    $ids = collect(explode("\n", trim(
+        $this->get($component->effects['redirect'])->assertSuccessful()->streamedContent()
+    )))->map(fn (string $line): int => (int) (string) str($line)->after(','));
+    $titles = Core06BulkResource::query()->whereKey($ids)->pluck('title', 'id');
+
+    expect($ids)->toHaveCount(3)
+        ->and($ids->unique())->toHaveCount(3)
+        ->and($ids->map(fn (int $id): string => $titles[$id])->all())
+        ->toBe(['Bravo', 'Charlie', 'Alpha']);
+});
+
+test('signed downloads authorize in bounded queries without reloading the receiver', function () {
+    config()->set('aura.security.bulk_downloads.cache_store', 'file');
+    config()->set('aura.security.bulk_downloads.chunk_size', 20);
+    $resources = collect(range(1, 45))->map(fn (int $number) => Core06BulkResource::create([
+        'title' => 'Bounded export '.$number,
+    ]));
+    $queries = [];
+    DB::listen(function (QueryExecuted $query) use (&$queries): void {
+        $queries[] = $query->sql;
+    });
+    $authorizationQueryCount = function () use (&$queries): int {
+        return collect($queries)->filter(fn (string $sql): bool => str_contains($sql, 'select "posts".* from "posts"')
+            && str_contains($sql, '"posts"."id" in ('))->count();
+    };
+
+    $component = livewire(Table::class, ['query' => null, 'model' => new Core06BulkResource])
+        ->set('selected', $resources->pluck('id')->all())
+        ->call('bulkCollectionAction', 'downloadCsv', ['prefix' => 'bounded'])
+        ->assertRedirect();
+
+    expect($authorizationQueryCount())->toBe(3)
+        ->and(Core06BulkResource::$downloadChunks)->toBe([]);
+
+    $response = $this->get($component->effects['redirect'])->assertSuccessful();
+
+    expect($authorizationQueryCount())->toBe(6)
+        ->and(Core06BulkResource::$downloadChunks)->toBe([]);
+
+    $response->streamedContent();
+
+    expect($authorizationQueryCount())->toBe(9)
+        ->and(Core06BulkResource::$downloadChunks)->toHaveCount(3);
+});
+
 test('bulk download URLs reject tampering and expiration', function () {
     config()->set('aura.security.bulk_downloads.cache_store', 'file');
     $resource = Core06BulkResource::create(['title' => 'Export match']);
@@ -255,16 +365,23 @@ test('bulk downloads reject forged parameters, empty scopes, and denied rows bef
     expect(Core06BulkResource::$downloadChunks)->toBe([]);
 });
 
-test('bulk downloads reject an invalid handler signature before issuing a URL', function () {
+test('bulk downloads reject invalid handler signatures before issuing a URL', function (
+    string $action,
+    array $parameters,
+) {
     config()->set('aura.security.bulk_downloads.cache_store', 'file');
     $resource = Core06BulkResource::create(['title' => 'Invalid handler']);
 
     livewire(Table::class, ['query' => null, 'model' => new Core06BulkResource])
         ->set('selected', [$resource->getKey()])
-        ->call('bulkCollectionAction', 'invalidDownload')
+        ->call('bulkCollectionAction', $action, $parameters)
         ->assertStatus(422)
         ->assertNoRedirect();
-});
+})->with([
+    'wrong arity' => ['invalidDownload', []],
+    'scalar ids' => ['invalidTypedDownload', []],
+    'scalar parameter map' => ['invalidParameterMapDownload', ['prefix' => 'test']],
+]);
 
 test('a different user cannot consume a bulk download URL owned by its issuer', function () {
     config()->set('aura.security.bulk_downloads.cache_store', 'file');

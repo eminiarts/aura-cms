@@ -22,7 +22,11 @@ use Illuminate\Database\Query\Grammars\MariaDbGrammar;
 use Illuminate\Database\Query\Grammars\MySqlGrammar;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Validation\ValidationException;
+use ReflectionIntersectionType;
 use ReflectionMethod;
+use ReflectionNamedType;
+use ReflectionType;
+use ReflectionUnionType;
 use Stringable;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
@@ -458,17 +462,12 @@ final class TableMutationDispatcher
             $selectAllExclusions,
         );
 
-        $firstId = $this->iterateDownloadSelection(
+        $receiver = $this->iterateDownloadSelection(
             $selection,
             $modelDescriptor,
             $descriptor['ability'],
             static function (array $ids): void {},
         );
-        $receiver = $this->authorizedDownloadRecords(
-            [$firstId],
-            $modelDescriptor,
-            $descriptor['ability'],
-        )->first();
 
         if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
             abort(422, 'Bulk downloads require an Aura table resource.');
@@ -701,17 +700,12 @@ final class TableMutationDispatcher
 
         $download = $this->downloadDefinition($definition);
         $parameters = $this->bulkActionParameters->validate($definition, $context['parameters']);
-        $firstId = $this->iterateDownloadSelection(
+        $receiver = $this->iterateDownloadSelection(
             $context['selection'],
             $modelDescriptor,
             $descriptor['ability'],
             static function (array $ids): void {},
         );
-        $receiver = $this->authorizedDownloadRecords(
-            [$firstId],
-            $modelDescriptor,
-            $descriptor['ability'],
-        )->first();
 
         if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
             abort(422, 'Bulk downloads require an Aura table resource.');
@@ -1586,6 +1580,57 @@ final class TableMutationDispatcher
         return $download;
     }
 
+    private function downloadOrderExpression(QueryBuilder $query): string
+    {
+        if (
+            (is_array($query->unions) && $query->unions !== [])
+            || (is_array($query->unionOrders) && $query->unionOrders !== [])
+            || ! is_array($query->orders)
+            || $query->orders === []
+        ) {
+            abort(422, 'The table download query contains an unsupported ordering.');
+        }
+
+        $grammar = $query->getGrammar();
+        $orders = [];
+
+        foreach ($query->orders as $order) {
+            if (! is_array($order)) {
+                abort(422, 'The table download query contains an unsupported ordering.');
+            }
+
+            $type = isset($order['type']) && is_string($order['type'])
+                ? strtolower($order['type'])
+                : (array_key_exists('column', $order) ? 'basic' : '');
+
+            if ($type === 'basic') {
+                $column = $order['column'] ?? null;
+                $direction = strtolower((string) ($order['direction'] ?? ''));
+
+                if (
+                    (! is_string($column) && ! ($column instanceof ExpressionContract))
+                    || ! in_array($direction, ['asc', 'desc'], true)
+                ) {
+                    abort(422, 'The table download query contains an unsupported ordering.');
+                }
+
+                $orders[] = $grammar->wrap($column).' '.$direction;
+
+                continue;
+            }
+
+            if ($type === 'raw' && is_string($order['sql'] ?? null) && $order['sql'] !== '') {
+                $orders[] = $order['sql'];
+
+                continue;
+            }
+
+            abort(422, 'The table download query contains an unsupported ordering.');
+        }
+
+        return implode(', ', $orders);
+    }
+
     /**
      * @return array{
      *     bindings: list<mixed>,
@@ -1644,6 +1689,7 @@ final class TableMutationDispatcher
         }
 
         $keyAlias = '__aura_download_key';
+        $orderAlias = '__aura_download_order';
         $qualifiedKey = $modelDescriptor->table.'.'.$modelDescriptor->keyName;
         $effectiveQuery->select($qualifiedKey.' as '.$keyAlias);
 
@@ -1655,11 +1701,20 @@ final class TableMutationDispatcher
         $this->applyVerifiedBeforeQueryCallbacks($query);
         $modelDescriptor->assertMatches($effectiveQuery);
         $this->normalizeMutationConstraintList($query->getBindings(), $query);
+        $order = $this->downloadOrderExpression($query);
+        $orderBindings = $query->getRawBindings()['order'] ?? [];
+        $query->selectRaw(
+            'DENSE_RANK() OVER (ORDER BY '.$order.') as '.$query->getGrammar()->wrap($orderAlias),
+            $orderBindings,
+        );
         $query = $model->newQuery()
             ->getQuery()
             ->fromSub($query, '__aura_download_scope')
             ->select($keyAlias)
-            ->distinct();
+            ->selectRaw('MIN('.$query->getGrammar()->wrap($orderAlias).') as '.$query->getGrammar()->wrap($orderAlias))
+            ->groupBy($keyAlias)
+            ->orderBy($orderAlias)
+            ->orderBy($keyAlias);
         $bindings = $query->getConnection()->prepareBindings($query->getBindings());
 
         return [
@@ -1720,7 +1775,7 @@ final class TableMutationDispatcher
         TableMutationModelDescriptor $modelDescriptor,
         string $ability,
         Closure $consume,
-    ): int|string {
+    ): Model {
         if (
             array_keys($selection) !== ['bindings', 'excluded', 'expected', 'key_alias', 'sql']
             || ! is_array($selection['bindings'])
@@ -1756,7 +1811,7 @@ final class TableMutationDispatcher
         $matchedExpectedKeys = [];
         $matchedExcludedKeys = [];
         $chunk = [];
-        $firstId = null;
+        $receiver = null;
         $candidateCount = 0;
         $connection = $modelDescriptor->connectionInstance();
 
@@ -1795,18 +1850,19 @@ final class TableMutationDispatcher
                 ]);
             }
 
-            $firstId ??= $id;
             $chunk[] = $id;
 
             if (count($chunk) === $this->bulkDownloadChunkSize()) {
-                $this->authorizedDownloadRecords($chunk, $modelDescriptor, $ability);
+                $authorizedRecords = $this->authorizedDownloadRecords($chunk, $modelDescriptor, $ability);
+                $receiver ??= $authorizedRecords->first();
                 $consume($chunk);
                 $chunk = [];
             }
         }
 
         if ($chunk !== []) {
-            $this->authorizedDownloadRecords($chunk, $modelDescriptor, $ability);
+            $authorizedRecords = $this->authorizedDownloadRecords($chunk, $modelDescriptor, $ability);
+            $receiver ??= $authorizedRecords->first();
             $consume($chunk);
         }
 
@@ -1822,13 +1878,13 @@ final class TableMutationDispatcher
             ]);
         }
 
-        if ($firstId === null) {
+        if (! $receiver instanceof Model) {
             throw ValidationException::withMessages([
                 'selected' => 'Select at least one record.',
             ]);
         }
 
-        return $firstId;
+        return $receiver;
     }
 
     /**
@@ -1998,8 +2054,20 @@ final class TableMutationDispatcher
             $hasParameters => $method->getNumberOfParameters() === 1,
             default => $method->getNumberOfRequiredParameters() === 0,
         };
+        $arrayParameterCount = match (true) {
+            $mode === self::BULK_MODE_COLLECTION && $hasParameters => 2,
+            $mode === self::BULK_MODE_COLLECTION || $hasParameters => 1,
+            default => 0,
+        };
+        $parametersAcceptArrays = collect(array_slice($method->getParameters(), 0, $arrayParameterCount))
+            ->every(fn ($parameter): bool => $this->reflectionTypeAcceptsArray($parameter->getType()));
 
-        if (! $method->isPublic() || $method->isStatic() || ! $validParameterCount) {
+        if (
+            ! $method->isPublic()
+            || $method->isStatic()
+            || ! $validParameterCount
+            || ! $parametersAcceptArrays
+        ) {
             abort(422, 'The declared table action cannot be executed.');
         }
 
@@ -2418,6 +2486,29 @@ final class TableMutationDispatcher
         }
 
         return min($chunkSize, $this->maximumRecordCount());
+    }
+
+    private function reflectionTypeAcceptsArray(?ReflectionType $type): bool
+    {
+        if ($type === null) {
+            return true;
+        }
+
+        if ($type instanceof ReflectionNamedType) {
+            return $type->isBuiltin() && in_array($type->getName(), ['array', 'iterable', 'mixed'], true);
+        }
+
+        if ($type instanceof ReflectionUnionType) {
+            return collect($type->getTypes())
+                ->contains(fn (ReflectionType $member): bool => $this->reflectionTypeAcceptsArray($member));
+        }
+
+        if ($type instanceof ReflectionIntersectionType) {
+            return collect($type->getTypes())
+                ->every(fn (ReflectionType $member): bool => $this->reflectionTypeAcceptsArray($member));
+        }
+
+        return false;
     }
 
     /**

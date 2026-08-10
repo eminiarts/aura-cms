@@ -471,7 +471,8 @@ parameters use a multi-select with options or a comma/newline input without them
 with a `download` declaration use Aura's
 single-use temporary signed HTTP stream instead of Livewire's buffered download payload. Handlers
 receive one bounded ID chunk at a time, followed by the validated parameter array when parameters
-are declared.
+are declared. Both arguments must accept arrays. The export retains the exact displayed ordering and
+de-duplicates joined rows in SQL before bounded authorization and streaming.
 
 ### Table Configuration
 
