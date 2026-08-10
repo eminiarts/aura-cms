@@ -136,6 +136,6 @@ trait AuraResourceUrls
     {
         $parameter = Route::getRoutes()->getByName($name)?->parameterNames()[0] ?? 'id';
 
-        return [$parameter => $this->getKey()];
+        return [$parameter => $this];
     }
 }

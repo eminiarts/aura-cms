@@ -161,7 +161,7 @@ class Table extends Component
             $record = $mutations->findRecord(clone $this->mutationQuery(), $trustedModel, $data['id']);
             $mutations->authorize($record, 'view');
 
-            return redirect()->route('aura.'.$resourceSlug.'.view', [$record->getKey()]);
+            return redirect()->route('aura.'.$resourceSlug.'.view', [$record]);
         }
         // edit
         if ($data['action'] == 'edit') {

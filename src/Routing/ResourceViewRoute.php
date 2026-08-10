@@ -48,7 +48,7 @@ final class ResourceViewRoute
                 continue;
             }
 
-            if (! is_a($resource, $model, true) && ! is_a($model, $resource, true)) {
+            if ($model !== $resource) {
                 throw new InvalidArgumentException("The [{$component}] view component binds [{$model}], which does not match [{$resource}].");
             }
 

@@ -60,7 +60,7 @@ class MediaTable extends Table
         if ($action === 'view') {
             Gate::authorize('view', $attachment);
 
-            return redirect()->route('aura.'.$attachment->getSlug().'.view', [$attachment->getKey()]);
+            return redirect()->route('aura.'.$attachment->getSlug().'.view', [$attachment]);
         }
 
         if ($action === 'edit') {
