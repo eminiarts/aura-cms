@@ -10,6 +10,7 @@ use Aura\Base\GlobalSearch\DatabaseStatementDeadline;
 use Aura\Base\GlobalSearch\FreshProcessGlobalSearchExecutor;
 use Aura\Base\GlobalSearch\FreshProcessGlobalSearchSupervisor;
 use Aura\Base\GlobalSearch\GlobalSearchBudget;
+use Aura\Base\GlobalSearch\GlobalSearchGuardedEventDispatcher;
 use Aura\Base\GlobalSearch\GlobalSearchQueryGuard;
 use Aura\Base\GlobalSearch\GlobalSearchWorkerContext;
 use Aura\Base\Livewire\GlobalSearch;
@@ -43,6 +44,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Events\ConnectionEstablished;
 use Illuminate\Database\Query\Builder as BaseQueryBuilder;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Events\Dispatcher;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -2049,6 +2051,51 @@ test('fresh workers meter late connection extensions after listeners are removed
     'provider-captured original manager' => 'query-churn-late-extension-captured-manager',
 ]);
 
+test('fresh workers reject event dispatcher rebinding before late extensions on captured managers', function (string $mode) {
+    $harness = configureFreshProcessSearchHarness($mode, [
+        GlobalSearchProcessCapturedManagerConnectionChurnResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+
+    try {
+        $this->actingAs($harness['user']);
+
+        Livewire::test(GlobalSearch::class)
+            ->set('search', 'Fresh Process Needle')
+            ->assertSee('Fresh Process Needle Current Team');
+
+        $marker = (string) @file_get_contents($harness['marker']);
+
+        expect(strlen($marker))->toBeLessThanOrEqual(7)
+            ->and($marker)->not->toContain('raw-dispatcher-observed');
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+})->with([
+    'late connection-name extension' => 'query-churn-dispatcher-rebind-late-extension-name',
+    'late driver extension' => 'query-churn-dispatcher-rebind-late-extension-driver',
+    'provider-prebound rebinding callback' => 'query-churn-dispatcher-prebound-callback-late-extension-name',
+]);
+
+test('query guards preserve replacement dispatcher semantics while rejecting rebinding', function () {
+    $observedReplacements = [];
+    app()->rebinding('events', static function (mixed $application, mixed $replacement) use (&$observedReplacements): void {
+        $observedReplacements[] = $replacement;
+    });
+    $queryGuard = new GlobalSearchQueryGuard(5);
+    $queryGuard->install();
+    $observedReplacements = [];
+    $replacementDispatcher = new Dispatcher(app());
+    $replacementDispatcher->listen('aura.global-search.custom-dispatch', fn (): string => 'preserved');
+
+    expect(fn () => app()->instance('events', $replacementDispatcher))
+        ->toThrow(GlobalSearchExecutionFailed::class)
+        ->and(Event::dispatch('aura.global-search.custom-dispatch'))
+        ->toBe(['preserved'])
+        ->and($observedReplacements)
+        ->each->toBeInstanceOf(GlobalSearchGuardedEventDispatcher::class);
+});
+
 test('fresh workers reject forged stdout envelopes and abnormal termination', function (string $mode) {
     $harness = configureFreshProcessSearchHarness($mode, [GlobalSearchProcessOutputAttackResource::class]);
     $executor = app(FreshProcessGlobalSearchExecutor::class);
@@ -2124,6 +2171,48 @@ test('fresh workers reject provider access to public completion authority', func
         ], 1_500, 1_048_576))->toThrow(GlobalSearchExecutionFailed::class);
     } finally {
         cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh workers reject a provider replacement for the worker command name', function () {
+    $harness = configureFreshProcessSearchHarness(
+        'provider-replaced-worker-command',
+        [GlobalSearchProcessOutputAttackResource::class],
+    );
+    $executor = app(FreshProcessGlobalSearchExecutor::class);
+
+    try {
+        expect(fn () => $executor->run([
+            'operation' => 'search',
+            'context' => signedFreshProcessContext($harness['user']),
+            'query_limit' => 20,
+            'resource' => GlobalSearchProcessOutputAttackResource::class,
+            'resource_order' => 0,
+            'search_term' => 'Fresh Process Needle',
+            'global_limit' => 15,
+            'execution_timeout_ms' => 1_500,
+        ], 1_500, 1_048_576))->toThrow(GlobalSearchExecutionFailed::class);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('completion capability consumption rejects unlink failure and destroys the token', function () {
+    $path = tempnam(sys_get_temp_dir(), 'aura-global-search-capability-');
+
+    expect($path)->toBeString();
+
+    $token = str_repeat('a', 64);
+    file_put_contents($path, $token);
+    $consume = new ReflectionMethod(FreshProcessGlobalSearchSupervisor::class, 'consumeCompletionCapability');
+
+    try {
+        $result = $consume->invoke(null, $path, static fn (string $capabilityPath): bool => false);
+
+        expect($result)->toBeNull()
+            ->and(file_get_contents($path))->toBe('');
+    } finally {
+        @unlink($path);
     }
 });
 

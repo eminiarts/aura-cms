@@ -5,7 +5,13 @@ namespace Aura\Base\Tests\Fixtures;
 use Aura\Base\Commands\RunGlobalSearchWorker;
 use Aura\Base\Facades\Aura;
 use Aura\Base\GlobalSearch\FreshProcessGlobalSearchSupervisor;
+use Aura\Base\GlobalSearch\GlobalSearchGuardedEventDispatcher;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Connectors\ConnectionFactory;
+use Illuminate\Database\DatabaseManager;
+use Illuminate\Database\Events\ConnectionEstablished;
+use Illuminate\Events\Dispatcher;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use ReflectionClass;
@@ -21,6 +27,11 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
         }
 
         $fixtureMode = getenv('AURA_GLOBAL_SEARCH_FIXTURE_MODE');
+
+        if ($fixtureMode === 'provider-replaced-worker-command') {
+            $this->commands([GlobalSearchReplacementWorkerCommand::class]);
+        }
+
         $databaseConfiguration = $fixtureMode === 'tenant-collision'
             ? [
                 'aura.global_search.worker_connections' => [
@@ -123,8 +134,45 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
         if (in_array($fixtureMode, [
             'query-churn-captured-manager',
             'query-churn-late-extension-captured-manager',
+            'query-churn-dispatcher-rebind-late-extension-name',
+            'query-churn-dispatcher-rebind-late-extension-driver',
+            'query-churn-dispatcher-prebound-callback-late-extension-name',
         ], true)) {
             GlobalSearchProcessCapturedManagerConnectionChurnResource::captureDatabase(app('db'));
+        }
+
+        if ($fixtureMode === 'query-churn-dispatcher-prebound-callback-late-extension-name') {
+            $capturedDatabase = app('db');
+
+            app()->rebinding('events', static function (mixed $application, mixed $replacement) use ($capturedDatabase): void {
+                if (! $capturedDatabase instanceof DatabaseManager
+                    || ! $replacement instanceof Dispatcher
+                    || $replacement instanceof GlobalSearchGuardedEventDispatcher) {
+                    return;
+                }
+
+                file_put_contents(
+                    (string) getenv('AURA_GLOBAL_SEARCH_HOOK_MARKER'),
+                    'raw-dispatcher-observed',
+                    FILE_APPEND,
+                );
+                Event::forget(ConnectionEstablished::class);
+                $capturedDatabase->extend(
+                    'process_search',
+                    fn (array $configuration, string $connectionName) => (new ConnectionFactory(app()))
+                        ->make($configuration, $connectionName),
+                );
+                $capturedDatabase->purge('process_search');
+
+                foreach (range(1, 10) as $iteration) {
+                    $capturedDatabase->connection('process_search')->select('select 1');
+                    file_put_contents(
+                        (string) getenv('AURA_GLOBAL_SEARCH_HOOK_MARKER'),
+                        'q',
+                        FILE_APPEND,
+                    );
+                }
+            });
         }
 
         $resources = match ($fixtureMode) {
@@ -184,11 +232,11 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
                 GlobalSearchProcessCapturedManagerConnectionChurnResource::class,
                 GlobalSearchProcessResource::class,
             ],
-            'query-churn-late-extension-captured-manager', 'query-churn-late-extension-current-manager' => [
+            'query-churn-late-extension-captured-manager', 'query-churn-late-extension-current-manager', 'query-churn-dispatcher-rebind-late-extension-name', 'query-churn-dispatcher-rebind-late-extension-driver', 'query-churn-dispatcher-prebound-callback-late-extension-name' => [
                 GlobalSearchProcessCapturedManagerConnectionChurnResource::class,
                 GlobalSearchProcessResource::class,
             ],
-            'forged-exit', 'forged-die', 'forged-completed-code', 'provider-forged-completed-code', 'provider-public-completion-forge', 'forged-fatal', 'forged-multiple', 'forged-partial', 'stderr-noise' => [
+            'forged-exit', 'forged-die', 'forged-completed-code', 'provider-forged-completed-code', 'provider-public-completion-forge', 'provider-replaced-worker-command', 'forged-fatal', 'forged-multiple', 'forged-partial', 'stderr-noise' => [
                 GlobalSearchProcessOutputAttackResource::class,
             ],
             'raw-pdo' => [

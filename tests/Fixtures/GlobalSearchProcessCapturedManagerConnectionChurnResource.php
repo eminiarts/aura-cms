@@ -3,12 +3,14 @@
 namespace Aura\Base\Tests\Fixtures;
 
 use Aura\Base\Contracts\GlobalSearchAdapter;
+use Aura\Base\Exceptions\GlobalSearchExecutionFailed;
 use Aura\Base\GlobalSearch\GlobalSearchBudget;
 use Aura\Base\Resource;
 use Illuminate\Database\Connectors\ConnectionFactory;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Events\ConnectionEstablished;
+use Illuminate\Events\Dispatcher;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Event;
 
@@ -33,11 +35,22 @@ final class GlobalSearchProcessCapturedManagerConnectionChurnAdapter implements 
             return collect();
         }
 
+        if (str_contains($mode, 'dispatcher-rebind')) {
+            $replacementDispatcher = new Dispatcher(app());
+
+            try {
+                app()->instance('events', $replacementDispatcher);
+            } catch (GlobalSearchExecutionFailed) {
+            }
+
+            Event::swap($replacementDispatcher);
+        }
+
         Event::forget(ConnectionEstablished::class);
 
         if (str_contains($mode, 'late-extension')) {
             $database->extend(
-                'process_search',
+                str_ends_with($mode, '-driver') ? 'sqlite' : 'process_search',
                 fn (array $configuration, string $connectionName) => (new ConnectionFactory(app()))
                     ->make($configuration, $connectionName),
             );

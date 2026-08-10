@@ -2,6 +2,9 @@
 
 namespace Aura\Base\GlobalSearch;
 
+use Aura\Base\Commands\RunGlobalSearchWorker;
+use Closure;
+use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Foundation\Application;
 use Symfony\Component\Console\Input\ArgvInput;
 use Throwable;
@@ -29,8 +32,9 @@ final class FreshProcessGlobalSearchSupervisor
     private const REQUIRED_FUNCTIONS = [
         'fclose',
         'feof',
-        'file_get_contents',
+        'fflush',
         'fread',
+        'ftruncate',
         'fopen',
         'fwrite',
         'getenv',
@@ -51,6 +55,7 @@ final class FreshProcessGlobalSearchSupervisor
         'posix_getppid',
         'posix_kill',
         'random_bytes',
+        'rewind',
         'stream_set_blocking',
         'stream_socket_pair',
         'sys_get_temp_dir',
@@ -372,12 +377,28 @@ final class FreshProcessGlobalSearchSupervisor
         }
     }
 
-    private static function consumeCompletionCapability(string $path): ?string
+    private static function consumeCompletionCapability(string $path, ?Closure $unlinkCapability = null): ?string
     {
-        $token = @file_get_contents($path, false, null, 0, 65);
-        @unlink($path);
+        $handle = @fopen($path, 'r+b');
 
-        return is_string($token) && preg_match('/^[a-f0-9]{64}$/D', $token) === 1
+        if (! is_resource($handle)) {
+            return null;
+        }
+
+        $token = @fread($handle, 65);
+        $neutralized = @rewind($handle)
+            && @fwrite($handle, str_repeat("\0", 64)) === 64
+            && @fflush($handle);
+        $truncated = $neutralized && @ftruncate($handle, 0) && @fflush($handle);
+        @fclose($handle);
+        $unlinked = $unlinkCapability === null
+            ? @unlink($path)
+            : $unlinkCapability($path);
+
+        return $truncated
+            && $unlinked
+            && is_string($token)
+            && preg_match('/^[a-f0-9]{64}$/D', $token) === 1
             ? $token
             : null;
     }
@@ -438,6 +459,7 @@ final class FreshProcessGlobalSearchSupervisor
     private static function handleApplicationCommand(string $autoloadPath, string $bootstrapPath): int
     {
         require_once $autoloadPath;
+        require_once dirname(__DIR__).'/Commands/RunGlobalSearchWorker.php';
 
         $application = require $bootstrapPath;
 
@@ -445,7 +467,31 @@ final class FreshProcessGlobalSearchSupervisor
             return self::WORKER_EARLY_TERMINATION_EXIT_CODE;
         }
 
-        return $application->handleCommand(new ArgvInput);
+        $kernel = $application->make(ConsoleKernel::class);
+
+        if (! $kernel instanceof ConsoleKernel) {
+            return self::WORKER_EARLY_TERMINATION_EXIT_CODE;
+        }
+
+        $kernel->bootstrap();
+        $registeredWorker = $kernel->all()['aura:global-search-worker'] ?? null;
+
+        if (! $registeredWorker instanceof RunGlobalSearchWorker
+            || get_class($registeredWorker) !== RunGlobalSearchWorker::class) {
+            return self::WORKER_EARLY_TERMINATION_EXIT_CODE;
+        }
+
+        $worker = $application->make(GlobalSearchWorker::class);
+
+        if (! $worker instanceof GlobalSearchWorker || get_class($worker) !== GlobalSearchWorker::class) {
+            return self::WORKER_EARLY_TERMINATION_EXIT_CODE;
+        }
+
+        $input = new ArgvInput;
+        $status = (new RunGlobalSearchWorker)->handle($worker);
+        $kernel->terminate($input, $status);
+
+        return $status;
     }
 
     /**
