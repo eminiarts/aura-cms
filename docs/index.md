@@ -41,6 +41,7 @@ Welcome to the comprehensive documentation for Aura CMS - a modern, flexible con
 
 ## 🔌 API & Integration
 - [API Integration Guide](/api-reference) - Build application-specific endpoints around Aura resources
+- [Scoped preferences](/preferences) - Typed user, team, everyone, resource, and application preferences
 
 ## 🚀 Developer Resources
 - [Testing Guide](/testing) - Write tests for your Aura applications

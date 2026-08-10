@@ -1,0 +1,250 @@
+<?php
+
+use Aura\Base\Preferences\PreferenceContext;
+use Aura\Base\Preferences\PreferenceDefinition;
+use Aura\Base\Preferences\PreferenceManager;
+use Aura\Base\Preferences\PreferenceRegistry;
+use Aura\Base\Preferences\PreferenceScope;
+use Aura\Base\Preferences\PreferenceValueType;
+use Aura\Base\Resources\Option;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Cache\ArrayStore;
+use Illuminate\Cache\Repository;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+
+function preferenceManager(): PreferenceManager
+{
+    return app(PreferenceManager::class);
+}
+
+function registerPreference(PreferenceDefinition $definition): void
+{
+    app(PreferenceRegistry::class)->register($definition);
+}
+
+function preferenceContext(User $user, Team $team, ?string $resource = 'Article'): PreferenceContext
+{
+    return new PreferenceContext('crm', $user, $team, $resource);
+}
+
+function preferenceGlobalAdmin(): User
+{
+    $user = createSuperAdmin();
+    $user->forceFill(['global_admin' => true])->saveQuietly();
+
+    return $user->refresh();
+}
+
+test('resource and owner precedence is deterministic', function () {
+    $user = preferenceGlobalAdmin();
+    $team = $user->currentTeam;
+    $context = preferenceContext($user, $team);
+    $preferences = preferenceManager();
+
+    expect($preferences->get('table.view', $context))->toBe('list');
+
+    $preferences->set('table.view', 'kanban', PreferenceScope::Everyone, $context, $user);
+    $preferences->set('table.view', 'list', PreferenceScope::Team, $context, $user);
+    $preferences->set('table.view', 'kanban', PreferenceScope::User, $context, $user);
+
+    $result = $preferences->resolve('table.view', $context);
+
+    expect($result->value)->toBe('kanban')
+        ->and($result->scope)->toBe(PreferenceScope::User)
+        ->and($result->resourceSpecific)->toBeTrue();
+
+    $preferences->reset('table.view', PreferenceScope::User, $context, $user);
+
+    expect($preferences->get('table.view', $context))->toBe('list');
+
+    $preferences->reset('table.view', PreferenceScope::Team, $context, $user);
+
+    expect($preferences->get('table.view', $context))->toBe('kanban');
+});
+
+test('resource values fall back to application values before defaults', function () {
+    $user = createSuperAdmin();
+    $context = preferenceContext($user, $user->currentTeam);
+    $applicationContext = $context->forApplication();
+    $preferences = preferenceManager();
+
+    $preferences->set('table.view', 'kanban', PreferenceScope::User, $context, $user);
+
+    $preferences->set('table.view', 'list', PreferenceScope::User, $applicationContext, $user);
+
+    expect($preferences->get('table.view', preferenceContext($user, $context->team, 'Contact')))->toBe('list')
+        ->and($preferences->resolve(
+            'table.view',
+            new PreferenceContext('support', $user, $context->team, 'Contact'),
+        )->isDefault)->toBeTrue();
+});
+
+test('false zero and null remain stored values', function () {
+    registerPreference(new PreferenceDefinition(
+        key: 'test.boolean',
+        type: PreferenceValueType::Boolean,
+        default: true,
+        scopes: [PreferenceScope::User],
+    ));
+    registerPreference(new PreferenceDefinition(
+        key: 'test.integer',
+        type: PreferenceValueType::Integer,
+        default: 1,
+        scopes: [PreferenceScope::User],
+    ));
+    registerPreference(new PreferenceDefinition(
+        key: 'test.nullable',
+        type: PreferenceValueType::String,
+        default: null,
+        scopes: [PreferenceScope::User],
+        nullable: true,
+    ));
+
+    $user = createSuperAdmin();
+    $context = preferenceContext($user, $user->currentTeam, null);
+    $preferences = preferenceManager();
+
+    $preferences->set('test.boolean', false, PreferenceScope::User, $context, $user);
+    $preferences->set('test.integer', 0, PreferenceScope::User, $context, $user);
+    $preferences->set('test.nullable', null, PreferenceScope::User, $context, $user);
+
+    expect($preferences->get('test.boolean', $context))->toBeFalse()
+        ->and($preferences->get('test.integer', $context))->toBe(0)
+        ->and($preferences->resolve('test.nullable', $context)->isDefault)->toBeFalse()
+        ->and($preferences->get('test.nullable', $context))->toBeNull();
+});
+
+test('explicit reads ignore ambient auth and team switches', function () {
+    $firstUser = createSuperAdmin();
+    $firstTeam = $firstUser->currentTeam;
+    $secondTeam = Team::factory()->create(['user_id' => $firstUser->id]);
+    $secondUser = soleMemberOf($firstTeam);
+    $preferences = preferenceManager();
+    $firstContext = preferenceContext($firstUser, $firstTeam);
+    $secondContext = preferenceContext($firstUser, $secondTeam);
+    $secondUserContext = preferenceContext($secondUser, $firstTeam);
+
+    $preferences->set('table.view', 'kanban', PreferenceScope::User, $firstContext, $firstUser);
+    $preferences->set('table.view', 'list', PreferenceScope::User, $secondContext, $firstUser);
+    $preferences->set('table.view', 'list', PreferenceScope::User, $secondUserContext, $secondUser);
+
+    Auth::login($secondUser);
+    $firstUser->forceFill(['current_team_id' => $secondTeam->id]);
+
+    expect($preferences->get('table.view', $firstContext))->toBe('kanban')
+        ->and($preferences->get('table.view', $secondContext))->toBe('list')
+        ->and($preferences->get('table.view', $secondUserContext))->toBe('list');
+
+    Auth::logout();
+
+    expect($preferences->get('table.view', $firstContext))->toBe('kanban');
+});
+
+test('writes authorize the explicit actor and exact target scope', function () {
+    $owner = createSuperAdmin();
+    $team = $owner->currentTeam;
+    $member = soleMemberOf($team);
+    $other = User::factory()->create();
+    $preferences = preferenceManager();
+    $context = preferenceContext($owner, $team);
+
+    Auth::login($other);
+    $preferences->set('table.view', 'kanban', PreferenceScope::User, $context, $owner);
+
+    expect(fn () => $preferences->set('table.view', 'list', PreferenceScope::User, $context, $other))
+        ->toThrow(AuthorizationException::class)
+        ->and(fn () => $preferences->set('table.view', 'list', PreferenceScope::Team, $context, $member))
+        ->toThrow(AuthorizationException::class)
+        ->and(fn () => $preferences->set('table.view', 'list', PreferenceScope::Everyone, $context, $member))
+        ->toThrow(AuthorizationException::class)
+        ->and(fn () => $preferences->set('table.view', 'list', PreferenceScope::User, $context, null))
+        ->toThrow(AuthorizationException::class);
+});
+
+test('schemas reject unknown keys invalid types and invalid values', function () {
+    $user = createSuperAdmin();
+    $context = preferenceContext($user, $user->currentTeam);
+    $preferences = preferenceManager();
+
+    expect(fn () => $preferences->get('unknown.key', $context))
+        ->toThrow(InvalidArgumentException::class, 'not registered')
+        ->and(fn () => $preferences->set('table.view', false, PreferenceScope::User, $context, $user))
+        ->toThrow(InvalidArgumentException::class, 'must be string')
+        ->and(fn () => $preferences->set('table.view', 'grid', PreferenceScope::User, $context, $user))
+        ->toThrow(InvalidArgumentException::class, 'outside its schema')
+        ->and(fn () => $preferences->set('table.columns', ['title' => true], PreferenceScope::User, $context, $user))
+        ->toThrow(InvalidArgumentException::class, 'must be a list')
+        ->and(fn () => $preferences->set('table.columns', ['title', 1], PreferenceScope::User, $context, $user))
+        ->toThrow(InvalidArgumentException::class, 'invalid item')
+        ->and(fn () => new PreferenceDefinition('Bad Key', PreferenceValueType::String, 'x'))
+        ->toThrow(InvalidArgumentException::class, 'Invalid preference key');
+});
+
+test('global writes require a global admin and reset cleanly', function () {
+    $admin = preferenceGlobalAdmin();
+    $context = preferenceContext($admin, $admin->currentTeam);
+    $preferences = preferenceManager();
+
+    $preferences->set('table.view', 'kanban', PreferenceScope::Everyone, $context, $admin);
+
+    expect($preferences->get('table.view', $context))->toBe('kanban');
+
+    $preferences->reset('table.view', PreferenceScope::Everyone, $context, $admin);
+
+    expect($preferences->get('table.view', $context))->toBe('list');
+});
+
+test('legacy user options are migration-safe reads', function () {
+    $user = createSuperAdmin();
+    $context = preferenceContext($user, $user->currentTeam);
+
+    $user->updateOption('columns.Article', ['title', 'status']);
+
+    $result = preferenceManager()->resolve('table.columns', $context);
+
+    expect($result->value)->toBe(['title', 'status'])
+        ->and($result->scope)->toBe(PreferenceScope::User)
+        ->and($result->isLegacy)->toBeTrue();
+
+    preferenceManager()->reset('table.columns', PreferenceScope::User, $context, $user);
+
+    expect(preferenceManager()->resolve('table.columns', $context)->isDefault)->toBeTrue();
+});
+
+test('direct everyone option edits invalidate the global scalar cache', function () {
+    $admin = preferenceGlobalAdmin();
+    $context = preferenceContext($admin, $admin->currentTeam);
+    $preferences = preferenceManager();
+
+    $preferences->set('table.view', 'kanban', PreferenceScope::Everyone, $context, $admin);
+    expect($preferences->get('table.view', $context))->toBe('kanban');
+
+    $record = Option::withoutGlobalScopes()
+        ->where('team_id', Option::EVERYONE_TEAM_ID)
+        ->sole();
+    $record->update(['value' => 'list']);
+
+    expect($preferences->get('table.view', $context))->toBe('list');
+});
+
+test('serialized caches rebind to fresh scalar values', function () {
+    $constructor = new ReflectionMethod(ArrayStore::class, '__construct');
+    $store = $constructor->getNumberOfParameters() === 1
+        ? new ArrayStore(serializesValues: true)
+        : new ArrayStore(serializesValues: true, serializableClasses: false);
+    Cache::swap(new Repository($store));
+    $user = createSuperAdmin();
+    $context = preferenceContext($user, $user->currentTeam);
+    $preferences = preferenceManager();
+
+    $preferences->set('table.view', 'kanban', PreferenceScope::User, $context, $user);
+    expect($preferences->get('table.view', $context))->toBe('kanban');
+
+    $preferences->set('table.view', 'list', PreferenceScope::User, $context, $user);
+
+    expect($preferences->get('table.view', $context))->toBe('list')
+        ->and(Option::withoutGlobalScopes()->count())->toBe(1);
+});

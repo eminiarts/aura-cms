@@ -371,6 +371,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         $this->forgetOptionCache($option, $connection);
     }
 
+    public function deleteOptionForTeam(string $option, string|int|null $teamId): void
+    {
+        $this->optionUserForTeam($teamId)->deleteOption($option);
+    }
+
     public function getAvatarUrlAttribute()
     {
         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
@@ -612,40 +617,20 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             return ['found' => false, 'value' => null];
         }
 
-        $payload = VersionedCache::remember(
-            $this->optionCacheNamespace(),
-            $this->optionCacheVariant($option),
-            now()->addHour(),
-            function () use ($option): array {
-                return $this->optionConnection()->transaction(function () use ($option): array {
-                    $record = null;
+        return $this->resolveOptionEntry($option);
+    }
 
-                    foreach ($this->optionNames($option) as $name) {
-                        $record = $this->optionQuery()
-                            ->where('name', $name)
-                            ->lockForUpdate()
-                            ->first();
-
-                        if ($record !== null) {
-                            $record = $this->verifiedOptionRecord($record);
-
-                            break;
-                        }
-                    }
-
-                    return [
-                        'found' => $record !== null,
-                        'value' => $record?->getAttributeValue('value'),
-                    ];
-                });
-            },
-            $this->optionConnection(),
-        );
-
-        return [
-            'found' => $payload['found'],
-            'value' => $payload['value'],
-        ];
+    /**
+     * Read an option for an explicit team context without consulting auth().
+     *
+     * This is a low-level storage adapter. Callers remain responsible for
+     * authorizing access to the requested preference context.
+     *
+     * @return array{found: bool, value: mixed}
+     */
+    public function getOptionEntryForTeam(string $option, string|int|null $teamId): array
+    {
+        return $this->optionUserForTeam($teamId)->resolveOptionEntry($option);
     }
 
     public function getOptionSidebar()
@@ -1009,6 +994,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         $this->forgetOptionCache($option, $record->getConnection());
     }
 
+    public function updateOptionForTeam(string $option, mixed $value, string|int|null $teamId): void
+    {
+        $this->optionUserForTeam($teamId)->updateOption($option, $value);
+    }
+
     public function widgets()
     {
         return collect($this->getWidgets())->map(function ($item) {
@@ -1188,6 +1178,15 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             ->where('team_id', $this->getAttribute('current_team_id'));
     }
 
+    protected function optionUserForTeam(string|int|null $teamId): static
+    {
+        $user = clone $this;
+        $user->setAttribute('current_team_id', config('aura.teams') ? $teamId : null);
+        $user->unsetRelation('currentTeam');
+
+        return $user;
+    }
+
     protected function optionValueOrDefault(string $option, mixed $default): mixed
     {
         $entry = $this->getOptionEntry($option);
@@ -1332,6 +1331,47 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         });
 
         return $teamPrototype->newCollection($teams->all());
+    }
+
+    /**
+     * @return array{found: bool, value: mixed}
+     */
+    protected function resolveOptionEntry(string $option): array
+    {
+        $payload = VersionedCache::remember(
+            $this->optionCacheNamespace(),
+            $this->optionCacheVariant($option),
+            now()->addHour(),
+            function () use ($option): array {
+                return $this->optionConnection()->transaction(function () use ($option): array {
+                    $record = null;
+
+                    foreach ($this->optionNames($option) as $name) {
+                        $record = $this->optionQuery()
+                            ->where('name', $name)
+                            ->lockForUpdate()
+                            ->first();
+
+                        if ($record !== null) {
+                            $record = $this->verifiedOptionRecord($record);
+
+                            break;
+                        }
+                    }
+
+                    return [
+                        'found' => $record !== null,
+                        'value' => $record?->getAttributeValue('value'),
+                    ];
+                });
+            },
+            $this->optionConnection(),
+        );
+
+        return [
+            'found' => $payload['found'],
+            'value' => $payload['value'],
+        ];
     }
 
     /**

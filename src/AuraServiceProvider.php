@@ -52,6 +52,11 @@ use Aura\Base\Navigation\Navigation as AuraNavigation;
 use Aura\Base\Policies\ResourcePolicy;
 use Aura\Base\Policies\TeamPolicy;
 use Aura\Base\Policies\UserPolicy;
+use Aura\Base\Preferences\PreferenceDefinition;
+use Aura\Base\Preferences\PreferenceManager;
+use Aura\Base\Preferences\PreferenceRegistry;
+use Aura\Base\Preferences\PreferenceScope;
+use Aura\Base\Preferences\PreferenceValueType;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Services\TransactionRollbackCallbacks;
@@ -401,6 +406,45 @@ class AuraServiceProvider extends PackageServiceProvider
         });
 
         $this->app->singleton(FieldProviderRegistry::class);
+        $this->app->singleton(PreferenceRegistry::class, function (): PreferenceRegistry {
+            return (new PreferenceRegistry)
+                ->register(new PreferenceDefinition(
+                    key: 'table.view',
+                    type: PreferenceValueType::String,
+                    default: 'list',
+                    scopes: [PreferenceScope::User, PreferenceScope::Team, PreferenceScope::Everyone],
+                    resourceAware: true,
+                    allowedValues: ['list', 'kanban'],
+                    legacyKeys: ['table_view.{resource}'],
+                ))
+                ->register(new PreferenceDefinition(
+                    key: 'table.columns',
+                    type: PreferenceValueType::Array,
+                    default: [],
+                    scopes: [PreferenceScope::User, PreferenceScope::Team, PreferenceScope::Everyone],
+                    resourceAware: true,
+                    itemType: PreferenceValueType::String,
+                    list: true,
+                    legacyKeys: ['columns.{resource}'],
+                ))
+                ->register(new PreferenceDefinition(
+                    key: 'navigation.sidebar.groups',
+                    type: PreferenceValueType::Array,
+                    default: [],
+                    scopes: [PreferenceScope::User],
+                    itemType: PreferenceValueType::String,
+                    list: true,
+                    legacyKeys: ['sidebar'],
+                ))
+                ->register(new PreferenceDefinition(
+                    key: 'navigation.sidebar.collapsed',
+                    type: PreferenceValueType::Boolean,
+                    default: false,
+                    scopes: [PreferenceScope::User],
+                    legacyKeys: ['sidebarToggled'],
+                ));
+        });
+        $this->app->singleton(PreferenceManager::class);
 
         // Bind the concrete Aura instance as a process-persistent singleton so
         // its resource/field registrations and captured baseline survive across

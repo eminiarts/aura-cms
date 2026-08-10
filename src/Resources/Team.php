@@ -247,6 +247,16 @@ class Team extends Resource
             return ['found' => false, 'value' => null];
         }
 
+        return $this->getOptionEntryExplicit((string) $option);
+    }
+
+    /**
+     * Read an option for this explicit team without consulting auth().
+     *
+     * @return array{found: bool, value: mixed}
+     */
+    public function getOptionEntryExplicit(string $option): array
+    {
         $optionName = $this->optionName($option);
 
         return VersionedCache::remember(
