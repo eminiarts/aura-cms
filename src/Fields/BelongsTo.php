@@ -8,6 +8,7 @@ use Aura\Base\Models\Meta;
 use Aura\Base\Policies\ResourcePolicy;
 use Aura\Base\Resource;
 use Aura\Base\Support\FieldDisplayValue;
+use Aura\Base\Support\FieldPresentationLabel;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -134,20 +135,6 @@ class BelongsTo extends Field implements PreloadsTableDisplay
                 'slug' => 'resource',
             ],
         ]);
-    }
-
-    /**
-     * Return the relation's plain-text label without presentation markup.
-     *
-     * @param  array<string, mixed>  $field
-     */
-    public function label(
-        array $field,
-        mixed $value,
-        ?Model $model = null,
-        FieldValueContext $context = FieldValueContext::Index,
-    ): mixed {
-        return $this->resolveLabel($value, $field, $model, $context);
     }
 
     /**
@@ -335,21 +322,6 @@ class BelongsTo extends Field implements PreloadsTableDisplay
         return $model->hasMany($field['resource'], $field['relation']);
     }
 
-    public function resolveLabel(
-        mixed $value,
-        array $field,
-        ?Model $model = null,
-        FieldValueContext $context = FieldValueContext::Index,
-    ): mixed {
-        if (empty($field['resource']) || $value === null || $value === '') {
-            return $value;
-        }
-
-        $related = $this->resolveDisplayModel($field, $value, $model);
-
-        return $this->resolveRelationLabel($value, $field, $model, $related, $context);
-    }
-
     public function set($post, $field, $value)
     {
         // Set the value to the id of the model
@@ -523,14 +495,14 @@ class BelongsTo extends Field implements PreloadsTableDisplay
             }
         }
 
-        $resolver = $field['label_resolver'] ?? null;
-
-        if (! is_callable($resolver)) {
-            return $currentLabel;
-        }
-
-        return $resolver($this->rawValue($value), $currentLabel, $model, $context, $field, $related)
-            ?? $currentLabel;
+        return (new FieldPresentationLabel)->resolve(
+            $value,
+            $currentLabel,
+            $field,
+            $model,
+            $context,
+            [$related],
+        );
     }
 
     protected function tableDisplayForeignId(Resource $row, string $slug)

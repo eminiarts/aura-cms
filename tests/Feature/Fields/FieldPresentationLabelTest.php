@@ -5,79 +5,116 @@ namespace Tests\Feature\Fields;
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Fields\Field;
 use Aura\Base\Fields\Select;
+use Aura\Base\Fields\Status;
 use Aura\Base\Resource;
+use Aura\Base\Support\FieldPresentationLabel;
 
 class PresentationLabelRecord extends Resource
 {
     public string $historicalPrefix = 'Historical';
-}
 
-test('field presentation distinguishes raw values from current option labels', function () {
-    $field = new Select;
-    $definition = [
-        'slug' => 'state',
-        'options' => [
-            ['key' => 'open', 'value' => 'Open now'],
-            ['key' => 0, 'value' => 'Zero label'],
-        ],
-    ];
-
-    expect($field->rawValue('open'))->toBe('open')
-        ->and($field->currentOptionLabel('open', $definition))->toBe('Open now')
-        ->and($field->currentOptionLabel('legacy', $definition))->toBe('legacy')
-        ->and($field->currentOptionLabel(0, $definition))->toBe('Zero label')
-        ->and($field->currentOptionLabel(false, $definition))->toBe('Zero label')
-        ->and($field->currentOptionLabel(null, $definition))->toBeNull();
-});
-
-test('record aware label resolver receives historical raw value current label and context', function () {
-    $field = new Select;
-    $record = new PresentationLabelRecord;
-    $definition = [
-        'slug' => 'state',
-        'options' => ['closed' => 'Closed now'],
-        'label_resolver' => function (
+    public static function getFields(): array
+    {
+        $resolver = function (
             mixed $rawValue,
             mixed $currentLabel,
-            ?Resource $contextRecord,
+            ?Resource $record,
             FieldValueContext $context,
         ): mixed {
-            if ($rawValue === 'legacy-closed' && $contextRecord instanceof PresentationLabelRecord) {
-                return $contextRecord->historicalPrefix.' closed ('.$context->value.')';
+            if ($rawValue === 'legacy-closed' && $record instanceof self) {
+                return $record->historicalPrefix.' closed ('.$context->value.')';
             }
 
             return $currentLabel;
-        },
-    ];
+        };
 
-    expect($field->resolveLabel('legacy-closed', $definition, $record, FieldValueContext::Index))
-        ->toBe('Historical closed (index)')
-        ->and($field->resolveLabel('legacy-closed', $definition, $record, FieldValueContext::View))
-        ->toBe('Historical closed (view)')
-        ->and($field->resolveLabel('legacy-closed', $definition, $record, FieldValueContext::Export))
-        ->toBe('Historical closed (export)')
-        ->and($field->resolveLabel('unknown', $definition, null, FieldValueContext::Export))
-        ->toBe('unknown');
+        return [
+            [
+                'name' => 'State',
+                'slug' => 'state',
+                'type' => Select::class,
+                'options' => [
+                    ['key' => 'open', 'value' => 'Open now'],
+                    ['key' => 0, 'value' => 'Integer zero'],
+                    ['key' => '0', 'value' => 'String zero'],
+                    ['key' => false, 'value' => 'False value'],
+                ],
+                'label_resolver' => $resolver,
+            ],
+            [
+                'name' => 'Status',
+                'slug' => 'status',
+                'type' => Status::class,
+                'options' => [
+                    ['key' => 'open', 'value' => 'Open now', 'color' => 'bg-green-100'],
+                ],
+                'label_resolver' => $resolver,
+            ],
+        ];
+    }
+}
+
+test('composed field presentation labels preserve strict option key semantics', function () {
+    $labels = new FieldPresentationLabel;
+    $options = PresentationLabelRecord::getFields()[0]['options'];
+
+    expect($labels->current('open', $options))->toBe('Open now')
+        ->and($labels->current('legacy', $options))->toBe('legacy')
+        ->and($labels->current(0, $options))->toBe('Integer zero')
+        ->and($labels->current('0', $options))->toBe('String zero')
+        ->and($labels->current(false, $options))->toBe('False value')
+        ->and($labels->current(null, $options))->toBeNull();
 });
 
-test('generic presentation uses labels while preserving false zero empty and null', function () {
+test('select resource presentation resolves historical labels on index view and export surfaces', function () {
+    $record = new PresentationLabelRecord;
+    $record->setAttribute('state', 'legacy-closed');
+
+    expect(strip_tags((string) $record->display('state')))->toContain('Historical closed (index)')
+        ->and((string) $record->displayInContext('state', FieldValueContext::View))
+        ->toBe('Historical closed (view)')
+        ->and((string) $record->exportFieldValue('state'))
+        ->toBe('Historical closed (export)');
+});
+
+test('status resource presentation uses resolved current labels on index view and export surfaces', function () {
+    $record = new PresentationLabelRecord;
+    $record->setAttribute('status', 'open');
+
+    expect(strip_tags((string) $record->display('status')))->toContain('Open now')
+        ->and((string) $record->displayInContext('status', FieldValueContext::View))->toBe('Open now')
+        ->and((string) $record->exportFieldValue('status'))->toBe('Open now');
+});
+
+test('unknown option codes remain visible across resource presentation surfaces', function () {
+    $record = new PresentationLabelRecord;
+    $record->setAttribute('state', 'unknown');
+
+    expect(strip_tags((string) $record->display('state')))->toContain('unknown')
+        ->and((string) $record->displayInContext('state', FieldValueContext::View))->toBe('unknown')
+        ->and((string) $record->exportFieldValue('state'))->toBe('unknown');
+});
+
+test('legacy custom display extensions receive the raw hydrated value', function () {
     $field = new class extends Field
     {
+        public mixed $receivedValue = null;
+
         public function display($field, $value, $model)
         {
-            return $value;
+            $this->receivedValue = $value;
+
+            return 'legacy:'.$value;
         }
     };
 
     $definition = [
         'options' => [
-            '0' => 'Zero',
-            '1' => 'One',
+            ['key' => 'open', 'value' => 'Open now'],
         ],
     ];
 
-    expect((string) $field->presentValue(0, $definition, null, FieldValueContext::Index))->toBe('Zero')
-        ->and((string) $field->presentValue(false, $definition, null, FieldValueContext::View))->toBe('Zero')
-        ->and($field->presentValue('', $definition, null, FieldValueContext::Export))->toBe('')
-        ->and($field->presentValue(null, $definition, null, FieldValueContext::Export))->toBeNull();
+    expect((string) $field->presentValue('open', $definition, null, FieldValueContext::Index))
+        ->toBe('legacy:open')
+        ->and($field->receivedValue)->toBe('open');
 });

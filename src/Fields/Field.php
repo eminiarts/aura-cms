@@ -8,6 +8,7 @@ use Aura\Base\Contracts\FieldValueContract;
 use Aura\Base\Contracts\FieldValueStorage;
 use Aura\Base\Schema\FieldColumn;
 use Aura\Base\Support\FieldDisplayValue;
+use Aura\Base\Support\FieldPresentationLabel;
 use Aura\Base\Traits\InputFields;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
@@ -94,51 +95,6 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
             type: $this->tableColumnType,
             nullable: $this->tableNullable,
         );
-    }
-
-    /**
-     * Resolve a value against the field's current option catalog.
-     *
-     * Unknown values are returned unchanged so legacy codes remain visible.
-     *
-     * @param  array<string, mixed>  $field
-     */
-    public function currentOptionLabel(mixed $value, array $field, ?Model $model = null): mixed
-    {
-        if ($value === null || $value === '') {
-            return $value;
-        }
-
-        if (is_array($value)) {
-            return array_map(
-                fn (mixed $item): mixed => $this->currentOptionLabel($item, $field, $model),
-                $value,
-            );
-        }
-
-        $options = $field['options'] ?? [];
-
-        if ($model !== null && method_exists($this, 'options')) {
-            $options = $this->options($model, $field);
-        }
-
-        if (! is_array($options)) {
-            return $value;
-        }
-
-        $labels = [];
-
-        foreach ($options as $key => $option) {
-            if (is_array($option) && array_key_exists('key', $option)) {
-                $labels[$option['key']] = $option['value'] ?? $option['label'] ?? $option['key'];
-            } else {
-                $labels[$key] = $option;
-            }
-        }
-
-        return (is_int($value) || is_string($value) || is_bool($value)) && array_key_exists($value, $labels)
-            ? $labels[$value]
-            : $value;
     }
 
     public function display($field, $value, $model)
@@ -441,61 +397,40 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
         FieldValueContext $context = FieldValueContext::Index,
     ): mixed {
         $usesLegacyDisplayValue = method_exists($this, 'displayValue');
-        $display = $usesLegacyDisplayValue
-            ? $this->invokeLegacyDisplayValue($value, $field, $model, $context)
-            : $this->display($field, $this->resolveLabel($value, $field, $model, $context), $model);
+        $displayMethod = new \ReflectionMethod($this, 'display');
+        $usesBaseDisplay = $displayMethod->getDeclaringClass()->getName() === self::class;
+
+        if ($usesLegacyDisplayValue) {
+            $display = $this->invokeLegacyDisplayValue($value, $field, $model, $context);
+        } elseif (! $usesBaseDisplay) {
+            // Existing display() extensions historically receive the raw or
+            // hydrated value. Keep that source and behavior contract intact.
+            $display = $this->display($field, $value, $model);
+        } else {
+            $label = $this->resolveAuraPresentationLabel($value, $field, $model, $context);
+            $usesDeclarativeLabels = array_key_exists('options', $field)
+                || array_key_exists('label_resolver', $field);
+            $display = $context === FieldValueContext::Index
+                || ! $usesDeclarativeLabels
+                || ! empty($field['display_view'])
+                ? $this->display($field, $label, $model)
+                : FieldDisplayValue::secure($label);
+        }
 
         if ($display instanceof Htmlable) {
             return $display;
         }
 
-        $displayMethod = new \ReflectionMethod($this, 'display');
-
         // The base implementation escapes all plain values and only emits
         // template markup as HtmlString. Custom overrides must explicitly
         // return Htmlable; their plain strings/arrays remain untrusted.
-        if (! $usesLegacyDisplayValue && $displayMethod->getDeclaringClass()->getName() === self::class) {
+        if (! $usesLegacyDisplayValue && $usesBaseDisplay) {
             return $display === null || $display === ''
                 ? $display
                 : new HtmlString((string) $display);
         }
 
         return FieldDisplayValue::secure($display);
-    }
-
-    /**
-     * Return the unformatted stored value supplied by the caller.
-     */
-    public function rawValue(mixed $value): mixed
-    {
-        return $value;
-    }
-
-    /**
-     * Resolve a current or historical label for any presentation surface.
-     *
-     * A `label_resolver` receives raw value, current option label, record,
-     * context, and field definition. Returning null falls back safely to the
-     * current label (or the raw legacy value when no option exists).
-     *
-     * @param  array<string, mixed>  $field
-     */
-    public function resolveLabel(
-        mixed $value,
-        array $field,
-        ?Model $model = null,
-        FieldValueContext $context = FieldValueContext::Index,
-    ): mixed {
-        $currentLabel = $this->currentOptionLabel($value, $field, $model);
-        $resolver = $field['label_resolver'] ?? null;
-
-        if (! is_callable($resolver)) {
-            return $currentLabel;
-        }
-
-        $resolved = $resolver($this->rawValue($value), $currentLabel, $model, $context, $field);
-
-        return $resolved ?? $currentLabel;
     }
 
     public function toLivewire()
@@ -546,5 +481,30 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
         }
 
         return $method->invoke($this, $value);
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     */
+    private function resolveAuraPresentationLabel(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueContext $context,
+    ): mixed {
+        $options = $field['options'] ?? [];
+
+        if ($model !== null && method_exists($this, 'options')) {
+            $options = $this->options($model, $field);
+        }
+
+        if (! is_array($options)) {
+            $options = [];
+        }
+
+        $labels = new FieldPresentationLabel;
+        $currentLabel = $labels->current($value, $options);
+
+        return $labels->resolve($value, $currentLabel, $field, $model, $context);
     }
 }

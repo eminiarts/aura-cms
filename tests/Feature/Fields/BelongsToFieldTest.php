@@ -286,9 +286,14 @@ describe('BelongsTo Field Display', function () {
 
         DB::flushQueryLog();
         DB::enableQueryLog();
-        $label = (new BelongsTo)->resolveLabel($related->id, $definition, $row);
+        $label = (new BelongsTo)->presentValue(
+            $related->id,
+            $definition,
+            $row,
+            FieldValueContext::Export,
+        );
 
-        expect($label)->toBe($related->title())
+        expect((string) $label)->toContain($related->title())
             ->and(DB::getQueryLog())->toHaveCount(0);
     });
 
@@ -319,7 +324,8 @@ describe('BelongsTo Field Display', function () {
         );
 
         foreach ($rows as $index => $row) {
-            expect($field->resolveLabel($related[$index]->id, $definition, $row))->toBe($related[$index]->title());
+            expect((string) $field->presentValue($related[$index]->id, $definition, $row))
+                ->toContain($related[$index]->title());
         }
 
         expect($relatedQueries)->toHaveCount(1)
