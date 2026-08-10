@@ -4,6 +4,8 @@ namespace Aura\Base\Livewire\Media;
 
 use Closure;
 use Illuminate\Contracts\Cache\Lock;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Support\Sleep;
 use InvalidArgumentException;
 
 final readonly class MediaSecurityLock implements Lock
@@ -22,9 +24,18 @@ final readonly class MediaSecurityLock implements Lock
             );
         }
 
-        return ($this->executeSafely)(
-            fn (): mixed => $this->lock->block($seconds, $callback),
-        );
+        $startedAt = hrtime(true);
+        $timeoutNanoseconds = max(0, (int) $seconds) * 1_000_000_000;
+
+        while (($this->executeSafely)(fn (): mixed => $this->lock->get()) !== true) {
+            if (hrtime(true) - $startedAt >= $timeoutNanoseconds) {
+                throw new LockTimeoutException;
+            }
+
+            Sleep::usleep(250_000);
+        }
+
+        return true;
     }
 
     public function forceRelease(): void

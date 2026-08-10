@@ -814,6 +814,48 @@ test('security cache revalidates its boundary before an acquired lock operation'
         ->toThrow(InvalidArgumentException::class, 'object-free reads');
 });
 
+test('a contended blocking lock does not prevent the current SQLite owner from releasing', function () {
+    if (! function_exists('pcntl_fork')) {
+        $this->markTestSkipped('pcntl is required for the contended lock proof.');
+    }
+
+    $security = app(MediaSecurityStore::class);
+    $owner = $security->lock('contended-block-release', 5);
+    expect($owner->get())->toBeTrue();
+    $sockets = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+    expect($sockets)->toBeArray();
+    $processId = pcntl_fork();
+
+    if ($processId === 0) {
+        fclose($sockets[0]);
+        fwrite($sockets[1], 'ready');
+
+        try {
+            $waiter = app(MediaSecurityStore::class)->lock('contended-block-release', 5);
+            $acquired = $waiter->block(3) === true;
+
+            if ($acquired) {
+                $waiter->release();
+            }
+
+            exit($acquired ? 0 : 10);
+        } catch (Throwable) {
+            exit(20);
+        }
+    }
+
+    fclose($sockets[1]);
+    expect($processId)->toBeGreaterThan(0)
+        ->and(fread($sockets[0], 5))->toBe('ready');
+    usleep(300_000);
+    expect($owner->release())->toBeTrue();
+    pcntl_waitpid($processId, $status);
+    fclose($sockets[0]);
+
+    expect(pcntl_wifexited($status))->toBeTrue()
+        ->and(pcntl_wexitstatus($status))->toBe(0);
+});
+
 test('security cache rejects configuration mutation before its next read', function () {
     config()->set('cache.serializable_classes', false);
     app('cache')->forgetDriver('aura-media-security');
