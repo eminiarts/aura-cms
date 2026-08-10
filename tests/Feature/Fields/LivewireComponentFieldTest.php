@@ -167,6 +167,16 @@ class Core12ZeroArgumentLivewireIndexField extends LivewireComponent
     }
 }
 
+class Core12UntypedGetFieldsLivewireField extends LivewireComponent
+{
+    public function getFields()
+    {
+        return [
+            ['slug' => 'legacy-untyped-field'],
+        ];
+    }
+}
+
 class Core12ParameterMapper implements MapsEmbeddedComponentParameters
 {
     public static int $mapCount = 0;
@@ -367,6 +377,13 @@ describe('LivewireComponent field configuration', function () {
             ->toBeFalse()
             ->and((new Core12ZeroArgumentLivewireIndexField)->rendersOnIndex())
             ->toBeTrue();
+    });
+
+    test('keeps historical untyped getFields overrides class-loadable', function (): void {
+        expect((new ReflectionMethod(LivewireComponent::class, 'getFields'))->hasReturnType())
+            ->toBeFalse()
+            ->and((new Core12UntypedGetFieldsLivewireField)->getFields())
+            ->toBe([['slug' => 'legacy-untyped-field']]);
     });
 
     test('registers embedded authorization before Livewire executable hooks', function () {

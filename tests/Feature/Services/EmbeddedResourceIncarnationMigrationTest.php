@@ -157,7 +157,7 @@ it('keeps migration ownership proof out of the runtime incarnation table', funct
         ->and($owner->incarnations()->firstOrFail()->resource_key)->toBe(str_repeat('a', 32));
 });
 
-it('removes only complete legacy marker rows and preserves discriminator collisions', function (): void {
+it('preserves exact legacy marker tuples and discriminator collisions', function (): void {
     $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
     $migration->up();
     $record = json_decode(DB::table(CORE12_OWNERSHIP_TABLE)
@@ -197,14 +197,14 @@ it('removes only complete legacy marker rows and preserves discriminator collisi
 
     expect(DB::table(EmbeddedResourceIncarnationStore::TABLE)
         ->where('resource_key', $record['payload']['generation'])
-        ->doesntExist())->toBeTrue()
+        ->exists())->toBeTrue()
         ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, $markerColumn))->toBeTrue()
         ->and(DB::table(EmbeddedResourceIncarnationStore::TABLE)
             ->where('resource_key', 'host-key')
             ->value($markerColumn))->toBe('host-data');
 });
 
-it('preserves discriminator collisions during fully pre-existing upgrade cleanup', function (): void {
+it('preserves exact marker tuples during fully pre-existing upgrade cleanup', function (): void {
     core12CreateEmbeddedIncarnationTable();
     $generation = str_repeat('c', 32);
     $markerColumn = MigrationOwnershipLedger::markerColumn($generation);
@@ -241,7 +241,7 @@ it('preserves discriminator collisions during fully pre-existing upgrade cleanup
 
     expect(DB::table(EmbeddedResourceIncarnationStore::TABLE)
         ->where('resource_key', $generation)
-        ->doesntExist())->toBeTrue()
+        ->exists())->toBeTrue()
         ->and(DB::table(EmbeddedResourceIncarnationStore::TABLE)
             ->where('resource_key', 'preserve-host-collision')
             ->value($markerColumn))->toBe('host-data')
@@ -391,6 +391,48 @@ it('rejects a named lookup index with the wrong ordered columns', function (): v
     $migration = require dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub';
 
     expect(fn () => $migration->up())->toThrow(RuntimeException::class, 'unexpected definition');
+});
+
+it('preserves and isolates every legacy row while adding identity columns', function (): void {
+    Schema::create(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
+        $table->id();
+        $table->string('resource_type');
+        $table->char('resource_key_hash', 64);
+        $table->uuid('incarnation');
+        $table->timestamps();
+        $table->unique(
+            ['resource_type', 'resource_key_hash'],
+            'aura_embedded_incarnation_resource_unique',
+        );
+    });
+    DB::table(EmbeddedResourceIncarnationStore::TABLE)->insert([
+        [
+            'resource_type' => 'LegacyResource',
+            'resource_key_hash' => str_repeat('a', 64),
+            'incarnation' => '00000000-0000-4000-8000-000000000081',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'resource_type' => 'LegacyResource',
+            'resource_key_hash' => str_repeat('b', 64),
+            'incarnation' => '00000000-0000-4000-8000-000000000082',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+    ]);
+    $migration = require dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub';
+
+    $migration->up();
+    $migration->up();
+
+    $rows = DB::table(EmbeddedResourceIncarnationStore::TABLE)->orderBy('id')->get();
+
+    expect($rows)->toHaveCount(2)
+        ->and($rows->pluck('resource_key_hash')->all())->toBe([str_repeat('a', 64), str_repeat('b', 64)])
+        ->and($rows->pluck('resource_key_type')->unique()->values()->all())->toBe(['legacy'])
+        ->and($rows->pluck('resource_key')->unique()->count())->toBe(2)
+        ->and($rows->pluck('version')->unique()->values()->all())->toBe([1]);
 });
 
 it('makes create migration up and down a no-op for a host-owned table', function () {

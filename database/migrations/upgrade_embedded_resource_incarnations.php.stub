@@ -1,6 +1,7 @@
 <?php
 
 use Aura\Base\Services\EmbeddedResourceIncarnationStore;
+use Aura\Base\Services\EmbeddedResourceIncarnationSchema;
 use Aura\Base\Services\MigrationOwnershipLedger;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\QueryException;
@@ -13,6 +14,16 @@ return new class extends Migration
     /** @var list<string> */
     private const COLUMNS = ['resource_key_type', 'resource_key', 'version'];
 
+    /** @var list<string> */
+    private const LEGACY_COLUMNS = [
+        'id',
+        'resource_type',
+        'resource_key_hash',
+        'incarnation',
+        'created_at',
+        'updated_at',
+    ];
+
     private const FORMAT_VERSION = 2;
 
     private const GENERATION_BYTES = 16;
@@ -20,6 +31,8 @@ return new class extends Migration
     private const IDENTITY_INDEX = 'aura_embedded_incarnation_guard_identity_unique';
 
     private const LOOKUP_INDEX = 'aura_embedded_incarnation_guard_lookup';
+
+    private const RESOURCE_INDEX = 'aura_embedded_incarnation_resource_unique';
 
     private const RECONCILE_ATTEMPTS = 40;
 
@@ -47,6 +60,8 @@ return new class extends Migration
                 return;
             }
 
+            $this->assertCompatibleExistingSchema();
+
             $missingColumns = collect(self::COLUMNS)
                 ->reject(fn (string $column): bool => Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, $column))
                 ->values()
@@ -54,7 +69,7 @@ return new class extends Migration
             $missingIndexes = $this->missingIndexes();
 
             if ($missingColumns === [] && $missingIndexes === []) {
-                $this->cleanupLegacyMarkers();
+                $this->assertFinalSchema();
 
                 return;
             }
@@ -88,7 +103,6 @@ return new class extends Migration
     {
         if ($ownership['state'] === 'owned') {
             $this->assertOwnedArtifactsExist($ownership['added_columns'], $ownership['created_indexes']);
-            $this->cleanupLegacyMarkers();
 
             return;
         }
@@ -115,15 +129,8 @@ return new class extends Migration
         }
 
         $ledger->checkpoint('upgrade.columns_added');
-
-        if ($ownership['added_columns'] !== []) {
-            DB::table(EmbeddedResourceIncarnationStore::TABLE)->delete();
-        }
-
-        $ledger->checkpoint('upgrade.rows_cleared');
-        $ledger->checkpoint('upgrade.legacy_marker_cleanup_started');
-        $this->cleanupLegacyMarkers();
-        $ledger->checkpoint('upgrade.legacy_markers_cleaned');
+        $this->isolateLegacyRows($ownership['added_columns']);
+        $ledger->checkpoint('upgrade.legacy_rows_isolated');
 
         foreach ($ownership['created_indexes'] as $index) {
             $this->reconcileArtifact(
@@ -153,49 +160,11 @@ return new class extends Migration
         ]);
     }
 
-    private function cleanupLegacyMarkers(): void
-    {
-        foreach ($this->legacyMarkerColumns() as $markerColumn => $generation) {
-            $this->reconcileArtifact(
-                fn (): bool => $this->legacyMarkerCleanupComplete($markerColumn, $generation),
-                fn () => $this->cleanupLegacyMarker($markerColumn, $generation),
-                "legacy marker [{$markerColumn}]",
-            );
-        }
-    }
-
-    private function cleanupLegacyMarker(string $markerColumn, string $generation): void
-    {
-        if (! Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, $markerColumn)) {
-            return;
-        }
-
-        DB::table(EmbeddedResourceIncarnationStore::TABLE)
-            ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
-            ->where('resource_key_hash', hash('sha256', $generation))
-            ->where('resource_key_type', 'internal')
-            ->where('resource_key', $generation)
-            ->where('incarnation', $this->markerIncarnation($generation))
-            ->where('version', 1)
-            ->where($markerColumn, $generation)
-            ->delete();
-
-        if (! Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, $markerColumn)
-            || DB::table(EmbeddedResourceIncarnationStore::TABLE)->whereNotNull($markerColumn)->exists()
-        ) {
-            return;
-        }
-
-        Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($markerColumn): void {
-            $table->dropColumn($markerColumn);
-        });
-    }
-
     private function createColumn(string $column): void
     {
         Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($column): void {
             if ($column === 'resource_key_type') {
-                $table->string('resource_key_type', 16)->default('string');
+                $table->string('resource_key_type', 16)->default(EmbeddedResourceIncarnationSchema::LEGACY_KEY_TYPE);
 
                 return;
             }
@@ -269,34 +238,19 @@ return new class extends Migration
         throw new RuntimeException('CORE-12 upgrade migration could not reconcile the ownership registry.');
     }
 
-    private function legacyMarkerCleanupComplete(string $markerColumn, string $generation): bool
-    {
-        if (! Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, $markerColumn)) {
-            return true;
-        }
-
-        $hasHistoricalMarker = DB::table(EmbeddedResourceIncarnationStore::TABLE)
-            ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
-            ->where('resource_key_hash', hash('sha256', $generation))
-            ->where('resource_key_type', 'internal')
-            ->where('resource_key', $generation)
-            ->where('incarnation', $this->markerIncarnation($generation))
-            ->where('version', 1)
-            ->where($markerColumn, $generation)
-            ->exists();
-
-        return ! $hasHistoricalMarker
-            && DB::table(EmbeddedResourceIncarnationStore::TABLE)->whereNotNull($markerColumn)->exists();
-    }
-
     private function hasOwnedColumn(string $column): bool
     {
-        return Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, $column);
+        return app(EmbeddedResourceIncarnationSchema::class)->hasColumn($column, true);
     }
 
     private function hasExactIndex(string $name): bool
     {
-        $expected = self::INDEXES[$name];
+        $expected = $name === self::RESOURCE_INDEX
+            ? [
+                'columns' => ['resource_type', 'resource_key_hash'],
+                'unique' => true,
+            ]
+            : self::INDEXES[$name];
 
         return collect(Schema::getIndexes(EmbeddedResourceIncarnationStore::TABLE))->contains(
             static fn (array $index): bool => $index['name'] === $name
@@ -319,31 +273,6 @@ return new class extends Migration
         }
 
         return true;
-    }
-
-    /** @return array<string, string> */
-    private function legacyMarkerColumns(): array
-    {
-        $markerColumns = [];
-
-        foreach (Schema::getColumnListing(EmbeddedResourceIncarnationStore::TABLE) as $column) {
-            $column = trim($column, "\"'`[]");
-
-            if (preg_match('/\Aaura_migration_owned_([0-9a-f]{32})\z/D', $column, $matches) === 1) {
-                $markerColumns[$column] = $matches[1];
-            }
-        }
-
-        return $markerColumns;
-    }
-
-    private function markerIncarnation(string $generation): string
-    {
-        return substr($generation, 0, 8)
-            .'-'.substr($generation, 8, 4)
-            .'-'.substr($generation, 12, 4)
-            .'-'.substr($generation, 16, 4)
-            .'-'.substr($generation, 20, 12);
     }
 
     /** @return list<string> */
@@ -411,11 +340,79 @@ return new class extends Migration
             }
         }
 
+        $this->assertFinalSchema();
+
         foreach ($indexes as $index) {
             if (! $this->hasExactIndex($index)) {
                 throw new RuntimeException("The index [{$index}] claimed by CORE-12 upgrade ownership has an unexpected definition.");
             }
         }
+    }
+
+    private function assertCompatibleExistingSchema(): void
+    {
+        $schema = app(EmbeddedResourceIncarnationSchema::class);
+        $schema->assertColumns(self::LEGACY_COLUMNS);
+        $schema->assertPrimaryKey();
+
+        foreach (self::COLUMNS as $column) {
+            if (Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, $column)) {
+                $schema->assertColumns([$column], true);
+            }
+        }
+
+        if ($this->hasNamedIndex(self::RESOURCE_INDEX)) {
+            return;
+        }
+
+        $createOwnership = app(MigrationOwnershipLedger::class)->readCreate();
+
+        if (($createOwnership['state'] ?? null) !== 'creating') {
+            throw new RuntimeException(
+                'The legacy embedded incarnation resource index has an unexpected definition.',
+            );
+        }
+
+        $this->reconcileArtifact(
+            fn (): bool => $this->hasNamedIndex(self::RESOURCE_INDEX),
+            static function (): void {},
+            'concurrent create resource index',
+        );
+    }
+
+    private function assertFinalSchema(): void
+    {
+        $this->assertCompatibleExistingSchema();
+        app(EmbeddedResourceIncarnationSchema::class)->assertColumns(self::COLUMNS, true);
+
+        foreach (array_keys(self::INDEXES) as $index) {
+            if (! $this->hasExactIndex($index)) {
+                throw new RuntimeException("The index [{$index}] has an unexpected definition.");
+            }
+        }
+    }
+
+    /** @param list<string> $addedColumns */
+    private function isolateLegacyRows(array $addedColumns): void
+    {
+        if (! in_array('resource_key', $addedColumns, true)) {
+            return;
+        }
+
+        DB::table(EmbeddedResourceIncarnationStore::TABLE)
+            ->where('resource_key', '')
+            ->orderBy('id')
+            ->chunkById(100, function ($rows): void {
+                foreach ($rows as $row) {
+                    DB::table(EmbeddedResourceIncarnationStore::TABLE)
+                        ->where('id', $row->id)
+                        ->where('resource_key', '')
+                        ->update([
+                            'resource_key_type' => EmbeddedResourceIncarnationSchema::LEGACY_KEY_TYPE,
+                            'resource_key' => 'legacy:'.$row->id,
+                        ]);
+                }
+            });
     }
 
     /**

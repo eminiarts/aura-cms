@@ -448,6 +448,65 @@ it('reconciles an interrupted create that exposes only the base table', function
         ->toBe(['resource_type', 'resource_key_type', 'resource_key']);
 });
 
+it('fails closed on a stale create ledger with malformed column definitions', function (): void {
+    Schema::create(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
+        $table->string('id')->primary();
+        $table->string('resource_type');
+        $table->char('resource_key_hash', 64);
+        $table->string('resource_key_type', 16);
+        $table->string('resource_key', 191);
+        $table->uuid('incarnation');
+        $table->unsignedBigInteger('version')->default(1);
+        $table->timestamps();
+    });
+    core12StateWriteRecord(CORE12_STATE_CREATE_KEY, core12StateCurrentRecord(
+        CORE12_STATE_CREATE_KEY,
+        'creating',
+        ['created_table' => true, 'owns_registry' => false],
+    ));
+    $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class, 'unexpected definition');
+
+    expect(app(MigrationOwnershipLedger::class)->readCreate()['state'])->toBe('creating');
+});
+
+it('fails closed on a stale upgrade ledger with a malformed claimed column', function (): void {
+    Schema::create(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
+        $table->id();
+        $table->string('resource_type');
+        $table->char('resource_key_hash', 64);
+        $table->string('resource_key_type', 16);
+        $table->string('resource_key', 191);
+        $table->uuid('incarnation');
+        $table->unsignedBigInteger('version')->nullable()->default(2);
+        $table->timestamps();
+        $table->unique(['resource_type', 'resource_key_hash'], 'aura_embedded_incarnation_resource_unique');
+        $table->index(
+            ['resource_type', 'resource_key_type', 'resource_key'],
+            'aura_embedded_incarnation_guard_lookup',
+        );
+        $table->unique(
+            ['resource_type', 'resource_key_type', 'resource_key'],
+            'aura_embedded_incarnation_guard_identity_unique',
+        );
+    });
+    core12StateWriteRecord(CORE12_STATE_UPGRADE_KEY, core12StateCurrentRecord(
+        CORE12_STATE_UPGRADE_KEY,
+        'upgrading',
+        [
+            'added_columns' => ['version'],
+            'created_indexes' => [],
+            'owns_registry' => false,
+        ],
+    ));
+    $migration = require dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub';
+
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class, 'unexpected definition');
+
+    expect(app(MigrationOwnershipLedger::class)->readUpgrade()['state'])->toBe('upgrading');
+});
+
 it('resumes create after a crash at every DDL artifact boundary', function (
     string $checkpoint,
     int $expectedSecondaryIndexes,
@@ -610,7 +669,6 @@ it('records every create up crash phase without granting stale destructive owner
     'registry ready' => ['create.registry_ready', null, false],
     'ownership started' => ['create.ownership_started', 'creating', false],
     'table created' => ['create.table_created', 'creating', true],
-    'legacy markers cleaned' => ['create.legacy_markers_cleaned', 'creating', true],
     'ownership committed' => ['create.ownership_committed', 'owned', true],
 ]);
 
@@ -652,13 +710,15 @@ it('records every upgrade up crash phase and never infers ownership from schema'
     $migration->up();
     $migration->down();
 
-    expect(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
+    expect(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue()
+        ->and(DB::table(EmbeddedResourceIncarnationStore::TABLE)
+            ->where('resource_key_hash', str_repeat('b', 64))
+            ->exists())->toBeTrue();
 })->with([
     'registry ready' => ['upgrade.registry_ready', null],
     'ownership started' => ['upgrade.ownership_started', 'upgrading'],
     'columns added' => ['upgrade.columns_added', 'upgrading'],
-    'rows cleared' => ['upgrade.rows_cleared', 'upgrading'],
-    'legacy markers cleaned' => ['upgrade.legacy_markers_cleaned', 'upgrading'],
+    'legacy rows isolated' => ['upgrade.legacy_rows_isolated', 'upgrading'],
     'indexes created' => ['upgrade.indexes_created', 'upgrading'],
     'ownership committed' => ['upgrade.ownership_committed', 'owned'],
 ]);

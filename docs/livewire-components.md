@@ -1214,19 +1214,24 @@ Persisted contexts are signed from a scoped, canonical `table.*` reload rather
 than the caller's possibly partial model projection. They also contain a
 durable row-incarnation token and version stored in
 `aura_embedded_resource_incarnations`. Publish and run Aura's create and upgrade
-migrations before deploying secure fields. The upgrade intentionally removes
-old incarnation rows, invalidating contexts issued under the previous contract.
+migrations before deploying secure fields. The upgrade preserves old incarnation
+rows and fills only newly added identity columns with a deterministic `legacy`
+identity. Runtime lookups use only the `integer` and `string` key types, so those
+preserved rows stay inert and contexts issued under the previous contract remain
+invalidated without deleting data.
 Both migrations record the exact table, columns, and indexes they create in
 `aura_migration_ownership` using atomic claims and compare-and-swap state
 transitions for fail-closed forward validation. A stale `creating` or
 `upgrading` record is resumed one DDL artifact at a time with bounded retries;
 each artifact is validated after a competing migration or interrupted run can
-have created it. Index validation includes the exact name, ordered columns, and
-uniqueness, not only existence. The ownership registry itself is valid only
-when `migration` has an exact primary or unique index. Ownership proof never
-uses runtime incarnation rows or columns; forward runs remove a legacy marker
-row only when its complete historical marker tuple matches, then remove its
-marker column only when no host value remains. Their `down()` methods are
+have created it. Validation covers each portable column type and length,
+nullability, default, generation status, auto-increment behavior, the primary
+key, and each index's exact name, ordered columns, and uniqueness. The ownership
+registry itself is valid only when `migration` has an exact primary or unique
+index. Ownership proof never uses runtime incarnation rows or columns. Historical
+marker rows and columns are retained because an exact host-owned collision is
+indistinguishable; reserved marker resource/key types are outside runtime lookup
+identities. Their `down()` methods are
 intentionally non-destructive because portable database metadata cannot
 distinguish the original objects from exact host-owned copies. Rolling back
 therefore leaves the incarnation table, ownership record, columns, and indexes

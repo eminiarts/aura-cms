@@ -19,7 +19,7 @@ class LivewireComponent extends Field implements PreloadsTableDisplay
 
     public $view = 'aura::fields.livewire-component-view';
 
-    public function getFields(): array
+    public function getFields()
     {
         return array_merge(parent::getFields(), [
             [
