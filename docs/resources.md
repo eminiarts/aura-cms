@@ -1502,6 +1502,8 @@ class Article extends Resource
 
 ## Resource Lifecycle
 
+For Aura's immutable after-commit event contract, change payloads, transaction timing, and hard-delete cleanup rules, see [Resource lifecycle events](resource-lifecycle.md).
+
 ### Complete Lifecycle Flow
 
 ```php

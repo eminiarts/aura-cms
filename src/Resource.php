@@ -11,6 +11,9 @@ use Aura\Base\Contracts\TableResource;
 use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\TypeScope;
+use Aura\Base\ResourceLifecycle\ResourceDependentCleaner;
+use Aura\Base\ResourceLifecycle\ResourceLifecycleDispatcher;
+use Aura\Base\ResourceLifecycle\ResourceLifecycleState;
 use Aura\Base\Resources\User;
 use Aura\Base\Traits\AuraModelConfig;
 use Aura\Base\Traits\InitialPostFields;
@@ -199,6 +202,8 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
      * @var array<string, mixed>
      */
     private array $quarantinedProviderFieldState = [];
+
+    private ?ResourceLifecycleState $resourceLifecycleState = null;
 
     public function __construct(array $attributes = [])
     {
@@ -522,6 +527,25 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         return $this->getConnection()->transaction(
             fn (): int|false => $this->incrementOrDecrement($column, $amount, $extra, 'decrement'),
         );
+    }
+
+    public function delete()
+    {
+        $deleted = $this->runResourceLifecycleTransaction(function (): ?bool {
+            $deleted = parent::delete();
+
+            if ($deleted && $this->resourceLifecycleRequiresDependentCleanup()) {
+                app(ResourceDependentCleaner::class)->cleanup($this);
+            }
+
+            return $deleted;
+        });
+
+        if ($deleted !== true) {
+            $this->resourceLifecycleState = null;
+        }
+
+        return $deleted;
     }
 
     /**
@@ -1250,8 +1274,10 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
 
     public function save(array $options = []): bool
     {
-        return $this->persistWithoutInactiveProviderFieldState(
-            fn (): bool => parent::save($options),
+        return $this->runResourceLifecycleTransaction(
+            fn (): bool => $this->persistWithoutInactiveProviderFieldState(
+                fn (): bool => parent::save($options),
+            ),
         );
     }
 
@@ -1272,8 +1298,10 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
 
     public function saveOrIgnore(array $options = [], array|string|null $uniqueBy = null): bool
     {
-        return $this->persistWithoutInactiveProviderFieldState(
-            fn (): bool => parent::saveOrIgnore($options, $uniqueBy),
+        return $this->runResourceLifecycleTransaction(
+            fn (): bool => $this->persistWithoutInactiveProviderFieldState(
+                fn (): bool => parent::saveOrIgnore($options, $uniqueBy),
+            ),
         );
     }
 
@@ -1552,6 +1580,60 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
 
         static::saved(function (Resource $resource): void {
             $resource->clearFieldsAttributeCache();
+        });
+
+        static::saving(function (Resource $resource): void {
+            $resource->resourceLifecycleState ??= app(ResourceLifecycleDispatcher::class)->beginSave($resource);
+        });
+
+        static::saved(function (Resource $resource): void {
+            if ($resource->resourceLifecycleState === null) {
+                return;
+            }
+
+            app(ResourceLifecycleDispatcher::class)->dispatchSaved($resource, $resource->resourceLifecycleState);
+
+            if ($resource->resourceLifecycleState->operation !== 'restore') {
+                $resource->resourceLifecycleState = null;
+            }
+        });
+
+        static::deleting(function (Resource $resource): void {
+            $resource->resourceLifecycleState = app(ResourceLifecycleDispatcher::class)->beginDelete($resource);
+        });
+
+        static::deleted(function (Resource $resource): void {
+            if ($resource->resourceLifecycleState === null) {
+                return;
+            }
+
+            app(ResourceLifecycleDispatcher::class)->dispatchDeleted($resource, $resource->resourceLifecycleState);
+
+            if (! method_exists($resource, 'isForceDeleting') || ! $resource->isForceDeleting()) {
+                $resource->resourceLifecycleState = null;
+            }
+        });
+
+        static::registerModelEvent('restoring', function (Resource $resource): void {
+            $resource->resourceLifecycleState = app(ResourceLifecycleDispatcher::class)->beginRestore($resource);
+        });
+
+        static::registerModelEvent('restored', function (Resource $resource): void {
+            if ($resource->resourceLifecycleState === null) {
+                return;
+            }
+
+            app(ResourceLifecycleDispatcher::class)->dispatchRestored($resource, $resource->resourceLifecycleState);
+            $resource->resourceLifecycleState = null;
+        });
+
+        static::registerModelEvent('forceDeleted', function (Resource $resource): void {
+            if ($resource->resourceLifecycleState === null) {
+                return;
+            }
+
+            app(ResourceLifecycleDispatcher::class)->dispatchForceDeleted($resource, $resource->resourceLifecycleState);
+            $resource->resourceLifecycleState = null;
         });
     }
 
@@ -2936,6 +3018,11 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         return $value;
     }
 
+    private function resourceLifecycleRequiresDependentCleanup(): bool
+    {
+        return ! method_exists($this, 'isForceDeleting') || $this->isForceDeleting();
+    }
+
     private function restoreConnectionQueryInfrastructure(
         Connection $connection,
         Grammar $grammar,
@@ -3063,6 +3150,29 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
     ): void {
         $transactionsProperty = new \ReflectionProperty(Connection::class, 'transactions');
         $transactionsProperty->setValue($connection, $transactionLevel);
+    }
+
+    /**
+     * @template TResult
+     *
+     * @param  Closure(): TResult  $callback
+     * @return TResult
+     */
+    private function runResourceLifecycleTransaction(Closure $callback): mixed
+    {
+        try {
+            $result = $this->getConnection()->transaction($callback);
+
+            if ($result === false) {
+                $this->resourceLifecycleState = null;
+            }
+
+            return $result;
+        } catch (\Throwable $exception) {
+            $this->resourceLifecycleState = null;
+
+            throw $exception;
+        }
     }
 
     private function saveGlobalResource(
