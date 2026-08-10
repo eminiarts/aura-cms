@@ -12,6 +12,7 @@ use Aura\Base\Resources\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Cache\ArrayStore;
 use Illuminate\Cache\Repository;
+use Illuminate\Database\Eloquent\Casts\Json;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -234,6 +235,65 @@ test('writes use persisted actor privilege membership and target existence', fun
         ->and(Option::withoutGlobalScopes()->count())->toBe(0);
 });
 
+test('unsaved actors cannot borrow a persisted user identity', function (PreferenceScope $scope) {
+    $persistedUser = preferenceGlobalAdmin();
+    $team = $persistedUser->currentTeam;
+    $forgedActor = new User;
+    $forgedActor->forceFill(['id' => $persistedUser->id]);
+    $context = preferenceContext($persistedUser, $team);
+    $preferences = preferenceManager();
+
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    expect(fn () => $preferences->set('table.view', 'kanban', $scope, $context, $forgedActor))
+        ->toThrow(AuthorizationException::class);
+
+    $queries = DB::getQueryLog();
+    DB::disableQueryLog();
+
+    expect($queries)->toBeEmpty()
+        ->and(Option::withoutGlobalScopes()->count())->toBe(0);
+})->with([
+    'user scope' => PreferenceScope::User,
+    'team scope' => PreferenceScope::Team,
+    'everyone scope' => PreferenceScope::Everyone,
+]);
+
+test('mutated persisted actor keys and unsaved target users fail before database access', function () {
+    $persistedUser = preferenceGlobalAdmin();
+    $team = $persistedUser->currentTeam;
+    $mutatedActor = User::factory()->create();
+    $mutatedActor->forceFill(['id' => $persistedUser->id]);
+    $unsavedTarget = new User;
+    $unsavedTarget->forceFill(['id' => $persistedUser->id]);
+    $preferences = preferenceManager();
+
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    expect(fn () => $preferences->set(
+        'table.view',
+        'kanban',
+        PreferenceScope::Everyone,
+        preferenceContext($persistedUser, $team),
+        $mutatedActor,
+    ))->toThrow(AuthorizationException::class)
+        ->and(fn () => $preferences->set(
+            'table.view',
+            'kanban',
+            PreferenceScope::User,
+            preferenceContext($unsavedTarget, $team),
+            $persistedUser,
+        ))->toThrow(AuthorizationException::class);
+
+    $queries = DB::getQueryLog();
+    DB::disableQueryLog();
+
+    expect($queries)->toBeEmpty()
+        ->and(Option::withoutGlobalScopes()->count())->toBe(0);
+});
+
 test('reserved everyone team identity cannot be used by normal models', function () {
     $user = preferenceGlobalAdmin();
     $reservedTeam = new Team;
@@ -346,14 +406,20 @@ test('finite floats preserve their exact type across option storage and fresh ca
     $context = preferenceContext($user, $user->currentTeam, null);
     $preferences = preferenceManager();
 
-    $preferences->set('test.float', $value, PreferenceScope::User, $context, $user);
+    Json::encodeUsing(fn (mixed $value): mixed => json_encode($value));
 
-    expect($preferences->get('test.float', $context))->toBe($value)
-        ->and(Option::withoutGlobalScopes()->sole()->getRawOriginal('value'))->toBe($json);
+    try {
+        $preferences->set('test.float', $value, PreferenceScope::User, $context, $user);
 
-    Cache::flush();
+        expect($preferences->get('test.float', $context))->toBe($value)
+            ->and(Option::withoutGlobalScopes()->sole()->getRawOriginal('value'))->toBe($json);
 
-    expect(preferenceManager()->get('test.float', $context))->toBe($value);
+        Cache::flush();
+
+        expect(preferenceManager()->get('test.float', $context))->toBe($value);
+    } finally {
+        Json::encodeUsing(null);
+    }
 })->with([
     'positive zero' => [0.0, '0.0'],
     'negative zero' => [-0.0, '-0.0'],

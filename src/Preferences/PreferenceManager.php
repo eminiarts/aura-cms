@@ -94,6 +94,15 @@ final readonly class PreferenceManager
             throw new AuthorizationException('An explicit actor is required to write preferences.');
         }
 
+        if (! $this->hasAuthenticPersistedIdentity($actor)) {
+            throw new AuthorizationException('The explicit preference actor is not persisted.');
+        }
+
+        if ($scope === PreferenceScope::User
+            && ! $this->hasAuthenticPersistedIdentity($context->user)) {
+            throw new AuthorizationException('The explicit preference target is not persisted.');
+        }
+
         $persistedActor = $this->persistedUser($actor);
 
         if ($persistedActor === null) {
@@ -184,6 +193,23 @@ final readonly class PreferenceManager
         );
     }
 
+    private function hasAuthenticPersistedIdentity(?User $user): bool
+    {
+        if ($user === null || ! $user->exists) {
+            return false;
+        }
+
+        $key = $user->getKey();
+        $originalKey = $user->getRawOriginal($user->getKeyName());
+
+        if ($key === null || $key === '' || $originalKey === null || $originalKey === ''
+            || (string) $key !== (string) $originalKey) {
+            return false;
+        }
+
+        return $user->getConnection()->getName() === $this->optionConnection()->getName();
+    }
+
     private function optionConnection(): Connection
     {
         return (new Option)->getConnection();
@@ -213,7 +239,7 @@ final readonly class PreferenceManager
 
     private function persistedUser(?User $user): ?User
     {
-        if ($user === null || $user->getKey() === null || $user->getKey() === '') {
+        if (! $this->hasAuthenticPersistedIdentity($user)) {
             return null;
         }
 
@@ -315,15 +341,18 @@ final readonly class PreferenceManager
         mixed $value,
     ): void {
         $storageKey = $this->storageKey($definition, $context);
+        $storageValue = $definition->type === PreferenceValueType::Float && is_float($value)
+            ? new PreferenceFloatValue($value)
+            : $value;
 
         match ($scope) {
             PreferenceScope::User => $context->user->updateOptionForTeam(
                 $storageKey,
-                $value,
+                $storageValue,
                 config('aura.teams') ? $context->team?->getKey() : null,
             ),
-            PreferenceScope::Team => $context->team->updateOption($storageKey, $value),
-            PreferenceScope::Everyone => $this->writeEveryoneEntry($storageKey, $value),
+            PreferenceScope::Team => $context->team->updateOption($storageKey, $storageValue),
+            PreferenceScope::Everyone => $this->writeEveryoneEntry($storageKey, $storageValue),
         };
     }
 
