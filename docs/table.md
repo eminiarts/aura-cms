@@ -1857,6 +1857,62 @@ ray([
 'selectRowsRange'    // Range selection
 ```
 
+## Reusable Query State
+
+`Aura\Base\Table\TableQueryState` is the stable, versioned state shared by table rows, select-all/bulk queries, saved views, and code that builds an export query. `TableQueryStateApplier` applies the same validated state to an Eloquent builder without requiring Livewire.
+
+The canonical schema is:
+
+```json
+{
+  "v": 1,
+  "filters": [
+    {
+      "operator": "and",
+      "filters": [
+        {"name": "status", "operator": "is", "value": "active", "main_operator": "and"}
+      ]
+    }
+  ],
+  "search": "customer",
+  "sorts": [{"key": "created_at", "direction": "desc"}],
+  "parent": {"scope": "account", "id": 42}
+}
+```
+
+Use `toQueryString()` and `fromQueryString()` for the canonical URL-safe round trip. Unsupported versions, extra keys, malformed groups, unknown columns, and undeclared parent scopes fail closed. `withoutParentScope()` produces state for the same query with its optional parent removed.
+
+```php
+$state = TableQueryState::fromQueryString($request->string('table'));
+
+$query = (new TableQueryStateApplier)->apply(
+    Contact::query(),
+    new Contact,
+    $state,
+);
+```
+
+Field keys resolve only through Aura's server-owned field capabilities. A trusted `TableColumnCapabilityResolver` may additionally provide a stable non-field key with validated filter and sort callbacks; URL state never supplies a SQL column or expression.
+
+### Declared Parent Scopes
+
+Nested indexes opt in by implementing `DeclaresTableParentScopes`. Each URL key maps to trusted resource and foreign-key metadata, and Aura resolves the parent through its scoped Eloquent query before authorizing the declared ability.
+
+```php
+public function tableParentScopes(): array
+{
+    return [
+        TableParentScope::foreignKey(
+            key: 'account',
+            parentResource: Account::class,
+            foreignKey: 'account_id',
+        ),
+    ];
+}
+```
+
+The serialized parent payload contains only the declared scope key and parent identifier. Arbitrary column/value pairs are not accepted. Missing, cross-team, unauthorized, or tampered parents never broaden the child query.
+
 ## Summary
 
 The Table component is a powerful, flexible system built with these traits:

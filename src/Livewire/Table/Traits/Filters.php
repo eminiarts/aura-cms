@@ -4,6 +4,7 @@ namespace Aura\Base\Livewire\Table\Traits;
 
 use Aura\Base\Fields\Field;
 use Aura\Base\Fields\Filters\FieldFilterCapabilityResolver;
+use Aura\Base\Table\FilterGroupStateMutator;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 
@@ -52,22 +53,28 @@ trait Filters
             'value' => null,
             'main_operator' => 'and',
         ];
+        $this->syncSerializedTableState();
     }
 
     public function addFilterGroup()
     {
         $this->resetSelectionForScopeChange();
-        $this->filters['custom'][] = [
-            'filters' => [
-                $this->newFilter(),
-            ],
-        ];
+        $this->filters['custom'] = (new FilterGroupStateMutator)->addGroup(
+            $this->filters['custom'],
+            $this->newFilter(),
+        );
+        $this->syncSerializedTableState();
     }
 
     public function addSubFilter($groupKey)
     {
         $this->resetSelectionForScopeChange();
-        $this->filters['custom'][$groupKey]['filters'][] = $this->newFilter();
+        $this->filters['custom'] = (new FilterGroupStateMutator)->addFilter(
+            $this->filters['custom'],
+            (int) $groupKey,
+            $this->newFilter(),
+        );
+        $this->syncSerializedTableState();
     }
 
     public function clearFiltersCache()
@@ -168,24 +175,28 @@ trait Filters
         $this->resetSelectionForScopeChange();
         unset($this->filters['custom'][$index]);
         $this->filters['custom'] = array_values($this->filters['custom']);
+        $this->syncSerializedTableState();
     }
 
     public function removeFilter($groupKey, $filterKey)
     {
         $this->resetSelectionForScopeChange();
-        unset($this->filters['custom'][$groupKey]['filters'][$filterKey]);
-        $this->filters['custom'][$groupKey]['filters'] = array_values($this->filters['custom'][$groupKey]['filters']);
-
-        if (empty($this->filters['custom'][$groupKey]['filters'])) {
-            $this->removeFilterGroup($groupKey);
-        }
+        $this->filters['custom'] = (new FilterGroupStateMutator)->removeFilter(
+            $this->filters['custom'],
+            (int) $groupKey,
+            (int) $filterKey,
+        );
+        $this->syncSerializedTableState();
     }
 
     public function removeFilterGroup($groupKey)
     {
         $this->resetSelectionForScopeChange();
-        unset($this->filters['custom'][$groupKey]);
-        $this->filters['custom'] = array_values($this->filters['custom']);
+        $this->filters['custom'] = (new FilterGroupStateMutator)->removeGroup(
+            $this->filters['custom'],
+            (int) $groupKey,
+        );
+        $this->syncSerializedTableState();
     }
 
     /**
@@ -197,6 +208,7 @@ trait Filters
     {
         $this->resetSelectionForScopeChange();
         $this->reset('filters');
+        $this->syncSerializedTableState();
     }
 
     /**
@@ -260,6 +272,8 @@ trait Filters
         $this->resetSelectionForScopeChange();
 
         if ($path === 'filters.custom') {
+            $this->syncSerializedTableState();
+
             return;
         }
 
@@ -277,11 +291,14 @@ trait Filters
 
         if ($property === 'operator') {
             $this->filters['custom'][(int) $groupKey]['filters'][(int) $filterKey]['value'] = null;
+            $this->syncSerializedTableState();
 
             return;
         }
 
         if ($property !== 'name') {
+            $this->syncSerializedTableState();
+
             return;
         }
 
@@ -291,6 +308,7 @@ trait Filters
 
         $this->filters['custom'][(int) $groupKey]['filters'][(int) $filterKey]['operator'] = $operator;
         $this->filters['custom'][(int) $groupKey]['filters'][(int) $filterKey]['value'] = null;
+        $this->syncSerializedTableState();
     }
 
     /**
@@ -331,6 +349,8 @@ trait Filters
                 'custom' => array_values($filterData['custom'] ?? []),
             ];
         }
+
+        $this->syncSerializedTableState();
 
         // Force a rerender of the component
         $this->dispatch('refresh');

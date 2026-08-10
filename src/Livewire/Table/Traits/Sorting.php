@@ -35,17 +35,20 @@ trait Sorting
 
         if (! isset($this->sorts[$field])) {
             $this->sorts[$field] = 'asc';
+            $this->syncSerializedTableState();
 
             return;
         }
 
         if ($this->sorts[$field] === 'asc') {
             $this->sorts[$field] = 'desc';
+            $this->syncSerializedTableState();
 
             return;
         }
 
         unset($this->sorts[$field]);
+        $this->syncSerializedTableState();
     }
 
     /**

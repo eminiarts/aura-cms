@@ -53,5 +53,6 @@ trait Search
     public function updatedSearch()
     {
         $this->resetPage();
+        $this->syncSerializedTableState();
     }
 }

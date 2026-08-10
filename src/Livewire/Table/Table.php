@@ -4,6 +4,7 @@ namespace Aura\Base\Livewire\Table;
 
 use Aura\Base\Contracts\PreloadsTableDisplay;
 use Aura\Base\Contracts\ProvidesTableEagerLoad;
+use Aura\Base\Contracts\TableColumnCapabilityResolver;
 use Aura\Base\Contracts\TableResource;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\SignedModalRequest;
@@ -19,6 +20,8 @@ use Aura\Base\Livewire\Table\Traits\Sorting;
 use Aura\Base\Livewire\Table\Traits\SwitchView;
 use Aura\Base\Resources\User;
 use Aura\Base\Routing\ResourceViewRoute;
+use Aura\Base\Table\TableQueryState;
+use Aura\Base\Table\TableQueryStateApplier;
 use Closure;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -27,6 +30,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
+use InvalidArgumentException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -134,9 +138,16 @@ class Table extends Component
      */
     public $settings;
 
-    protected $queryString = ['selectedFilter'];
+    public string $tableState = '';
+
+    protected $queryString = [
+        'selectedFilter',
+        'tableState' => ['as' => 'table', 'except' => ''],
+    ];
 
     private bool $failClosedDynamicQuery = false;
+
+    private bool $invalidTableState = false;
 
     public function action(array $data, TableMutationDispatcher $mutations): mixed
     {
@@ -190,6 +201,15 @@ class Table extends Component
     }
 
     public function boot() {}
+
+    public function clearParentScope(): void
+    {
+        $state = $this->currentTableQueryState()->withoutParentScope();
+        $this->tableState = $state->toQueryString();
+        $this->hydrateSerializedTableState();
+        $this->resetSelectionForScopeChange();
+        $this->resetPage();
+    }
 
     /**
      * Get the create link.
@@ -334,6 +354,10 @@ class Table extends Component
     {
         $this->dispatch('tableMounted');
 
+        if ($this->tableState !== '') {
+            $this->hydrateSerializedTableState();
+        }
+
         if ($this->selectedFilter) {
             if (array_key_exists($this->selectedFilter, $this->userFilters)) {
                 $this->filters = $this->userFilters[$this->selectedFilter];
@@ -470,6 +494,20 @@ class Table extends Component
     {
         $query = $this->query();
 
+        if ($this->invalidTableState) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($this->tableState !== '') {
+            $query = $this->tableQueryStateApplier()->apply($query, $this->model(), $this->currentTableQueryState());
+
+            if ($this->currentView === 'kanban') {
+                $query = $this->applyKanbanOrdering($query);
+            }
+
+            return $query;
+        }
+
         if ($this->filters) {
             $query = $this->applyCustomFilter($query);
         }
@@ -534,6 +572,22 @@ class Table extends Component
         $this->resetPage();
     }
 
+    public function syncSerializedTableState(): void
+    {
+        if ($this->usesLegacyTableQueryHooks()) {
+            return;
+        }
+
+        $parent = $this->tableState === '' ? null : $this->currentTableQueryState()->parent;
+        $this->tableState = TableQueryState::fromLegacy(
+            is_array($this->filters) ? $this->filters : ['custom' => []],
+            $this->search,
+            is_array($this->sorts) ? $this->sorts : [],
+            $parent,
+        )->toQueryString();
+        $this->invalidTableState = false;
+    }
+
     public function updateCardStatus(mixed $cardId, mixed $newStatus, TableMutationDispatcher $mutations): void
     {
         $kanbanConfiguration = $this->resolvedKanbanConfiguration();
@@ -578,6 +632,7 @@ class Table extends Component
     {
         if ($property === 'search') {
             $this->resetSelectionForScopeChange();
+            $this->syncSerializedTableState();
         }
     }
 
@@ -627,12 +682,27 @@ class Table extends Component
         $this->resetSelectionForScopeChange();
     }
 
+    public function updatedTableState(): void
+    {
+        $this->resetSelectionForScopeChange();
+        $this->hydrateSerializedTableState();
+        $this->resetPage();
+    }
+
     /**
      * Exact effective display scope for bulk selection mutations.
      */
     protected function bulkMutationQuery()
     {
         $query = $this->mutationQuery();
+
+        if ($this->invalidTableState) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($this->tableState !== '') {
+            return $this->tableQueryStateApplier()->apply($query, $this->model(), $this->currentTableQueryState());
+        }
 
         $this->assertValidMutationFilters();
 
@@ -855,5 +925,49 @@ class Table extends Component
                 abort(422, 'The table mutation sorting is invalid.');
             }
         }
+    }
+
+    private function currentTableQueryState(): TableQueryState
+    {
+        return TableQueryState::fromQueryString($this->tableState);
+    }
+
+    private function hydrateSerializedTableState(): void
+    {
+        try {
+            $state = $this->currentTableQueryState();
+        } catch (InvalidArgumentException) {
+            $this->invalidTableState = true;
+
+            return;
+        }
+
+        $this->filters = ['custom' => $state->filters];
+        $this->search = $state->search;
+        $this->sorts = collect($state->sorts)->mapWithKeys(
+            fn (array $sort): array => [$sort['key'] => $sort['direction']],
+        )->all();
+        $this->tableState = $state->toQueryString();
+        $this->invalidTableState = false;
+    }
+
+    private function tableQueryStateApplier(): TableQueryStateApplier
+    {
+        $resolver = $this->model() instanceof TableColumnCapabilityResolver
+            ? $this->model()
+            : null;
+
+        return new TableQueryStateApplier($resolver);
+    }
+
+    private function usesLegacyTableQueryHooks(): bool
+    {
+        foreach (['applyFilterBasedOnType', 'applyRelationFieldFilter', 'applyMetaFieldFilter', 'applyTableFieldFilter', 'applySorting', 'applySearch'] as $method) {
+            if ((new \ReflectionMethod($this, $method))->getDeclaringClass()->getName() !== self::class) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
