@@ -58,6 +58,22 @@ trait InteractsWithFields
     }
 
     /**
+     * Reject forged promotion intent before unavailable fields are removed from
+     * the form state. Legitimate promotion is authorized again by the resource
+     * persistence contract.
+     */
+    protected function authorizeRequestedGlobalFormIntent(): void
+    {
+        if (! config('aura.teams')
+            || ! $this->model::sharesRecordsAcrossTeams()
+            || ! filter_var(data_get($this->form, 'fields.is_global'), FILTER_VALIDATE_BOOLEAN)) {
+            return;
+        }
+
+        $this->authorize('createGlobal', $this->model);
+    }
+
+    /**
      * Pull the virtual global-row intent out of a validated shared-resource
      * form. The caller must route a true value through createGlobal() or
      * promoteToGlobal(); it is never mass assigned to the model.

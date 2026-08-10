@@ -1,5 +1,5 @@
 <x-aura::fields.wrapper :field="$field">
-    <?php $uniqueId = uniqid($field['slug'] . '_'); ?>
+    <?php $uniqueId = uniqid($field['slug'].'_'); ?>
     <div class="overflow-hidden w-full bg-white rounded-lg border appearance-none border-gray-500/30 shadow-xs focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900">
         <div>
             <div
@@ -12,7 +12,7 @@
                 x-init="
                     console.log('Initializing editor for: ' + editorId);
                     const editor = monaco.editor.create($refs['editor_' + editorId], {
-                        value: @js($form['fields'][$field['slug']]),
+                        value: @js($form['fields'][$field['slug']] ?? ''),
                         language: '{{ $field['language'] ?? 'html' }}',
                         automaticLayout: true,
                         minimap: {
@@ -63,7 +63,7 @@
                 "
                 wire:ignore
                 class="w-full h-full"
-                style="min-height: {{ optional($field)['min_height'] ? optional($field)['min_height'] . 'px' : '300px' }};"
+                style="min-height: {{ optional($field)['min_height'] ? optional($field)['min_height'].'px' : '300px' }};"
             ></div>
         </div>
     </div>
