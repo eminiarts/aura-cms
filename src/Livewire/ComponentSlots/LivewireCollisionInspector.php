@@ -8,7 +8,12 @@ interface LivewireCollisionInspector
 {
     public function assertCompatible(): void;
 
-    public function assertReservable(string $identifier, string $intrinsicComponent, Closure $auraResolver): void;
+    public function assertReservable(
+        string $identifier,
+        string $intrinsicComponent,
+        Closure $auraResolver,
+        bool $allowExactClaim = false,
+    ): void;
 
     /**
      * @param  list<string>  $identifiers

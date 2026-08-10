@@ -78,8 +78,12 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         $this->assertCollectionShapes();
     }
 
-    public function assertReservable(string $identifier, string $intrinsicComponent, Closure $auraResolver): void
-    {
+    public function assertReservable(
+        string $identifier,
+        string $intrinsicComponent,
+        Closure $auraResolver,
+        bool $allowExactClaim = false,
+    ): void {
         $this->assertCompatible();
         $snapshot = $this->protectedClaimSnapshot();
         $this->assertIdentifierUnclaimed(
@@ -87,6 +91,7 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
             $auraResolver,
             allowedConventionalClass: $intrinsicComponent,
             allowAuraReservation: false,
+            allowedExactClaim: $allowExactClaim ? $intrinsicComponent : null,
             protectedClaimSnapshot: $snapshot,
         );
         $this->assertProtectedClaimSnapshotUnchanged($identifier, $snapshot);
@@ -167,6 +172,7 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         Closure $auraResolver,
         ?string $allowedConventionalClass = null,
         bool $allowAuraReservation = true,
+        ?string $allowedExactClaim = null,
         ?array $protectedClaimSnapshot = null,
     ): void {
         $normalized = $this->normalizeIdentifier($identifier);
@@ -178,6 +184,7 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
             $normalized,
             $allowedConventionalClass,
             $allowAuraReservation,
+            $allowedExactClaim,
         );
 
         foreach ($resolvers as $resolver) {
@@ -198,6 +205,7 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
                 $normalized,
                 $allowedConventionalClass,
                 $allowAuraReservation,
+                $allowedExactClaim,
             );
 
             if ($target) {
@@ -268,16 +276,19 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         string $normalized,
         ?string $allowedConventionalClass,
         bool $allowAuraReservation,
+        ?string $allowedExactClaim = null,
     ): void {
         $factoryCache = $this->read($this->factory, 'resolvedComponentCache');
 
-        if (array_key_exists($normalized, $factoryCache)) {
+        if (array_key_exists($normalized, $factoryCache)
+            && $factoryCache[$normalized] !== $allowedExactClaim) {
             $this->collision($identifier, 'factory-cache', $factoryCache[$normalized]);
         }
 
         $classComponents = $this->read($this->finder, 'classComponents');
 
         if (array_key_exists($normalized, $classComponents)
+            && $classComponents[$normalized] !== $allowedExactClaim
             && ! ($allowAuraReservation && $this->isAuraReservation($identifier, $classComponents[$normalized]))) {
             $this->collision($identifier, 'explicit-class', $classComponents[$normalized]);
         }

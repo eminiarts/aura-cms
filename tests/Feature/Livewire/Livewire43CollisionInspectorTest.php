@@ -199,6 +199,27 @@ test('inspector detects existing Factory cache entries before normal resolution'
         ->toThrow(ComponentSlotCollision::class, 'factory-cache');
 })->with(protectedComponentSlotIdentifiers());
 
+test('inspector permits only an explicitly allowed exact owned claim', function () {
+    [$inspector, $finder, $factory] = freshCollisionInspector();
+    $identifier = 'aura-record-panel-owned';
+    $finder->addComponent(name: $identifier, class: CollisionFixture::class);
+    setLivewireInternal($factory, 'resolvedComponentCache', [$identifier => CollisionFixture::class]);
+
+    $inspector->assertReservable(
+        $identifier,
+        CollisionFixture::class,
+        static fn (): null => null,
+        allowExactClaim: true,
+    );
+
+    expect(fn () => $inspector->assertReservable(
+        $identifier,
+        GlobalSearch::class,
+        static fn (): null => null,
+        allowExactClaim: true,
+    ))->toThrow(ComponentSlotCollision::class, CollisionFixture::class);
+});
+
 test('inspector converts errors from third party missing resolvers into collision diagnostics', function () {
     [$inspector, , $factory] = freshCollisionInspector();
     $factory->resolveMissingComponent(static fn () => throw new RuntimeException('resolver failed'));

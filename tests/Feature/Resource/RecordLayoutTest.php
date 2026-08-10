@@ -231,6 +231,26 @@ test('panel transports reject even same-class claims through the core collision 
     expect($registry->panelsFor(new Post))->toBe([]);
 });
 
+test('record layout transport ownership survives a fresh registry without trusting replacements', function () {
+    $panel = new RecordLayoutPanel('worker-owned', RecordLayoutRegion::MainContent, TestPanel::class);
+    $registered = new RegisteredRecordLayoutPanel('acme/panels', $panel);
+
+    $firstRegistry = core25Registry();
+    $firstRegistry->register('acme/panels', [$panel]);
+    $firstRegistry->captureBaselineState();
+
+    $freshRegistry = core25Registry();
+    $freshRegistry->register('acme/panels', [$panel]);
+    expect(fn () => $freshRegistry->captureBaselineState())->not->toThrow(ComponentSlotCollision::class);
+
+    Livewire::component($registered->transport(), SecondPanel::class);
+
+    $replacedRegistry = core25Registry();
+    $replacedRegistry->register('acme/panels', [$panel]);
+    expect(fn () => $replacedRegistry->captureBaselineState())
+        ->toThrow(ComponentSlotCollision::class, SecondPanel::class);
+});
+
 test('a failed batch preflight does not claim earlier livewire transports', function () {
     $registry = core25Registry();
     $first = new RegisteredRecordLayoutPanel(
