@@ -83,52 +83,12 @@ trait HydratesResourceFormFields
      */
     protected function sanitizeResourceFormFields(FieldValueContext $context): void
     {
-        $values = is_array($this->form['fields'] ?? null) ? $this->form['fields'] : [];
-        $sanitized = [];
-        $writableFields = $this->writableResourceFormFields($context);
-        $writableSlugs = $writableFields->pluck('slug');
-
-        foreach ($writableFields as $field) {
-            $slug = $field['slug'] ?? null;
-
-            if (! is_string($slug)) {
-                continue;
-            }
-
-            if ($this->isServerDerivedSlugField($field)) {
-                $basedOn = $field['based_on'] ?? null;
-
-                if (! is_string($basedOn)
-                    || ! $writableSlugs->contains($basedOn)
-                    || ! Arr::has($values, $basedOn)) {
-                    continue;
-                }
-
-                Arr::set($sanitized, $slug, $field['field']->deriveValue(Arr::get($values, $basedOn)));
-
-                continue;
-            }
-
-            if (! Arr::has($values, $slug)) {
-                continue;
-            }
-
-            Arr::set($sanitized, $slug, Arr::get($values, $slug));
-        }
-
-        $this->form['fields'] = $sanitized;
+        $this->form['fields'] = $this->resolveWritableResourceFormState($context)['values'];
     }
 
     protected function writableResourceFormFields(FieldValueContext $context): Collection
     {
-        return $this->resourceFormFields($context)
-            ->filter(fn (array $field): bool => $this->isResourceFormFieldWritable($field))
-            ->filter(fn (array $field): bool => ConditionalLogic::shouldDisplayField(
-                $this->model,
-                $field,
-                ['fields' => is_array($this->form['fields'] ?? null) ? $this->form['fields'] : []],
-            ))
-            ->values();
+        return $this->resolveWritableResourceFormState($context)['fields'];
     }
 
     /**
@@ -201,5 +161,86 @@ trait HydratesResourceFormFields
         return $field['field'] instanceof Slug
             && $field['field']->isDisabled($this->model, $field)
             && ! ($field['custom'] ?? false);
+    }
+
+    /**
+     * Resolve visibility and protected values as one trust graph. A submitted
+     * value only becomes available to later conditions or slug dependencies
+     * after its field is currently visible and writable. Protected slugs are
+     * never copied from Livewire state; they are derived in dependency order.
+     *
+     * @return array{fields: Collection<int, array<string, mixed>>, values: array<string, mixed>}
+     */
+    private function resolveWritableResourceFormState(FieldValueContext $context): array
+    {
+        $submittedValues = is_array($this->form['fields'] ?? null) ? $this->form['fields'] : [];
+        $candidateFields = $this->resourceFormFields($context)
+            ->filter(fn (array $field): bool => $this->isResourceFormFieldWritable($field))
+            ->values();
+        $candidateSlugs = $candidateFields
+            ->pluck('slug')
+            ->filter(fn (mixed $slug): bool => is_string($slug))
+            ->flip();
+        $trustedValues = [];
+        $visibleSlugs = [];
+        $maximumPasses = ($candidateFields->count() * 2) + 1;
+
+        for ($pass = 0; $pass < $maximumPasses; $pass++) {
+            $changed = false;
+
+            foreach ($candidateFields as $field) {
+                $slug = $field['slug'] ?? null;
+
+                if (! is_string($slug)) {
+                    continue;
+                }
+
+                if (! isset($visibleSlugs[$slug])) {
+                    if (! ConditionalLogic::shouldDisplayFieldForWrite($this->model, $field, $trustedValues)) {
+                        continue;
+                    }
+
+                    $visibleSlugs[$slug] = true;
+                    $changed = true;
+                }
+
+                if (Arr::has($trustedValues, $slug)) {
+                    continue;
+                }
+
+                if (! $this->isServerDerivedSlugField($field)) {
+                    if (Arr::has($submittedValues, $slug)) {
+                        Arr::set($trustedValues, $slug, Arr::get($submittedValues, $slug));
+                        $changed = true;
+                    }
+
+                    continue;
+                }
+
+                $basedOn = $field['based_on'] ?? null;
+
+                if (! is_string($basedOn)
+                    || $basedOn === $slug
+                    || ! $candidateSlugs->has($basedOn)
+                    || ! isset($visibleSlugs[$basedOn])
+                    || ! Arr::has($trustedValues, $basedOn)) {
+                    continue;
+                }
+
+                Arr::set($trustedValues, $slug, $field['field']->deriveValue(Arr::get($trustedValues, $basedOn)));
+                $changed = true;
+            }
+
+            if (! $changed) {
+                break;
+            }
+        }
+
+        return [
+            'fields' => $candidateFields
+                ->filter(fn (array $field): bool => is_string($field['slug'] ?? null) && isset($visibleSlugs[$field['slug']]))
+                ->values(),
+            'values' => $trustedValues,
+        ];
     }
 }

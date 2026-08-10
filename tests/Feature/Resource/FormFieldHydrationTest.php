@@ -100,6 +100,13 @@ class FormFieldHydrationResource extends Resource
                 ],
             ],
             ['name' => 'Role slug', 'slug' => 'role_slug', 'type' => Slug::class, 'based_on' => 'role_source', 'custom' => false, 'disabled' => true],
+            ['name' => 'Chain final', 'slug' => 'chain_final', 'type' => Slug::class, 'based_on' => 'chain_middle', 'custom' => false, 'disabled' => true],
+            ['name' => 'Chain middle', 'slug' => 'chain_middle', 'type' => Slug::class, 'based_on' => 'chain_source', 'custom' => false, 'disabled' => true],
+            ['name' => 'Chain source', 'slug' => 'chain_source', 'type' => Text::class],
+            ['name' => 'Cycle A', 'slug' => 'cycle_a', 'type' => Slug::class, 'based_on' => 'cycle_b', 'custom' => false, 'disabled' => true],
+            ['name' => 'Cycle B', 'slug' => 'cycle_b', 'type' => Slug::class, 'based_on' => 'cycle_a', 'custom' => false, 'disabled' => true],
+            ['name' => 'Self cycle', 'slug' => 'self_cycle', 'type' => Slug::class, 'based_on' => 'self_cycle', 'custom' => false, 'disabled' => true],
+            ['name' => 'Missing source slug', 'slug' => 'missing_source_slug', 'type' => Slug::class, 'based_on' => 'not_a_declared_field', 'custom' => false, 'disabled' => true],
             ['name' => 'Derived provider slug', 'slug' => 'derived_provider_slug', 'type' => Slug::class, 'based_on' => 'sensitive_provider_field', 'custom' => false, 'disabled' => true],
         ];
 
@@ -357,6 +364,85 @@ test('edit preserves protected slugs when their conditionally hidden and role un
         ->and($resource->getMeta('role_slug'))->toBe('stored_role_slug')
         ->and($resource->getMeta('sensitive_provider_field'))->toBe('stored provider source')
         ->and($resource->getMeta('derived_provider_slug'))->toBe('stored_provider_slug');
+});
+
+test('edit evaluates visible to hidden transitions from pending sanitized form state', function () {
+    $resource = FormFieldHydrationResource::create([
+        'meta_value' => 'required',
+        'visibility_toggle' => true,
+        'conditional_source' => 'stored source',
+        'conditional_slug' => 'stored_source',
+    ])->refresh();
+
+    Livewire::test(Edit::class, ['id' => $resource->id, 'slug' => 'form-field-hydration'])
+        ->set('form.fields.visibility_toggle', false)
+        ->set('form.fields.conditional_source', 'forged hidden source')
+        ->set('form.fields.conditional_slug', 'forged_hidden_slug')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $resource->refresh();
+
+    expect($resource->getMeta('conditional_source'))->toBe('stored source')
+        ->and($resource->getMeta('conditional_slug'))->toBe('stored_source');
+});
+
+test('create derives protected slug chains from trusted values and omits invalid dependencies', function () {
+    Livewire::test(Create::class, ['slug' => 'form-field-hydration'])
+        ->set('form.fields.meta_value', 'required')
+        ->set('form.fields.chain_source', 'Trusted Leaf')
+        ->set('form.fields.chain_middle', 'forged_intermediate')
+        ->set('form.fields.chain_final', 'forged_final')
+        ->set('form.fields.cycle_a', 'forged_cycle_a')
+        ->set('form.fields.cycle_b', 'forged_cycle_b')
+        ->set('form.fields.self_cycle', 'forged_self_cycle')
+        ->set('form.fields.missing_source_slug', 'forged_missing')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $created = FormFieldHydrationResource::query()->sole();
+
+    expect($created->getMeta('chain_source'))->toBe('Trusted Leaf')
+        ->and($created->getMeta('chain_middle'))->toBe('trusted_leaf')
+        ->and($created->getMeta('chain_final'))->toBe('trusted_leaf')
+        ->and($created->getMeta('cycle_a'))->toBeNull()
+        ->and($created->getMeta('cycle_b'))->toBeNull()
+        ->and($created->getMeta('self_cycle'))->toBeNull()
+        ->and($created->getMeta('missing_source_slug'))->toBeNull();
+});
+
+test('edit derives protected slug chains and preserves invalid dependencies against tampering', function () {
+    $resource = FormFieldHydrationResource::create([
+        'meta_value' => 'required',
+        'chain_source' => 'Stored Leaf',
+        'chain_middle' => 'stored_leaf',
+        'chain_final' => 'stored_leaf',
+        'cycle_a' => 'stored_cycle_a',
+        'cycle_b' => 'stored_cycle_b',
+        'self_cycle' => 'stored_self_cycle',
+        'missing_source_slug' => 'stored_missing',
+    ])->refresh();
+
+    Livewire::test(Edit::class, ['id' => $resource->id, 'slug' => 'form-field-hydration'])
+        ->set('form.fields.chain_source', 'Changed Leaf')
+        ->set('form.fields.chain_middle', 'forged_intermediate')
+        ->set('form.fields.chain_final', 'forged_final')
+        ->set('form.fields.cycle_a', 'forged_cycle_a')
+        ->set('form.fields.cycle_b', 'forged_cycle_b')
+        ->set('form.fields.self_cycle', 'forged_self_cycle')
+        ->set('form.fields.missing_source_slug', 'forged_missing')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $resource->refresh();
+
+    expect($resource->getMeta('chain_source'))->toBe('Changed Leaf')
+        ->and($resource->getMeta('chain_middle'))->toBe('changed_leaf')
+        ->and($resource->getMeta('chain_final'))->toBe('changed_leaf')
+        ->and($resource->getMeta('cycle_a'))->toBe('stored_cycle_a')
+        ->and($resource->getMeta('cycle_b'))->toBe('stored_cycle_b')
+        ->and($resource->getMeta('self_cycle'))->toBe('stored_self_cycle')
+        ->and($resource->getMeta('missing_source_slug'))->toBe('stored_missing');
 });
 
 test('second request condition role and provider drift cannot change protected slugs', function () {
