@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Query\Grammars\SQLiteGrammar;
 use Illuminate\Database\Query\Processors\SQLiteProcessor;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\SQLiteConnection;
 use Illuminate\Support\Facades\DB;
@@ -144,6 +145,28 @@ class PhysicalWriterGuardedGlobalResource extends ExplicitNullSharedCustomResour
     }
 }
 
+class LateBuilderCallbackGlobalResource extends PhysicalWriterGuardedGlobalResource
+{
+    public static ?PDO $substitutedWriter = null;
+
+    public function newModelQuery()
+    {
+        $builder = parent::newModelQuery();
+
+        if (self::$substitutedWriter !== null) {
+            $builder->getQuery()->beforeQuery(function (): void {
+                $substitutedWriter = self::$substitutedWriter;
+                self::$substitutedWriter = null;
+                $this->getConnection()->beforeExecuting(function () use ($substitutedWriter): void {
+                    $this->getConnection()->setPdo($substitutedWriter);
+                });
+            });
+        }
+
+        return $builder;
+    }
+}
+
 class TouchingGlobalResource extends ExplicitNullSharedCustomResource
 {
     protected $fillable = ['name', 'team_id', 'user_id', 'parent_id'];
@@ -173,6 +196,8 @@ class Core13ConnectionProbe extends SQLiteConnection
     public bool $failInsert = false;
 
     public bool $failUpdate = false;
+
+    public bool $failWithLostConnectionOnce = false;
 
     public int $insertCalls = 0;
 
@@ -207,6 +232,19 @@ class Core13ConnectionProbe extends SQLiteConnection
         }
 
         return parent::update($query, $bindings);
+    }
+
+    protected function runQueryCallback($query, $bindings, Closure $callback)
+    {
+        if ($this->failWithLostConnectionOnce) {
+            $this->failWithLostConnectionOnce = false;
+
+            return parent::runQueryCallback($query, $bindings, static function (): never {
+                throw new PDOException('server has gone away');
+            });
+        }
+
+        return parent::runQueryCallback($query, $bindings, $callback);
     }
 }
 
@@ -330,6 +368,7 @@ afterEach(function () {
     PhysicalWriterGuardedGlobalResource::$createdAttack = null;
     PhysicalWriterGuardedGlobalResource::$savingAttack = null;
     PhysicalWriterGuardedGlobalResource::$creatingAttack = null;
+    LateBuilderCallbackGlobalResource::$substitutedWriter = null;
     MutatingGlobalResource::$mutatorInputs = [];
     Schema::dropIfExists('explicit_null_shared_custom_resources');
     DB::purge('core13_probe');
@@ -403,6 +442,13 @@ function core13InstallConnectionProbe(): Core13ConnectionProbe
         SQL);
 
     return $connection;
+}
+
+function core13BeforeExecutingCallbackCount(Connection $connection): int
+{
+    $property = new ReflectionProperty(Connection::class, 'beforeExecutingCallbacks');
+
+    return count($property->getValue($connection));
 }
 
 it('keeps no reflectable static write intent or capability state', function (): void {
@@ -949,6 +995,38 @@ it('fails closed when a connection callback swaps the writer immediately before 
         ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
 });
 
+it('runs final authorization after builder callbacks register later connection callbacks', function (): void {
+    $connection = DB::connection();
+    $originalWriter = $connection->getPdo();
+    $substitutedWriter = core13PhysicalWriter();
+    LateBuilderCallbackGlobalResource::$substitutedWriter = $substitutedWriter;
+
+    try {
+        expect(fn () => LateBuilderCallbackGlobalResource::createGlobalForSystem([
+            'name' => 'Late callback redirected write',
+        ], $connection))->toThrow(LogicException::class, 'physical database writer');
+    } finally {
+        LateBuilderCallbackGlobalResource::$substitutedWriter = null;
+        $connection->setPdo($originalWriter);
+    }
+
+    expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
+        ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
+});
+
+it('does not leave connection authorization callbacks behind in long workers', function (): void {
+    $connection = DB::connection();
+    $initialCallbackCount = core13BeforeExecutingCallbackCount($connection);
+
+    foreach (range(1, 25) as $attempt) {
+        PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+            'name' => 'Scoped callback '.$attempt,
+        ], $connection);
+    }
+
+    expect(core13BeforeExecutingCallbackCount($connection))->toBe($initialCallbackCount);
+});
+
 it('does not leak a trusted owner intent into a nested ordinary callback write', function (): void {
     $existingId = DB::table('explicit_null_shared_custom_resources')->insertGetId([
         'name' => 'Nested owner target',
@@ -986,6 +1064,26 @@ it('does not leak a trusted owner intent into a nested ordinary callback write',
     expect($nestedWriteRejected)->toBeTrue()
         ->and($outer->user_id)->toBe(999999)
         ->and(DB::table('explicit_null_shared_custom_resources')->where('id', $existingId)->value('user_id'))->toBeNull();
+});
+
+it('does not retry a privileged write on a reconnected physical writer', function (): void {
+    $connection = core13InstallConnectionProbe();
+    $originalWriter = $connection->getPdo();
+    $substitutedWriter = core13PhysicalWriter();
+    $reconnectCalls = 0;
+    $connection->setReconnector(function (Connection $reconnecting) use (&$reconnectCalls, $substitutedWriter): void {
+        $reconnectCalls++;
+        $reconnecting->setPdo($substitutedWriter);
+    });
+    $connection->failWithLostConnectionOnce = true;
+
+    expect(fn () => ExplicitNullSharedCustomResource::createGlobalForSystem([
+        'name' => 'Lost connection retry candidate',
+    ], $connection))->toThrow(QueryException::class);
+
+    expect($reconnectCalls)->toBe(0)
+        ->and(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
+        ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
 });
 
 it('fails closed before the outer global insert when a saving listener swaps the physical writer', function () {
@@ -1168,7 +1266,7 @@ it('invalidates global writer authority when the connection is reconnected or pu
 
         $currentConnection = DB::connection('global_write_reconnect');
 
-        expect($currentConnection->getPdo())->not->toBe($originalWriter)
+        expect($currentConnection->getPdo() === $originalWriter)->toBe($attack === 'reconnect')
             ->and((int) $currentConnection->table('explicit_null_shared_custom_resources')->count())->toBe(0);
 
         PhysicalWriterGuardedGlobalResource::$savingAttack = null;

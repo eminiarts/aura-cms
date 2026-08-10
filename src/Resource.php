@@ -957,8 +957,23 @@ class Resource extends Model implements DefinesFields
         }
 
         $assertIntent = function () use ($connection, $writePdo, $table, $teamId, $ownerId): void {
+            $restoreTransactionState = static function () use ($connection, $writePdo): void {
+                if ($writePdo->inTransaction() && $connection->transactionLevel() === 0) {
+                    $transactionsProperty = new \ReflectionProperty(Connection::class, 'transactions');
+                    $transactionsProperty->setValue($connection, 1);
+                }
+            };
+
+            if ($connection->getRawPdo() !== $writePdo) {
+                $connection->setPdo($writePdo);
+                $restoreTransactionState();
+
+                throw new \LogicException('A named write cannot change its physical database writer.');
+            }
+
+            $restoreTransactionState();
+
             if ($this->getConnection() !== $connection
-                || $connection->getRawPdo() !== $writePdo
                 || $this->getTable() !== $table
                 || ($this->getAttribute('team_id') === null) !== ($teamId === null)
                 || (string) $this->getAttribute('team_id') !== (string) $teamId
@@ -1020,10 +1035,10 @@ class Resource extends Model implements DefinesFields
     }
 
     /**
-     * Run through Laravel's normal Connection path while placing the final
-     * authorization after every previously registered connection callback.
-     * The stored hook retains only a weak reference, so it has no reusable
-     * authority after this call returns or throws.
+     * Run through Laravel's normal Connection path while placing authorization
+     * after Builder and Connection callbacks. The scoped dispatcher is removed
+     * in finally, and the transaction disables Laravel's unauthorised
+     * reconnect-and-retry path.
      *
      * @template TValue
      *
@@ -1057,16 +1072,38 @@ class Resource extends Model implements DefinesFields
                 }
             }
         };
-        $operationReference = \WeakReference::create($operation);
+        $callbacksProperty = new \ReflectionProperty(Connection::class, 'beforeExecutingCallbacks');
+        /** @var list<callable> $originalCallbacks */
+        $originalCallbacks = $callbacksProperty->getValue($connection);
+        $dispatcher = static function (string $query, array $bindings, Connection $executingConnection) use (
+            $operation,
+            $originalCallbacks,
+        ): void {
+            foreach ($originalCallbacks as $callback) {
+                $callback($query, $bindings, $executingConnection);
+            }
 
-        $connection->beforeExecuting(static function () use ($operationReference): void {
-            $operationReference->get()?->authorize();
-        });
+            $operation->authorize();
+        };
+        $callbacksProperty->setValue($connection, [$dispatcher]);
 
         try {
-            return $persist();
+            $operation->authorize();
+
+            return $connection->transactionLevel() > 0
+                ? $persist()
+                : $connection->transaction($persist, 1);
         } finally {
-            unset($operation);
+            /** @var list<callable> $currentCallbacks */
+            $currentCallbacks = $callbacksProperty->getValue($connection);
+            $callbacksAddedDuringExecution = array_values(array_filter(
+                $currentCallbacks,
+                static fn (callable $callback): bool => $callback !== $dispatcher,
+            ));
+            $callbacksProperty->setValue(
+                $connection,
+                array_merge($originalCallbacks, $callbacksAddedDuringExecution),
+            );
         }
     }
 
@@ -1105,6 +1142,7 @@ class Resource extends Model implements DefinesFields
         );
 
         if ($this->getIncrementing()) {
+            $query->getQuery()->applyBeforeQueryCallbacks();
             $this->setAttribute(
                 $this->getKeyName(),
                 $this->executeWithFinalConnectionAuthorization(
@@ -1114,6 +1152,7 @@ class Resource extends Model implements DefinesFields
                 ),
             );
         } elseif ($attributes !== []) {
+            $query->getQuery()->applyBeforeQueryCallbacks();
             $this->executeWithFinalConnectionAuthorization(
                 $connection,
                 $authorize,
@@ -1162,6 +1201,7 @@ class Resource extends Model implements DefinesFields
         );
 
         if ($dirty !== []) {
+            $query->getQuery()->applyBeforeQueryCallbacks();
             $this->executeWithFinalConnectionAuthorization(
                 $connection,
                 $authorize,

@@ -195,11 +195,13 @@ uses `createForOwnerForSystem($ownerId, $attributes)` or
 `$resource->assignOwnerForSystem($ownerId, $attributes)`.
 
 Global-write authorization is call-local: no token, flag, or reusable capability
-is stored on the Resource or in static process state. After model and Connection
-callbacks, Aura revalidates the exact Resource, table, connection, physical
-writer, team value, owner, and authenticated actor immediately before persistence. The
-write then follows Laravel's normal Connection, query grammar, binding,
-processor, transaction, and exception paths without redispatching model events.
+is stored on the Resource or in static process state. After model, Builder, and
+Connection callbacks, Aura revalidates the exact Resource, table, connection,
+physical writer, team value, owner, and authenticated actor immediately before
+persistence. The write then follows Laravel's normal Connection, query grammar,
+binding, processor, transaction, and exception paths without redispatching model
+events. Outside a caller transaction, Aura scopes the statement in a transaction
+so Laravel cannot reconnect and retry it on a different physical writer.
 Event handlers, nested field saves, and re-entrant saves do not inherit the outer
 operation's authority. A callback that needs another global or tenant write must
 invoke an independently authorized named API for that operation.
