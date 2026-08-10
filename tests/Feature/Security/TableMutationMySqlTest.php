@@ -19,7 +19,22 @@ class Core05MySqlMutationResource extends BaseResource
         ],
     ];
 
+    public array $bulkActions = [
+        'captureCurrentOrder' => [
+            'label' => 'Capture current order',
+            'ability' => 'update',
+            'method' => 'collection',
+        ],
+    ];
+
+    public static array $capturedIds = [];
+
     protected $guarded = [];
+
+    public function captureCurrentOrder(array $ids): void
+    {
+        array_push(static::$capturedIds, ...$ids);
+    }
 
     public static function getFields(): array
     {
@@ -205,4 +220,79 @@ test('mysql revalidates membership after waiting on a concurrent scope change', 
         ->and(pcntl_wexitstatus($status))->toBe(0, $childResult)
         ->and($resource->fresh()->status)->toBe('excluded')
         ->and($resource->fresh()->content)->toBe('unchanged');
+})->group('mysql');
+
+test('mysql globally orders multiple locked chunks from current values after a concurrent update', function () {
+    if (! function_exists('pcntl_fork')) {
+        $this->markTestSkipped('pcntl is required for the two-session MySQL ordering probe.');
+    }
+
+    config()->set('aura.security.table_mutations.chunk_size', 2);
+    $mounted = core05MySqlMountedResource();
+    $resources = collect(['10', '20', '30', '50'])->map(fn (string $content) => $mounted->newQuery()->create([
+        'title' => 'MySQL ordered '.$content,
+        'content' => $content,
+        'status' => 'eligible',
+    ]));
+    DB::disconnect('core05_mysql');
+    DB::purge('core05_mysql');
+    $signals = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+
+    if ($signals === false) {
+        $this->fail('Unable to create the MySQL ordering signal channel.');
+    }
+
+    $child = pcntl_fork();
+
+    if ($child === -1) {
+        $this->fail('Unable to fork the MySQL ordering probe.');
+    }
+
+    if ($child === 0) {
+        fclose($signals[0]);
+        fread($signals[1], 1);
+        $childMounted = core05MySqlMountedResource('core05_mysql_child');
+        Core05MySqlMutationResource::$capturedIds = [];
+
+        try {
+            app(TableMutationDispatcher::class)->dispatchBulk(
+                $childMounted->newQuery()->orderBy($childMounted->qualifyColumn('content')),
+                new TableMutationModelDescriptor($childMounted),
+                'captureCurrentOrder',
+                $childMounted->getBulkActions(),
+                $resources->pluck('id')->all(),
+                false,
+                'collection',
+            );
+
+            fwrite($signals[1], json_encode(Core05MySqlMutationResource::$capturedIds, JSON_THROW_ON_ERROR));
+            exit(0);
+        } catch (Throwable $exception) {
+            fwrite($signals[1], $exception::class.':'.$exception->getMessage());
+            exit(2);
+        }
+    }
+
+    fclose($signals[1]);
+    $writer = DB::connection('core05_mysql_writer');
+    $writer->beginTransaction();
+    $writer->table(core05MySqlTable())
+        ->where('id', $resources[0]->getKey())
+        ->update(['content' => '40']);
+    fwrite($signals[0], '1');
+    usleep(300_000);
+    $writer->commit();
+    pcntl_waitpid($child, $status);
+    $childResult = stream_get_contents($signals[0]);
+    fclose($signals[0]);
+    $capturedIds = json_decode($childResult, true);
+
+    expect(pcntl_wifexited($status))->toBeTrue()
+        ->and(pcntl_wexitstatus($status))->toBe(0, $childResult)
+        ->and($capturedIds)->toBe([
+            $resources[1]->getKey(),
+            $resources[2]->getKey(),
+            $resources[0]->getKey(),
+            $resources[3]->getKey(),
+        ]);
 })->group('mysql');

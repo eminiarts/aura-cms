@@ -21,7 +21,22 @@ class Core05PostgresMutationResource extends BaseResource
         ],
     ];
 
+    public array $bulkActions = [
+        'captureCurrentOrder' => [
+            'label' => 'Capture current order',
+            'ability' => 'update',
+            'method' => 'collection',
+        ],
+    ];
+
+    public static array $capturedIds = [];
+
     protected $guarded = [];
+
+    public function captureCurrentOrder(array $ids): void
+    {
+        array_push(static::$capturedIds, ...$ids);
+    }
 
     public static function getFields(): array
     {
@@ -238,4 +253,79 @@ test('postgres revalidates effective membership after waiting on a concurrent sc
         ->and(pcntl_wexitstatus($status))->toBe(0, $childResult)
         ->and($resource->fresh()->status)->toBe('excluded')
         ->and($resource->fresh()->content)->toBe('unchanged');
+})->group('postgres');
+
+test('postgres globally orders multiple locked chunks from current values after a concurrent update', function () {
+    if (! function_exists('pcntl_fork')) {
+        $this->markTestSkipped('pcntl is required for the two-session PostgreSQL ordering probe.');
+    }
+
+    config()->set('aura.security.table_mutations.chunk_size', 2);
+    $mounted = core05PostgresMountedResource();
+    $resources = collect(['10', '20', '30', '50'])->map(fn (string $content) => $mounted->newQuery()->create([
+        'title' => 'PostgreSQL ordered '.$content,
+        'content' => $content,
+        'status' => 'eligible',
+    ]));
+    DB::disconnect('core05_pgsql');
+    DB::purge('core05_pgsql');
+    $signals = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+
+    if ($signals === false) {
+        $this->fail('Unable to create the PostgreSQL ordering signal channel.');
+    }
+
+    $child = pcntl_fork();
+
+    if ($child === -1) {
+        $this->fail('Unable to fork the PostgreSQL ordering probe.');
+    }
+
+    if ($child === 0) {
+        fclose($signals[0]);
+        fread($signals[1], 1);
+        $childMounted = core05PostgresMountedResource('core05_pgsql_child');
+        Core05PostgresMutationResource::$capturedIds = [];
+
+        try {
+            app(TableMutationDispatcher::class)->dispatchBulk(
+                $childMounted->newQuery()->orderBy($childMounted->qualifyColumn('content')),
+                new TableMutationModelDescriptor($childMounted),
+                'captureCurrentOrder',
+                $childMounted->getBulkActions(),
+                $resources->pluck('id')->all(),
+                false,
+                'collection',
+            );
+
+            fwrite($signals[1], json_encode(Core05PostgresMutationResource::$capturedIds, JSON_THROW_ON_ERROR));
+            exit(0);
+        } catch (Throwable $exception) {
+            fwrite($signals[1], $exception::class.':'.$exception->getMessage());
+            exit(2);
+        }
+    }
+
+    fclose($signals[1]);
+    $writer = DB::connection('core05_pgsql_writer');
+    $writer->beginTransaction();
+    $writer->table(core05PostgresTable())
+        ->where('id', $resources[0]->getKey())
+        ->update(['content' => '40']);
+    fwrite($signals[0], '1');
+    usleep(300_000);
+    $writer->commit();
+    pcntl_waitpid($child, $status);
+    $childResult = stream_get_contents($signals[0]);
+    fclose($signals[0]);
+    $capturedIds = json_decode($childResult, true);
+
+    expect(pcntl_wifexited($status))->toBeTrue()
+        ->and(pcntl_wexitstatus($status))->toBe(0, $childResult)
+        ->and($capturedIds)->toBe([
+            $resources[1]->getKey(),
+            $resources[2]->getKey(),
+            $resources[0]->getKey(),
+            $resources[3]->getKey(),
+        ]);
 })->group('postgres');

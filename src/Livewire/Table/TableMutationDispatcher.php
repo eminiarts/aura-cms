@@ -1769,6 +1769,14 @@ final class TableMutationDispatcher
         // once-per-locked-chunk semantics; they cannot alter ordering or joins.
         $effectiveBaseQuery->beforeQueryCallbacks = [];
         $modelDescriptor->assertMatches($effectiveQuery);
+        $orderingGrammar = $effectiveBaseQuery->getGrammar();
+
+        if ($orderingGrammar instanceof MariaDbGrammar) {
+            $effectiveBaseQuery->lock('lock in share mode');
+        } elseif ($orderingGrammar instanceof MySqlGrammar) {
+            $effectiveBaseQuery->lock('for share');
+        }
+
         $orderedKeys = $this->mutationKeysFromRows(
             $effectiveBaseQuery->getConnection()->select(
                 $effectiveBaseQuery->toSql(),
