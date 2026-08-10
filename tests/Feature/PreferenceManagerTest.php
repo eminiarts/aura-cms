@@ -886,6 +886,7 @@ test('a false restore veto leaves a float option deleted', function (PreferenceS
 })->with([
     'user scope' => PreferenceScope::User,
     'team scope' => PreferenceScope::Team,
+    'everyone scope' => PreferenceScope::Everyone,
 ]);
 
 test('a false alias deletion veto rolls back the float update and preserves the alias', function () {
