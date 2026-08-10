@@ -79,7 +79,7 @@ class Attachment extends Resource
         return redirect()->route('aura.attachment.index');
     }
 
-    public function deleteSelected($ids)
+    public function deleteSelected(array $ids): void
     {
         self::whereIn('id', $ids)->get()->each(function (self $attachment): void {
             Gate::authorize('delete', $attachment);

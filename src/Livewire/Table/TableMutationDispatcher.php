@@ -24,8 +24,13 @@ use Illuminate\Database\Query\Grammars\MariaDbGrammar;
 use Illuminate\Database\Query\Grammars\MySqlGrammar;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Validation\ValidationException;
+use ReflectionIntersectionType;
 use ReflectionMethod;
+use ReflectionNamedType;
+use ReflectionType;
+use ReflectionUnionType;
 use Stringable;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 use UnitEnum;
 
@@ -85,7 +90,10 @@ final class TableMutationDispatcher
         'year',
     ];
 
-    public function __construct(private readonly Gate $gate) {}
+    public function __construct(
+        private readonly BulkActionParameters $bulkActionParameters,
+        private readonly Gate $gate,
+    ) {}
 
     public function abilityFor(string $action, mixed $definition = null): string
     {
@@ -275,6 +283,7 @@ final class TableMutationDispatcher
         bool $selectAll,
         string $expectedMode,
         mixed $selectAllExclusions = [],
+        array $parameters = [],
     ): mixed {
         $descriptor = $this->descriptor($action, $declaredActions, bulk: true);
 
@@ -283,28 +292,39 @@ final class TableMutationDispatcher
         }
 
         $this->assertConditionAvailable($descriptor);
+        $validatedParameters = $this->bulkActionParameters->validate(
+            is_array($declaredActions[$action]) ? $declaredActions[$action] : [],
+            $parameters,
+        );
+        $hasParameters = is_array($declaredActions[$action])
+            && array_key_exists('parameters', $declaredActions[$action]);
 
         return $this->transactionWithPreLockRetries($modelDescriptor->connectionInstance(), function (
             Closure $markLockAcquired,
         ) use (
             $action,
             $descriptor,
+            $hasParameters,
             $modelDescriptor,
             $scope,
             $selectAll,
             $selectAllExclusions,
             $selected,
+            $validatedParameters,
         ): mixed {
-            $modelDescriptor->assertMatches($scope);
-            $records = $this->withCurrentActorTeamContext(function () use (
+            return $this->withCurrentActorTeamContext(function () use (
+                $action,
                 $descriptor,
+                $hasParameters,
                 $markLockAcquired,
                 $modelDescriptor,
                 $scope,
                 $selectAll,
                 $selectAllExclusions,
                 $selected,
-            ): Collection {
+                $validatedParameters,
+            ): mixed {
+                $modelDescriptor->assertMatches($scope);
                 $records = $this->resolveExactSelection(
                     $scope,
                     $modelDescriptor,
@@ -316,38 +336,40 @@ final class TableMutationDispatcher
                 );
 
                 $this->authorizeBulkRecords($records, $modelDescriptor, $descriptor['ability']);
+                $receiver = $records->first();
 
-                return $records;
-            });
-            $receiver = $records->first();
+                if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
+                    abort(422, 'Bulk mutations require an Aura table resource.');
+                }
 
-            if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
-                abort(422, 'Bulk mutations require an Aura table resource.');
-            }
+                $this->mutationMethod($receiver, $action, $descriptor['mode'], $hasParameters);
 
-            $this->mutationMethod($receiver, $action, $descriptor['mode']);
+                $ids = $records->map(fn (Model $record): mixed => $record->getKey())->all();
 
-            $ids = $records->map(fn (Model $record): mixed => $record->getKey())->all();
+                if ($descriptor['mode'] === self::BULK_MODE_COLLECTION) {
+                    $results = [];
 
-            if ($descriptor['mode'] === self::BULK_MODE_COLLECTION) {
+                    foreach (array_chunk($ids, $this->recordChunkSize()) as $idChunk) {
+                        $results[] = $hasParameters
+                            ? $receiver->{$action}($idChunk, $validatedParameters)
+                            : $receiver->{$action}($idChunk);
+                    }
+
+                    return $this->combineCollectionResults($results);
+                }
+
                 $result = null;
 
-                foreach (array_chunk($ids, $this->recordChunkSize()) as $idChunk) {
-                    $result = $receiver->{$action}($idChunk);
+                foreach ($records->chunk($this->recordChunkSize()) as $recordChunk) {
+                    foreach ($recordChunk as $record) {
+                        $result = $hasParameters
+                            ? $record->{$action}($validatedParameters)
+                            : $record->{$action}();
+                    }
                 }
 
                 return $result;
-            }
-
-            $result = null;
-
-            foreach ($records->chunk($this->recordChunkSize()) as $recordChunk) {
-                foreach ($recordChunk as $record) {
-                    $result = $record->{$action}();
-                }
-            }
-
-            return $result;
+            });
         });
     }
 
@@ -414,6 +436,86 @@ final class TableMutationDispatcher
         }
 
         return $record;
+    }
+
+    /**
+     * Capture a trusted, bounded-memory download scope and authorize its
+     * current records before issuing a browser-visible URL.
+     *
+     * @param  array<string, mixed>  $declaredActions
+     * @param  array<string, mixed>  $parameters
+     * @return array<string, mixed>
+     */
+    public function prepareBulkDownload(
+        Builder $scope,
+        TableMutationModelDescriptor $modelDescriptor,
+        string $action,
+        array $declaredActions,
+        mixed $selected,
+        bool $selectAll,
+        mixed $selectAllExclusions = [],
+        array $parameters = [],
+    ): array {
+        $descriptor = $this->descriptor($action, $declaredActions, bulk: true);
+
+        if ($descriptor['mode'] !== self::BULK_MODE_COLLECTION) {
+            abort(422, 'Bulk downloads require collection execution mode.');
+        }
+
+        $this->assertConditionAvailable($descriptor);
+        $definition = $declaredActions[$action];
+
+        if (! is_array($definition)) {
+            abort(422, 'The declared bulk download is invalid.');
+        }
+
+        $this->downloadDefinition($definition);
+        $validatedParameters = $this->bulkActionParameters->validate($definition, $parameters);
+        [$selection, $receiver] = $this->withCurrentActorTeamContext(function () use (
+            $descriptor,
+            $modelDescriptor,
+            $scope,
+            $selectAll,
+            $selectAllExclusions,
+            $selected,
+        ): array {
+            $selection = $this->downloadSelection(
+                $scope,
+                $modelDescriptor,
+                $selected,
+                $selectAll,
+                $descriptor['trashed'],
+                $selectAllExclusions,
+            );
+
+            $receiver = $this->iterateDownloadSelection(
+                $selection,
+                $modelDescriptor,
+                $descriptor['ability'],
+                static function (array $ids): void {},
+            );
+
+            return [$selection, $receiver];
+        });
+
+        if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
+            abort(422, 'Bulk downloads require an Aura table resource.');
+        }
+
+        $this->mutationMethod(
+            $receiver,
+            $action,
+            self::BULK_MODE_COLLECTION,
+            array_key_exists('parameters', $definition),
+        );
+
+        return [
+            'action' => $action,
+            'model' => $modelDescriptor->state(),
+            'parameters' => $validatedParameters,
+            'resource' => $this->resourceSlug($modelDescriptor->model()),
+            'selection' => $selection,
+        ];
     }
 
     /**
@@ -500,7 +602,7 @@ final class TableMutationDispatcher
 
         $allowedKeys = $expectedKeys + $excludedKeys;
 
-        return $this->transactionWithPreLockRetries(
+        return $this->withCurrentActorTeamContext(fn (): array => $this->transactionWithPreLockRetries(
             $modelDescriptor->connectionInstance(),
             function (Closure $markLockAcquired) use (
                 $context,
@@ -577,7 +679,103 @@ final class TableMutationDispatcher
                     'modalAttributes' => [],
                 ];
             },
-        );
+        ));
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    public function streamBulkDownload(array $context): StreamedResponse
+    {
+        if (
+            array_keys($context) !== ['action', 'model', 'parameters', 'resource', 'selection']
+            || ! is_string($context['action'])
+            || ! is_array($context['model'])
+            || ! is_array($context['parameters'])
+            || ! is_string($context['resource'])
+            || ! is_array($context['selection'])
+        ) {
+            abort(422, 'The stored bulk download request is invalid.');
+        }
+
+        $modelDescriptor = TableMutationModelDescriptor::fromState($context['model']);
+        $model = $modelDescriptor->model();
+        $registeredResource = Aura::findResourceBySlug($context['resource']);
+
+        if (
+            ! $registeredResource instanceof TableResource
+            || ! $registeredResource instanceof Model
+            || ! $registeredResource instanceof Resource
+            || $registeredResource::class !== $model::class
+            || $registeredResource->getSlug() !== $context['resource']
+        ) {
+            abort(422, 'The bulk download resource is no longer registered.');
+        }
+
+        $declaredActions = (array) $model->getBulkActions();
+        $descriptor = $this->descriptor($context['action'], $declaredActions, bulk: true);
+
+        if ($descriptor['mode'] !== self::BULK_MODE_COLLECTION) {
+            abort(422, 'Bulk downloads require collection execution mode.');
+        }
+
+        $this->assertConditionAvailable($descriptor);
+
+        $definition = $declaredActions[$context['action']];
+
+        if (! is_array($definition)) {
+            abort(422, 'The declared bulk download is invalid.');
+        }
+
+        $download = $this->downloadDefinition($definition);
+        $parameters = $this->bulkActionParameters->validate($definition, $context['parameters']);
+        $receiver = $this->withCurrentActorTeamContext(fn (): ?Model => $this->iterateDownloadSelection(
+            $context['selection'],
+            $modelDescriptor,
+            $descriptor['ability'],
+            static function (array $ids): void {},
+        ));
+
+        if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
+            abort(422, 'Bulk downloads require an Aura table resource.');
+        }
+
+        $hasParameters = array_key_exists('parameters', $definition);
+        $this->mutationMethod($receiver, $context['action'], self::BULK_MODE_COLLECTION, $hasParameters);
+
+        return response()->streamDownload(function () use (
+            $context,
+            $descriptor,
+            $hasParameters,
+            $modelDescriptor,
+            $parameters,
+            $receiver,
+        ): void {
+            $this->withCurrentActorTeamContext(function () use (
+                $context,
+                $descriptor,
+                $hasParameters,
+                $modelDescriptor,
+                $parameters,
+                $receiver,
+            ): void {
+                $this->iterateDownloadSelection(
+                    $context['selection'],
+                    $modelDescriptor,
+                    $descriptor['ability'],
+                    function (array $ids) use ($context, $hasParameters, $parameters, $receiver): void {
+                        $result = $hasParameters
+                            ? $receiver->{$context['action']}($ids, $parameters)
+                            : $receiver->{$context['action']}($ids);
+
+                        $this->emitDownloadResult($result);
+                    },
+                );
+            });
+        }, $download['filename'], [
+            'Content-Type' => $download['content_type'],
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     public function updateField(Model&TableResource $record, string $fieldSlug, mixed $value): void
@@ -1151,6 +1349,69 @@ final class TableMutationDispatcher
     }
 
     /**
+     * @param  list<int|string>  $ids
+     * @return Collection<int, Model&TableResource>
+     */
+    private function authorizedDownloadRecords(
+        array $ids,
+        TableMutationModelDescriptor $modelDescriptor,
+        string $ability,
+    ): Collection {
+        $rows = $this->lockedRows(
+            $modelDescriptor->connectionInstance(),
+            $modelDescriptor,
+            $ids,
+            false,
+        );
+        $recordsByIdentity = [];
+
+        foreach ($rows as $row) {
+            $record = $modelDescriptor->hydrate((array) $row);
+            $modelDescriptor->assertModelMatches($record);
+            $recordsByIdentity[$modelDescriptor->canonicalIdentity($record->getKey())] = $record;
+        }
+
+        $records = [];
+
+        foreach ($ids as $id) {
+            $record = $recordsByIdentity[$modelDescriptor->canonicalIdentity($id)] ?? null;
+
+            if (! $record instanceof Model || ! $record instanceof TableResource) {
+                throw ValidationException::withMessages([
+                    'selected' => 'The selected records are no longer valid.',
+                ]);
+            }
+
+            $this->authorize($record, $ability);
+            $records[] = $record;
+        }
+
+        return $modelDescriptor->model()->newCollection($records);
+    }
+
+    private function bulkDownloadChunkSize(): int
+    {
+        $chunkSize = config('aura.security.bulk_downloads.chunk_size', 250);
+
+        if (! is_int($chunkSize) || $chunkSize < 1 || $chunkSize > 1000) {
+            abort(503, 'The bulk download chunk size is invalid.');
+        }
+
+        return min($chunkSize, $this->bulkDownloadMaximumRecordCount());
+    }
+
+    private function bulkDownloadMaximumRecordCount(): int
+    {
+        $maximum = config('aura.security.bulk_downloads.max_records', 100000);
+
+        if (! is_int($maximum) || $maximum < 1 || $maximum > 1000000) {
+            abort(503, 'The bulk download record limit is invalid.');
+        }
+
+        return $maximum;
+    }
+
+    /**
      * @param  list<mixed>  $constraints
      */
     private function callbackConstraintBindingCount(array $constraints, bool $having): int
@@ -1238,6 +1499,48 @@ final class TableMutationDispatcher
             ->values();
     }
 
+    /**
+     * @param  list<mixed>  $results
+     */
+    private function combineCollectionResults(array $results): mixed
+    {
+        $streamedResponses = array_values(array_filter(
+            $results,
+            static fn (mixed $result): bool => $result instanceof StreamedResponse,
+        ));
+
+        if ($streamedResponses === []) {
+            return $results === [] ? null : $results[array_key_last($results)];
+        }
+
+        if (count($streamedResponses) !== count($results)) {
+            abort(422, 'Bulk collection handlers must return a streamed response for every chunk.');
+        }
+
+        /** @var StreamedResponse $firstResponse */
+        $firstResponse = $streamedResponses[0];
+
+        foreach ($streamedResponses as $response) {
+            if (
+                $response->getStatusCode() !== $firstResponse->getStatusCode()
+                || $response->headers->get('Content-Disposition') !== $firstResponse->headers->get('Content-Disposition')
+                || $response->headers->get('Content-Type') !== $firstResponse->headers->get('Content-Type')
+            ) {
+                abort(422, 'Bulk collection download chunks must use consistent response metadata.');
+            }
+        }
+
+        return new StreamedResponse(
+            static function () use ($streamedResponses): void {
+                foreach ($streamedResponses as $response) {
+                    $response->sendContent();
+                }
+            },
+            $firstResponse->getStatusCode(),
+            $firstResponse->headers->all(),
+        );
+    }
+
     private function containsCallbackSqlExpression(mixed $value): bool
     {
         if ($value instanceof ExpressionContract) {
@@ -1301,12 +1604,338 @@ final class TableMutationDispatcher
     }
 
     /**
+     * @param  array<string, mixed>  $definition
+     * @return array{content_type: string, filename: string}
+     */
+    private function downloadDefinition(array $definition): array
+    {
+        $download = $definition['download'] ?? null;
+
+        if (
+            ! is_array($download)
+            || array_keys($download) !== ['content_type', 'filename']
+            || ! is_string($download['content_type'])
+            || preg_match('/\A[a-zA-Z0-9.+-]+\/[a-zA-Z0-9.+-]+(?:; charset=[A-Za-z0-9._-]+)?\z/', $download['content_type']) !== 1
+            || ! is_string($download['filename'])
+            || preg_match('/\A[\x20-\x7E]{1,180}\z/', $download['filename']) !== 1
+            || str_contains($download['filename'], '/')
+            || str_contains($download['filename'], '\\')
+        ) {
+            abort(422, 'The declared bulk download is invalid.');
+        }
+
+        if (str_starts_with($download['content_type'], 'text/') && ! str_contains($download['content_type'], ';')) {
+            $download['content_type'] .= '; charset=UTF-8';
+        }
+
+        return $download;
+    }
+
+    private function downloadOrderExpression(QueryBuilder $query): string
+    {
+        if (
+            (is_array($query->unions) && $query->unions !== [])
+            || (is_array($query->unionOrders) && $query->unionOrders !== [])
+            || ! is_array($query->orders)
+            || $query->orders === []
+        ) {
+            abort(422, 'The table download query contains an unsupported ordering.');
+        }
+
+        $grammar = $query->getGrammar();
+        $orders = [];
+
+        foreach ($query->orders as $order) {
+            if (! is_array($order)) {
+                abort(422, 'The table download query contains an unsupported ordering.');
+            }
+
+            $type = isset($order['type']) && is_string($order['type'])
+                ? strtolower($order['type'])
+                : (array_key_exists('column', $order) ? 'basic' : '');
+
+            if ($type === 'basic') {
+                $column = $order['column'] ?? null;
+                $direction = strtolower((string) ($order['direction'] ?? ''));
+
+                if (
+                    (! is_string($column) && ! ($column instanceof ExpressionContract))
+                    || ! in_array($direction, ['asc', 'desc'], true)
+                ) {
+                    abort(422, 'The table download query contains an unsupported ordering.');
+                }
+
+                $orders[] = $grammar->wrap($column).' '.$direction;
+
+                continue;
+            }
+
+            if ($type === 'raw' && is_string($order['sql'] ?? null) && $order['sql'] !== '') {
+                $orders[] = $order['sql'];
+
+                continue;
+            }
+
+            abort(422, 'The table download query contains an unsupported ordering.');
+        }
+
+        return implode(', ', $orders);
+    }
+
+    /**
+     * @return array{
+     *     bindings: list<mixed>,
+     *     excluded: list<int|string>,
+     *     expected: list<int|string>|null,
+     *     key_alias: string,
+     *     sql: string
+     * }
+     */
+    private function downloadSelection(
+        Builder $scope,
+        TableMutationModelDescriptor $modelDescriptor,
+        mixed $selected,
+        bool $selectAll,
+        ?string $trashed,
+        mixed $excluded,
+    ): array {
+        $expectedKeys = $selectAll
+            ? null
+            : $this->normalizeDownloadKeys(
+                $selected,
+                $modelDescriptor,
+                'The selected records are invalid.',
+                false,
+            );
+        $excludedKeys = $selectAll
+            ? $this->normalizeDownloadKeys(
+                $excluded,
+                $modelDescriptor,
+                'The select-all exclusions are invalid.',
+                true,
+            )
+            : [];
+
+        if (! $selectAll && $excluded !== [] && $excluded !== null) {
+            throw ValidationException::withMessages([
+                'selected' => 'The select-all exclusions are invalid.',
+            ]);
+        }
+
+        $model = $modelDescriptor->model();
+        $effectiveScope = clone $scope;
+
+        if ($expectedKeys !== null) {
+            $effectiveScope->whereKey(array_values($expectedKeys));
+        }
+
+        $effectiveQuery = $model->registerGlobalScopes($effectiveScope);
+        $effectiveQuery = $this->applyTrashedMode($effectiveQuery, $trashed);
+        $effectiveQuery = $this->applyScopesOnce($effectiveQuery);
+        $modelDescriptor->assertMatches($effectiveQuery);
+        $effectiveQuery->setEagerLoads([]);
+
+        if ($effectiveQuery->getQuery()->aggregate !== null) {
+            abort(422, 'Aggregate table download scopes cannot identify authoritative records.');
+        }
+
+        $keyAlias = '__aura_download_key';
+        $orderAlias = '__aura_download_order';
+        $qualifiedKey = $modelDescriptor->table.'.'.$modelDescriptor->keyName;
+        $effectiveQuery->select($qualifiedKey.' as '.$keyAlias);
+
+        if ($effectiveQuery->getQuery()->orders === null && $effectiveQuery->getQuery()->unionOrders === null) {
+            $effectiveQuery->orderBy($qualifiedKey);
+        }
+
+        $query = $effectiveQuery->getQuery();
+        $this->applyVerifiedBeforeQueryCallbacks($query);
+        $modelDescriptor->assertMatches($effectiveQuery);
+        $this->normalizeMutationConstraintList($query->getBindings(), $query);
+        $order = $this->downloadOrderExpression($query);
+        $orderBindings = $query->getRawBindings()['order'] ?? [];
+        $query->selectRaw(
+            'DENSE_RANK() OVER (ORDER BY '.$order.') as '.$query->getGrammar()->wrap($orderAlias),
+            $orderBindings,
+        );
+        $query = $model->newQuery()
+            ->getQuery()
+            ->fromSub($query, '__aura_download_scope')
+            ->select($keyAlias)
+            ->selectRaw('MIN('.$query->getGrammar()->wrap($orderAlias).') as '.$query->getGrammar()->wrap($orderAlias))
+            ->groupBy($keyAlias)
+            ->orderBy($orderAlias)
+            ->orderBy($keyAlias);
+        $bindings = $query->getConnection()->prepareBindings($query->getBindings());
+
+        return [
+            'bindings' => array_values($bindings),
+            'excluded' => array_values($excludedKeys),
+            'expected' => $expectedKeys === null ? null : array_values($expectedKeys),
+            'key_alias' => $keyAlias,
+            'sql' => $query->toSql(),
+        ];
+    }
+
+    private function emitDownloadResult(mixed $result): void
+    {
+        if ($result instanceof StreamedResponse) {
+            $result->sendContent();
+
+            return;
+        }
+
+        if (is_string($result)) {
+            echo $result;
+
+            return;
+        }
+
+        if (is_iterable($result)) {
+            foreach ($result as $chunk) {
+                if (! is_string($chunk)) {
+                    abort(422, 'Bulk download handlers must yield strings.');
+                }
+
+                echo $chunk;
+            }
+
+            return;
+        }
+
+        if ($result !== null) {
+            abort(422, 'Bulk download handlers must return strings, iterables, streamed responses, or null.');
+        }
+    }
+
+    /**
      * @param  list<mixed>  $constraints
      * @param  list<mixed>  $mandatoryConstraints
      */
     private function hasConstraintPrefix(array $constraints, array $mandatoryConstraints): bool
     {
         return array_slice($constraints, 0, count($mandatoryConstraints)) === $mandatoryConstraints;
+    }
+
+    /**
+     * @param  array<string, mixed>  $selection
+     * @param  Closure(list<int|string>): void  $consume
+     */
+    private function iterateDownloadSelection(
+        array $selection,
+        TableMutationModelDescriptor $modelDescriptor,
+        string $ability,
+        Closure $consume,
+    ): Model {
+        if (
+            array_keys($selection) !== ['bindings', 'excluded', 'expected', 'key_alias', 'sql']
+            || ! is_array($selection['bindings'])
+            || ! is_array($selection['excluded'])
+            || ($selection['expected'] !== null && ! is_array($selection['expected']))
+            || ! is_string($selection['key_alias'])
+            || $selection['key_alias'] !== '__aura_download_key'
+            || ! is_string($selection['sql'])
+            || $selection['sql'] === ''
+        ) {
+            abort(422, 'The stored bulk download selection is invalid.');
+        }
+
+        $expectedKeys = $selection['expected'] === null
+            ? null
+            : $this->normalizeDownloadKeys(
+                $selection['expected'],
+                $modelDescriptor,
+                'The selected records are invalid.',
+                false,
+            );
+        $excludedKeys = $this->normalizeDownloadKeys(
+            $selection['excluded'],
+            $modelDescriptor,
+            'The select-all exclusions are invalid.',
+            true,
+        );
+
+        if ($expectedKeys !== null && $excludedKeys !== []) {
+            abort(422, 'The stored bulk download selection is invalid.');
+        }
+
+        $matchedExpectedKeys = [];
+        $matchedExcludedKeys = [];
+        $chunk = [];
+        $receiver = null;
+        $candidateCount = 0;
+        $connection = $modelDescriptor->connectionInstance();
+
+        foreach ($connection->cursor($selection['sql'], $selection['bindings'], false) as $row) {
+            if (! is_object($row) || ! property_exists($row, $selection['key_alias'])) {
+                abort(422, 'The bulk download query returned an invalid identifier.');
+            }
+
+            $id = $row->{$selection['key_alias']};
+
+            if (! is_int($id) && ! is_string($id)) {
+                abort(422, 'The bulk download query returned an invalid identifier.');
+            }
+
+            $identity = $modelDescriptor->canonicalIdentity($id);
+
+            if ($expectedKeys !== null && ! array_key_exists($identity, $expectedKeys)) {
+                abort(422, 'The bulk download query returned an invalid record.');
+            }
+
+            if (array_key_exists($identity, $excludedKeys)) {
+                $matchedExcludedKeys[$identity] = true;
+
+                continue;
+            }
+
+            if ($expectedKeys !== null) {
+                $matchedExpectedKeys[$identity] = true;
+            }
+
+            $candidateCount++;
+
+            if ($candidateCount > $this->bulkDownloadMaximumRecordCount()) {
+                throw ValidationException::withMessages([
+                    'selected' => 'The selected records exceed the configured download limit.',
+                ]);
+            }
+
+            $chunk[] = $id;
+
+            if (count($chunk) === $this->bulkDownloadChunkSize()) {
+                $authorizedRecords = $this->authorizedDownloadRecords($chunk, $modelDescriptor, $ability);
+                $receiver ??= $authorizedRecords->first();
+                $consume($chunk);
+                $chunk = [];
+            }
+        }
+
+        if ($chunk !== []) {
+            $authorizedRecords = $this->authorizedDownloadRecords($chunk, $modelDescriptor, $ability);
+            $receiver ??= $authorizedRecords->first();
+            $consume($chunk);
+        }
+
+        if (array_diff_key($excludedKeys, $matchedExcludedKeys) !== []) {
+            throw ValidationException::withMessages([
+                'selected' => 'The select-all exclusions are invalid.',
+            ]);
+        }
+
+        if ($expectedKeys !== null && array_diff_key($expectedKeys, $matchedExpectedKeys) !== []) {
+            throw ValidationException::withMessages([
+                'selected' => 'The selected records are no longer valid.',
+            ]);
+        }
+
+        if (! $receiver instanceof Model) {
+            throw ValidationException::withMessages([
+                'selected' => 'Select at least one record.',
+            ]);
+        }
+
+        return $receiver;
     }
 
     /**
@@ -1459,22 +2088,79 @@ final class TableMutationDispatcher
         return $keys;
     }
 
-    private function mutationMethod(Model $receiver, string $action, string $mode): ReflectionMethod
-    {
+    private function mutationMethod(
+        Model $receiver,
+        string $action,
+        string $mode,
+        bool $hasParameters = false,
+    ): ReflectionMethod {
         if (! method_exists($receiver, $action)) {
             abort(422, 'The declared table action cannot be executed.');
         }
 
         $method = new ReflectionMethod($receiver, $action);
-        $validParameterCount = $mode === self::BULK_MODE_COLLECTION
-            ? $method->getNumberOfParameters() === 1
-            : $method->getNumberOfRequiredParameters() === 0;
+        $validParameterCount = match (true) {
+            $mode === self::BULK_MODE_COLLECTION && $hasParameters => $method->getNumberOfParameters() === 2,
+            $mode === self::BULK_MODE_COLLECTION => $method->getNumberOfParameters() === 1,
+            $hasParameters => $method->getNumberOfParameters() === 1,
+            default => $method->getNumberOfRequiredParameters() === 0,
+        };
+        $arrayParameterCount = match (true) {
+            $mode === self::BULK_MODE_COLLECTION && $hasParameters => 2,
+            $mode === self::BULK_MODE_COLLECTION || $hasParameters => 1,
+            default => 0,
+        };
+        $parametersAcceptArrays = collect(array_slice($method->getParameters(), 0, $arrayParameterCount))
+            ->every(fn ($parameter): bool => $this->reflectionTypeAcceptsArray($parameter->getType()));
 
-        if (! $method->isPublic() || $method->isStatic() || ! $validParameterCount) {
+        if (
+            ! $method->isPublic()
+            || $method->isStatic()
+            || ! $validParameterCount
+            || ! $parametersAcceptArrays
+        ) {
             abort(422, 'The declared table action cannot be executed.');
         }
 
         return $method;
+    }
+
+    /**
+     * @return array<string, int|string>
+     */
+    private function normalizeDownloadKeys(
+        mixed $ids,
+        TableMutationModelDescriptor $modelDescriptor,
+        string $message,
+        bool $allowEmpty,
+    ): array {
+        if (! is_array($ids) || (! $allowEmpty && $ids === [])) {
+            throw ValidationException::withMessages(['selected' => $message]);
+        }
+
+        $keys = [];
+
+        foreach ($ids as $id) {
+            if ((! is_int($id) && ! is_string($id)) || (string) $id === '') {
+                throw ValidationException::withMessages(['selected' => $message]);
+            }
+
+            $identity = $modelDescriptor->canonicalIdentity($id);
+
+            if (array_key_exists($identity, $keys)) {
+                continue;
+            }
+
+            $keys[$identity] = $id;
+
+            if (count($keys) > $this->bulkDownloadMaximumRecordCount()) {
+                throw ValidationException::withMessages([
+                    'selected' => 'The selected records exceed the configured download limit.',
+                ]);
+            }
+        }
+
+        return $keys;
     }
 
     /**
@@ -1851,6 +2537,29 @@ final class TableMutationDispatcher
         }
 
         return min($chunkSize, $this->maximumRecordCount());
+    }
+
+    private function reflectionTypeAcceptsArray(?ReflectionType $type): bool
+    {
+        if ($type === null) {
+            return false;
+        }
+
+        if ($type instanceof ReflectionNamedType) {
+            return $type->isBuiltin() && in_array($type->getName(), ['array', 'iterable'], true);
+        }
+
+        if ($type instanceof ReflectionUnionType) {
+            return collect($type->getTypes())
+                ->contains(fn (ReflectionType $member): bool => $this->reflectionTypeAcceptsArray($member));
+        }
+
+        if ($type instanceof ReflectionIntersectionType) {
+            return collect($type->getTypes())
+                ->every(fn (ReflectionType $member): bool => $this->reflectionTypeAcceptsArray($member));
+        }
+
+        return false;
     }
 
     /**

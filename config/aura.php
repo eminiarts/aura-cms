@@ -52,6 +52,14 @@ return [
     'teams' => env('AURA_TEAMS', true),
 
     'security' => [
+        'bulk_downloads' => [
+            // The file store is suitable only for a single application host.
+            // Multi-node deployments must use one shared atomic store.
+            'cache_store' => 'file',
+            'chunk_size' => 250,
+            'max_records' => 100000,
+            'ttl_seconds' => 120,
+        ],
         'modal_requests' => [
             // The file store is suitable only for a single application host.
             // Multi-node deployments must use one shared atomic store, such

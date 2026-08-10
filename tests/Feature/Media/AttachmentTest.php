@@ -1,9 +1,12 @@
 <?php
 
+use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+
+use function Pest\Livewire\livewire;
 
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
@@ -253,6 +256,20 @@ test('can delete multiple attachments', function () {
 
     // deleteSelected is an instance method
     (new Attachment)->deleteSelected([$attachment1->id, $attachment2->id]);
+
+    $this->assertDatabaseMissing('posts', ['id' => $attachment1->id]);
+    $this->assertDatabaseMissing('posts', ['id' => $attachment2->id]);
+    $this->assertDatabaseHas('posts', ['id' => $attachment3->id]);
+});
+
+test('the declared bulk delete action executes through the table dispatcher', function () {
+    $attachment1 = Attachment::create(['name' => 'First', 'url' => '1.jpg']);
+    $attachment2 = Attachment::create(['name' => 'Second', 'url' => '2.jpg']);
+    $attachment3 = Attachment::create(['name' => 'Third', 'url' => '3.jpg']);
+
+    livewire(Table::class, ['query' => null, 'model' => new Attachment])
+        ->set('selected', [$attachment1->id, $attachment2->id])
+        ->call('bulkCollectionAction', 'deleteSelected');
 
     $this->assertDatabaseMissing('posts', ['id' => $attachment1->id]);
     $this->assertDatabaseMissing('posts', ['id' => $attachment2->id]);

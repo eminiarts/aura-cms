@@ -3,13 +3,14 @@
 namespace Aura\Base;
 
 use Closure;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 
 class ConditionalLogic
 {
     private static $shouldDisplayFieldCache = [];
 
-    public static function checkCondition($model, $field, $post = null)
+    public static function checkCondition($model, $field, $post = null, bool $preferPost = false)
     {
         $conditions = $field['conditional_logic'] ?? null;
 
@@ -45,7 +46,7 @@ class ConditionalLogic
             } elseif (is_array($condition)) {
                 $show = $condition['field'] === 'role'
                     ? self::handleRoleCondition($condition)
-                    : self::handleDefaultCondition($model, $condition, $post);
+                    : self::handleDefaultCondition($model, $condition, $post, $preferPost);
 
                 if (! $show) {
                     return false;
@@ -115,6 +116,18 @@ class ConditionalLogic
     }
 
     /**
+     * Evaluate write-boundary conditions only from values already accepted by
+     * the server. The model remains available to closures and role checks, but
+     * ordinary field conditions must not fall back to stale persisted values.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    public static function shouldDisplayFieldForWrite($model, $field, array $values): bool
+    {
+        return self::checkCondition($model, $field, ['fields' => $values], true);
+    }
+
+    /**
      * Resource conditions may read mutable model/meta state, provider-captured
      * closures may close over a team or user, and role membership can change
      * without the authenticated user's ID changing. Evaluate those decisions
@@ -178,9 +191,19 @@ class ConditionalLogic
         }
     }
 
-    private static function handleDefaultCondition($model, $condition, $post)
+    private static function handleDefaultCondition($model, $condition, $post, bool $preferPost = false)
     {
         $fieldValue = null;
+
+        if ($preferPost) {
+            $fields = is_array($post['fields'] ?? null) ? $post['fields'] : [];
+
+            if (! Arr::has($fields, $condition['field'])) {
+                return false;
+            }
+
+            return self::checkFieldCondition($condition, Arr::get($fields, $condition['field']));
+        }
 
         if (is_object($model)) {
             if (property_exists($model, $condition['field'])) {
