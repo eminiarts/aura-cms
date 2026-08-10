@@ -323,6 +323,19 @@ class Core05MutationResource extends Resource
         return $query->where($query->getModel()->qualifyColumn('title'), '!=', 'Excluded by kanbanQuery');
     }
 
+    public function kanbanSettings(): array
+    {
+        return [
+            'enabled' => true,
+            'group_field' => 'status',
+            'columns' => ['draft', 'reviewed'],
+            'card_title' => 'title',
+            'card_subtitle' => null,
+            'order_by' => null,
+            'show_empty_columns' => true,
+        ];
+    }
+
     public function markBulkReviewed(): void
     {
         $this->content = 'reviewed-by-bulk-action';
@@ -690,6 +703,19 @@ class Core05UuidMutationResource extends BaseResource
                     ],
                 ],
             ],
+        ];
+    }
+
+    public function kanbanSettings(): array
+    {
+        return [
+            'enabled' => true,
+            'group_field' => 'status',
+            'columns' => ['draft', 'reviewed'],
+            'card_title' => 'title',
+            'card_subtitle' => null,
+            'order_by' => null,
+            'show_empty_columns' => true,
         ];
     }
 
@@ -2900,7 +2926,7 @@ test('kanban status change rejects a value outside the declared field options', 
 
     livewire(Table::class, ['query' => null, 'model' => $resource])
         ->call('updateCardStatus', $resource->id, 'forged-status')
-        ->assertHasErrors(['kanbanStatus']);
+        ->assertStatus(422);
 
     expect($resource->fresh()->status)->toBe('draft');
 });
@@ -2945,7 +2971,7 @@ test('kanban status change rejects a resource without the configured group field
 
     livewire(Table::class, ['query' => null, 'model' => $resource])
         ->call('updateCardStatus', $resource->id, 'reviewed')
-        ->assertHasErrors(['kanbanField']);
+        ->assertStatus(422);
 
     expect($resource->fresh()->status)->toBe('draft');
 });
