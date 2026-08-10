@@ -114,9 +114,49 @@ class Product extends Resource
 | `$customTable` | `bool` | `false` | Enable dedicated table storage |
 | `$usesMeta` | `bool` | `true` | Store overflow fields in meta table |
 | `$physicalFields` | `array` | model `$fillable` | Actual table columns represented by Aura fields; configured owner/team columns are added automatically |
+| `$inheritanceColumn` | `?string` | `null` | Opt a custom table into discriminator-based inheritance using this column |
+| `$inheritanceValue` | `?string` | resource type | Value Aura scopes to and stamps on create when inheritance is enabled |
 | `$table` | `string` | `'posts'` | Database table name |
 | `$fillable` | `array` | `[]` | Writable physical columns; Aura never adds meta slugs to this list |
 | `$casts` | `array` | `[]` | Attribute type casting |
+
+### Custom-table inheritance
+
+Custom tables do not receive the `posts.type` constraint. To store multiple
+resource subclasses in one custom table, explicitly declare a discriminator:
+
+```php
+abstract class Activity extends Resource
+{
+    public static bool $customTable = true;
+
+    public static ?string $inheritanceColumn = 'activity_kind';
+
+    protected $table = 'activities';
+}
+
+class CallActivity extends Activity
+{
+    public static ?string $inheritanceValue = 'call';
+}
+
+class EmailActivity extends Activity
+{
+    public static ?string $inheritanceValue = 'email';
+}
+```
+
+Aura qualifies the declared column with the model table, applies `TypeScope`
+to each subclass, and overwrites the discriminator with the declared value
+when a model is created. `inheritanceValue` defaults to `getType()`. Use
+`withoutGlobalScope(TypeScope::class)` or `withoutGlobalScopes()` for a
+deliberate cross-type query. Empty declarations, or a custom-table value
+without a column, fail during model boot.
+
+Aura's ownership, team, owner-permission, discriminator, and cache lifecycle
+hooks boot before the resource's own `booted()` method. A custom resource can
+therefore register listeners or scopes in `booted()` without calling
+`parent::booted()`.
 
 ### Global Configuration
 

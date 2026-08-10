@@ -931,15 +931,16 @@ class ArticleRepository
 
 ### Global Scopes
 
-Resources automatically apply these scopes (defined in `Resource::booted()`):
+Resources automatically apply these scopes from Aura's non-overridable model
+boot path, before a consumer resource's `booted()` hook runs:
 
 ```php
 use Aura\Base\Models\Scopes\TypeScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\ScopedScope;
 
-// TypeScope - filters by resource type (only for non-custom tables)
-// Applied when $customTable = false, filters posts by type column
+// TypeScope - filters posts by type and custom-table inheritance by its
+// explicitly declared inheritanceColumn/inheritanceValue pair
 Article::withoutGlobalScope(TypeScope::class)->get(); // All post types
 
 // TeamScope - multi-tenancy filtering
@@ -1033,12 +1034,14 @@ class PublishedScope implements Scope
 }
 
 // In your resource
-protected static function booted()
+protected static function booted(): void
 {
-    parent::booted(); // Important: call parent first!
     static::addGlobalScope(new PublishedScope);
 }
 ```
+
+Calling `parent::booted()` is no longer required. Aura's scopes and listeners
+have already been registered exactly once before this consumer hook runs.
 
 ## Actions and Permissions
 
@@ -1440,8 +1443,6 @@ class Article extends Resource
     
     protected static function booted()
     {
-        parent::booted();
-        
         // Automatic slug generation
         static::creating(function ($article) {
             if (empty($article->slug)) {

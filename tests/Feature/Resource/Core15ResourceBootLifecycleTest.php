@@ -4,9 +4,12 @@ use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\TypeScope;
 use Aura\Base\Resource;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -60,6 +63,11 @@ class Core15CustomBetaResource extends Core15CustomInheritanceResource
     public static ?string $inheritanceValue = 'beta';
 }
 
+class Core15CustomDefaultValueResource extends Core15CustomInheritanceResource
+{
+    public static string $type = 'Core15DefaultKind';
+}
+
 class Core15PlainCustomResource extends Resource
 {
     public static $customTable = true;
@@ -100,9 +108,34 @@ class Core15OrphanValueResource extends Core15PlainCustomResource
     public static ?string $inheritanceValue = 'orphan';
 }
 
+class Core15TeamVisibilityProbeJob implements ShouldQueue
+{
+    use Queueable;
+
+    /** @var list<int> */
+    public static array $observedCounts = [];
+
+    public function __construct(public int|string|null $teamId = null) {}
+
+    public function handle(): void
+    {
+        if ($this->teamId === null) {
+            self::$observedCounts[] = Core15TeamResource::query()->count();
+
+            return;
+        }
+
+        self::$observedCounts[] = TeamScope::forTeam(
+            $this->teamId,
+            fn (): int => Core15TeamResource::query()->count(),
+        );
+    }
+}
+
 beforeEach(function (): void {
     Core15ArticleResource::$bootedCalls = 0;
     Core15ArticleResource::$creatingCalls = 0;
+    Core15TeamVisibilityProbeJob::$observedCounts = [];
 
     $this->actingAs($this->actor = createSuperAdmin());
 
@@ -154,13 +187,17 @@ test('post table siblings retain their type isolation and deliberate scope remov
 test('custom table resources can declare a qualified discriminator and stamp it on create', function (): void {
     $alpha = Core15CustomAlphaResource::create(['name' => 'Alpha', 'record_kind' => 'forged']);
     $beta = Core15CustomBetaResource::create(['name' => 'Beta']);
+    $default = Core15CustomDefaultValueResource::create(['name' => 'Default']);
 
     expect($alpha->record_kind)->toBe('alpha')
         ->and($beta->record_kind)->toBe('beta')
+        ->and($default->record_kind)->toBe('Core15DefaultKind')
         ->and(Core15CustomAlphaResource::query()->pluck('name')->all())->toBe(['Alpha'])
         ->and(Core15CustomBetaResource::query()->pluck('name')->all())->toBe(['Beta'])
-        ->and(Core15CustomAlphaResource::withoutGlobalScope(TypeScope::class)->count())->toBe(2)
-        ->and(DB::table('core15_inherited_records')->pluck('record_kind')->all())->toBe(['alpha', 'beta']);
+        ->and(Core15CustomDefaultValueResource::query()->pluck('name')->all())->toBe(['Default'])
+        ->and(Core15CustomAlphaResource::withoutGlobalScope(TypeScope::class)->count())->toBe(3)
+        ->and(DB::table('core15_inherited_records')->pluck('record_kind')->all())
+        ->toBe(['alpha', 'beta', 'Core15DefaultKind']);
 });
 
 test('plain custom tables do not receive an unrelated type constraint', function (): void {
@@ -187,7 +224,7 @@ test('all ownership modes retain the applicable Aura scopes with teams on or off
         ->and(Core15PlainCustomResource::usesTeamScope())->toBeFalse();
 });
 
-test('background queries remain fail closed unless a trusted team context is explicit', function (): void {
+test('console and queued queries fail closed unless a trusted team context is explicit', function (): void {
     if (! config('aura.teams')) {
         $this->markTestSkipped('Tenant query contexts only apply when teams are enabled.');
     }
@@ -196,8 +233,12 @@ test('background queries remain fail closed unless a trusted team context is exp
     Core15TeamResource::create(['name' => 'Team row']);
     Auth::logout();
 
-    expect(Core15TeamResource::query()->count())->toBe(0)
-        ->and(TeamScope::forTeam($teamId, fn (): int => Core15TeamResource::query()->count()))->toBe(1);
+    Bus::dispatchSync(new Core15TeamVisibilityProbeJob);
+    Bus::dispatchSync(new Core15TeamVisibilityProbeJob($teamId));
+
+    expect(app()->runningInConsole())->toBeTrue()
+        ->and(Core15TeamResource::query()->count())->toBe(0)
+        ->and(Core15TeamVisibilityProbeJob::$observedCounts)->toBe([0, 1]);
 });
 
 test('invalid discriminator declarations fail with actionable messages', function (): void {
