@@ -20,7 +20,6 @@ use Aura\Base\Commands\PublishCommand;
 use Aura\Base\Commands\TransferFromPostsToCustomTable;
 use Aura\Base\Commands\TransformTableToResource;
 use Aura\Base\Commands\UpdateSchemaFromMigration;
-use Aura\Base\Database\GuardedDatabaseManager;
 use Aura\Base\Database\Seeders\RoleCatalogSeeder;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
@@ -64,7 +63,6 @@ use Aura\Base\Widgets\SparklineBar;
 use Aura\Base\Widgets\ValueWidget;
 use Aura\Base\Widgets\Widgets;
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -493,14 +491,6 @@ class AuraServiceProvider extends PackageServiceProvider
         app('aura')::registerResources(app('aura')::getAppResources());
         app('aura')::registerWidgets(app('aura')::getAppWidgets());
         app('aura')::registerFields(app('aura')::getAppFields());
-    }
-
-    public function registeringPackage()
-    {
-        $this->app->extend(
-            'db',
-            static fn (DatabaseManager $manager): GuardedDatabaseManager => GuardedDatabaseManager::wrap($manager),
-        );
     }
 
     protected function getResources(): array

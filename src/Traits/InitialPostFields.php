@@ -29,7 +29,7 @@ trait InitialPostFields
 
         $attributes = $post->getAttributes();
         $user = auth()->user();
-        $globalWrite = $post::isGlobalWriteInProgress($post);
+        $globalWrite = $post::hasGlobalWriteValidationIntent($post);
         $connection = $post->getConnection();
         $hasTeamContext = TeamScope::hasContextForConnection($connection);
         $hasOwnerContext = $post::hasTrustedOwnerContextForConnection($connection);

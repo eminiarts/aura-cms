@@ -973,11 +973,11 @@ Global rows from every opted-in resource are mutable only by a Global Admin;
 team Super Admins retain read access but are denied update, delete, restore,
 and force-delete operations.
 
-For an ordinary authenticated create, omitted and explicitly null `team_id` and
-`user_id` values both default to the authenticated user's team and ID. The
-global-write contract is the narrow exception that preserves intentional nulls
-for both posts storage and custom-table storage. Trusted seeders and background
-catalog synchronization may use `createGlobalForSystem()` or
+For an ordinary authenticated create, omitted `team_id` and `user_id` values
+default to the authenticated user's team and ID, while explicit null values are
+rejected. The global-write contract is the narrow exception that preserves
+intentional nulls for both posts storage and custom-table storage. Trusted
+seeders and background catalog synchronization may use `createGlobalForSystem()` or
 `firstOrCreateGlobalForSystem()` / `updateOrCreateGlobalForSystem()`.
 Trusted infrastructure can create a team row with
 `Resource::createForTeamForSystem($teamId, $attributes)` or move an existing row

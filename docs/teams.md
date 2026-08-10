@@ -194,10 +194,20 @@ uses `createForTeamForSystem($teamId, $attributes)` or
 uses `createForOwnerForSystem($ownerId, $attributes)` or
 `$resource->assignOwnerForSystem($ownerId, $attributes)`.
 
-Global-write authorization is bound to the exact Resource instance and its
-writer connection for the duration of that named API call. Model-event handlers
-and nested field saves do not inherit it; a nested resource must independently
-use its own explicit global or tenant system contract.
+Global-write authorization is bound to the exact Resource instance and physical
+writer selected by the named API. Aura runs model, query-builder, and connection
+callbacks without that authority, then uses the captured writer only for the
+package-owned insert or update statement. Event handlers, nested field saves,
+and re-entrant saves therefore do not inherit the outer operation's authority.
+A callback also cannot start a second named global Resource write while the
+outer operation is active. Nested tenant writes still require their own explicit
+tenant system contract.
+
+This is a Resource API authorization boundary, not a sandbox for trusted
+application code. Code that directly uses PDO or SQL while holding the
+application's database credentials acts with those database credentials and is
+outside Aura's Resource tenancy checks. Enforce restrictions on such code with
+database users, grants, row-level security, or equivalent database controls.
 
 Tenant and owner contexts are connection-qualified. An authenticated actor on
 connection A cannot authorize a same-id read or write on connection B. For

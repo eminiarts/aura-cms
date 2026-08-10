@@ -1,19 +1,15 @@
 <?php
 
-use Aura\Base\Database\GuardedDatabaseManager;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
-use Illuminate\Database\Events\ConnectionEstablished;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Database\SQLiteConnection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 
 class ExplicitNullSharedPost extends Resource
@@ -62,7 +58,16 @@ class ThrowingGlobalCustomResource extends ExplicitNullSharedCustomResource
 
 class PhysicalWriterGuardedGlobalResource extends ExplicitNullSharedCustomResource
 {
+    public static bool $cancelCreating = false;
+
+    public static ?Closure $createdAttack = null;
+
     public static ?Closure $creatingAttack = null;
+
+    /** @var list<array{event: string, capability: bool}> */
+    public static array $observedGlobalWriteCapability = [];
+
+    public static ?self $resourceUnderGlobalWrite = null;
 
     public static ?Closure $savingAttack = null;
 
@@ -71,16 +76,89 @@ class PhysicalWriterGuardedGlobalResource extends ExplicitNullSharedCustomResour
         parent::booted();
 
         static::saving(function (self $resource): void {
+            self::$resourceUnderGlobalWrite = $resource;
+            self::$observedGlobalWriteCapability[] = [
+                'event' => 'saving',
+                'capability' => Resource::isGlobalWriteInProgress($resource),
+            ];
+
             if (self::$savingAttack !== null) {
                 (self::$savingAttack)($resource);
             }
         });
 
-        static::creating(function (self $resource): void {
+        static::creating(function (self $resource): ?bool {
+            self::$observedGlobalWriteCapability[] = [
+                'event' => 'creating',
+                'capability' => Resource::isGlobalWriteInProgress($resource),
+            ];
+
+            if (self::$cancelCreating) {
+                return false;
+            }
+
             if (self::$creatingAttack !== null) {
                 (self::$creatingAttack)($resource);
             }
+
+            return null;
         });
+
+        static::created(function (self $resource): void {
+            self::$observedGlobalWriteCapability[] = [
+                'event' => 'created',
+                'capability' => Resource::isGlobalWriteInProgress($resource),
+            ];
+
+            if (self::$createdAttack !== null) {
+                (self::$createdAttack)($resource);
+            }
+        });
+
+        static::updating(function (self $resource): void {
+            self::$observedGlobalWriteCapability[] = [
+                'event' => 'updating',
+                'capability' => Resource::isGlobalWriteInProgress($resource),
+            ];
+        });
+
+        static::updated(function (self $resource): void {
+            self::$observedGlobalWriteCapability[] = [
+                'event' => 'updated',
+                'capability' => Resource::isGlobalWriteInProgress($resource),
+            ];
+        });
+
+        static::saved(function (self $resource): void {
+            self::$observedGlobalWriteCapability[] = [
+                'event' => 'saved',
+                'capability' => Resource::isGlobalWriteInProgress($resource),
+            ];
+        });
+    }
+}
+
+class TouchingGlobalResource extends ExplicitNullSharedCustomResource
+{
+    protected $fillable = ['name', 'team_id', 'user_id', 'parent_id'];
+
+    protected $touches = ['parentRecord'];
+
+    public function parentRecord()
+    {
+        return $this->belongsTo(self::class, 'parent_id')->withoutGlobalScopes();
+    }
+}
+
+class MutatingGlobalResource extends ExplicitNullSharedCustomResource
+{
+    /** @var list<string> */
+    public static array $mutatorInputs = [];
+
+    public function setNameAttribute(string $value): void
+    {
+        self::$mutatorInputs[] = $value;
+        $this->attributes['name'] = strtoupper($value);
     }
 }
 
@@ -144,13 +222,19 @@ beforeEach(function () {
         $table->string('name');
         $table->foreignId('team_id')->nullable();
         $table->foreignId('user_id')->nullable();
+        $table->foreignId('parent_id')->nullable();
         $table->timestamps();
     });
 });
 
 afterEach(function () {
+    PhysicalWriterGuardedGlobalResource::$observedGlobalWriteCapability = [];
+    PhysicalWriterGuardedGlobalResource::$resourceUnderGlobalWrite = null;
+    PhysicalWriterGuardedGlobalResource::$cancelCreating = false;
+    PhysicalWriterGuardedGlobalResource::$createdAttack = null;
     PhysicalWriterGuardedGlobalResource::$savingAttack = null;
     PhysicalWriterGuardedGlobalResource::$creatingAttack = null;
+    MutatingGlobalResource::$mutatorInputs = [];
     Schema::dropIfExists('explicit_null_shared_custom_resources');
     DB::purge('nested_global_write');
     DB::purge('global_write_reconnect');
@@ -284,6 +368,241 @@ it('restores the global-write invariant after a model event throws an Error', fu
     expect(Resource::isGlobalWriteInProgress())->toBeFalse();
 });
 
+it('does not expose Aura global-write authority to model callbacks', function (): void {
+    $global = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Callback authority probe',
+    ]);
+
+    expect($global->name)->toBe('Callback authority probe')
+        ->and(PhysicalWriterGuardedGlobalResource::$observedGlobalWriteCapability)->toBe([
+            ['event' => 'saving', 'capability' => false],
+            ['event' => 'creating', 'capability' => false],
+            ['event' => 'created', 'capability' => false],
+            ['event' => 'saved', 'capability' => false],
+        ]);
+});
+
+it('does not let callbacks start nested global writes through database access channels', function (string $channel): void {
+    $capturedManager = app('db');
+    $nestedWriteRejected = false;
+
+    expect($capturedManager)->toBeInstanceOf(DatabaseManager::class)
+        ->and(DB::getFacadeRoot())->toBe($capturedManager)
+        ->and(app(DatabaseManager::class))->toBe($capturedManager)
+        ->and(Model::getConnectionResolver())->toBe($capturedManager);
+
+    PhysicalWriterGuardedGlobalResource::$savingAttack = function () use (
+        $capturedManager,
+        $channel,
+        &$nestedWriteRejected,
+    ): void {
+        $connection = match ($channel) {
+            'captured-manager' => $capturedManager->connection(),
+            'container-alias' => app('db.connection'),
+            'container-class' => app(DatabaseManager::class)->connection(),
+            'facade' => DB::connection(),
+            'eloquent-resolver' => Model::getConnectionResolver()->connection(),
+        };
+
+        try {
+            ExplicitNullSharedCustomResource::createGlobalForSystem([
+                'name' => 'Nested global capability leak',
+            ], $connection);
+        } catch (LogicException $exception) {
+            $nestedWriteRejected = str_contains($exception->getMessage(), 'nested global Resource write');
+        }
+    };
+
+    $outer = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Outer global resource',
+    ]);
+
+    expect($nestedWriteRejected)->toBeTrue()
+        ->and($outer->name)->toBe('Outer global resource')
+        ->and(ExplicitNullSharedCustomResource::withoutGlobalScopes()
+            ->where('name', 'Nested global capability leak')
+            ->doesntExist())->toBeTrue();
+})->with([
+    'captured-manager',
+    'container-alias',
+    'container-class',
+    'facade',
+    'eloquent-resolver',
+]);
+
+it('does not let a connection callback start a nested global Resource write', function (): void {
+    $connection = DB::connection();
+    $armed = true;
+    $nestedWriteRejected = false;
+
+    $connection->beforeExecuting(function () use (&$armed, &$nestedWriteRejected, $connection): void {
+        if (! $armed) {
+            return;
+        }
+
+        $armed = false;
+
+        try {
+            ExplicitNullSharedCustomResource::createGlobalForSystem([
+                'name' => 'Connection callback nested global write',
+            ], $connection);
+        } catch (LogicException $exception) {
+            $nestedWriteRejected = str_contains($exception->getMessage(), 'nested global Resource write');
+        }
+    });
+
+    $outer = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Connection callback outer write',
+    ], $connection);
+
+    expect($nestedWriteRejected)->toBeTrue()
+        ->and($outer->name)->toBe('Connection callback outer write')
+        ->and(ExplicitNullSharedCustomResource::withoutGlobalScopes()
+            ->where('name', 'Connection callback nested global write')
+            ->doesntExist())->toBeTrue();
+});
+
+it('preserves Laravel event order and cancellation around a global insert', function (): void {
+    PhysicalWriterGuardedGlobalResource::$cancelCreating = true;
+
+    $cancelled = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Cancelled global insert',
+    ]);
+
+    expect($cancelled->exists)->toBeFalse()
+        ->and(PhysicalWriterGuardedGlobalResource::withoutGlobalScopes()->count())->toBe(0)
+        ->and(array_column(
+            PhysicalWriterGuardedGlobalResource::$observedGlobalWriteCapability,
+            'event',
+        ))->toBe(['saving', 'creating']);
+});
+
+it('preserves Laravel update events and timestamps for global records', function (): void {
+    $global = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Before global update',
+    ]);
+    $originalUpdatedAt = $global->updated_at;
+    PhysicalWriterGuardedGlobalResource::$observedGlobalWriteCapability = [];
+    $global->updated_at = $originalUpdatedAt->copy()->subSecond();
+
+    $updated = PhysicalWriterGuardedGlobalResource::updateOrCreateGlobalForSystem(
+        ['id' => $global->id],
+        ['name' => 'After global update'],
+    );
+
+    expect($updated->name)->toBe('After global update')
+        ->and($updated->updated_at->greaterThan($originalUpdatedAt->copy()->subSecond()))->toBeTrue()
+        ->and(array_column(
+            PhysicalWriterGuardedGlobalResource::$observedGlobalWriteCapability,
+            'event',
+        ))->toBe(['saving', 'updating', 'updated', 'saved'])
+        ->and(array_unique(array_column(
+            PhysicalWriterGuardedGlobalResource::$observedGlobalWriteCapability,
+            'capability',
+        )))->toBe([false]);
+});
+
+it('preserves attribute mutators for global inserts and updates', function (): void {
+    $global = MutatingGlobalResource::createGlobalForSystem([
+        'name' => 'created through mutator',
+    ]);
+    $updated = MutatingGlobalResource::updateOrCreateGlobalForSystem(
+        ['id' => $global->id],
+        ['name' => 'updated through mutator'],
+    );
+
+    expect($global->name)->toBe('CREATED THROUGH MUTATOR')
+        ->and($updated->name)->toBe('UPDATED THROUGH MUTATOR')
+        ->and(MutatingGlobalResource::$mutatorInputs)->toBe([
+            'created through mutator',
+            'updated through mutator',
+        ]);
+});
+
+it('allows post-persistence callbacks to perform an ordinary same-model update', function (): void {
+    PhysicalWriterGuardedGlobalResource::$createdAttack = function (PhysicalWriterGuardedGlobalResource $resource): void {
+        $resource->forceFill(['name' => 'Updated by created callback'])->saveQuietly();
+    };
+
+    $global = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Before created callback',
+    ]);
+
+    expect($global->refresh()->name)->toBe('Updated by created callback')
+        ->and($global->getAttribute('team_id'))->toBeNull();
+});
+
+it('keeps global inserts inside the callers transaction', function (): void {
+    $connection = DB::connection();
+    $connection->beginTransaction();
+
+    try {
+        PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+            'name' => 'Transactional global insert',
+        ], $connection);
+
+        expect(PhysicalWriterGuardedGlobalResource::withoutGlobalScopes()->count())->toBe(1);
+    } finally {
+        $connection->rollBack();
+    }
+
+    expect(PhysicalWriterGuardedGlobalResource::withoutGlobalScopes()->count())->toBe(0);
+});
+
+it('preserves Eloquent owner touching after a global insert', function (): void {
+    $parent = TouchingGlobalResource::createGlobalForSystem([
+        'name' => 'Touched global parent',
+    ]);
+    $parent->forceFill(['updated_at' => now()->subMinute()])->saveQuietly();
+    $staleUpdatedAt = $parent->fresh()->updated_at;
+
+    TouchingGlobalResource::createGlobalForSystem([
+        'name' => 'Touching global child',
+        'parent_id' => $parent->id,
+    ]);
+
+    expect($parent->fresh()->updated_at->greaterThan($staleUpdatedAt))->toBeTrue();
+});
+
+it('does not let a saving callback re-enter save with the outer global-write authority', function (): void {
+    $reentered = false;
+
+    PhysicalWriterGuardedGlobalResource::$savingAttack = function (PhysicalWriterGuardedGlobalResource $resource) use (&$reentered): void {
+        if ($reentered) {
+            return;
+        }
+
+        $reentered = true;
+        $resource->save();
+    };
+
+    expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Reentrant authority probe',
+    ]))->toThrow(LogicException::class, 'cannot be re-entered');
+
+    expect($reentered)->toBeTrue()
+        ->and(PhysicalWriterGuardedGlobalResource::withoutGlobalScopes()->count())->toBe(0);
+});
+
+it('does not expose Aura global-write authority to connection callbacks', function (): void {
+    $connection = DB::connection();
+    $observedCapabilities = [];
+
+    $connection->beforeExecuting(function () use (&$observedCapabilities): void {
+        $observedCapabilities[] = Resource::isGlobalWriteInProgress(
+            PhysicalWriterGuardedGlobalResource::$resourceUnderGlobalWrite,
+        );
+    });
+
+    $global = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Connection callback authority probe',
+    ], $connection);
+
+    expect($global->name)->toBe('Connection callback authority probe')
+        ->and($observedCapabilities)->not->toBeEmpty()
+        ->and(array_unique($observedCapabilities))->toBe([false]);
+});
+
 it('fails closed before the outer global insert when a saving listener swaps the physical writer', function () {
     $connection = DB::connection();
     $originalWriter = $connection->getPdo();
@@ -328,7 +647,7 @@ it('fails closed when a creating listener swaps the writer after the saving even
         ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
 });
 
-it('blocks a saving listener from issuing a query on the substituted writer', function () {
+it('keeps the package-owned global insert on its captured writer after an ordinary callback query', function () {
     $connection = DB::connection();
     $originalWriter = $connection->getPdo();
     $substitutedWriter = core13PhysicalWriter();
@@ -351,7 +670,7 @@ it('blocks a saving listener from issuing a query on the substituted writer', fu
     }
 
     expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
-        ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
+        ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(1);
 });
 
 it('fails closed when a saving listener swaps the writer and re-enters save on the same resource', function () {
@@ -373,7 +692,7 @@ it('fails closed when a saving listener swaps the writer and re-enters save on t
     try {
         expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
             'name' => 'Reentrant redirected write',
-        ]))->toThrow(LogicException::class, 'physical database writer');
+        ]))->toThrow(LogicException::class, 'cannot be re-entered');
     } finally {
         PhysicalWriterGuardedGlobalResource::$savingAttack = null;
         $connection->setPdo($originalWriter);
@@ -480,133 +799,6 @@ it('invalidates global writer authority when the connection is reconnected or pu
         @unlink($database);
     }
 })->with(['reconnect', 'purge']);
-
-it('blocks a purged same-name replacement connection from writing during a global save', function (): void {
-    expect(DB::getFacadeRoot())->toBeInstanceOf(GuardedDatabaseManager::class)
-        ->and(app(DatabaseManager::class))->toBe(DB::getFacadeRoot());
-
-    $database = tempnam(sys_get_temp_dir(), 'aura-core13-purge-write-');
-
-    if ($database === false) {
-        throw new RuntimeException('Unable to create a temporary SQLite database.');
-    }
-
-    config()->set('database.connections.global_write_reconnect', [
-        'driver' => 'sqlite',
-        'database' => $database,
-        'prefix' => '',
-        'foreign_key_constraints' => false,
-    ]);
-    DB::purge('global_write_reconnect');
-
-    $originalConnection = DB::connection('global_write_reconnect');
-    $originalConnection->getPdo()->exec(<<<'SQL'
-        CREATE TABLE explicit_null_shared_custom_resources (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR NOT NULL,
-            team_id INTEGER NULL,
-            user_id INTEGER NULL,
-            created_at DATETIME NULL,
-            updated_at DATETIME NULL
-        )
-        SQL);
-    $originalWriter = $originalConnection->getPdo();
-    $replacementConnection = null;
-    Event::forget(ConnectionEstablished::class);
-
-    PhysicalWriterGuardedGlobalResource::$savingAttack = function () use (&$replacementConnection): void {
-        DB::purge('global_write_reconnect');
-        $replacementConnection = DB::connection('global_write_reconnect');
-        $replacementConnection->getPdo()->exec(<<<'SQL'
-            INSERT INTO explicit_null_shared_custom_resources (name)
-            VALUES ('Replacement listener raw PDO side-channel write')
-            SQL);
-    };
-
-    try {
-        expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
-            'name' => 'Outer purge candidate',
-        ], $originalConnection))->toThrow(LogicException::class, 'physical database writer');
-
-        expect($replacementConnection)->toBeNull();
-
-        $inspectionConnection = DB::connection('global_write_reconnect');
-
-        expect($inspectionConnection)->not->toBe($originalConnection)
-            ->and($inspectionConnection->getPdo())->not->toBe($originalWriter)
-            ->and((int) $inspectionConnection->table('explicit_null_shared_custom_resources')->count())->toBe(0);
-    } finally {
-        PhysicalWriterGuardedGlobalResource::$savingAttack = null;
-        DB::purge('global_write_reconnect');
-        @unlink($database);
-    }
-});
-
-it('blocks a late connection resolver from replacing the guarded writer during a global save', function (): void {
-    $database = tempnam(sys_get_temp_dir(), 'aura-core13-late-resolver-');
-
-    if ($database === false) {
-        throw new RuntimeException('Unable to create a temporary SQLite database.');
-    }
-
-    config()->set('database.connections.global_write_reconnect', [
-        'driver' => 'sqlite',
-        'database' => $database,
-        'prefix' => '',
-        'foreign_key_constraints' => false,
-    ]);
-    DB::purge('global_write_reconnect');
-
-    $originalConnection = DB::connection('global_write_reconnect');
-    $originalConnection->getPdo()->exec(<<<'SQL'
-        CREATE TABLE explicit_null_shared_custom_resources (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR NOT NULL,
-            team_id INTEGER NULL,
-            user_id INTEGER NULL,
-            created_at DATETIME NULL,
-            updated_at DATETIME NULL
-        )
-        SQL);
-    $originalWriter = $originalConnection->getPdo();
-    $originalResolver = Connection::getResolver('sqlite');
-    $replacementConnection = null;
-
-    PhysicalWriterGuardedGlobalResource::$savingAttack = function () use (&$replacementConnection): void {
-        Connection::resolverFor(
-            'sqlite',
-            static fn (mixed $pdo, string $database, string $prefix, array $config): SQLiteConnection => new SQLiteConnection($pdo, $database, $prefix, $config),
-        );
-        DB::purge('global_write_reconnect');
-        $replacementConnection = DB::connection('global_write_reconnect');
-        $replacementConnection->table('explicit_null_shared_custom_resources')->insert([
-            'name' => 'Late resolver side-channel write',
-        ]);
-    };
-
-    try {
-        expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
-            'name' => 'Outer late resolver candidate',
-        ], $originalConnection))->toThrow(LogicException::class, 'physical database writer');
-
-        expect($replacementConnection)->toBeNull();
-
-        $inspectionConnection = DB::connection('global_write_reconnect');
-
-        expect($inspectionConnection)->not->toBe($originalConnection)
-            ->and($inspectionConnection->getPdo())->not->toBe($originalWriter)
-            ->and((int) $inspectionConnection->table('explicit_null_shared_custom_resources')->count())->toBe(0);
-    } finally {
-        PhysicalWriterGuardedGlobalResource::$savingAttack = null;
-
-        if ($originalResolver instanceof Closure) {
-            Connection::resolverFor('sqlite', $originalResolver);
-        }
-
-        DB::purge('global_write_reconnect');
-        @unlink($database);
-    }
-});
 
 it('does not leak global writer authority across repeated long worker failures', function () {
     $connection = DB::connection();
