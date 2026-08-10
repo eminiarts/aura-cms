@@ -298,12 +298,25 @@ describe('Slug Field in Livewire', function () {
 });
 
 describe('Slug Field Value Handling', function () {
-    test('derives values with the browser slug normalization semantics', function () {
+    test('derives values with the browser slug normalization semantics', function (mixed $value, string $expected) {
         $slugField = new Slug;
 
-        expect($slugField->deriveValue('  Héllo -- WORLD & More  '))->toBe('hello_world_more')
-            ->and($slugField->deriveValue('Crème brûlée'))->toBe('creme_brulee');
-    });
+        expect($slugField->deriveValue($value))->toBe($expected);
+    })->with([
+        'zero' => [0, '0'],
+        'empty string' => ['', ''],
+        'null source value' => [null, ''],
+        'ASCII whitespace' => ["\t\n  Alpha Beta \r\n", 'alpha_beta'],
+        'byte order mark whitespace' => ["\u{FEFF}Alpha\u{FEFF}", 'alpha'],
+        'legacy Mongolian separator is not whitespace' => ["\u{180E}Alpha\u{180E}", '_alpha_'],
+        'precomposed Unicode accents' => ['Crème brûlée', 'creme_brulee'],
+        'combining marks' => ["Cafe\u{0301}", 'cafe'],
+        'non-ASCII letters' => ['Straße 東京', 'stra_e_'],
+        'punctuation' => ['Hello, world!', 'hello_world_'],
+        'repeated separators' => ['A---  $$$B', 'a_b'],
+        'case folding' => ['MiXeD_CaSe', 'mixed_case'],
+        'long value' => [str_repeat('A', 10_000), str_repeat('a', 10_000)],
+    ]);
 
     test('get method returns value unchanged', function () {
         $slugField = new Slug;

@@ -68,6 +68,38 @@ class FormFieldHydrationResource extends Resource
             ['name' => 'Edit hidden panel', 'slug' => 'edit_hidden_panel', 'type' => Panel::class, 'on_edit' => false],
             ['name' => 'Edit parent hidden', 'slug' => 'edit_parent_hidden', 'type' => Text::class, 'default' => 'edit parent hidden'],
             ['name' => 'Legacy nullable', 'slug' => 'legacy_nullable', 'type' => NullUnsafeLegacyHydrationField::class],
+            ['name' => 'Visibility toggle', 'slug' => 'visibility_toggle', 'type' => Boolean::class, 'default' => false],
+            [
+                'name' => 'Conditional source',
+                'slug' => 'conditional_source',
+                'type' => Text::class,
+                'conditional_logic' => [
+                    ['field' => 'visibility_toggle', 'operator' => '==', 'value' => true],
+                ],
+            ],
+            ['name' => 'Conditional slug', 'slug' => 'conditional_slug', 'type' => Slug::class, 'based_on' => 'conditional_source', 'custom' => false, 'disabled' => true],
+            [
+                'name' => 'Conditional source panel',
+                'slug' => 'conditional_source_panel',
+                'type' => Panel::class,
+                'conditional_logic' => [
+                    ['field' => 'visibility_toggle', 'operator' => '==', 'value' => true],
+                ],
+            ],
+            ['name' => 'Parent conditional source', 'slug' => 'parent_conditional_source', 'type' => Text::class],
+            ['name' => 'Protected slug panel', 'slug' => 'protected_slug_panel', 'type' => Panel::class],
+            ['name' => 'Parent conditional slug', 'slug' => 'parent_conditional_slug', 'type' => Slug::class, 'based_on' => 'parent_conditional_source', 'custom' => false, 'disabled' => true],
+            ['name' => 'Disabled source', 'slug' => 'disabled_source', 'type' => Text::class, 'disabled' => true],
+            ['name' => 'Disabled source slug', 'slug' => 'disabled_source_slug', 'type' => Slug::class, 'based_on' => 'disabled_source', 'custom' => false, 'disabled' => true],
+            [
+                'name' => 'Role source',
+                'slug' => 'role_source',
+                'type' => Text::class,
+                'conditional_logic' => [
+                    ['field' => 'role', 'operator' => '==', 'value' => 'slug-source-writer'],
+                ],
+            ],
+            ['name' => 'Role slug', 'slug' => 'role_slug', 'type' => Slug::class, 'based_on' => 'role_source', 'custom' => false, 'disabled' => true],
             ['name' => 'Derived provider slug', 'slug' => 'derived_provider_slug', 'type' => Slug::class, 'based_on' => 'sensitive_provider_field', 'custom' => false, 'disabled' => true],
         ];
 
@@ -231,6 +263,148 @@ test('query values and a changed field provider cannot seed or persist unavailab
         ->and($created->getMeta('derived_provider_slug'))->toBeNull()
         ->and($created->getMeta('create_hidden'))->toBeNull()
         ->and($created->getMeta('parent_hidden'))->toBeNull();
+});
+
+test('create ignores protected slug derivation from conditionally hidden and role unauthorized sources', function () {
+    $role = $this->user->roles()->firstOrFail();
+    $role->forceFill([
+        'slug' => 'form-field-editor',
+        'super_admin' => false,
+        'permissions' => ['create-form-field-hydration' => true],
+    ])->saveQuietly();
+    $this->actingAs($this->user->refresh());
+    Aura::clearConditionsCache();
+
+    Livewire::test(Create::class, ['slug' => 'form-field-hydration'])
+        ->set('form.fields.meta_value', 'required')
+        ->set('form.fields.visibility_toggle', false)
+        ->set('form.fields.conditional_source', 'forged conditional source')
+        ->set('form.fields.conditional_slug', 'forged_conditional_slug')
+        ->set('form.fields.parent_conditional_source', 'forged parent conditional source')
+        ->set('form.fields.parent_conditional_slug', 'forged_parent_conditional_slug')
+        ->set('form.fields.disabled_source', 'forged disabled source')
+        ->set('form.fields.disabled_source_slug', 'forged_disabled_source_slug')
+        ->set('form.fields.role_source', 'forged role source')
+        ->set('form.fields.role_slug', 'forged_role_slug')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $created = FormFieldHydrationResource::query()->sole();
+
+    expect($created->getMeta('conditional_source'))->toBeNull()
+        ->and($created->getMeta('conditional_slug'))->toBeNull()
+        ->and($created->getMeta('parent_conditional_source'))->toBeNull()
+        ->and($created->getMeta('parent_conditional_slug'))->toBeNull()
+        ->and($created->getMeta('disabled_source'))->toBeNull()
+        ->and($created->getMeta('disabled_source_slug'))->toBeNull()
+        ->and($created->getMeta('role_source'))->toBeNull()
+        ->and($created->getMeta('role_slug'))->toBeNull();
+});
+
+test('edit preserves protected slugs when their conditionally hidden and role unauthorized sources are forged', function () {
+    $resource = FormFieldHydrationResource::create([
+        'meta_value' => 'required',
+        'visibility_toggle' => false,
+        'conditional_source' => 'stored conditional source',
+        'conditional_slug' => 'stored_conditional_slug',
+        'parent_conditional_source' => 'stored parent conditional source',
+        'parent_conditional_slug' => 'stored_parent_conditional_slug',
+        'disabled_source' => 'stored disabled source',
+        'disabled_source_slug' => 'stored_disabled_source_slug',
+        'role_source' => 'stored role source',
+        'role_slug' => 'stored_role_slug',
+        'sensitive_provider_field' => 'stored provider source',
+        'derived_provider_slug' => 'stored_provider_slug',
+    ])->refresh();
+
+    $role = $this->user->roles()->firstOrFail();
+    $role->forceFill([
+        'slug' => 'form-field-editor',
+        'super_admin' => false,
+        'permissions' => ['update-form-field-hydration' => true],
+    ])->saveQuietly();
+    $this->actingAs($this->user->refresh());
+    Aura::clearConditionsCache();
+
+    $component = Livewire::test(Edit::class, ['id' => $resource->id, 'slug' => 'form-field-hydration']);
+
+    FormFieldHydrationResource::$sensitiveFieldVisible = false;
+    Aura::flushFieldCache();
+
+    $component
+        ->set('form.fields.conditional_source', 'forged conditional source')
+        ->set('form.fields.conditional_slug', 'forged_conditional_slug')
+        ->set('form.fields.parent_conditional_source', 'forged parent conditional source')
+        ->set('form.fields.parent_conditional_slug', 'forged_parent_conditional_slug')
+        ->set('form.fields.disabled_source', 'forged disabled source')
+        ->set('form.fields.disabled_source_slug', 'forged_disabled_source_slug')
+        ->set('form.fields.role_source', 'forged role source')
+        ->set('form.fields.role_slug', 'forged_role_slug')
+        ->set('form.fields.sensitive_provider_field', 'forged provider source')
+        ->set('form.fields.derived_provider_slug', 'forged_provider_slug')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $resource->refresh();
+
+    expect($resource->getMeta('conditional_source'))->toBe('stored conditional source')
+        ->and($resource->getMeta('conditional_slug'))->toBe('stored_conditional_slug')
+        ->and($resource->getMeta('parent_conditional_source'))->toBe('stored parent conditional source')
+        ->and($resource->getMeta('parent_conditional_slug'))->toBe('stored_parent_conditional_slug')
+        ->and($resource->getMeta('disabled_source'))->toBe('stored disabled source')
+        ->and($resource->getMeta('disabled_source_slug'))->toBe('stored_disabled_source_slug')
+        ->and($resource->getMeta('role_source'))->toBe('stored role source')
+        ->and($resource->getMeta('role_slug'))->toBe('stored_role_slug')
+        ->and($resource->getMeta('sensitive_provider_field'))->toBe('stored provider source')
+        ->and($resource->getMeta('derived_provider_slug'))->toBe('stored_provider_slug');
+});
+
+test('second request condition role and provider drift cannot change protected slugs', function () {
+    $role = $this->user->roles()->firstOrFail();
+    $role->forceFill([
+        'slug' => 'slug-source-writer',
+        'super_admin' => false,
+        'permissions' => ['create-form-field-hydration' => true],
+    ])->saveQuietly();
+    $this->actingAs($this->user->refresh());
+    Aura::clearConditionsCache();
+
+    $component = Livewire::test(Create::class, ['slug' => 'form-field-hydration'])
+        ->set('form.fields.meta_value', 'required')
+        ->set('form.fields.visibility_toggle', true)
+        ->set('form.fields.conditional_source', 'initial conditional source')
+        ->set('form.fields.role_source', 'initial role source')
+        ->set('form.fields.sensitive_provider_field', 'initial provider source');
+
+    $role->forceFill(['slug' => 'form-field-editor'])->saveQuietly();
+    $this->actingAs($this->user->refresh());
+    FormFieldHydrationResource::$sensitiveFieldVisible = false;
+    Aura::clearConditionsCache();
+    Aura::flushFieldCache();
+
+    $component
+        ->set('form.fields.visibility_toggle', false)
+        ->set('form.fields.conditional_source', 'forged conditional source')
+        ->set('form.fields.conditional_slug', 'forged_conditional_slug')
+        ->set('form.fields.parent_conditional_source', 'forged parent conditional source')
+        ->set('form.fields.parent_conditional_slug', 'forged_parent_conditional_slug')
+        ->set('form.fields.role_source', 'forged role source')
+        ->set('form.fields.role_slug', 'forged_role_slug')
+        ->set('form.fields.sensitive_provider_field', 'forged provider source')
+        ->set('form.fields.derived_provider_slug', 'forged_provider_slug')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $created = FormFieldHydrationResource::query()->sole();
+
+    expect($created->getMeta('conditional_source'))->toBeNull()
+        ->and($created->getMeta('conditional_slug'))->toBeNull()
+        ->and($created->getMeta('parent_conditional_source'))->toBeNull()
+        ->and($created->getMeta('parent_conditional_slug'))->toBeNull()
+        ->and($created->getMeta('role_source'))->toBeNull()
+        ->and($created->getMeta('role_slug'))->toBeNull()
+        ->and($created->getMeta('sensitive_provider_field'))->toBeNull()
+        ->and($created->getMeta('derived_provider_slug'))->toBeNull();
 });
 
 test('modal parameters cannot seed fields absent from the create form', function () {

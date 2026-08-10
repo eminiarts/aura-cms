@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\ConditionalLogic;
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Fields\Boolean;
 use Aura\Base\Fields\Checkbox;
@@ -122,6 +123,11 @@ trait HydratesResourceFormFields
     {
         return $this->resourceFormFields($context)
             ->filter(fn (array $field): bool => $this->isResourceFormFieldWritable($field))
+            ->filter(fn (array $field): bool => ConditionalLogic::shouldDisplayField(
+                $this->model,
+                $field,
+                ['fields' => is_array($this->form['fields'] ?? null) ? $this->form['fields'] : []],
+            ))
             ->values();
     }
 
