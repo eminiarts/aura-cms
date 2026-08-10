@@ -9,6 +9,7 @@ use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Services\VersionedCache;
+use DateTimeInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\SessionGuard;
 use Illuminate\Database\Connection;
@@ -324,12 +325,26 @@ final readonly class PreferenceManager
         }
 
         foreach (['user_id', 'name', 'created_at', 'updated_at'] as $attribute) {
-            if ($candidate->getAttribute($attribute) != $canonical->getAttribute($attribute)) {
+            if ($this->normalizedTeamAttribute($candidate, $attribute)
+                !== $this->normalizedTeamAttribute($canonical, $attribute)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private function normalizedTeamAttribute(Team $team, string $attribute): string
+    {
+        $value = $team->getAttribute($attribute);
+
+        return match (true) {
+            $value === null => 'null',
+            is_int($value) => 'int:'.$value,
+            is_string($value) => 'string:'.$value,
+            $value instanceof DateTimeInterface => 'datetime:'.$value->format('Y-m-d\TH:i:s.uP'),
+            default => 'invalid:'.get_debug_type($value),
+        };
     }
 
     private function optionConnection(): Connection

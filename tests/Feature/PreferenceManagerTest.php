@@ -469,6 +469,10 @@ test('team writes reject unauthentic target models', function () {
     $synchronizedMutation = clone $team;
     $synchronizedMutation->forceFill(['id' => $otherTeam->id]);
     $synchronizedMutation->syncOriginalAttribute('id', $otherTeam->id);
+    $typeJuggledOwner = (new Team)->newFromBuilder(array_replace(
+        $team->getAttributes(),
+        ['user_id' => $team->user_id.'e0'],
+    ));
     $crossConnection = clone $team;
     $crossConnection->setConnection('preference-hostile');
     config()->set('database.connections.preference-hostile', [
@@ -477,7 +481,14 @@ test('team writes reject unauthentic target models', function () {
         'prefix' => '',
     ]);
 
-    foreach ([$unsavedCopy, $spoofedExists, $mutatedKey, $synchronizedMutation, $crossConnection] as $target) {
+    foreach ([
+        $unsavedCopy,
+        $spoofedExists,
+        $mutatedKey,
+        $synchronizedMutation,
+        $typeJuggledOwner,
+        $crossConnection,
+    ] as $target) {
         expect(fn () => preferenceManager()->set(
             'table.view',
             'kanban',
