@@ -25,9 +25,16 @@
         <div role="none">
             @if($this->bulk_actions)
                 @foreach($this->bulk_actions as $action => $data)
+                    @php
+                        $encodedAction = json_encode(
+                            $action,
+                            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR,
+                        );
+                    @endphp
+
                     @if(is_array($data) && isset($data['modal']))
                     <!-- if it's an array and has a modal, then open the modal -->
-                    <a wire:click="openBulkActionModal('{{ $action }}')"
+                    <a wire:click="openBulkActionModal({{ $encodedAction }})"
                     class="flex items-center px-3 py-1.5 text-sm text-gray-700 rounded-md transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
                     role="menuitem" tabindex="-1" id="menu-item-6">
                         {{ $data['label'] }}
@@ -38,10 +45,6 @@
                             $method = is_array($data) && ($data['method'] ?? null) === 'collection'
                                 ? 'bulkCollectionAction'
                                 : 'bulkAction';
-                            $encodedAction = json_encode(
-                                $action,
-                                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR,
-                            );
                             $initialParameters = [];
                             $arrayInputs = [];
 

@@ -673,10 +673,16 @@ test('the bulk action menu safely encodes complete Livewire and Alpine action ex
             ],
         ],
     ];
+    $model->bulkActions["modal'\"><tag>&"] = [
+        'ability' => 'update',
+        'label' => 'Render-only modal action',
+        'modal' => 'render-only-modal',
+    ];
 
     livewire(Table::class, ['query' => null, 'model' => $model])
         ->assertSeeHtml('wire:click="bulkCollectionAction(&quot;renderOnly\\u0027\\u0022\\u003E\\u003Ctag\\u003E\\u0026&quot;)"')
         ->assertSeeHtml('$wire.bulkAction(&quot;parameterized\\u0027\\u0022\\u003E\\u003Ctag\\u003E\\u0026&quot;, parameters)')
+        ->assertSeeHtml('wire:click="openBulkActionModal(&quot;modal\\u0027\\u0022\\u003E\\u003Ctag\\u003E\\u0026&quot;)"')
         ->assertDontSeeHtml('wire:click="bulkCollectionAction("renderOnly');
 });
 
