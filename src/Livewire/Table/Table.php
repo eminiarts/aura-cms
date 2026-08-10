@@ -21,8 +21,14 @@ use Aura\Base\Livewire\Table\Traits\SwitchView;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Aura\Base\Routing\ResourceViewRoute;
+use Aura\Base\Table\ResourceTableColumnCapabilityResolver;
+use Aura\Base\Table\TableColumnCapability;
+use Aura\Base\Table\TableColumnRegistry;
 use Aura\Base\Table\TableQueryState;
 use Aura\Base\Table\TableQueryStateApplier;
+use Aura\Base\Table\TableRowOrderer;
+use Aura\Base\Table\TableRowOrdering;
+use Aura\Base\Table\TableRowOrderingResolver;
 use Closure;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -391,6 +397,32 @@ class Table extends Component
         $this->updateCardStatus($cardId, $newStatus, $mutations);
     }
 
+    public function moveTableRow(
+        mixed $rowId,
+        mixed $position,
+        TableRowOrderer $orderer,
+    ): void {
+        $data = Validator::make([
+            'rowId' => $rowId,
+            'position' => $position,
+        ], [
+            'rowId' => $this->mutationIdentifierRules(),
+            'position' => ['required', 'integer', 'min:0'],
+        ])->validate();
+        $ids = $this->orderingPageIds();
+        $currentPosition = array_search((string) $data['rowId'], array_map('strval', $ids), true);
+
+        if ($currentPosition === false || $data['position'] >= count($ids)) {
+            abort(409, 'The table row ordering page changed.');
+        }
+
+        $moved = $ids[$currentPosition];
+        array_splice($ids, $currentPosition, 1);
+        array_splice($ids, $data['position'], 0, [$moved]);
+
+        $this->reorderTableRows($ids, $orderer);
+    }
+
     public function openBulkActionModal(
         mixed $action,
         TableMutationDispatcher $mutations,
@@ -477,6 +509,48 @@ class Table extends Component
         }
 
         auth()->user()->updateOption($this->settings['columns_user_key'], $orderedSort);
+    }
+
+    /**
+     * @param  list<int|string>  $orderedIds
+     */
+    public function reorderTableRows(mixed $orderedIds, TableRowOrderer $orderer): void
+    {
+        if (! is_array($orderedIds) || ! array_is_list($orderedIds)) {
+            abort(422, 'The table row ordering request must be an exact permutation.');
+        }
+
+        $ordering = $this->effectiveTableRowOrdering();
+
+        if ($ordering === null) {
+            abort(422, 'Table row ordering is not available for this view.');
+        }
+
+        $state = $this->currentRowOrderingState();
+        $applier = $this->tableQueryStateApplier();
+        $resource = $this->model();
+
+        if (! $applier->accepts($resource, $state)) {
+            abort(422, 'The table row ordering query state is invalid.');
+        }
+
+        $orderer->reorder(
+            scope: function () use ($applier, $resource, $state) {
+                return $applier->apply(
+                    $this->mutationQuery(),
+                    $resource,
+                    $state,
+                    auth()->user(),
+                );
+            },
+            resource: $resource,
+            ordering: $ordering,
+            orderedIds: $orderedIds,
+            page: (int) $this->getPage(),
+            perPage: (int) $this->perPage,
+        );
+
+        $this->refreshRows();
     }
 
     #[Computed]
@@ -599,6 +673,25 @@ class Table extends Component
         } catch (InvalidArgumentException) {
             $this->tableState = '';
             $this->invalidTableState = false;
+        }
+    }
+
+    public function tableColumnIsSortable(string $key): bool
+    {
+        if (! $this->model() instanceof Resource) {
+            return $key === $this->model()->getKeyName()
+                || is_array($this->model()->fieldBySlug($key));
+        }
+
+        return $this->resolveTableColumnCapability($key)?->acceptsSort() === true;
+    }
+
+    public function tableRowsAreOrderable(): bool
+    {
+        try {
+            return $this->effectiveTableRowOrdering() !== null;
+        } catch (InvalidArgumentException) {
+            return false;
         }
     }
 
@@ -957,9 +1050,56 @@ class Table extends Component
         }
     }
 
+    private function currentRowOrderingState(): TableQueryState
+    {
+        if ($this->invalidTableState || $this->usesLegacyTableQueryHooks()) {
+            abort(422, 'The table row ordering query state is invalid.');
+        }
+
+        try {
+            if ($this->tableState !== '') {
+                return $this->currentTableQueryState();
+            }
+
+            if (! is_array($this->filters) || ! is_array($this->sorts)) {
+                throw new InvalidArgumentException('Invalid table row ordering state.');
+            }
+
+            return TableQueryState::fromLegacy($this->filters, $this->search, $this->sorts);
+        } catch (InvalidArgumentException) {
+            abort(422, 'The table row ordering query state is invalid.');
+        }
+    }
+
     private function currentTableQueryState(): TableQueryState
     {
         return TableQueryState::fromQueryString($this->tableState);
+    }
+
+    private function effectiveTableRowOrdering(): ?TableRowOrdering
+    {
+        if ($this->currentView !== 'list' || $this->usesLegacyTableQueryHooks()) {
+            return null;
+        }
+
+        $resource = $this->model();
+        $ordering = (new TableRowOrderingResolver)->resolve($resource);
+
+        if ($ordering === null || ! is_array($this->sorts)) {
+            return null;
+        }
+
+        if ($this->sorts === []) {
+            return $resource->defaultTableSort() === $ordering->column
+                && strtolower((string) $resource->defaultTableSortDirection()) === $ordering->direction
+                    ? $ordering
+                    : null;
+        }
+
+        return count($this->sorts) === 1
+            && ($this->sorts[$ordering->column] ?? null) === $ordering->direction
+                ? $ordering
+                : null;
     }
 
     private function hydrateSerializedTableState(): void
@@ -985,6 +1125,59 @@ class Table extends Component
         )->all();
         $this->tableState = $state->toQueryString();
         $this->invalidTableState = false;
+    }
+
+    /**
+     * @return list<int|string>
+     */
+    private function orderingPageIds(): array
+    {
+        $ordering = $this->effectiveTableRowOrdering();
+
+        if ($ordering === null) {
+            abort(422, 'Table row ordering is not available for this view.');
+        }
+
+        $state = $this->currentRowOrderingState();
+        $applier = $this->tableQueryStateApplier();
+
+        if (! $applier->accepts($this->model(), $state)) {
+            abort(422, 'The table row ordering query state is invalid.');
+        }
+
+        return $applier->apply(
+            $this->mutationQuery(),
+            $this->model(),
+            $state,
+            auth()->user(),
+        )->paginate((int) $this->perPage, ['*'], 'page', (int) $this->getPage())
+            ->pluck($this->model()->getKeyName())
+            ->all();
+    }
+
+    private function resolveTableColumnCapability(string $key): ?TableColumnCapability
+    {
+        $resource = $this->model();
+
+        if (! $resource instanceof Resource) {
+            return null;
+        }
+
+        $computed = (new TableColumnRegistry)->find($resource, $key);
+
+        if ($computed !== null) {
+            return $computed->capability();
+        }
+
+        if ($resource instanceof TableColumnCapabilityResolver) {
+            $capability = $resource->resolve($resource, $key);
+
+            if ($capability !== null) {
+                return $capability;
+            }
+        }
+
+        return (new ResourceTableColumnCapabilityResolver)->resolve($resource, $key);
     }
 
     private function tableQueryStateApplier(): TableQueryStateApplier

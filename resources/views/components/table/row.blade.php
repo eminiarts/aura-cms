@@ -1,8 +1,17 @@
 <tr class="transition-colors duration-150 ease-in-out cm-table-row hover:bg-gray-50/80 dark:hover:bg-white/[0.04]"
     wire:key="{{ $row->id }}"
     data-id="{{ $row->id }}"
+    @if($this->tableRowsAreOrderable()) wire:sort:item="{{ $row->getKey() }}" @endif
     :class="{ 'bg-primary-50/60 dark:bg-primary-500/10': isRowSelected(@js($row->getKey())) }"
     >
+
+    @if ($this->tableRowsAreOrderable())
+        <td class="w-8 px-2 py-3 text-aura-muted">
+            <button type="button" wire:sort:handle class="inline-flex cursor-grab items-center rounded p-1 hover:text-aura-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500" aria-label="{{ __('Reorder row') }}">
+                <span aria-hidden="true">⋮⋮</span>
+            </button>
+        </td>
+    @endif
 
     @if ($this->settings['selectable'])
         <x-aura::table.cell class="relative pr-0">

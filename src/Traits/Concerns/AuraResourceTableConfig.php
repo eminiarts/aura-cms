@@ -4,7 +4,9 @@ namespace Aura\Base\Traits\Concerns;
 
 use Aura\Base\ConditionalLogic;
 use Aura\Base\Contracts\FieldValueContext;
+use Aura\Base\Resource;
 use Aura\Base\Support\FieldDisplayValue;
+use Aura\Base\Table\TableColumnRegistry;
 use Illuminate\Support\Collection;
 
 trait AuraResourceTableConfig
@@ -13,6 +15,14 @@ trait AuraResourceTableConfig
 
     public function display($key)
     {
+        if ($this instanceof Resource) {
+            $computed = (new TableColumnRegistry)->find($this, (string) $key);
+
+            if ($computed !== null) {
+                return $computed->render($this);
+            }
+        }
+
         $context = $this->fieldDisplayContext;
         $field = $this->fieldBySlug($key);
         $isInputField = in_array($key, $this->inputFieldsSlugs(), true);
@@ -85,6 +95,14 @@ trait AuraResourceTableConfig
      */
     public function exportFieldValue(string $key): mixed
     {
+        if ($this instanceof Resource) {
+            $computed = (new TableColumnRegistry)->find($this, $key);
+
+            if ($computed !== null) {
+                return $computed->export($this);
+            }
+        }
+
         return $this->displayInContext($key, FieldValueContext::Export);
     }
 

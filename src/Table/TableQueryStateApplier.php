@@ -212,6 +212,12 @@ final class TableQueryStateApplier
 
     private function resolveCapability(Resource $resource, string $key): ?TableColumnCapability
     {
+        $computed = (new TableColumnRegistry)->find($resource, $key);
+
+        if ($computed !== null) {
+            return $computed->capability();
+        }
+
         $capability = $this->capabilities?->resolve($resource, $key);
 
         if ($capability !== null) {

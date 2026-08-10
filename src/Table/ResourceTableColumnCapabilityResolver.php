@@ -26,6 +26,12 @@ final class ResourceTableColumnCapabilityResolver implements TableColumnCapabili
 
     public function resolve(Resource $resource, string $key): ?TableColumnCapability
     {
+        $computed = (new TableColumnRegistry)->find($resource, $key);
+
+        if ($computed !== null) {
+            return $computed->capability();
+        }
+
         $field = $resource->fieldBySlug($key);
         $fieldInstance = $resource->fieldClassBySlug($key);
 

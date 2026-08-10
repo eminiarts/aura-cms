@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\Resource;
+use Aura\Base\Table\TableColumnRegistry;
+
 trait InputFieldsTable
 {
     public function getColumns()
@@ -24,7 +27,14 @@ trait InputFieldsTable
             return $this->isFieldOnIndex($slug) && $this->shouldDisplayField($this->fieldBySlug($slug));
         });
 
-        return $fields;
+        if (! $this instanceof Resource) {
+            return $fields;
+        }
+
+        $computed = collect((new TableColumnRegistry)->computed($this))
+            ->map(fn ($column): string => $column->label);
+
+        return $fields->merge($computed);
     }
 
     public function isFieldOnIndex($slug)

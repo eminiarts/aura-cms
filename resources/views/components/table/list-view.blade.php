@@ -5,14 +5,17 @@
             <table class="min-w-full">
                 @include($this->settings['views']['table_header'])
 
-                <tbody class="divide-y divide-aura-border">
+                <tbody
+                    class="divide-y divide-aura-border"
+                    @if($this->tableRowsAreOrderable()) wire:sort="moveTableRow" @endif
+                >
 
                     @forelse($rows as $row)
                         @include($this->settings['views']['row'])
                     @empty
 
                     <tr>
-                        <td colspan="{{ count($this->headers) + 2 }}">
+                        <td colspan="{{ count($this->headers) + 2 + ($this->tableRowsAreOrderable() ? 1 : 0) }}">
                             <div class="flex flex-col items-center px-6 py-20 text-center">
                                 <div class="flex justify-center items-center w-12 h-12 rounded-full bg-aura-background ring-1 ring-aura-border">
                                     <svg class="w-5 h-5 text-aura-muted" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

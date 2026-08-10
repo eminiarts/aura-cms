@@ -849,6 +849,95 @@ $query->orderBy(
 );
 ```
 
+### Computed Columns
+
+Computed columns are explicit server declarations. Implement
+`DeclaresComputedTableColumns` and return a list of `ComputedTableColumn`
+descriptors. Keys must be unique stable identifiers and cannot collide with a
+field, physical fillable attribute, primary key, timestamp, or Aura's reserved
+table keys. Both display and export behavior are required.
+
+```php
+use Aura\Base\Contracts\DeclaresComputedTableColumns;
+use Aura\Base\Resource;
+use Aura\Base\Table\ComputedTableColumn;
+use Illuminate\Database\Eloquent\Builder;
+
+class Contact extends Resource implements DeclaresComputedTableColumns
+{
+    public function computedTableColumns(): array
+    {
+        return [
+            ComputedTableColumn::make(
+                key: 'full_name',
+                label: 'Full name',
+                render: fn (self $contact): string => "{$contact->first_name} {$contact->last_name}",
+                export: fn (self $contact): string => "{$contact->last_name}, {$contact->first_name}",
+                applySort: static function (Builder $query, Resource $resource, string $direction): void {
+                    $query->orderBy($resource->qualifyColumn('last_name'), $direction)
+                        ->orderBy($resource->qualifyColumn('first_name'), $direction)
+                        ->orderBy($resource->getQualifiedKeyName());
+                },
+            ),
+        ];
+    }
+}
+```
+
+Plain render output is escaped recursively. Return an `Htmlable` value only for
+trusted markup. The export callback is separate and is returned by
+`exportFieldValue($key)`. A computed header is sortable only when `applySort`
+is declared; non-sortable headers do not emit a Livewire sort action.
+
+For canonical CORE-22 filtering, declare `operators`, `validateFilter`, and
+`applyFilter` together. Sort and filter callbacks receive only the validated
+direction/operator/value state. Unknown, removed, or forged keys fail closed.
+Resource-supplied `TableColumnCapabilityResolver` implementations remain the
+fallback for non-computed server-owned capabilities.
+
+### Explicit List Row Ordering
+
+Row drag ordering is disabled by default. To opt in, implement
+`DeclaresTableRowOrdering` and name a real physical column on the Resource's
+base table:
+
+```php
+use Aura\Base\Contracts\DeclaresTableRowOrdering;
+use Aura\Base\Table\TableRowOrdering;
+
+class PipelineStage extends Resource implements DeclaresTableRowOrdering
+{
+    public function defaultTableSort(): string
+    {
+        return 'position';
+    }
+
+    public function defaultTableSortDirection(): string
+    {
+        return 'asc';
+    }
+
+    public function tableRowOrdering(): TableRowOrdering
+    {
+        return TableRowOrdering::make(
+            column: 'position',
+            direction: 'asc',
+            ability: 'update',
+        );
+    }
+}
+```
+
+The drag UI and mutation are available only in list view while the effective
+sort is exactly the declared column and direction. The server freshly rebuilds
+the canonical CORE-22 filter/search/parent scope, resolves the current page,
+requires an exact ID permutation, locks the physical rows in stable primary-key
+order, authorizes every record, and saves changed models in a retryable
+transaction. Reordering assigns the page's existing order values to the new
+permutation, preserving every outside-page row and slot. Duplicate slots,
+stale pages, forged IDs, invalid declarations, and mismatched sorts fail closed;
+an already-applied permutation is a no-op. Kanban ordering remains independent.
+
 ## Selection & Bulk Actions
 
 The Table component provides sophisticated selection handling and bulk operations via the `Select` and `BulkActions` traits.

@@ -28,6 +28,10 @@ trait Sorting
      */
     public function sortBy($field)
     {
+        if (! is_string($field) || ! $this->tableColumnIsSortable($field)) {
+            abort(422, 'The requested table column is not sortable.');
+        }
+
         $this->resetSelectionForScopeChange();
         $this->sorts = collect($this->sorts)->filter(function ($value, $key) use ($field) {
             return $key === $field;
