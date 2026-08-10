@@ -95,6 +95,45 @@ test('schema lock domains use physical database identity rather than connection 
     }
 });
 
+test('sqlite schema lock domains fall back deterministically when the database path is missing or deleted', function () {
+    $directory = sys_get_temp_dir().'/aura-core10-missing-lock-'.uniqid();
+    $database = $directory.'/database.sqlite';
+    File::makeDirectory($directory);
+    $configuration = ['driver' => 'sqlite', 'database' => $database, 'prefix' => ''];
+    config()->set('database.connections.core_10_missing_lock_a', $configuration);
+    config()->set('database.connections.core_10_missing_lock_b', [
+        ...$configuration,
+        'database' => $directory.'/./database.sqlite',
+    ]);
+
+    $first = DB::connection('core_10_missing_lock_a');
+    $second = DB::connection('core_10_missing_lock_b');
+
+    try {
+        $missingDomain = SchemaMigrationLock::domain($first, 'orders');
+
+        expect($missingDomain)
+            ->toContain(':path:')
+            ->toBe(SchemaMigrationLock::domain($second, 'orders'));
+
+        File::put($database, '');
+        $inodeDomain = SchemaMigrationLock::domain($first, 'orders');
+
+        expect($inodeDomain)->toContain(':inode:')
+            ->not->toBe($missingDomain);
+
+        File::delete($database);
+
+        expect(SchemaMigrationLock::domain($first, 'orders'))
+            ->toBe($missingDomain)
+            ->toBe(SchemaMigrationLock::domain($second, 'orders'));
+    } finally {
+        DB::purge('core_10_missing_lock_a');
+        DB::purge('core_10_missing_lock_b');
+        File::deleteDirectory($directory);
+    }
+});
+
 test('sqlite schema locks canonicalize symlinks and time out across processes before recovering after release', function () {
     if (! function_exists('pcntl_fork')) {
         $this->markTestSkipped('pcntl is required for the process contention contract.');

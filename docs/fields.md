@@ -270,6 +270,9 @@ Numeric input with validation and formatting.
 - Explicit integer or fixed-precision decimal normalization
 - Decimal strings are not truncated through an unconditional integer cast
 - Preserves null, empty string, zero, negative, and invalid legacy values distinctly
+- Filters and sorts text-backed meta values through the same exact sign/length/digit key on SQLite, MySQL, and PostgreSQL
+- Treats equivalent plain-decimal spellings equally; scientific notation and malformed or over-65-digit legacy values are not numeric
+- Excludes invalid legacy values from numeric comparisons and places them last in both sort directions
 - Default value support
 
 **Database:** `integer` by default, or portable `decimal(precision, scale)` when `number_type` is `decimal`. Decimal fields default to precision 19 and scale 2 when omitted. Changing a field definition does not safely convert an already-deployed integer column by itself; see [Upgrading Aura CMS](../UPGRADING.md#changing-an-existing-number-column-to-decimal).

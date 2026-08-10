@@ -138,7 +138,7 @@ trait QueryFilters
 
     protected function applyOperatorCondition(Builder $query, array $filter): void
     {
-        if ($this->applyExactSqliteNumberCondition($query, 'value', $filter)) {
+        if ($this->applyExactNumberCondition($query, 'value', $filter)) {
             return;
         }
 
@@ -279,7 +279,7 @@ trait QueryFilters
             $filter['value'] = implode(',', $filter['value']);
         }
 
-        if ($this->applyExactSqliteNumberCondition($query, $filter['name'], $filter)) {
+        if ($this->applyExactNumberCondition($query, $filter['name'], $filter)) {
             return $query;
         }
 
@@ -409,7 +409,7 @@ trait QueryFilters
         return ! is_string($filter['value']) || trim($filter['value']) !== '';
     }
 
-    private function applyExactSqliteNumberCondition(Builder $query, string $column, array $filter): bool
+    private function applyExactNumberCondition(Builder $query, string $column, array $filter): bool
     {
         $operators = [
             'is' => '=', 'equals' => '=', 'is_not' => '!=', 'not_equals' => '!=',
@@ -417,9 +417,20 @@ trait QueryFilters
             'greater_than_or_equal' => '>=', 'less_than_or_equal' => '<=',
         ];
 
-        if (! isset($operators[$filter['operator']])
-            || ! $this->model->isNumberField($filter['name'])
-            || DB::connection($this->model->getConnectionName())->getDriverName() !== 'sqlite') {
+        if (! isset($operators[$filter['operator']]) || ! $this->model->isNumberField($filter['name'])) {
+            return false;
+        }
+
+        $connection = DB::connection($this->model->getConnectionName());
+        $storage = $this->model->isMetaField($filter['name'])
+            ? FieldValueStorage::Meta
+            : FieldValueStorage::Physical;
+
+        if ($storage === FieldValueStorage::Physical && $connection->getDriverName() !== 'sqlite') {
+            return false;
+        }
+
+        if (! ExactDecimal::supportsSql($connection)) {
             return false;
         }
 
@@ -434,16 +445,15 @@ trait QueryFilters
             $filter['value'],
             is_array($field) ? $field : [],
             $this->model,
-            $this->model->isMetaField($filter['name'])
-                ? FieldValueStorage::Meta
-                : FieldValueStorage::Physical,
+            $storage,
         );
-        ExactDecimal::registerSqliteFunction(DB::connection($this->model->getConnectionName()));
         $wrapped = $query->getQuery()->getGrammar()->wrap($column);
-        $key = "aura_decimal_sort_key({$wrapped})";
-        $query->whereRaw(
-            "substr({$key}, 1, 1) IN ('0', '1', '2') AND {$key} {$operators[$filter['operator']]} aura_decimal_sort_key(?)",
-            [(string) $value],
+        ExactDecimal::applyComparison(
+            $query,
+            $connection,
+            $wrapped,
+            $operators[$filter['operator']],
+            $value,
         );
 
         return true;

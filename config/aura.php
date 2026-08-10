@@ -56,8 +56,11 @@ return [
     |--------------------------------------------------------------------------
     |
     | Bound how long schema updates wait for another process that is changing
-    | the same physical database table. Polling applies to PostgreSQL/SQLite;
-    | MySQL delegates the configured timeout to GET_LOCK().
+    | the same physical database table. PostgreSQL and MySQL locks coordinate
+    | through the database server. SQLite uses a host-local temporary flock;
+    | it does not coordinate shared SQLite/NFS files across multiple hosts.
+    | Polling applies to PostgreSQL/SQLite; MySQL delegates the configured
+    | timeout to GET_LOCK().
     |
     */
 

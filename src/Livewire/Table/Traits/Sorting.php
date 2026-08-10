@@ -98,15 +98,16 @@ trait Sorting
                 })
                     ->select($table.'.*')
                     ->when($this->model->isNumberField($field), function ($query) use ($direction) {
-                        if (DB::connection($this->model->getConnectionName())->getDriverName() === 'sqlite') {
-                            ExactDecimal::registerSqliteFunction(DB::connection($this->model->getConnectionName()));
-                            $query->orderByRaw("CASE WHEN substr(aura_decimal_sort_key(meta.value), 1, 1) = '3' THEN 1 ELSE 0 END");
-                            $query->orderByRaw('aura_decimal_sort_key(meta.value) '.$direction);
+                        $connection = DB::connection($this->model->getConnectionName());
+
+                        if (! ExactDecimal::supportsSql($connection)) {
+                            $query->orderByRaw('CAST(meta.value AS DECIMAL(65,30)) '.$direction);
 
                             return;
                         }
 
-                        $query->orderByRaw('CAST(meta.value AS DECIMAL(65,30)) '.$direction);
+                        $column = $query->getQuery()->getGrammar()->wrap('meta.value');
+                        ExactDecimal::applySorting($query, $connection, $column, $direction);
                     })
                     ->when(! $this->model->isNumberField($field), function ($query) use ($direction) {
                         $query->orderByRaw('CAST(meta.value AS CHAR) '.$direction);
@@ -116,10 +117,9 @@ trait Sorting
                 return $query;
             } else {
                 if ($this->model->isNumberField($field) && DB::connection($this->model->getConnectionName())->getDriverName() === 'sqlite') {
-                    ExactDecimal::registerSqliteFunction(DB::connection($this->model->getConnectionName()));
+                    $connection = DB::connection($this->model->getConnectionName());
                     $column = $query->getQuery()->getGrammar()->wrap($field);
-                    $query->orderByRaw("CASE WHEN substr(aura_decimal_sort_key({$column}), 1, 1) = '3' THEN 1 ELSE 0 END");
-                    $query->orderByRaw("aura_decimal_sort_key({$column}) {$direction}");
+                    ExactDecimal::applySorting($query, $connection, $column, $direction);
 
                     return $query;
                 }

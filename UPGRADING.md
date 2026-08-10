@@ -39,9 +39,15 @@ Before deploying, inspect values that exceed the new precision, decide how inval
 
 Meta-backed Number fields require no schema change because Aura meta values are stored as text. Their configured normalization is applied on hydration and on subsequent writes; it does not destructively rewrite all existing rows during the package upgrade.
 
-SQLite physical decimal columns remain `TEXT` so all 65 configured digits survive. Aura's table filters and sorting use an exact canonical comparison key for these columns and for legacy text meta values; existing exact plain-decimal strings need no rewrite. Before upgrading a customized query, remove float/`CAST(... AS NUMERIC)` comparisons and route it through the Aura table query contract or implement an equally exact decimal comparator.
+SQLite physical decimal columns remain `TEXT` so all 65 configured digits survive. Aura's table filters and sorting use an exact canonical comparison key for these columns and for text-backed meta values on SQLite, MySQL, and PostgreSQL; existing exact plain-decimal strings need no rewrite. The key compares sign, normalized integer length, and zero-padded fractional digits without converting through floating point or a narrowing database `DECIMAL` cast. Numerically equal spellings such as `2`, `+002.0`, and `2.000` therefore compare and sort equally. Before upgrading a customized query, remove float/`CAST(... AS NUMERIC)` comparisons and route it through the Aura table query contract or implement an equally exact decimal comparator.
 
 Malformed legacy number strings and values exceeding the 65-digit portability limit are excluded from every exact numeric comparison. They remain visible without a numeric filter and sort after valid numbers in both ascending and descending order. Before upgrading, audit number-backed physical and meta columns, then either normalize each invalid value to an authorized plain-decimal value or move it to a separate text field; Aura deliberately does not guess or rewrite legacy data during reads.
+
+## SQLite Schema Lock Scope
+
+Aura's SQLite schema-update lock uses `flock()` on a lock file in the local system temporary directory. It coordinates processes on one host only. It does not coordinate two application hosts that access the same SQLite file, including a file on NFS or another shared filesystem. Run Aura schema changes from one designated host, stop other schema writers, or provide external deployment coordination; use MySQL or PostgreSQL when database-server-wide advisory locking is required.
+
+For an existing SQLite file, Aura identifies the lock domain by filesystem device and inode, so same-host symlink and hardlink aliases contend. If the configured database path is missing or has been deleted, Aura falls back to its canonical absolute path. That fallback is deterministic for equivalent path spellings, but it cannot infer that a missing symlink or hardlink once referred to the same inode. Avoid replacing or unlinking the SQLite database while a schema update is running.
 
 ## Changing Datetime Columns from TIMESTAMP
 
