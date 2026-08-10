@@ -116,7 +116,7 @@ $allOptions = Aura::options();
 ```php
 use Aura\Base\Navigation\Navigation;
 
-// Scalar definitions may be cached, but visibility is checked for this request.
+// Resource class discovery may be cached; definitions and visibility are rebuilt now.
 $navigation = Aura::navigation();
 
 // A non-resource link restricted by a Gate ability.
@@ -134,9 +134,10 @@ $resourcePolicy = Navigation::policy('viewAny', Report::class);
 Registered resource items always require their normal `viewAny` policy. A non-resource item
 without `policy` is visible to any authenticated user; guests receive an empty navigation. The
 canonical policy payload is `['ability' => string, 'arguments' => scalar|array|null]`. Invalid or
-non-scalar payloads fail closed. The legacy second callback argument to `Navigation::add()` is
-evaluated only when an authenticated request resolves navigation and makes that registration
-uncacheable; the callback itself is never serialized or returned to Livewire.
+non-scalar payloads fail closed. Resource `navigation()` methods, badges, and navigation hooks run
+for the current authenticated request and are never stored in the persistent navigation cache. The
+legacy second callback argument to `Navigation::add()` is evaluated only when an authenticated
+request resolves navigation; the callback itself is never serialized or returned to Livewire.
 
 ### Route Registration
 

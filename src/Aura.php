@@ -411,22 +411,17 @@ class Aura
             $authorizationContext = $this->navigationAuthorizationContext($user);
             $hookManager = app('hook_manager');
             $revision = $hookManager->revision('navigation');
-            $context = $this->navigationDefinitionCacheContext();
-            $hookFingerprint = $hookManager->cacheFingerprint('navigation');
-
-            if ($hookFingerprint === null) {
-                $definitions = $this->buildNavigationDefinitions();
-            } else {
-                $payload = VersionedCache::remember(
-                    'navigation',
-                    $context,
-                    3600,
-                    fn (): array => ['items' => $this->buildNavigationDefinitions()],
-                );
-                $definitions = is_array($payload) && is_array($payload['items'] ?? null)
-                    ? $payload['items']
-                    : [];
-            }
+            $context = $this->navigationStructureCacheContext();
+            $payload = VersionedCache::remember(
+                'navigation',
+                $context,
+                3600,
+                fn (): array => ['resources' => $this->navigationResourceClasses()],
+            );
+            $resourceClasses = is_array($payload) && is_array($payload['resources'] ?? null)
+                ? $payload['resources']
+                : [];
+            $definitions = $this->buildNavigationDefinitions($resourceClasses);
 
             $navigation = $this->groupNavigation(
                 $this->visibleNavigationDefinitions($definitions, $user),
@@ -434,7 +429,7 @@ class Aura
 
             if ($hookManager === app('hook_manager')
                 && $revision === $hookManager->revision('navigation')
-                && hash_equals($context, $this->navigationDefinitionCacheContext())
+                && hash_equals($context, $this->navigationStructureCacheContext())
                 && $user === auth()->user()
                 && hash_equals($authorizationContext, $this->navigationAuthorizationContext($user))) {
                 return collect($navigation)->map(fn ($items) => collect($items));
@@ -646,19 +641,10 @@ class Aura
         return $user?->authorizedCurrentTeam();
     }
 
-    protected function buildNavigationDefinitions(): array
+    protected function buildNavigationDefinitions(array $resourceClasses): array
     {
-        $resources = collect($this->getResources())
-            ->filter(fn ($resource): bool => is_string($resource) && class_exists($resource));
-
-        // If a Resource is overriden, we want to remove the original from the navigation
-        $keys = $resources->map(function ($resource) {
-            return Str::afterLast($resource, '\\');
-        })->reverse()->unique()->reverse()->keys();
-
-        $resources = $resources->filter(function ($value, $key) use ($keys) {
-            return $keys->contains($key);
-        })
+        $resources = collect($resourceClasses)
+            ->filter(fn ($resource): bool => is_string($resource) && class_exists($resource))
             ->map(fn ($r) => app($r)->navigation())
             ->filter(fn ($r) => $r['showInNavigation'] ?? true)
             ->sortBy('sort');
@@ -731,17 +717,6 @@ class Aura
         }
     }
 
-    protected function navigationDefinitionCacheContext(): string
-    {
-        $hookFingerprint = app('hook_manager')->cacheFingerprint('navigation') ?? 'uncacheable';
-
-        return hash('sha256', serialize([
-            'resources' => $this->getResources(),
-            'hooks' => $hookFingerprint,
-            'teams' => (bool) config('aura.teams'),
-        ]));
-    }
-
     protected function navigationItemVisible(array $item, Authenticatable $user): bool
     {
         if (! ($item['showInNavigation'] ?? true)) {
@@ -785,6 +760,36 @@ class Aura
         } catch (Throwable) {
             return false;
         }
+    }
+
+    protected function navigationResourceClasses(): array
+    {
+        $resources = collect($this->getResources())
+            ->filter(fn ($resource): bool => is_string($resource) && class_exists($resource));
+
+        $keys = $resources->map(fn (string $resource): string => Str::afterLast($resource, '\\'))
+            ->reverse()
+            ->unique()
+            ->reverse()
+            ->keys();
+
+        return $resources
+            ->filter(fn (string $resource, int $key): bool => $keys->contains($key))
+            ->values()
+            ->all();
+    }
+
+    protected function navigationStructureCacheContext(): string
+    {
+        $resources = collect($this->getResources())
+            ->filter(fn ($resource): bool => is_string($resource))
+            ->values()
+            ->all();
+
+        return hash('sha256', serialize([
+            'resources' => $resources,
+            'teams' => (bool) config('aura.teams'),
+        ]));
     }
 
     protected function optionConnection(): Connection

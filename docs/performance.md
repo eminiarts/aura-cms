@@ -52,12 +52,13 @@ Exact entries use `['found' => bool, 'value' => mixed]`. This keeps a missing op
 
 ### Navigation Caching
 
-Aura caches only deterministic, scalar navigation definitions for 1 hour. The definition key
-fingerprints registered resources, the teams configuration, and the ordered identity of
-deterministic hooks. It deliberately contains no user ID, team ID, role, permission, or visibility
-result. After authentication in every call to `Aura::navigation()`, Aura applies resource
-`viewAny`, non-resource `policy`, and legacy `conditional_logic` checks to the current guard user,
-then removes hidden dropdown children and empty groups.
+Aura caches only the deduplicated resource class registry for 1 hour. The structural key
+fingerprints registered resource class names and the teams configuration. The payload contains
+only class strings; it contains no evaluated resource definition, badge, hook output, user ID,
+team ID, role, permission, or visibility result. After authentication in every call to
+`Aura::navigation()`, Aura rebuilds each resource definition, runs every navigation hook, applies
+resource `viewAny`, non-resource `policy`, and legacy `conditional_logic` checks to the current
+guard user, then removes hidden dropdown children and empty groups.
 
 ```php
 Navigation::add([[
@@ -75,15 +76,16 @@ accepted. Resource items always retain their `viewAny` check, and an additional 
 extra requirement. Non-resource items without a policy remain visible to authenticated users for
 backward compatibility. Guests fail closed before definitions or callbacks are resolved.
 
-String/static hooks and scalar `Navigation::add()` configurations receive stable fingerprints.
-Closures, object-bound callables, resources, and any recursively non-scalar definition bypass
-persistent caching. The legacy second `Navigation::add()` auth callback is registered without
-executing during provider boot, runs only during authenticated navigation resolution, and always
-bypasses the definition cache. Callback values and policy metadata are removed before the grouped
-menu reaches Livewire, so they cannot be hydrated back as executable callbacks. A before/after hook
-revision check retries when registration changes while a definition is built; the authenticated
-user and team context are checked again before returning, protecting impersonation, team switches,
-and long-running workers.
+Resource `navigation()` methods and `getBadge()` may query current user or TeamScope state, and
+string, static, closure, or object-bound hooks may branch on authentication. Aura therefore never
+persists their evaluated output, even when all resulting values happen to be scalar. Arbitrary
+non-scalar decoration may exist for the current call, but only the structural class-string payload
+reaches a serializing cache store. The legacy second `Navigation::add()` auth callback is registered
+without executing during provider boot and runs only during authenticated navigation resolution.
+Callback values and policy metadata are removed before the grouped menu reaches Livewire, so they
+cannot be hydrated back as executable callbacks. A before/after hook revision check retries when
+registration changes while a definition is built; the authenticated user and team context are
+checked again before returning, protecting impersonation, team switches, and long-running workers.
 
 ### Team and Template Catalog Caching
 
@@ -1252,7 +1254,7 @@ Aura CMS caches automatically. Leverage it:
 // Options are cached automatically - just use them
 $settings = Aura::getOption('media');
 
-// Navigation definitions are cached; authorization is evaluated for this call
+// Navigation resource discovery is cached; definitions and authorization run now
 $nav = Aura::navigation();
 
 // Clear all caches when needed
