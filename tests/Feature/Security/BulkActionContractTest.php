@@ -82,6 +82,22 @@ class Core06BulkResource extends Resource
             'label' => 'Mixed download',
             'method' => 'collection',
         ],
+        'mixedParameterMapDownload' => [
+            'ability' => 'view',
+            'download' => [
+                'content_type' => 'text/plain',
+                'filename' => 'mixed-parameters.txt',
+            ],
+            'label' => 'Mixed parameter map download',
+            'method' => 'collection',
+            'parameters' => [
+                'prefix' => [
+                    'label' => 'Prefix',
+                    'rules' => ['required', 'string'],
+                    'type' => 'string',
+                ],
+            ],
+        ],
         'invalidParameterMapDownload' => [
             'ability' => 'view',
             'download' => [
@@ -178,6 +194,11 @@ class Core06BulkResource extends Resource
     public function mixedDownload(mixed $ids): string
     {
         return is_array($ids) ? implode(',', $ids) : '';
+    }
+
+    public function mixedParameterMapDownload(array $ids, mixed $parameters): string
+    {
+        return implode(',', $ids).(is_array($parameters) ? implode(',', $parameters) : '');
     }
 
     public function smallDownload(array $ids): StreamedResponse
@@ -410,6 +431,7 @@ test('bulk downloads reject invalid handler signatures before issuing a URL', fu
     'scalar ids' => ['invalidTypedDownload', []],
     'scalar parameter map' => ['invalidParameterMapDownload', ['prefix' => 'test']],
     'mixed ids' => ['mixedDownload', []],
+    'mixed parameter map' => ['mixedParameterMapDownload', ['prefix' => 'test']],
     'untyped ids' => ['untypedDownload', []],
 ]);
 
