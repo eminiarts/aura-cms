@@ -2,6 +2,7 @@
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Http\Controllers\Api\FieldsController;
+use Aura\Base\Http\Controllers\BulkDownloadController;
 use Aura\Base\Http\Controllers\ImageController;
 use Aura\Base\Http\Middleware\EnsureResourceEditorEnabled;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
@@ -27,6 +28,11 @@ Route::domain(config('aura.domain'))
         // });
 
         Route::prefix(config('aura.path'))->group(function () {
+
+            Route::get('/bulk-downloads/{token}', BulkDownloadController::class)
+                ->middleware('signed')
+                ->where('token', '[A-Za-z0-9]{64}')
+                ->name('bulk-download');
 
             Route::get('/', config('aura.components.dashboard'))->name('dashboard');
 

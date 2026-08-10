@@ -25,27 +25,101 @@
         <div role="none">
             @if($this->bulk_actions)
                 @foreach($this->bulk_actions as $action => $data)
+                    @php
+                        $encodedAction = json_encode(
+                            $action,
+                            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR,
+                        );
+                    @endphp
+
                     @if(is_array($data) && isset($data['modal']))
                     <!-- if it's an array and has a modal, then open the modal -->
-                    <a wire:click="openBulkActionModal('{{ $action }}')"
+                    <a wire:click="openBulkActionModal({{ $encodedAction }})"
                     class="flex items-center px-3 py-1.5 text-sm text-gray-700 rounded-md transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
                     role="menuitem" tabindex="-1" id="menu-item-6">
                         {{ $data['label'] }}
                     </a>
-                    @elseif(is_array($data) && optional($data)['method'] == 'collection')
-                        <!-- call collection action on model -->
-                        <a wire:click="bulkCollectionAction('{{ $action }}', {{json_encode($data)}})"
-                            class="flex items-center px-3 py-1.5 text-sm text-gray-700 rounded-md transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
-                            role="menuitem" tabindex="-1" id="menu-item-6">
-                            {{ $data['label'] }}
-                        </a>
                     @else
-                    <!-- if it's not an array, it's a string, so keep the old behavior -->
-                    <a wire:click="bulkAction('{{ $action }}')"
-                        class="flex items-center px-3 py-1.5 text-sm text-gray-700 rounded-md transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
-                        role="menuitem" tabindex="-1" id="menu-item-6">
-                        {{ is_array($data) ? $data['label'] : $data }}
-                    </a>
+                        @php
+                            $parameters = is_array($data) ? ($data['parameters'] ?? []) : [];
+                            $method = is_array($data) && ($data['method'] ?? null) === 'collection'
+                                ? 'bulkCollectionAction'
+                                : 'bulkAction';
+                            $initialParameters = [];
+                            $arrayInputs = [];
+
+                            foreach ($parameters as $parameter => $declaration) {
+                                if (($declaration['type'] ?? null) === 'boolean') {
+                                    $initialParameters[$parameter] = false;
+                                } elseif (($declaration['type'] ?? null) === 'array') {
+                                    $initialParameters[$parameter] = [];
+
+                                    if (! isset($declaration['options'])) {
+                                        $arrayInputs[$parameter] = '';
+                                    }
+                                }
+                            }
+                        @endphp
+
+                        @if($parameters)
+                            <div class="px-3 py-2 space-y-2"
+                                x-data="{ parameters: @js($initialParameters), arrayInputs: @js($arrayInputs) }">
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                    {{ $data['label'] }}
+                                </p>
+
+                                @foreach($parameters as $parameter => $declaration)
+                                    <label class="block space-y-1 text-xs text-gray-600 dark:text-gray-300">
+                                        <span>{{ $declaration['label'] }}</span>
+
+                                        @if(($declaration['type'] ?? null) === 'boolean')
+                                            <input type="checkbox" x-model="parameters.{{ $parameter }}"
+                                                class="rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                                        @elseif(isset($declaration['options']) && is_array($declaration['options']))
+                                            <select x-model="parameters.{{ $parameter }}"
+                                                @if(($declaration['type'] ?? null) === 'array') multiple @endif
+                                                class="block w-full rounded-md border-0 py-1.5 text-sm ring-1 ring-gray-950/10 focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:ring-white/10">
+                                                @if(($declaration['type'] ?? null) !== 'array')
+                                                    <option value="">{{ __('Select an option') }}</option>
+                                                @endif
+                                                @foreach($declaration['options'] as $value => $label)
+                                                    <option value="{{ $value }}">
+                                                        {{ $label }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        @elseif(($declaration['type'] ?? null) === 'array')
+                                            <textarea x-model="arrayInputs.{{ $parameter }}" rows="3"
+                                                placeholder="{{ __('One value per line or comma-separated') }}"
+                                                class="block w-full rounded-md border-0 py-1.5 text-sm ring-1 ring-gray-950/10 focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:ring-white/10"></textarea>
+                                        @else
+                                            <input
+                                                type="{{ in_array($declaration['type'] ?? null, ['integer', 'float'], true) ? 'number' : 'text' }}"
+                                                @if(($declaration['type'] ?? null) === 'float') step="any" @endif
+                                                x-model="parameters.{{ $parameter }}"
+                                                class="block w-full rounded-md border-0 py-1.5 text-sm ring-1 ring-gray-950/10 focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:ring-white/10">
+                                        @endif
+                                    </label>
+                                @endforeach
+
+                                <button type="button"
+                                    x-on:click="
+                                        @foreach($arrayInputs as $parameter => $value)
+                                            parameters.{{ $parameter }} = arrayInputs.{{ $parameter }}.split(/[\n,]+/).map(value => value.trim()).filter(Boolean);
+                                        @endforeach
+                                        $wire.{{ $method }}({{ $encodedAction }}, parameters)
+                                    "
+                                    class="inline-flex items-center px-2.5 py-1.5 text-sm font-medium text-white rounded-md bg-primary-600 hover:bg-primary-500">
+                                    {{ __('Apply') }}
+                                </button>
+                            </div>
+                        @else
+                            <button type="button" wire:click="{{ $method }}({{ $encodedAction }})"
+                                class="flex items-center px-3 py-1.5 w-full text-sm text-left text-gray-700 rounded-md transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
+                                role="menuitem" tabindex="-1">
+                                {{ is_array($data) ? $data['label'] : $data }}
+                            </button>
+                        @endif
                     @endif
                 @endforeach
             @endif

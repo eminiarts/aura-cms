@@ -26,15 +26,31 @@ class Core05MySqlMutationResource extends BaseResource
             'ability' => 'update',
             'method' => 'collection',
         ],
+        'downloadCurrentOrder' => [
+            'ability' => 'update',
+            'download' => [
+                'content_type' => 'text/plain',
+                'filename' => 'mysql-order.txt',
+            ],
+            'label' => 'Download current order',
+            'method' => 'collection',
+        ],
     ];
 
     public static array $capturedIds = [];
+
+    public static ?string $slug = 'core05-mysql-mutation-resource';
 
     protected $guarded = [];
 
     public function captureCurrentOrder(array $ids): void
     {
         array_push(static::$capturedIds, ...$ids);
+    }
+
+    public function downloadCurrentOrder(array $ids): string
+    {
+        return implode(',', $ids);
     }
 
     public static function getFields(): array
@@ -208,6 +224,41 @@ test('mysql revalidates distinct and grouped scopes with a current locking read'
 
     expect($resource->fresh()->content)->toBe('reviewed');
 })->with(['DISTINCT' => 'distinct', 'GROUP BY and HAVING' => 'group'])->group('mysql');
+
+test('mysql bulk downloads retain bound custom ordering while de-duplicating joins', function () {
+    $mounted = core05MySqlMountedResource();
+    collect(['Alpha', 'Charlie', 'Bravo'])->each(fn (string $title) => $mounted->newQuery()->create([
+        'title' => $title,
+        'status' => 'eligible',
+    ]));
+    $duplicates = DB::connection('core05_mysql')->query()
+        ->selectRaw('1 as duplicate_marker')
+        ->unionAll(DB::connection('core05_mysql')->query()->selectRaw('2 as duplicate_marker'));
+    $scope = $mounted->newQuery()
+        ->crossJoinSub($duplicates, 'download_duplicates')
+        ->orderByDesc('duplicate_marker')
+        ->orderByRaw('CASE WHEN '.$mounted->qualifyColumn('title').' = ? THEN 0 ELSE 1 END', ['Bravo'])
+        ->orderByDesc($mounted->qualifyColumn('title'))
+        ->orderBy($mounted->qualifyColumn('id'));
+
+    $context = app(TableMutationDispatcher::class)->prepareBulkDownload(
+        $scope,
+        new TableMutationModelDescriptor($mounted),
+        'downloadCurrentOrder',
+        $mounted->getBulkActions(),
+        [],
+        true,
+    );
+    $selection = $context['selection'];
+    $ids = collect(DB::connection('core05_mysql')->select($selection['sql'], $selection['bindings']))
+        ->pluck('__aura_download_key');
+    $titles = $mounted->newQuery()->whereKey($ids)->pluck('title', 'id');
+
+    expect($ids)->toHaveCount(3)
+        ->and($ids->unique())->toHaveCount(3)
+        ->and($ids->map(fn (int|string $id): string => $titles[$id])->all())
+        ->toBe(['Bravo', 'Charlie', 'Alpha']);
+})->group('mysql');
 
 test('mysql revalidates membership after waiting on a concurrent scope change', function () {
     if (! function_exists('pcntl_fork')) {

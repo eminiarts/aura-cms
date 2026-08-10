@@ -28,15 +28,31 @@ class Core05PostgresMutationResource extends BaseResource
             'ability' => 'update',
             'method' => 'collection',
         ],
+        'downloadCurrentOrder' => [
+            'ability' => 'update',
+            'download' => [
+                'content_type' => 'text/plain',
+                'filename' => 'postgres-order.txt',
+            ],
+            'label' => 'Download current order',
+            'method' => 'collection',
+        ],
     ];
 
     public static array $capturedIds = [];
+
+    public static ?string $slug = 'core05-postgres-mutation-resource';
 
     protected $guarded = [];
 
     public function captureCurrentOrder(array $ids): void
     {
         array_push(static::$capturedIds, ...$ids);
+    }
+
+    public function downloadCurrentOrder(array $ids): string
+    {
+        return implode(',', $ids);
     }
 
     public static function getFields(): array
@@ -240,6 +256,41 @@ test('postgres aggregate scopes fail closed before policy or handler execution',
     ))->toThrow(HttpException::class, 'Aggregate table mutation scopes');
 
     expect($resource->fresh()->content)->toBe('unchanged');
+})->group('postgres');
+
+test('postgres bulk downloads retain bound custom ordering while de-duplicating joins', function () {
+    $mounted = core05PostgresMountedResource();
+    collect(['Alpha', 'Charlie', 'Bravo'])->each(fn (string $title) => $mounted->newQuery()->create([
+        'title' => $title,
+        'status' => 'eligible',
+    ]));
+    $duplicates = DB::connection('core05_pgsql')->query()
+        ->selectRaw('1 as duplicate_marker')
+        ->unionAll(DB::connection('core05_pgsql')->query()->selectRaw('2 as duplicate_marker'));
+    $scope = $mounted->newQuery()
+        ->crossJoinSub($duplicates, 'download_duplicates')
+        ->orderByDesc('duplicate_marker')
+        ->orderByRaw('CASE WHEN '.$mounted->qualifyColumn('title').' = ? THEN 0 ELSE 1 END', ['Bravo'])
+        ->orderByDesc($mounted->qualifyColumn('title'))
+        ->orderBy($mounted->qualifyColumn('id'));
+
+    $context = app(TableMutationDispatcher::class)->prepareBulkDownload(
+        $scope,
+        new TableMutationModelDescriptor($mounted),
+        'downloadCurrentOrder',
+        $mounted->getBulkActions(),
+        [],
+        true,
+    );
+    $selection = $context['selection'];
+    $ids = collect(DB::connection('core05_pgsql')->select($selection['sql'], $selection['bindings']))
+        ->pluck('__aura_download_key');
+    $titles = $mounted->newQuery()->whereKey($ids)->pluck('title', 'id');
+
+    expect($ids)->toHaveCount(3)
+        ->and($ids->unique())->toHaveCount(3)
+        ->and($ids->map(fn (int|string $id): string => $titles[$id])->all())
+        ->toBe(['Bravo', 'Charlie', 'Alpha']);
 })->group('postgres');
 
 test('postgres revalidates effective membership after waiting on a concurrent scope change', function () {
