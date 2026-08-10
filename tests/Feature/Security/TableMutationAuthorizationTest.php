@@ -1879,6 +1879,54 @@ test('bulk mutations accept a currently available provider sort with exact decim
     'select-all provider-sorted selection' => true,
 ]);
 
+test('bulk mutations qualify a contextual physical number sort across joined scopes', function (bool $selectAll) {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    $firstEquivalent = Core05MutationResource::create([
+        'title' => 'First joined contextual amount',
+        'content' => '2',
+        'status' => 'draft',
+    ]);
+    $secondEquivalent = Core05MutationResource::create([
+        'title' => 'Second joined contextual amount',
+        'content' => '2.00',
+        'status' => 'draft',
+    ]);
+    $higher = Core05MutationResource::create([
+        'title' => 'Higher joined contextual amount',
+        'content' => '10',
+        'status' => 'draft',
+    ]);
+    $resources = collect([$firstEquivalent, $secondEquivalent, $higher]);
+    $resources->each(fn (Core05MutationResource $resource) => core05CreateMutationCollision($resource, $actor));
+    Aura::registerFieldProvider(
+        Core05ContextualSortFieldProvider::class,
+        resources: [Core05MutationResource::class],
+    );
+
+    $component = livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('sorts', ['content' => 'asc']);
+
+    if ($selectAll) {
+        $component->set('selectAll', true);
+    } else {
+        $component->set('selected', $resources->pluck('id')->all());
+    }
+
+    $component
+        ->call('bulkCollectionAction', 'captureCollectionOrder')
+        ->assertHasNoErrors();
+
+    expect(Core05MutationResource::$capturedCollectionIdChunks)->toBe([[
+        $secondEquivalent->getKey(),
+        $firstEquivalent->getKey(),
+        $higher->getKey(),
+    ]]);
+})->with([
+    'explicit joined provider-sorted selection' => false,
+    'select-all joined provider-sorted selection' => true,
+]);
+
 test('bulk mutations reject a provider sort withdrawn after selection without writing', function (bool $selectAll) {
     $this->actingAs(createSuperAdmin());
     $resources = collect(range(1, 3))->map(fn (int $amount) => Core05MutationResource::create([

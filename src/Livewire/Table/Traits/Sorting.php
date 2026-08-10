@@ -132,7 +132,9 @@ trait Sorting
             } else {
                 if ($this->model->isNumberField($field) && DB::connection($this->model->getConnectionName())->getDriverName() === 'sqlite') {
                     $connection = DB::connection($this->model->getConnectionName());
-                    $column = $query->getQuery()->getGrammar()->wrap($field);
+                    $column = $query->getQuery()->getGrammar()->wrap(
+                        $this->model->qualifyColumn($field),
+                    );
                     $fieldDefinition = $this->model->fieldBySlug($field);
                     $fieldClass = $this->model->fieldClassBySlug($field);
                     ExactDecimal::applySorting(
