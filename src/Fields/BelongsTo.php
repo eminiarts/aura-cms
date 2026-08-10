@@ -457,6 +457,7 @@ class BelongsTo extends Field implements PreloadsTableDisplay
         $application = parse_url(URL::to('/'));
 
         return is_array($application)
+            && Str::lower((string) ($components['scheme'] ?? '')) === Str::lower((string) ($application['scheme'] ?? ''))
             && Str::lower((string) ($components['host'] ?? '')) === Str::lower((string) ($application['host'] ?? ''))
             && ($components['port'] ?? null) === ($application['port'] ?? null);
     }

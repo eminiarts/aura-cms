@@ -378,6 +378,23 @@ describe('BelongsTo Field Display', function () {
             ->toContain("href='".e($destination)."'");
     });
 
+    test('rejects an absolute custom destination with a mismatched origin scheme', function () {
+        $related = Post::factory()->create(['title' => 'Related Post']);
+        $application = parse_url(url('/'));
+        $oppositeScheme = ($application['scheme'] ?? 'http') === 'https' ? 'http' : 'https';
+        $destination = $oppositeScheme.'://'.$application['host'].'/posts/'.$related->id;
+        $definition = [
+            'resource' => Post::class,
+            'link_resolver' => fn (): string => $destination,
+        ];
+
+        $html = (new BelongsTo)->presentValue($related->id, $definition, $this->user);
+
+        expect((string) $html)
+            ->toContain("href='".route('aura.post.view', $related->id)."'")
+            ->not->toContain("href='".e($destination)."'");
+    });
+
     test('unsafe custom destinations fall back to the authorized default without reaching exports', function (string $destination) {
         $related = Post::factory()->create(['title' => 'Related Post']);
         $definition = [
