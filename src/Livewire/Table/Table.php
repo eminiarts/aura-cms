@@ -564,7 +564,7 @@ class Table extends Component
         $rowIds = $this->rows->pluck('id')->toArray();
 
         $this->rowOrderSnapshot = $this->tableRowsAreOrderable()
-            ? array_values($rowIds)
+            ? array_values($this->rows->pluck($this->model()->getKeyName())->toArray())
             : [];
 
         $this->dispatch('rowIdsUpdated', $rowIds);

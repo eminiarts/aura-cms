@@ -55,6 +55,7 @@ final class TableRowOrderer
             $page,
             $perPage,
             $requested,
+            $resource,
             $scope,
         ): void {
             $lockIds = array_values($requested);
@@ -78,14 +79,6 @@ final class TableRowOrderer
                 $this->gate->authorize($ordering->ability, $record);
             }
 
-            $currentIds = $records->mapWithKeys(
-                fn (Model $record): array => [$descriptor->canonicalIdentity($record->getKey()) => $record->getKey()],
-            )->all();
-
-            if (array_keys($currentIds) === array_keys($requested)) {
-                return;
-            }
-
             $slots = $records->pluck($ordering->column)->all();
 
             if (count(array_unique(array_map(
@@ -93,6 +86,23 @@ final class TableRowOrderer
                 $slots,
             ))) !== count($slots)) {
                 abort(409, 'The table row ordering slots are stale or ambiguous.');
+            }
+
+            $this->assertScopedSlotsUnique(
+                $scope(),
+                $records,
+                $slots,
+                $resource,
+                $ordering,
+                $descriptor,
+            );
+
+            $currentIds = $records->mapWithKeys(
+                fn (Model $record): array => [$descriptor->canonicalIdentity($record->getKey()) => $record->getKey()],
+            )->all();
+
+            if (array_keys($currentIds) === array_keys($requested)) {
+                return;
             }
 
             $recordsByIdentity = $records->keyBy(
@@ -151,6 +161,37 @@ final class TableRowOrderer
 
         if ($resolvedOrder !== array_keys($expected)) {
             abort(409, 'The table row ordering page is stale.');
+        }
+    }
+
+    /**
+     * @param  Collection<int, Model>  $pageRecords
+     * @param  list<mixed>  $slots
+     */
+    private function assertScopedSlotsUnique(
+        Builder $scope,
+        Collection $pageRecords,
+        array $slots,
+        Resource $resource,
+        TableRowOrdering $ordering,
+        TableMutationModelDescriptor $descriptor,
+    ): void {
+        $pageIdentities = $pageRecords->mapWithKeys(
+            fn (Model $record): array => [$descriptor->canonicalIdentity($record->getKey()) => true],
+        )->all();
+        $slotIdentities = $scope
+            ->whereIn($resource->qualifyColumn($ordering->column), $slots)
+            ->reorder($resource->getQualifiedKeyName())
+            ->lockForUpdate()
+            ->get()
+            ->mapWithKeys(
+                fn (Model $record): array => [$descriptor->canonicalIdentity($record->getKey()) => true],
+            )->all();
+
+        if (count($slotIdentities) !== count($pageRecords)
+            || array_diff_key($pageIdentities, $slotIdentities) !== []
+            || array_diff_key($slotIdentities, $pageIdentities) !== []) {
+            abort(409, 'The table row ordering slots conflict with records outside the current page.');
         }
     }
 
