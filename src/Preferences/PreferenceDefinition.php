@@ -37,6 +37,12 @@ final readonly class PreferenceDefinition
             }
         }
 
+        if (($list || $itemType !== null) && $type !== PreferenceValueType::Array) {
+            throw new InvalidArgumentException(
+                "Preference [{$key}] must use the array type when declaring a list or item type."
+            );
+        }
+
         $this->validate($default);
     }
 

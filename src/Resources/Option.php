@@ -73,6 +73,13 @@ class Option extends Resource
         return [];
     }
 
+    public static function isEveryoneTeamId(mixed $teamId): bool
+    {
+        return $teamId !== null
+            && $teamId !== ''
+            && (string) $teamId === (string) self::EVERYONE_TEAM_ID;
+    }
+
     /**
      * Persist logical null as JSON `null` because the option value column is
      * intentionally non-nullable and SQL null means no stored row to callers.
@@ -115,6 +122,12 @@ class Option extends Resource
         );
     }
 
+    protected function getJsonCastFlags($key)
+    {
+        return parent::getJsonCastFlags($key)
+            | ($key === 'value' ? JSON_PRESERVE_ZERO_FRACTION : 0);
+    }
+
     protected function invalidateCacheScopes(bool $includeOriginal = false): void
     {
         $connection = $this->getConnection();
@@ -134,14 +147,14 @@ class Option extends Resource
 
         if ($teamIds->contains(fn ($teamId): bool => $teamId === null
             || $teamId === ''
-            || (string) $teamId === (string) self::EVERYONE_TEAM_ID)) {
+            || self::isEveryoneTeamId($teamId))) {
             Aura::clearGlobalOptionCache($connection);
         }
 
         $teamIds
             ->filter(fn ($teamId): bool => $teamId !== null
                 && $teamId !== ''
-                && (string) $teamId !== (string) self::EVERYONE_TEAM_ID)
+                && ! self::isEveryoneTeamId($teamId))
             ->unique()
             ->each(function ($teamId) use ($connection): void {
                 Team::clearOptionCacheForTeam($teamId, $connection);

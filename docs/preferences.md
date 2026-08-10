@@ -69,8 +69,13 @@ For resource-aware keys, resolution is deterministic:
 
 Unsupported scopes and missing context subjects are skipped during reads. Writes reject unsupported scopes.
 Everyone scope is optional per declaration. With teams enabled it uses the reserved option ownership
-`team_id = 0`; normal TeamScope queries cannot see it. This avoids a destructive schema migration and keeps
-the existing `(team_id, name)` uniqueness guarantee.
+`team_id = 0`; Team and user model writes reject that identity, and TeamScope fails closed if a persisted
+current-team pointer contains it. Normal tenant queries therefore cannot see the everyone row or become
+unscoped. Direct edits to reserved Option rows invalidate the global preference cache. This avoids a
+destructive schema migration and keeps the existing `(team_id, name)` uniqueness guarantee.
+
+Team-scoped reads are skipped when teams are disabled, so resolution continues to everyone or the declared
+default. Team-scoped writes and resets are rejected before an option storage adapter is called.
 
 ## Existing options and migration
 

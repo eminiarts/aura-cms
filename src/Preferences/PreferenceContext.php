@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Preferences;
 
+use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use InvalidArgumentException;
@@ -18,6 +19,10 @@ final readonly class PreferenceContext
             if ($value !== null && (trim($value) === '' || str_contains($value, "\0"))) {
                 throw new InvalidArgumentException("Preference context {$name} is invalid.");
             }
+        }
+
+        if ($team !== null && Option::isEveryoneTeamId($team->getKey())) {
+            throw new InvalidArgumentException('The reserved everyone preference owner cannot be used as a team context.');
         }
     }
 

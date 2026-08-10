@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rules\Password;
+use InvalidArgumentException;
 use Lab404\Impersonate\Models\Impersonate;
 use Lab404\Impersonate\Services\ImpersonateManager;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -952,6 +953,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             return false;
         }
 
+        if ($team === null || Option::isEveryoneTeamId($team->getKey())) {
+            return false;
+        }
+
         // Visitation: a Global Admin may enter any team without holding a
         // Membership (no user_role row is created — switchTeam only moves the
         // current-team pointer). Their in-team power comes from the policy gate
@@ -1016,6 +1021,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     protected static function booted()
     {
         parent::booted();
+
+        static::saving(function (User $user): void {
+            if (config('aura.teams') && Option::isEveryoneTeamId($user->getAttribute('current_team_id'))) {
+                throw new InvalidArgumentException('Team ID 0 is reserved for everyone preferences.');
+            }
+        });
 
         static::saved(function ($user) {
             if ($user->wasChanged('current_team_id')) {

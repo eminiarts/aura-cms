@@ -9,7 +9,7 @@ enum PreferenceValueType: string
         return match ($this) {
             self::Array => is_array($value),
             self::Boolean => is_bool($value),
-            self::Float => is_float($value),
+            self::Float => is_float($value) && is_finite($value),
             self::Integer => is_int($value),
             self::String => is_string($value),
         };

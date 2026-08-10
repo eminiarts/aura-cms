@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
+use InvalidArgumentException;
 
 class Team extends Resource
 {
@@ -87,6 +88,7 @@ class Team extends Resource
 
     public function deleteOption($option)
     {
+        $this->assertNotReservedPreferenceOwner();
         $optionName = $this->optionName($option);
 
         Option::withoutGlobalScope(TeamScope::class)
@@ -198,6 +200,8 @@ class Team extends Resource
 
     public function getOption($option)
     {
+        $this->assertNotReservedPreferenceOwner();
+
         if (! $this->hasAuthorizedOptionContext()) {
             return str_ends_with((string) $option, '*') ? collect() : null;
         }
@@ -243,6 +247,8 @@ class Team extends Resource
      */
     public function getOptionEntry($option): array
     {
+        $this->assertNotReservedPreferenceOwner();
+
         if (! $this->hasAuthorizedOptionContext()) {
             return ['found' => false, 'value' => null];
         }
@@ -257,6 +263,7 @@ class Team extends Resource
      */
     public function getOptionEntryExplicit(string $option): array
     {
+        $this->assertNotReservedPreferenceOwner();
         $optionName = $this->optionName($option);
 
         return VersionedCache::remember(
@@ -300,6 +307,7 @@ class Team extends Resource
 
     public function updateOption($option, $value)
     {
+        $this->assertNotReservedPreferenceOwner();
         $optionName = $this->optionName($option);
         $attributes = ['name' => $optionName, 'team_id' => $this->id];
         $record = Option::withoutGlobalScope(TeamScope::class)
@@ -343,6 +351,13 @@ class Team extends Resource
             ->withTimestamps();
     }
 
+    protected function assertNotReservedPreferenceOwner(): void
+    {
+        if (Option::isEveryoneTeamId($this->getKey())) {
+            throw new InvalidArgumentException('Team ID 0 is reserved for everyone preferences.');
+        }
+    }
+
     protected static function booted()
     {
         parent::booted();
@@ -362,6 +377,8 @@ class Team extends Resource
         });
 
         static::saving(function ($team) {
+            $team->assertNotReservedPreferenceOwner();
+
             // unset title attribute
             unset($team->title);
             unset($team->content);
@@ -374,6 +391,8 @@ class Team extends Resource
         });
 
         static::creating(function ($team) {});
+
+        static::deleting(fn (Team $team) => $team->assertNotReservedPreferenceOwner());
 
         static::created(function ($team) {
 

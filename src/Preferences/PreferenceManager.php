@@ -3,7 +3,9 @@
 namespace Aura\Base\Preferences;
 
 use Aura\Base\Aura;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Option;
+use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Services\VersionedCache;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -84,17 +86,31 @@ final readonly class PreferenceManager
             throw new InvalidArgumentException("Preference [{$definition->key}] does not support {$scope->value} scope.");
         }
 
+        if ($scope === PreferenceScope::Team && ! config('aura.teams')) {
+            throw new InvalidArgumentException('Team preference writes are unavailable while teams are disabled.');
+        }
+
         if ($actor === null) {
             throw new AuthorizationException('An explicit actor is required to write preferences.');
         }
 
+        $persistedActor = $this->persistedUser($actor);
+
+        if ($persistedActor === null) {
+            throw new AuthorizationException('The explicit preference actor is not persisted.');
+        }
+
+        $persistedUser = $this->persistedUser($context->user);
+        $persistedTeam = $this->persistedTeam($context->team);
+        $isGlobalAdmin = $persistedActor->isAuraGlobalAdmin();
+
         $authorized = match ($scope) {
-            PreferenceScope::User => $context->user !== null
-                && (string) $actor->getKey() === (string) $context->user->getKey()
-                && $this->canUseTeam($actor, $context),
-            PreferenceScope::Team => $context->team !== null
-                && ($actor->isAuraGlobalAdmin() || $actor->ownsTeam($context->team)),
-            PreferenceScope::Everyone => $actor->isAuraGlobalAdmin(),
+            PreferenceScope::User => $persistedUser !== null
+                && $this->sameKey($persistedActor, $persistedUser)
+                && $this->canUseTeam($persistedActor, $persistedTeam, $context),
+            PreferenceScope::Team => $persistedTeam !== null
+                && ($isGlobalAdmin || $this->ownsPersistedTeam($persistedActor, $persistedTeam)),
+            PreferenceScope::Everyone => $isGlobalAdmin,
         };
 
         if (! $authorized) {
@@ -102,18 +118,18 @@ final readonly class PreferenceManager
         }
     }
 
-    private function canUseTeam(User $actor, PreferenceContext $context): bool
+    private function canUseTeam(User $actor, ?Team $team, PreferenceContext $context): bool
     {
         if (! config('aura.teams')) {
             return $context->team === null;
         }
 
-        if ($context->team === null) {
+        if ($team === null) {
             return false;
         }
 
         return $actor->isAuraGlobalAdmin()
-            || $actor->teams()->whereKey($context->team->getKey())->exists();
+            || $actor->teams()->whereKey($team->getKey())->exists();
     }
 
     private function deleteEntry(
@@ -171,6 +187,40 @@ final readonly class PreferenceManager
     private function optionConnection(): Connection
     {
         return (new Option)->getConnection();
+    }
+
+    private function ownsPersistedTeam(User $actor, Team $team): bool
+    {
+        $ownerId = $team->getAttribute($actor->getForeignKey());
+
+        return $ownerId !== null
+            && $ownerId !== ''
+            && (string) $actor->getKey() === (string) $ownerId;
+    }
+
+    private function persistedTeam(?Team $team): ?Team
+    {
+        if ($team === null || $team->getKey() === null || $team->getKey() === ''
+            || Option::isEveryoneTeamId($team->getKey())) {
+            return null;
+        }
+
+        return $team->newQuery()
+            ->withoutGlobalScope(TeamScope::class)
+            ->whereKey($team->getKey())
+            ->first();
+    }
+
+    private function persistedUser(?User $user): ?User
+    {
+        if ($user === null || $user->getKey() === null || $user->getKey() === '') {
+            return null;
+        }
+
+        return $user->newQuery()
+            ->withoutGlobalScope(TeamScope::class)
+            ->whereKey($user->getKey())
+            ->first();
     }
 
     /** @return array{found: bool, value: mixed, legacy: bool} */
@@ -237,6 +287,11 @@ final readonly class PreferenceManager
                 : ['found' => false, 'value' => null],
             PreferenceScope::Everyone => $this->readEveryoneEntry($storageKey),
         };
+    }
+
+    private function sameKey(User $first, User $second): bool
+    {
+        return (string) $first->getKey() === (string) $second->getKey();
     }
 
     private function storageKey(PreferenceDefinition $definition, PreferenceContext $context): string
