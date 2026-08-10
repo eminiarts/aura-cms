@@ -230,6 +230,10 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         $isGuardedForwardedWrite = is_string($method)
             && in_array($method, self::GUARDED_FORWARDED_WRITE_METHODS, true);
 
+        if ($parameters === [] && $method === static::getOwnerRelation()) {
+            return $this->owner();
+        }
+
         if ($this->getFieldSlugs()->contains($method)) {
 
             $fieldClass = $this->fieldClassBySlug($method);
@@ -966,6 +970,10 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
     // Override isRelation
     public function isRelation($key)
     {
+        if (is_string($key) && $key === static::getOwnerRelation()) {
+            return true;
+        }
+
         $modelMethods = get_class_methods($this);
 
         $possibleRelationMethods = [$key, Str::camel($key)];

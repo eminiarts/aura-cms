@@ -6,7 +6,6 @@ use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Policies\ResourcePolicy;
 use Aura\Base\Resource;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
@@ -30,11 +29,6 @@ class Core14OwnedDocument extends Resource
     protected $fillable = ['name', 'owner_id', 'team_id'];
 
     protected $table = 'core14_owned_documents';
-
-    public function assignee(): BelongsTo
-    {
-        return $this->belongsTo(config('aura.resources.user'), 'owner_id');
-    }
 
     public static function getFields(): array
     {
