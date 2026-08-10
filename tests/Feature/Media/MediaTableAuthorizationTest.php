@@ -2,6 +2,8 @@
 
 use Aura\Base\Contracts\ScopesMediaVisibility;
 use Aura\Base\Fields\Image;
+use Aura\Base\Livewire\Media\InvalidMediaOwnerContext;
+use Aura\Base\Livewire\Media\MediaAuthorization;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Livewire\MediaTable;
 use Aura\Base\Resource;
@@ -9,6 +11,7 @@ use Aura\Base\Resources\Attachment;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 
@@ -110,6 +113,49 @@ test('media table fails closed when a record policy has no sql visibility scope'
         'field' => $this->field,
         'ownerToken' => $this->ownerToken,
     ])->assertViewHas('rows', fn ($rows): bool => $rows->total() === 0);
+});
+
+test('explicit ids fail closed when the policy has no sql visibility scope', function () {
+    Gate::policy(Attachment::class, Core20UnscopedAttachmentPolicy::class);
+    $attachment = Attachment::factory()->create(config('aura.teams') ? ['team_id' => $this->actor->current_team_id] : []);
+
+    expect(fn () => app(MediaAuthorization::class)->authorizeAttachments(
+        [(string) $attachment->getKey()],
+        $this->actor,
+    ))->toThrow(InvalidMediaOwnerContext::class);
+});
+
+test('explicit ids reject the whole selection when one id is outside the sql visibility scope', function () {
+    $attributes = config('aura.teams') ? ['team_id' => $this->actor->current_team_id] : [];
+    $visible = Attachment::factory()->create($attributes);
+    $hidden = Attachment::factory()->create($attributes);
+    Core20AttachmentPolicy::$visibleId = $visible->getKey();
+
+    expect(app(MediaAuthorization::class)->authorizeAttachments(
+        [(string) $visible->getKey()],
+        $this->actor,
+    ))->toHaveCount(1)
+        ->and(fn () => app(MediaAuthorization::class)->authorizeAttachments(
+            [(string) $visible->getKey(), (string) $hidden->getKey()],
+            $this->actor,
+        ))->toThrow(InvalidMediaOwnerContext::class);
+});
+
+test('explicit ids are re-scoped after the actor switches teams', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('This test exercises team switching.');
+    }
+
+    $attachment = Attachment::factory()->create(['team_id' => $this->actor->current_team_id]);
+    $otherTeam = foreignTeam();
+    $this->actor->forceFill(['current_team_id' => $otherTeam->getKey()])->save();
+    Cache::forget("user_{$this->actor->getKey()}_current_team_id");
+    $this->actingAs($this->actor->refresh());
+
+    expect(fn () => app(MediaAuthorization::class)->authorizeAttachments(
+        [(string) $attachment->getKey()],
+        $this->actor,
+    ))->toThrow(InvalidMediaOwnerContext::class);
 });
 
 test('media table rejects undeclared methods and reauthorizes destructive row actions', function () {

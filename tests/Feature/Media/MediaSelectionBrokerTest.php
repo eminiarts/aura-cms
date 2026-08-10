@@ -131,6 +131,29 @@ test('only one active request may exist for a manager and owner scope', function
         ->not->toBe($request->token);
 });
 
+test('only one active request may exist for an owner across manager components', function () {
+    $request = $this->selections->begin($this->ownerToken, 'first-manager', ['9'], $this->actor);
+
+    expect(fn () => $this->selections->begin($this->ownerToken, 'second-manager', ['10'], $this->actor))
+        ->toThrow(InvalidMediaSelectionRequest::class);
+
+    $this->selections->processForOwner(
+        $request->token,
+        $this->ownerToken,
+        'owner-component',
+        'image',
+        ['9'],
+        $this->actor,
+        fn (): MediaSelectionMutation => new MediaSelectionMutation(
+            apply: static function (): void {},
+            rollback: static function (): void {},
+        ),
+    );
+
+    expect($this->selections->begin($this->ownerToken, 'second-manager', ['10'], $this->actor)->token)
+        ->not->toBe($request->token);
+});
+
 test('concurrent workers share the active request fence', function () {
     if (! function_exists('pcntl_fork')) {
         $this->markTestSkipped('pcntl is required for the concurrent selection proof.');

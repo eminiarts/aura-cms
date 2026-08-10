@@ -9,9 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Two deterministic Livewire component slots, `global-search` and `media-manager`, with host-over-plugin-over-default precedence, boot-time candidate validation, collision detection, plugin registration through `Aura::registerComponentSlots()`, and compatibility aliases that follow the selected winner.
 - Typed per-resource editor chrome hooks (`createHeaderTitle()`, `editHeaderTitle()`, `createReturnRoute()`, `editReturnRoute()`) plus `RouteTarget` for changing escaped create/edit copy and named return destinations with path parameters or query state without publishing package views.
 - Per-resource page component hooks (`indexComponent()`, `createComponent()`, `editComponent()`, `viewComponent()`): a resource can swap in a custom Livewire component for any of its admin pages while keeping the default URI and `aura.{slug}.*` route name, so all generated links keep working.
 - `aura:customize` command: customize a resource page by copying its Blade view into `resources/views/aura/{slug}/`, generating a custom Livewire component in `app/Livewire/`, or both (`--mode=view|component|full`). Wires the resource to the generated files automatically and scaffolds an app-level subclass for package resources (User, Team, …).
+
+### Changed
+
+- Media-manager replacements now accept the owner-token mount contract and correlated request, acknowledgement, and timeout actions; the legacy `aura.components.media-manager` host key remains compatible but is deprecated in favor of `aura.component-slots.media-manager`.
 
 ### Removed
 
@@ -21,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Dashboard team quick actions derive the edit route from the configured Team resource, disappear when the resource, route, current team, or policy is unavailable, and remain safe with teams disabled.
 - Create and edit return breadcrumbs now fall back to unlinked copy when their named route cannot be generated; plain breadcrumb titles are escaped while explicit `Htmlable` content remains supported.
+
+### Security
+
+- Media owner, selection, and details brokers now fail closed on cache or lock failures, fence concurrent owner mutations and deadline settlement across workers, preserve rollback-before-dismissal, and require a shared atomic-lock cache store.
+- Explicit attachment IDs now use the same policy-provided SQL visibility scope as paginated media rows and reject the complete selection when any ID is unavailable or denied.
 
 ## [1.0.0](https://github.com/eminiarts/aura-cms/compare/v0.2.0...v1.0.0) - 2026-07-18
 

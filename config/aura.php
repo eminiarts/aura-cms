@@ -79,9 +79,9 @@ return [
         'profile' => Profile::class,
         'settings' => Settings::class,
 
-        // The media-manager modal component. Plugins (e.g. the Media Library)
-        // may override this with a drop-in replacement by publishing/setting
-        // `aura.components.media-manager` to their own Livewire component.
+        // Deprecated host compatibility key. New applications should configure
+        // `aura.component-slots.media-manager`; plugins must declare candidates
+        // through Aura::registerComponentSlots() instead of changing config.
         'media-manager' => MediaManager::class,
     ],
 
@@ -228,6 +228,9 @@ return [
 
         'generate_thumbnails' => true,
         'security' => [
+            // Null uses Laravel's default cache store. Every web/worker process
+            // must share a supported file, database, Redis, Memcached, or
+            // DynamoDB store with atomic locks; process-local stores are unsafe.
             'cache_store' => null,
             'owner_token_ttl' => 900,
             'selection_ttl' => 15,

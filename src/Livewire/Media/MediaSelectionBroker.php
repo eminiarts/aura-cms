@@ -43,19 +43,21 @@ class MediaSelectionBroker
         $this->authorizeOwnerSelection($ownerToken, $normalized, $actor);
         $scopeKey = $this->scopeKey($ownerToken, $managerComponentId);
 
-        return $this->locks->lock($scopeKey.':lock', 10)->block(5, function () use ($normalized, $owner, $ownerToken, $managerComponentId, $scopeKey): MediaSelectionRequest {
+        return $this->withNamedLock($scopeKey.':lock', 10, function () use ($normalized, $owner, $ownerToken, $managerComponentId, $scopeKey): MediaSelectionRequest {
             $activeToken = $this->cache->get($scopeKey);
 
-            if (is_string($activeToken)) {
+            if ($activeToken !== null) {
+                if (! is_string($activeToken)) {
+                    throw new InvalidMediaSelectionRequest('The active media selection scope is invalid.');
+                }
+
                 try {
                     $active = $this->read($activeToken);
                 } catch (InvalidMediaSelectionRequest) {
-                    $active = null;
+                    throw new InvalidMediaSelectionRequest('The active media selection scope is unavailable.');
                 }
 
-                if ($active instanceof MediaSelectionRecord
-                    && in_array($active->state, ['pending', 'processing'], true)
-                    && now()->getTimestamp() < $active->deadline) {
+                if (in_array($active->state, ['pending', 'processing'], true)) {
                     throw new InvalidMediaSelectionRequest('A media selection request is already active for this picker.');
                 }
             }
@@ -80,16 +82,63 @@ class MediaSelectionBroker
                 claimId: null,
             );
 
-            $this->cache->put($scopeKey, $token, $this->ttl() + $this->retention());
-            $this->rememberOwnerRequest($ownerToken, $token);
+            $indexKey = $this->ownerIndexKey($ownerToken);
 
-            if (! $this->cache->add($this->recordKey($token), $record->toArray(), $this->ttl() + $this->retention())) {
-                $this->cache->forget($scopeKey);
+            return $this->withNamedLock($indexKey.':lock', 5, function () use (
+                $indexKey,
+                $token,
+                $record,
+                $scopeKey,
+                $digest,
+                $activeToken,
+                $ownerToken,
+                $owner,
+            ): MediaSelectionRequest {
+                $previousTokens = $this->ownerRequestTokens($indexKey);
+                $this->assertOwnerRequestsSettled($previousTokens, $ownerToken, $owner);
+                $indexAttempted = false;
+                $recordStored = false;
+                $scopeAttempted = false;
 
-                throw new InvalidMediaSelectionRequest('Unable to create a unique media selection request.');
-            }
+                try {
+                    $indexAttempted = true;
+                    $this->putOrFail(
+                        $indexKey,
+                        [$token],
+                        $this->ttl() + $this->retention(),
+                    );
+                    $this->addOrFail(
+                        $this->recordKey($token),
+                        $record->toArray(),
+                        $this->ttl() + $this->retention(),
+                    );
+                    $recordStored = true;
+                    $scopeAttempted = true;
+                    $this->putOrFail($scopeKey, $token, $this->ttl() + $this->retention());
+                } catch (Throwable $exception) {
+                    $this->rollbackBegin(
+                        $indexKey,
+                        $previousTokens,
+                        $token,
+                        $scopeKey,
+                        $activeToken,
+                        $indexAttempted,
+                        $recordStored,
+                        $scopeAttempted,
+                    );
 
-            return new MediaSelectionRequest($token, $digest, $record);
+                    if ($exception instanceof InvalidMediaSelectionRequest) {
+                        throw $exception;
+                    }
+
+                    throw new InvalidMediaSelectionRequest(
+                        'Unable to create a durable media selection request.',
+                        previous: $exception,
+                    );
+                }
+
+                return new MediaSelectionRequest($token, $digest, $record);
+            });
         });
     }
 
@@ -99,19 +148,46 @@ class MediaSelectionBroker
         string $managerComponentId,
         Authenticatable $actor,
     ): MediaSelectionRecord {
-        return $this->withLock($requestToken, function () use ($requestToken, $ownerToken, $managerComponentId, $actor): MediaSelectionRecord {
-            $record = $this->validatedForManager($requestToken, $ownerToken, $managerComponentId, $actor);
+        $previous = null;
+        $transitioned = false;
 
-            if (in_array($record->state, ['succeeded', 'failed', 'expired'], true)
-                || now()->getTimestamp() < $record->deadline) {
-                return $record;
+        try {
+            return $this->withLock($requestToken, function () use (
+                $requestToken,
+                $ownerToken,
+                $managerComponentId,
+                $actor,
+                &$previous,
+                &$transitioned,
+            ): MediaSelectionRecord {
+                $record = $this->validatedForManager($requestToken, $ownerToken, $managerComponentId, $actor);
+
+                if (in_array($record->state, ['succeeded', 'failed', 'expired'], true)
+                    || now()->getTimestamp() < $record->deadline) {
+                    return $record;
+                }
+
+                $previous = $record;
+                $transitioned = true;
+                $expired = $record->withState('expired', 'selection_timeout');
+                $this->store($requestToken, $expired);
+
+                return $expired;
+            });
+        } catch (Throwable $exception) {
+            if ($transitioned && $previous instanceof MediaSelectionRecord) {
+                $this->restoreActiveRecord($requestToken, $previous, $exception);
             }
 
-            $expired = $record->withState('expired', 'selection_timeout');
-            $this->store($requestToken, $expired);
+            if ($exception instanceof InvalidMediaSelectionRequest) {
+                throw $exception;
+            }
 
-            return $expired;
-        });
+            throw new InvalidMediaSelectionRequest(
+                'Unable to durably expire the media selection request.',
+                previous: $exception,
+            );
+        }
     }
 
     public function forManager(
@@ -129,33 +205,38 @@ class MediaSelectionBroker
     ): bool {
         $owner = $this->resolveOwner($ownerToken, $actor);
         $indexKey = $this->ownerIndexKey($ownerToken);
-        $tokens = $this->cache->get($indexKey, []);
 
-        if (! is_array($tokens)) {
-            return true;
-        }
+        return $this->withNamedLock($indexKey.':lock', 5, function () use ($indexKey, $ownerToken, $owner): bool {
+            $tokens = $this->cache->get($indexKey, []);
 
-        foreach ($tokens as $requestToken) {
-            if (! is_string($requestToken)) {
+            if (! is_array($tokens)) {
                 return true;
             }
 
-            try {
-                $record = $this->read($requestToken);
-            } catch (InvalidMediaSelectionRequest) {
-                continue;
+            foreach ($tokens as $requestToken) {
+                if (! is_string($requestToken)) {
+                    return true;
+                }
+
+                try {
+                    $record = $this->read($requestToken);
+                } catch (InvalidMediaSelectionRequest) {
+                    return true;
+                }
+
+                if (! hash_equals($record->ownerTokenDigest, $this->owners->digest($ownerToken))
+                    || ! hash_equals($record->actorId, $owner->actorId)
+                    || $record->teamId !== $owner->teamId) {
+                    return true;
+                }
+
+                if (in_array($record->state, ['pending', 'processing'], true)) {
+                    return true;
+                }
             }
 
-            if (hash_equals($record->ownerTokenDigest, $this->owners->digest($ownerToken))
-                && hash_equals($record->actorId, $owner->actorId)
-                && $record->teamId === $owner->teamId
-                && in_array($record->state, ['pending', 'processing'], true)
-                && now()->getTimestamp() < $record->deadline) {
-                return true;
-            }
-        }
-
-        return false;
+            return false;
+        }, 0);
     }
 
     /**
@@ -222,6 +303,220 @@ class MediaSelectionBroker
         }
 
         $application = null;
+        $applicationStarted = false;
+        $rolledBack = false;
+
+        try {
+            $settled = $this->withNamedLock(
+                $this->ownerIndexKey($ownerToken).':lock',
+                max(10, $this->ttl() + $this->retention()),
+                function () use (
+                    $requestToken,
+                    $ownerToken,
+                    $ownerComponentId,
+                    $slug,
+                    $value,
+                    $actor,
+                    $claimId,
+                    $mutation,
+                    &$application,
+                    &$applicationStarted,
+                    &$rolledBack,
+                ): MediaSelectionRecord {
+                    return $this->processClaimedForOwner(
+                        $requestToken,
+                        $ownerToken,
+                        $ownerComponentId,
+                        $slug,
+                        $value,
+                        $actor,
+                        $claimId,
+                        $mutation,
+                        $application,
+                        $applicationStarted,
+                        $rolledBack,
+                    );
+                },
+            );
+        } catch (Throwable $exception) {
+            $recoveryFailure = null;
+
+            if ($applicationStarted && ! $rolledBack && $application instanceof MediaSelectionMutation) {
+                try {
+                    $this->rollbackMutation($application);
+                } catch (Throwable $rollbackException) {
+                    $recoveryFailure = $rollbackException;
+                }
+            }
+
+            try {
+                $this->store($requestToken, $claimed);
+            } catch (Throwable $storeException) {
+                $recoveryFailure ??= $storeException;
+            }
+
+            if ($recoveryFailure instanceof Throwable) {
+                throw new InvalidMediaSelectionRequest(
+                    'Unable to restore the active media selection fence after failure.',
+                    previous: $recoveryFailure,
+                );
+            }
+
+            if ($exception instanceof InvalidMediaSelectionRequest) {
+                throw $exception;
+            }
+
+            throw new InvalidMediaSelectionRequest(
+                'Unable to finish the media selection request.',
+                previous: $exception,
+            );
+        }
+
+        if ($settled->state === 'succeeded' && $application?->afterCommit instanceof Closure) {
+            ($application->afterCommit)();
+        }
+
+        return $settled;
+    }
+
+    private function addOrFail(string $key, mixed $value, int $seconds): void
+    {
+        try {
+            $stored = $this->cache->add($key, $value, $seconds);
+        } catch (Throwable $exception) {
+            throw new InvalidMediaSelectionRequest('Unable to create durable media selection state.', previous: $exception);
+        }
+
+        if (! $stored) {
+            throw new InvalidMediaSelectionRequest('Unable to create durable media selection state.');
+        }
+    }
+
+    /** @param list<string> $tokens */
+    private function assertOwnerRequestsSettled(
+        array $tokens,
+        string $ownerToken,
+        MediaOwnerContext $owner,
+    ): void {
+        foreach ($tokens as $requestToken) {
+            $record = $this->read($requestToken);
+
+            if (! hash_equals($record->ownerTokenDigest, $this->owners->digest($ownerToken))
+                || ! hash_equals($record->actorId, $owner->actorId)
+                || $record->teamId !== $owner->teamId) {
+                throw new InvalidMediaSelectionRequest('The media selection owner index is invalid.');
+            }
+
+            if (in_array($record->state, ['pending', 'processing'], true)) {
+                throw new InvalidMediaSelectionRequest('A media selection request is already active for this owner.');
+            }
+        }
+    }
+
+    /** @param list<int|string> $value */
+    private function authorizeOwnerSelection(
+        string $ownerToken,
+        array $value,
+        Authenticatable $actor,
+    ): void {
+        try {
+            app(MediaAuthorization::class)->authorizeOwnerSelection($ownerToken, $value, $actor);
+        } catch (InvalidMediaOwnerToken|InvalidMediaOwnerContext) {
+            throw new InvalidMediaSelectionRequest('The media selection owner context is invalid.');
+        }
+    }
+
+    private function digest(string $token): string
+    {
+        return hash('sha256', $token);
+    }
+
+    private function errorCode(string $errorCode): string
+    {
+        return preg_match('/^[a-z][a-z0-9_]{0,63}$/', $errorCode) === 1
+            ? $errorCode
+            : 'selection_rejected';
+    }
+
+    private function forgetOrFail(string $key): void
+    {
+        try {
+            $forgotten = $this->cache->forget($key);
+        } catch (Throwable $exception) {
+            throw new InvalidMediaSelectionRequest('Unable to remove media selection state.', previous: $exception);
+        }
+
+        if (! $forgotten) {
+            throw new InvalidMediaSelectionRequest('Unable to remove media selection state.');
+        }
+    }
+
+    /**
+     * @param  list<int|string>  $value
+     * @return list<string>
+     */
+    private function normalizeValue(array $value): array
+    {
+        if (! array_is_list($value)) {
+            throw new InvalidArgumentException('Media selection values must be a list.');
+        }
+
+        $normalized = [];
+
+        foreach ($value as $id) {
+            if ((! is_int($id) && ! is_string($id)) || (string) $id === '') {
+                throw new InvalidArgumentException('Media selection values must contain non-empty integer or string IDs.');
+            }
+
+            $normalized[] = (string) $id;
+        }
+
+        if (count($normalized) !== count(array_unique($normalized, SORT_STRING))) {
+            throw new InvalidArgumentException('Media selection values must not contain duplicate IDs.');
+        }
+
+        return $normalized;
+    }
+
+    private function ownerIndexKey(string $ownerToken): string
+    {
+        return self::CACHE_PREFIX.'owner:'.$this->owners->digest($ownerToken);
+    }
+
+    /** @return list<string> */
+    private function ownerRequestTokens(string $indexKey): array
+    {
+        $tokens = $this->cache->get($indexKey, []);
+
+        if (! is_array($tokens) || ! array_is_list($tokens)) {
+            throw new InvalidMediaSelectionRequest('The media selection owner index is invalid.');
+        }
+
+        foreach ($tokens as $token) {
+            if (! is_string($token)) {
+                throw new InvalidMediaSelectionRequest('The media selection owner index is invalid.');
+            }
+        }
+
+        return array_values(array_unique($tokens));
+    }
+
+    /**
+     * @param  list<int|string>  $value
+     */
+    private function processClaimedForOwner(
+        string $requestToken,
+        string $ownerToken,
+        string $ownerComponentId,
+        string $slug,
+        array $value,
+        Authenticatable $actor,
+        string $claimId,
+        Closure $mutation,
+        ?MediaSelectionMutation &$application,
+        bool &$applicationStarted,
+        bool &$rolledBack,
+    ): MediaSelectionRecord {
         $errorCode = null;
 
         try {
@@ -238,7 +533,7 @@ class MediaSelectionBroker
             $errorCode = 'processing_failed';
         }
 
-        $settled = $this->withLock($requestToken, function () use (
+        $ready = $this->withLock($requestToken, function () use (
             $requestToken,
             $ownerToken,
             $ownerComponentId,
@@ -280,94 +575,119 @@ class MediaSelectionBroker
                 return $failed;
             }
 
-            try {
-                ($application->apply)();
-                $this->authorizeOwnerSelection($ownerToken, $value, $actor);
+            $this->authorizeOwnerSelection($ownerToken, $value, $actor);
 
-                if (now()->getTimestamp() >= $record->deadline) {
-                    ($application->rollback)();
-                    $settled = $record->withState('expired', 'selection_timeout');
-                } else {
-                    $settled = $record->withState('succeeded');
-                }
-            } catch (MediaSelectionRejected $exception) {
-                ($application->rollback)();
-                $settled = $record->withState('failed', $this->errorCode($exception->errorCode));
-            } catch (Throwable) {
-                try {
-                    ($application->rollback)();
-                } catch (Throwable) {
-                }
-                $settled = $record->withState('failed', 'processing_failed');
+            return $record;
+        });
+
+        if ($ready->state !== 'processing' || ! is_string($ready->claimId)
+            || ! hash_equals($ready->claimId, $claimId)
+            || ! $application instanceof MediaSelectionMutation) {
+            return $ready;
+        }
+
+        $mutationErrorCode = null;
+        $applicationStarted = true;
+
+        try {
+            ($application->apply)();
+        } catch (MediaSelectionRejected $exception) {
+            $mutationErrorCode = $this->errorCode($exception->errorCode);
+        } catch (Throwable) {
+            $mutationErrorCode = 'processing_failed';
+        }
+
+        return $this->withLock($requestToken, function () use (
+            $requestToken,
+            $ownerToken,
+            $ownerComponentId,
+            $slug,
+            $value,
+            $actor,
+            $claimId,
+            $application,
+            $mutationErrorCode,
+            &$rolledBack,
+        ): MediaSelectionRecord {
+            $record = $this->validatedForOwner(
+                $requestToken,
+                $ownerToken,
+                $ownerComponentId,
+                $slug,
+                $value,
+                $actor,
+            );
+
+            if (in_array($record->state, ['succeeded', 'failed', 'expired'], true)) {
+                $this->rollbackMutation($application);
+                $rolledBack = true;
+
+                return $record;
             }
 
-            $this->store($requestToken, $settled);
+            if ($record->state !== 'processing' || ! is_string($record->claimId)
+                || ! hash_equals($record->claimId, $claimId)) {
+                $this->rollbackMutation($application);
+                $rolledBack = true;
+
+                throw new InvalidMediaSelectionRequest('The media selection request apply fence is stale.');
+            }
+
+            $authorizationErrorCode = null;
+
+            if ($mutationErrorCode === null) {
+                try {
+                    $this->authorizeOwnerSelection($ownerToken, $value, $actor);
+                } catch (Throwable) {
+                    $authorizationErrorCode = 'processing_failed';
+                }
+            }
+
+            if ($mutationErrorCode !== null || $authorizationErrorCode !== null) {
+                $this->rollbackMutation($application);
+                $rolledBack = true;
+                $settled = $record->withState('failed', $mutationErrorCode ?? $authorizationErrorCode);
+            } elseif (now()->getTimestamp() >= $record->deadline) {
+                $this->rollbackMutation($application);
+                $rolledBack = true;
+                $settled = $record->withState('expired', 'selection_timeout');
+            } else {
+                $settled = $record->withState('succeeded');
+            }
+
+            try {
+                $this->store($requestToken, $settled);
+            } catch (Throwable $exception) {
+                if (! $rolledBack) {
+                    $this->rollbackMutation($application);
+                    $rolledBack = true;
+                }
+
+                if ($exception instanceof InvalidMediaSelectionRequest) {
+                    throw $exception;
+                }
+
+                throw new InvalidMediaSelectionRequest(
+                    'Unable to durably settle the media selection request.',
+                    previous: $exception,
+                );
+            }
 
             return $settled;
         });
-
-        if ($settled->state === 'succeeded' && $application?->afterCommit instanceof Closure) {
-            ($application->afterCommit)();
-        }
-
-        return $settled;
     }
 
-    /** @param list<int|string> $value */
-    private function authorizeOwnerSelection(
-        string $ownerToken,
-        array $value,
-        Authenticatable $actor,
-    ): void {
+    private function putOrFail(string $key, mixed $value, int $seconds): void
+    {
         try {
-            app(MediaAuthorization::class)->authorizeOwnerSelection($ownerToken, $value, $actor);
-        } catch (InvalidMediaOwnerToken|InvalidMediaOwnerContext) {
-            throw new InvalidMediaSelectionRequest('The media selection owner context is invalid.');
-        }
-    }
-
-    private function digest(string $token): string
-    {
-        return hash('sha256', $token);
-    }
-
-    private function errorCode(string $errorCode): string
-    {
-        return preg_match('/^[a-z][a-z0-9_]{0,63}$/', $errorCode) === 1
-            ? $errorCode
-            : 'selection_rejected';
-    }
-
-    /**
-     * @param  list<int|string>  $value
-     * @return list<string>
-     */
-    private function normalizeValue(array $value): array
-    {
-        if (! array_is_list($value)) {
-            throw new InvalidArgumentException('Media selection values must be a list.');
+            $stored = $this->cache->put($key, $value, $seconds);
+        } catch (Throwable $exception) {
+            throw new InvalidMediaSelectionRequest('Unable to persist media selection state.', previous: $exception);
         }
 
-        $normalized = [];
-
-        foreach ($value as $id) {
-            if ((! is_int($id) && ! is_string($id)) || (string) $id === '') {
-                throw new InvalidArgumentException('Media selection values must contain non-empty integer or string IDs.');
-            }
-
-            $normalized[] = (string) $id;
+        if (! $stored) {
+            throw new InvalidMediaSelectionRequest('Unable to persist media selection state.');
         }
-
-        if (count($normalized) !== count(array_unique($normalized, SORT_STRING))) {
-            throw new InvalidArgumentException('Media selection values must not contain duplicate IDs.');
-        }
-
-        return $normalized;
-    }
-
-    private function ownerIndexKey(string $ownerToken): string
-    {
-        return self::CACHE_PREFIX.'owner:'.$this->owners->digest($ownerToken);
     }
 
     private function read(string $requestToken): MediaSelectionRecord
@@ -376,7 +696,11 @@ class MediaSelectionBroker
             throw new InvalidMediaSelectionRequest('The media selection request is invalid.');
         }
 
-        $stored = $this->cache->get($this->recordKey($requestToken));
+        try {
+            $stored = $this->cache->get($this->recordKey($requestToken));
+        } catch (Throwable $exception) {
+            throw new InvalidMediaSelectionRequest('The media selection request is unavailable.', previous: $exception);
+        }
 
         if (! is_array($stored)) {
             throw new InvalidMediaSelectionRequest('The media selection request is invalid.');
@@ -400,20 +724,6 @@ class MediaSelectionBroker
         return self::CACHE_PREFIX.'request:'.$this->digest($requestToken);
     }
 
-    private function rememberOwnerRequest(string $ownerToken, string $requestToken): void
-    {
-        $indexKey = $this->ownerIndexKey($ownerToken);
-
-        $this->locks->lock($indexKey.':lock', 5)->block(5, function () use ($indexKey, $requestToken): void {
-            $tokens = $this->cache->get($indexKey, []);
-            $tokens = is_array($tokens)
-                ? array_values(array_filter($tokens, 'is_string'))
-                : [];
-            $tokens[] = $requestToken;
-            $this->cache->put($indexKey, array_values(array_unique($tokens)), $this->ttl() + $this->retention());
-        });
-    }
-
     private function resolveOwner(string $ownerToken, Authenticatable $actor): MediaOwnerContext
     {
         try {
@@ -421,6 +731,57 @@ class MediaSelectionBroker
         } catch (InvalidMediaOwnerToken) {
             throw new InvalidMediaSelectionRequest('The media selection owner token is invalid.');
         }
+    }
+
+    private function restoreActiveRecord(
+        string $requestToken,
+        MediaSelectionRecord $record,
+        Throwable $failure,
+    ): never {
+        try {
+            $this->store($requestToken, $record);
+        } catch (Throwable $restoreException) {
+            throw new InvalidMediaSelectionRequest(
+                'Unable to restore the active media selection fence after failure.',
+                previous: $restoreException,
+            );
+        }
+
+        if ($failure instanceof InvalidMediaSelectionRequest) {
+            throw $failure;
+        }
+
+        throw new InvalidMediaSelectionRequest(
+            'Unable to durably settle the media selection request.',
+            previous: $failure,
+        );
+    }
+
+    /** @param list<string> $tokens */
+    private function restoreOwnerRequestTokens(string $indexKey, array $tokens): void
+    {
+        if ($tokens === []) {
+            $this->forgetOrFail($indexKey);
+
+            return;
+        }
+
+        $this->putOrFail($indexKey, $tokens, $this->ttl() + $this->retention());
+    }
+
+    private function restoreScopeToken(string $scopeKey, mixed $token): void
+    {
+        if ($token === null) {
+            $this->forgetOrFail($scopeKey);
+
+            return;
+        }
+
+        if (! is_string($token)) {
+            throw new InvalidMediaSelectionRequest('The previous media selection scope is invalid.');
+        }
+
+        $this->putOrFail($scopeKey, $token, $this->ttl() + $this->retention());
     }
 
     private function retention(): int
@@ -434,6 +795,47 @@ class MediaSelectionBroker
         return $retention;
     }
 
+    private function rollbackBegin(
+        string $indexKey,
+        array $previousTokens,
+        string $requestToken,
+        string $scopeKey,
+        mixed $previousScopeToken,
+        bool $indexAttempted,
+        bool $recordStored,
+        bool $scopeAttempted,
+    ): void {
+        $cleanupFailure = null;
+
+        foreach ([
+            fn () => $scopeAttempted ? $this->restoreScopeToken($scopeKey, $previousScopeToken) : null,
+            fn () => $recordStored ? $this->forgetOrFail($this->recordKey($requestToken)) : null,
+            fn () => $indexAttempted ? $this->restoreOwnerRequestTokens($indexKey, $previousTokens) : null,
+        ] as $cleanup) {
+            try {
+                $cleanup();
+            } catch (Throwable $exception) {
+                $cleanupFailure ??= $exception;
+            }
+        }
+
+        if ($cleanupFailure instanceof Throwable) {
+            throw new InvalidMediaSelectionRequest(
+                'Unable to roll back an incomplete media selection request.',
+                previous: $cleanupFailure,
+            );
+        }
+    }
+
+    private function rollbackMutation(MediaSelectionMutation $application): void
+    {
+        try {
+            ($application->rollback)();
+        } catch (Throwable $exception) {
+            throw new InvalidMediaSelectionRequest('Unable to roll back the media selection mutation.', previous: $exception);
+        }
+    }
+
     private function scopeKey(string $ownerToken, string $managerComponentId): string
     {
         return self::CACHE_PREFIX.'scope:'.$this->owners->digest($ownerToken).':'.$this->digest($managerComponentId);
@@ -442,7 +844,7 @@ class MediaSelectionBroker
     private function store(string $requestToken, MediaSelectionRecord $record): void
     {
         $seconds = max(1, $record->deadline - now()->getTimestamp() + $this->retention());
-        $this->cache->put($this->recordKey($requestToken), $record->toArray(), $seconds);
+        $this->putOrFail($this->recordKey($requestToken), $record->toArray(), $seconds);
     }
 
     private function ttl(): int
@@ -510,6 +912,64 @@ class MediaSelectionBroker
     /** @param Closure(): MediaSelectionRecord $callback */
     private function withLock(string $requestToken, Closure $callback): MediaSelectionRecord
     {
-        return $this->locks->lock(self::CACHE_PREFIX.'lock:'.$this->digest($requestToken), 10)->block(5, $callback);
+        return $this->withNamedLock(
+            self::CACHE_PREFIX.'lock:'.$this->digest($requestToken),
+            10,
+            $callback,
+        );
+    }
+
+    /**
+     * @template T
+     *
+     * @param  Closure(): T  $callback
+     * @return T
+     */
+    private function withNamedLock(
+        string $key,
+        int $seconds,
+        Closure $callback,
+        int $waitSeconds = 5,
+    ): mixed {
+        try {
+            $lock = $this->locks->lock($key, $seconds);
+
+            if (! is_object($lock) || ! method_exists($lock, 'block') || ! method_exists($lock, 'release')) {
+                throw new InvalidMediaSelectionRequest('The media selection lock is unavailable.');
+            }
+
+            if ($lock->block($waitSeconds) !== true) {
+                throw new InvalidMediaSelectionRequest('The media selection lock could not be acquired.');
+            }
+
+            $result = null;
+            $callbackFailure = null;
+
+            try {
+                $result = $callback();
+            } catch (Throwable $exception) {
+                $callbackFailure = $exception;
+            }
+
+            try {
+                $released = $lock->release();
+            } catch (Throwable $exception) {
+                throw new InvalidMediaSelectionRequest('The media selection lock could not be released.', previous: $exception);
+            }
+
+            if (! $released) {
+                throw new InvalidMediaSelectionRequest('The media selection lock could not be released.');
+            }
+
+            if ($callbackFailure instanceof Throwable) {
+                throw $callbackFailure;
+            }
+
+            return $result;
+        } catch (InvalidMediaSelectionRequest $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            throw new InvalidMediaSelectionRequest('The media selection lock is unavailable.', previous: $exception);
+        }
     }
 }

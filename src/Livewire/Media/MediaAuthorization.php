@@ -62,14 +62,16 @@ class MediaAuthorization
         $normalized = $this->normalizeIds($ids);
         $prototype = $this->attachmentPrototype();
         $actorGate = $this->gate->forUser($actor);
-        $actorGate->authorize('viewAny', $prototype);
 
         if ($normalized === []) {
+            $actorGate->authorize('viewAny', $prototype);
+
             return new Collection;
         }
 
         $attachmentClass = $prototype::class;
-        $found = $attachmentClass::query()->whereKey($normalized)->get()
+        $query = $this->applyAttachmentVisibility($attachmentClass::query(), $actor);
+        $found = $query->whereKey($normalized)->get()
             ->keyBy(fn (Resource $attachment): string => (string) $attachment->getKey());
 
         if ($found->count() !== count($normalized)) {

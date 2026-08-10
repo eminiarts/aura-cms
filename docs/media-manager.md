@@ -95,6 +95,14 @@ Configure media settings in `config/aura.php`:
     
     // File upload limits
     'max_file_size' => 10000,  // KB (10MB)
+
+    // Server-side owner/selection/details protocol
+    'security' => [
+        'cache_store' => null, // Null uses Laravel's default cache store
+        'owner_token_ttl' => 900,
+        'selection_ttl' => 15,
+        'selection_retention' => 60,
+    ],
     
     // Image processing
     'generate_thumbnails' => true,
@@ -112,7 +120,8 @@ Configure media settings in `config/aura.php`:
 ],
 ```
 
-> **Note**: The `max_files` limit is configured per-field using the `max_files` option on Image or File fields, not globally.
+> **Note**: The `max_files` selection limit is configured per Image or File
+> field. Upload requests also have a non-configurable hard limit of 20 files.
 
 ### Storage Configuration
 
@@ -234,24 +243,33 @@ The `MediaUploader` Livewire component handles file uploads:
     'selected' => $selectedIds,  // Currently selected attachment IDs
     'button' => false,           // Show as button vs dropzone
     'table' => true,             // Show table of uploads
+    'ownerToken' => $ownerToken, // Issued by the owning Aura component
 ])
 ```
 
-The component uses Livewire's `WithFileUploads` trait and stores files to the `media` folder on the `public` disk.
+The component uses Livewire's `WithFileUploads` trait and stores files on the
+configured media disk/path. The owner token is server-issued, actor/team/owner
+bound, and revalidated on mount and hydration; do not accept it from arbitrary
+request input.
 
 ### Upload Process
 
-1. **Validation**: File type, size, and count checks
-2. **Storage**: Files saved to configured disk
-3. **Database**: Attachment record created
-4. **Processing**: Thumbnail generation queued
-5. **Response**: Attachment IDs returned
+1. **Authorization**: Fresh owner authorization and Attachment `create`
+2. **Validation**: File type, size, and count checks (hard limit: 20 files)
+3. **Storage**: Files saved to the configured disk
+4. **Database**: Attachment record created transactionally
+5. **Processing**: Thumbnail generation queued
+6. **Response**: Token-bound attachment IDs returned
+
+If Attachment persistence fails, Aura removes the just-stored file. It does not
+emit upload success for denied or orphaned rows.
 
 ### Upload Validation
 
 ```php
 // MediaUploader.php validation (Livewire file upload limit)
 $this->validate([
+    'media' => 'required|array|max:20',
     'media.*' => 'required|max:102400', // 100MB max per file
 ]);
 
@@ -414,27 +432,57 @@ route('aura.image', [
 
 ### Media Manager Modal
 
-The `MediaManager` Livewire component provides a selection interface:
+Aura Image and File fields issue the owner context and open the media-manager
+slot. Low-level integrations must use the same server protocol; a slug and array
+of IDs are not sufficient authority:
 
 ```php
-// Open media manager modal
-$this->dispatch('openModal', 
-    component: 'aura::media-manager',
-    arguments: [
-        'model' => get_class($this->model), // Resource class name
-        'slug' => 'gallery',                 // Field slug
-        'selected' => $this->selected,       // Currently selected IDs
-        'modalAttributes' => [
-            'multiple' => true,
-            'maxFiles' => 10,
-        ],
-    ]
-);
+use Aura\Base\Livewire\ComponentSlots\ComponentSlotRegistry;
 
-// Listen for selection
-// The component dispatches 'updateField' with selected IDs
-// and 'media-manager-selected' when complete
+$this->dispatch('openModal',
+    component: ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID,
+    arguments: [
+        'model' => $this->model::class,
+        'slug' => 'gallery',
+        'selected' => $this->form['fields']['gallery'],
+        'ownerToken' => $this->mediaOwnerToken('gallery'),
+    ],
+    modalAttributes: ['persistent' => true],
+);
 ```
+
+The modal host adds the fifth named input, `modalAttributes`. A media-manager
+slot candidate must accept exactly the named inputs `model: string`,
+`slug: string`, `selected: ?array`, `ownerToken: string`, and
+`modalAttributes: array`, and must expose these public `void` actions:
+
+```php
+public function requestMediaSelection(array $value): void;
+
+#[On('aura-media-selection-acknowledged')]
+public function acknowledgeMediaSelection(
+    string $ownerToken,
+    string $requestToken,
+    string $outcome,
+    ?string $errorCode = null,
+): void;
+
+public function expireMediaSelection(string $requestToken): void;
+```
+
+`requestMediaSelection()` emits `aura-media-selection-requested` with exactly
+`ownerToken`, `requestToken`, `slug`, and normalized `value`. The locked owner
+listener validates the correlated token/value context, fresh authorization, and
+field `max_files`; it then emits `aura-media-selection-acknowledged` with
+`ownerToken`, `requestToken`, `outcome`, and nullable `errorCode` after durable
+settlement. The manager rereads that record and closes only for `succeeded`.
+Failed or expired requests roll back the form, suppress post-commit effects, keep
+the modal open, and allow retry. A global close is also rejected while any
+request for that owner is `pending` or `processing`, including during a
+timeout/apply race.
+
+The former slug-only `updateField` and immediate `closeModal` sequence is not a
+supported picker integration.
 
 ### Selection Features
 
@@ -443,6 +491,59 @@ $this->dispatch('openModal',
 - **Multi-select**: Select multiple attachments
 - **Preview**: Image thumbnails for visual files
 - **Integration**: Syncs selection with parent form via Livewire events
+
+### Attachment Visibility Contract
+
+The configured Attachment policy must implement
+`Aura\Base\Contracts\ScopesMediaVisibility`:
+
+```php
+public function scopeMediaVisibility(
+    Builder $query,
+    Authenticatable $actor,
+    Resource $resource,
+): Builder;
+```
+
+Aura applies that same SQL builder scope to pagination and every explicit ID
+lookup, then enforces `viewAny` and per-record `view`. If the policy does not
+implement the interface, or one ID is missing/denied, the full explicit
+selection is rejected. There is no per-model unscoped fallback. Actor and team
+changes cause a fresh scope evaluation.
+
+### Picker Details Snapshots
+
+Opening attachment details from a picker uses a short-lived opaque snapshot. It
+binds the actor, current team, owner token, picker/details component, field slug,
+chosen attachment, ordered visible rows, and current selection. The details
+broker consumes that snapshot once using compare-and-delete under a shared lock.
+A delete or lock failure returns no snapshot; when the record remains, the same
+token can be retried. A successful consume cannot be replayed. Browser-supplied
+attachment/row/selection fields do not replace the server snapshot.
+
+### Security Cache Store
+
+Set `aura.media.security.cache_store` to a shared file, database, Redis,
+Memcached, or DynamoDB cache store with atomic locks. All web and worker
+processes must use the same store. Aura rejects process-local stores such as
+`array` when the media security services resolve.
+
+Every cache `add`, `put`, `forget`, lock acquisition, and lock release result is
+authoritative. False results and exceptions fail closed. An incomplete begin is
+compensated, a failed details deletion is not reported as consumed, and a failed
+selection settlement leaves the request active and the modal locked for retry or
+the configured TTL/retention recovery path.
+
+### Replacing the Media Manager
+
+`media-manager` and `global-search` are Aura's only supported Livewire component
+slots. Applications configure `aura.component-slots.media-manager`; plugins call
+`Aura::registerComponentSlots('vendor/package', ['media-manager' => ...])` from
+a non-deferred provider. Host choice wins over one distinct plugin candidate,
+which wins over Aura's default. Conflicting plugin classes, invalid candidates,
+and direct `Livewire::component()` claims on the compatibility aliases fail
+boot. See [Livewire Components](livewire-components.md#supported-component-slots)
+for the full registration and compatibility contract.
 
 
 ## Programmatic Usage

@@ -273,6 +273,204 @@ test('global modal close events cannot bypass a pending media dismissal lock', f
     expect($modals->modals)->not->toHaveKey('picker');
 });
 
+test('deadline crossing cannot close the modal until timeout settlement is durable', function () {
+    config()->set('aura.media.security.selection_ttl', 1);
+    $request = app(MediaSelectionBroker::class)->begin(
+        $this->ownerToken,
+        'manager-component',
+        [(string) $this->attachment->getKey()],
+        $this->actor,
+    );
+    $modals = new Modals;
+    $modals->modals = [
+        'picker' => [
+            'name' => ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID,
+            'arguments' => ['ownerToken' => $this->ownerToken],
+        ],
+    ];
+    Carbon::setTestNow(now()->addSecond());
+
+    try {
+        $modals->closeModal('picker');
+
+        expect($modals->modals)->toHaveKey('picker')
+            ->and(app(MediaSelectionBroker::class)->expireForManager(
+                $request->token,
+                $this->ownerToken,
+                'manager-component',
+                $this->actor,
+            )->state)->toBe('expired');
+
+        $modals->closeModal('picker');
+
+        expect($modals->modals)->not->toHaveKey('picker');
+    } finally {
+        Carbon::setTestNow();
+    }
+});
+
+test('a close racing the exact application deadline waits for rollback and settlement', function () {
+    config()->set('aura.media.security.selection_ttl', 1);
+    $request = app(MediaSelectionBroker::class)->begin(
+        $this->ownerToken,
+        'manager-component',
+        [(string) $this->attachment->getKey()],
+        $this->actor,
+    );
+    $modals = new Modals;
+    $modals->modals = [
+        'picker' => [
+            'name' => ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID,
+            'arguments' => ['ownerToken' => $this->ownerToken],
+        ],
+    ];
+    $value = [];
+    $effects = 0;
+
+    try {
+        $record = app(MediaSelectionBroker::class)->processForOwner(
+            $request->token,
+            $this->ownerToken,
+            'owner-component',
+            'image',
+            [(string) $this->attachment->getKey()],
+            $this->actor,
+            function () use (&$value, &$effects, $modals): MediaSelectionMutation {
+                return new MediaSelectionMutation(
+                    apply: function () use (&$value, $modals): void {
+                        $value = [(string) $this->attachment->getKey()];
+                        Carbon::setTestNow(now()->addSecond());
+                        $modals->closeModal('picker');
+                    },
+                    rollback: function () use (&$value): void {
+                        $value = [];
+                    },
+                    afterCommit: function () use (&$effects): void {
+                        $effects++;
+                    },
+                );
+            },
+        );
+
+        expect($record->state)->toBe('expired')
+            ->and($value)->toBe([])
+            ->and($effects)->toBe(0)
+            ->and($modals->modals)->toHaveKey('picker');
+
+        $modals->closeModal('picker');
+
+        expect($modals->modals)->not->toHaveKey('picker');
+    } finally {
+        Carbon::setTestNow();
+    }
+});
+
+test('a cross process global close cannot pass timeout settlement before apply rollback', function () {
+    if (! function_exists('pcntl_fork')) {
+        $this->markTestSkipped('pcntl is required for the concurrent modal proof.');
+    }
+
+    config()->set('aura.media.security.selection_ttl', 1);
+    $request = app(MediaSelectionBroker::class)->begin(
+        $this->ownerToken,
+        'manager-component',
+        [(string) $this->attachment->getKey()],
+        $this->actor,
+    );
+    $barrier = sys_get_temp_dir().'/aura-core20-applying-'.bin2hex(random_bytes(8));
+    $release = $barrier.'-release';
+    $applied = $barrier.'-applied';
+    $rolledBack = $barrier.'-rolled-back';
+    $processId = pcntl_fork();
+
+    if ($processId === 0) {
+        try {
+            app(MediaSelectionBroker::class)->processForOwner(
+                $request->token,
+                $this->ownerToken,
+                'owner-component',
+                'image',
+                [(string) $this->attachment->getKey()],
+                $this->actor,
+                fn (): MediaSelectionMutation => new MediaSelectionMutation(
+                    apply: static function () use ($barrier, $release, $applied): void {
+                        file_put_contents($applied, 'applied');
+                        file_put_contents($barrier, 'applying');
+                        $deadline = microtime(true) + 3;
+
+                        while (! is_file($release) && microtime(true) < $deadline) {
+                            usleep(10_000);
+                        }
+                    },
+                    rollback: static function () use ($applied, $rolledBack): void {
+                        @unlink($applied);
+                        file_put_contents($rolledBack, 'rolled-back');
+                    },
+                ),
+            );
+            exit(0);
+        } catch (Throwable) {
+            exit(20);
+        }
+    }
+
+    expect($processId)->toBeGreaterThan(0);
+    $deadline = microtime(true) + 3;
+
+    while (! is_file($barrier) && microtime(true) < $deadline) {
+        usleep(10_000);
+    }
+
+    $modals = new Modals;
+    $modals->modals = [
+        'picker' => [
+            'name' => ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID,
+            'arguments' => ['ownerToken' => $this->ownerToken],
+        ],
+    ];
+
+    try {
+        Carbon::setTestNow(now()->addSecond());
+        expect(app(MediaSelectionBroker::class)->expireForManager(
+            $request->token,
+            $this->ownerToken,
+            'manager-component',
+            $this->actor,
+        )->state)->toBe('expired');
+
+        $modals->closeModal('picker');
+
+        expect($modals->modals)->toHaveKey('picker')
+            ->and(is_file($applied))->toBeTrue()
+            ->and(is_file($rolledBack))->toBeFalse();
+
+        file_put_contents($release, 'continue');
+        pcntl_waitpid($processId, $status);
+
+        expect(is_file($barrier))->toBeTrue()
+            ->and(pcntl_wifexited($status))->toBeTrue()
+            ->and(pcntl_wexitstatus($status))->toBe(0)
+            ->and(is_file($applied))->toBeFalse()
+            ->and(is_file($rolledBack))->toBeTrue();
+
+        $modals->closeModal('picker');
+
+        expect($modals->modals)->not->toHaveKey('picker');
+    } finally {
+        Carbon::setTestNow();
+        file_put_contents($release, 'continue');
+
+        if (isset($status) === false) {
+            pcntl_waitpid($processId, $status);
+        }
+
+        @unlink($barrier);
+        @unlink($release);
+        @unlink($applied);
+        @unlink($rolledBack);
+    }
+});
+
 test('picker modal security metadata cannot be hydrated away to bypass its dismissal lock', function () {
     app(MediaSelectionBroker::class)->begin(
         $this->ownerToken,

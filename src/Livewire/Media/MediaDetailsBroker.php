@@ -2,9 +2,11 @@
 
 namespace Aura\Base\Livewire\Media;
 
+use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use InvalidArgumentException;
+use Throwable;
 
 final class MediaDetailsBroker
 {
@@ -28,7 +30,7 @@ final class MediaDetailsBroker
             throw new InvalidMediaOwnerContext('The media details context is invalid.');
         }
 
-        return $this->store->locks->lock($this->key($token).':lock', 10)->block(5, function () use ($token, $ownerToken, $componentId, $fieldSlug, $actor): array {
+        return $this->withLock($token, function () use ($token, $ownerToken, $componentId, $fieldSlug, $actor): array {
             $record = $this->store->cache->get($this->key($token));
             $owner = $this->owners->resolve($ownerToken, $actor);
 
@@ -49,7 +51,15 @@ final class MediaDetailsBroker
                 throw new InvalidMediaOwnerContext('The media details context is invalid.');
             }
 
-            $this->store->cache->forget($this->key($token));
+            try {
+                $forgotten = $this->store->cache->forget($this->key($token));
+            } catch (Throwable $exception) {
+                throw new InvalidMediaOwnerContext('The media details context could not be consumed.', previous: $exception);
+            }
+
+            if (! $forgotten) {
+                throw new InvalidMediaOwnerContext('The media details context could not be consumed.');
+            }
 
             return [
                 'attachment_id' => $record['attachment_id'],
@@ -94,7 +104,13 @@ final class MediaDetailsBroker
             'deadline' => now()->getTimestamp() + $this->ttl(),
         ];
 
-        if (! $this->store->cache->add($this->key($token), $record, $this->ttl())) {
+        try {
+            $stored = $this->store->cache->add($this->key($token), $record, $this->ttl());
+        } catch (Throwable $exception) {
+            throw new InvalidMediaOwnerContext('Unable to issue a media details context.', previous: $exception);
+        }
+
+        if (! $stored) {
             throw new InvalidMediaOwnerContext('Unable to issue a media details context.');
         }
 
@@ -133,5 +149,56 @@ final class MediaDetailsBroker
         }
 
         return $ttl;
+    }
+
+    /** @param Closure(): array{attachment_id: string, row_ids: list<string>, selection_ids: list<string>} $callback
+     * @return array{attachment_id: string, row_ids: list<string>, selection_ids: list<string>}
+     */
+    private function withLock(string $token, Closure $callback): array
+    {
+        try {
+            $lock = $this->store->locks->lock($this->key($token).':lock', 10);
+
+            if (! is_object($lock) || ! method_exists($lock, 'block') || ! method_exists($lock, 'release')) {
+                throw new InvalidMediaOwnerContext('The media details context lock is unavailable.');
+            }
+
+            if ($lock->block(5) !== true) {
+                throw new InvalidMediaOwnerContext('The media details context lock could not be acquired.');
+            }
+
+            $result = null;
+            $callbackFailure = null;
+
+            try {
+                $result = $callback();
+            } catch (Throwable $exception) {
+                $callbackFailure = $exception;
+            }
+
+            try {
+                $released = $lock->release();
+            } catch (Throwable $exception) {
+                throw new InvalidMediaOwnerContext('The media details context lock could not be released.', previous: $exception);
+            }
+
+            if (! $released) {
+                throw new InvalidMediaOwnerContext('The media details context lock could not be released.');
+            }
+
+            if ($callbackFailure instanceof Throwable) {
+                throw $callbackFailure;
+            }
+
+            if (! is_array($result)) {
+                throw new InvalidMediaOwnerContext('The media details context is invalid.');
+            }
+
+            return $result;
+        } catch (InvalidMediaOwnerContext $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            throw new InvalidMediaOwnerContext('The media details context lock is unavailable.', previous: $exception);
+        }
     }
 }

@@ -79,54 +79,113 @@ class MediaOwnerTokenBroker
         ], JSON_THROW_ON_ERROR));
         $indexKey = self::CACHE_PREFIX.'index:'.$fingerprint;
 
-        return $this->locks->lock($indexKey.':lock', 5)->block(5, function () use (
-            $indexKey,
-            $ownerComponentId,
-            $ownerComponentClass,
-            $modelClass,
-            $modelKey,
-            $action,
-            $slug,
-            $fieldType,
-            $actor,
-            $actorId,
-            $teamId,
-        ): string {
-            $existing = $this->cache->get($indexKey);
+        try {
+            $lock = $this->locks->lock($indexKey.':lock', 5);
 
-            if (is_string($existing)) {
-                try {
-                    $this->resolve($existing, $actor);
-
-                    return $existing;
-                } catch (InvalidMediaOwnerToken) {
-                    $this->cache->forget($indexKey);
-                }
+            if (! is_object($lock) || ! method_exists($lock, 'block') || ! method_exists($lock, 'release')) {
+                throw new InvalidMediaOwnerToken('The media owner token lock is unavailable.');
             }
 
-            $issuedAt = now()->getTimestamp();
-            $ttl = $this->ttl();
-            $context = new MediaOwnerContext(
-                ownerComponentId: $ownerComponentId,
-                ownerComponentClass: $ownerComponentClass,
-                modelClass: $modelClass,
-                modelKey: $modelKey,
-                action: $action,
-                slug: $slug,
-                fieldType: $fieldType,
-                actorId: $actorId,
-                teamId: $teamId,
-                nonce: bin2hex(random_bytes(32)),
-                issuedAt: $issuedAt,
-                deadline: $issuedAt + $ttl,
-            );
-            $token = $this->encode($this->encrypter->encryptString(json_encode($context->toArray(), JSON_THROW_ON_ERROR)));
+            if ($lock->block(5) !== true) {
+                throw new InvalidMediaOwnerToken('The media owner token lock could not be acquired.');
+            }
 
-            $this->cache->put($this->tokenKey($token), $context->toArray(), $ttl);
-            $this->cache->put($indexKey, $token, $ttl);
+            $result = null;
+            $callbackFailure = null;
 
-            return $token;
-        });
+            try {
+                $result = (function () use (
+                    $indexKey,
+                    $ownerComponentId,
+                    $ownerComponentClass,
+                    $modelClass,
+                    $modelKey,
+                    $action,
+                    $slug,
+                    $fieldType,
+                    $actor,
+                    $actorId,
+                    $teamId,
+                ): string {
+                    $existing = $this->cache->get($indexKey);
+
+                    if ($existing !== null && ! is_string($existing)) {
+                        throw new InvalidMediaOwnerToken('The media owner token index is invalid.');
+                    }
+
+                    if (is_string($existing)) {
+                        try {
+                            $this->resolve($existing, $actor);
+
+                            return $existing;
+                        } catch (InvalidMediaOwnerToken $exception) {
+                            if ($exception->getPrevious() instanceof Throwable) {
+                                throw $exception;
+                            }
+
+                            $this->forgetOrFail($indexKey);
+                        }
+                    }
+
+                    $issuedAt = now()->getTimestamp();
+                    $ttl = $this->ttl();
+                    $context = new MediaOwnerContext(
+                        ownerComponentId: $ownerComponentId,
+                        ownerComponentClass: $ownerComponentClass,
+                        modelClass: $modelClass,
+                        modelKey: $modelKey,
+                        action: $action,
+                        slug: $slug,
+                        fieldType: $fieldType,
+                        actorId: $actorId,
+                        teamId: $teamId,
+                        nonce: bin2hex(random_bytes(32)),
+                        issuedAt: $issuedAt,
+                        deadline: $issuedAt + $ttl,
+                    );
+                    $token = $this->encode($this->encrypter->encryptString(json_encode($context->toArray(), JSON_THROW_ON_ERROR)));
+                    $tokenKey = $this->tokenKey($token);
+
+                    $this->putOrFail($tokenKey, $context->toArray(), $ttl);
+
+                    try {
+                        $this->putOrFail($indexKey, $token, $ttl);
+                    } catch (Throwable $exception) {
+                        $this->forgetOrFail($tokenKey);
+
+                        throw $exception;
+                    }
+
+                    return $token;
+                })();
+            } catch (Throwable $exception) {
+                $callbackFailure = $exception;
+            }
+
+            try {
+                $released = $lock->release();
+            } catch (Throwable $exception) {
+                throw new InvalidMediaOwnerToken('The media owner token lock could not be released.', previous: $exception);
+            }
+
+            if (! $released) {
+                throw new InvalidMediaOwnerToken('The media owner token lock could not be released.');
+            }
+
+            if ($callbackFailure instanceof Throwable) {
+                throw $callbackFailure;
+            }
+
+            if (! is_string($result)) {
+                throw new InvalidMediaOwnerToken('Unable to issue a durable media owner token.');
+            }
+
+            return $result;
+        } catch (InvalidMediaOwnerToken $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            throw new InvalidMediaOwnerToken('Unable to issue a durable media owner token.', previous: $exception);
+        }
     }
 
     public function issueLibrary(string $ownerComponentId, Authenticatable $actor): string
@@ -162,7 +221,11 @@ class MediaOwnerTokenBroker
             throw new InvalidMediaOwnerToken('The media owner token is invalid.');
         }
 
-        $cached = $this->cache->get($this->tokenKey($token));
+        try {
+            $cached = $this->cache->get($this->tokenKey($token));
+        } catch (Throwable $exception) {
+            throw new InvalidMediaOwnerToken('The media owner token is unavailable.', previous: $exception);
+        }
 
         if (! is_array($cached)
             || ! hash_equals($this->payloadDigest($payload), $this->payloadDigest($cached))
@@ -212,6 +275,19 @@ class MediaOwnerTokenBroker
         return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
     }
 
+    private function forgetOrFail(string $key): void
+    {
+        try {
+            $forgotten = $this->cache->forget($key);
+        } catch (Throwable $exception) {
+            throw new InvalidMediaOwnerToken('Unable to remove stale media owner state.', previous: $exception);
+        }
+
+        if (! $forgotten) {
+            throw new InvalidMediaOwnerToken('Unable to remove stale media owner state.');
+        }
+    }
+
     /** @param array<string, mixed> $payload */
     private function payloadDigest(array $payload): string
     {
@@ -219,6 +295,19 @@ class MediaOwnerTokenBroker
             return hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR));
         } catch (JsonException) {
             throw new InvalidMediaOwnerToken('The media owner token is invalid.');
+        }
+    }
+
+    private function putOrFail(string $key, mixed $value, int $seconds): void
+    {
+        try {
+            $stored = $this->cache->put($key, $value, $seconds);
+        } catch (Throwable $exception) {
+            throw new InvalidMediaOwnerToken('Unable to persist media owner state.', previous: $exception);
+        }
+
+        if (! $stored) {
+            throw new InvalidMediaOwnerToken('Unable to persist media owner state.');
         }
     }
 
