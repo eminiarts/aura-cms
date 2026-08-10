@@ -78,6 +78,7 @@ class Core07StageBoardResource extends Resource
                 'options' => [
                     'lead' => 'Lead',
                     'won' => 'Won',
+                    'lost' => 'Lost',
                 ],
             ],
         ];
@@ -138,6 +139,20 @@ class Core07InvalidBoardResource extends Core07StatusBoardResource
     {
         return array_replace(parent::kanbanSettings(), [
             'columns' => ['draft', 'forged'],
+        ]);
+    }
+}
+
+class Core07DisabledBoardResource extends Core07StatusBoardResource
+{
+    public static ?string $slug = 'core07-disabled-board';
+
+    public static string $type = 'Core07DisabledBoard';
+
+    public function kanbanSettings(): array
+    {
+        return array_replace(parent::kanbanSettings(), [
+            'enabled' => false,
         ]);
     }
 }
@@ -306,6 +321,44 @@ test('configured Kanban group mutation still enforces the resource policy', func
         ->assertForbidden();
 
     expect($card->fresh()->content)->toBe('lead');
+});
+
+test('Kanban mutations reject destinations excluded from the board contract', function () {
+    $card = Core07StageBoardResource::create([
+        'title' => 'Qualified lead',
+        'content' => 'lead',
+    ]);
+
+    livewire(Table::class, [
+        'model' => new Core07StageBoardResource,
+        'settings' => ['default_view' => 'kanban'],
+    ])
+        ->call('updateCardStatus', $card->getKey(), 'lost')
+        ->assertStatus(422);
+
+    expect($card->fresh()->content)->toBe('lead');
+});
+
+test('Kanban mutations reject disabled and invalid board contracts', function () {
+    $disabledCard = Core07DisabledBoardResource::create([
+        'title' => 'Disabled board card',
+        'status' => 'draft',
+    ]);
+    $invalidCard = Core07InvalidBoardResource::create([
+        'title' => 'Invalid board card',
+        'status' => 'draft',
+    ]);
+
+    livewire(Table::class, ['model' => new Core07DisabledBoardResource])
+        ->call('updateCardStatus', $disabledCard->getKey(), 'reviewed')
+        ->assertStatus(422);
+
+    livewire(Table::class, ['model' => new Core07InvalidBoardResource])
+        ->call('updateCardStatus', $invalidCard->getKey(), 'reviewed')
+        ->assertStatus(422);
+
+    expect($disabledCard->fresh()->status)->toBe('draft')
+        ->and($invalidCard->fresh()->status)->toBe('draft');
 });
 
 test('Kanban does not render records from another team', function () {

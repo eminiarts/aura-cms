@@ -347,7 +347,6 @@ The `SwitchView` trait persists only supported views. Unknown preferences and
 preferences for disabled views fall back to the resource's supported default.
 Saved Kanban column order and visibility are intersected with the resource's
 declared column allow-list before use.
-```
 
 ## Configuration Options
 

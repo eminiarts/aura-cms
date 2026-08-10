@@ -534,6 +534,12 @@ class Table extends Component
 
     public function updateCardStatus(mixed $cardId, mixed $newStatus, TableMutationDispatcher $mutations): void
     {
+        $kanbanConfiguration = $this->resolvedKanbanConfiguration();
+
+        if (! $kanbanConfiguration['enabled']) {
+            abort(422, 'Kanban mutations require an enabled configuration.');
+        }
+
         $data = Validator::make([
             'cardId' => $cardId,
             'kanbanStatus' => $newStatus,
@@ -548,8 +554,13 @@ class Table extends Component
                 },
             ],
         ])->validate();
+
+        if (! array_key_exists((string) $data['kanbanStatus'], $kanbanConfiguration['columns'])) {
+            abort(422, 'The Kanban destination is not declared.');
+        }
+
         $trustedModel = new TableMutationModelDescriptor($this->mutationModel());
-        $groupField = $this->resolvedKanbanConfiguration()['group_field'];
+        $groupField = $kanbanConfiguration['group_field'];
 
         $mutations->dispatchFieldUpdate(
             clone $this->mutationQuery(forKanban: true),
