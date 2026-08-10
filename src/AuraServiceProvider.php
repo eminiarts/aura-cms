@@ -28,6 +28,7 @@ use Aura\Base\Livewire\BookmarkPage;
 use Aura\Base\Livewire\ChooseTemplate;
 use Aura\Base\Livewire\CreateResource;
 use Aura\Base\Livewire\EditResourceField;
+use Aura\Base\Livewire\EmbeddedComponentAuthorizationHook;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\InviteUser;
 use Aura\Base\Livewire\MediaManager;
@@ -54,6 +55,10 @@ use Aura\Base\Policies\TeamPolicy;
 use Aura\Base\Policies\UserPolicy;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Services\EmbeddedComponentAuthorizer;
+use Aura\Base\Services\EmbeddedComponentContextStore;
+use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
+use Aura\Base\Services\EmbeddedResourceIncarnationStore;
 use Aura\Base\Services\TransactionRollbackCallbacks;
 use Aura\Base\Widgets\Bar;
 use Aura\Base\Widgets\Donut;
@@ -63,9 +68,11 @@ use Aura\Base\Widgets\SparklineBar;
 use Aura\Base\Widgets\ValueWidget;
 use Aura\Base\Widgets\Widgets;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Octane\Events\RequestReceived;
@@ -229,7 +236,16 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasViews('aura')
             ->hasAssets()
             ->hasRoutes('web')
-            ->hasMigrations(['create_aura_tables', 'consolidate_per_team_admin_roles', 'add_global_admin_to_users', 'add_soft_deletes_to_options', 'enforce_unique_option_identity', 'add_owner_identity_to_options'])
+            ->hasMigrations([
+                'create_aura_tables',
+                'consolidate_per_team_admin_roles',
+                'add_global_admin_to_users',
+                'add_soft_deletes_to_options',
+                'enforce_unique_option_identity',
+                'add_owner_identity_to_options',
+                'create_embedded_resource_incarnations',
+                'upgrade_embedded_resource_incarnations',
+            ])
             ->runsMigrations()
             ->hasCommands([
                 InstallConfigCommand::class,
@@ -291,6 +307,16 @@ class AuraServiceProvider extends PackageServiceProvider
         app('aura')::registerFields(app('aura')::getAppFields());
 
         Queue::before(fn () => Aura::flushState());
+
+        Event::listen(QueryExecuted::class, function (QueryExecuted $event): void {
+            if (preg_match('/^\s*(select|pragma|show|describe|explain)\b/i', $event->sql) === 1
+                || ! $this->app->resolved(EmbeddedComponentContextStore::class)
+            ) {
+                return;
+            }
+
+            $this->app->make(EmbeddedComponentContextStore::class)->flushIncarnations();
+        });
         Queue::after(fn () => Aura::flushState());
         Queue::exceptionOccurred(fn () => Aura::flushState());
 
@@ -402,6 +428,19 @@ class AuraServiceProvider extends PackageServiceProvider
 
         $this->app->singleton(FieldProviderRegistry::class);
 
+        // Register before Livewire boots its built-in SupportEvents hook. This
+        // lets secure embedded components authorize `__dispatch` before an
+        // event listener can execute, including later calls in one batch.
+        $registerEmbeddedAuthorizationHook = static function ($livewire): void {
+            $livewire->componentHook(EmbeddedComponentAuthorizationHook::class);
+        };
+
+        if ($this->app->bound('livewire')) {
+            $registerEmbeddedAuthorizationHook($this->app->make('livewire'));
+        } else {
+            $this->app->afterResolving('livewire', $registerEmbeddedAuthorizationHook);
+        }
+
         // Bind the concrete Aura instance as a process-persistent singleton so
         // its resource/field registrations and captured baseline survive across
         // requests on a long-running worker (Octane). Octane clears facade and
@@ -410,6 +449,11 @@ class AuraServiceProvider extends PackageServiceProvider
         // registration after the first request. Per-request mutable state is
         // reset back to the boot baseline via Aura::flushState() instead.
         $this->app->singleton(\Aura\Base\Aura::class);
+
+        $this->app->scoped(EmbeddedComponentAuthorizer::class);
+        $this->app->scoped(EmbeddedComponentContextStore::class);
+        $this->app->scoped(EmbeddedResourceIncarnationGuard::class);
+        $this->app->scoped(EmbeddedResourceIncarnationStore::class);
 
         $this->app->scoped('aura', function (): Aura {
             return app(Aura::class);

@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Hardened embedded-resource migration ownership for concurrent installs with atomic claims, compare-and-swap transitions, exact portable column/primary-key/index validation, and retryable interrupted states. Upgrades preserve every existing incarnation row, isolate old rows behind a non-runtime `legacy` key type, and retain indistinguishable historical marker tuples instead of risking host-data deletion.
+- Preserved compatibility with custom fields that override `getFields()` or `rendersOnIndex()` without a return type while normalizing the index adapter result to `bool`.
+- Made embedded-resource incarnation rollbacks permanently non-destructive so copied ownership proof cannot authorize deletion of a host-recreated table or schema artifacts.
 - Dashboard team quick actions derive the edit route from the configured Team resource, disappear when the resource, route, current team, or policy is unavailable, and remain safe with teams disabled.
 - Create and edit return breadcrumbs now fall back to unlinked copy when their named route cannot be generated; plain breadcrumb titles are escaped while explicit `Htmlable` content remains supported.
 

@@ -292,13 +292,15 @@ trait InputFields
 
     public function indexFields()
     {
-        return $this->inputFields()->filter(function ($field) {
-            if (optional($field)['on_index'] === false) {
-                return false;
-            }
+        return $this->getFieldsBeforeTree()
+            ->filter(fn ($field) => $field['field_type'] === 'input' || $field['field']->rendersConfiguredFieldOnIndex($field))
+            ->filter(function ($field) {
+                if (optional($field)['on_index'] === false) {
+                    return false;
+                }
 
-            return true;
-        });
+                return true;
+            });
     }
 
     /**

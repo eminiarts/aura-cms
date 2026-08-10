@@ -20,10 +20,11 @@ Aura CMS uses Livewire 4 to create dynamic, reactive user interfaces without req
 14. [Widget Components](#widget-components)
 15. [Component Communication](#component-communication)
 16. [Creating Custom Components](#creating-custom-components)
-17. [Performance Optimization](#performance-optimization)
-18. [Testing Components](#testing-components)
-19. [Best Practices](#best-practices)
-20. [Component Quick Reference](#component-quick-reference)
+17. [Embedding Components as Resource Fields](#embedding-components-as-resource-fields)
+18. [Performance Optimization](#performance-optimization)
+19. [Testing Components](#testing-components)
+20. [Best Practices](#best-practices)
+21. [Component Quick Reference](#component-quick-reference)
 
 ## Introduction
 
@@ -1080,6 +1081,269 @@ Dashboard, Settings, and Profile components are configurable via `config/aura.ph
 
 Replace with your own classes to customize behavior.
 
+## Embedding Components as Resource Fields
+
+`LivewireComponent` embeds host-application components on a resource's edit,
+view, and index surfaces. Each surface has an explicit alias. The field remains
+non-input, so Aura never persists its slug to a resource column or meta row.
+
+### Declare the field
+
+```php
+use App\Livewire\QuoteLineItems;
+use App\Support\QuoteLineItemParameters;
+use Aura\Base\Fields\LivewireComponent;
+
+[
+    'name' => 'Line items',
+    'slug' => 'quote_line_items',
+    'type' => LivewireComponent::class,
+    'component_aliases' => [
+        'edit' => QuoteLineItems::EDIT_ALIAS,
+        'view' => QuoteLineItems::VIEW_ALIAS,
+        'index' => QuoteLineItems::INDEX_ALIAS,
+        'fallback' => QuoteLineItems::VIEW_ALIAS,
+    ],
+    'parameter_mapper' => QuoteLineItemParameters::class,
+    'on_forms' => true,
+    'on_view' => true,
+    'on_index' => true,
+],
+```
+
+Register every alias with Livewire in the host service provider. Aliases, not
+component class names, are accepted by the field.
+
+```php
+Livewire::component(QuoteLineItems::EDIT_ALIAS, QuoteLineItems::class);
+Livewire::component(QuoteLineItems::VIEW_ALIAS, QuoteLineItems::class);
+Livewire::component(QuoteLineItems::INDEX_ALIAS, QuoteLineItems::class);
+```
+
+The legacy top-level `component` key remains an edit-only alias. Components
+that do not opt into the embedded boundary continue to receive the historical
+`model` and `field` mount parameters. They never create view/index surfaces or
+table columns. New fields should use `component_aliases.edit` so every
+supported surface is explicit. Once `component_aliases` is present, Aura treats
+the declaration as secure configuration: a malformed or unresolved explicit
+surface alias fails closed and never falls back to the legacy component. A
+valid `fallback` applies only when that surface key is absent.
+
+### Map mount parameters
+
+The optional mapper is a class string, which keeps the field declaration safe
+to serialize through Livewire. Its output is placed inside Aura's signed
+component context:
+
+```php
+use Aura\Base\Contracts\MapsEmbeddedComponentParameters;
+use Aura\Base\Services\EmbeddedComponentContext;
+use Aura\Base\Services\EmbeddedComponentSurface;
+
+final class QuoteLineItemParameters implements MapsEmbeddedComponentParameters
+{
+    public function map(EmbeddedComponentContext $context): array
+    {
+        return [
+            'quoteId' => $context->resource->getKey(),
+            'readOnly' => $context->surface !== EmbeddedComponentSurface::Edit,
+        ];
+    }
+}
+```
+
+Mappers may return only null, scalar, or nested array values. Aura rejects
+models, Eloquent collections, closures, objects, non-finite floats, and arrays
+deeper than ten levels instead of serializing an arbitrary model graph. Mapper
+values are not exposed as duplicate public mount properties; the component
+reads them from `embeddedContext()->parameter()` after Aura verifies the locked
+signature.
+
+A mapper runs once per rendered cell on an index. It must not issue a query per
+record. Read loaded attributes or relations and eager-load any required relation
+from the resource's table query.
+
+### Implement the authorization boundary
+
+Every embedded class must implement `EmbeddedLivewireComponent` and use
+`AuthorizesEmbeddedComponent`. Aura refuses aliases that do not satisfy both
+parts of this boundary.
+
+```php
+use Aura\Base\Contracts\EmbeddedLivewireComponent;
+use Aura\Base\Traits\AuthorizesEmbeddedComponent;
+use Illuminate\View\View;
+use Livewire\Component;
+
+final class QuoteLineItems extends Component implements EmbeddedLivewireComponent
+{
+    use AuthorizesEmbeddedComponent;
+
+    public const EDIT_ALIAS = 'crm.quote-line-items.edit';
+    public const INDEX_ALIAS = 'crm.quote-line-items.index';
+    public const VIEW_ALIAS = 'crm.quote-line-items.view';
+
+    public function addLineItem(): void
+    {
+        $context = $this->embeddedContext();
+        $quote = $context->resource;
+        $readOnly = (bool) $context->parameter('readOnly', false);
+
+        // Apply any additional operation-specific authorization here.
+    }
+
+    public function render(): View
+    {
+        return view('livewire.quote-line-items');
+    }
+}
+```
+
+The field checks the owner policy before rendering (`create` for an unsaved
+edit model, `update` for a persisted edit model, and `view` for view/index).
+The trait verifies the signed, locked context before component `mount()` code
+runs and again before every action or public-property update, including every
+operation in one batched Livewire request. Property updates are checked before
+the value and `updating*` hooks run, then checked again before Livewire invokes
+`updated*` hooks. Aura's authorization hook runs before Livewire lifecycle and
+event-dispatch support, so neither an update hook nor a protected `#[On]`
+listener can execute before the same fresh check. Unsaved resources may carry
+preassigned UUID/ULID keys and remain create contexts.
+
+Persisted contexts are signed from a scoped, canonical `table.*` reload rather
+than the caller's possibly partial model projection. They also contain a
+durable row-incarnation token and version stored in
+`aura_embedded_resource_incarnations`. Publish and run Aura's create and upgrade
+migrations before deploying secure fields. The upgrade preserves old incarnation
+rows and fills only newly added identity columns with a deterministic `legacy`
+identity. Runtime lookups use only the `integer` and `string` key types, so those
+preserved rows stay inert and contexts issued under the previous contract remain
+invalidated without deleting data.
+Both migrations record the exact table, columns, and indexes they create in
+`aura_migration_ownership` using atomic claims and compare-and-swap state
+transitions for fail-closed forward validation. A stale `creating` or
+`upgrading` record is resumed one DDL artifact at a time with bounded retries;
+each artifact is validated after a competing migration or interrupted run can
+have created it. Validation covers each portable column type and length,
+nullability, default, generation status, auto-increment behavior, the primary
+key, and each index's exact name, ordered columns, and uniqueness. The ownership
+registry itself is valid only when `migration` has an exact primary or unique
+index. Ownership proof never uses runtime incarnation rows or columns. Historical
+marker rows and columns are retained because an exact host-owned collision is
+indistinguishable; reserved marker resource/key types are outside runtime lookup
+identities. Their `down()` methods are
+intentionally non-destructive because portable database metadata cannot
+distinguish the original objects from exact host-owned copies. Rolling back
+therefore leaves the incarnation table, ownership record, columns, and indexes
+in place; use a forward migration to correct them.
+
+Every concrete persisted resource class used by a secure embedded field must
+also install its database guard in an application deployment migration:
+
+```php
+use App\Aura\Resources\Quote;
+use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
+use Illuminate\Database\Migrations\Migration;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        app(EmbeddedResourceIncarnationGuard::class)->install(Quote::class);
+    }
+
+    public function down(): void
+    {
+        app(EmbeddedResourceIncarnationGuard::class)->uninstall(Quote::class);
+    }
+};
+```
+
+Run this application migration after Aura's incarnation migrations. On
+rollback, uninstall the application guards before rolling back Aura's upgrade;
+the Aura rollback itself intentionally leaves its incarnation schema in place.
+The migration connection needs permission to create/drop triggers (and
+functions on PostgreSQL); the runtime connection needs permission for the
+trigger to update the incarnation table. Installation, uninstallation, and
+their migrations are idempotent. DDL failures are not suppressed.
+
+The guard contract supports SQLite, MySQL, MariaDB (through Laravel's native
+`mariadb` driver), and PostgreSQL. Its insert/delete/update triggers atomically
+create or advance the identity and, when a primary key changes, also advance the
+destination identity. This covers normal, quiet, query-builder, bulk, raw,
+replace/upsert, and truncate-then-insert key reuse without relying on Eloquent
+events. A failed trigger write aborts the owner write.
+
+Canonical owner loading and first sidecar priming have one locking invariant:
+Aura starts a transaction, locks and reloads the owner row, then creates or
+loads its sidecar identity before committing. MySQL, MariaDB, and PostgreSQL use
+a row update lock. SQLite acquires its database write reservation before the
+canonical read. Owner writes and their triggers use the same owner-then-sidecar
+order. Therefore a replacement either commits before the canonical reload or
+waits until after the old identity has been captured, at which point its trigger
+advances that identity. A byte-identical replacement can never inherit the
+context being issued for the old row.
+
+Aura never installs schema while rendering or issuing a context: a missing
+declared guard renders no persisted embedded component, and a missing guard
+during an action returns `403`. Other database failures remain visible.
+Ordinary owner changes also make the signed fingerprint and incarnation version
+stale and require a page refresh.
+
+Unsaved create contexts sign a bounded authorization snapshot and restore it
+before every `create` policy check. Aura `Resource` and `BaseResource` include
+present `team_id` and `user_id` attributes by default. Override the resource
+contract when a policy uses another tenant or owner attribute:
+
+```php
+/**
+ * @return list<string>
+ */
+public function embeddedAuthorizationAttributeNames(): array
+{
+    return ['team_id', 'owner_id'];
+}
+```
+
+Only declared, present scalar or null values are signed (at most 16 attributes;
+strings are length-limited). These values are integrity-protected, not
+encrypted, so never include secrets. A model with authorization state but no
+`ProvidesEmbeddedAuthorizationAttributes` contract fails closed. This keeps
+null-model create hosts and preassigned UUID/ULID create owners supported while
+ensuring later requests authorize the same bounded policy subject.
+
+A preassigned create key is checked against the physical owner table on its
+model connection using the write PDO. This deliberately bypasses `TeamScope`,
+`TypeScope`, soft-delete, and application global scopes; a key occupied in any
+tenant or subtype cannot receive a create context.
+
+Mapper output is validated before it is signed or embedded. Parameters may
+contain only finite scalar, null, and array values, with at most 1,024 aggregate
+elements, 10 nesting levels, 191 bytes per string key, 16,384 bytes per string,
+and 65,536 bytes in the final JSON encoding. Invalid mapper output raises an
+actionable `InvalidEmbeddedComponentParameters` exception; untrusted invalid
+contexts fail authorization.
+
+Contexts expire after `aura.embedded_components.context_ttl` seconds (one hour
+by default). Increment `aura.embedded_components.context_revision` to revoke
+every outstanding context after a security-sensitive configuration change.
+Component actions should use `embeddedContext()` (or the `embeddedResource()`
+convenience method) instead of trusting duplicate public IDs, surface names,
+field slugs, or read-only flags.
+
+When a create host cannot provide even an unsaved model, declare
+`'owner_resource' => Quote::class`; Aura instantiates it for the `create` policy
+and signs a null resource key. A missing alias, invalid mapper, failed policy,
+or component outside the boundary renders nothing. If a valid
+`component_aliases.fallback` is declared, Aura uses it only when the requested
+surface alias is absent; an explicitly configured invalid alias fails closed.
+
+Keys are deterministic across renders and include the surface, owner, field
+slug, and Aura's nested field ids. For repeated programmatic instances that
+otherwise share those values, set a scalar `component_identity` on the field.
+Table and bundled Livewire requests batch canonical-owner and incarnation
+lookups per request. These caches are container-scoped and never shared across
+users or long-running worker requests.
 
 ## Performance Optimization
 

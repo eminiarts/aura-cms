@@ -6,6 +6,7 @@ use Aura\Base\Contracts\DefinesFields;
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Contracts\FieldValueContract;
 use Aura\Base\Contracts\FieldValueStorage;
+use Aura\Base\Contracts\ProvidesEmbeddedAuthorizationAttributes;
 use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\TypeScope;
@@ -13,6 +14,7 @@ use Aura\Base\Traits\AuraModelConfig;
 use Aura\Base\Traits\InitialPostFields;
 use Aura\Base\Traits\InputFields;
 use Aura\Base\Traits\InteractsWithTable;
+use Aura\Base\Traits\ProvidesEmbeddedAuthorizationAttributes as ProvidesEmbeddedAuthorizationAttributesTrait;
 use Aura\Base\Traits\SaveFieldAttributes;
 use Aura\Base\Traits\SaveMetaFields;
 use Closure;
@@ -46,7 +48,7 @@ use LogicException;
  * @property-read mixed $meta  The meta relation / normalized meta map (see getMeta()).
  * @property array<string, mixed> $metaFields Pending meta values awaiting persistence.
  */
-class Resource extends Model implements DefinesFields
+class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthorizationAttributes
 {
     use AuraModelConfig;
     use HasFactory;
@@ -56,6 +58,7 @@ class Resource extends Model implements DefinesFields
     use InitialPostFields;
     use InputFields;
     use InteractsWithTable;
+    use ProvidesEmbeddedAuthorizationAttributesTrait;
     use SaveFieldAttributes;
     use SaveMetaFields;
 
