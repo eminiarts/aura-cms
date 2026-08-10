@@ -11,6 +11,8 @@ use Aura\Base\Livewire\Resource\Index;
 use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\RecordLayout\RecordLayoutPanel;
+use Aura\Base\RecordLayout\RecordLayoutRegistry;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Team;
@@ -102,6 +104,9 @@ class Aura
         $this->baselineResources = $this->resources;
         $this->baselineWidgets = $this->widgets;
         app(FieldProviderRegistry::class)->captureBaselineState();
+        if (app()->bound(RecordLayoutRegistry::class)) {
+            app(RecordLayoutRegistry::class)->captureBaselineState($this->getResources());
+        }
     }
 
     public static function checkCondition($model, $field, $post = null)
@@ -177,6 +182,9 @@ class Aura
         $this->resources = $this->baselineResources;
         $this->widgets = $this->baselineWidgets;
         app(FieldProviderRegistry::class)->flushState();
+        if (app()->bound(RecordLayoutRegistry::class)) {
+            app(RecordLayoutRegistry::class)->flushState();
+        }
 
         FieldCacheManager::flush(flushProviderResults: false);
         ScopedScope::flushState();
@@ -517,6 +525,18 @@ class Aura
     public function registerInjectView(string $name, Closure $callback): void
     {
         $this->injectViews[$name][] = $callback;
+    }
+
+    /**
+     * @param  list<RecordLayoutPanel>  $panels
+     */
+    public function registerRecordLayoutPanels(string $source, array $panels): void
+    {
+        if (! app()->bound(RecordLayoutRegistry::class)) {
+            throw new LogicException('Record layout panels require Aura to be resolved through the application container.');
+        }
+
+        app(RecordLayoutRegistry::class)->register($source, $panels);
     }
 
     public function registerResources(array $resources): void

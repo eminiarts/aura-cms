@@ -3,6 +3,7 @@
 namespace Aura\Base\Livewire\Resource;
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\RecordLayout\RecordLayoutResolver;
 use Aura\Base\Traits\HasActions;
 use Aura\Base\Traits\InteractsWithFields;
 use Aura\Base\Traits\RepeaterFields;
@@ -80,7 +81,7 @@ class View extends Component
         $this->dispatch('refreshComponent');
     }
 
-    public function render()
+    public function render(RecordLayoutResolver $recordLayouts)
     {
         // $view = "aura.{$this->slug}.view";
 
@@ -92,7 +93,9 @@ class View extends Component
         // if (view()->exists("aura::" . $view)) {
         //     return view("aura::" . $view)->layout('aura::components.layout.app');
         // }
-        return view($this->model->viewView())->layout('aura::components.layout.app');
+        return view($this->model->viewView(), [
+            'recordLayout' => $recordLayouts->resolve($this->model),
+        ])->layout('aura::components.layout.app');
 
     }
 

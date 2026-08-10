@@ -4,6 +4,7 @@ namespace Aura\Base\Livewire\Resource;
 
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Facades\Aura;
+use Aura\Base\RecordLayout\RecordLayoutResolver;
 use Livewire\Attributes\On;
 
 class ViewModal extends View
@@ -103,7 +104,7 @@ class ViewModal extends View
         $this->loading = false;
     }
 
-    public function render()
+    public function render(RecordLayoutResolver $recordLayouts)
     {
         return view('aura::livewire.resource.view-modal');
     }

@@ -67,6 +67,8 @@ use Aura\Base\Preferences\PreferenceRegistry;
 use Aura\Base\Preferences\PreferenceScope;
 use Aura\Base\Preferences\PreferenceValueType;
 use Aura\Base\Providers\AuraEloquentUserProvider;
+use Aura\Base\RecordLayout\RecordLayoutRegistry;
+use Aura\Base\RecordLayout\RecordLayoutResolver;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Services\EmbeddedComponentAuthorizer;
@@ -535,6 +537,8 @@ class AuraServiceProvider extends PackageServiceProvider
                 ));
         });
         $this->app->singleton(PreferenceManager::class);
+        $this->app->singleton(RecordLayoutRegistry::class);
+        $this->app->singleton(RecordLayoutResolver::class);
 
         // Package discovery can load eminiarts/aura-cms before livewire/livewire
         // (alphabetical order). Register Livewire's services before installing
