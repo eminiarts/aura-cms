@@ -52,7 +52,10 @@ return [
 
     'security' => [
         'modal_requests' => [
-            'cache_store' => 'file',
+            // The file store is suitable only for a single application host.
+            // Multi-node deployments must use one shared atomic store, such
+            // as Redis or database, that every node can reach.
+            'cache_store' => env('AURA_MODAL_REQUEST_CACHE_STORE', 'file'),
             'ttl_seconds' => 120,
         ],
         'table_mutations' => [

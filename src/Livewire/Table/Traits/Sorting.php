@@ -130,8 +130,9 @@ trait Sorting
 
                 return $query;
             } else {
-                if ($this->model->isNumberField($field) && DB::connection($this->model->getConnectionName())->getDriverName() === 'sqlite') {
-                    $connection = DB::connection($this->model->getConnectionName());
+                $connection = DB::connection($this->model->getConnectionName());
+
+                if ($this->model->isNumberField($field) && ExactDecimal::supportsSql($connection)) {
                     $column = $query->getQuery()->getGrammar()->wrap(
                         $this->model->qualifyColumn($field),
                     );

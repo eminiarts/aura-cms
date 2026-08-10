@@ -442,8 +442,8 @@ class Article extends Resource
     
     // Define bulk actions
     public array $bulkActions = [
-        'publish' => 'Publish Selected',
-        'archive' => 'Archive Selected',
+        'publish' => ['label' => 'Publish Selected', 'ability' => 'update'],
+        'archive' => ['label' => 'Archive Selected', 'ability' => 'update'],
         'delete' => 'Delete Selected',
     ];
 }

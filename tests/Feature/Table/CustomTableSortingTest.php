@@ -229,7 +229,7 @@ test('native physical number sorting keeps equal decimal pagination deterministi
         $connection->getSchemaBuilder()->create($nativeTable, function (Blueprint $table): void {
             $table->id();
             $table->string('name');
-            $table->decimal('amount', 6, 2);
+            $table->text('amount')->nullable();
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('team_id')->nullable();
             $table->timestamps();
@@ -243,7 +243,9 @@ test('native physical number sorting keeps equal decimal pagination deterministi
             ['name' => 'equal two', 'amount' => '2.0', 'user_id' => $this->user->id, 'team_id' => $teamId, 'created_at' => $now, 'updated_at' => $now],
             ['name' => 'equal three', 'amount' => '2.00', 'user_id' => $this->user->id, 'team_id' => $teamId, 'created_at' => $now, 'updated_at' => $now],
             ['name' => 'equal four', 'amount' => '02.000', 'user_id' => $this->user->id, 'team_id' => $teamId, 'created_at' => $now, 'updated_at' => $now],
-            ['name' => 'high', 'amount' => '3', 'user_id' => $this->user->id, 'team_id' => $teamId, 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'high', 'amount' => '10', 'user_id' => $this->user->id, 'team_id' => $teamId, 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'invalid', 'amount' => 'not-a-number', 'user_id' => $this->user->id, 'team_id' => $teamId, 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'null', 'amount' => null, 'user_id' => $this->user->id, 'team_id' => $teamId, 'created_at' => $now, 'updated_at' => $now],
         ]);
 
         $component = new Table;
@@ -252,17 +254,19 @@ test('native physical number sorting keeps equal decimal pagination deterministi
         $query = $component->rowsQuery();
         $orders = $query->getQuery()->orders;
         $qualifiedKey = $nativeTable.'.id';
+        $qualifiedAmount = $query->getQuery()->getGrammar()->wrap($nativeTable.'.amount');
 
-        expect($orders)->toHaveCount(2)
-            ->and($orders[0]['column'])->toBe('amount')
-            ->and($orders[0]['direction'])->toBe($direction)
-            ->and($orders[1]['column'])->toBe($qualifiedKey)
-            ->and($orders[1]['direction'])->toBe('desc');
+        expect($orders)->toHaveCount(3)
+            ->and($orders[0]['type'])->toBe('Raw')
+            ->and($orders[1]['type'])->toBe('Raw')
+            ->and($orders[2]['column'])->toBe($qualifiedKey)
+            ->and($orders[2]['direction'])->toBe('desc')
+            ->and($query->toSql())->toContain($qualifiedAmount);
 
         $expected = $direction === 'asc'
-            ? ['low', 'equal four', 'equal three', 'equal two', 'equal one', 'high']
-            : ['high', 'equal four', 'equal three', 'equal two', 'equal one', 'low'];
-        $paginated = collect(range(1, 3))->flatMap(function (int $page) use ($query): array {
+            ? ['low', 'equal four', 'equal three', 'equal two', 'equal one', 'high', 'null', 'invalid']
+            : ['high', 'equal four', 'equal three', 'equal two', 'equal one', 'low', 'null', 'invalid'];
+        $paginated = collect(range(1, 4))->flatMap(function (int $page) use ($query): array {
             $paginator = (clone $query)->paginate(2, ['*'], 'page', $page);
 
             return collect($paginator->items())->pluck('name')->all();
@@ -270,13 +274,14 @@ test('native physical number sorting keeps equal decimal pagination deterministi
 
         expect($paginated)->toBe($expected);
 
-        $component->sorts = ['amount' => "{$direction}, {$qualifiedKey} asc"];
+        $component->sorts = ['amount' => "{$direction}; drop table {$nativeTable}"];
         $forgedOrders = $component->rowsQuery()->getQuery()->orders;
+        $forgedSql = $component->rowsQuery()->toSql();
 
-        expect($forgedOrders)->toHaveCount(2)
-            ->and($forgedOrders[0]['direction'])->toBe('asc')
-            ->and($forgedOrders[1]['column'])->toBe($qualifiedKey)
-            ->and($forgedOrders[1]['direction'])->toBe('desc');
+        expect($forgedOrders)->toHaveCount(3)
+            ->and($forgedOrders[2]['column'])->toBe($qualifiedKey)
+            ->and($forgedOrders[2]['direction'])->toBe('desc')
+            ->and($forgedSql)->not->toContain('drop table');
     } finally {
         $connection->getSchemaBuilder()->dropIfExists($nativeTable);
         DB::purge($connectionName);

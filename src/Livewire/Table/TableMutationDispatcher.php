@@ -1085,8 +1085,8 @@ final class TableMutationDispatcher
         ?Closure $captureScope = null,
     ): Collection {
         $model = $modelDescriptor->model();
-        $records = [];
         $capturedPages = [];
+        $recordChunks = [];
 
         foreach (array_chunk($expectedKeys, $this->recordChunkSize(), true) as $expectedChunk) {
             $chunkRecords = $this->authoritativeRecords(
@@ -1103,9 +1103,7 @@ final class TableMutationDispatcher
                 },
             );
 
-            foreach ($chunkRecords as $record) {
-                $records[] = $record;
-            }
+            $recordChunks[] = $chunkRecords->all();
         }
 
         $captureScope?->__invoke([
@@ -1114,7 +1112,12 @@ final class TableMutationDispatcher
             'pages' => $capturedPages,
         ]);
 
-        return $model->newCollection($records);
+        return $model->newCollection($this->mergeMutationRecordChunks(
+            $recordChunks,
+            $scope,
+            $modelDescriptor,
+            $trashed,
+        ));
     }
 
     /**
@@ -1336,6 +1339,83 @@ final class TableMutationDispatcher
     }
 
     /**
+     * Merge independently queried identifier chunks using the authoritative
+     * database ordering. Pair comparisons remain bounded to two identifiers,
+     * so arbitrary resource sort callbacks and exact-decimal ordering retain
+     * their database semantics without rebuilding a comparator in PHP.
+     *
+     * @param  array<int, array<int, Model&TableResource>>  $recordChunks
+     * @return array<int, Model&TableResource>
+     */
+    private function mergeMutationRecordChunks(
+        array $recordChunks,
+        Builder $scope,
+        TableMutationModelDescriptor $modelDescriptor,
+        ?string $trashed,
+    ): array {
+        while (count($recordChunks) > 1) {
+            $mergedChunks = [];
+
+            for ($index = 0; $index < count($recordChunks); $index += 2) {
+                if (! isset($recordChunks[$index + 1])) {
+                    $mergedChunks[] = $recordChunks[$index];
+
+                    continue;
+                }
+
+                $mergedChunks[] = $this->mergeMutationRecordPair(
+                    $recordChunks[$index],
+                    $recordChunks[$index + 1],
+                    $scope,
+                    $modelDescriptor,
+                    $trashed,
+                );
+            }
+
+            $recordChunks = $mergedChunks;
+        }
+
+        return $recordChunks[0] ?? [];
+    }
+
+    /**
+     * @param  array<int, Model&TableResource>  $left
+     * @param  array<int, Model&TableResource>  $right
+     * @return array<int, Model&TableResource>
+     */
+    private function mergeMutationRecordPair(
+        array $left,
+        array $right,
+        Builder $scope,
+        TableMutationModelDescriptor $modelDescriptor,
+        ?string $trashed,
+    ): array {
+        $merged = [];
+        $leftIndex = 0;
+        $rightIndex = 0;
+
+        while (isset($left[$leftIndex], $right[$rightIndex])) {
+            if ($this->mutationRecordPrecedes(
+                $left[$leftIndex],
+                $right[$rightIndex],
+                $scope,
+                $modelDescriptor,
+                $trashed,
+            )) {
+                $merged[] = $left[$leftIndex++];
+            } else {
+                $merged[] = $right[$rightIndex++];
+            }
+        }
+
+        return array_merge(
+            $merged,
+            array_slice($left, $leftIndex),
+            array_slice($right, $rightIndex),
+        );
+    }
+
+    /**
      * @return array{
      *     fixed: mixed,
      *     wheres: list<mixed>,
@@ -1442,6 +1522,42 @@ final class TableMutationDispatcher
         }
 
         return $method;
+    }
+
+    private function mutationRecordPrecedes(
+        Model&TableResource $left,
+        Model&TableResource $right,
+        Builder $scope,
+        TableMutationModelDescriptor $modelDescriptor,
+        ?string $trashed,
+    ): bool {
+        $comparisonScope = clone $scope;
+        $comparisonQuery = $comparisonScope->getQuery();
+        $comparisonQuery->limit = null;
+        $comparisonQuery->offset = null;
+        $comparisonQuery->unionLimit = null;
+        $comparisonQuery->unionOffset = null;
+        $expectedKeys = [];
+
+        foreach ([$left, $right] as $record) {
+            $expectedKeys[$modelDescriptor->canonicalIdentity($record->getKey())] = $record->getKey();
+        }
+
+        $ordered = $this->authoritativeRecords(
+            $comparisonScope->whereKey(array_values($expectedKeys)),
+            $modelDescriptor,
+            $expectedKeys,
+            $trashed,
+        );
+
+        if ($ordered->count() !== 2) {
+            throw ValidationException::withMessages([
+                'selected' => 'The selected records are no longer valid.',
+            ]);
+        }
+
+        return $modelDescriptor->canonicalIdentity($ordered->first()->getKey())
+            === $modelDescriptor->canonicalIdentity($left->getKey());
     }
 
     /**

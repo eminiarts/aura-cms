@@ -1927,6 +1927,45 @@ test('bulk mutations qualify a contextual physical number sort across joined sco
     'select-all joined provider-sorted selection' => true,
 ]);
 
+test('chunked bulk mutations preserve one global contextual display order without duplicates', function (bool $selectAll) {
+    $this->actingAs(createSuperAdmin());
+    config()->set('aura.security.table_mutations.chunk_size', 2);
+    $resources = collect(['10', '2.0', '1', '02.000', '-1', '2'])->map(fn (string $amount) => Core05MutationResource::create([
+        'title' => 'Chunked contextual amount '.$amount,
+        'content' => (string) $amount,
+        'status' => 'draft',
+    ]));
+    Aura::registerFieldProvider(
+        Core05ContextualSortFieldProvider::class,
+        resources: [Core05MutationResource::class],
+    );
+
+    $component = livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('sorts', ['content' => 'asc']);
+
+    if ($selectAll) {
+        $component->set('selectAll', true);
+    } else {
+        $component->set('selected', $resources->pluck('id')->all());
+    }
+
+    $component
+        ->call('bulkCollectionAction', 'captureCollectionOrder')
+        ->assertHasNoErrors();
+
+    $capturedIds = collect(Core05MutationResource::$capturedCollectionIdChunks)->flatten()->all();
+    $expectedIds = collect([4, 2, 5, 3, 1, 0])
+        ->map(fn (int $index): mixed => $resources[$index]->getKey())
+        ->all();
+
+    expect(Core05MutationResource::$capturedCollectionIdChunks)->each->toHaveCount(2)
+        ->and($capturedIds)->toBe($expectedIds)
+        ->and(array_values(array_unique($capturedIds)))->toBe($capturedIds);
+})->with([
+    'explicit chunked provider-sorted selection' => false,
+    'select-all chunked provider-sorted selection' => true,
+]);
+
 test('bulk mutations reject a provider sort withdrawn after selection without writing', function (bool $selectAll) {
     $this->actingAs(createSuperAdmin());
     $resources = collect(range(1, 3))->map(fn (int $amount) => Core05MutationResource::create([

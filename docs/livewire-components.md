@@ -546,14 +546,29 @@ class Modal extends Component
 
 **Opening Modals:**
 ```php
-// From a Livewire component
-$this->dispatch('openModal', 'component-name', ['param' => 'value']);
+use Aura\Base\Livewire\ModalActionRegistry;
+use Illuminate\Support\Facades\Gate;
+
+// Register custom modal actions in an application service provider.
+app(ModalActionRegistry::class)->register(
+    'user.edit',
+    'user-form',
+    ['arguments.userId' => ['required', 'integer']],
+    fn (array $arguments) => Gate::authorize('update', User::findOrFail($arguments['userId'])),
+);
+
+// Dispatch the registered action name, not an arbitrary component name.
+$this->dispatch('openModal', 'user.edit', ['userId' => $user->id]);
 
 // From Blade
-<button wire:click="$dispatch('openModal', 'user-form', { userId: {{ $user->id }} })">
+<button wire:click="$dispatch('openModal', 'user.edit', { userId: {{ $user->id }} })">
     Edit User
 </button>
 ```
+
+Undeclared modal actions, undeclared arguments, and unsupported modal attributes return HTTP 422. The registration's authorization callback must throw or authorize the request; returning a component name from client input is never supported.
+
+Bulk modal requests are signed, single-use, and stored server-side. The default `file` cache store is suitable only for a single host. Multi-node deployments must set `AURA_MODAL_REQUEST_CACHE_STORE` to one shared atomic store such as Redis or database. A request redeemed on a node that cannot access its issuance store fails closed with HTTP 422. The `array` and `null` stores are rejected with HTTP 503.
 
 **Modal Components can define their size:**
 ```php

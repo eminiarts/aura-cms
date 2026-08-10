@@ -847,11 +847,17 @@ Define bulk actions in your resource using the `$bulkActions` property or `bulkA
 ```php
 class Article extends Resource
 {
-    // Simple array format
+    // Custom actions must declare the policy ability used per record.
     public array $bulkActions = [
         'delete' => 'Delete Selected',
-        'publish' => 'Publish Selected',
-        'archive' => 'Archive Selected',
+        'publish' => [
+            'label' => 'Publish Selected',
+            'ability' => 'update',
+        ],
+        'archive' => [
+            'label' => 'Archive Selected',
+            'ability' => 'update',
+        ],
     ];
     
     // Or method format for dynamic actions
@@ -859,8 +865,12 @@ class Article extends Resource
     {
         return [
             'delete' => 'Delete Selected',
-            'publish' => 'Publish Selected',
-            'export' => 'Export to CSV',
+            'publish' => ['label' => 'Publish Selected', 'ability' => 'update'],
+            'export' => [
+                'label' => 'Export to CSV',
+                'ability' => 'view',
+                'method' => 'collection',
+            ],
         ];
     }
     
@@ -894,9 +904,11 @@ $this->bulkAction('publish');
 // Execute action on collection (for exports, etc.)
 $this->bulkCollectionAction('export');
 
-// Open a modal for bulk action
-$this->openBulkActionModal('assign_category', ['modal' => 'assign-category-modal']);
+// Open the modal declared by the server-side bulk action definition
+$this->openBulkActionModal('assign_category');
 ```
+
+Only the built-in `delete`, `forceDelete`, `restore`, and `update` actions infer an ability. Every custom row, bulk, or bulk-modal action must declare a valid `ability`; a missing or malformed custom ability returns HTTP 422. An action name absent from the resource declaration returns HTTP 403.
 
 **Special Action Prefixes:**
 

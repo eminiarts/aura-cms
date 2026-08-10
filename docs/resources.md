@@ -996,6 +996,7 @@ class Article extends Resource
     public static array $actions = [
         'publish' => [
             'label' => 'Publish',
+            'ability' => 'update',
             'icon' => '<svg>...</svg>',
             'class' => 'text-green-600 hover:text-green-700',
             'confirm' => true,
@@ -1007,6 +1008,7 @@ class Article extends Resource
         ],
         'archive' => [
             'label' => 'Archive',
+            'ability' => 'update',
             'icon' => '<svg>...</svg>',
             'class' => 'text-yellow-600',
             'modal' => 'archive-modal',
@@ -1014,14 +1016,16 @@ class Article extends Resource
     ];
     
     public static array $bulkActions = [
-        'publish' => 'Publish Selected',
+        'publish' => ['label' => 'Publish Selected', 'ability' => 'update'],
         'archive' => [
             'label' => 'Archive Selected',
+            'ability' => 'update',
             'confirm' => true,
         ],
         'export' => [
             'label' => 'Export to CSV',
-            'handler' => 'exportToCsv',
+            'ability' => 'view',
+            'method' => 'collection',
         ],
     ];
 }

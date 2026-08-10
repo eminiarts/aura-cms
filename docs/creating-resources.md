@@ -349,6 +349,7 @@ Define custom actions for your resource:
 public array $actions = [
     'publish' => [
         'label' => 'Publish',
+        'ability' => 'update',
         'icon-view' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>',
         'class' => 'hover:text-green-700 text-green-500 font-bold',
         'confirm' => true,
@@ -363,9 +364,13 @@ Define actions that can be performed on multiple resources:
 
 ```php
 public array $bulkActions = [
-    'deleteSelected' => 'Delete',
+    'deleteSelected' => [
+        'label' => 'Delete',
+        'ability' => 'delete',
+    ],
     'publishSelected' => [
         'label' => 'Publish',
+        'ability' => 'update',
         'modal' => 'publish-modal',
     ],
 ];
@@ -430,6 +435,7 @@ public function actions()
     return [
         'publish' => [
             'label' => 'Publish',
+            'ability' => 'update',
             'icon-view' => 'aura::components.actions.check',
             'class' => 'hover:text-green-700 text-green-500 font-bold',
             'confirm' => true,
@@ -571,6 +577,7 @@ class Project extends Resource
     public array $actions = [
         'archive' => [
             'label' => 'Archive',
+            'ability' => 'update',
             'class' => 'text-gray-500 hover:text-gray-700',
             'confirm' => true,
             'confirm-title' => 'Archive Project?',
@@ -578,8 +585,14 @@ class Project extends Resource
     ];
 
     public array $bulkActions = [
-        'deleteSelected' => 'Delete',
-        'archiveSelected' => 'Archive',
+        'deleteSelected' => [
+            'label' => 'Delete',
+            'ability' => 'delete',
+        ],
+        'archiveSelected' => [
+            'label' => 'Archive',
+            'ability' => 'update',
+        ],
     ];
 
     public function getIcon()

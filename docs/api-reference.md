@@ -424,28 +424,34 @@ $post->tableComponentView();  // 'aura::livewire.table'
 ```php
 // Define actions on resource
 public array $actions = [
-    'publish' => 'Publish',
-    'archive' => 'Archive',
+    'publish' => ['label' => 'Publish', 'ability' => 'update'],
+    'archive' => ['label' => 'Archive', 'ability' => 'update'],
 ];
 
 // Or as a method for dynamic actions
 public function actions(): array
 {
     return [
-        'publish' => 'Publish',
+        'publish' => ['label' => 'Publish', 'ability' => 'update'],
     ];
 }
 
 // Define bulk actions
 public array $bulkActions = [
     'delete' => 'Delete Selected',
-    'export' => 'Export',
+    'export' => [
+        'label' => 'Export',
+        'ability' => 'view',
+        'method' => 'collection',
+    ],
 ];
 
 // Get configured actions
 $actions = $post->getActions();
 $bulkActions = $post->getBulkActions();
 ```
+
+Only the built-in `delete`, `forceDelete`, `restore`, and `update` names infer a policy ability. Custom row and bulk actions must declare `ability`; missing or malformed custom abilities return HTTP 422, while action names not declared by the resource return HTTP 403.
 
 ### Table Configuration
 

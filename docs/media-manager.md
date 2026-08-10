@@ -425,11 +425,10 @@ $this->dispatch('openModal',
         'resource' => $this->model->getSlug(), // Registered resource slug
         'slug' => 'gallery',                 // Field slug
         'selected' => $this->selected,       // Currently selected IDs
-        'modalAttributes' => [
-            'multiple' => true,
-            'maxFiles' => 10,
-        ],
-    ]
+    ],
+    modalAttributes: [
+        'persistent' => true,
+    ],
 );
 
 // Listen for selection
@@ -438,6 +437,8 @@ $this->dispatch('openModal',
 ```
 
 `resource` is the preferred public argument. For backward compatibility, `model` may instead contain the exact class name of a registered Aura resource. Aura never resolves arbitrary legacy class names through the service container, and passing both arguments is invalid.
+
+`aura::media-manager` is a registered modal action. Modal attributes belong in the top-level `modalAttributes` argument; only `persistent`, `modalClasses`, and `slideOver` are accepted. Selection limits come from the declared Image or File field rather than modal attributes.
 
 ### Selection Features
 
