@@ -306,9 +306,14 @@ class BelongsTo extends Field implements PreloadsTableDisplay
             && ($this->canAccessDestination('view', $related) || $this->canAccessDestination('update', $related))
                 ? $related
                 : null;
+
+        if (! $authorizedRelated instanceof Model) {
+            return FieldDisplayValue::secure($value);
+        }
+
         $label = $this->resolveRelationLabel($value, $field, $model, $authorizedRelated, $context);
 
-        if ($context === FieldValueContext::Export || ! $authorizedRelated instanceof Model) {
+        if ($context === FieldValueContext::Export) {
             return FieldDisplayValue::secure($label);
         }
 

@@ -231,8 +231,21 @@ describe('BelongsTo Field Display', function () {
         ]]);
         $this->actingAs($viewer->refresh());
         $related = Post::factory()->create(['title' => 'Unlinked Post']);
+        $resolverCalls = 0;
         $field = new BelongsTo;
-        $definition = ['resource' => Post::class];
+        $definition = [
+            'resource' => Post::class,
+            'label_resolver' => function () use (&$resolverCalls): string {
+                $resolverCalls++;
+
+                return (string) Post::query()
+                    ->where('title', 'Denied resolver-only lookup')
+                    ->value('title');
+            },
+        ];
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
 
         $unauthorizedIndex = $field->presentValue($related->id, $definition, $viewer);
         $unauthorizedView = $field->presentValue(
@@ -248,6 +261,9 @@ describe('BelongsTo Field Display', function () {
             FieldValueContext::Export,
         );
         $missing = $field->display($definition, 999999, $viewer);
+        $resolverQueries = collect(DB::getQueryLog())->filter(
+            fn (array $query): bool => in_array('Denied resolver-only lookup', $query['bindings'], true),
+        );
 
         expect((string) $unauthorizedIndex)->toBe((string) $related->id)
             ->and((string) $unauthorizedView)->toBe((string) $related->id)
@@ -256,7 +272,9 @@ describe('BelongsTo Field Display', function () {
             ->and((string) $unauthorizedView)->not->toContain($related->title())
             ->and((string) $unauthorizedExport)->not->toContain($related->title())
             ->and((string) $missing)->toBe('999999')
-            ->and((string) $missing)->not->toContain('<a');
+            ->and((string) $missing)->not->toContain('<a')
+            ->and($resolverCalls)->toBe(0)
+            ->and($resolverQueries)->toHaveCount(0);
     });
 
     test('treats a constrained eager-loaded null relation as authoritative without a fallback query', function () {
@@ -441,8 +459,21 @@ describe('BelongsTo Field Display', function () {
     test('does not disclose relation labels to guests', function () {
         $related = Post::factory()->create(['title' => 'Guest Hidden Post']);
         auth()->logout();
+        $resolverCalls = 0;
         $field = new BelongsTo;
-        $definition = ['resource' => Post::class];
+        $definition = [
+            'resource' => Post::class,
+            'label_resolver' => function () use (&$resolverCalls): string {
+                $resolverCalls++;
+
+                return (string) Post::query()
+                    ->where('title', 'Guest resolver-only lookup')
+                    ->value('title');
+            },
+        ];
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
 
         foreach ([FieldValueContext::Index, FieldValueContext::View, FieldValueContext::Export] as $context) {
             $result = $field->presentValue($related->id, $definition, $this->user, $context);
@@ -452,6 +483,13 @@ describe('BelongsTo Field Display', function () {
                 ->not->toContain($related->title())
                 ->not->toContain('<a');
         }
+
+        $resolverQueries = collect(DB::getQueryLog())->filter(
+            fn (array $query): bool => in_array('Guest resolver-only lookup', $query['bindings'], true),
+        );
+
+        expect($resolverCalls)->toBe(0)
+            ->and($resolverQueries)->toHaveCount(0);
     });
 
     test('an empty custom destination intentionally renders plain text', function () {
