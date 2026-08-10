@@ -241,6 +241,86 @@ test('failed selection lock release restores the active fence and rolls back app
     'exception' => true,
 ]);
 
+test('selection begin release failures disclose the same durable request only to an exact retry', function (string $lockKey, bool $throws) {
+    $ownerToken = issueFaultTestOwnerToken($this);
+    $this->media->store->failNext('release', $lockKey, $throws);
+
+    expect(fn () => $this->media->selections->begin(
+        $ownerToken,
+        'fault-manager',
+        ['9'],
+        $this->actor,
+    ))->toThrow(InvalidMediaSelectionRequest::class)
+        ->and(fn () => $this->media->selections->begin(
+            $ownerToken,
+            'fault-manager',
+            ['10'],
+            $this->actor,
+        ))->toThrow(InvalidMediaSelectionRequest::class)
+        ->and(fn () => $this->media->selections->begin(
+            $ownerToken,
+            'other-manager',
+            ['9'],
+            $this->actor,
+        ))->toThrow(InvalidMediaSelectionRequest::class);
+
+    $recovered = $this->media->selections->begin(
+        $ownerToken,
+        'fault-manager',
+        ['9'],
+        $this->actor,
+    );
+
+    expect($recovered->record->state)->toBe('pending')
+        ->and($recovered->record->managerComponentId)->toBe('fault-manager')
+        ->and($this->media->selections->processForOwner(
+            $recovered->token,
+            $ownerToken,
+            'fault-owner',
+            'image',
+            ['9'],
+            $this->actor,
+            fn (): MediaSelectionMutation => new MediaSelectionMutation(
+                apply: static function (): void {},
+                rollback: static function (): void {},
+            ),
+        )->state)->toBe('succeeded')
+        ->and($this->media->selections->hasActiveRequestForOwner($ownerToken, $this->actor))->toBeFalse();
+})->with([
+    'scope release false' => ['aura:media-selection:v1:scope:', false],
+    'scope release exception' => ['aura:media-selection:v1:scope:', true],
+    'owner release false' => ['aura:media-selection:v1:owner:', false],
+    'owner release exception' => ['aura:media-selection:v1:owner:', true],
+]);
+
+test('selection recovery rejects an active scope missing its owner wide fence', function () {
+    $ownerToken = issueFaultTestOwnerToken($this);
+    $request = $this->media->selections->begin(
+        $ownerToken,
+        'fault-manager',
+        ['9'],
+        $this->actor,
+    );
+    $this->media->store->put(
+        'aura:media-selection:v1:owner:'.hash('sha256', $ownerToken),
+        [],
+        75,
+    );
+
+    expect(fn () => $this->media->selections->begin(
+        $ownerToken,
+        'fault-manager',
+        ['9'],
+        $this->actor,
+    ))->toThrow(InvalidMediaSelectionRequest::class)
+        ->and($this->media->selections->forManager(
+            $request->token,
+            $ownerToken,
+            'fault-manager',
+            $this->actor,
+        )->state)->toBe('pending');
+});
+
 test('failed timeout lock release restores the active fence for retry', function (bool $throws) {
     $ownerToken = issueFaultTestOwnerToken($this);
     $request = $this->media->selections->begin($ownerToken, 'fault-manager', ['9'], $this->actor);
@@ -309,6 +389,150 @@ test('details consumption fails closed until compare and delete succeeds', funct
     'false return' => false,
     'exception' => true,
 ]);
+
+test('details lock release failures preserve the single use snapshot for retry', function (bool $throws) {
+    $ownerToken = issueFaultTestOwnerToken($this);
+    $token = $this->media->details->issue(
+        $ownerToken,
+        'details-component',
+        'image',
+        9,
+        [9],
+        [],
+        $this->actor,
+    );
+    $this->media->store->failNext('release', 'aura:media-details:v1:', $throws);
+
+    expect(fn () => $this->media->details->consume(
+        $token,
+        $ownerToken,
+        'details-component',
+        'image',
+        $this->actor,
+    ))->toThrow(InvalidMediaOwnerContext::class)
+        ->and($this->media->details->consume(
+            $token,
+            $ownerToken,
+            'details-component',
+            'image',
+            $this->actor,
+        )['attachment_id'])->toBe('9')
+        ->and(fn () => $this->media->details->consume(
+            $token,
+            $ownerToken,
+            'details-component',
+            'image',
+            $this->actor,
+        ))->toThrow(InvalidMediaOwnerContext::class);
+})->with([
+    'false return' => false,
+    'exception' => true,
+]);
+
+test('details replay staging failures preserve a single use retry', function (string $operation, bool $throws) {
+    $ownerToken = issueFaultTestOwnerToken($this);
+    $token = $this->media->details->issue(
+        $ownerToken,
+        'details-component',
+        'image',
+        9,
+        [9],
+        [],
+        $this->actor,
+    );
+    $this->media->store->failNext($operation, ':recovery', $throws);
+
+    expect(fn () => $this->media->details->consume(
+        $token,
+        $ownerToken,
+        'details-component',
+        'image',
+        $this->actor,
+    ))->toThrow(InvalidMediaOwnerContext::class)
+        ->and($this->media->details->consume(
+            $token,
+            $ownerToken,
+            'details-component',
+            'image',
+            $this->actor,
+        )['attachment_id'])->toBe('9')
+        ->and(fn () => $this->media->details->consume(
+            $token,
+            $ownerToken,
+            'details-component',
+            'image',
+            $this->actor,
+        ))->toThrow(InvalidMediaOwnerContext::class);
+})->with([
+    'staging add false' => ['add', false],
+    'staging add exception' => ['add', true],
+    'final delete false' => ['forget', false],
+    'final delete exception' => ['forget', true],
+]);
+
+test('concurrent details consumers reveal a snapshot only once across processes', function () {
+    if (! function_exists('pcntl_fork')) {
+        $this->markTestSkipped('pcntl is required for the concurrent details proof.');
+    }
+
+    $ownerToken = issueFaultTestOwnerToken($this);
+    $token = $this->media->details->issue(
+        $ownerToken,
+        'details-component',
+        'image',
+        9,
+        [9],
+        [],
+        $this->actor,
+    );
+    $processId = pcntl_fork();
+
+    if ($processId === 0) {
+        try {
+            $this->media->details->consume(
+                $token,
+                $ownerToken,
+                'details-component',
+                'image',
+                $this->actor,
+            );
+            exit(0);
+        } catch (InvalidMediaOwnerContext) {
+            exit(10);
+        } catch (Throwable) {
+            exit(20);
+        }
+    }
+
+    expect($processId)->toBeGreaterThan(0);
+    $parentSucceeded = true;
+
+    try {
+        $this->media->details->consume(
+            $token,
+            $ownerToken,
+            'details-component',
+            'image',
+            $this->actor,
+        );
+    } catch (InvalidMediaOwnerContext) {
+        $parentSucceeded = false;
+    }
+
+    pcntl_waitpid($processId, $status);
+    $childExit = pcntl_wexitstatus($status);
+
+    expect(pcntl_wifexited($status))->toBeTrue()
+        ->and($childExit)->toBeIn([0, 10])
+        ->and((int) $parentSucceeded + (int) ($childExit === 0))->toBe(1)
+        ->and(fn () => $this->media->details->consume(
+            $token,
+            $ownerToken,
+            'details-component',
+            'image',
+            $this->actor,
+        ))->toThrow(InvalidMediaOwnerContext::class);
+});
 
 test('details issuance rejects failed atomic creation', function (bool $throws) {
     $ownerToken = issueFaultTestOwnerToken($this);

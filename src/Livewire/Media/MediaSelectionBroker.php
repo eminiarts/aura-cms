@@ -58,7 +58,30 @@ class MediaSelectionBroker
                 }
 
                 if (in_array($active->state, ['pending', 'processing'], true)) {
-                    throw new InvalidMediaSelectionRequest('A media selection request is already active for this picker.');
+                    $indexKey = $this->ownerIndexKey($ownerToken);
+
+                    return $this->withNamedLock($indexKey.':lock', 5, function () use (
+                        $indexKey,
+                        $activeToken,
+                        $active,
+                        $ownerToken,
+                        $managerComponentId,
+                        $normalized,
+                        $owner,
+                    ): MediaSelectionRequest {
+                        if ($this->ownerRequestTokens($indexKey) !== [$activeToken]) {
+                            throw new InvalidMediaSelectionRequest('The active media selection owner fence is invalid.');
+                        }
+
+                        return $this->recoverActiveRequest(
+                            $activeToken,
+                            $active,
+                            $ownerToken,
+                            $managerComponentId,
+                            $normalized,
+                            $owner,
+                        );
+                    });
                 }
             }
 
@@ -722,6 +745,29 @@ class MediaSelectionBroker
     private function recordKey(string $requestToken): string
     {
         return self::CACHE_PREFIX.'request:'.$this->digest($requestToken);
+    }
+
+    /** @param list<string> $value */
+    private function recoverActiveRequest(
+        string $requestToken,
+        MediaSelectionRecord $record,
+        string $ownerToken,
+        string $managerComponentId,
+        array $value,
+        MediaOwnerContext $owner,
+    ): MediaSelectionRequest {
+        if (now()->getTimestamp() >= $record->deadline
+            || ! hash_equals($record->ownerTokenDigest, $this->owners->digest($ownerToken))
+            || ! hash_equals($record->managerComponentId, $managerComponentId)
+            || ! hash_equals($record->ownerComponentId, $owner->ownerComponentId)
+            || ! hash_equals($record->actorId, $owner->actorId)
+            || $record->teamId !== $owner->teamId
+            || ! hash_equals($record->slug, $owner->slug)
+            || ! hash_equals($record->valueDigest, $this->valueDigest($value))) {
+            throw new InvalidMediaSelectionRequest('A media selection request is already active for this picker.');
+        }
+
+        return new MediaSelectionRequest($requestToken, $record->requestDigest, $record);
     }
 
     private function resolveOwner(string $ownerToken, Authenticatable $actor): MediaOwnerContext

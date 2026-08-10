@@ -578,8 +578,11 @@ component, or field data. `MediaDetailsBroker` issues a short-lived opaque
 snapshot bound to the actor, current team, owner token, picker/details component,
 field slug, attachment ID, ordered visible row IDs, and current selection IDs.
 Consumption is single-use compare-and-delete under a shared lock. A failed
-delete or lock does not reveal the snapshot and leaves a safe retry path when the
-record remains available; a successful consume cannot be replayed.
+delete or lock does not reveal the snapshot. Before removing the active copy,
+Aura stages an identical recovery copy under that lock; the recovery copy remains
+until lock release succeeds, and its final atomic deletion elects the only
+successful consumer. The same valid token can therefore retry a failed staging,
+delete, or release outcome without permitting a successful consume to replay.
 
 ### Media Security Cache Store
 
@@ -592,9 +595,12 @@ details snapshots, and their locks all use this store.
 Cache `add`, `put`, `forget`, lock acquisition, and lock release results are
 authoritative. A false result or exception fails closed. Aura does not report a
 request as begun, consumed, applied, committed, rolled back, or timed out until
-the corresponding state is durable. Failed settlement keeps the request active
-and the modal locked; retry or the configured retention/TTL recovery path must
-settle it before dismissal.
+the corresponding state is durable. If a begin is fully durable but its final
+lock release fails, an exact authorized retry recovers that same opaque request
+only after the scope pointer, owner-wide index, record, actor, team, manager, and
+value bindings all match under both locks. Failed settlement keeps the request
+active and the modal locked; retry or the configured retention/TTL recovery path
+must settle it before dismissal.
 
 ### Attachment Index
 

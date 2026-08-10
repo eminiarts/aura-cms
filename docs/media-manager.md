@@ -517,9 +517,12 @@ Opening attachment details from a picker uses a short-lived opaque snapshot. It
 binds the actor, current team, owner token, picker/details component, field slug,
 chosen attachment, ordered visible rows, and current selection. The details
 broker consumes that snapshot once using compare-and-delete under a shared lock.
-A delete or lock failure returns no snapshot; when the record remains, the same
-token can be retried. A successful consume cannot be replayed. Browser-supplied
-attachment/row/selection fields do not replace the server snapshot.
+Aura stages an identical recovery copy before removing the active copy; that
+recovery remains until lock release succeeds, and its final atomic deletion
+elects the sole successful consumer. A staging, delete, or lock failure returns
+no snapshot and the same valid token remains safely retryable. A successful
+consume cannot be replayed. Browser-supplied attachment/row/selection fields do
+not replace the server snapshot.
 
 ### Security Cache Store
 
@@ -530,9 +533,12 @@ processes must use the same store. Aura rejects process-local stores such as
 
 Every cache `add`, `put`, `forget`, lock acquisition, and lock release result is
 authoritative. False results and exceptions fail closed. An incomplete begin is
-compensated, a failed details deletion is not reported as consumed, and a failed
-selection settlement leaves the request active and the modal locked for retry or
-the configured TTL/retention recovery path.
+compensated. If all begin writes are durable before a release failure, an exact
+authorized retry may recover only that same token after the scope, owner-wide
+index, record, actor, team, manager, and value bindings match under both locks. A
+failed details deletion is not reported as consumed, and a failed selection
+settlement leaves the request active and the modal locked for retry or the
+configured TTL/retention recovery path.
 
 ### Replacing the Media Manager
 

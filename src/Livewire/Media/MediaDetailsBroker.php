@@ -30,8 +30,28 @@ final class MediaDetailsBroker
             throw new InvalidMediaOwnerContext('The media details context is invalid.');
         }
 
-        return $this->withLock($token, function () use ($token, $ownerToken, $componentId, $fieldSlug, $actor): array {
-            $record = $this->store->cache->get($this->key($token));
+        $primaryKey = $this->key($token);
+        $recoveryKey = $primaryKey.':recovery';
+        $stagedKey = null;
+        $result = $this->withLock($token, function () use (
+            $primaryKey,
+            $recoveryKey,
+            &$stagedKey,
+            $ownerToken,
+            $componentId,
+            $fieldSlug,
+            $actor,
+        ): array {
+            $primaryRecord = $this->store->cache->get($primaryKey);
+            $recoveryRecord = $this->store->cache->get($recoveryKey);
+
+            if (($primaryRecord !== null && ! is_array($primaryRecord))
+                || ($recoveryRecord !== null && ! is_array($recoveryRecord))
+                || (is_array($primaryRecord) && is_array($recoveryRecord) && $primaryRecord !== $recoveryRecord)) {
+                throw new InvalidMediaOwnerContext('The media details context is invalid.');
+            }
+
+            $record = is_array($primaryRecord) ? $primaryRecord : $recoveryRecord;
             $owner = $this->owners->resolve($ownerToken, $actor);
 
             if (! is_array($record)
@@ -51,14 +71,34 @@ final class MediaDetailsBroker
                 throw new InvalidMediaOwnerContext('The media details context is invalid.');
             }
 
+            $sourceKey = is_array($primaryRecord) ? $primaryKey : $recoveryKey;
+            $stagedKey = $sourceKey === $primaryKey ? $recoveryKey : $primaryKey;
+            $stagedRecord = $sourceKey === $primaryKey ? $recoveryRecord : $primaryRecord;
+
+            if ($stagedRecord === null) {
+                try {
+                    $stored = $this->store->cache->add(
+                        $stagedKey,
+                        $record,
+                        max(1, $record['deadline'] - now()->getTimestamp()),
+                    );
+                } catch (Throwable $exception) {
+                    throw new InvalidMediaOwnerContext('The media details context could not be staged.', previous: $exception);
+                }
+
+                if (! $stored) {
+                    throw new InvalidMediaOwnerContext('The media details context could not be staged.');
+                }
+            }
+
             try {
-                $forgotten = $this->store->cache->forget($this->key($token));
+                $forgotten = $this->store->cache->forget($sourceKey);
             } catch (Throwable $exception) {
-                throw new InvalidMediaOwnerContext('The media details context could not be consumed.', previous: $exception);
+                throw new InvalidMediaOwnerContext('The media details context could not be staged.', previous: $exception);
             }
 
             if (! $forgotten) {
-                throw new InvalidMediaOwnerContext('The media details context could not be consumed.');
+                throw new InvalidMediaOwnerContext('The media details context could not be staged.');
             }
 
             return [
@@ -67,6 +107,22 @@ final class MediaDetailsBroker
                 'selection_ids' => $this->normalizeIds($record['selection_ids']),
             ];
         });
+
+        if (! is_string($stagedKey)) {
+            throw new InvalidMediaOwnerContext('The media details context could not be consumed.');
+        }
+
+        try {
+            $forgotten = $this->store->cache->forget($stagedKey);
+        } catch (Throwable $exception) {
+            throw new InvalidMediaOwnerContext('The media details context could not be consumed.', previous: $exception);
+        }
+
+        if (! $forgotten) {
+            throw new InvalidMediaOwnerContext('The media details context could not be consumed.');
+        }
+
+        return $result;
     }
 
     /**
