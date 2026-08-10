@@ -43,6 +43,7 @@ trait Filters
      */
     public function addFilter()
     {
+        $this->resetSelectionForScopeChange();
         $fieldSlug = $this->fieldsForFilter->keys()->first();
 
         $this->filters['custom'][] = [
@@ -55,6 +56,7 @@ trait Filters
 
     public function addFilterGroup()
     {
+        $this->resetSelectionForScopeChange();
         $this->filters['custom'][] = [
             'filters' => [
                 $this->newFilter(),
@@ -64,6 +66,7 @@ trait Filters
 
     public function addSubFilter($groupKey)
     {
+        $this->resetSelectionForScopeChange();
         $this->filters['custom'][$groupKey]['filters'][] = $this->newFilter();
     }
 
@@ -83,6 +86,7 @@ trait Filters
      */
     public function deleteFilter($filterName)
     {
+        $this->resetSelectionForScopeChange();
         // Retrieve the filter using the provided key
         $filter = $this->userFilters[$filterName] ?? null;
 
@@ -161,12 +165,14 @@ trait Filters
      */
     public function removeCustomFilter($index)
     {
+        $this->resetSelectionForScopeChange();
         unset($this->filters['custom'][$index]);
         $this->filters['custom'] = array_values($this->filters['custom']);
     }
 
     public function removeFilter($groupKey, $filterKey)
     {
+        $this->resetSelectionForScopeChange();
         unset($this->filters['custom'][$groupKey]['filters'][$filterKey]);
         $this->filters['custom'][$groupKey]['filters'] = array_values($this->filters['custom'][$groupKey]['filters']);
 
@@ -177,6 +183,7 @@ trait Filters
 
     public function removeFilterGroup($groupKey)
     {
+        $this->resetSelectionForScopeChange();
         unset($this->filters['custom'][$groupKey]);
         $this->filters['custom'] = array_values($this->filters['custom']);
     }
@@ -188,6 +195,7 @@ trait Filters
      */
     public function resetFilter()
     {
+        $this->resetSelectionForScopeChange();
         $this->reset('filters');
     }
 
@@ -198,6 +206,7 @@ trait Filters
      */
     public function saveFilter()
     {
+        $this->resetSelectionForScopeChange();
         $this->validate([
             'filter.name' => 'required',
             'filter.public' => 'required',
@@ -234,11 +243,23 @@ trait Filters
     }
 
     /**
-     * Livewire invokes this trait hook with the full property path and value.
+     * Livewire 4 invokes this property hook with the value followed by the key
+     * beneath filters. The full-path branch retains direct-call compatibility.
      */
-    public function updatedFilters(mixed $path, mixed $value = null): void
+    public function updatedFilters(mixed $value, mixed $key = null): void
     {
-        if (! is_string($path) || ! str_starts_with($path, 'filters.custom.')) {
+        if (is_string($key) && ($key === 'custom' || str_starts_with($key, 'custom.'))) {
+            $path = 'filters.'.$key;
+        } elseif (is_string($value) && str_starts_with($value, 'filters.custom.')) {
+            $path = $value;
+            $value = $key;
+        } else {
+            return;
+        }
+
+        $this->resetSelectionForScopeChange();
+
+        if ($path === 'filters.custom') {
             return;
         }
 
@@ -295,6 +316,7 @@ trait Filters
      */
     public function updatedSelectedFilter($filter)
     {
+        $this->resetSelectionForScopeChange();
         $this->clearFiltersCache();
 
         // Reset filters first

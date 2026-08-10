@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\Livewire\MediaFieldAuthorization;
 use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 
@@ -46,8 +47,18 @@ trait MediaFields
     }
 
     #[On('updateField')]
-    public function updateField($data)
+    public function updateField(mixed $data): void
     {
+        if (! is_array($data) || ! is_string($data['slug'] ?? null) || ! array_key_exists('value', $data)) {
+            abort(422, 'The media field is invalid.');
+        }
+
+        app(MediaFieldAuthorization::class)->authorizeDeclaredField(
+            $this->declaredMediaFields(),
+            $data['slug'],
+            $data['value'],
+        );
+
         $this->form['fields'][$data['slug']] = $data['value'];
 
         $this->dispatch('fieldUpdated', [
@@ -59,5 +70,37 @@ trait MediaFields
             'slug' => $data['slug'],
             'value' => $data['value'],
         ]);
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    protected function declaredMediaFields(): array
+    {
+        if (is_object($this->model ?? null) && method_exists($this->model, 'fieldsCollection')) {
+            $fields = $this->model->fieldsCollection();
+
+            return $fields->values()->all();
+        }
+
+        if (method_exists($this, 'getFields')) {
+            $fields = $this->getFields();
+
+            return is_array($fields) ? $fields : [];
+        }
+
+        return [];
+    }
+
+    protected function validateMediaFieldsBeforePersistence(): void
+    {
+        $values = $this->form['fields'] ?? null;
+
+        if (! is_array($values)) {
+            abort(422, 'The media fields are invalid.');
+        }
+
+        app(MediaFieldAuthorization::class)->authorizeDeclaredFields(
+            $this->declaredMediaFields(),
+            $values,
+        );
     }
 }

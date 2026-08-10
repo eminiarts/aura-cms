@@ -413,10 +413,12 @@ Modal-based media library interface for selecting attachments.
 @livewire('aura::media-manager', [
     'slug' => 'field-slug',
     'selected' => [1, 2, 3],  // Pre-selected attachment IDs
-    'model' => $resourceClass,
+    'resource' => $resource->getSlug(),
     'modalAttributes' => [...],
 ])
 ```
+
+`resource` is the preferred public argument and must be the slug of a registered Aura resource that owns the Image or File field. The documented legacy `model` argument remains supported when it is the exact class of a registered resource; arbitrary class or container resolution is rejected.
 
 **Key Properties:**
 - `$selected` - Array of selected attachment IDs
@@ -448,7 +450,7 @@ $this->dispatch('closeModal');
         @livewire('aura::media-manager', [
             'slug' => 'featured_image',
             'selected' => $selectedIds,
-            'model' => \App\Resources\Post::class,
+            'resource' => 'post',
         ])
     </div>
 </div>
@@ -460,6 +462,8 @@ Drag-and-drop file upload component with automatic attachment creation.
 
 ```php
 @livewire('aura::media-uploader', [
+    'resource' => 'post',
+    'fieldSlug' => 'featured_image',
     'field' => $fieldConfig,
     'selected' => $selectedIds,
     'button' => false,      // Show upload button
@@ -467,6 +471,8 @@ Drag-and-drop file upload component with automatic attachment creation.
     'disabled' => false,    // Disable uploads
 ])
 ```
+
+Field-bound uploaders re-resolve the registered resource and owned Image or File field on every Livewire request. A standalone attachment-library uploader omits `resource`, `fieldSlug`, and `field`.
 
 **Key Features:**
 - Uses `WithFileUploads` trait

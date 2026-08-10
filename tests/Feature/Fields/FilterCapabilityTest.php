@@ -29,6 +29,13 @@ use function Pest\Livewire\livewire;
 
 class FilterCapabilityResource extends Resource
 {
+    public array $bulkActions = [
+        'markCapabilityMatch' => [
+            'label' => 'Mark capability match',
+            'ability' => 'update',
+        ],
+    ];
+
     public static ?string $slug = 'filter-capability-resource';
 
     public static string $type = 'FilterCapabilityResource';
@@ -146,6 +153,11 @@ class FilterCapabilityResource extends Resource
                 'on_index' => false,
             ],
         ];
+    }
+
+    public function markCapabilityMatch(): void
+    {
+        $this->update(['content' => 'capability-match']);
     }
 }
 
@@ -323,7 +335,11 @@ test('dynamic Livewire field and operator updates reset stale filter values', fu
     livewire(Table::class, ['model' => $resource])
         ->call('addFilterGroup')
         ->set('filters.custom.0.filters.0.value', 'draft')
+        ->call('selectAllRows')
+        ->assertSet('selectAll', true)
         ->set('filters.custom.0.filters.0.operator', 'is_not')
+        ->assertSet('selectAll', false)
+        ->assertSet('selectAllExclusions', [])
         ->assertSet('filters.custom.0.filters.0.value', null)
         ->set('filters.custom.0.filters.0.value', 'draft')
         ->set('filters.custom.0.filters.0.name', 'status_choice')
@@ -1159,4 +1175,106 @@ test('package fields declare custom UI query behavior and date ranges at the cap
         ->assertViewHas('rows', fn ($rows) => $rows->isEmpty());
 
     expect($routine->id)->not->toBe($urgent->id);
+});
+
+test('select all bulk mutations honor custom and date range capability payloads', function () {
+    $matching = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => '[P1] Matching review',
+        'content' => 'unchanged',
+        'priority' => 'urgent',
+        'reviewed_on' => '2026-02-10',
+    ]);
+    $outsideDateRange = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => '[P1] Outside review',
+        'content' => 'unchanged',
+        'priority' => 'urgent',
+        'reviewed_on' => '2026-04-10',
+    ]);
+    $outsideCustomCapability = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => '[Routine] Matching date',
+        'content' => 'unchanged',
+        'priority' => 'routine',
+        'reviewed_on' => '2026-02-12',
+    ]);
+
+    livewire(Table::class, ['model' => $matching])
+        ->set('filters.custom', [[
+            'filters' => [
+                [
+                    'name' => 'priority',
+                    'operator' => 'is',
+                    'value' => 'urgent',
+                    'main_operator' => 'and',
+                ],
+                [
+                    'name' => 'reviewed_on',
+                    'operator' => 'date_between',
+                    'value' => [
+                        'from' => '2026-02-01',
+                        'to' => '2026-02-28',
+                    ],
+                    'main_operator' => 'and',
+                ],
+            ],
+        ]])
+        ->set('selectAll', true)
+        ->call('bulkAction', 'markCapabilityMatch')
+        ->assertHasNoErrors();
+
+    expect($matching->fresh()->content)->toBe('capability-match')
+        ->and($outsideDateRange->fresh()->content)->toBe('unchanged')
+        ->and($outsideCustomCapability->fresh()->content)->toBe('unchanged');
+});
+
+test('select all bulk mutations accept canonical relationship and JSON capability payloads', function () {
+    $tag = Tag::create(['title' => 'Capability bulk tag']);
+    $relationshipMatch = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'Relationship match',
+        'content' => 'unchanged',
+        'topics' => [$tag->id],
+        'segments' => [10],
+    ]);
+    $jsonMatch = FilterCapabilityResource::create([
+        'type' => FilterCapabilityResource::$type,
+        'title' => 'JSON match',
+        'content' => 'unchanged',
+        'segments' => [1],
+    ]);
+
+    livewire(Table::class, ['model' => $relationshipMatch])
+        ->set('filters.custom', [[
+            'filters' => [[
+                'name' => 'topics',
+                'operator' => 'contains',
+                'value' => [$tag->id],
+                'options' => ['resource_type' => Tag::class],
+            ]],
+        ]])
+        ->set('selectAll', true)
+        ->call('bulkAction', 'markCapabilityMatch')
+        ->assertHasNoErrors();
+
+    expect($relationshipMatch->fresh()->content)->toBe('capability-match')
+        ->and($jsonMatch->fresh()->content)->toBe('unchanged');
+
+    $relationshipMatch->refresh()->update(['content' => 'unchanged']);
+
+    livewire(Table::class, ['model' => $jsonMatch])
+        ->set('filters.custom', [[
+            'filters' => [[
+                'name' => 'segments',
+                'operator' => 'contains',
+                'value' => [1],
+            ]],
+        ]])
+        ->set('selectAll', true)
+        ->call('bulkAction', 'markCapabilityMatch')
+        ->assertHasNoErrors();
+
+    expect($relationshipMatch->fresh()->content)->toBe('unchanged')
+        ->and($jsonMatch->fresh()->content)->toBe('capability-match');
 });

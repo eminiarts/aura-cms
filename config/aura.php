@@ -50,6 +50,17 @@ return [
 
     'teams' => env('AURA_TEAMS', true),
 
+    'security' => [
+        'modal_requests' => [
+            'cache_store' => 'file',
+            'ttl_seconds' => 120,
+        ],
+        'table_mutations' => [
+            'chunk_size' => 100,
+            'max_records' => 500,
+        ],
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Schema Migration Locks

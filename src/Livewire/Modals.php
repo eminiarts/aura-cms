@@ -2,21 +2,29 @@
 
 namespace Aura\Base\Livewire;
 
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\Finder\Finder;
 
 class Modals extends Component
 {
-    public $modals = [];
+    /** @var array<string, bool> */
+    public array $activeModals = [];
+
+    /** @var array<string, array<string, mixed>> */
+    #[Locked]
+    public array $modals = [];
 
     #[On('closeModal')]
     public function closeModal($id = null): void
     {
         if ($id) {
             unset($this->modals[$id]);
+            unset($this->activeModals[$id]);
         } else {
             $this->modals = [];
+            $this->activeModals = [];
         }
     }
 
@@ -26,8 +34,25 @@ class Modals extends Component
     }
 
     #[On('openModal')]
-    public function openModal($component, $arguments = [], $modalAttributes = []): void
-    {
+    public function openModal(
+        mixed $component,
+        mixed $arguments = [],
+        mixed $modalAttributes = [],
+        ?ModalActionRegistry $actions = null,
+        ?SignedModalRequest $signedRequests = null,
+    ): void {
+        if (! is_string($component) || ! is_array($arguments) || ! is_array($modalAttributes)) {
+            abort(422, 'The modal request is invalid.');
+        }
+
+        $actions ??= app(ModalActionRegistry::class);
+        $signedRequests ??= app(SignedModalRequest::class);
+        $resolved = $signedRequests->supports($component)
+            ? $signedRequests->resolve($component)
+            : $actions->resolve($component, $arguments, $modalAttributes);
+        $component = $resolved['component'];
+        $arguments = $resolved['arguments'];
+        $modalAttributes = $resolved['modalAttributes'];
         $id = md5($component.serialize($arguments));
 
         // Resolve component class - handle both namespaced and non-namespaced components
@@ -52,8 +77,8 @@ class Modals extends Component
                 'modalClasses' => $modalClasses,
                 'slideOver' => false,
             ], $modalAttributes),
-            'active' => true,
         ];
+        $this->activeModals[$id] = true;
     }
 
     public function render()

@@ -537,6 +537,8 @@ class Settings extends Component
 
     public function save()
     {
+        $this->validateMediaFieldsBeforePersistence();
+
         $this->model->update([
             'value' => $this->form['fields'],
         ]);

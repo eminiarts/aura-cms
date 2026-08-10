@@ -105,6 +105,42 @@ function collidingOptionUsers(): array
     ];
 }
 
+test('role team and user cache generations invalidate together after writes', function () {
+    $user = createSuperAdmin();
+    $this->actingAs($user);
+    $team = $user->currentTeam;
+
+    $user->updateOption('core05.integration', ['version' => 1]);
+    $team->updateOption('core05.integration', ['version' => 1]);
+
+    expect($user->getOption('core05.integration'))->toBe(['version' => 1])
+        ->and($team->getOption('core05.integration'))->toBe(['version' => 1]);
+
+    $user->updateOption('core05.integration', ['version' => 2]);
+    $team->updateOption('core05.integration', ['version' => 2]);
+
+    expect($user->getOption('core05.integration'))->toBe(['version' => 2])
+        ->and($team->getOption('core05.integration'))->toBe(['version' => 2]);
+
+    $globalAdmin = $user->cachedRoles()->firstWhere('slug', 'admin');
+    $catalogVersion = Role::catalogVersion();
+    $shadow = Role::withoutGlobalScopes()->create([
+        'name' => 'Team admin shadow',
+        'slug' => 'admin',
+        'description' => 'Integration cache canary',
+        'super_admin' => false,
+        'permissions' => [],
+        'team_id' => $team->getKey(),
+    ]);
+
+    expect(Role::catalogVersion())->toBeGreaterThan($catalogVersion)
+        ->and($user->cachedRoles()->firstWhere('slug', 'admin')->is($shadow))->toBeTrue();
+
+    $shadow->delete();
+
+    expect($user->cachedRoles()->firstWhere('slug', 'admin')->is($globalAdmin))->toBeTrue();
+});
+
 test('template catalog survives a serialized cache read in a fresh application container', function () {
     $cache = serializedOptionCacheRepository();
     Cache::swap($cache);

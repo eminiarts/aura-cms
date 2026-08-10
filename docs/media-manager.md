@@ -230,14 +230,15 @@ The `MediaUploader` Livewire component handles file uploads:
 // In Blade template
 @livewire('aura::media-uploader', [
     'field' => $field,           // Field definition array
-    'for' => $fieldSlug,         // Field identifier
+    'fieldSlug' => $field['slug'],
+    'resource' => $resource->getSlug(),
     'selected' => $selectedIds,  // Currently selected attachment IDs
     'button' => false,           // Show as button vs dropzone
     'table' => true,             // Show table of uploads
 ])
 ```
 
-The component uses Livewire's `WithFileUploads` trait and stores files to the `media` folder on the `public` disk.
+The component uses Livewire's `WithFileUploads` trait and stores files to the configured media disk and path. Field-bound uploaders require a registered resource slug plus an owned Image or File field slug; Aura re-resolves and authorizes that context, the selected attachments, and Attachment creation on each request before any storage or database write.
 
 ### Upload Process
 
@@ -421,7 +422,7 @@ The `MediaManager` Livewire component provides a selection interface:
 $this->dispatch('openModal', 
     component: 'aura::media-manager',
     arguments: [
-        'model' => get_class($this->model), // Resource class name
+        'resource' => $this->model->getSlug(), // Registered resource slug
         'slug' => 'gallery',                 // Field slug
         'selected' => $this->selected,       // Currently selected IDs
         'modalAttributes' => [
@@ -435,6 +436,8 @@ $this->dispatch('openModal',
 // The component dispatches 'updateField' with selected IDs
 // and 'media-manager-selected' when complete
 ```
+
+`resource` is the preferred public argument. For backward compatibility, `model` may instead contain the exact class name of a registered Aura resource. Aura never resolves arbitrary legacy class names through the service container, and passing both arguments is invalid.
 
 ### Selection Features
 

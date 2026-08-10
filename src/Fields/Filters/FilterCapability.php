@@ -59,6 +59,21 @@ final class FilterCapability
     }
 
     /**
+     * Determine whether an untrusted filter payload can be normalized by this
+     * capability without applying it to a query.
+     *
+     * @param  array<string, mixed>  $filter
+     */
+    public function accepts(array $filter): bool
+    {
+        $operator = $filter['operator'] ?? null;
+
+        return is_string($operator)
+            && array_key_exists($operator, $this->operators)
+            && $this->normalizeFilter($filter) !== null;
+    }
+
+    /**
      * @param  array<string, mixed>  $field
      * @param  array{name: string, operator: string, value?: mixed, options?: array<string, mixed>}  $filter
      */

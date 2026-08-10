@@ -2,185 +2,131 @@
     data-attachment-table
     @selectfieldrows.window="selectRows($event.detail)"
     x-data="{
-    selected: @entangle('selected'),
+    selected: $wire.entangle('selected'),
+    exclusions: $wire.entangle('selectAllExclusions'),
     rows: @js($rowIds),
     lastSelectedId: null,
     total: @js($rows->total()),
     selectPage: false,
-    currentPage: @entangle('paginators.page'),
-    selectAll: @entangle('selectAll'),
+    currentPage: $wire.entangle('paginators.page'),
+    selectAll: $wire.entangle('selectAll'),
     loading: false,
-    oldSelected: null,
     field: @js($field),
     maxFilesReached: false,
     _updatingFromSelectedRows: false,
 
     init() {
         Livewire.on('selectedRows', (updatedSelected) => {
-            // Only update if values are actually different to prevent circular updates
             const newSelected = updatedSelected[0] || [];
-            const currentSelected = this.selected || [];
 
-            // Compare arrays - if they're the same, don't update
-            if (JSON.stringify(newSelected.sort()) === JSON.stringify([...currentSelected].sort())) {
+            if (JSON.stringify(newSelected.map(String).sort()) === JSON.stringify((this.selected || []).map(String).sort())) {
                 return;
             }
 
             this._updatingFromSelectedRows = true;
-            this.selected = [...newSelected];
-            this.$nextTick(() => {
-                this._updatingFromSelectedRows = false;
-            });
+            this.applySelection({ selected: newSelected, selectAll: false, exclusions: [] });
+            this.$nextTick(() => this._updatingFromSelectedRows = false);
         });
 
         Livewire.on('rowIdsUpdated', (ids) => {
-            this.rows = ids[0];
-            this.selectPage = false;
+            this.rows = ids[0] || [];
+            this.refreshPageSelection();
         });
 
-        if (this.selectAll) {
-            this.selectPage = true;
-        }
+        this.refreshPageSelection();
 
-        this.$watch('selected', (value) => {
-            if (this.field && this.field.max_files) {
-                this.maxFilesReached = value.length >= this.field.max_files;
-            }
-            // Only dispatch selection-changed if NOT from selectedRows to prevent circular updates
+        this.$watch('selected', value => {
+            this.refreshSelectionLimit();
+
             if (!this._updatingFromSelectedRows) {
                 this.$dispatch('selection-changed', { selected: value, slug: this.field ? this.field.slug : null });
             }
         });
 
-        this.$watch('rows', (rows) => {
-            // Check if rows (array of ids) is included in this.selected. if so, set this.selectPage to true
-        });
-
-        this.$watch('currentPage', (rows) => {
-            this.$nextTick(() => {
-                this.selectPage = this.rows.every(row => this.selected.includes(row));
-            });
+        this.$watch('currentPage', () => {
+            this.$nextTick(() => this.refreshPageSelection());
         });
     },
 
-    toggleRow(event, id) {
-        if (!this.rows || !Array.isArray(this.rows)) {
-            console.warn('this.rows is not an array, exiting toggleRow');
+    applySelection(state) {
+        this.selected = state.selected || [];
+        this.selectAll = Boolean(state.selectAll);
+        this.exclusions = state.exclusions || [];
+        this.refreshPageSelection();
+        this.refreshSelectionLimit();
+    },
+
+    contains(ids, id) {
+        return (ids || []).some(value => String(value) === String(id));
+    },
+
+    isRowSelected(id) {
+        return this.selectAll
+            ? !this.contains(this.exclusions, id)
+            : this.contains(this.selected, id);
+    },
+
+    selectionCount() {
+        return this.selectAll
+            ? Math.max(0, this.total - (this.exclusions || []).length)
+            : (this.selected || []).length;
+    },
+
+    refreshPageSelection() {
+        this.selectPage = this.rows.length > 0 && this.rows.every(id => this.isRowSelected(id));
+    },
+
+    refreshSelectionLimit() {
+        this.maxFilesReached = Boolean(this.field && this.field.max_files && this.selectionCount() >= this.field.max_files);
+    },
+
+    async toggleRow(event, id) {
+        let ids = [id];
+
+        if ((!this.field || this.field.max_files !== 1) && event.shiftKey && this.lastSelectedId !== null) {
+            const currentIndex = this.rows.findIndex(row => String(row) === String(id));
+            const lastIndex = this.rows.findIndex(row => String(row) === String(this.lastSelectedId));
+
+            if (currentIndex !== -1 && lastIndex !== -1) {
+                ids = this.rows.slice(Math.min(lastIndex, currentIndex), Math.max(lastIndex, currentIndex) + 1);
+            }
+        }
+
+        const shouldSelect = !this.isRowSelected(id);
+
+        if (shouldSelect && this.maxFilesReached && (!this.field || this.field.max_files !== 1)) {
             return;
         }
 
-        // Use reassignment instead of mutation for proper reactivity with entangle
-        const idStr = String(id);
-
-        if (this.field && this.field.max_files === 1) {
-            // Single file selection mode
-            if (this.selected.includes(idStr)) {
-                this.selected = [];
-            } else {
-                this.selected = [idStr];
-            }
-        } else if (event.shiftKey && this.lastSelectedId !== null) {
-            // Shift-click range selection
-            const lastIndex = this.rows.indexOf(this.lastSelectedId);
-            const currentIndex = this.rows.indexOf(id);
-
-            if (lastIndex === -1 || currentIndex === -1) {
-                console.warn('Invalid indexes, exiting shift selection');
-                return;
-            }
-
-            const start = Math.min(lastIndex, currentIndex);
-            const end = Math.max(lastIndex, currentIndex);
-            const rowsToToggle = this.rows.slice(start, end + 1).map(String);
-
-            const isLastSelected = this.selected.includes(String(this.lastSelectedId));
-
-            if (isLastSelected) {
-                // Adding rows - use reassignment
-                let newSelection = [...new Set([...this.selected, ...rowsToToggle])];
-                if (this.field && this.field.max_files) {
-                    newSelection = newSelection.slice(0, this.field.max_files);
-                }
-                this.selected = newSelection;
-            } else {
-                // Removing rows - use reassignment
-                this.selected = this.selected.filter(row => !rowsToToggle.includes(String(row)));
-            }
-        } else {
-            // Single click selection - use reassignment instead of push/splice
-            const index = this.selected.indexOf(idStr);
-            if (index === -1) {
-                if (!this.field || !this.field.max_files || this.selected.length < this.field.max_files) {
-                    // Use spread to create new array instead of push
-                    this.selected = [...this.selected, idStr];
-                } else {
-                    console.warn('Max files limit reached, cannot add more');
-                }
-            } else {
-                // Use filter to create new array instead of splice
-                this.selected = this.selected.filter((_, i) => i !== index);
-            }
-        }
-
+        this.applySelection(await $wire.updateRowSelection(ids, shouldSelect));
         this.lastSelectedId = id;
     },
 
-    selectCurrentPage() {
-        this.$nextTick(() => {
-            if (this.selectPage) {
-                // add this.rows to existing this.selected, unique
-                this.selected = Array.from(new Set([...this.selected.map(Number), ...this.rows.map(Number)]));
+    async selectCurrentPage() {
+        const shouldSelect = ! this.selectPage;
 
-                // if all rows are selected, set this.selectAll to true
-                this.selectAll = this.selected.length === this.total;
-            } else {
-
-                this.selectAll = false;
-
-                // remove this.rows from existing this.selected with new Set
-                this.selected = [...new Set([...this.selected.map(Number)].filter(item => !this.rows.map(Number).includes(item)))];
-            }
-        });
+        this.loading = true;
+        this.applySelection(await $wire.updateRowSelection(this.rows, Boolean(shouldSelect)));
+        this.loading = false;
     },
 
-    selectAllRows: async function() {
-
-        this.loading = true
-
-        let allSelected = await $wire.getAllTableRows()
-        this.selectAll = true
-
-        this.loading = false
-
-        this.$nextTick(() => {
-            // this.selected = allSelected with set
-            this.selected = [...new Set([...this.selected.map(Number), ...allSelected.map(Number)])];
-            this.selectPage = true;
-        });
+    async selectAllRows() {
+        this.loading = true;
+        this.applySelection(await $wire.selectAllRows());
+        this.loading = false;
     },
 
-    resetBulk() {
-        this.selected = [];
-        this.selectPage = false;
-        this.selectAll = false;
+    async resetBulk() {
+        this.applySelection(await $wire.clearSelection());
     },
 
-    deselectRows(ids) {
-        for (id of ids) {
-            let index = this.selected.indexOf(id)
-
-            if (index === -1) {
-                continue
-            }
-
-            this.selected.splice(index, 1)
-            {{-- this.toggleRow(false, id) --}}
-        }
+    async deselectRows(ids) {
+        this.applySelection(await $wire.updateRowSelection(ids, false));
     },
 
     selectRows(detail) {
         if (detail.slug == '{{ optional($field)['slug'] }}') {
-            this.selected = detail.value
+            this.applySelection({ selected: detail.value, selectAll: false, exclusions: [] });
         }
     }
 }">

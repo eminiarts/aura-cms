@@ -47,6 +47,7 @@ class Team extends Resource
         return [
             'deleteAction' => [
                 'label' => 'Delete',
+                'ability' => 'delete',
                 'icon-view' => 'aura::components.actions.trash',
                 'class' => 'hover:text-red-700 text-red-500 font-bold',
                 'conditional_logic' => function () {

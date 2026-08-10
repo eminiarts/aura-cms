@@ -277,6 +277,69 @@ trait QueryFilters
         return $query;
     }
 
+    protected function assertValidMutationFilters(): void
+    {
+        if (! is_array($this->filters)
+            || ! is_array($this->filters['custom'] ?? null)
+            || ! array_is_list($this->filters['custom'])) {
+            abort(422, 'The table mutation filters are invalid.');
+        }
+
+        $customFilters = $this->filters['custom'];
+        $containsGroups = collect($customFilters)->contains(
+            static fn (mixed $filter): bool => is_array($filter) && array_key_exists('filters', $filter),
+        );
+        $containsFlatFilters = collect($customFilters)->contains(
+            static fn (mixed $filter): bool => is_array($filter) && ! array_key_exists('filters', $filter),
+        );
+
+        if ($containsGroups && $containsFlatFilters) {
+            abort(422, 'The table mutation filters are invalid.');
+        }
+
+        $groups = $containsFlatFilters ? [['filters' => $customFilters]] : $customFilters;
+
+        foreach ($groups as $group) {
+            if (! is_array($group)
+                || array_diff(array_keys($group), ['operator', 'filters']) !== []
+                || ! is_array($group['filters'] ?? null)
+                || ! array_is_list($group['filters'])
+                || ! in_array($group['operator'] ?? 'and', ['and', 'or'], true)) {
+                abort(422, 'The table mutation filters are invalid.');
+            }
+
+            foreach ($group['filters'] as $filter) {
+                if (! is_array($filter)
+                    || array_diff(array_keys($filter), ['name', 'operator', 'value', 'main_operator', 'options']) !== []
+                    || ! in_array($filter['main_operator'] ?? 'and', ['and', 'or'], true)
+                    || (array_key_exists('options', $filter) && ! is_array($filter['options']))) {
+                    abort(422, 'The table mutation filters are invalid.');
+                }
+
+                $name = $filter['name'] ?? null;
+                $resolved = $this->resolvedFilterField($name);
+
+                if ($resolved === null) {
+                    abort(422, 'The table mutation filters are invalid.');
+                }
+
+                [$field, $fieldInstance] = $resolved;
+                $capability = (new FieldFilterCapabilityResolver)->resolve($fieldInstance, $this->model, $field);
+
+                if (! $capability->accepts($filter)) {
+                    abort(422, 'The table mutation filters are invalid.');
+                }
+
+                $resourceType = data_get($filter, 'options.resource_type');
+                $declaredResourceType = data_get($capability->context(), 'resource_type');
+
+                if ($resourceType !== null && $resourceType !== $declaredResourceType) {
+                    abort(422, 'The table mutation filters are invalid.');
+                }
+            }
+        }
+    }
+
     /**
      * Compatibility adapter; prefer inspecting the resolved field capability.
      */

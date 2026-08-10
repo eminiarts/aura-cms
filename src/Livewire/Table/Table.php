@@ -4,7 +4,9 @@ namespace Aura\Base\Livewire\Table;
 
 use Aura\Base\Contracts\PreloadsTableDisplay;
 use Aura\Base\Contracts\ProvidesTableEagerLoad;
+use Aura\Base\Contracts\TableResource;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\SignedModalRequest;
 use Aura\Base\Livewire\Table\Traits\BulkActions;
 use Aura\Base\Livewire\Table\Traits\Filters;
 use Aura\Base\Livewire\Table\Traits\Kanban;
@@ -15,15 +17,17 @@ use Aura\Base\Livewire\Table\Traits\Select;
 use Aura\Base\Livewire\Table\Traits\Settings;
 use Aura\Base\Livewire\Table\Traits\Sorting;
 use Aura\Base\Livewire\Table\Traits\SwitchView;
-use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Closure;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -58,11 +62,8 @@ class Table extends Component
 
     public $disabled;
 
-    /**
-     * The field of the parent.
-     *
-     * @var string
-     */
+    /** @var array<string, mixed>|null The field of the parent. */
+    #[Locked]
     public $field;
 
     /**
@@ -87,6 +88,7 @@ class Table extends Component
 
     public $loaded = false;
 
+    #[Locked]
     public $model;
 
     /**
@@ -94,8 +96,10 @@ class Table extends Component
      *
      * @var Model
      */
+    #[Locked]
     public $parent;
 
+    #[Locked]
     public $query;
 
     /**
@@ -131,20 +135,51 @@ class Table extends Component
 
     protected $queryString = ['selectedFilter'];
 
-    public function action($data)
+    private bool $failClosedDynamicQuery = false;
+
+    public function action(array $data, TableMutationDispatcher $mutations): mixed
     {
+        $data = Validator::make($data, [
+            'action' => ['required', 'string'],
+            'id' => $this->mutationIdentifierRules(),
+        ])->validate();
+        $model = $this->mutationModel();
+        $trustedModel = new TableMutationModelDescriptor($model);
+
+        if (! method_exists($model, 'getSlug')) {
+            abort(422, 'Table mutations require an Aura resource slug.');
+        }
+
+        $resourceSlug = $model->getSlug();
+
+        if (! is_string($resourceSlug)) {
+            abort(422, 'Table mutations require an Aura resource slug.');
+        }
+
         // return redirect to post view
         if ($data['action'] == 'view') {
-            return redirect()->route('aura.'.$this->model()->getSlug().'.view', ['id' => $data['id']]);
+            $record = $mutations->findRecord(clone $this->mutationQuery(), $trustedModel, $data['id']);
+            $mutations->authorize($record, 'view');
+
+            return redirect()->route('aura.'.$resourceSlug.'.view', ['id' => $record->getKey()]);
         }
         // edit
         if ($data['action'] == 'edit') {
-            return redirect()->route('aura.'.$this->model()->getSlug().'.edit', ['id' => $data['id']]);
+            $record = $mutations->findRecord(clone $this->mutationQuery(), $trustedModel, $data['id']);
+            $mutations->authorize($record, 'update');
+
+            return redirect()->route('aura.'.$resourceSlug.'.edit', ['id' => $record->getKey()]);
         }
 
-        if (method_exists($this->model, $data['action'])) {
-            return $this->model()->find($data['id'])->{$data['action']}();
-        }
+        $declaredActions = (array) $model->getActions();
+
+        return $mutations->dispatchAction(
+            clone $this->mutationQuery(),
+            $trustedModel,
+            $data['id'],
+            $data['action'],
+            $declaredActions,
+        );
     }
 
     public function allTableRows()
@@ -189,9 +224,9 @@ class Table extends Component
         return $this->model()->inputFields();
     }
 
-    public function getAllTableRows()
+    public function getAllTableRows(): array
     {
-        return $this->query()->pluck('id')->all();
+        return array_values($this->rowIds());
     }
 
     public function getParentModel()
@@ -312,13 +347,27 @@ class Table extends Component
         }
     }
 
-    public function openBulkActionModal($action, $data)
-    {
-        $this->dispatch('openModal', $data['modal'], [
-            'action' => $action,
-            'selected' => $this->selectedRowsQuery->pluck('id'),
-            'model' => get_class($this->model),
-        ]);
+    public function openBulkActionModal(
+        mixed $action,
+        TableMutationDispatcher $mutations,
+        SignedModalRequest $modalRequests,
+    ): void {
+        $validated = Validator::make(['action' => $action], [
+            'action' => ['required', 'string'],
+        ])->validate();
+        $model = $this->mutationModel();
+        $resolved = $mutations->authorizeBulkModal(
+            clone $this->bulkMutationQuery(),
+            new TableMutationModelDescriptor($model),
+            $validated['action'],
+            (array) $model->getBulkActions(),
+            $this->selected,
+            (bool) $this->selectAll,
+            $this->selectAllExclusions,
+        );
+        $request = $modalRequests->issue($resolved['request']);
+
+        $this->dispatch('openModal', $request);
     }
 
     public function refreshRows()
@@ -336,7 +385,7 @@ class Table extends Component
     #[On('refreshTableSelected')]
     public function refreshTableSelected()
     {
-        $this->selected = [];
+        $this->resetSelectionForScopeChange();
     }
 
     /**
@@ -455,6 +504,7 @@ class Table extends Component
      */
     public function setQuickFilter(string $key, string|int|float|bool|array|null $value): void
     {
+        $this->resetSelectionForScopeChange();
         if ($value === null || $value === '') {
             unset($this->quickFilters[$key]);
         } else {
@@ -464,15 +514,38 @@ class Table extends Component
         $this->resetPage();
     }
 
-    public function updateCardStatus($cardId, $newStatus)
+    public function updateCardStatus(mixed $cardId, mixed $newStatus, TableMutationDispatcher $mutations): void
     {
-        $card = $this->model->find($cardId);
-        if ($card) {
-            $card->status = $newStatus;
-            $card->save();
-            $this->notify('Card status updated successfully');
-        } else {
-            $this->notify('Card not found', 'error');
+        $data = Validator::make([
+            'cardId' => $cardId,
+            'kanbanStatus' => $newStatus,
+        ], [
+            'cardId' => $this->mutationIdentifierRules(),
+            'kanbanStatus' => [
+                'required',
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    if (! is_int($value) && ! is_string($value)) {
+                        $fail('The '.$attribute.' must be a valid option value.');
+                    }
+                },
+            ],
+        ])->validate();
+        $trustedModel = new TableMutationModelDescriptor($this->mutationModel());
+
+        $mutations->dispatchFieldUpdate(
+            clone $this->mutationQuery(forKanban: true),
+            $trustedModel,
+            $data['cardId'],
+            'status',
+            $data['kanbanStatus'],
+        );
+        $this->notify('Card status updated successfully');
+    }
+
+    public function updated(string $property): void
+    {
+        if ($property === 'search') {
+            $this->resetSelectionForScopeChange();
         }
     }
 
@@ -490,6 +563,11 @@ class Table extends Component
         }
     }
 
+    public function updatedQuickFilters(): void
+    {
+        $this->resetSelectionForScopeChange();
+    }
+
     /**
      * Update the selected rows in the table.
      *
@@ -498,6 +576,7 @@ class Table extends Component
     public function updatedSelected()
     {
         $this->selectAll = false;
+        $this->selectAllExclusions = [];
         $this->selectPage = false;
 
         // Only allow the max number of selected rows.
@@ -509,6 +588,86 @@ class Table extends Component
         } else {
             $this->dispatch('selectedRows', $this->selected);
         }
+    }
+
+    public function updatedSorts(): void
+    {
+        $this->resetSelectionForScopeChange();
+    }
+
+    /**
+     * Exact effective display scope for bulk selection mutations.
+     */
+    protected function bulkMutationQuery()
+    {
+        $query = $this->mutationQuery();
+
+        $this->assertValidMutationFilters();
+
+        if ($this->filters['custom'] !== []) {
+            $query = $this->applyCustomFilter($query);
+        }
+
+        if ($this->search !== null && ! is_string($this->search)) {
+            abort(422, 'The table mutation search is invalid.');
+        }
+
+        $query = $this->applySearch($query);
+        $this->assertValidMutationSorting();
+
+        return $this->applySorting($query);
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    protected function mutationIdentifierRules(): array
+    {
+        return [
+            'required',
+            function (string $attribute, mixed $value, Closure $fail): void {
+                if (! is_int($value) && ! is_string($value)) {
+                    $fail('The '.$attribute.' must be a valid record identifier.');
+                }
+            },
+        ];
+    }
+
+    protected function mutationModel(): Model&TableResource
+    {
+        $model = $this->model();
+
+        if (! $model instanceof Model || ! $model instanceof TableResource) {
+            abort(422, 'Table mutations require an Aura resource.');
+        }
+
+        return $model;
+    }
+
+    /**
+     * Security scope for every table mutation.
+     *
+     * Includes model global scopes, resource indexQuery(), parent relationship
+     * constraints, declared dynamic queries, and Kanban constraints. Bulk
+     * selection composes its validated display filters, search, and sorting on
+     * top of this trusted base scope.
+     */
+    protected function mutationQuery(bool $forKanban = false)
+    {
+        $previousFailClosedState = $this->failClosedDynamicQuery;
+        $this->failClosedDynamicQuery = true;
+
+        try {
+            $query = $this->query();
+        } finally {
+            $this->failClosedDynamicQuery = $previousFailClosedState;
+        }
+
+        if ($forKanban && $this->currentView !== 'kanban') {
+            $query = $this->applyKanbanQuery($query);
+        }
+
+        return $query;
     }
 
     /**
@@ -567,10 +726,14 @@ class Table extends Component
 
         // If query is set, use it
         if ($this->query && is_string($this->query)) {
-            try {
+            if ($this->failClosedDynamicQuery) {
                 $query = app('dynamicFunctions')::call($this->query);
-            } catch (\Exception $e) {
-                // Handle the exception
+            } else {
+                try {
+                    $query = app('dynamicFunctions')::call($this->query);
+                } catch (\Exception $e) {
+                    // Preserve the existing read-path fallback.
+                }
             }
         }
 
@@ -639,5 +802,29 @@ class Table extends Component
         }
 
         return array_values(array_unique($relations));
+    }
+
+    private function assertValidMutationSorting(): void
+    {
+        if (! is_array($this->sorts)) {
+            abort(422, 'The table mutation sorting is invalid.');
+        }
+
+        $allowedFields = collect($this->mutationModel()->getFields())
+            ->pluck('slug')
+            ->filter(static fn (mixed $slug): bool => is_string($slug))
+            ->push($this->mutationModel()->getKeyName())
+            ->unique();
+
+        foreach ($this->sorts as $field => $direction) {
+            if (
+                ! is_string($field)
+                || ! $allowedFields->containsStrict($field)
+                || ! is_string($direction)
+                || ! in_array(strtolower($direction), ['asc', 'desc'], true)
+            ) {
+                abort(422, 'The table mutation sorting is invalid.');
+            }
+        }
     }
 }

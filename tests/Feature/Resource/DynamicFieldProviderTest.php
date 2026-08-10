@@ -7,6 +7,10 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\FieldProviderContext;
 use Aura\Base\FieldProviderMode;
 use Aura\Base\FieldProviderRegistry;
+use Aura\Base\Fields\Image;
+use Aura\Base\Livewire\Profile;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resource;
 
 class DynamicFieldProviderResource extends Resource
@@ -182,6 +186,20 @@ class TransientFieldProvider extends StaticFieldProvider
     }
 }
 
+class MediaAppendFieldProvider extends StaticFieldProvider
+{
+    public function fields(FieldProviderContext $context): array
+    {
+        return [
+            [
+                'name' => 'Provider image',
+                'slug' => 'provider_image',
+                'type' => Image::class,
+            ],
+        ];
+    }
+}
+
 beforeEach(function () {
     ResourceWithoutDynamicProviders::$declarationCalls = 0;
     TeamFieldProviderState::reset();
@@ -309,4 +327,34 @@ it('restores boot providers and drops transient providers across a worker bounda
     expect($fields->pluck('slug')->all())->toBe(['base', 'tail', 'team_field'])
         ->and($fields->firstWhere('slug', 'team_field')['name'])->toBe('Team two')
         ->and(TeamFieldProviderState::$fieldsCalls)->toBe(2);
+});
+
+it('uses contextual provider media fields across editor validation and Aura fake registration', function () {
+    Aura::registerFieldProvider(
+        MediaAppendFieldProvider::class,
+        resources: [DynamicFieldProviderResource::class],
+    );
+
+    $resource = new DynamicFieldProviderResource;
+    $create = new Create;
+    $create->model = $resource;
+    $create->form = ['fields' => []];
+
+    (fn () => $this->initializeFieldsWithDefaults())->call($create);
+
+    $declaredFields = static fn (object $component): array => (fn (): array => $this->declaredMediaFields())->call($component);
+    $edit = new Edit;
+    $edit->model = $resource;
+    $profile = new Profile;
+    $profile->model = $resource;
+
+    expect($create->form['fields'])->toHaveKey('provider_image')
+        ->and(collect($declaredFields($create))->pluck('slug'))->toContain('provider_image')
+        ->and(collect($declaredFields($edit))->pluck('slug'))->toContain('provider_image')
+        ->and(collect($declaredFields($profile))->pluck('slug'))->toContain('provider_image');
+
+    Aura::fake();
+    Aura::setModel($resource);
+
+    expect(Aura::getResources())->toContain(DynamicFieldProviderResource::class);
 });

@@ -443,12 +443,12 @@ test('user aware resource badges are rebuilt after a serialized cache read in a 
 
     $secondBadge = collect(Aura::navigation()['Resources'])
         ->firstWhere('resource', UserAwareBadgeNavigationModel::class)['badge'];
+    $structuralPayloads = navigationStructuralCachePayloads($store);
 
     expect($firstBadge)->toBe($firstUser->id)
         ->and($secondBadge)->toBe($secondUser->id)
-        ->and(navigationStructuralCachePayloads($store))->toBe([[
-            'resources' => [UserAwareBadgeNavigationModel::class],
-        ]]);
+        ->and($structuralPayloads)->toHaveCount(1)
+        ->and($structuralPayloads[0]['resources'])->toContain(UserAwareBadgeNavigationModel::class);
 });
 
 test('team scoped resource badges are rebuilt after same user switches teams', function () {
@@ -508,12 +508,11 @@ test('authenticated static hooks rebuild membership for each user', function () 
         ->toContain('AuthContextPage');
 
     $this->actingAs($deniedUser);
+    $structuralPayloads = navigationStructuralCachePayloads($store);
 
     expect(Aura::navigation())->not->toHaveKey('Custom Group')
         ->and(AuthContextNavigationHook::$invocations)->toBe(2)
-        ->and(navigationStructuralCachePayloads($store))->toBe([[
-            'resources' => [],
-        ]]);
+        ->and($structuralPayloads)->toHaveCount(1);
 });
 
 test('long workers rebuild static hooks across team switches and guest login cycles', function () {

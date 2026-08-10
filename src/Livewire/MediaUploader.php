@@ -3,8 +3,10 @@
 namespace Aura\Base\Livewire;
 
 use Aura\Base\Resources\Attachment;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -21,24 +23,38 @@ class MediaUploader extends Component
 
     private const MAX_FILES = 20;
 
+    #[Locked]
     public $button = false;
 
+    #[Locked]
     public $disabled = false;
 
+    #[Locked]
     public $field;
 
+    #[Locked]
+    public ?string $fieldSlug = null;
+
+    #[Locked]
     public $for;
 
     public $media = [];
 
+    #[Locked]
     public $model;
 
+    #[Locked]
     public $namespace = Attachment::class;
+
+    #[Locked]
+    public ?string $resource = null;
 
     public $selected;
 
+    #[Locked]
     public $table = true;
 
+    #[Locked]
     public $upload = false;
 
     public array $uploadResult = [
@@ -47,13 +63,21 @@ class MediaUploader extends Component
         'ids' => [],
     ];
 
+    public function hydrate(): void
+    {
+        $this->authorizeRequest();
+    }
+
     public function mount(): void
     {
-        $this->model = app($this->namespace);
+        $this->initializeAuthoritativeContext();
+        $this->authorizeRequest();
     }
 
     public function render(): View
     {
+        $this->authorizeRequest();
+
         return view('aura::livewire.media-uploader', [
             'uploadPolicy' => $this->uploadPolicy(),
         ]);
@@ -62,13 +86,21 @@ class MediaUploader extends Component
     #[On('selectedMediaUpdated')]
     public function selectedMediaUpdated(array $data): void
     {
-        if ($this->field && ($this->field['slug'] == $data['slug'])) {
+        $this->authorizeRequest();
+
+        if (! is_string($data['slug'] ?? null) || ! is_array($data['value'] ?? null)) {
+            abort(422, 'The selected media are invalid.');
+        }
+
+        if ($this->fieldSlug !== null && hash_equals($this->fieldSlug, $data['slug'])) {
             $this->selected = $data['value'];
+            $this->authorizeRequest();
         }
     }
 
     public function updatedMedia(): void
     {
+        $this->authorizeRequest(authorizeCreate: true);
         $this->resetValidation();
         $this->uploadResult = [
             'successful' => false,
@@ -78,6 +110,10 @@ class MediaUploader extends Component
 
         try {
             $this->validate([
+                'media' => [
+                    'array',
+                    'max:'.self::MAX_FILES,
+                ],
                 'media.*' => [
                     'required',
                     'max:'.self::MAX_FILE_SIZE_KILOBYTES,
@@ -98,6 +134,12 @@ class MediaUploader extends Component
             $this->media = [];
 
             return;
+        }
+
+        $attachment = $this->model;
+
+        if (! $attachment instanceof Model) {
+            abort(422, 'The configured attachment resource is invalid.');
         }
 
         $attachments = [];
@@ -130,7 +172,7 @@ class MediaUploader extends Component
                 $payload['height'] = $dimensions[1];
             }
 
-            $attachments[] = app(config('aura.resources.attachment'))::create($payload);
+            $attachments[] = $attachment->newQuery()->create($payload);
 
             // Unset the processed file
             unset($this->media[$key]);
@@ -177,5 +219,61 @@ class MediaUploader extends Component
             'max_size_bytes' => self::MAX_FILE_SIZE_KILOBYTES * 1024,
             'blocked_extensions' => self::BLOCKED_EXTENSIONS,
         ];
+    }
+
+    private function authorizeRequest(bool $authorizeCreate = false): void
+    {
+        $authorization = app(MediaFieldAuthorization::class);
+
+        if ($this->resource === null && $this->fieldSlug === null) {
+            if ($this->field !== null || $this->for !== null) {
+                abort(422, 'The media uploader resource field is invalid.');
+            }
+
+            $attachment = $authorization->authorizeLibrary($authorizeCreate);
+            $this->model = $attachment;
+            $this->namespace = $attachment::class;
+
+            return;
+        }
+
+        if ($this->resource === null || $this->fieldSlug === null || ! is_array($this->selected)) {
+            abort(422, 'The media uploader resource field is invalid.');
+        }
+
+        $authorized = $authorization->authorizeField(
+            $this->resource,
+            $this->fieldSlug,
+            $this->selected,
+            $authorizeCreate,
+        );
+        $this->resource = $authorized['resource_slug'];
+        $this->field = $authorized['field'];
+        $this->selected = $authorized['selected'];
+        $this->model = $authorized['attachment'];
+        $this->namespace = $authorized['attachment']::class;
+        $this->for = $authorized['resource_slug'];
+
+        if (($this->field['disabled'] ?? false) && $authorizeCreate) {
+            abort(403, 'Uploads are disabled for this field.');
+        }
+    }
+
+    private function initializeAuthoritativeContext(): void
+    {
+        if ($this->selected === null || $this->selected === '') {
+            $this->selected = [];
+        }
+
+        if ($this->resource === null && is_string($this->for) && is_array($this->field)) {
+            $fieldSlug = $this->field['slug'] ?? null;
+
+            if (! is_string($fieldSlug) || $fieldSlug === '') {
+                abort(422, 'The media uploader resource field is invalid.');
+            }
+
+            $this->resource = app(MediaFieldAuthorization::class)->normalizeResourceReference($this->for, null);
+            $this->fieldSlug = $fieldSlug;
+        }
     }
 }

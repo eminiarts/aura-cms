@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
-use Livewire\Attributes\On;
 use Livewire\Component;
 
 class Profile extends Component
@@ -139,6 +138,7 @@ class Profile extends Component
     public function save()
     {
         $validatedData = $this->validate();
+        $this->validateMediaFieldsBeforePersistence();
 
         if (optional($this->form['fields'])['current_password'] && optional($this->form['fields'])['password']) {
             $this->model->update([
@@ -167,14 +167,11 @@ class Profile extends Component
         return $this->notify(__('Successfully updated'));
     }
 
-    #[On('updateField')]
-    public function updateField($data)
+    /** @return array<int, array<string, mixed>> */
+    protected function declaredMediaFields(): array
     {
-        $this->form['fields'][$data['slug']] = $data['value'];
+        $fields = $this->model->fieldsCollection();
 
-        $this->dispatch('selectedMediaUpdated', [
-            'slug' => $data['slug'],
-            'value' => $data['value'],
-        ]);
+        return $fields->values()->all();
     }
 }

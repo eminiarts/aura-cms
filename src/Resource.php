@@ -6,6 +6,7 @@ use Aura\Base\Contracts\DefinesFields;
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Contracts\FieldValueContract;
 use Aura\Base\Contracts\FieldValueStorage;
+use Aura\Base\Contracts\TableResource;
 use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\TypeScope;
@@ -46,7 +47,7 @@ use LogicException;
  * @property-read mixed $meta  The meta relation / normalized meta map (see getMeta()).
  * @property array<string, mixed> $metaFields Pending meta values awaiting persistence.
  */
-class Resource extends Model implements DefinesFields
+class Resource extends Model implements DefinesFields, TableResource
 {
     use AuraModelConfig;
     use HasFactory;

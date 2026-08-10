@@ -165,6 +165,7 @@ class Create extends Component
     public function save()
     {
         $this->validate();
+        $this->validateMediaFieldsBeforePersistence();
 
         $attributes = collect($this->form['fields'])
             ->except(['team_id', 'user_id', 'type', 'current_team_id'])
@@ -208,7 +209,7 @@ class Create extends Component
 
     protected function initializeFieldsWithDefaults()
     {
-        $fields = $this->model->getFields(); // Assume this returns the fields configurations
+        $fields = $this->model->fieldsCollection();
 
         foreach ($fields as $field) {
             $slug = $field['slug'] ?? null;

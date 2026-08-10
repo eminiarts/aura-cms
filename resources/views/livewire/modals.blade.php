@@ -1,6 +1,6 @@
 <div>
     @forelse($modals as $id => $modal)
-        <x-aura::dialog wire:model="modals.{{ $id }}.active">
+        <x-aura::dialog wire:model="activeModals.{{ $id }}">
             @if ($modal['modalAttributes']['slideOver'])
                 <x-aura::dialog.slideover wire:key="slideover-{{ $id }}">
                     {{-- @dump($activeModals) --}}

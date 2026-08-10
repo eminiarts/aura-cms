@@ -2,7 +2,8 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
-use Illuminate\Support\Facades\Gate;
+use Aura\Base\Livewire\Table\TableMutationDispatcher;
+use Aura\Base\Livewire\Table\TableMutationModelDescriptor;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -15,58 +16,56 @@ trait BulkActions
     /**
      * Handle bulk action on the selected rows.
      */
-    public function bulkAction(string $action)
+    public function bulkAction(string $action, TableMutationDispatcher $mutations): void
     {
-        $this->ensureBulkActionAllowed($action);
+        $model = $this->mutationModel();
+        $trustedModel = new TableMutationModelDescriptor($model);
+        $declaredActions = (array) $model->getBulkActions();
 
-        $ability = $this->bulkActionAbility($action);
+        $mutations->dispatchBulk(
+            clone $this->bulkMutationQuery(),
+            $trustedModel,
+            $action,
+            $declaredActions,
+            $this->selected,
+            (bool) $this->selectAll,
+            'record',
+            $this->selectAllExclusions,
+        );
 
-        $this->selectedRowsQuery->each(function ($item, $key) use ($action, $ability) {
-            // Authorize the action against each selected model before running it.
-            Gate::authorize($ability, $item);
-
-            if (str_starts_with($action, 'callFlow.')) {
-                $item->callFlow(explode('.', $action)[1]);
-            } elseif (str_starts_with($action, 'multiple')) {
-                $posts = $this->selectedRowsQuery->get();
-                $response = $item->{$action}($posts);
-
-            } elseif (method_exists($item, $action)) {
-                $item->{$action}();
-            }
-        });
-
-        // Clear the selected array
-        $this->selected = [];
+        $this->resetSelectionForScopeChange();
 
         $this->notify('Success: '.$action);
     }
 
-    public function bulkCollectionAction($action)
+    public function bulkCollectionAction(string $action, TableMutationDispatcher $mutations): ?StreamedResponse
     {
-        $this->ensureBulkActionAllowed($action);
+        $model = $this->mutationModel();
+        $trustedModel = new TableMutationModelDescriptor($model);
+        $declaredActions = (array) $model->getBulkActions();
 
-        $ability = $this->bulkActionAbility($action);
-
-        // Authorize the action against every selected model before running it.
-        $this->selectedRowsQuery->each(function ($item) use ($ability) {
-            Gate::authorize($ability, $item);
-        });
-
-        $ids = $this->selectedRowsQuery->pluck('id')->toArray();
-
-        $response = $this->model->{$action}($ids);
+        $response = $mutations->dispatchBulk(
+            clone $this->bulkMutationQuery(),
+            $trustedModel,
+            $action,
+            $declaredActions,
+            $this->selected,
+            (bool) $this->selectAll,
+            'collection',
+            $this->selectAllExclusions,
+        );
 
         if ($response instanceof StreamedResponse) {
             return $response;
         }
 
-        // reset selected rows
-        $this->selected = [];
+        $this->resetSelectionForScopeChange();
 
         $this->notify('Success: '.$action);
 
         $this->dispatch('refreshTable');
+
+        return null;
     }
 
     /**
@@ -77,45 +76,5 @@ trait BulkActions
     public function getBulkActionsProperty()
     {
         return $this->model->getBulkActions();
-    }
-
-    /**
-     * Map a declared bulk action to the policy ability it requires.
-     *
-     * Destructive actions are matched by name so they are authorized with the
-     * matching ability; anything else defaults to the mutating 'update' ability.
-     */
-    protected function bulkActionAbility(string $action): string
-    {
-        $normalized = strtolower($action);
-
-        if (str_contains($normalized, 'forcedelete')) {
-            return 'forceDelete';
-        }
-
-        if (str_contains($normalized, 'restore')) {
-            return 'restore';
-        }
-
-        if (str_contains($normalized, 'delete') || str_contains($normalized, 'trash')) {
-            return 'delete';
-        }
-
-        return 'update';
-    }
-
-    /**
-     * Ensure the requested action is one the resource explicitly declares.
-     *
-     * This prevents a client from invoking arbitrary methods on the model by
-     * passing an unlisted action string to bulkAction()/bulkCollectionAction().
-     */
-    protected function ensureBulkActionAllowed(string $action): void
-    {
-        $allowed = array_keys((array) $this->getBulkActionsProperty());
-
-        if (! in_array($action, $allowed, true)) {
-            abort(403, 'This bulk action is not allowed.');
-        }
     }
 }

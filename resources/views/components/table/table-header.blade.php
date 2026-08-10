@@ -2,7 +2,7 @@
     <tr class="bg-gray-50/80 dark:bg-white/[0.03] border-b border-gray-200/80 dark:border-white/10">
         @if($this->settings['selectable'])
         <x-aura::table.heading class="pr-0 w-8">
-                <x-aura::input.checkbox x-model="selectPage" x-on:click="selectCurrentPage" />
+                <x-aura::input.checkbox x-bind:checked="selectPage" x-on:click="selectCurrentPage" />
         </x-aura::table.heading>
         @endif
 

@@ -133,3 +133,73 @@ test('bulk selection deletes multiple attachments', function () {
         ->and(Attachment::query()->find($second->id))->toBeNull()
         ->and(Attachment::query()->find($third->id))->not->toBeNull();
 });
+
+test('filtered select all lets an excluded row be reselected without selecting hidden attachments', function () {
+    $included = seedLibraryAttachment('target-included.jpg', 'image/jpeg');
+    $excluded = seedLibraryAttachment('target-excluded.jpg', 'image/jpeg');
+    $hidden = seedLibraryAttachment('hidden.jpg', 'image/jpeg');
+
+    $page = visit('/admin/attachment');
+
+    $page->type('table-search', 'target')->wait(2);
+    $page->check('checkbox_grid_'.$included->id)->wait(1);
+    $page->click('Select all')->wait(1);
+    $page->uncheck('checkbox_grid_'.$excluded->id)->wait(1);
+    $page->assertNotChecked('checkbox_grid_'.$excluded->id);
+    $page->check('checkbox_grid_'.$excluded->id)->wait(1);
+    $page->assertChecked('checkbox_grid_'.$excluded->id);
+    $page->assertSee('You have selected all');
+    $page->click('Actions')->wait(1);
+    $page->click('Delete')->wait(2);
+
+    expect(Attachment::query()->find($included->id))->toBeNull()
+        ->and(Attachment::query()->find($excluded->id))->toBeNull()
+        ->and(Attachment::query()->find($hidden->id))->not->toBeNull();
+
+    $page->assertNoJavascriptErrors()->assertNoConsoleLogs();
+});
+
+test('clear selection resets explicit and select-all state', function () {
+    $first = seedLibraryAttachment('clear-first.jpg', 'image/jpeg');
+    $second = seedLibraryAttachment('clear-second.jpg', 'image/jpeg');
+
+    $page = visit('/admin/attachment');
+
+    $page->check('checkbox_grid_'.$first->id)->wait(1);
+    $page->click('Select all')->wait(1);
+    $page->assertSee('You have selected all');
+    $page->click('Clear selection')->wait(1);
+
+    $page->assertDontSee('You have selected all')
+        ->assertNotChecked('checkbox_grid_'.$first->id)
+        ->assertNotChecked('checkbox_grid_'.$second->id)
+        ->assertNoJavascriptErrors()
+        ->assertNoConsoleLogs();
+});
+
+test('search and quick-filter scope changes reset selection', function () {
+    $image = seedLibraryAttachment('scope-target.jpg', 'image/jpeg');
+    $document = seedLibraryAttachment('scope-other.pdf', 'application/pdf');
+
+    $page = visit('/admin/attachment');
+
+    $page->fill('table-search', 'target')->wait(2);
+    $page->check('checkbox_grid_'.$image->id)->wait(1);
+    $page->click('Select all')->wait(1);
+    $page->fill('table-search', 'other')->wait(2);
+
+    $page->assertSee('scope-other.pdf')
+        ->assertDontSee('You have selected all')
+        ->assertNotChecked('checkbox_grid_'.$document->id);
+
+    $page->fill('table-search', '')->wait(2);
+    $page->check('checkbox_grid_'.$image->id)->wait(1);
+    $page->click('Select all')->wait(1);
+    $page->click('Documents')->wait(2);
+
+    $page->assertSee('scope-other.pdf')
+        ->assertDontSee('You have selected all')
+        ->assertNotChecked('checkbox_grid_'.$document->id)
+        ->assertNoJavascriptErrors()
+        ->assertNoConsoleLogs();
+});

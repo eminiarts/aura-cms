@@ -25,6 +25,7 @@ class Post extends Resource
         ],
         'testAction' => [
             'label' => 'Test Action',
+            'ability' => 'update',
             'class' => 'hover:text-primary-700 text-primary-500 font-bold',
             'confirm' => true,
             'confirm-title' => 'Test Action Post?',
@@ -34,7 +35,10 @@ class Post extends Resource
     ];
 
     public array $bulkActions = [
-        'deleteSelected' => 'Delete',
+        'deleteSelected' => [
+            'label' => 'Delete',
+            'ability' => 'delete',
+        ],
         'multipleExportSelected' => [
             'label' => 'Export',
             'modal' => 'export::export-selected-modal',
