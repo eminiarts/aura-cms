@@ -19,6 +19,7 @@ use Aura\Base\Livewire\SignedModalRequest;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Livewire\Table\TableMutationDispatcher;
 use Aura\Base\Livewire\Table\TableMutationModelDescriptor;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\User;
@@ -714,6 +715,9 @@ class Core05MutationBoundaryPolicy
 {
     public static int $attempts = 0;
 
+    /** @var array<int, int|string|null> */
+    public static array $teamContexts = [];
+
     /** @var array<int, int> */
     public static array $transactionLevels = [];
 
@@ -721,6 +725,7 @@ class Core05MutationBoundaryPolicy
     {
         if ($resource->exists) {
             static::$attempts++;
+            static::$teamContexts[] = TeamScope::currentContextTeamId($resource->getConnection());
 
             if ($resource->getConnection()->transactionLevel() > 0) {
                 static::$transactionLevels[] = $resource->getConnection()->transactionLevel();
@@ -910,6 +915,7 @@ beforeEach(function () {
     Core05MorphMutationPolicy::$attempts = 0;
     Core05MorphMutationPolicy::$morphClasses = [];
     Core05MutationBoundaryPolicy::$attempts = 0;
+    Core05MutationBoundaryPolicy::$teamContexts = [];
     Core05MutationBoundaryPolicy::$transactionLevels = [];
     Core05EagerMutationResource::$relationBeforeQueryInvocations = 0;
     Core05EagerMutationResource::$relationExpectedTransactionLevel = null;
@@ -1098,6 +1104,41 @@ test('bulk modal requests are single use for the same actor and team', function 
     $modals->call('openModal', $request)->assertStatus(422);
 
     expect(Core05AuthorizedBulkModal::$mounts)->toBe(1);
+});
+
+test('bulk modal redemption re-enters the issuing team context', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team context is only applicable when teams are enabled.');
+    }
+
+    $actor = createAdmin();
+    $this->actingAs($actor);
+    Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
+    $resource = Core05MutationResource::create([
+        'title' => 'Context-bound modal target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $request = null;
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('openBulkActionModal', 'openReviewModal')
+        ->assertDispatched('openModal', function (string $event, array $parameters) use (&$request): bool {
+            $request = $parameters[0] ?? null;
+
+            return is_string($request);
+        });
+
+    Core05MutationBoundaryPolicy::$teamContexts = [];
+
+    livewire(Modals::class)
+        ->call('openModal', $request)
+        ->assertSee('Authorized bulk modal');
+
+    expect(Core05MutationBoundaryPolicy::$teamContexts)
+        ->not->toBeEmpty()
+        ->each->toBe($actor->current_team_id);
 });
 
 test('concurrent bulk modal redemption has exactly one atomic winner', function () {

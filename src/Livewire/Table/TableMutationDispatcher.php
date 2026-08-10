@@ -470,21 +470,32 @@ final class TableMutationDispatcher
 
         $this->downloadDefinition($definition);
         $validatedParameters = $this->bulkActionParameters->validate($definition, $parameters);
-        $selection = $this->downloadSelection(
+        [$selection, $receiver] = $this->withCurrentActorTeamContext(function () use (
+            $descriptor,
+            $modelDescriptor,
             $scope,
-            $modelDescriptor,
-            $selected,
             $selectAll,
-            $descriptor['trashed'],
             $selectAllExclusions,
-        );
+            $selected,
+        ): array {
+            $selection = $this->downloadSelection(
+                $scope,
+                $modelDescriptor,
+                $selected,
+                $selectAll,
+                $descriptor['trashed'],
+                $selectAllExclusions,
+            );
 
-        $receiver = $this->iterateDownloadSelection(
-            $selection,
-            $modelDescriptor,
-            $descriptor['ability'],
-            static function (array $ids): void {},
-        );
+            $receiver = $this->iterateDownloadSelection(
+                $selection,
+                $modelDescriptor,
+                $descriptor['ability'],
+                static function (array $ids): void {},
+            );
+
+            return [$selection, $receiver];
+        });
 
         if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
             abort(422, 'Bulk downloads require an Aura table resource.');
@@ -590,7 +601,7 @@ final class TableMutationDispatcher
 
         $allowedKeys = $expectedKeys + $excludedKeys;
 
-        return $this->transactionWithPreLockRetries(
+        return $this->withCurrentActorTeamContext(fn (): array => $this->transactionWithPreLockRetries(
             $modelDescriptor->connectionInstance(),
             function (Closure $markLockAcquired) use (
                 $context,
@@ -667,7 +678,7 @@ final class TableMutationDispatcher
                     'modalAttributes' => [],
                 ];
             },
-        );
+        ));
     }
 
     /**
@@ -717,12 +728,12 @@ final class TableMutationDispatcher
 
         $download = $this->downloadDefinition($definition);
         $parameters = $this->bulkActionParameters->validate($definition, $context['parameters']);
-        $receiver = $this->iterateDownloadSelection(
+        $receiver = $this->withCurrentActorTeamContext(fn (): ?Model => $this->iterateDownloadSelection(
             $context['selection'],
             $modelDescriptor,
             $descriptor['ability'],
             static function (array $ids): void {},
-        );
+        ));
 
         if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
             abort(422, 'Bulk downloads require an Aura table resource.');
@@ -739,18 +750,27 @@ final class TableMutationDispatcher
             $parameters,
             $receiver,
         ): void {
-            $this->iterateDownloadSelection(
-                $context['selection'],
+            $this->withCurrentActorTeamContext(function () use (
+                $context,
+                $descriptor,
+                $hasParameters,
                 $modelDescriptor,
-                $descriptor['ability'],
-                function (array $ids) use ($context, $hasParameters, $parameters, $receiver): void {
-                    $result = $hasParameters
-                        ? $receiver->{$context['action']}($ids, $parameters)
-                        : $receiver->{$context['action']}($ids);
+                $parameters,
+                $receiver,
+            ): void {
+                $this->iterateDownloadSelection(
+                    $context['selection'],
+                    $modelDescriptor,
+                    $descriptor['ability'],
+                    function (array $ids) use ($context, $hasParameters, $parameters, $receiver): void {
+                        $result = $hasParameters
+                            ? $receiver->{$context['action']}($ids, $parameters)
+                            : $receiver->{$context['action']}($ids);
 
-                    $this->emitDownloadResult($result);
-                },
-            );
+                        $this->emitDownloadResult($result);
+                    },
+                );
+            });
         }, $download['filename'], [
             'Content-Type' => $download['content_type'],
             'X-Content-Type-Options' => 'nosniff',

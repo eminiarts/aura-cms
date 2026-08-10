@@ -3,6 +3,7 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Facades\DynamicFunctions;
 use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
@@ -133,6 +134,9 @@ class Core06BulkResource extends Resource
     /** @var list<list<int|string>> */
     public static array $downloadChunks = [];
 
+    /** @var list<int|string|null> */
+    public static array $downloadTeamContexts = [];
+
     public static $singularName = 'Core06 bulk resource';
 
     public static ?string $slug = 'core06-bulk-resource';
@@ -148,6 +152,7 @@ class Core06BulkResource extends Resource
     public function downloadCsv(array $ids, array $parameters): string
     {
         self::$downloadChunks[] = $ids;
+        self::$downloadTeamContexts[] = TeamScope::currentContextTeamId($this->getConnection());
 
         return collect($ids)
             ->map(fn (int|string $id): string => $parameters['prefix'].','.$id."\n")
@@ -229,8 +234,13 @@ class Core06BulkResource extends Resource
 
 class Core06BulkResourcePolicy
 {
+    /** @var list<int|string|null> */
+    public static array $viewTeamContexts = [];
+
     public function view(User $user, Core06BulkResource $resource): bool
     {
+        self::$viewTeamContexts[] = TeamScope::currentContextTeamId($resource->getConnection());
+
         return $user->exists && $resource->title !== 'Denied export';
     }
 }
@@ -241,6 +251,8 @@ beforeEach(function () {
     Aura::setModel(new Core06BulkResource);
     Cache::clear();
     Core06BulkResource::$downloadChunks = [];
+    Core06BulkResource::$downloadTeamContexts = [];
+    Core06BulkResourcePolicy::$viewTeamContexts = [];
 
     $this->actingAs(createSuperAdmin());
 });
@@ -474,6 +486,35 @@ test('a bulk download URL remains bound to the issuing team', function () {
 
     $owner->forceFill(['current_team_id' => $issuingTeamId])->save();
     $this->get($url)->assertSuccessful()->streamedContent();
+});
+
+test('bulk download authorization and deferred handlers retain the issuing team context', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team context is only applicable when teams are enabled.');
+    }
+
+    config()->set('aura.security.bulk_downloads.cache_store', 'file');
+    $actor = createAdmin();
+    $this->actingAs($actor);
+    Gate::policy(Core06BulkResource::class, Core06BulkResourcePolicy::class);
+    $resource = Core06BulkResource::create(['title' => 'Context-bound export']);
+    $component = livewire(Table::class, ['query' => null, 'model' => new Core06BulkResource])
+        ->set('selected', [$resource->getKey()]);
+    Core06BulkResourcePolicy::$viewTeamContexts = [];
+
+    $component
+        ->call('bulkCollectionAction', 'downloadCsv', ['prefix' => 'context'])
+        ->assertRedirect();
+
+    $this->get($component->effects['redirect'])
+        ->assertSuccessful()
+        ->streamedContent();
+
+    expect(Core06BulkResourcePolicy::$viewTeamContexts)
+        ->not->toBeEmpty()
+        ->each->toBe($actor->current_team_id)
+        ->and(Core06BulkResource::$downloadTeamContexts)
+        ->toBe([$actor->current_team_id]);
 });
 
 test('small Livewire downloads clear selection before returning the buffered response', function () {
