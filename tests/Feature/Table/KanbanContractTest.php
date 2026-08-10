@@ -201,7 +201,7 @@ test('Kanban uses the resource configured group field for rendering and mutation
     ])
         ->assertSee('Qualified lead')
         ->assertSeeInOrder(['Lead', 'Won'])
-        ->call('updateCardStatus', $card->getKey(), 'won')
+        ->call('moveKanbanCard', $card->getKey(), 0, 'won')
         ->assertHasNoErrors();
 
     expect($card->fresh()->content)->toBe('won')

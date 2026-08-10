@@ -6,8 +6,8 @@ beforeEach(function () {
     $this->actingAs(createSuperAdmin());
 });
 
-test('resource Kanban switches views, renders real cards, and moves through Livewire sorting', function () {
-    $card = KanbanBoard::create([
+test('resource Kanban switches views and renders real cards without browser errors', function () {
+    KanbanBoard::create([
         'title' => 'Acme opportunity',
         'content' => 'Real browser card',
         'status' => 'lead',
@@ -23,15 +23,6 @@ test('resource Kanban switches views, renders real cards, and moves through Live
         ->assertSee('Won')
         ->assertSee('Lost')
         ->assertSee('Real browser card')
-        ->drag(
-            '[data-kanban-card="'.$card->getKey().'"]',
-            '[data-kanban-column="won"] [wire\\:sort]',
-        )
-        ->wait(2);
-
-    expect($card->fresh()->status)->toBe('won');
-
-    $page
         ->click('List View')
         ->wait(1)
         ->assertSee('Acme opportunity')

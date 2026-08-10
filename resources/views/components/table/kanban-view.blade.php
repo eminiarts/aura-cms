@@ -23,13 +23,18 @@
                 wire:sort="moveKanbanCard"
                 wire:sort:group="{{ $model->getType() }}-kanban-cards"
                 wire:sort:group-id="{{ $columnKey }}">
+                @if ($columnRows->isEmpty())
+                    <div class="h-12" data-kanban-dropzone="{{ $columnKey }}"></div>
+                @endif
+
                 @foreach ($columnRows as $row)
                     <article class="rounded-lg bg-white p-4 shadow-xs ring-1 ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10"
                         data-kanban-card="{{ $row->getKey() }}"
                         wire:key="kanban-card-{{ $model->getType() }}-{{ $row->getKey() }}"
                         wire:sort:item="{{ $row->getKey() }}">
                         <div class="flex items-start gap-2">
-                            <button type="button" class="mt-0.5 cursor-grab text-gray-400" wire:sort:handle>
+                            <button type="button" class="mt-0.5 cursor-grab text-gray-400"
+                                data-kanban-drag-handle="{{ $row->getKey() }}" wire:sort:handle>
                                 <span class="sr-only">{{ __('Move card') }}</span>
                                 <x-aura::icon icon="move" size="sm" />
                             </button>

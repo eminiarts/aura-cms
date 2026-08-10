@@ -248,44 +248,76 @@ public function tableGridView()
 
 ### Kanban View
 
-Drag-and-drop board interface for workflow management.
+Drag-and-drop board interface for workflow management. Enable and configure it
+with the resource's explicit `kanbanSettings()` contract:
 
 ```php
-// Enable kanban view by returning a view path (returns false by default)
-public function tableKanbanView()
+public function kanbanSettings(): array
 {
-    return 'aura::components.table.kanban-view';
-}
-
-// Customize the kanban query (optional)
-public function kanbanQuery($query)
-{
-    // Return false to use default query, or modify and return $query
-    return $query->orderBy('order', 'asc');
-}
-
-// Optional: Set custom pagination for kanban
-public function kanbanPagination()
-{
-    return 50; // Items per column
+    return [
+        'enabled' => true,
+        'group_field' => 'pipeline_stage',
+        'columns' => ['lead', 'qualified', 'won'],
+        'card_title' => 'title',
+        'card_subtitle' => 'company_name',
+        'order_by' => ['field' => 'order', 'direction' => 'asc'],
+        'show_empty_columns' => true,
+    ];
 }
 ```
 
-The Kanban view automatically uses the `status` field's options to create columns. Each option should have `key`, `value`, and `color` properties:
+The group field must be a declared option field. `columns` is an ordered
+allow-list of that field's option keys; omit it or use an empty array to use all
+declared options. Card title and subtitle values are rendered through their
+field display contracts. `order_by` accepts a declared field and `asc` or
+`desc`. Set `show_empty_columns` to `false` to hide groups without cards.
+
+The built-in board view is used automatically. Override only its Blade path
+when needed:
 
 ```php
-// In your getFields() method
+public function tableKanbanView(): string
+{
+    return 'aura.resources.deals.kanban';
+}
+```
+
+For backward compatibility, returning a Kanban view path without overriding
+`kanbanSettings()` enables the legacy `status`-field contract. New resources
+should always declare `kanbanSettings()` explicitly.
+
+The group field's options may use Aura's structured option format or an
+associative value-to-label map:
+
+```php
 [
     'type' => 'Aura\\Base\\Fields\\Select',
-    'name' => 'Status',
-    'slug' => 'status',
+    'name' => 'Pipeline Stage',
+    'slug' => 'pipeline_stage',
     'options' => [
-        ['key' => 'todo', 'value' => 'To Do', 'color' => 'gray'],
-        ['key' => 'in_progress', 'value' => 'In Progress', 'color' => 'blue'],
-        ['key' => 'review', 'value' => 'Review', 'color' => 'yellow'],
-        ['key' => 'done', 'value' => 'Done', 'color' => 'green'],
+        ['key' => 'lead', 'value' => 'Lead', 'color' => 'bg-gray-500'],
+        ['key' => 'qualified', 'value' => 'Qualified', 'color' => 'bg-blue-500'],
+        ['key' => 'won', 'value' => 'Won', 'color' => 'bg-green-500'],
     ],
 ]
+```
+
+Use `kanbanQuery()` for additional resource-owned constraints:
+
+```php
+public function kanbanQuery($query)
+{
+    return $query->where('archived', false);
+}
+```
+
+Optional pagination remains available:
+
+```php
+public function kanbanPagination(): int
+{
+    return 50;
+}
 ```
 
 **Features:**
@@ -311,7 +343,10 @@ public function tableKanbanView()  { return false; } // Disabled by default
 // Key: 'table_view.{ResourceType}'
 ```
 
-The `SwitchView` trait handles view switching and persists user preferences automatically.
+The `SwitchView` trait persists only supported views. Unknown preferences and
+preferences for disabled views fall back to the resource's supported default.
+Saved Kanban column order and visibility are intersected with the resource's
+declared column allow-list before use.
 ```
 
 ## Configuration Options
