@@ -20,13 +20,13 @@ class Core14OwnedDocument extends Resource
 
     public static ?string $ownerRelation = 'assignee';
 
-    public static array $physicalFields = ['name', 'physical_secret', 'owner_id', 'team_id'];
+    public static array $physicalFields = ['name', 'physical_secret'];
 
     public static ?string $slug = 'core14-owned-document';
 
     public static string $type = 'Core14OwnedDocument';
 
-    protected $fillable = ['name', 'owner_id', 'team_id'];
+    protected $fillable = ['name'];
 
     protected $table = 'core14_owned_documents';
 
@@ -38,13 +38,23 @@ class Core14OwnedDocument extends Resource
             ['name' => 'Notes', 'slug' => 'notes', 'type' => Text::class],
         ];
     }
+
+    public function setOwnerIdField(mixed $value): void
+    {
+        throw new LogicException('Protected owner setters must not receive raw nested payloads.');
+    }
+
+    public function setTeamIdField(mixed $value): void
+    {
+        throw new LogicException('Protected team setters must not receive raw nested payloads.');
+    }
 }
 
 class Core14TeamCatalog extends Resource
 {
     public static $customTable = true;
 
-    public static array $physicalFields = ['name', 'team_id'];
+    public static array $physicalFields = ['name'];
 
     public static string $scopeMode = self::SCOPE_TEAM;
 
@@ -54,7 +64,7 @@ class Core14TeamCatalog extends Resource
 
     public static bool $usesMeta = false;
 
-    protected $fillable = ['name', 'team_id'];
+    protected $fillable = ['name'];
 
     protected $table = 'core14_team_catalogs';
 
@@ -92,6 +102,15 @@ class Core14GlobalCatalog extends Resource
     }
 }
 
+class Core14InvalidTeamCatalog extends Resource
+{
+    public static $customTable = true;
+
+    public static string $scopeMode = self::SCOPE_TEAM;
+
+    public static ?string $teamColumn = null;
+}
+
 beforeEach(function (): void {
     $this->actingAs($this->actor = createSuperAdmin());
 
@@ -125,6 +144,9 @@ afterEach(function (): void {
 });
 
 test('owner resources use their declared column relation and physical storage contract', function (): void {
+    $physicalFields = config('aura.teams')
+        ? ['name', 'physical_secret', 'owner_id', 'team_id']
+        : ['name', 'physical_secret', 'owner_id'];
     $resource = Core14OwnedDocument::create([
         'name' => 'Contract',
         'notes' => 'Meta note',
@@ -138,13 +160,36 @@ test('owner resources use their declared column relation and physical storage co
         ->and(Core14OwnedDocument::getOwnerRelation())->toBe('assignee')
         ->and($resource->owner_id)->toBe($this->actor->getKey())
         ->and($resource->assignee->is($this->actor))->toBeTrue()
-        ->and($resource->getFillable())->toBe(['name', 'owner_id', 'team_id'])
+        ->and($resource->getFillable())->toBe(['name'])
+        ->and($resource->getPhysicalFields())->toBe($physicalFields)
         ->and($resource->isTableField('physical_secret'))->toBeTrue()
         ->and($resource->physical_secret)->toBeNull()
         ->and($resource->getMeta('notes'))->toBe('Meta note')
         ->and($resource->getMeta('unknown_meta'))->toBeNull()
         ->and(Meta::query()->where('metable_type', Core14OwnedDocument::class)->pluck('key')->all())
         ->toBe(['notes']);
+});
+
+test('raw nested fields cannot bypass physical fillability or ownership authorization', function (): void {
+    $other = createAdmin();
+    $resource = Core14OwnedDocument::create([
+        'name' => 'Top level',
+        'owner_id' => $other->getKey(),
+        'team_id' => $other->currentTeamIdForAuthorization(),
+        'fields' => [
+            'name' => 'Writable nested name',
+            'physical_secret' => 'forged secret',
+            'owner_id' => $other->getKey(),
+            'team_id' => $other->currentTeamIdForAuthorization(),
+            'notes' => 'Nested meta note',
+        ],
+    ]);
+
+    expect($resource->name)->toBe('Writable nested name')
+        ->and($resource->physical_secret)->toBeNull()
+        ->and($resource->getOwnerId())->toBe($this->actor->getKey())
+        ->and($resource->getTeamId())->toBe($this->actor->currentTeamIdForAuthorization())
+        ->and($resource->getMeta('notes'))->toBe('Nested meta note');
 });
 
 test('owner query scope and policy use the same declared owner column', function (): void {
@@ -177,6 +222,7 @@ test('team-only and global resources never require missing owner or tenant colum
         'name' => 'Global catalog',
         'user_id' => 999,
         'team_id' => 999,
+        'fields' => ['user_id' => 999, 'team_id' => 999],
     ]);
 
     expect(Core14TeamCatalog::usesOwnerScope())->toBeFalse()
@@ -193,6 +239,48 @@ test('team and owner named helpers reject resources without those capabilities',
         ->toThrow(LogicException::class, 'Owner writes require')
         ->and(fn () => Core14GlobalCatalog::createForTeamForSystem(1, ['name' => 'No']))
         ->toThrow(LogicException::class, 'Team writes require');
+});
+
+test('named system helpers persist trusted non-fillable owner and team columns', function (): void {
+    $other = createAdmin();
+    $owned = Core14OwnedDocument::createForOwnerForSystem($other->getKey(), ['name' => 'Owned']);
+
+    expect($owned->getOwnerId())->toBe($other->getKey());
+
+    $owned->assignOwnerForSystem($this->actor->getKey());
+
+    expect($owned->refresh()->getOwnerId())->toBe($this->actor->getKey());
+
+    if (! config('aura.teams')) {
+        return;
+    }
+
+    $teamOwned = Core14OwnedDocument::createForTeamForSystem(
+        $other->currentTeamIdForAuthorization(),
+        ['name' => 'Team owned', 'owner_id' => $other->getKey()],
+    );
+
+    expect($teamOwned->getOwnerId())->toBe($other->getKey())
+        ->and($teamOwned->getTeamId())->toBe($other->currentTeamIdForAuthorization());
+
+    $teamOwned->moveToTeamForSystem(
+        $this->actor->currentTeamIdForAuthorization(),
+        ['owner_id' => $this->actor->getKey()],
+    );
+
+    expect($teamOwned->refresh()->getOwnerId())->toBe($this->actor->getKey())
+        ->and($teamOwned->getTeamId())->toBe($this->actor->currentTeamIdForAuthorization());
+});
+
+test('team-scoped declarations fail closed without a team column', function (): void {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('The missing-team-column invariant applies when teams are enabled.');
+    }
+
+    expect(fn () => Core14InvalidTeamCatalog::getScopeMode())
+        ->toThrow(LogicException::class, 'must declare a team column')
+        ->and(fn () => Core14InvalidTeamCatalog::query()->get())
+        ->toThrow(LogicException::class, 'must declare a team column');
 });
 
 test('scope declarations expose only the authorization attributes that exist', function (): void {

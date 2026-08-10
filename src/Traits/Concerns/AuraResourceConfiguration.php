@@ -150,6 +150,12 @@ trait AuraResourceConfiguration
             throw new \LogicException(sprintf('Owner-scoped resource [%s] must declare an owner column.', static::class));
         }
 
+        if (config('aura.teams')
+            && in_array(static::$scopeMode, [self::SCOPE_OWNER, self::SCOPE_TEAM], true)
+            && (! is_string(static::$teamColumn) || static::$teamColumn === '')) {
+            throw new \LogicException(sprintf('Team-scoped resource [%s] must declare a team column.', static::class));
+        }
+
         return static::$scopeMode;
     }
 

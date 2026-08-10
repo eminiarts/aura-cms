@@ -59,7 +59,7 @@ class Product extends Resource
 
     // Explicit physical schema contract used by Aura and migration generation
     public static array $physicalFields = [
-        'name', 'price', 'description', 'status', 'user_id', 'team_id',
+        'name', 'price', 'description', 'status',
     ];
 
     // Define the table name (must match your migration)
@@ -113,7 +113,7 @@ class Product extends Resource
 |----------|------|---------|-------------|
 | `$customTable` | `bool` | `false` | Enable dedicated table storage |
 | `$usesMeta` | `bool` | `true` | Store overflow fields in meta table |
-| `$physicalFields` | `array` | model `$fillable` | Actual table columns represented by Aura fields |
+| `$physicalFields` | `array` | model `$fillable` | Actual table columns represented by Aura fields; configured owner/team columns are added automatically |
 | `$table` | `string` | `'posts'` | Database table name |
 | `$fillable` | `array` | `[]` | Writable physical columns; Aura never adds meta slugs to this list |
 | `$casts` | `array` | `[]` | Attribute type casting |
@@ -311,7 +311,7 @@ class Product extends Resource
     protected $table = 'products';
 
     public static array $physicalFields = [
-        'name', 'price', 'status', 'user_id', 'team_id',
+        'name', 'price', 'status',
     ];
 
     // Only core fields in the table
@@ -358,6 +358,7 @@ Declared input fields outside `$physicalFields` go to meta; unknown keys go nowh
 resources without `$physicalFields` retain the historical `$fillable` classification. Custom-table
 resources without meta also retain their legacy all-input-fields-are-columns behavior, but new
 resources should declare the physical list so generated migrations and runtime writes agree.
+Configured owner and team columns are always treated as physical and do not need to be repeated.
 
 ## Ownership and scoping
 

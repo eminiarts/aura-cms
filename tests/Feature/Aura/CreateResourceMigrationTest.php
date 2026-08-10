@@ -16,9 +16,9 @@ class Core14MigrationOwnerResource extends Resource
 
     public static ?string $ownerRelation = 'assignee';
 
-    public static array $physicalFields = ['name', 'owner_id', 'team_id'];
+    public static array $physicalFields = ['name'];
 
-    protected $fillable = ['name', 'owner_id', 'team_id'];
+    protected $fillable = ['name'];
 
     public static function getFields(): array
     {

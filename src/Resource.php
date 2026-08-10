@@ -204,7 +204,17 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
     {
         parent::__construct();
 
-        $this->baseFillable = array_values(array_diff(parent::getFillable(), ['fields']));
+        $declaredFillable = array_values(array_diff(parent::getFillable(), ['fields']));
+
+        if (static::$physicalFields !== []) {
+            $declaredPhysicalFields = array_merge(static::$physicalFields, array_filter([
+                static::getOwnerColumn(),
+                static::getTeamColumn(),
+            ]));
+            $declaredFillable = array_values(array_intersect($declaredFillable, $declaredPhysicalFields));
+        }
+
+        $this->baseFillable = $declaredFillable;
         $this->fillable($this->baseFillable);
         $this->fieldDefinitionStateReady = true;
 
@@ -345,8 +355,8 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
     {
         static::ensureOwnerWriteIsSupported();
         $ownerColumn = static::getOwnerColumn();
-        $attributes[$ownerColumn] = $ownerId;
         $this->fill($attributes);
+        $this->setAttribute($ownerColumn, $ownerId);
 
         return $this->saveSystemResource(
             trustedOwnerIntent: true,
@@ -409,9 +419,10 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
     ): static {
         static::ensureOwnerWriteIsSupported();
         $ownerColumn = static::getOwnerColumn();
-        $attributes[$ownerColumn] = $ownerId;
+        unset($attributes[$ownerColumn]);
         $resource = static::resourceModelOnConnection($connection);
         $instance = static::ensureStaticResource($resource->newInstance($attributes));
+        $instance->setAttribute($ownerColumn, $ownerId);
         $instance->saveSystemResource(trustedOwnerIntent: true, trustedOwnerId: $ownerId);
 
         return $instance;
@@ -431,13 +442,25 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
 
         $teamColumn = static::getTeamColumn();
         $ownerColumn = static::getOwnerColumn();
-        $attributes[$teamColumn] = $teamId;
+        $hasOwnerIntent = $ownerColumn !== null && array_key_exists($ownerColumn, $attributes);
+        $trustedOwnerId = $hasOwnerIntent ? $attributes[$ownerColumn] : null;
+        unset($attributes[$teamColumn]);
+
+        if ($ownerColumn !== null) {
+            unset($attributes[$ownerColumn]);
+        }
+
         $resource = static::resourceModelOnConnection($connection);
         $instance = static::ensureStaticResource($resource->newInstance($attributes));
-        $hasOwnerIntent = $ownerColumn !== null && array_key_exists($ownerColumn, $attributes);
+        $instance->setAttribute($teamColumn, $teamId);
+
+        if ($hasOwnerIntent) {
+            $instance->setAttribute($ownerColumn, $trustedOwnerId);
+        }
+
         $instance->saveSystemResource(
             trustedOwnerIntent: $hasOwnerIntent,
-            trustedOwnerId: $ownerColumn === null ? null : ($attributes[$ownerColumn] ?? null),
+            trustedOwnerId: $trustedOwnerId,
             trustedTeamIntent: true,
             trustedTeamId: $teamId,
         );
@@ -522,7 +545,17 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
             : [];
 
         foreach ($attributes as $key => $value) {
-            if (! is_string($key) || $key === 'fields' || ! $this->isMetaField($key)) {
+            if (! is_string($key) || $key === 'fields') {
+                continue;
+            }
+
+            if (in_array($key, $this->configuredOwnershipColumns(), true) && ! $this->isTableField($key)) {
+                unset($attributes[$key]);
+
+                continue;
+            }
+
+            if (! $this->isMetaField($key)) {
                 continue;
             }
 
@@ -1034,12 +1067,18 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
 
         $teamColumn = static::getTeamColumn();
         $ownerColumn = static::getOwnerColumn();
+        $hasOwnerIntent = $ownerColumn !== null && array_key_exists($ownerColumn, $attributes);
+        $trustedOwnerId = $hasOwnerIntent ? $attributes[$ownerColumn] : null;
         $this->fill($attributes);
         $this->setAttribute($teamColumn, $teamId);
 
+        if ($hasOwnerIntent) {
+            $this->setAttribute($ownerColumn, $trustedOwnerId);
+        }
+
         return $this->saveSystemResource(
-            trustedOwnerIntent: $ownerColumn !== null && array_key_exists($ownerColumn, $attributes),
-            trustedOwnerId: $ownerColumn === null ? null : ($attributes[$ownerColumn] ?? null),
+            trustedOwnerIntent: $hasOwnerIntent,
+            trustedOwnerId: $trustedOwnerId,
             trustedTeamIntent: true,
             trustedTeamId: $teamId,
         );
@@ -1541,8 +1580,23 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         bool $trustedOwnerIntent = false,
     ): static {
         $teamColumn = static::getTeamColumn();
-        $attributes[$teamColumn] = null;
+        $ownerColumn = static::getOwnerColumn();
+        $trustedOwnerId = $trustedOwnerIntent && $ownerColumn !== null
+            ? ($attributes[$ownerColumn] ?? null)
+            : null;
+        unset($attributes[$teamColumn]);
+
+        if ($trustedOwnerIntent && $ownerColumn !== null) {
+            unset($attributes[$ownerColumn]);
+        }
+
         $instance = static::ensureStaticResource($resource->newInstance($attributes));
+
+        $instance->setAttribute($teamColumn, null);
+
+        if ($trustedOwnerIntent && $ownerColumn !== null) {
+            $instance->setAttribute($ownerColumn, $trustedOwnerId);
+        }
 
         return tap($instance, function (Resource $instance) use ($authenticatedUser, $trustedOwnerIntent): void {
             $instance->saveGlobalResource($authenticatedUser, trustedOwnerIntent: $trustedOwnerIntent);
@@ -1812,6 +1866,11 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         if (! $instance->wasRecentlyCreated) {
             $instance->fill($values);
             $merged = array_merge($attributes, $values);
+
+            if (static::attributesContainOwner($merged)) {
+                $instance->setAttribute(static::getOwnerColumn(), $merged[static::getOwnerColumn()]);
+            }
+
             $instance->saveGlobalResource(
                 trustedOwnerIntent: static::attributesContainOwner($merged),
             );
@@ -2062,6 +2121,17 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         return array_keys($columns);
     }
 
+    /** @return list<string> */
+    private function configuredOwnershipColumns(): array
+    {
+        return array_values(array_unique(array_filter([
+            static::$ownerColumn,
+            static::$teamColumn,
+            'user_id',
+            'team_id',
+        ], static fn (mixed $column): bool => is_string($column) && $column !== '')));
+    }
+
     /**
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
@@ -2069,15 +2139,27 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
     private function declaredFieldPayload(array $payload): array
     {
         $declaredSlugs = array_fill_keys($this->inputFieldsSlugs(), true);
+        $protectedColumns = $this->configuredOwnershipColumns();
 
         return collect($payload)
-            ->filter(function (mixed $value, mixed $key) use ($declaredSlugs): bool {
+            ->filter(function (mixed $value, mixed $key) use ($declaredSlugs, $protectedColumns): bool {
                 if (! is_string($key)) {
                     return false;
                 }
 
-                return isset($declaredSlugs[$key])
-                    || method_exists($this, 'set'.Str::studly($key).'Field');
+                if (in_array($key, $protectedColumns, true)) {
+                    return false;
+                }
+
+                if (! isset($declaredSlugs[$key])) {
+                    return method_exists($this, 'set'.Str::studly($key).'Field');
+                }
+
+                if (! $this->isTableField($key)) {
+                    return true;
+                }
+
+                return $this->isFillable($key);
             })
             ->all();
     }

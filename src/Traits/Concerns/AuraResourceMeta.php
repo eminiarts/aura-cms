@@ -49,6 +49,11 @@ trait AuraResourceMeta
             $physicalFields = array_merge($physicalFields, $this->inputFieldsSlugs());
         }
 
+        $physicalFields = array_merge($physicalFields, array_filter([
+            static::getOwnerColumn(),
+            static::getTeamColumn(),
+        ]));
+
         return array_values(array_unique(array_filter(
             $physicalFields,
             static fn (mixed $field): bool => is_string($field) && $field !== '',
