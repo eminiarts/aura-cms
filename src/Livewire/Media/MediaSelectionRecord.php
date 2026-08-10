@@ -14,6 +14,7 @@ final readonly class MediaSelectionRecord
         'completed_at',
         'deadline',
         'error_code',
+        'generation',
         'issued_at',
         'manager_component_id',
         'owner_component_id',
@@ -34,6 +35,7 @@ final readonly class MediaSelectionRecord
         public ?string $teamId,
         public string $slug,
         public string $valueDigest,
+        public int $generation,
         public int $issuedAt,
         public int $deadline,
         public string $state,
@@ -60,6 +62,7 @@ final readonly class MediaSelectionRecord
             || (! is_null($record['team_id']) && ! is_string($record['team_id']))
             || ! is_string($record['slug'])
             || ! is_string($record['value_digest'])
+            || ! is_int($record['generation'])
             || ! is_int($record['issued_at'])
             || ! is_int($record['deadline'])
             || ! is_string($record['state'])
@@ -79,6 +82,7 @@ final readonly class MediaSelectionRecord
             teamId: $record['team_id'],
             slug: $record['slug'],
             valueDigest: $record['value_digest'],
+            generation: $record['generation'],
             issuedAt: $record['issued_at'],
             deadline: $record['deadline'],
             state: $record['state'],
@@ -103,6 +107,7 @@ final readonly class MediaSelectionRecord
             'team_id' => $this->teamId,
             'slug' => $this->slug,
             'value_digest' => $this->valueDigest,
+            'generation' => $this->generation,
             'issued_at' => $this->issuedAt,
             'deadline' => $this->deadline,
             'state' => $this->state,
@@ -136,6 +141,7 @@ final readonly class MediaSelectionRecord
             teamId: $this->teamId,
             slug: $this->slug,
             valueDigest: $this->valueDigest,
+            generation: $this->generation + 1,
             issuedAt: $this->issuedAt,
             deadline: $this->deadline,
             state: $state,
@@ -156,6 +162,8 @@ final readonly class MediaSelectionRecord
             || ! $this->isIdentifier($this->actorId)
             || ($this->teamId !== null && ! $this->isIdentifier($this->teamId))
             || ! $this->isIdentifier($this->slug)
+            || $this->generation < 0
+            || $this->generation > 2
             || $this->issuedAt < 1
             || $this->deadline <= $this->issuedAt
             || $this->deadline - $this->issuedAt > 300
@@ -165,22 +173,28 @@ final readonly class MediaSelectionRecord
 
         $valid = match ($this->state) {
             'pending' => $this->errorCode === null
+                && $this->generation === 0
                 && $this->claimId === null
                 && $this->claimedAt === null
                 && $this->completedAt === null,
             'processing' => $this->errorCode === null
+                && $this->generation === 1
                 && $this->isClaim($this->claimId)
                 && $this->isClaimedTimestamp()
                 && $this->completedAt === null,
             'succeeded' => $this->errorCode === null
+                && $this->generation === 2
                 && $this->claimId === null
                 && $this->isClaimedTimestamp()
                 && $this->isCompletedBeforeDeadline(),
             'failed' => $this->isFailureCode($this->errorCode)
+                && $this->generation === 2
                 && $this->claimId === null
                 && $this->isClaimedTimestamp()
                 && $this->isCompletedBeforeDeadline(),
             'expired' => $this->errorCode === 'selection_timeout'
+                && (($this->generation === 1 && $this->claimedAt === null)
+                    || ($this->generation === 2 && $this->claimedAt !== null))
                 && $this->claimId === null
                 && ($this->claimedAt === null || $this->isClaimedTimestamp())
                 && $this->completedAt !== null
@@ -226,6 +240,8 @@ final readonly class MediaSelectionRecord
 
     private function isIdentifier(string $value): bool
     {
-        return $value !== '' && strlen($value) <= 255;
+        return $value !== ''
+            && strlen($value) <= 255
+            && preg_match('/[\x00-\x1F\x7F]/', $value) !== 1;
     }
 }

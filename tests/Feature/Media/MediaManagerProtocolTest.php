@@ -145,9 +145,50 @@ test('a hydrated manager cannot close from a cache forged success with a live cl
             return true;
         });
     $key = core20ManagerSelectionRecordKey($requestToken);
-    $record = app(MediaSecurityStore::class)->cache->get($key);
+    $record = app(MediaSelectionBroker::class)->forManager(
+        $requestToken,
+        $this->ownerToken,
+        $manager->instance()->getId(),
+        $this->actor,
+    )->toArray();
     $record['state'] = 'succeeded';
+    $record['generation'] = 2;
     $record['claim_id'] = str_repeat('a', 64);
+    $record['claimed_at'] = $record['issued_at'];
+    $record['completed_at'] = $record['issued_at'];
+    app(MediaSecurityStore::class)->cache->put($key, $record, 60);
+
+    $manager->call(
+        'acknowledgeMediaSelection',
+        $this->ownerToken,
+        $requestToken,
+        'succeeded',
+        null,
+    )
+        ->assertSet('pending', true)
+        ->assertNotDispatched('closeModal');
+});
+
+test('a hydrated manager cannot close from a coherent cache forged success', function () {
+    $requestToken = null;
+    $manager = Livewire::test(MediaManager::class, $this->arguments)
+        ->call('requestMediaSelection', [(string) $this->attachment->getKey()])
+        ->assertDispatched('aura-media-selection-requested', function (string $event, array $payload) use (&$requestToken): bool {
+            $requestToken = $payload['requestToken'];
+
+            return true;
+        });
+    $key = core20ManagerSelectionRecordKey($requestToken);
+    $record = app(MediaSelectionBroker::class)->forManager(
+        $requestToken,
+        $this->ownerToken,
+        $manager->instance()->getId(),
+        $this->actor,
+    )->toArray();
+    $record['state'] = 'succeeded';
+    $record['generation'] = 2;
+    $record['claimed_at'] = $record['issued_at'];
+    $record['completed_at'] = $record['issued_at'];
     app(MediaSecurityStore::class)->cache->put($key, $record, 60);
 
     $manager->call(
@@ -171,7 +212,12 @@ test('a hydrated manager cannot manufacture timeout from malformed cached timest
             return true;
         });
     $key = core20ManagerSelectionRecordKey($requestToken);
-    $record = app(MediaSecurityStore::class)->cache->get($key);
+    $record = app(MediaSelectionBroker::class)->forManager(
+        $requestToken,
+        $this->ownerToken,
+        $manager->instance()->getId(),
+        $this->actor,
+    )->toArray();
     $record['deadline'] = $record['issued_at'];
     app(MediaSecurityStore::class)->cache->put($key, $record, 60);
 

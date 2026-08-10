@@ -7,12 +7,17 @@ use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
+use Illuminate\Contracts\Encryption\StringEncrypter;
 use InvalidArgumentException;
 use Throwable;
 
 class MediaSelectionBroker
 {
     private const CACHE_PREFIX = 'aura:media-selection:v1:';
+
+    private const ENVELOPE_PURPOSE = 'aura-media-selection';
+
+    private const ENVELOPE_VERSION = 1;
 
     private readonly CacheRepository $cache;
 
@@ -22,6 +27,7 @@ class MediaSelectionBroker
         MediaSecurityStore $store,
         private readonly ConfigRepository $config,
         private readonly MediaOwnerTokenBroker $owners,
+        private readonly StringEncrypter $encrypter,
     ) {
         $this->cache = $store->cache;
         $this->locks = $store->locks;
@@ -98,6 +104,7 @@ class MediaSelectionBroker
                 teamId: $owner->teamId,
                 slug: $owner->slug,
                 valueDigest: $this->valueDigest($normalized),
+                generation: 0,
                 issuedAt: $issuedAt,
                 deadline: $deadline,
                 state: 'pending',
@@ -134,7 +141,7 @@ class MediaSelectionBroker
                     );
                     $this->addOrFail(
                         $this->recordKey($token),
-                        $record->toArray(),
+                        $this->sealRecord($token, $record),
                         $this->ttl() + $this->retention(),
                     );
                     $recordStored = true;
@@ -743,7 +750,7 @@ class MediaSelectionBroker
 
     private function read(string $requestToken): MediaSelectionRecord
     {
-        if (preg_match('/^[A-Za-z0-9_-]{43}$/', $requestToken) !== 1) {
+        if (preg_match('/^[A-Za-z0-9_-]{43}$/D', $requestToken) !== 1) {
             throw new InvalidMediaSelectionRequest('The media selection request is invalid.');
         }
 
@@ -753,17 +760,48 @@ class MediaSelectionBroker
             throw new InvalidMediaSelectionRequest('The media selection request is unavailable.', previous: $exception);
         }
 
-        if (! is_array($stored)) {
+        if (! is_string($stored) || strlen($stored) > 16384) {
             throw new InvalidMediaSelectionRequest('The media selection request is invalid.');
         }
 
         try {
-            $record = MediaSelectionRecord::fromArray($stored);
+            $decoded = json_decode(
+                $this->encrypter->decryptString($stored),
+                true,
+                32,
+                JSON_THROW_ON_ERROR,
+            );
         } catch (Throwable) {
             throw new InvalidMediaSelectionRequest('The media selection request is invalid.');
         }
 
-        if (! hash_equals($record->requestDigest, $this->digest($requestToken))) {
+        if (! is_array($decoded)) {
+            throw new InvalidMediaSelectionRequest('The media selection request is invalid.');
+        }
+
+        $keys = array_keys($decoded);
+        sort($keys);
+
+        if ($keys !== ['purpose', 'record', 'request_token', 'version']
+            || $decoded['purpose'] !== self::ENVELOPE_PURPOSE
+            || $decoded['version'] !== self::ENVELOPE_VERSION
+            || ! is_string($decoded['request_token'])
+            || ! hash_equals($decoded['request_token'], $requestToken)
+            || ! is_array($decoded['record'])) {
+            throw new InvalidMediaSelectionRequest('The media selection request is invalid.');
+        }
+
+        try {
+            $record = MediaSelectionRecord::fromArray($decoded['record']);
+        } catch (Throwable) {
+            throw new InvalidMediaSelectionRequest('The media selection request is invalid.');
+        }
+
+        $now = now()->getTimestamp();
+
+        if (! hash_equals($record->requestDigest, $this->digest($requestToken))
+            || $record->issuedAt > $now
+            || $now > $record->deadline + $this->retention()) {
             throw new InvalidMediaSelectionRequest('The media selection request is invalid.');
         }
 
@@ -915,10 +953,20 @@ class MediaSelectionBroker
         return self::CACHE_PREFIX.'scope:'.$this->owners->digest($ownerToken).':'.$this->digest($managerComponentId);
     }
 
+    private function sealRecord(string $requestToken, MediaSelectionRecord $record): string
+    {
+        return $this->encrypter->encryptString(json_encode([
+            'purpose' => self::ENVELOPE_PURPOSE,
+            'version' => self::ENVELOPE_VERSION,
+            'request_token' => $requestToken,
+            'record' => $record->toArray(),
+        ], JSON_THROW_ON_ERROR));
+    }
+
     private function store(string $requestToken, MediaSelectionRecord $record): void
     {
         $seconds = max(1, $record->deadline - now()->getTimestamp() + $this->retention());
-        $this->putOrFail($this->recordKey($requestToken), $record->toArray(), $seconds);
+        $this->putOrFail($this->recordKey($requestToken), $this->sealRecord($requestToken, $record), $seconds);
     }
 
     private function ttl(): int
@@ -943,8 +991,10 @@ class MediaSelectionBroker
 
         if (! hash_equals($record->ownerTokenDigest, $this->owners->digest($ownerToken))
             || ! hash_equals($record->managerComponentId, $managerComponentId)
+            || ! hash_equals($record->ownerComponentId, $owner->ownerComponentId)
             || ! hash_equals($record->actorId, $owner->actorId)
-            || $record->teamId !== $owner->teamId) {
+            || $record->teamId !== $owner->teamId
+            || ! hash_equals($record->slug, $owner->slug)) {
             throw new InvalidMediaSelectionRequest('The media selection request context does not match.');
         }
 

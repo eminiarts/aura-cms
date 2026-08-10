@@ -185,7 +185,12 @@ final readonly class FaultInjectingMediaEnvironment
         $app->forgetInstance(MediaAuthorization::class);
 
         $authorization = $app->make(MediaAuthorization::class);
-        $selections = new MediaSelectionBroker($security, $config, $owners);
+        $selections = new MediaSelectionBroker(
+            $security,
+            $config,
+            $owners,
+            $app->make(StringEncrypter::class),
+        );
         $details = new MediaDetailsBroker($security, $config, $owners);
 
         $app->instance(MediaAuthorization::class, $authorization);

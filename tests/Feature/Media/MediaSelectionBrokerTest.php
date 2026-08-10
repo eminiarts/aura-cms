@@ -9,6 +9,9 @@ use Aura\Base\Livewire\Media\MediaSelectionMutation;
 use Aura\Base\Livewire\Media\MediaSelectionRejected;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
+use Illuminate\Contracts\Encryption\StringEncrypter;
+use Illuminate\Encryption\Encrypter;
+use Illuminate\Encryption\MissingAppKeyException;
 use Illuminate\Support\Carbon;
 
 beforeEach(function () {
@@ -68,6 +71,7 @@ test('selection requests bind both components actor team slug and normalized val
         ->and($record->teamId)->toBe(config('aura.teams') ? (string) $this->actor->current_team_id : null)
         ->and($record->slug)->toBe('image')
         ->and($record->valueDigest)->toBe(hash('sha256', '["4","7"]'))
+        ->and($record->generation)->toBe(0)
         ->and($record->state)->toBe('pending')
         ->and($record->errorCode)->toBeNull()
         ->and($record->claimId)->toBeNull()
@@ -78,9 +82,12 @@ test('selection requests bind both components actor team slug and normalized val
 test('manager reads reject a forged succeeded record that retains a live claim', function () {
     $request = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
     $key = core20SelectionRecordKey($request->token);
-    $record = app(MediaSecurityStore::class)->cache->get($key);
+    $record = $request->record->toArray();
     $record['state'] = 'succeeded';
+    $record['generation'] = 2;
     $record['claim_id'] = str_repeat('a', 64);
+    $record['claimed_at'] = $record['issued_at'];
+    $record['completed_at'] = $record['issued_at'];
     app(MediaSecurityStore::class)->cache->put($key, $record, 60);
 
     expect(fn () => $this->selections->forManager(
@@ -108,22 +115,25 @@ test('manager reads reject records detached from their owner index and manager s
 test('manager reads reject malformed state error claim and timestamp tuples', function (string $forgery) {
     $request = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
     $key = core20SelectionRecordKey($request->token);
-    $record = app(MediaSecurityStore::class)->cache->get($key);
+    $record = $request->record->toArray();
     $forged = match ($forgery) {
         'unknown' => array_replace($record, ['state' => 'complete']),
         'early-expiry' => array_replace($record, [
             'state' => 'expired',
+            'generation' => 1,
             'error_code' => 'selection_timeout',
             'completed_at' => $record['issued_at'],
         ]),
         'timeout-failure' => array_replace($record, [
             'state' => 'failed',
+            'generation' => 2,
             'error_code' => 'selection_timeout',
             'claimed_at' => $record['issued_at'],
             'completed_at' => $record['issued_at'],
         ]),
         'reversed-time' => array_replace($record, [
             'state' => 'succeeded',
+            'generation' => 2,
             'claimed_at' => $record['issued_at'] + 1,
             'completed_at' => $record['issued_at'],
         ]),
@@ -141,6 +151,288 @@ test('manager reads reject malformed state error claim and timestamp tuples', fu
     'expired before deadline' => 'early-expiry',
     'failed with timeout error' => 'timeout-failure',
     'success completed before claim' => 'reversed-time',
+]);
+
+test('manager reads reject coherent forged terminal context and timestamp records', function (string $forgery) {
+    $request = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
+    $key = core20SelectionRecordKey($request->token);
+    $record = $request->record->toArray();
+    $forged = match ($forgery) {
+        'succeeded' => array_replace($record, [
+            'state' => 'succeeded',
+            'generation' => 2,
+            'claimed_at' => $record['issued_at'],
+            'completed_at' => $record['issued_at'],
+        ]),
+        'failed' => array_replace($record, [
+            'state' => 'failed',
+            'generation' => 2,
+            'error_code' => 'processing_failed',
+            'claimed_at' => $record['issued_at'],
+            'completed_at' => $record['issued_at'],
+        ]),
+        'premature-expired' => array_replace($record, [
+            'state' => 'expired',
+            'generation' => 1,
+            'error_code' => 'selection_timeout',
+            'completed_at' => $record['deadline'],
+        ]),
+        'owner' => array_replace($record, [
+            'owner_component_id' => 'forged-owner',
+            'state' => 'succeeded',
+            'generation' => 2,
+            'claimed_at' => $record['issued_at'],
+            'completed_at' => $record['issued_at'],
+        ]),
+        'slug' => array_replace($record, [
+            'slug' => 'forged-slug',
+            'state' => 'succeeded',
+            'generation' => 2,
+            'claimed_at' => $record['issued_at'],
+            'completed_at' => $record['issued_at'],
+        ]),
+        'value' => array_replace($record, [
+            'value_digest' => str_repeat('a', 64),
+            'state' => 'succeeded',
+            'generation' => 2,
+            'claimed_at' => $record['issued_at'],
+            'completed_at' => $record['issued_at'],
+        ]),
+        'future' => array_replace($record, [
+            'issued_at' => $record['issued_at'] + 120,
+            'deadline' => $record['deadline'] + 120,
+            'state' => 'succeeded',
+            'generation' => 2,
+            'claimed_at' => $record['issued_at'] + 120,
+            'completed_at' => $record['issued_at'] + 120,
+        ]),
+        'stale' => array_replace($record, [
+            'issued_at' => $record['issued_at'] - 3600,
+            'deadline' => $record['deadline'] - 3600,
+            'state' => 'succeeded',
+            'generation' => 2,
+            'claimed_at' => $record['issued_at'] - 3599,
+            'completed_at' => $record['issued_at'] - 3599,
+        ]),
+        'nul' => array_replace($record, [
+            'owner_component_id' => "owner\0forged",
+            'slug' => "image\0forged",
+            'state' => 'succeeded',
+            'generation' => 2,
+            'claimed_at' => $record['issued_at'],
+            'completed_at' => $record['issued_at'],
+        ]),
+    };
+    app(MediaSecurityStore::class)->cache->put($key, $forged, 120);
+
+    expect(fn () => $this->selections->forManager(
+        $request->token,
+        $this->ownerToken,
+        'manager',
+        $this->actor,
+    ))->toThrow(InvalidMediaSelectionRequest::class);
+})->with([
+    'coherent succeeded tuple' => 'succeeded',
+    'coherent failed tuple' => 'failed',
+    'premature expired tuple' => 'premature-expired',
+    'altered owner component' => 'owner',
+    'altered field slug' => 'slug',
+    'altered value digest' => 'value',
+    'future issued terminal record' => 'future',
+    'stale replayed terminal record' => 'stale',
+    'NUL-bearing owner context' => 'nul',
+]);
+
+test('selection records are opaque and reject a transition key mismatch', function () {
+    $request = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
+    $stored = app(MediaSecurityStore::class)->cache->get(core20SelectionRecordKey($request->token));
+    $wrongKeyBroker = new MediaSelectionBroker(
+        app(MediaSecurityStore::class),
+        app('config'),
+        $this->owners,
+        new Encrypter(random_bytes(32), 'AES-256-CBC'),
+    );
+
+    expect($stored)->toBeString()
+        ->not->toContain('manager', 'owner-component', 'pending')
+        ->and(fn () => $wrongKeyBroker->forManager(
+            $request->token,
+            $this->ownerToken,
+            'manager',
+            $this->actor,
+        ))->toThrow(InvalidMediaSelectionRequest::class);
+});
+
+test('selection records survive application key rotation through previous keys', function () {
+    $request = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
+    $originalKey = config('app.key');
+    $originalPreviousKeys = config('app.previous_keys', []);
+
+    try {
+        config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+        config()->set('app.previous_keys', [$originalKey]);
+        app()->forgetInstance('encrypter');
+
+        $rotatedBroker = app(MediaSelectionBroker::class);
+        $pending = $rotatedBroker->forManager(
+            $request->token,
+            $this->ownerToken,
+            'manager',
+            $this->actor,
+        );
+        $settled = $rotatedBroker->processForOwner(
+            $request->token,
+            $this->ownerToken,
+            'owner-component',
+            'image',
+            ['9'],
+            $this->actor,
+            fn (): MediaSelectionMutation => new MediaSelectionMutation(
+                apply: static function (): void {},
+                rollback: static function (): void {},
+            ),
+        );
+
+        expect($pending->state)->toBe('pending')
+            ->and($settled->state)->toBe('succeeded')
+            ->and($settled->generation)->toBe(2);
+    } finally {
+        config()->set('app.key', $originalKey);
+        config()->set('app.previous_keys', $originalPreviousKeys);
+        app()->forgetInstance('encrypter');
+    }
+});
+
+test('authenticated envelopes enforce protocol version and transition generation', function (string $field) {
+    $request = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
+    $key = core20SelectionRecordKey($request->token);
+    $stored = app(MediaSecurityStore::class)->cache->get($key);
+    $encrypter = app(StringEncrypter::class);
+
+    if (! is_string($stored)) {
+        throw new RuntimeException('Expected an encrypted media selection envelope.');
+    }
+
+    $payload = json_decode($encrypter->decryptString($stored), true, flags: JSON_THROW_ON_ERROR);
+
+    if (! is_array($payload) || ! is_array($payload['record'] ?? null)) {
+        throw new RuntimeException('Expected a structured media selection envelope.');
+    }
+
+    if ($field === 'version') {
+        $payload['version'] = 2;
+    } else {
+        $payload['record']['generation'] = 1;
+    }
+
+    app(MediaSecurityStore::class)->cache->put(
+        $key,
+        $encrypter->encryptString(json_encode($payload, JSON_THROW_ON_ERROR)),
+        120,
+    );
+
+    expect(fn () => $this->selections->forManager(
+        $request->token,
+        $this->ownerToken,
+        'manager',
+        $this->actor,
+    ))->toThrow(InvalidMediaSelectionRequest::class);
+})->with(['version', 'generation']);
+
+test('selection state fails closed when the application key is unavailable', function () {
+    $originalKey = config('app.key');
+
+    try {
+        config()->set('app.key', null);
+        app()->forgetInstance('encrypter');
+
+        expect(fn () => app(MediaSelectionBroker::class)->begin(
+            $this->ownerToken,
+            'manager-without-key',
+            ['9'],
+            $this->actor,
+        ))->toThrow(MissingAppKeyException::class);
+    } finally {
+        config()->set('app.key', $originalKey);
+        app()->forgetInstance('encrypter');
+    }
+});
+
+test('signed selection records reject future issue times and stale retention replays', function (string $replay) {
+    $baseline = now();
+
+    try {
+        if ($replay === 'future') {
+            Carbon::setTestNow($baseline->copy()->addSeconds(60));
+        }
+
+        $request = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
+        $stored = app(MediaSecurityStore::class)->cache->get(core20SelectionRecordKey($request->token));
+
+        Carbon::setTestNow($replay === 'future'
+            ? $baseline
+            : $baseline->copy()->addSeconds(76));
+
+        if ($replay === 'stale') {
+            app(MediaSecurityStore::class)->cache->put(
+                core20SelectionRecordKey($request->token),
+                $stored,
+                120,
+            );
+        }
+
+        expect(fn () => $this->selections->forManager(
+            $request->token,
+            $this->ownerToken,
+            'manager',
+            $this->actor,
+        ))->toThrow(InvalidMediaSelectionRequest::class);
+    } finally {
+        Carbon::setTestNow();
+    }
+})->with(['future', 'stale']);
+
+test('signed selection records cannot be replayed under a replacement request token', function () {
+    $first = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
+    $this->selections->processForOwner(
+        $first->token,
+        $this->ownerToken,
+        'owner-component',
+        'image',
+        ['9'],
+        $this->actor,
+        fn (): MediaSelectionMutation => new MediaSelectionMutation(
+            apply: static function (): void {},
+            rollback: static function (): void {},
+        ),
+    );
+    $firstStored = app(MediaSecurityStore::class)->cache->get(core20SelectionRecordKey($first->token));
+    $replacement = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
+    app(MediaSecurityStore::class)->cache->put(
+        core20SelectionRecordKey($replacement->token),
+        $firstStored,
+        120,
+    );
+
+    expect(fn () => $this->selections->forManager(
+        $replacement->token,
+        $this->ownerToken,
+        'manager',
+        $this->actor,
+    ))->toThrow(InvalidMediaSelectionRequest::class);
+});
+
+test('selection context rejects control characters before persistence', function (string $managerComponentId) {
+    expect(fn () => $this->selections->begin(
+        $this->ownerToken,
+        $managerComponentId,
+        ['9'],
+        $this->actor,
+    ))->toThrow(InvalidMediaSelectionRequest::class);
+})->with([
+    "manager\0forged",
+    "manager\nforged",
+    "manager\x7Fforged",
 ]);
 
 test('owner processing is atomic successful and idempotent', function () {
@@ -191,6 +483,7 @@ test('owner processing is atomic successful and idempotent', function () {
     expect($applications)->toBe(1)
         ->and($effects)->toBe(1)
         ->and($first->state)->toBe('succeeded')
+        ->and($first->generation)->toBe(2)
         ->and($first->errorCode)->toBeNull()
         ->and($first->claimId)->toBeNull()
         ->and($first->claimedAt)->toBeInt()
