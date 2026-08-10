@@ -920,7 +920,7 @@ Livewire action validates and authorizes the exact current selection, clears the
 redirects the browser to a single-use temporary signed HTTP URL. The HTTP response repeats
 per-record authorization and invokes the handler in bounded chunks while streaming. Joined rows are
 de-duplicated in SQL while retaining the table's deterministic sort order. Collection handler ID and
-parameter-map arguments must accept arrays; incompatible declared signatures are rejected before a
+parameter-map arguments must declare array-compatible types; incompatible signatures are rejected before a
 URL is issued. Configure
 `aura.security.bulk_downloads.chunk_size`, `max_records`, `ttl_seconds`, and `cache_store`; use a
 shared atomic cache store on multi-node deployments. The default file store is intended only for a

@@ -89,6 +89,15 @@ class Core06BulkResource extends Resource
                 ],
             ],
         ],
+        'untypedDownload' => [
+            'ability' => 'view',
+            'download' => [
+                'content_type' => 'text/plain',
+                'filename' => 'untyped.txt',
+            ],
+            'label' => 'Untyped download',
+            'method' => 'collection',
+        ],
         'smallDownload' => [
             'ability' => 'view',
             'label' => 'Small download',
@@ -175,6 +184,11 @@ class Core06BulkResource extends Resource
             ->orderBy('duplicate_marker', $direction)
             ->orderByRaw('CASE WHEN posts.title = ? THEN 0 ELSE 1 END', ['Bravo'])
             ->orderBy($this->qualifyColumn('title'), 'desc');
+    }
+
+    public function untypedDownload($ids): string
+    {
+        return implode(',', $ids);
     }
 }
 
@@ -381,6 +395,7 @@ test('bulk downloads reject invalid handler signatures before issuing a URL', fu
     'wrong arity' => ['invalidDownload', []],
     'scalar ids' => ['invalidTypedDownload', []],
     'scalar parameter map' => ['invalidParameterMapDownload', ['prefix' => 'test']],
+    'untyped ids' => ['untypedDownload', []],
 ]);
 
 test('a different user cannot consume a bulk download URL owned by its issuer', function () {

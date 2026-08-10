@@ -2491,7 +2491,7 @@ final class TableMutationDispatcher
     private function reflectionTypeAcceptsArray(?ReflectionType $type): bool
     {
         if ($type === null) {
-            return true;
+            return false;
         }
 
         if ($type instanceof ReflectionNamedType) {
