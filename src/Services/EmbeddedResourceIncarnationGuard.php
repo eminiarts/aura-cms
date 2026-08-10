@@ -84,30 +84,44 @@ final class EmbeddedResourceIncarnationGuard
             return;
         }
 
-        $functions = collect(array_values(array_unique([1, self::CONTRACT_VERSION])))
-            ->flatMap(fn (int $version): array => [
-                $this->functionName($resource, $version),
-                $this->insertFunctionName($resource, $version),
-            ])
-            ->all();
-        $foreign = $connection->selectOne(
+        $allowedDependencies = [];
+
+        foreach (array_values(array_unique([1, self::CONTRACT_VERSION])) as $version) {
+            $names = $this->triggerNames($resource, $version);
+            $allowedDependencies[$this->functionName($resource, $version)] = [
+                $names['delete'],
+                $names['update'],
+            ];
+            $allowedDependencies[$this->insertFunctionName($resource, $version)] = [$names['insert']];
+        }
+
+        $functions = array_keys($allowedDependencies);
+        $ownerRelation = $connection->getQueryGrammar()->wrapTable($resource->getTable());
+        $dependencies = $connection->select(
             <<<'SQL'
-                select p.proname as function_name, t.tgname as trigger_name
+                select p.proname as function_name, t.tgname as trigger_name,
+                       t.tgrelid = pg_catalog.to_regclass(?) as owns_relation
                 from pg_catalog.pg_proc p
                 join pg_catalog.pg_namespace n on n.oid = p.pronamespace
                 join pg_catalog.pg_trigger t on t.tgfoid = p.oid
                 where n.nspname = current_schema()
                   and p.proname in (?, ?, ?, ?)
                   and pg_catalog.pg_get_function_identity_arguments(p.oid) = ''
-                  and t.tgrelid <> pg_catalog.to_regclass(?)
-                limit 1
                 SQL,
-            [...$functions, $connection->getQueryGrammar()->wrapTable($resource->getTable())],
+            [$ownerRelation, ...$functions],
         );
+        $foreign = collect($dependencies)->first(function (object $dependency) use ($allowedDependencies): bool {
+            return ! (bool) $dependency->owns_relation
+                || ! in_array(
+                    (string) $dependency->trigger_name,
+                    $allowedDependencies[(string) $dependency->function_name] ?? [],
+                    true,
+                );
+        });
 
         if ($foreign !== null) {
             throw new RuntimeException(sprintf(
-                'Cannot install embedded incarnation guard because function [%s] is used by trigger [%s] on another table.',
+                'Cannot install embedded incarnation guard because function [%s] is used by unowned trigger [%s].',
                 (string) $foreign->function_name,
                 (string) $foreign->trigger_name,
             ));
@@ -179,6 +193,68 @@ final class EmbeddedResourceIncarnationGuard
         }
     }
 
+    private function canonicalSql(string $sql): string
+    {
+        $canonical = '';
+        $length = strlen($sql);
+        $quote = null;
+        $spacePending = false;
+
+        for ($index = 0; $index < $length; $index++) {
+            $character = $sql[$index];
+
+            if ($quote !== null) {
+                $canonical .= $character;
+                $closingQuote = $quote === '[' ? ']' : $quote;
+
+                if ($character === $closingQuote) {
+                    if ($quote !== '[' && ($sql[$index + 1] ?? null) === $closingQuote) {
+                        $canonical .= $sql[++$index];
+                    } else {
+                        $quote = null;
+                    }
+                }
+
+                continue;
+            }
+
+            if (in_array($character, ["'", '"', '`', '['], true)) {
+                if ($spacePending && $canonical !== '') {
+                    $canonical .= ' ';
+                }
+
+                $spacePending = false;
+                $quote = $character;
+                $canonical .= $character;
+
+                continue;
+            }
+
+            if (ctype_space($character)) {
+                $spacePending = true;
+
+                continue;
+            }
+
+            if (str_contains('(),;.=<>+', $character)) {
+                $canonical = rtrim($canonical);
+                $canonical .= $character;
+                $spacePending = false;
+
+                continue;
+            }
+
+            if ($spacePending && $canonical !== '') {
+                $canonical .= ' ';
+            }
+
+            $spacePending = false;
+            $canonical .= strtolower($character);
+        }
+
+        return trim($canonical);
+    }
+
     /**
      * @return list<string>
      */
@@ -223,8 +299,8 @@ final class EmbeddedResourceIncarnationGuard
         if ($connection->getDriverName() === 'pgsql') {
             $function = $grammar->wrap($this->functionName($resource));
             $insertFunction = $grammar->wrap($this->insertFunctionName($resource));
-            $functionStatement = "create or replace function {$function}() returns trigger as \$aura\$ begin {$oldRowTouch}; if TG_OP = 'UPDATE' and {$keyChanged} then {$newRowTouch}; end if; return OLD; end; \$aura\$ language plpgsql";
-            $insertFunctionStatement = "create or replace function {$insertFunction}() returns trigger as \$aura\$ begin {$newRowTouch}; return NEW; end; \$aura\$ language plpgsql";
+            $functionStatement = "create or replace function {$function}() returns trigger as \$aura\$ begin {$oldRowTouch}; if TG_OP = 'UPDATE' and {$keyChanged} then {$newRowTouch}; end if; return OLD; end; \$aura\$ language plpgsql volatile parallel unsafe security invoker";
+            $insertFunctionStatement = "create or replace function {$insertFunction}() returns trigger as \$aura\$ begin {$newRowTouch}; return NEW; end; \$aura\$ language plpgsql volatile parallel unsafe security invoker";
 
             return [
                 $functionStatement,
@@ -353,7 +429,7 @@ final class EmbeddedResourceIncarnationGuard
                 || strtoupper((string) $row->event) !== strtoupper($event)
                 || strtoupper((string) $row->timing) !== 'AFTER'
                 || strtoupper((string) $row->orientation) !== 'ROW'
-                || $this->normalizeSql((string) $row->action_statement) !== $this->normalizeSql($actions[$event])
+                || $this->canonicalSql((string) $row->action_statement) !== $this->canonicalSql($actions[$event])
             ) {
                 return false;
             }
@@ -386,14 +462,6 @@ final class EmbeddedResourceIncarnationGuard
             'insert' => $actions['insert'],
             'update' => $actions['update'],
         ];
-    }
-
-    private function normalizeSql(string $sql): string
-    {
-        $sql = str_replace(['`', '"', '[', ']'], '', strtolower($sql));
-        $sql = preg_replace('/\s+/', ' ', trim($sql)) ?? '';
-
-        return preg_replace('/\s*([(),;.=<>+])\s*/', '$1', $sql) ?? '';
     }
 
     /**
@@ -430,11 +498,16 @@ final class EmbeddedResourceIncarnationGuard
         $rows = collect($connection->select(
             <<<'SQL'
                 select t.tgname as name, t.tgtype as trigger_type, t.tgenabled as enabled,
-                       p.proname as function_name, pn.nspname as function_schema, p.prosrc as function_source
+                       t.tgqual as condition,
+                       p.proname as function_name, pn.nspname as function_schema, p.prosrc as function_source,
+                       p.prosecdef as security_definer, p.provolatile as volatility,
+                       p.proparallel as parallel_safety, p.proleakproof as leakproof,
+                       p.proconfig as runtime_config, l.lanname as language
                 from pg_catalog.pg_trigger t
                 join pg_catalog.pg_class c on c.oid = t.tgrelid
                 join pg_catalog.pg_proc p on p.oid = t.tgfoid
                 join pg_catalog.pg_namespace pn on pn.oid = p.pronamespace
+                join pg_catalog.pg_language l on l.oid = p.prolang
                 where not t.tgisinternal
                   and c.oid = pg_catalog.to_regclass(?)
                   and t.tgname in (?, ?, ?)
@@ -454,9 +527,16 @@ final class EmbeddedResourceIncarnationGuard
             if (! is_object($row)
                 || (int) $row->trigger_type !== (1 | $eventBit)
                 || (string) $row->enabled !== 'O'
+                || $row->condition !== null
                 || (string) $row->function_name !== $expectedFunction
                 || (string) $row->function_schema !== $functionSchema
-                || $this->normalizeSql((string) $row->function_source) !== $this->normalizeSql($sources[$expectedFunction])
+                || (bool) $row->security_definer
+                || (string) $row->volatility !== 'v'
+                || (string) $row->parallel_safety !== 'u'
+                || (bool) $row->leakproof
+                || $row->runtime_config !== null
+                || (string) $row->language !== 'plpgsql'
+                || $this->canonicalSql((string) $row->function_source) !== $this->canonicalSql($sources[$expectedFunction])
             ) {
                 return false;
             }
@@ -473,7 +553,7 @@ final class EmbeddedResourceIncarnationGuard
         $sources = [];
 
         foreach (array_slice($this->createStatements($connection, $resource), 0, 2) as $statement) {
-            if (preg_match('/create or replace function ["`]?([^"`()]+)["`]?\(\) returns trigger as \$aura\$(.+)\$aura\$ language plpgsql\z/is', $statement, $matches) !== 1) {
+            if (preg_match('/create or replace function ["`]?([^"`()]+)["`]?\(\) returns trigger as \$aura\$(.+)\$aura\$ language plpgsql volatile parallel unsafe security invoker\z/is', $statement, $matches) !== 1) {
                 throw new RuntimeException('Unable to derive the embedded incarnation function contract.');
             }
 
@@ -550,7 +630,7 @@ final class EmbeddedResourceIncarnationGuard
             $row = $rows->get($name);
 
             if (! is_object($row)
-                || $this->normalizeSql((string) $row->sql) !== $this->normalizeSql((string) $statements->get($name))
+                || $this->canonicalSql((string) $row->sql) !== $this->canonicalSql((string) $statements->get($name))
             ) {
                 return false;
             }

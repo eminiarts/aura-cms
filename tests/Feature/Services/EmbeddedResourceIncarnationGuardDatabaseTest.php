@@ -390,6 +390,60 @@ test('portable database guards install upgrade invalidate and preserve migration
         $guard->install($prototype);
         expect($guard->isInstalled($prototype))->toBeTrue();
 
+        if ($driver === 'sqlite') {
+            $trigger = $connection->table('sqlite_master')
+                ->where('type', 'trigger')
+                ->where('tbl_name', $prototype->getTable())
+                ->whereRaw("lower(sql) like '% after delete %'")
+                ->first(['name', 'sql']);
+            $corruptSql = str_replace(
+                Core12ExternalGuardResource::class,
+                strtolower(Core12ExternalGuardResource::class),
+                (string) $trigger->sql,
+            );
+            expect($corruptSql)->not->toBe((string) $trigger->sql);
+            $connection->unprepared('drop trigger "'.str_replace('"', '""', $trigger->name).'"');
+            $connection->unprepared($corruptSql);
+        } elseif (in_array($driver, ['mysql', 'mariadb'], true)) {
+            $trigger = $connection->table('information_schema.TRIGGERS')
+                ->where('TRIGGER_SCHEMA', $connection->getDatabaseName())
+                ->where('EVENT_OBJECT_TABLE', $prototype->getTable())
+                ->where('EVENT_MANIPULATION', 'DELETE')
+                ->first(['TRIGGER_NAME as name', 'ACTION_STATEMENT as action_statement']);
+            $corruptAction = str_replace(
+                Core12ExternalGuardResource::class,
+                strtolower(Core12ExternalGuardResource::class),
+                (string) $trigger->action_statement,
+            );
+            expect($corruptAction)->not->toBe((string) $trigger->action_statement);
+            $connection->unprepared('drop trigger `'.str_replace('`', '``', $trigger->name).'`');
+            $connection->unprepared(sprintf(
+                'create trigger `%s` after delete on `core12 guarded-owners` for each row %s',
+                str_replace('`', '``', $trigger->name),
+                $corruptAction,
+            ));
+        } else {
+            $connection->unprepared(sprintf(
+                'alter function "%s"() security definer',
+                str_replace('"', '""', $trigger->function_name),
+            ));
+
+            expect($guard->isInstalled($prototype))->toBeFalse();
+            $guard->install($prototype);
+            expect($guard->isInstalled($prototype))->toBeTrue();
+
+            $connection->unprepared('drop trigger "'.str_replace('"', '""', $trigger->name).'" on "core12 guarded-owners"');
+            $connection->unprepared(sprintf(
+                'create trigger "%s" after delete on "core12 guarded-owners" for each row when (false) execute function "%s"()',
+                str_replace('"', '""', $trigger->name),
+                str_replace('"', '""', $trigger->function_name),
+            ));
+        }
+
+        expect($guard->isInstalled($prototype))->toBeFalse();
+        $guard->install($prototype);
+        expect($guard->isInstalled($prototype))->toBeTrue();
+
         $connection->table($prototype->getTable())->insert([
             'select' => 'portable-key',
             'title' => 'Original',
@@ -560,6 +614,39 @@ test('postgres guard ignores same-named triggers on another owner table', functi
                 SQL,
             ['"core12 guarded-owners"', $deleteTrigger],
         )->name;
+        $connection->unprepared(sprintf(
+            'create trigger "core12_unowned_dependency" after delete on "core12 guarded-owners" for each row execute function "%s"()',
+            str_replace('"', '""', $sharedFunction),
+        ));
+        $connection->unprepared(sprintf(
+            'alter function "%s"() security definer',
+            str_replace('"', '""', $sharedFunction),
+        ));
+        $functionSource = (string) $connection->selectOne(
+            'select prosrc from pg_catalog.pg_proc where proname = ? and pronamespace = pg_catalog.current_schema()::regnamespace',
+            [$sharedFunction],
+        )->prosrc;
+
+        expect($guard->isInstalled($prototype))->toBeFalse()
+            ->and(fn () => $guard->install($prototype))
+            ->toThrow(RuntimeException::class, 'unowned trigger')
+            ->and($connection->selectOne(
+                'select count(*) as aggregate from pg_catalog.pg_trigger where not tgisinternal and tgrelid = pg_catalog.to_regclass(?)',
+                ['"core12 guarded-owners"'],
+            )->aggregate)->toBe(4)
+            ->and((bool) $connection->selectOne(
+                'select prosecdef from pg_catalog.pg_proc where proname = ? and pronamespace = pg_catalog.current_schema()::regnamespace',
+                [$sharedFunction],
+            )->prosecdef)->toBeTrue()
+            ->and((string) $connection->selectOne(
+                'select prosrc from pg_catalog.pg_proc where proname = ? and pronamespace = pg_catalog.current_schema()::regnamespace',
+                [$sharedFunction],
+            )->prosrc)->toBe($functionSource);
+
+        $connection->unprepared('drop trigger "core12_unowned_dependency" on "core12 guarded-owners"');
+        $guard->install($prototype);
+        expect($guard->isInstalled($prototype))->toBeTrue();
+
         $schema->drop($foreignTable);
         $schema->create($foreignTable, function (Blueprint $table): void {
             $table->string('select')->primary();
@@ -578,7 +665,7 @@ test('postgres guard ignores same-named triggers on another owner table', functi
                 [$deleteTrigger],
             )->aggregate)->toBe(1)
             ->and(fn () => $guard->install($prototype))
-            ->toThrow(RuntimeException::class, 'is used by trigger')
+            ->toThrow(RuntimeException::class, 'unowned trigger')
             ->and($guard->isInstalled($prototype))->toBeFalse();
     } finally {
         if ($schema->hasTable($prototype->getTable())) {
