@@ -12,7 +12,7 @@
                 x-init="
                     console.log('Initializing editor for: ' + editorId);
                     const editor = monaco.editor.create($refs['editor_' + editorId], {
-                        value: @js($form['fields'][$field['slug']]),
+                        value: @js($form['fields'][$field['slug']] ?? ''),
                         language: '{{ $field['language'] ?? 'html' }}',
                         automaticLayout: true,
                         minimap: {
