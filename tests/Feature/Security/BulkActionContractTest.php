@@ -654,6 +654,32 @@ test('the bulk action menu renders declared parameter inputs without public comp
         ->assertSeeHtml('<textarea');
 });
 
+test('the bulk action menu safely encodes complete Livewire and Alpine action expressions', function () {
+    Core06BulkResource::create(['title' => 'Target']);
+    $model = new Core06BulkResource;
+    $model->bulkActions["renderOnly'\"><tag>&"] = [
+        'ability' => 'view',
+        'label' => 'Render-only collection action',
+        'method' => 'collection',
+    ];
+    $model->bulkActions["parameterized'\"><tag>&"] = [
+        'ability' => 'update',
+        'label' => 'Render-only parameterized action',
+        'parameters' => [
+            'value' => [
+                'label' => 'Value',
+                'rules' => ['required', 'string'],
+                'type' => 'string',
+            ],
+        ],
+    ];
+
+    livewire(Table::class, ['query' => null, 'model' => $model])
+        ->assertSeeHtml('wire:click="bulkCollectionAction(&quot;renderOnly\\u0027\\u0022\\u003E\\u003Ctag\\u003E\\u0026&quot;)"')
+        ->assertSeeHtml('$wire.bulkAction(&quot;parameterized\\u0027\\u0022\\u003E\\u003Ctag\\u003E\\u0026&quot;, parameters)')
+        ->assertDontSeeHtml('wire:click="bulkCollectionAction("renderOnly');
+});
+
 test('the selected rows query is the exact filtered and searched display query', function () {
     $matching = Core06BulkResource::create(['title' => 'Exact search match']);
     Core06BulkResource::create(['title' => 'Outside display scope']);

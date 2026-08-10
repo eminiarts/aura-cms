@@ -38,6 +38,10 @@
                             $method = is_array($data) && ($data['method'] ?? null) === 'collection'
                                 ? 'bulkCollectionAction'
                                 : 'bulkAction';
+                            $encodedAction = json_encode(
+                                $action,
+                                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR,
+                            );
                             $initialParameters = [];
                             $arrayInputs = [];
 
@@ -100,14 +104,14 @@
                                         @foreach($arrayInputs as $parameter => $value)
                                             parameters.{{ $parameter }} = arrayInputs.{{ $parameter }}.split(/[\n,]+/).map(value => value.trim()).filter(Boolean);
                                         @endforeach
-                                        $wire.{{ $method }}(@js($action), parameters)
+                                        $wire.{{ $method }}({{ $encodedAction }}, parameters)
                                     "
                                     class="inline-flex items-center px-2.5 py-1.5 text-sm font-medium text-white rounded-md bg-primary-600 hover:bg-primary-500">
                                     {{ __('Apply') }}
                                 </button>
                             </div>
                         @else
-                            <button type="button" wire:click="{{ $method }}(@js($action))"
+                            <button type="button" wire:click="{{ $method }}({{ $encodedAction }})"
                                 class="flex items-center px-3 py-1.5 w-full text-sm text-left text-gray-700 rounded-md transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
                                 role="menuitem" tabindex="-1">
                                 {{ is_array($data) ? $data['label'] : $data }}
