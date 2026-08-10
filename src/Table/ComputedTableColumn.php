@@ -70,6 +70,13 @@ final readonly class ComputedTableColumn
             throw new InvalidArgumentException('Computed table filter callbacks require declared operators.');
         }
 
+        $stableSort = $applySort === null
+            ? null
+            : static function (Builder $query, Resource $resource, string $direction) use ($applySort): void {
+                $applySort($query, $resource, $direction);
+                $query->orderBy($resource->getQualifiedKeyName());
+            };
+
         return new self(
             $key,
             trim($label),
@@ -80,7 +87,7 @@ final readonly class ComputedTableColumn
                 operators: $operators,
                 validateFilter: $validateFilter,
                 applyFilter: $applyFilter,
-                applySort: $applySort,
+                applySort: $stableSort,
             ),
         );
     }

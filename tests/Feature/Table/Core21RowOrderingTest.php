@@ -231,7 +231,7 @@ test('row ordering rejects stale duplicate forged denied and mismatched sort sta
 
     livewire(Table::class, ['model' => new Core21OrderedResource])
         ->call('reorderTableRows', [$first->id, $denied->id, 'forged'])
-        ->assertStatus(409);
+        ->assertStatus(422);
 
     livewire(Table::class, ['model' => new Core21OrderedResource])
         ->call('sortBy', 'name')
@@ -249,6 +249,18 @@ test('row ordering rejects stale duplicate forged denied and mismatched sort sta
         $denied->id,
         $third->id,
     ]);
+});
+
+test('row ordering rejects a concurrently changed page order snapshot', function () {
+    $first = core21OrderedRecord('First', 10);
+    $second = core21OrderedRecord('Second', 20);
+    $component = livewire(Table::class, ['model' => new Core21OrderedResource]);
+
+    Core21OrderedResource::query()->whereKey($first->id)->update(['position' => 20]);
+    Core21OrderedResource::query()->whereKey($second->id)->update(['position' => 10]);
+
+    $component->call('reorderTableRows', [$second->id, $first->id])
+        ->assertStatus(409);
 });
 
 test('invalid or absent physical ordering declarations expose no mutation', function () {

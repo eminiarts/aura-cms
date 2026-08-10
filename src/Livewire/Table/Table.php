@@ -128,6 +128,10 @@ class Table extends Component
 
     public $resource;
 
+    /** @var list<int|string> */
+    #[Locked]
+    public array $rowOrderSnapshot = [];
+
     /**
      * Validation rules.
      *
@@ -409,7 +413,7 @@ class Table extends Component
             'rowId' => $this->mutationIdentifierRules(),
             'position' => ['required', 'integer', 'min:0'],
         ])->validate();
-        $ids = $this->orderingPageIds();
+        $ids = $this->rowOrderSnapshot;
         $currentPosition = array_search((string) $data['rowId'], array_map('strval', $ids), true);
 
         if ($currentPosition === false || $data['position'] >= count($ids)) {
@@ -546,6 +550,7 @@ class Table extends Component
             resource: $resource,
             ordering: $ordering,
             orderedIds: $orderedIds,
+            expectedIds: $this->rowOrderSnapshot,
             page: (int) $this->getPage(),
             perPage: (int) $this->perPage,
         );
@@ -557,6 +562,10 @@ class Table extends Component
     public function rowIds()
     {
         $rowIds = $this->rows->pluck('id')->toArray();
+
+        $this->rowOrderSnapshot = $this->tableRowsAreOrderable()
+            ? array_values($rowIds)
+            : [];
 
         $this->dispatch('rowIdsUpdated', $rowIds);
 
@@ -1125,34 +1134,6 @@ class Table extends Component
         )->all();
         $this->tableState = $state->toQueryString();
         $this->invalidTableState = false;
-    }
-
-    /**
-     * @return list<int|string>
-     */
-    private function orderingPageIds(): array
-    {
-        $ordering = $this->effectiveTableRowOrdering();
-
-        if ($ordering === null) {
-            abort(422, 'Table row ordering is not available for this view.');
-        }
-
-        $state = $this->currentRowOrderingState();
-        $applier = $this->tableQueryStateApplier();
-
-        if (! $applier->accepts($this->model(), $state)) {
-            abort(422, 'The table row ordering query state is invalid.');
-        }
-
-        return $applier->apply(
-            $this->mutationQuery(),
-            $this->model(),
-            $state,
-            auth()->user(),
-        )->paginate((int) $this->perPage, ['*'], 'page', (int) $this->getPage())
-            ->pluck($this->model()->getKeyName())
-            ->all();
     }
 
     private function resolveTableColumnCapability(string $key): ?TableColumnCapability

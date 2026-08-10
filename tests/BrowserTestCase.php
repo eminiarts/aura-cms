@@ -11,6 +11,7 @@ use Aura\Base\Resources\User;
 use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
 use Aura\Base\Tests\Fixtures\ComponentSlots\BrowserGlobalSearch;
 use Aura\Base\Tests\Fixtures\ComponentSlots\BrowserMediaManager;
+use Aura\Base\Tests\Resources\Core21OrderedList;
 use Aura\Base\Tests\Resources\GalleryPage;
 use Aura\Base\Tests\Resources\KanbanBoard;
 use Aura\Base\Tests\Resources\RecordLayoutPage;
@@ -48,11 +49,13 @@ class BrowserTestCase extends TestCase
         // as soon as any sync job (e.g. thumbnail generation) runs.
         Aura::registerResources([
             Resources\EmbeddedComponentPage::class,
+            Core21OrderedList::class,
             GalleryPage::class,
             KanbanBoard::class,
             RecordLayoutPage::class,
         ]);
         Aura::registerRoutes('embedded-component-page');
+        Aura::registerRoutes('core21-ordered-list');
         Aura::registerRoutes('gallery-page');
         Aura::registerRoutes('kanban-board');
         Aura::registerRoutes('record-layout-page');

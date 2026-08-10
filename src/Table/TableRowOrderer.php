@@ -17,12 +17,14 @@ final class TableRowOrderer
     /**
      * @param  Closure(): Builder  $scope
      * @param  list<int|string>  $orderedIds
+     * @param  list<int|string>  $expectedIds
      */
     public function reorder(
         Closure $scope,
         Resource $resource,
         TableRowOrdering $ordering,
         array $orderedIds,
+        array $expectedIds,
         int $page,
         int $perPage,
     ): void {
@@ -32,35 +34,45 @@ final class TableRowOrderer
 
         $descriptor = new TableMutationModelDescriptor($resource);
         $requested = $this->normalizeIds($orderedIds, $descriptor);
+        $expected = $this->normalizeIds($expectedIds, $descriptor);
 
-        if (count($requested) !== count($orderedIds)) {
+        if (count($requested) !== count($orderedIds)
+            || count($expected) !== count($expectedIds)
+            || array_diff_key($requested, $expected) !== []
+            || array_diff_key($expected, $requested) !== []) {
             abort(422, 'The table row ordering permutation contains duplicate records.');
         }
+
+        $preflight = $this->pageRecords($scope(), $page, $perPage);
+        $this->assertExpectedOrder($preflight, $expected, $descriptor);
 
         $connection = $descriptor->connectionInstance();
         $connection->transaction(function () use (
             $connection,
             $descriptor,
+            $expected,
             $ordering,
             $page,
             $perPage,
             $requested,
             $scope,
         ): void {
-            $firstPage = $this->pageRecords($scope(), $page, $perPage);
-            $this->assertExactPermutation($firstPage, $requested, $descriptor);
-
             $lockIds = array_values($requested);
             usort($lockIds, static fn (int|string $left, int|string $right): int => strcmp((string) $left, (string) $right));
 
-            $connection->table($descriptor->table)
+            $locked = $connection->table($descriptor->table)
                 ->whereIn($descriptor->keyName, $lockIds)
                 ->orderBy($descriptor->keyName)
                 ->lockForUpdate()
                 ->get();
 
+            if ($locked->count() !== count($lockIds)) {
+                abort(409, 'The table row ordering records changed.');
+            }
+
             $records = $this->pageRecords($scope(), $page, $perPage);
             $this->assertExactPermutation($records, $requested, $descriptor);
+            $this->assertExpectedOrder($records, $expected, $descriptor);
 
             foreach ($records as $record) {
                 $this->gate->authorize($ordering->ability, $record);
@@ -121,6 +133,24 @@ final class TableRowOrderer
             || array_diff_key($requested, $resolved) !== []
             || array_diff_key($resolved, $requested) !== []) {
             abort(409, 'The table row ordering page changed.');
+        }
+    }
+
+    /**
+     * @param  Collection<int, Model>  $records
+     * @param  array<string, int|string>  $expected
+     */
+    private function assertExpectedOrder(
+        Collection $records,
+        array $expected,
+        TableMutationModelDescriptor $descriptor,
+    ): void {
+        $resolvedOrder = $records->map(
+            fn (Model $record): string => $descriptor->canonicalIdentity($record->getKey()),
+        )->all();
+
+        if ($resolvedOrder !== array_keys($expected)) {
+            abort(409, 'The table row ordering page is stale.');
         }
     }
 
