@@ -1229,6 +1229,7 @@ class Resource extends Model implements DefinesFields
         };
 
         $operation->authorize($transactionLevel);
+        $this->assertCallerTransactionDoesNotExposeConnectionCallbacks($connection);
 
         try {
             return $connection->transaction(function () use (

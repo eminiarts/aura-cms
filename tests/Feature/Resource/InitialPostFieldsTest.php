@@ -1482,6 +1482,60 @@ it('rejects transaction-start callbacks before they can open an untracked physic
         ->and(core13PhysicalWriterRowCount($writer))->toBe(1);
 });
 
+it('rejects transaction-start callbacks registered by model listeners before they run', function (string $attack, int $depth): void {
+    $connection = core13InstallConnectionProbe();
+    $writer = $connection->getPdo();
+    $callbacksProperty = new ReflectionProperty(Connection::class, 'beforeStartingTransaction');
+    $originalCallbacks = $callbacksProperty->getValue($connection);
+    $armed = true;
+
+    for ($level = 0; $level < $depth; $level++) {
+        $connection->beginTransaction();
+    }
+
+    if ($depth > 0) {
+        $connection->table('explicit_null_shared_custom_resources')->insert([
+            'name' => 'Caller row before late hook rejection',
+        ]);
+    }
+
+    PhysicalWriterGuardedGlobalResource::$savingAttack = function () use ($attack, $connection, $writer, &$armed): void {
+        $connection->beforeStartingTransaction(function () use ($attack, $writer, &$armed): void {
+            $armed = false;
+
+            if ($attack === 'begin') {
+                $writer->beginTransaction();
+
+                return;
+            }
+
+            $writer->commit();
+        });
+    };
+
+    expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Rejected late transaction-start hook',
+    ], $connection))->toThrow(LogicException::class, 'transaction state');
+
+    expect($armed)->toBeTrue()
+        ->and($connection->transactionLevel())->toBe($depth)
+        ->and($writer->inTransaction())->toBe($depth > 0);
+
+    $callbacksProperty->setValue($connection, $originalCallbacks);
+    PhysicalWriterGuardedGlobalResource::$savingAttack = null;
+
+    if ($depth > 0) {
+        expect($connection->table('explicit_null_shared_custom_resources')->pluck('name')->all())
+            ->toBe(['Caller row before late hook rejection']);
+        $connection->rollBack(0);
+    }
+
+    expect(core13PhysicalWriterRowCount($writer))->toBe(0);
+})->with([
+    'raw PDO begin at level zero' => ['begin', 0],
+    'raw PDO commit at caller depth one' => ['commit', 1],
+]);
+
 it('does not leave connection authorization callbacks behind in long workers', function (): void {
     $connection = DB::connection();
     $initialCallbackCount = core13BeforeExecutingCallbackCount($connection);
