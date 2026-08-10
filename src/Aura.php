@@ -17,11 +17,14 @@ use Aura\Base\Resources\User;
 use Aura\Base\Services\VersionedCache;
 use Aura\Base\Traits\DefaultFields;
 use Closure;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Connection;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\HtmlString;
@@ -29,6 +32,7 @@ use Illuminate\Support\Str;
 use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\Finder\SplFileInfo;
+use Throwable;
 
 class Aura
 {
@@ -395,32 +399,44 @@ class Aura
         return new HtmlString(implode('', $hooks));
     }
 
-    public function navigation()
+    public function navigation(): Collection
     {
-        $user = auth()->user();
-
         for ($attempt = 0; $attempt < self::MAX_NAVIGATION_STABILIZATION_ATTEMPTS; $attempt++) {
+            $user = auth()->user();
+
+            if (! $user instanceof Authenticatable) {
+                return collect();
+            }
+
+            $authorizationContext = $this->navigationAuthorizationContext($user);
             $hookManager = app('hook_manager');
             $revision = $hookManager->revision('navigation');
-            $context = $this->navigationCacheContext();
+            $context = $this->navigationDefinitionCacheContext();
             $hookFingerprint = $hookManager->cacheFingerprint('navigation');
 
             if ($hookFingerprint === null) {
-                $navigation = $this->buildNavigation();
+                $definitions = $this->buildNavigationDefinitions();
             } else {
                 $payload = VersionedCache::remember(
                     'navigation',
                     $context,
                     3600,
-                    fn (): array => ['groups' => $this->buildNavigation()],
-                    $user->getConnection(),
+                    fn (): array => ['items' => $this->buildNavigationDefinitions()],
                 );
-                $navigation = $payload['groups'];
+                $definitions = is_array($payload) && is_array($payload['items'] ?? null)
+                    ? $payload['items']
+                    : [];
             }
+
+            $navigation = $this->groupNavigation(
+                $this->visibleNavigationDefinitions($definitions, $user),
+            );
 
             if ($hookManager === app('hook_manager')
                 && $revision === $hookManager->revision('navigation')
-                && hash_equals($context, $this->navigationCacheContext())) {
+                && hash_equals($context, $this->navigationDefinitionCacheContext())
+                && $user === auth()->user()
+                && hash_equals($authorizationContext, $this->navigationAuthorizationContext($user))) {
                 return collect($navigation)->map(fn ($items) => collect($items));
             }
         }
@@ -630,20 +646,10 @@ class Aura
         return $user?->authorizedCurrentTeam();
     }
 
-    protected function buildNavigation(): array
+    protected function buildNavigationDefinitions(): array
     {
-        $resources = collect($this->getResources());
-
-        // filter resources by permission and check if user has viewAny permission
-        $resources = $resources->filter(function ($resource) {
-            if (class_exists($resource)) {
-                $resource = app($resource);
-            } else {
-                return false;
-            }
-
-            return auth()->user()->can('viewAny', $resource);
-        });
+        $resources = collect($this->getResources())
+            ->filter(fn ($resource): bool => is_string($resource) && class_exists($resource));
 
         // If a Resource is overriden, we want to remove the original from the navigation
         $keys = $resources->map(function ($resource) {
@@ -659,25 +665,27 @@ class Aura
 
         $resources = app('hook_manager')->applyHooks('navigation', $resources->values());
 
-        $resources = $resources->sortBy('sort')->filter(function ($value, $key) {
-            if (isset($value['conditional_logic'])) {
-                return app('dynamicFunctions')::call($value['conditional_logic']);
-            }
+        return collect($resources)
+            ->filter(fn ($item): bool => is_array($item))
+            ->sortBy('sort')
+            ->values()
+            ->all();
+    }
 
-            return true;
-        });
+    protected function globalOptionCacheNamespace(): string
+    {
+        return 'option.global';
+    }
 
-        $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
+    protected function groupNavigation(array $resources): array
+    {
+        $grouped = array_reduce($resources, function ($carry, $item) {
             if (isset($item['dropdown']) && $item['dropdown'] !== false) {
                 if (! isset($carry[$item['dropdown']])) {
                     $carry[$item['dropdown']] = [];
                 }
-                // Check if 'group' key exists before using it
-                if (isset($item['group'])) {
-                    $carry[$item['dropdown']]['group'] = $item['group'];
-                } else {
-                    $carry[$item['dropdown']]['group'] = ''; // Default empty group if not set
-                }
+
+                $carry[$item['dropdown']]['group'] = $item['group'] ?? '';
                 $carry[$item['dropdown']]['dropdown'] = $item['dropdown'];
                 $carry[$item['dropdown']]['items'][] = $item;
             } else {
@@ -693,27 +701,157 @@ class Aura
             ->all();
     }
 
-    protected function globalOptionCacheNamespace(): string
+    protected function navigationAuthorizationContext(Authenticatable $user): string
     {
-        return 'option.global';
+        return hash('sha256', serialize([
+            'class' => get_class($user),
+            'identifier' => $user->getAuthIdentifier(),
+            'team' => config('aura.teams') ? data_get($user, 'current_team_id', 'none') : 'global',
+        ]));
     }
 
-    protected function navigationCacheContext(): string
+    protected function navigationConditionalAllows(mixed $condition): bool
     {
-        $user = auth()->user();
-        $teamId = config('aura.teams') ? ($user->current_team_id ?? 'none') : 'global';
+        try {
+            if (is_bool($condition)) {
+                return $condition;
+            }
+
+            if ($condition instanceof Closure) {
+                return (bool) $condition();
+            }
+
+            if (! is_string($condition) || preg_match('/\A[a-f0-9]{32}\z/D', $condition) !== 1) {
+                return false;
+            }
+
+            return (bool) app('dynamicFunctions')::call($condition);
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    protected function navigationDefinitionCacheContext(): string
+    {
         $hookFingerprint = app('hook_manager')->cacheFingerprint('navigation') ?? 'uncacheable';
 
         return hash('sha256', serialize([
-            'user' => $user->getAuthIdentifier(),
-            'team' => $teamId,
             'resources' => $this->getResources(),
             'hooks' => $hookFingerprint,
+            'teams' => (bool) config('aura.teams'),
         ]));
+    }
+
+    protected function navigationItemVisible(array $item, Authenticatable $user): bool
+    {
+        if (! ($item['showInNavigation'] ?? true)) {
+            return false;
+        }
+
+        $resource = $item['resource'] ?? null;
+
+        if ($resource !== null) {
+            if (! is_string($resource) || ! class_exists($resource)) {
+                return false;
+            }
+
+            try {
+                if (! Gate::forUser($user)->allows('viewAny', app($resource))) {
+                    return false;
+                }
+            } catch (Throwable) {
+                return false;
+            }
+        }
+
+        if (array_key_exists('policy', $item) && ! $this->navigationPolicyAllows($item['policy'], $user)) {
+            return false;
+        }
+
+        return ! array_key_exists('conditional_logic', $item)
+            || $this->navigationConditionalAllows($item['conditional_logic']);
+    }
+
+    protected function navigationPolicyAllows(mixed $policy, Authenticatable $user): bool
+    {
+        $contract = $this->parseNavigationPolicy($policy);
+
+        if ($contract === null) {
+            return false;
+        }
+
+        try {
+            return Gate::forUser($user)->allows($contract['ability'], $contract['arguments']);
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     protected function optionConnection(): Connection
     {
         return (new Option)->getConnection();
+    }
+
+    protected function parseNavigationPolicy(mixed $policy): ?array
+    {
+        if (is_string($policy)) {
+            $ability = $policy;
+            $arguments = [];
+        } elseif (is_array($policy) && array_is_list($policy)) {
+            if (count($policy) > 2) {
+                return null;
+            }
+
+            $ability = $policy[0] ?? null;
+            $arguments = $policy[1] ?? [];
+        } elseif (is_array($policy)) {
+            if (array_diff(array_keys($policy), ['ability', 'arguments']) !== []) {
+                return null;
+            }
+
+            $ability = $policy['ability'] ?? null;
+            $arguments = $policy['arguments'] ?? [];
+        } else {
+            return null;
+        }
+
+        if (! is_string($ability) || trim($ability) === '' || ! VersionedCache::isSafe($arguments)) {
+            return null;
+        }
+
+        return ['ability' => $ability, 'arguments' => $arguments];
+    }
+
+    protected function visibleNavigationDefinitions(array $definitions, Authenticatable $user): array
+    {
+        return collect($definitions)
+            ->map(function ($item) use ($user): ?array {
+                if (! is_array($item) || ! $this->navigationItemVisible($item, $user)) {
+                    return null;
+                }
+
+                foreach (['children', 'items'] as $childrenKey) {
+                    if (! array_key_exists($childrenKey, $item)) {
+                        continue;
+                    }
+
+                    if (! is_array($item[$childrenKey])) {
+                        return null;
+                    }
+
+                    $item[$childrenKey] = $this->visibleNavigationDefinitions($item[$childrenKey], $user);
+
+                    if ($item[$childrenKey] === []) {
+                        return null;
+                    }
+                }
+
+                unset($item['conditional_logic'], $item['policy']);
+
+                return $item;
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 }
