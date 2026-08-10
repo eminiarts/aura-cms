@@ -9,7 +9,9 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Services\VersionedCache;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\SessionGuard;
 use Illuminate\Database\Connection;
+use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
 
 final readonly class PreferenceManager
@@ -28,8 +30,8 @@ final readonly class PreferenceManager
         ?User $actor,
     ): void {
         $definition = $this->registry->get($key);
-        $this->authorizeWrite($definition, $scope, $context, $actor);
-        $this->deleteEntry($definition, $scope, $context);
+        $authorizedContext = $this->authorizeWrite($definition, $scope, $context, $actor);
+        $this->deleteEntry($definition, $scope, $authorizedContext);
     }
 
     public function resolve(string $key, PreferenceContext $context): PreferenceResult
@@ -72,8 +74,71 @@ final readonly class PreferenceManager
     ): void {
         $definition = $this->registry->get($key);
         $definition->validate($value);
-        $this->authorizeWrite($definition, $scope, $context, $actor);
-        $this->writeEntry($definition, $scope, $context, $value);
+        $authorizedContext = $this->authorizeWrite($definition, $scope, $context, $actor);
+        $this->writeEntry($definition, $scope, $authorizedContext, $value);
+    }
+
+    private function authenticatedActor(
+        ?User $actor,
+        PreferenceScope $scope,
+        PreferenceContext $context,
+    ): User {
+        if (! $this->isStableUserReference($actor)) {
+            throw new AuthorizationException('An authentic explicit actor is required to write preferences.');
+        }
+
+        if ($scope === PreferenceScope::User
+            && ! $this->isStableUserReference($context->user)) {
+            throw new AuthorizationException('The explicit preference target is not authentic.');
+        }
+
+        if (config('aura.teams')
+            && in_array($scope, [PreferenceScope::User, PreferenceScope::Team], true)
+            && ! $this->isStableTeamReference($context->team)) {
+            throw new AuthorizationException('The explicit preference team target is not authentic.');
+        }
+
+        $authenticatedIdentifier = $this->authenticatedIdentifier();
+
+        if ($authenticatedIdentifier === null
+            || (string) $actor->getKey() !== (string) $authenticatedIdentifier
+            || ($scope === PreferenceScope::User
+                && (string) $context->user?->getKey() !== (string) $authenticatedIdentifier)) {
+            throw new AuthorizationException('The explicit preference actor does not match the authenticated principal.');
+        }
+
+        $authenticatedUser = $this->persistedUser($authenticatedIdentifier);
+
+        if ($authenticatedUser === null) {
+            throw new AuthorizationException('The authenticated preference actor is not persisted.');
+        }
+
+        return $authenticatedUser;
+    }
+
+    private function authenticatedIdentifier(): string|int|null
+    {
+        $guard = Auth::guard();
+        $authenticatedUser = $guard->user();
+
+        if (! $authenticatedUser instanceof User) {
+            return null;
+        }
+
+        $identifier = $authenticatedUser->getAuthIdentifier();
+
+        if ($guard instanceof SessionGuard) {
+            $sessionIdentifier = $guard->getSession()->get($guard->getName());
+
+            if ($sessionIdentifier === null || $identifier === null
+                || (string) $sessionIdentifier !== (string) $identifier) {
+                return null;
+            }
+
+            return $sessionIdentifier;
+        }
+
+        return is_string($identifier) || is_int($identifier) ? $identifier : null;
     }
 
     private function authorizeWrite(
@@ -81,7 +146,7 @@ final readonly class PreferenceManager
         PreferenceScope $scope,
         PreferenceContext $context,
         ?User $actor,
-    ): void {
+    ): PreferenceContext {
         if (! $definition->supports($scope)) {
             throw new InvalidArgumentException("Preference [{$definition->key}] does not support {$scope->value} scope.");
         }
@@ -90,27 +155,20 @@ final readonly class PreferenceManager
             throw new InvalidArgumentException('Team preference writes are unavailable while teams are disabled.');
         }
 
-        if ($actor === null) {
-            throw new AuthorizationException('An explicit actor is required to write preferences.');
+        $persistedActor = $this->authenticatedActor($actor, $scope, $context);
+
+        $persistedUser = $scope === PreferenceScope::User ? $persistedActor : null;
+        $persistedTeam = in_array($scope, [PreferenceScope::User, PreferenceScope::Team], true)
+            && config('aura.teams')
+                ? $this->persistedTeam($context->team)
+                : null;
+
+        if (config('aura.teams')
+            && in_array($scope, [PreferenceScope::User, PreferenceScope::Team], true)
+            && ($persistedTeam === null || ! $this->matchesCanonicalTeam($context->team, $persistedTeam))) {
+            throw new AuthorizationException('The explicit preference team target is not authentic.');
         }
 
-        if (! $this->hasAuthenticPersistedIdentity($actor)) {
-            throw new AuthorizationException('The explicit preference actor is not persisted.');
-        }
-
-        if ($scope === PreferenceScope::User
-            && ! $this->hasAuthenticPersistedIdentity($context->user)) {
-            throw new AuthorizationException('The explicit preference target is not persisted.');
-        }
-
-        $persistedActor = $this->persistedUser($actor);
-
-        if ($persistedActor === null) {
-            throw new AuthorizationException('The explicit preference actor is not persisted.');
-        }
-
-        $persistedUser = $this->persistedUser($context->user);
-        $persistedTeam = $this->persistedTeam($context->team);
         $isGlobalAdmin = $persistedActor->isAuraGlobalAdmin();
 
         $authorized = match ($scope) {
@@ -125,6 +183,13 @@ final readonly class PreferenceManager
         if (! $authorized) {
             throw new AuthorizationException("Not authorized to write {$scope->value} preferences.");
         }
+
+        return new PreferenceContext(
+            $context->application,
+            $persistedUser ?? $persistedActor,
+            $persistedTeam,
+            $context->resource,
+        );
     }
 
     private function canUseTeam(User $actor, ?Team $team, PreferenceContext $context): bool
@@ -193,9 +258,32 @@ final readonly class PreferenceManager
         );
     }
 
-    private function hasAuthenticPersistedIdentity(?User $user): bool
+    private function isStableTeamReference(?Team $team): bool
     {
-        if ($user === null || ! $user->exists) {
+        $prototype = $this->teamPrototype();
+
+        if ($team === null || $prototype === null || $team::class !== $prototype::class
+            || $team->getTable() !== $prototype->getTable() || ! $team->exists) {
+            return false;
+        }
+
+        $key = $team->getKey();
+        $originalKey = $team->getRawOriginal($team->getKeyName());
+        if ($key === null || $key === '' || $originalKey === null || $originalKey === ''
+            || (string) $key !== (string) $originalKey
+            || Option::isEveryoneTeamId($key)) {
+            return false;
+        }
+
+        return $team->getConnection()->getName() === $this->optionConnection()->getName();
+    }
+
+    private function isStableUserReference(?User $user): bool
+    {
+        $prototype = $this->userPrototype();
+
+        if ($user === null || $prototype === null || $user::class !== $prototype::class
+            || $user->getTable() !== $prototype->getTable() || ! $user->exists) {
             return false;
         }
 
@@ -208,6 +296,21 @@ final readonly class PreferenceManager
         }
 
         return $user->getConnection()->getName() === $this->optionConnection()->getName();
+    }
+
+    private function matchesCanonicalTeam(?Team $candidate, Team $canonical): bool
+    {
+        if ($candidate === null || $candidate::class !== $canonical::class) {
+            return false;
+        }
+
+        foreach ([$candidate->getKeyName(), 'user_id', 'name', 'created_at', 'updated_at'] as $attribute) {
+            if ($candidate->getAttribute($attribute) != $canonical->getAttribute($attribute)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function optionConnection(): Connection
@@ -226,26 +329,37 @@ final readonly class PreferenceManager
 
     private function persistedTeam(?Team $team): ?Team
     {
-        if ($team === null || $team->getKey() === null || $team->getKey() === ''
-            || Option::isEveryoneTeamId($team->getKey())) {
+        if (! $this->isStableTeamReference($team)) {
             return null;
         }
 
-        return $team->newQuery()
+        $prototype = $this->teamPrototype();
+
+        if ($prototype === null) {
+            return null;
+        }
+
+        $prototype->setConnection($this->optionConnection()->getName());
+
+        return $prototype->newQuery()
             ->withoutGlobalScope(TeamScope::class)
             ->whereKey($team->getKey())
             ->first();
     }
 
-    private function persistedUser(?User $user): ?User
+    private function persistedUser(string|int $identifier): ?User
     {
-        if (! $this->hasAuthenticPersistedIdentity($user)) {
+        $prototype = $this->userPrototype();
+
+        if ($prototype === null) {
             return null;
         }
 
-        return $user->newQuery()
+        $prototype->setConnection($this->optionConnection()->getName());
+
+        return $prototype->newQuery()
             ->withoutGlobalScope(TeamScope::class)
-            ->whereKey($user->getKey())
+            ->where($prototype->getAuthIdentifierName(), $identifier)
             ->first();
     }
 
@@ -334,6 +448,50 @@ final readonly class PreferenceManager
         );
     }
 
+    private function teamPrototype(): ?Team
+    {
+        $teamClass = config('aura.resources.team', Team::class);
+
+        if (! is_string($teamClass) || ! is_a($teamClass, Team::class, true)) {
+            return null;
+        }
+
+        return new $teamClass;
+    }
+
+    private function userPrototype(): ?User
+    {
+        $userClass = config('aura.resources.user', User::class);
+
+        if (! is_string($userClass) || ! is_a($userClass, User::class, true)) {
+            return null;
+        }
+
+        return new $userClass;
+    }
+
+    private function writeEncodedFloat(string $name, string|int|null $teamId, mixed $value): void
+    {
+        if (! is_float($value) || ! is_finite($value)) {
+            throw new InvalidArgumentException('Preference float storage requires a finite float.');
+        }
+
+        $option = new Option;
+        $query = $this->optionConnection()->table($option->getTable())->where('name', $name);
+
+        if (config('aura.teams')) {
+            $query->where('team_id', $teamId);
+        }
+
+        if ((clone $query)->count() !== 1) {
+            throw new InvalidArgumentException('Preference float storage target is not canonical.');
+        }
+
+        $query->update([
+            'value' => json_encode($value, JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR),
+        ]);
+    }
+
     private function writeEntry(
         PreferenceDefinition $definition,
         PreferenceScope $scope,
@@ -341,26 +499,20 @@ final readonly class PreferenceManager
         mixed $value,
     ): void {
         $storageKey = $this->storageKey($definition, $context);
-        $storageValue = $definition->type === PreferenceValueType::Float && is_float($value)
-            ? new PreferenceFloatValue($value)
-            : $value;
+        $preserveFloat = $definition->type === PreferenceValueType::Float && is_float($value);
 
         match ($scope) {
-            PreferenceScope::User => $context->user->updateOptionForTeam(
-                $storageKey,
-                $storageValue,
-                config('aura.teams') ? $context->team?->getKey() : null,
-            ),
-            PreferenceScope::Team => $context->team->updateOption($storageKey, $storageValue),
-            PreferenceScope::Everyone => $this->writeEveryoneEntry($storageKey, $storageValue),
+            PreferenceScope::User => $this->writeUserEntry($context, $storageKey, $value, $preserveFloat),
+            PreferenceScope::Team => $this->writeTeamEntry($context, $storageKey, $value, $preserveFloat),
+            PreferenceScope::Everyone => $this->writeEveryoneEntry($storageKey, $value, $preserveFloat),
         };
     }
 
-    private function writeEveryoneEntry(string $storageKey, mixed $value): void
+    private function writeEveryoneEntry(string $storageKey, mixed $value, bool $preserveFloat): void
     {
         $connection = $this->optionConnection();
 
-        $connection->transaction(function () use ($storageKey, $value): void {
+        $connection->transaction(function () use ($storageKey, $value, $preserveFloat): void {
             $attributes = ['name' => $storageKey];
 
             if (config('aura.teams')) {
@@ -377,7 +529,14 @@ final readonly class PreferenceManager
                 $record = Option::withoutGlobalScopes()->newModelInstance($attributes);
             }
 
-            $record->setAttribute('value', $value);
+            if ($preserveFloat) {
+                $record->setRawAttributes(array_replace(
+                    $record->getAttributes(),
+                    ['value' => json_encode($value, JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR)],
+                ));
+            } else {
+                $record->setAttribute('value', $value);
+            }
 
             if ($record->trashed()) {
                 $record->setAttribute($record->getDeletedAtColumn(), null);
@@ -387,5 +546,48 @@ final readonly class PreferenceManager
         });
 
         Aura::clearGlobalOptionCache($connection);
+    }
+
+    private function writeTeamEntry(
+        PreferenceContext $context,
+        string $storageKey,
+        mixed $value,
+        bool $preserveFloat,
+    ): void {
+        $connection = $this->optionConnection();
+
+        $connection->transaction(function () use ($context, $storageKey, $value, $preserveFloat): void {
+            $context->team->updateOption($storageKey, $value);
+
+            if ($preserveFloat) {
+                $this->writeEncodedFloat(
+                    'team.'.$context->team->getKey().'.'.$storageKey,
+                    $context->team->getKey(),
+                    $value,
+                );
+            }
+        });
+    }
+
+    private function writeUserEntry(
+        PreferenceContext $context,
+        string $storageKey,
+        mixed $value,
+        bool $preserveFloat,
+    ): void {
+        $connection = $this->optionConnection();
+        $teamId = config('aura.teams') ? $context->team?->getKey() : null;
+
+        $connection->transaction(function () use ($context, $storageKey, $value, $preserveFloat, $teamId): void {
+            $context->user->updateOptionForTeam($storageKey, $value, $teamId);
+
+            if ($preserveFloat) {
+                $this->writeEncodedFloat(
+                    User::optionNamePrefixFor($context->user->getKey()).$storageKey,
+                    $teamId,
+                    $value,
+                );
+            }
+        });
     }
 }

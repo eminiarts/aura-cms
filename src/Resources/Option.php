@@ -5,9 +5,7 @@ namespace Aura\Base\Resources;
 use Aura\Base\Aura;
 use Aura\Base\Models\Post;
 use Aura\Base\Models\Scopes\TeamScope;
-use Aura\Base\Preferences\PreferenceFloatValue;
 use Aura\Base\Resource;
-use Illuminate\Database\Eloquent\JsonEncodingException;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Option extends Resource
@@ -88,18 +86,6 @@ class Option extends Resource
      */
     public function setValueAttribute(mixed $value): void
     {
-        if ($value instanceof PreferenceFloatValue) {
-            $encoded = json_encode($value->value, JSON_PRESERVE_ZERO_FRACTION);
-
-            if ($encoded === false) {
-                throw JsonEncodingException::forAttribute($this, 'value', json_last_error_msg());
-            }
-
-            $this->attributes['value'] = $encoded;
-
-            return;
-        }
-
         $this->attributes['value'] = $this->castAttributeAsJson('value', $value);
     }
 

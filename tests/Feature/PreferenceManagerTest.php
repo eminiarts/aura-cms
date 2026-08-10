@@ -137,6 +137,7 @@ test('explicit reads ignore ambient auth and team switches', function () {
 
     $preferences->set('table.view', 'kanban', PreferenceScope::User, $firstContext, $firstUser);
     $preferences->set('table.view', 'list', PreferenceScope::User, $secondContext, $firstUser);
+    Auth::login($secondUser);
     $preferences->set('table.view', 'list', PreferenceScope::User, $secondUserContext, $secondUser);
 
     Auth::login($secondUser);
@@ -151,7 +152,7 @@ test('explicit reads ignore ambient auth and team switches', function () {
     expect($preferences->get('table.view', $firstContext))->toBe('kanban');
 });
 
-test('writes authorize the explicit actor and exact target scope', function () {
+test('writes bind the explicit actor to authentication and exact target scope', function () {
     $owner = createSuperAdmin();
     $team = $owner->currentTeam;
     $member = soleMemberOf($team);
@@ -159,10 +160,14 @@ test('writes authorize the explicit actor and exact target scope', function () {
     $preferences = preferenceManager();
     $context = preferenceContext($owner, $team);
 
-    Auth::login($other);
+    Auth::login($owner);
     $preferences->set('table.view', 'kanban', PreferenceScope::User, $context, $owner);
 
-    expect(fn () => $preferences->set('table.view', 'list', PreferenceScope::User, $context, $other))
+    Auth::login($other);
+
+    expect(fn () => $preferences->set('table.view', 'list', PreferenceScope::User, $context, $owner))
+        ->toThrow(AuthorizationException::class)
+        ->and(fn () => $preferences->set('table.view', 'list', PreferenceScope::User, $context, $other))
         ->toThrow(AuthorizationException::class)
         ->and(fn () => $preferences->set('table.view', 'list', PreferenceScope::Team, $context, $member))
         ->toThrow(AuthorizationException::class)
@@ -225,10 +230,13 @@ test('writes use persisted actor privilege membership and target existence', fun
         ->where('user_id', $member->id)
         ->delete();
 
+    Auth::login($member);
+
     expect(fn () => $preferences->set('table.view', 'kanban', PreferenceScope::User, $memberContext, $member))
         ->toThrow(AuthorizationException::class);
 
     $team->deleteQuietly();
+    Auth::login($admin);
 
     expect(fn () => $preferences->set('table.view', 'kanban', PreferenceScope::Team, preferenceContext($admin, $team), $admin))
         ->toThrow(AuthorizationException::class)
@@ -292,6 +300,153 @@ test('mutated persisted actor keys and unsaved target users fail before database
 
     expect($queries)->toBeEmpty()
         ->and(Option::withoutGlobalScopes()->count())->toBe(0);
+});
+
+test('writes bind fabricated actors to the authenticated principal before database access', function () {
+    $admin = preferenceGlobalAdmin();
+    $team = $admin->currentTeam;
+    $authenticatedUser = User::factory()->create();
+    Auth::login($authenticatedUser);
+
+    $fabricatedFromBuilder = (new User)->newFromBuilder(['id' => $admin->id]);
+    $spoofedExists = new User;
+    $spoofedExists->setRawAttributes(['id' => $admin->id], true);
+    $spoofedExists->exists = true;
+    $synchronizedMutation = User::factory()->create();
+    $synchronizedMutation->forceFill(['id' => $admin->id]);
+    $synchronizedMutation->syncOriginalAttribute('id', $admin->id);
+
+    foreach ([$fabricatedFromBuilder, $spoofedExists, $synchronizedMutation] as $fabricatedActor) {
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+
+        expect(fn () => preferenceManager()->set(
+            'table.view',
+            'kanban',
+            PreferenceScope::Everyone,
+            preferenceContext($admin, $team),
+            $fabricatedActor,
+        ))->toThrow(AuthorizationException::class);
+
+        $queries = DB::getQueryLog();
+        DB::disableQueryLog();
+
+        expect($queries)->toBeEmpty();
+    }
+
+    Auth::logout();
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    expect(fn () => preferenceManager()->set(
+        'table.view',
+        'kanban',
+        PreferenceScope::Everyone,
+        preferenceContext($admin, $team),
+        $admin,
+    ))->toThrow(AuthorizationException::class);
+
+    $queries = DB::getQueryLog();
+    DB::disableQueryLog();
+
+    expect($queries)->toBeEmpty()
+        ->and(Option::withoutGlobalScopes()->count())->toBe(0);
+});
+
+test('writes reject an authenticated actor whose session identity was synchronized to another key', function () {
+    $admin = preferenceGlobalAdmin();
+    $team = $admin->currentTeam;
+    $authenticatedUser = User::factory()->create();
+    Auth::login($authenticatedUser);
+    $authenticatedUser->forceFill(['id' => $admin->id]);
+    $authenticatedUser->syncOriginalAttribute('id', $admin->id);
+
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    expect(fn () => preferenceManager()->set(
+        'table.view',
+        'kanban',
+        PreferenceScope::Everyone,
+        preferenceContext($admin, $team),
+        $authenticatedUser,
+    ))->toThrow(AuthorizationException::class);
+
+    $queries = DB::getQueryLog();
+    DB::disableQueryLog();
+
+    expect($queries)->toBeEmpty()
+        ->and(Option::withoutGlobalScopes()->count())->toBe(0);
+});
+
+test('authenticated writes authorize the canonical user instead of mutable actor attributes', function () {
+    $admin = preferenceGlobalAdmin();
+    $member = soleMemberOf($admin->currentTeam);
+    Auth::login($member);
+
+    $forgedActor = (new User)->newFromBuilder(array_replace(
+        $member->getAttributes(),
+        ['global_admin' => true],
+    ));
+    $context = preferenceContext($forgedActor, $admin->currentTeam);
+
+    preferenceManager()->set('table.view', 'kanban', PreferenceScope::User, $context, $forgedActor);
+
+    expect(preferenceManager()->get('table.view', $context))->toBe('kanban')
+        ->and(fn () => preferenceManager()->set(
+            'table.view',
+            'list',
+            PreferenceScope::Everyone,
+            $context,
+            $forgedActor,
+        ))->toThrow(AuthorizationException::class);
+});
+
+test('serialized authenticated actors remain valid write assertions', function () {
+    $admin = preferenceGlobalAdmin();
+    $context = preferenceContext($admin, $admin->currentTeam);
+    $serializedActor = unserialize(serialize($admin));
+
+    preferenceManager()->set('table.view', 'kanban', PreferenceScope::Everyone, $context, $serializedActor);
+
+    expect(preferenceManager()->get('table.view', $context))->toBe('kanban');
+});
+
+test('team writes reject unauthentic target models', function () {
+    $owner = createSuperAdmin();
+    $team = $owner->currentTeam;
+    $otherTeam = Team::factory()->createQuietly(['user_id' => $owner->id]);
+    $unsavedCopy = new Team;
+    $unsavedCopy->forceFill(['id' => $team->id, 'user_id' => $owner->id, 'name' => $team->name]);
+    $spoofedExists = new Team;
+    $spoofedExists->setRawAttributes(['id' => $team->id], true);
+    $spoofedExists->exists = true;
+    $mutatedKey = $team->replicate();
+    $mutatedKey->exists = true;
+    $mutatedKey->setRawAttributes($team->getRawOriginal(), true);
+    $mutatedKey->forceFill(['id' => $otherTeam->id]);
+    $synchronizedMutation = clone $team;
+    $synchronizedMutation->forceFill(['id' => $otherTeam->id]);
+    $synchronizedMutation->syncOriginalAttribute('id', $otherTeam->id);
+    $crossConnection = clone $team;
+    $crossConnection->setConnection('preference-hostile');
+    config()->set('database.connections.preference-hostile', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+    ]);
+
+    foreach ([$unsavedCopy, $spoofedExists, $mutatedKey, $synchronizedMutation, $crossConnection] as $target) {
+        expect(fn () => preferenceManager()->set(
+            'table.view',
+            'kanban',
+            PreferenceScope::Team,
+            preferenceContext($owner, $target),
+            $owner,
+        ))->toThrow(AuthorizationException::class);
+    }
+
+    expect(Option::withoutGlobalScopes()->count())->toBe(0);
 });
 
 test('reserved everyone team identity cannot be used by normal models', function () {
@@ -395,21 +550,25 @@ test('declarations reject contradictory array schemas', function () {
         ))->toThrow(InvalidArgumentException::class, 'array type');
 });
 
-test('finite floats preserve their exact type across option storage and fresh cache reads', function (float $value, string $json) {
+test('finite floats preserve their exact type across every scope and fresh cache reads', function (
+    float $value,
+    string $json,
+    PreferenceScope $scope,
+) {
     registerPreference(new PreferenceDefinition(
         key: 'test.float',
         type: PreferenceValueType::Float,
         default: 2.5,
-        scopes: [PreferenceScope::User],
+        scopes: PreferenceScope::cases(),
     ));
-    $user = createSuperAdmin();
+    $user = preferenceGlobalAdmin();
     $context = preferenceContext($user, $user->currentTeam, null);
     $preferences = preferenceManager();
 
     Json::encodeUsing(fn (mixed $value): mixed => json_encode($value));
 
     try {
-        $preferences->set('test.float', $value, PreferenceScope::User, $context, $user);
+        $preferences->set('test.float', $value, $scope, $context, $user);
 
         expect($preferences->get('test.float', $context))->toBe($value)
             ->and(Option::withoutGlobalScopes()->sole()->getRawOriginal('value'))->toBe($json);
@@ -425,7 +584,27 @@ test('finite floats preserve their exact type across option storage and fresh ca
     'negative zero' => [-0.0, '-0.0'],
     'whole float' => [1.0, '1.0'],
     'fractional float' => [1.25, '1.25'],
+    'positive exponent' => [1.0e+30, '1.0e+30'],
+    'negative exponent' => [-3.125e-9, '-3.125e-9'],
+])->with([
+    'user scope' => PreferenceScope::User,
+    'team scope' => PreferenceScope::Team,
+    'everyone scope' => PreferenceScope::Everyone,
 ]);
+
+test('preference float transport is unavailable to generic option APIs', function () {
+    $user = createSuperAdmin();
+    $payload = (object) ['value' => 12.0];
+
+    $user->updateOption('generic-object', $payload);
+
+    expect(class_exists('Aura\\Base\\Preferences\\PreferenceFloatValue'))->toBeFalse()
+        ->and(method_exists(Option::class, 'setPreferenceFloatValue'))->toBeFalse()
+        ->and(method_exists(User::class, 'updatePreferenceFloatOptionForTeam'))->toBeFalse()
+        ->and(method_exists(Team::class, 'updatePreferenceFloatOption'))->toBeFalse()
+        ->and($user->getOption('generic-object'))->toBeArray()
+        ->and($user->getOption('generic-object'))->toHaveKey('value');
+});
 
 test('float declarations reject integers non-finite values and other invalid types', function (mixed $value) {
     registerPreference(new PreferenceDefinition(
