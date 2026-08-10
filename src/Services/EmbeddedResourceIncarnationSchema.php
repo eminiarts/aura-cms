@@ -156,20 +156,34 @@ final class EmbeddedResourceIncarnationSchema
     ): bool {
         $expected = $this->expectedDefinition($column, $allowHistoricalUpgradeDefaults);
 
-        return $this->normalizeType((string) $actual['type']) === $expected['type']
+        return $this->normalizeType($column, (string) $actual['type']) === $expected['type']
             && (bool) $actual['nullable'] === $expected['nullable']
             && (bool) $actual['auto_increment'] === $expected['auto_increment']
             && $actual['generation'] === null
-            && in_array($this->normalizeDefault($actual['default']), $expected['defaults'], true);
+            && in_array(
+                $this->normalizeDefault(
+                    $actual['default'],
+                    $expected['nullable'] && $expected['defaults'] === [null],
+                ),
+                $expected['defaults'],
+                true,
+            );
     }
 
-    private function normalizeDefault(mixed $default): ?string
+    private function normalizeDefault(mixed $default, bool $acceptMariaDbNullLiteral): ?string
     {
         if ($default === null) {
             return null;
         }
 
         $default = trim((string) $default);
+
+        if ($acceptMariaDbNullLiteral
+            && Schema::getConnection()->getDriverName() === 'mariadb'
+            && $default === 'NULL'
+        ) {
+            return null;
+        }
 
         if (str_starts_with($default, 'nextval(')) {
             return '__auto_increment__';
@@ -184,8 +198,20 @@ final class EmbeddedResourceIncarnationSchema
         return $default;
     }
 
-    private function normalizeType(string $type): string
+    private function normalizeType(string $column, string $type): string
     {
-        return strtolower(preg_replace('/\s+/', ' ', trim($type)) ?? $type);
+        $type = strtolower(preg_replace('/\s+/', ' ', trim($type)) ?? $type);
+
+        if (Schema::getConnection()->getDriverName() === 'mariadb') {
+            if ($type === 'bigint(20) unsigned') {
+                return 'bigint unsigned';
+            }
+
+            if ($column === 'incarnation' && $type === 'uuid') {
+                return 'char(36)';
+            }
+        }
+
+        return $type;
     }
 }

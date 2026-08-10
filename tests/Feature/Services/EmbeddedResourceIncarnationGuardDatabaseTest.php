@@ -267,6 +267,14 @@ test('portable database guards install upgrade invalidate and preserve migration
         $upgrade->up();
         $upgrade->up();
 
+        if ($driver === 'mariadb') {
+            $columns = collect($schema->getColumns(EmbeddedResourceIncarnationStore::TABLE));
+
+            expect($columns->firstWhere('name', 'id')['type'])->toBe('bigint(20) unsigned')
+                ->and($columns->firstWhere('name', 'incarnation')['type'])->toBe('uuid')
+                ->and($columns->firstWhere('name', 'created_at')['default'])->toBe('NULL');
+        }
+
         expect($schema->hasColumns(EmbeddedResourceIncarnationStore::TABLE, [
             'resource_key_type',
             'resource_key',
@@ -445,6 +453,15 @@ test('first canonical prime locks the owner while a second connection replaces i
     try {
         $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
         $migration->up();
+
+        if ($driver === 'mariadb') {
+            $columns = collect($schema->getColumns(EmbeddedResourceIncarnationStore::TABLE));
+
+            expect($columns->firstWhere('name', 'id')['type'])->toBe('bigint(20) unsigned')
+                ->and($columns->firstWhere('name', 'incarnation')['type'])->toBe('uuid')
+                ->and($columns->firstWhere('name', 'created_at')['default'])->toBe('NULL');
+        }
+
         $schema->create($prototype->getTable(), function (Blueprint $table): void {
             $table->string('select')->primary();
             $table->string('title')->nullable();
@@ -560,6 +577,15 @@ test('portable migration ownership stays outside runtime rows and validates orde
     try {
         $create = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
         $create->up();
+
+        if ($driver === 'mariadb') {
+            $columns = collect($schema->getColumns(EmbeddedResourceIncarnationStore::TABLE));
+
+            expect($columns->firstWhere('name', 'id')['type'])->toBe('bigint(20) unsigned')
+                ->and($columns->firstWhere('name', 'incarnation')['type'])->toBe('uuid')
+                ->and($columns->firstWhere('name', 'created_at')['default'])->toBe('NULL');
+        }
+
         expect($connection->table(EmbeddedResourceIncarnationStore::TABLE)
             ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
             ->doesntExist())->toBeTrue()
@@ -715,6 +741,87 @@ test('portable migrations fail closed on malformed stale claimed schemas', funct
 
         expect(fn () => $upgrade->up())->toThrow(RuntimeException::class, 'unexpected definition')
             ->and(app(MigrationOwnershipLedger::class)->readUpgrade()['state'])->toBe('upgrading');
+
+        if ($driver === 'mariadb') {
+            $malformedDefinitions = [
+                'non-canonical integer display width' => [
+                    'MODIFY `id` BIGINT(19) UNSIGNED NOT NULL AUTO_INCREMENT',
+                ],
+                'wrong integer type' => [
+                    'MODIFY `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT',
+                ],
+                'signed primary key' => [
+                    'MODIFY `id` BIGINT(20) NOT NULL AUTO_INCREMENT',
+                ],
+                'non-auto-incrementing primary key' => [
+                    'MODIFY `id` BIGINT(20) UNSIGNED NOT NULL',
+                ],
+                'non-primary auto-incrementing key' => [
+                    'MODIFY `id` BIGINT(20) UNSIGNED NOT NULL',
+                    'DROP PRIMARY KEY, ADD UNIQUE KEY `aura_incarnation_id_unique` (`id`)',
+                    'MODIFY `id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT',
+                ],
+                'nullable required column' => [
+                    'MODIFY `resource_type` VARCHAR(255) NULL',
+                ],
+                'wrong non-null default' => [
+                    'MODIFY `version` BIGINT(20) UNSIGNED NOT NULL DEFAULT 2',
+                ],
+                'wrong UUID length' => [
+                    'MODIFY `incarnation` CHAR(35) NOT NULL',
+                ],
+                'unrelated UUID representation' => [
+                    'MODIFY `incarnation` VARCHAR(36) NOT NULL',
+                ],
+                'non-null timestamp default' => [
+                    'MODIFY `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP',
+                ],
+            ];
+
+            foreach ($malformedDefinitions as $malformation => $alterDefinitions) {
+                $schema->drop(EmbeddedResourceIncarnationStore::TABLE);
+                $connection->table(MigrationOwnershipLedger::TABLE)->delete();
+                $schema->create(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
+                    $table->id();
+                    $table->string('resource_type');
+                    $table->char('resource_key_hash', 64);
+                    $table->string('resource_key_type', 16);
+                    $table->string('resource_key', 191);
+                    $table->uuid('incarnation');
+                    $table->unsignedBigInteger('version')->default(1);
+                    $table->timestamps();
+                });
+
+                foreach ($alterDefinitions as $alterDefinition) {
+                    $connection->statement(
+                        'ALTER TABLE `'.EmbeddedResourceIncarnationStore::TABLE.'` '.$alterDefinition,
+                    );
+                }
+
+                $connection->table(MigrationOwnershipLedger::TABLE)->insert([
+                    'migration' => MigrationOwnershipLedger::CREATE_KEY,
+                    'ownership' => json_encode([
+                        'version' => 2,
+                        'migration' => MigrationOwnershipLedger::CREATE_KEY,
+                        'state' => 'creating',
+                        'payload' => [
+                            'created_table' => true,
+                            'owns_registry' => false,
+                            'generation' => str_repeat('c', 32),
+                        ],
+                    ], JSON_THROW_ON_ERROR),
+                ]);
+                app()->forgetInstance(MigrationOwnershipLedger::class);
+
+                try {
+                    $create->up();
+                    $this->fail("MariaDB accepted the malformed schema: {$malformation}.");
+                } catch (RuntimeException $exception) {
+                    expect($exception->getMessage())->toContain('unexpected definition')
+                        ->and(app(MigrationOwnershipLedger::class)->readCreate()['state'])->toBe('creating');
+                }
+            }
+        }
     } finally {
         app()->forgetInstance(MigrationOwnershipLedger::class);
         $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
@@ -772,6 +879,14 @@ test('portable migrations reject duplicate-capable registries and resume after a
         app()->forgetInstance(MigrationOwnershipLedger::class);
         $migration->up();
         $indexes = collect($schema->getIndexes(EmbeddedResourceIncarnationStore::TABLE));
+
+        if ($driver === 'mariadb') {
+            $columns = collect($schema->getColumns(EmbeddedResourceIncarnationStore::TABLE));
+
+            expect($columns->firstWhere('name', 'id')['type'])->toBe('bigint(20) unsigned')
+                ->and($columns->firstWhere('name', 'incarnation')['type'])->toBe('uuid')
+                ->and($columns->firstWhere('name', 'created_at')['default'])->toBe('NULL');
+        }
 
         expect(app(MigrationOwnershipLedger::class)->readCreate()['state'])->toBe('owned')
             ->and($indexes->firstWhere('name', 'aura_embedded_incarnation_resource_unique')['columns'])
