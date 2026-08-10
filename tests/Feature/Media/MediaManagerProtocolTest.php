@@ -641,6 +641,55 @@ test('picker modal security metadata cannot be hydrated away to bypass its dismi
         ->assertSet("modals.{$freshId}.name", ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID);
 });
 
+test('picker modal active state cannot be hydrated closed while its selection is pending', function () {
+    app(MediaSelectionBroker::class)->begin(
+        $this->ownerToken,
+        'manager-component',
+        [(string) $this->attachment->getKey()],
+        $this->actor,
+    );
+
+    $modals = Livewire::test(Modals::class)
+        ->call('openModal', ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID, $this->arguments);
+    $id = array_key_first($modals->get('modals'));
+
+    $modals->set("activeModals.{$id}", false)
+        ->assertOk()
+        ->assertSet("activeModals.{$id}", true)
+        ->assertSet("modals.{$id}.name", ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID);
+});
+
+test('picker modal active state accepts normal dismissal after its selection lock clears', function () {
+    $modals = Livewire::test(Modals::class)
+        ->call('openModal', ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID, $this->arguments);
+    $id = array_key_first($modals->get('modals'));
+
+    $modals->set("activeModals.{$id}", false)
+        ->assertOk()
+        ->assertSet("activeModals.{$id}", false)
+        ->assertSet("modals.{$id}.name", ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID);
+});
+
+test('modal active state rejects forged keys values and whole-map hydration without corruption', function () {
+    $openModals = fn () => Livewire::test(Modals::class)
+        ->call('openModal', ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID, $this->arguments);
+
+    $unknown = $openModals();
+    $unknown->set('activeModals.forged', true)
+        ->assertForbidden();
+
+    expect($unknown->get('activeModals'))->not->toHaveKey('forged');
+
+    $malformed = $openModals();
+    $malformedId = array_key_first($malformed->get('modals'));
+    $malformed->set("activeModals.{$malformedId}", 'false')
+        ->assertForbidden();
+
+    $wholeMap = $openModals();
+    $wholeMap->set('activeModals', [])
+        ->assertForbidden();
+});
+
 test('manager accepts upload selection only from its attested owner context', function () {
     app('aura')::registerResources([GalleryPage::class]);
     $uploaded = Attachment::factory()->create(config('aura.teams') ? ['team_id' => $this->actor->current_team_id] : []);

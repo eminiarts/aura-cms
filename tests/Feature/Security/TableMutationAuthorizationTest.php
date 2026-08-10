@@ -1393,6 +1393,7 @@ test('global modal state cannot be hydrated with component definitions or nested
 
     livewire(Modals::class)
         ->set('activeModals.forged', true)
+        ->assertForbidden()
         ->assertDontSee('Forged modal');
 
     expect(Core05ForgedModal::$mounts)->toBe(0);

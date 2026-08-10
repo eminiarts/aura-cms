@@ -116,6 +116,23 @@ class Modals extends Component
         return view('aura::livewire.modals');
     }
 
+    public function updatedActiveModals(mixed $value, ?string $key = null): void
+    {
+        if (! is_string($key)
+            || ! array_key_exists($key, $this->modals)
+            || ! is_bool($value)) {
+            if (is_string($key) && ! array_key_exists($key, $this->modals)) {
+                unset($this->activeModals[$key]);
+            }
+
+            abort(403, 'Modal state is invalid.');
+        }
+
+        if ($value === false && $this->dismissalLocked($key)) {
+            $this->activeModals[$key] = true;
+        }
+    }
+
     public function updatedModals(mixed $value, string $key): void
     {
         if ($value !== false || ! str_ends_with($key, '.active')) {
@@ -126,6 +143,26 @@ class Modals extends Component
 
         if (isset($this->modals[$id]) && $this->dismissalLocked($id)) {
             $this->modals[$id]['active'] = true;
+        }
+    }
+
+    public function updatingActiveModals(mixed $value, ?string $key = null): void
+    {
+        if (! is_string($key)
+            || ! array_key_exists($key, $this->modals)
+            || ! array_key_exists($key, $this->activeModals)
+            || ! is_bool($value)) {
+            if (is_string($key) && array_key_exists($key, $this->modals)) {
+                $this->activeModals[$key] = true;
+            } elseif (is_string($key)) {
+                unset($this->activeModals[$key]);
+            }
+
+            abort(403, 'Modal state is invalid.');
+        }
+
+        if ($value === false && $this->dismissalLocked($key)) {
+            $this->activeModals[$key] = true;
         }
     }
 
