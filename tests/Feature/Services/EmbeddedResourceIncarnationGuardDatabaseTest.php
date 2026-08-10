@@ -339,6 +339,57 @@ test('portable database guards install upgrade invalidate and preserve migration
         $guard->install($prototype);
         expect($guard->isInstalled($prototype))->toBeTrue();
 
+        if ($driver === 'sqlite') {
+            $deleteTrigger = $connection->table('sqlite_master')
+                ->where('type', 'trigger')
+                ->where('tbl_name', $prototype->getTable())
+                ->whereRaw("lower(sql) like '% after delete %'")
+                ->value('name');
+            $connection->unprepared('drop trigger "'.str_replace('"', '""', $deleteTrigger).'"');
+            $connection->unprepared(sprintf(
+                'create trigger "%s" before delete on "core12 guarded-owners" for each row begin select 1; end',
+                str_replace('"', '""', $deleteTrigger),
+            ));
+        } elseif (in_array($driver, ['mysql', 'mariadb'], true)) {
+            $deleteTrigger = $connection->table('information_schema.TRIGGERS')
+                ->where('TRIGGER_SCHEMA', $connection->getDatabaseName())
+                ->where('EVENT_OBJECT_TABLE', $prototype->getTable())
+                ->where('EVENT_MANIPULATION', 'DELETE')
+                ->value('TRIGGER_NAME');
+            $connection->unprepared('drop trigger `'.str_replace('`', '``', $deleteTrigger).'`');
+            $connection->unprepared(sprintf(
+                'create trigger `%s` before delete on `core12 guarded-owners` for each row set @aura_core12_noop = 1',
+                str_replace('`', '``', $deleteTrigger),
+            ));
+        } else {
+            $trigger = $connection->selectOne(
+                <<<'SQL'
+                    select t.tgname as name, p.proname as function_name
+                    from pg_catalog.pg_trigger t
+                    join pg_catalog.pg_class c on c.oid = t.tgrelid
+                    join pg_catalog.pg_proc p on p.oid = t.tgfoid
+                    where not t.tgisinternal
+                      and c.oid = pg_catalog.to_regclass(?)
+                      and (t.tgtype & 8) = 8
+                    SQL,
+                ['"core12 guarded-owners"'],
+            );
+            $connection->unprepared('drop trigger "'.str_replace('"', '""', $trigger->name).'" on "core12 guarded-owners"');
+            $connection->unprepared(sprintf(
+                'create or replace function "%s"() returns trigger as $aura$ begin return OLD; end; $aura$ language plpgsql',
+                str_replace('"', '""', $trigger->function_name),
+            ));
+            $connection->unprepared(sprintf(
+                'create trigger "%s" before delete on "core12 guarded-owners" for each row execute function "%s"()',
+                str_replace('"', '""', $trigger->name),
+                str_replace('"', '""', $trigger->function_name),
+            ));
+        }
+
+        expect($guard->isInstalled($prototype))->toBeFalse();
+        $guard->install($prototype);
+        expect($guard->isInstalled($prototype))->toBeTrue();
+
         $connection->table($prototype->getTable())->insert([
             'select' => 'portable-key',
             'title' => 'Original',
@@ -431,6 +482,85 @@ test('portable database guards install upgrade invalidate and preserve migration
         }
     }
 })->with(['sqlite', 'mysql', 'mariadb', 'pgsql'])->group('database-guards');
+
+test('postgres guard ignores same-named triggers on another owner table', function (): void {
+    if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
+        $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with a dedicated PostgreSQL test database.');
+    }
+
+    $connectionName = 'core12_pgsql_foreign_trigger';
+    config(["database.connections.{$connectionName}" => core12ExternalGuardConnection('pgsql')]);
+    DB::purge($connectionName);
+    $originalConnection = DB::getDefaultConnection();
+    DB::setDefaultConnection($connectionName);
+    Schema::clearResolvedInstance('db.schema');
+    $connection = DB::connection($connectionName);
+    $schema = $connection->getSchemaBuilder();
+    $prototype = (new Core12ExternalGuardResource)->setConnection($connectionName);
+    $guard = app(EmbeddedResourceIncarnationGuard::class);
+    $foreignTable = 'core12 foreign-owners';
+    $foreignFunction = 'aura_core12_foreign_noop';
+
+    $schema->dropIfExists($prototype->getTable());
+    $schema->dropIfExists($foreignTable);
+    $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+    $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+    $connection->unprepared('drop function if exists "'.$foreignFunction.'"()');
+
+    try {
+        $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+        $migration->up();
+        $schema->create($prototype->getTable(), function (Blueprint $table): void {
+            $table->string('select')->primary();
+        });
+        $schema->create($foreignTable, function (Blueprint $table): void {
+            $table->string('select')->primary();
+        });
+        $guard->install($prototype);
+        $deleteTrigger = (string) $connection->selectOne(
+            <<<'SQL'
+                select t.tgname as name
+                from pg_catalog.pg_trigger t
+                join pg_catalog.pg_class c on c.oid = t.tgrelid
+                where not t.tgisinternal
+                  and c.oid = pg_catalog.to_regclass(?)
+                  and (t.tgtype & 8) = 8
+                SQL,
+            ['"core12 guarded-owners"'],
+        )->name;
+        $guard->uninstall($prototype);
+        $connection->unprepared(
+            'create function "'.$foreignFunction.'"() returns trigger as $aura$ begin return OLD; end; $aura$ language plpgsql',
+        );
+        $connection->unprepared(sprintf(
+            'create trigger "%s" after delete on "core12 foreign-owners" for each row execute function "%s"()',
+            str_replace('"', '""', $deleteTrigger),
+            $foreignFunction,
+        ));
+
+        expect($guard->isInstalled($prototype))->toBeFalse();
+        $guard->install($prototype);
+
+        expect($guard->isInstalled($prototype))->toBeTrue()
+            ->and($connection->selectOne(
+                'select count(*) as aggregate from pg_catalog.pg_trigger where not tgisinternal and tgname = ?',
+                [$deleteTrigger],
+            )->aggregate)->toBe(2);
+    } finally {
+        if ($schema->hasTable($prototype->getTable())) {
+            $guard->uninstall($prototype);
+            $schema->drop($prototype->getTable());
+        }
+
+        $schema->dropIfExists($foreignTable);
+        $connection->unprepared('drop function if exists "'.$foreignFunction.'"()');
+        $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+        $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+        DB::disconnect($connectionName);
+        DB::setDefaultConnection($originalConnection);
+        Schema::clearResolvedInstance('db.schema');
+    }
+})->group('database-guards');
 
 test('first canonical prime locks the owner while a second connection replaces it', function (string $driver): void {
     if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {

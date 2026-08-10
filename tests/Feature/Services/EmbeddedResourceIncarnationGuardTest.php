@@ -134,6 +134,61 @@ it('fails closed when a resource guard is absent', function () {
             ->count())->toBe(0);
 });
 
+it('repairs a same-name SQLite trigger with the wrong contract and does not cache prior verification', function (): void {
+    $guard = app(EmbeddedResourceIncarnationGuard::class);
+    $resource = new Core12QuotedGuardResource;
+    $guard->install($resource);
+    $deleteTrigger = DB::table('sqlite_master')
+        ->where('type', 'trigger')
+        ->where('tbl_name', $resource->getTable())
+        ->whereRaw("lower(sql) like '% after delete %'")
+        ->value('name');
+
+    expect($deleteTrigger)->toBeString();
+    $guard->assertInstalled($resource);
+    DB::unprepared('drop trigger "'.str_replace('"', '""', $deleteTrigger).'"');
+    DB::unprepared(sprintf(
+        'create trigger "%s" before delete on "core12 guarded-owners" for each row begin select 1; end',
+        str_replace('"', '""', $deleteTrigger),
+    ));
+
+    expect($guard->isInstalled($resource))->toBeFalse()
+        ->and(fn () => $guard->assertInstalled($resource))
+        ->toThrow(MissingEmbeddedResourceIncarnationGuard::class);
+
+    $guard->install($resource);
+
+    expect($guard->isInstalled($resource))->toBeTrue();
+});
+
+it('does not remove a same-name SQLite trigger owned by another table', function (): void {
+    $guard = app(EmbeddedResourceIncarnationGuard::class);
+    $resource = new Core12QuotedGuardResource;
+    $guard->install($resource);
+    $deleteTrigger = DB::table('sqlite_master')
+        ->where('type', 'trigger')
+        ->where('tbl_name', $resource->getTable())
+        ->whereRaw("lower(sql) like '% after delete %'")
+        ->value('name');
+    $guard->uninstall($resource);
+    Schema::create('core12 foreign-owners', function (Blueprint $table): void {
+        $table->string('select')->primary();
+    });
+    DB::unprepared(sprintf(
+        'create trigger "%s" after delete on "core12 foreign-owners" for each row begin select 1; end',
+        str_replace('"', '""', $deleteTrigger),
+    ));
+
+    expect(fn () => $guard->install($resource))
+        ->toThrow(RuntimeException::class, 'belongs to another table')
+        ->and(DB::table('sqlite_master')
+            ->where('type', 'trigger')
+            ->where('tbl_name', 'core12 foreign-owners')
+            ->where('name', $deleteTrigger)
+            ->exists())->toBeTrue()
+        ->and($guard->isInstalled($resource))->toBeFalse();
+});
+
 it('propagates database write failures while installing a guard', function () {
     DB::statement('PRAGMA query_only = ON');
 

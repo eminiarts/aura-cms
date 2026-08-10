@@ -15,25 +15,14 @@ final class EmbeddedResourceIncarnationGuard
 
     private const IDENTITY_INDEX = 'aura_embedded_incarnation_guard_identity_unique';
 
-    /** @var array<string, true> */
-    private array $verified = [];
-
     public function assertInstalled(Model $resource): void
     {
-        $identity = $this->identity($resource);
-
-        if (isset($this->verified[$identity])) {
-            return;
-        }
-
         if (! $this->isInstalled($resource)) {
             throw new MissingEmbeddedResourceIncarnationGuard(sprintf(
                 'Secure embedded components require an incarnation guard for %s. Install it in a deployment migration.',
                 $resource::class,
             ));
         }
-
-        $this->verified[$identity] = true;
     }
 
     /**
@@ -51,13 +40,12 @@ final class EmbeddedResourceIncarnationGuard
             return;
         }
 
+        $this->assertNoForeignTriggerNameConflicts($connection, $resource);
         $this->dropStatements($connection, $resource);
 
         foreach ($this->createStatements($connection, $resource) as $statement) {
             $connection->unprepared($statement);
         }
-
-        unset($this->verified[$this->identity($resource)]);
 
         if (! $this->isInstalled($resource)) {
             throw new RuntimeException('Unable to install the embedded resource incarnation guard.');
@@ -67,33 +55,16 @@ final class EmbeddedResourceIncarnationGuard
     public function isInstalled(Model $resource): bool
     {
         $connection = $resource->getConnection();
-        $names = $this->triggerNames($resource);
-        $driver = $connection->getDriverName();
 
-        $rows = match ($driver) {
-            'sqlite' => $connection->select(
-                'select name from sqlite_master where type = ? and name in (?, ?, ?)',
-                ['trigger', $names['delete'], $names['insert'], $names['update']],
-            ),
-            'mysql', 'mariadb' => $connection->select(
-                'select TRIGGER_NAME as name from information_schema.TRIGGERS where TRIGGER_SCHEMA = database() and TRIGGER_NAME in (?, ?, ?)',
-                [$names['delete'], $names['insert'], $names['update']],
-            ),
-            'pgsql' => $connection->select(
-                'select trigger_name as name from information_schema.triggers where trigger_schema = current_schema() and trigger_name in (?, ?, ?)',
-                [$names['delete'], $names['insert'], $names['update']],
-            ),
-            default => throw new RuntimeException("Unsupported embedded incarnation guard driver [{$driver}]."),
+        return match ($connection->getDriverName()) {
+            'sqlite' => $this->sqliteContractIsInstalled($connection, $resource),
+            'mysql', 'mariadb' => $this->mysqlContractIsInstalled($connection, $resource),
+            'pgsql' => $this->postgresContractIsInstalled($connection, $resource),
+            default => throw new RuntimeException(sprintf(
+                'Unsupported embedded incarnation guard driver [%s].',
+                $connection->getDriverName(),
+            )),
         };
-
-        $installed = collect($rows)
-            ->map(fn (object $row): string => (string) ($row->name ?? $row->TRIGGER_NAME ?? ''))
-            ->unique()
-            ->all();
-
-        return in_array($names['delete'], $installed, true)
-            && in_array($names['insert'], $installed, true)
-            && in_array($names['update'], $installed, true);
     }
 
     /**
@@ -104,7 +75,38 @@ final class EmbeddedResourceIncarnationGuard
         $resource = $this->resource($resource);
         $connection = $resource->getConnection();
         $this->dropStatements($connection, $resource);
-        unset($this->verified[$this->identity($resource)]);
+    }
+
+    private function assertNoForeignTriggerNameConflicts(Connection $connection, Model $resource): void
+    {
+        if (! in_array($connection->getDriverName(), ['sqlite', 'mysql', 'mariadb'], true)) {
+            return;
+        }
+
+        $names = array_values($this->triggerNames($resource));
+        $ownerTable = $this->ownerTable($connection, $resource);
+        $rows = $connection->getDriverName() === 'sqlite'
+            ? $connection->select(
+                'select name, tbl_name from sqlite_master where type = ? and name in (?, ?, ?)',
+                ['trigger', ...$names],
+            )
+            : $connection->select(
+                'select TRIGGER_NAME as name, EVENT_OBJECT_TABLE as owner_table from information_schema.TRIGGERS where TRIGGER_SCHEMA = database() and TRIGGER_NAME in (?, ?, ?)',
+                $names,
+            );
+
+        $foreign = collect($rows)->first(function (object $row) use ($ownerTable): bool {
+            $actualTable = (string) ($row->tbl_name ?? $row->owner_table ?? '');
+
+            return $actualTable !== $ownerTable;
+        });
+
+        if ($foreign !== null) {
+            throw new RuntimeException(sprintf(
+                'Cannot install embedded incarnation guard because trigger [%s] belongs to another table.',
+                (string) ($foreign->name ?? ''),
+            ));
+        }
     }
 
     private function assertSchema(Connection $connection, Model $resource): void
@@ -241,7 +243,7 @@ final class EmbeddedResourceIncarnationGuard
         }
 
         foreach ($versions as $version) {
-            foreach ($this->triggerNames($resource, $version) as $name) {
+            foreach ($this->ownedTriggerNames($connection, $resource, $version) as $name) {
                 $connection->unprepared('drop trigger if exists '.$grammar->wrap($name));
             }
         }
@@ -263,11 +265,6 @@ final class EmbeddedResourceIncarnationGuard
         ])), 0, 40);
     }
 
-    private function identity(Model $resource): string
-    {
-        return $resource->getConnectionName().'|'.$this->guardHash($resource);
-    }
-
     private function insertFunctionName(Model $resource, int $version = self::CONTRACT_VERSION): string
     {
         return 'aura_emb_ins_'.$this->guardHash($resource, $version);
@@ -276,6 +273,152 @@ final class EmbeddedResourceIncarnationGuard
     private function literal(string $value): string
     {
         return "'".str_replace("'", "''", $value)."'";
+    }
+
+    private function mysqlContractIsInstalled(Connection $connection, Model $resource): bool
+    {
+        $names = $this->triggerNames($resource);
+        $rows = collect($connection->select(
+            'select TRIGGER_NAME as name, EVENT_MANIPULATION as event, EVENT_OBJECT_TABLE as owner_table, ACTION_STATEMENT as action_statement, ACTION_ORIENTATION as orientation, ACTION_TIMING as timing from information_schema.TRIGGERS where TRIGGER_SCHEMA = database() and EVENT_OBJECT_TABLE = ? and TRIGGER_NAME in (?, ?, ?)',
+            [$this->ownerTable($connection, $resource), ...array_values($names)],
+        ))->keyBy(fn (object $row): string => (string) $row->name);
+        $actions = $this->mysqlExpectedActions($connection, $resource);
+
+        foreach (['delete', 'insert', 'update'] as $event) {
+            $row = $rows->get($names[$event]);
+
+            if (! is_object($row)
+                || strtoupper((string) $row->event) !== strtoupper($event)
+                || strtoupper((string) $row->timing) !== 'AFTER'
+                || strtoupper((string) $row->orientation) !== 'ROW'
+                || $this->normalizeSql((string) $row->action_statement) !== $this->normalizeSql($actions[$event])
+            ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @return array{delete: string, insert: string, update: string}
+     */
+    private function mysqlExpectedActions(Connection $connection, Model $resource): array
+    {
+        $actions = [];
+
+        foreach (array_slice($this->createStatements($connection, $resource), -3) as $statement) {
+            if (preg_match('/create trigger .+ after (delete|insert|update) on .+ for each row (.+)\z/is', $statement, $matches) !== 1) {
+                throw new RuntimeException('Unable to derive the embedded incarnation trigger contract.');
+            }
+
+            $actions[strtolower($matches[1])] = $matches[2];
+        }
+
+        if (! isset($actions['delete'], $actions['insert'], $actions['update'])) {
+            throw new RuntimeException('Unable to derive the complete embedded incarnation trigger contract.');
+        }
+
+        return [
+            'delete' => $actions['delete'],
+            'insert' => $actions['insert'],
+            'update' => $actions['update'],
+        ];
+    }
+
+    private function normalizeSql(string $sql): string
+    {
+        $sql = str_replace(['`', '"', '[', ']'], '', strtolower($sql));
+        $sql = preg_replace('/\s+/', ' ', trim($sql)) ?? '';
+
+        return preg_replace('/\s*([(),;.=<>+])\s*/', '$1', $sql) ?? '';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function ownedTriggerNames(Connection $connection, Model $resource, int $version): array
+    {
+        $names = array_values($this->triggerNames($resource, $version));
+        $rows = $connection->getDriverName() === 'sqlite'
+            ? $connection->select(
+                'select name from sqlite_master where type = ? and tbl_name = ? and name in (?, ?, ?)',
+                ['trigger', $this->ownerTable($connection, $resource), ...$names],
+            )
+            : $connection->select(
+                'select TRIGGER_NAME as name from information_schema.TRIGGERS where TRIGGER_SCHEMA = database() and EVENT_OBJECT_TABLE = ? and TRIGGER_NAME in (?, ?, ?)',
+                [$this->ownerTable($connection, $resource), ...$names],
+            );
+
+        return collect($rows)
+            ->map(fn (object $row): string => (string) ($row->name ?? ''))
+            ->all();
+    }
+
+    private function ownerTable(Connection $connection, Model $resource): string
+    {
+        $table = $connection->getTablePrefix().$resource->getTable();
+
+        return str_contains($table, '.') ? (string) str($table)->afterLast('.') : $table;
+    }
+
+    private function postgresContractIsInstalled(Connection $connection, Model $resource): bool
+    {
+        $names = $this->triggerNames($resource);
+        $rows = collect($connection->select(
+            <<<'SQL'
+                select t.tgname as name, t.tgtype as trigger_type, t.tgenabled as enabled,
+                       p.proname as function_name, pn.nspname as function_schema, p.prosrc as function_source
+                from pg_catalog.pg_trigger t
+                join pg_catalog.pg_class c on c.oid = t.tgrelid
+                join pg_catalog.pg_proc p on p.oid = t.tgfoid
+                join pg_catalog.pg_namespace pn on pn.oid = p.pronamespace
+                where not t.tgisinternal
+                  and c.oid = pg_catalog.to_regclass(?)
+                  and t.tgname in (?, ?, ?)
+                SQL,
+            [$connection->getQueryGrammar()->wrapTable($resource->getTable()), ...array_values($names)],
+        ))->keyBy(fn (object $row): string => (string) $row->name);
+        $sources = $this->postgresExpectedFunctionSources($connection, $resource);
+        $functionSchema = (string) ($connection->selectOne('select current_schema() as name')->name ?? '');
+        $eventBits = ['delete' => 8, 'insert' => 4, 'update' => 16];
+
+        foreach ($eventBits as $event => $eventBit) {
+            $row = $rows->get($names[$event]);
+            $expectedFunction = $event === 'insert'
+                ? $this->insertFunctionName($resource)
+                : $this->functionName($resource);
+
+            if (! is_object($row)
+                || (int) $row->trigger_type !== (1 | $eventBit)
+                || (string) $row->enabled !== 'O'
+                || (string) $row->function_name !== $expectedFunction
+                || (string) $row->function_schema !== $functionSchema
+                || $this->normalizeSql((string) $row->function_source) !== $this->normalizeSql($sources[$expectedFunction])
+            ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function postgresExpectedFunctionSources(Connection $connection, Model $resource): array
+    {
+        $sources = [];
+
+        foreach (array_slice($this->createStatements($connection, $resource), 0, 2) as $statement) {
+            if (preg_match('/create or replace function ["`]?([^"`()]+)["`]?\(\) returns trigger as \$aura\$(.+)\$aura\$ language plpgsql\z/is', $statement, $matches) !== 1) {
+                throw new RuntimeException('Unable to derive the embedded incarnation function contract.');
+            }
+
+            $sources[$matches[1]] = $matches[2];
+        }
+
+        return $sources;
     }
 
     private function randomHashExpression(string $driver): string
@@ -325,6 +468,33 @@ final class EmbeddedResourceIncarnationGuard
     private function resourceKeyType(Model $resource): string
     {
         return $resource->getKeyType() === 'int' ? 'integer' : 'string';
+    }
+
+    private function sqliteContractIsInstalled(Connection $connection, Model $resource): bool
+    {
+        $names = $this->triggerNames($resource);
+        $rows = collect($connection->select(
+            'select name, tbl_name, sql from sqlite_master where type = ? and tbl_name = ? and name in (?, ?, ?)',
+            ['trigger', $this->ownerTable($connection, $resource), ...array_values($names)],
+        ))->keyBy(fn (object $row): string => (string) $row->name);
+        $statements = collect($this->createStatements($connection, $resource))
+            ->keyBy(function (string $statement): string {
+                preg_match('/create trigger ["`]?([^"` ]+)/i', $statement, $matches);
+
+                return $matches[1] ?? '';
+            });
+
+        foreach ($names as $name) {
+            $row = $rows->get($name);
+
+            if (! is_object($row)
+                || $this->normalizeSql((string) $row->sql) !== $this->normalizeSql((string) $statements->get($name))
+            ) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function touchStatement(
