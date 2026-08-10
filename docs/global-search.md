@@ -38,14 +38,80 @@ return [
 
 When disabled, the GlobalSearch component returns a 403 error and the search interface is not rendered.
 
+### Search Bounds and Ranking
+
+The default search budget is configured separately from the feature toggle:
+
+```php
+'global_search' => [
+    'adapter' => Aura\Base\GlobalSearch\DatabaseGlobalSearchAdapter::class,
+    'execution_backend' => 'process',
+    'worker_php' => null,
+    'worker_artisan' => null,
+    'worker_autoload' => null,
+    'worker_bootstrap' => null,
+    'worker_connections' => ['@default'],
+    'minimum_query_length' => 2,
+    'maximum_query_length' => 64,
+    'max_resources' => 25,
+    'max_resource_candidates' => 100,
+    'max_fields_per_resource' => 8,
+    'candidate_limit' => 100,
+    'per_resource_limit' => 5,
+    'global_limit' => 15,
+    'max_title_dependencies' => 4,
+    'max_queries_per_resource' => 4,
+    'max_total_queries' => 100,
+    'per_resource_timeout_ms' => 500,
+    'total_timeout_ms' => 3_000,
+    'isolated_payload_bytes' => 1_048_576,
+    'icon_bytes' => 8_192,
+    'allowed_route_names' => ['aura.*'],
+    'ranking' => [
+        'exact' => 300,
+        'prefix' => 200,
+        'contains' => 100,
+    ],
+],
+```
+
+The default database adapter selects a key-ordered window of at most `candidate_limit` visible rows per resource and ranks that window in PHP. Aura evaluates global scopes and `applyGlobalSearchVisibility()` on two independent query clones and requires their exact SQL, bindings, connection, compiler, and operator state to match. Resource query callbacks execute separately on a predicate-free clone; their safe parameter-bound predicates are then appended beneath one core-owned `AND` group, so a callback cannot erase or top-level-`OR` around trusted visibility. Ordering, limit, and offset changes remain supported. A callback that introduces a raw SQL fragment, changes structural query components such as the selected columns, source, joins, grouping, or having clauses, changes the connection/compiler, or adds a union fails the resource closed. The final sealed query must use the resource's exact table and connection and cannot contain a union, including in nested builders. Aura then snapshots those predicates into a callback-free subquery and adds the candidate limit on a new, core-owned outer query. The adapter verifies the sealed SQL, bindings, callback state, and final limit before execution and fails closed if any invariant changes. It never runs an unbounded `%term%` table scan and never enables a resource's default eager loads. Aura also caps registered-resource inspection, authorized resources, searchable fields, title dependencies, per-resource queries, total queries, returned results, query characters, and elapsed search work. Package hard caps still apply if published configuration is accidentally set much higher.
+
+Aura executes discovery and each resource search in a separately booted Laravel CLI process. A minimal POSIX launcher first proves that `/proc/self/fd` or `/dev/fd` is readable and enumerable, then closes every inherited descriptor above standard input/output/error before executing PHP. Requests and scalar responses cross the boundary as size-limited JSON over standard input/output; no application object, PDO handle, file, or server socket crosses into the worker. Each worker receives an app-key-signed authentication context containing an allowlisted connection name and a keyed fingerprint of that connection's configuration. It selects that connection before authentication, reloads the user there, verifies both the resolved model connection and persisted current-team identifier, and exits after one operation. A connection-name or configuration mismatch fails closed, including equal user/team identifiers in another database.
+
+`worker_connections` is a non-empty allowlist of at most 32 configured Laravel connection names. The special `@default` entry resolves to the application's current default connection. Multi-tenant applications must list every eligible named connection and bootstrap identical connection configuration in the request and CLI worker; credentials are never serialized into the worker request. Runtime-only connection changes that the fresh CLI boot cannot reproduce intentionally fail the configuration fingerprint check.
+
+The process backend requires the authenticated principal to be an Eloquent model so its resolved connection can be verified. Other provider types fail closed.
+
+The total deadline includes resource discovery. After class validation, Aura creates a constructor-free model subject and evaluates `viewAny` before container resolution, resource construction, field discovery, database access, visibility, adapter, or presentation hooks. Only an authorized class is resolved and constructed, and a container substitution for a different concrete class fails closed. The resource deadline includes those authorized hooks, record policies, title dependencies, and destinations. Worker standard output is untrusted diagnostic data. The restricted outer bootstrap destructively consumes and unlinks a supervisor-generated one-use capability, registers its premature-termination sentinel, and only then boots Laravel. Failed truncation or unlinking rejects completion, and the token is neutralized before either operation so an unlink failure cannot leave reusable capability material. After provider bootstrap, Aura verifies that the registered worker name still resolves to the exact final package command, then invokes a freshly constructed copy of that package command directly rather than authorizing completion from the replaceable Artisan name registry. Only after that exact command returns the completion status does the outer bootstrap append a capability-bound proof. After the exact worker child exits, the supervisor reveals the matching capability in a distinct terminal attestation containing the PID it forked, verified containment state, and observed completion exit. The parent accepts only one response, followed by one valid bootstrap proof and one supervisor attestation, and adds worker identity and containment metadata from that attestation rather than worker JSON. No provider, resource, or other autoloaded application code receives completion authority. An early `exit`, `die`, fatal error, or replaced worker command emits no valid completion chain; forged, partial, duplicate, malformed, reordered, or metadata-inconsistent output fails closed, including provider shutdown callbacks, public completion calls, and output buffering. `isolated_payload_bytes` bounds all worker output. Exceptions and deadlines are logged using only resource class, reason, exception class, and configured timeout; search terms and result data are never included.
+
+Query limits are installed before the worker reloads the authenticated user and are enforced with a before-execution callback on every Laravel-managed database connection created by the worker. Aura replaces the shared connection factory on the original database manager before installing its facade/model-resolver wrapper, guards existing connection extensions, and decorates the worker's event dispatcher so every `ConnectionEstablished` dispatch installs the meter before application listeners run. The decorator remains authoritative through a private container alias for the operation. Rebinding and before-resolution guards run before application callbacks, wrap a replacement before it can be observed, restore the alias after singleton, scoped-instance, offset-unset, facade-cache, or complete instance clearing, and fail replacement or removal closed. A replacement dispatcher's custom listeners and concrete behavior remain available through the decorator if application code catches the rejection. Connections created through a manager reference captured during provider boot are therefore metered just like connections created through the current container binding. Replacing `app('events')`, swapping or clearing the facade, removing `ConnectionEstablished` listeners, clearing or aliasing the container binding, registering a higher-precedence connection-name or driver extension after guard installation, and then purging or reconnecting cannot bypass the meter. Extension callbacks keep Laravel's normal semantics; unsupported connections fail closed. Guarded connection objects are tracked by weak object identity, so recreating a connection installs a fresh callback even when PHP reuses the previous numeric object ID, without retaining discarded connections. Authentication plus queries issued by policies, hooks, title presentation, and custom adapters count even when those extensions do not cooperate with `GlobalSearchBudget`. A timed-out or malformed resource pessimistically consumes its remaining per-resource query allocation in the parent.
+
+Native PDO cannot be intercepted portably by Laravel's connection callback. Global-search resources, policies, visibility/title hooks, and adapters therefore must not call `getPdo()`/`getReadPdo()`, construct `PDO`, or create unmanaged database connections. Such application code violates the extension contract and is not query-metered; the independent hard process deadline still kills it. Use Eloquent, the query builder, or Laravel `Connection` methods, and use `GlobalSearchBudget` for non-database backends.
+
+The `process` backend requires a POSIX `/bin/sh`; an enumerable `/proc/self/fd` or `/dev/fd`; PHP's `proc_open`, `pcntl` signal handlers and signal masking, and `posix_kill` in the request runtime; a CLI PHP with fork/exec/wait, POSIX signal support, and Unix socket-pair stream functions; and readable Artisan, Composer autoload, and Laravel bootstrap entry points. `worker_php: null` uses Symfony's SAPI-aware PHP executable finder, so an FPM binary is never reused as the worker command; set an absolute path when PHP CLI lives in a non-standard location. `worker_artisan: null` resolves to `base_path('artisan')`. `worker_autoload` and `worker_bootstrap` default to `vendor/autoload.php` and `bootstrap/app.php` beside that Artisan file; set explicit absolute paths only for a non-standard application layout. Unsupported request runtimes fail before a supervisor is launched, and unsupported CLI runtimes fail before the application worker is launched.
+
+The small CLI supervisor gives every operation its own monotonic deadline and directly forks both the watcher and application worker, keeping both as waitable children. Before either fork it blocks termination signals and creates two bounded, non-blocking Unix socket pairs plus a random publication token. The worker publishes its PID to the watcher; the watcher validates and relays both child PIDs; and the supervisor accepts them only when they match its exact fork results and both child identities are still live. The worker cannot unmask signals or boot Laravel until the complete tokened handshake succeeds. Publication or acknowledgement failure kills and reaps both children and fails closed. The watcher independently kills the published worker if the supervisor, request parent, or deadline disappears, while the supervisor kills and reaps the exact worker child if the watcher exits, including under `SIGKILL`. Before forking the worker, the supervisor also creates a mode-0600 completion capability. The restricted bootstrap consumes and unlinks it before autoloading application code, so its secret exists only in the outer bootstrap's local scope while providers and resources run. The application worker loads a final package-owned INI fragment whose `disable_functions` value is the union of the request runtime's effective restrictions, the selected CLI runtime's restrictions, and Aura's process-spawn, process-group, and signalling restrictions; FFI is disabled too. This avoids a command-line `disable_functions` override weakening host policy. Only after reaping the exact worker with a successful status does the supervisor emit the terminal attestation consumed by the request process; the request process cryptographically matches it to the bootstrap proof. The request runtime also kills active supervisors on output overflow, timeout, `SIGTERM`/`SIGINT`, and fatal shutdown. If any containment prerequisite is unavailable, `execution_backend` is `none`, or configuration is invalid, the complete search fails closed. `inline-testing` exists only for package unit tests and is rejected outside Laravel's unit-test runtime.
+
+`allowed_route_names` must be a non-empty list of at most 20 simple route-name patterns. A malformed entry invalidates the complete list and produces a metadata-only warning. Resource icons are sanitized to a small SVG allowlist and capped by `icon_bytes` before raw rendering; scripts, event handlers, URL-bearing elements, and oversized output are discarded.
+
+This bounded default has an intentional completeness tradeoff: a matching row beyond the key window is not returned. Applications requiring complete or relevance-indexed search should supply an indexed adapter (Scout, Meilisearch, a database full-text index, or equivalent) through `global_search.adapter` or the resource's `globalSearchAdapter()` hook, and must deploy on a runtime where Aura can isolate it.
+
+Ranking is deterministic inside the candidate window. A result's score is the configured match-quality score plus its field weight. Equal scores use resource registration order and then the model key in ascending order. Matching is exact, prefix, then contains using case-sensitive PHP string semantics. That gives SQLite, MySQL, PostgreSQL, and SQL Server the same codepoint/byte behavior regardless of database collation; composed and decomposed Unicode remain distinct. Query punctuation such as `%`, `_`, and `!` is literal because user input is never interpolated into a `LIKE` expression.
+
 ### Resource-Level Configuration
 
-Control whether a resource appears in global search results using the static `$globalSearch` property:
+Control whether a resource participates using the static `$globalSearch` property. The default remains `true` for backward compatibility, so internal or non-navigable resources should opt out explicitly:
 
 ```php
 class Post extends Resource
 {
-    public static $globalSearch = true; // Set to false to exclude from search
+    public static $globalSearch = true;
+}
+
+class InternalAuditLog extends Resource
+{
+    public static $globalSearch = false;
 }
 ```
 
@@ -56,10 +122,9 @@ You can also access this setting programmatically:
 $includeInSearch = Post::getGlobalSearch(); // Returns true or false
 ```
 
-**Default excluded resources**: The following built-in resources are excluded from global search by default:
-- `resource`, `flow`, `flowlog`, `operation`, `flowoperation`, `operationlog`, `option`, `team`, `user`, `product`
+There is no class-name or slug denylist. Aura only searches registered, concrete, instantiable `Resource` classes for which the current user first passes the resource's `viewAny` policy, `getGlobalSearch()` returns `true`, and at least one explicit searchable field exists. `viewAny` is checked before `getGlobalSearch()`, the missing-team opt-in hook, searchable-field resolution, and `max_resources`, so denied registrations cannot execute those hooks or consume searchable-resource slots. Built-in internal resources opt out on their own resource definitions. Users use the same contract as every custom-table resource and remain searchable by name and email.
 
-Note: While regular User resources are filtered from the resource loop, users are still searchable separately by name and email.
+In teams mode, an unauthenticated user or an authenticated user without a current team receives no results. A trusted resource may deliberately override `globalSearchAllowsMissingTeamContext()` and return `true`, but it must then enforce the intended visibility in `applyGlobalSearchVisibility()`.
 
 ## Usage
 
@@ -87,6 +152,22 @@ The search interface provides:
 
 ### Defining Searchable Fields
 
+The preferred explicit contract is the resource's `$searchable` property. List slugs in ranking order or assign integer weights:
+
+```php
+class Post extends Resource
+{
+    protected static array $searchable = [
+        'title' => 20,
+        'content' => 10,
+    ];
+}
+```
+
+Every listed slug must exist in `getFields()`. Higher weights win within the same match quality. You may also put `global_search_weight` on a field definition when using an ordered slug list.
+
+For backward compatibility, a resource with an empty `$searchable` property falls back to fields marked `searchable => true`:
+
 Make fields searchable by adding the `searchable` property in your field definitions:
 
 ```php
@@ -111,7 +192,7 @@ public static function getFields()
             'name' => 'Description',
             'slug' => 'description',
             'type' => 'Aura\\Base\\Fields\\Text',
-            'searchable' => false, // This field won't appear in search results
+            'searchable' => false,
         ]
     ];
 }
@@ -123,21 +204,20 @@ You can retrieve the searchable fields for a resource programmatically:
 
 ```php
 $resource = new Post();
-$searchableFields = $resource->getSearchableFields(); // Returns collection of fields with searchable => true
+$searchableFields = $resource->getGlobalSearchableFields();
 ```
+
+`getGlobalSearchableFields()` is the global-search hook. Override it when a resource needs to derive its searchable field contract dynamically. `getSearchableFields()` remains the lower-level collection of field definitions carrying `searchable => true`.
 
 ### Meta Fields Support
 
-Global Search automatically includes meta fields marked as searchable in your field definitions. The search performs a LEFT JOIN with the `meta` table and searches both:
+Global Search supports both table-backed and meta-backed fields in the explicit contract. The default adapter fetches only configured searchable meta keys for rows inside the bounded candidate window. It does not hydrate the Resource model's unconditional `meta` eager load.
 
-1. The `posts.title` column (always searched)
-2. Meta field values where the field is marked as `searchable => true`
-
-Both regular table fields and meta fields are supported as long as they have the `searchable` property set to `true`.
+No `title` column is assumed. Resources that use `name`, a meta field, or another custom-table column can be searched normally, and the resource's existing `title()` method controls the displayed label.
 
 ### User Search
 
-Global Search also searches the User model separately, matching against:
+The built-in User resource declares these searchable fields:
 - `name` field
 - `email` field
 
@@ -146,10 +226,13 @@ Global Search also searches the User model separately, matching against:
 ### Result Structure
 
 Search results are:
-- Limited to 15 results total (across all resource types)
+- Selected from at most 100 candidates, limited to 5 results per resource and 15 globally by default
 - Grouped by resource type after limiting
-- Displayed with relevant icons and metadata
-- Linked directly to the resource view page
+- Converted to immutable, scalar result DTOs before rendering
+- Returned only when both `viewAny` and record-level `view` authorization pass
+- Linked only to an allowed same-origin named GET route
+
+Record-level policy denials do not consume result slots while candidates remain in the configured window. The policy check remains a defense in depth; row visibility should also be expressed in SQL with `applyGlobalSearchVisibility()` so forbidden candidates do not enter the window at all.
 
 ### Result Display
 
@@ -182,7 +265,67 @@ Note: The `/` and `⌘ + K` shortcuts only work when not focused on an input fie
 
 ## Customization
 
-### Custom Search Logic
+### Resource Query and Destination Hooks
+
+Apply resource-specific SQL visibility without replacing the component. This hook runs before the candidate window is limited or ranked:
+
+```php
+use Illuminate\Database\Eloquent\Builder;
+
+public function applyGlobalSearchVisibility($query, $user)
+{
+    return $query->where('status', 'published');
+}
+```
+
+The normal Eloquent global scopes, including Aura's team scope, remain active. `newGlobalSearchQuery()` is still available for changing the base query, but visibility belongs in the explicit visibility hook.
+
+Use a named GET route for non-standard result destinations:
+
+```php
+public function globalSearchDestination()
+{
+    return [
+        'route' => 'aura.orders.view',
+        'parameters' => ['id' => $this->getKey()],
+    ];
+}
+```
+
+Route names must match `allowed_route_names`, support GET, resolve to the application's origin, and receive only declared path parameters. Existing `globalSearchUrl()` overrides remain supported only when they return a query-free, fragment-free relative or same-origin HTTP(S) URL that resolves to an allowed named GET route. External, protocol-relative, `javascript:`, `data:`, unknown-route, and open-redirect-style destinations are rejected. Aura still requires both `viewAny` for the resource and `view` for the returned record.
+
+### Indexed Adapter
+
+Implement `Aura\Base\Contracts\GlobalSearchAdapter` to replace bounded key-window discovery for one resource or globally:
+
+```php
+public function globalSearchAdapter()
+{
+    return App\Search\IndexedOrderSearch::class;
+}
+```
+
+An adapter receives the already-scoped Eloquent query, searchable fields, normalized term, candidate cap, and `GlobalSearchBudget`. It must use Laravel-managed database access, claim non-database backend operations through the budget, preserve the query's visibility constraints, return no more than the candidate cap, and return `GlobalSearchCandidate` values. Adapter failures are isolated to that resource.
+
+Authorization policies and resource visibility hooks are trusted application code. Laravel-managed statements they issue consume the worker's central budget. They should not issue per-row queries; express record visibility on the supplied Eloquent query and preload any policy inputs. Aura bounds the candidates passed to row policies, but native PDO is prohibited and only wall-clock contained as described above.
+
+### Title Dependencies
+
+Candidate models start with `meta` disabled and lazy loading prevented during presentation. Declare the small set of meta keys or direct `BelongsTo` relations required by `title()`:
+
+```php
+public function globalSearchTitleDependencies()
+{
+    return [
+        'meta' => ['display_name'],
+        'relations' => ['company'],
+    ];
+}
+```
+
+Only declared dependencies for authorized, retained candidates are loaded, and those queries consume the resource and global query budgets. Invalid dependencies, lazy-load attempts, non-scalar titles, and presentation exceptions safely omit the affected result.
+
+### Custom Search Component
 
 You can customize the search behavior by extending the GlobalSearch component:
 
@@ -196,8 +339,8 @@ class CustomGlobalSearch extends GlobalSearch
         // Custom search implementation
         // Must return a collection grouped by type
         
-        if (!$this->search || $this->search === '') {
-            return [];
+        if (! $this->search || $this->search === '') {
+            return collect();
         }
         
         // Your custom search logic here
@@ -278,10 +421,11 @@ class Post extends Resource
 ## Best Practices
 
 1. **Performance**
-   - Index searchable fields in your database for faster queries
+   - Keep visibility predicates supported by indexes used in the candidate query
    - Limit the number of searchable fields to essential ones
-   - Consider that meta fields require JOIN operations which can be slower
-   - The search uses `LIKE '%term%'` queries which don't use indexes efficiently
+   - Lower `candidate_limit` for tighter latency; raise it only when the completeness tradeoff is acceptable
+   - Use an indexed adapter when results must be complete across a large resource
+   - Verify that the deployment runtime supports Aura's isolated custom-adapter backend before enabling one
 
 2. **User Experience**
    - Choose searchable fields wisely - only fields users would search for

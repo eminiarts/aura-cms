@@ -58,6 +58,7 @@ class TestCase extends Orchestra
         config()->set('filesystems.default', 'local');
         $this->app['cache']->store('aura-media-security')->clear();
         DB::connection('media-security-testing')->table('media_security_cache_locks')->delete();
+        config()->set('aura.global_search.execution_backend', 'inline-testing');
 
         Factory::guessFactoryNamesUsing(
             fn (string $modelName) => 'Aura\\Base\\Database\\Factories\\'.class_basename($modelName).'Factory'
