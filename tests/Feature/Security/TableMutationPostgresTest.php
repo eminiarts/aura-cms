@@ -84,6 +84,60 @@ function core05PostgresMountedResource(string $connection = 'core05_pgsql'): Cor
         ->setTable(core05PostgresTable());
 }
 
+function core05PostgresReadSignal(mixed $stream): void
+{
+    stream_set_timeout($stream, 5);
+    $signal = fread($stream, 1);
+    $metadata = stream_get_meta_data($stream);
+
+    if ($signal !== '1' || ($metadata['timed_out'] ?? false)) {
+        throw new RuntimeException('Timed out waiting for the PostgreSQL ordering probe signal.');
+    }
+}
+
+function core05PostgresWaitForChild(int $child, int &$status): bool
+{
+    $deadline = microtime(true) + 5;
+
+    do {
+        $result = pcntl_waitpid($child, $status, WNOHANG);
+
+        if ($result === $child) {
+            return true;
+        }
+
+        if ($result === -1) {
+            return false;
+        }
+
+        usleep(50_000);
+    } while (microtime(true) < $deadline);
+
+    pcntl_kill($child, SIGTERM);
+    $terminateDeadline = microtime(true) + 1;
+
+    do {
+        if (pcntl_waitpid($child, $status, WNOHANG) === $child) {
+            return false;
+        }
+
+        usleep(50_000);
+    } while (microtime(true) < $terminateDeadline);
+
+    pcntl_kill($child, SIGKILL);
+    $killDeadline = microtime(true) + 1;
+
+    do {
+        if (pcntl_waitpid($child, $status, WNOHANG) === $child) {
+            return false;
+        }
+
+        usleep(50_000);
+    } while (microtime(true) < $killDeadline);
+
+    return false;
+}
+
 beforeEach(function () {
     config()->set('database.connections.core05_pgsql', [
         'driver' => 'pgsql',
@@ -284,7 +338,7 @@ test('postgres globally orders multiple locked chunks from current values after 
 
     if ($child === 0) {
         fclose($signals[0]);
-        fread($signals[1], 1);
+        core05PostgresReadSignal($signals[1]);
         $childMounted = core05PostgresMountedResource('core05_pgsql_child');
         Core05PostgresMutationResource::$capturedIds = [];
         $snapshotSignalled = false;
@@ -299,7 +353,7 @@ test('postgres globally orders multiple locked chunks from current values after 
             $snapshotSignalled = true;
             fwrite($signals[1], "snapshot\n");
             fflush($signals[1]);
-            fread($signals[1], 1);
+            core05PostgresReadSignal($signals[1]);
         });
 
         try {
@@ -323,21 +377,40 @@ test('postgres globally orders multiple locked chunks from current values after 
 
     fclose($signals[1]);
     $writer = DB::connection('core05_pgsql_writer');
-    $writer->beginTransaction();
-    $writer->table(core05PostgresTable())
-        ->where('id', $resources[0]->getKey())
-        ->update(['content' => '40']);
-    fwrite($signals[0], '1');
-    stream_set_timeout($signals[0], 5);
-    $barrier = trim((string) fgets($signals[0]));
-    $writer->commit();
-    fwrite($signals[0], '1');
-    pcntl_waitpid($child, $status);
-    $childResult = stream_get_contents($signals[0]);
-    fclose($signals[0]);
+    $barrier = '';
+    $childExited = false;
+    $childResult = '';
+    $status = 0;
+
+    try {
+        $writer->beginTransaction();
+        $writer->table(core05PostgresTable())
+            ->where('id', $resources[0]->getKey())
+            ->update(['content' => '40']);
+        fwrite($signals[0], '1');
+        stream_set_timeout($signals[0], 5);
+        $barrier = trim((string) fgets($signals[0]));
+        $writer->commit();
+        fwrite($signals[0], '1');
+        $childExited = core05PostgresWaitForChild($child, $status);
+        $childResult = stream_get_contents($signals[0]);
+    } finally {
+        if ($writer->transactionLevel() > 0) {
+            $writer->rollBack();
+        }
+
+        if (! $childExited) {
+            @fwrite($signals[0], '1');
+            core05PostgresWaitForChild($child, $status);
+        }
+
+        fclose($signals[0]);
+    }
+
     $capturedIds = json_decode($childResult, true);
 
-    expect(pcntl_wifexited($status))->toBeTrue()
+    expect($childExited)->toBeTrue()
+        ->and(pcntl_wifexited($status))->toBeTrue()
         ->and(pcntl_wexitstatus($status))->toBe(0, $childResult)
         ->and($barrier)->toBe('snapshot')
         ->and($capturedIds)->toBe([
