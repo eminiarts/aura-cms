@@ -48,7 +48,7 @@ function core12CreateEmbeddedIncarnationTable(bool $includeIdentityIndex = true)
     });
 }
 
-it('records and rolls back only the incarnation table created by the create migration', function () {
+it('records the incarnation table and preserves it during rollback', function () {
     $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
 
     $migration->up();
@@ -80,10 +80,10 @@ it('records and rolls back only the incarnation table created by the create migr
     $migration->down();
     $migration->down();
 
-    expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeFalse()
+    expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue()
         ->and(DB::table(CORE12_OWNERSHIP_TABLE)
             ->where('migration', CORE12_CREATE_OWNERSHIP_KEY)
-            ->exists())->toBeFalse();
+            ->exists())->toBeTrue();
 });
 
 it('makes create migration up and down a no-op for a host-owned table', function () {
@@ -131,7 +131,7 @@ it('fails visibly instead of accepting corrupt create migration ownership', func
     expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeFalse();
 });
 
-it('upgrades and rolls back only columns and indexes owned by the upgrade migration', function () {
+it('upgrades the table and preserves all artifacts during rollback', function () {
     Schema::create(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
         $table->id();
         $table->string('resource_type');
@@ -171,7 +171,7 @@ it('upgrades and rolls back only columns and indexes owned by the upgrade migrat
         'resource_key_type',
         'resource_key',
     ]))->toBeTrue()
-        ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeFalse()
+        ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue()
         ->and(Schema::hasIndex(
             EmbeddedResourceIncarnationStore::TABLE,
             'aura_embedded_incarnation_guard_lookup',
@@ -179,7 +179,7 @@ it('upgrades and rolls back only columns and indexes owned by the upgrade migrat
         ->and(Schema::hasIndex(
             EmbeddedResourceIncarnationStore::TABLE,
             'aura_embedded_incarnation_guard_identity_unique',
-        ))->toBeFalse();
+        ))->toBeTrue();
 });
 
 it('makes a fully pre-existing upgrade schema roundtrip a no-op', function () {

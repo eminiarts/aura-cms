@@ -3,10 +3,15 @@
 use Aura\Base\Services\MigrationOwnershipLedger;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    private const FORMAT_VERSION = 2;
+
+    private const GENERATION_BYTES = 16;
+
     private const TABLE = 'aura_embedded_resource_incarnations';
 
     public function up(): void
@@ -23,13 +28,13 @@ return new class extends Migration
                 return;
             }
 
-            $ledger->writeCreate('creating', $ownership['owns_registry'], $ownership['generation']);
+            $this->writeCreate('creating', $ownership['owns_registry'], $ownership['generation']);
             $ledger->checkpoint('create.ownership_started');
             $this->createTable($ownership['generation']);
             $ledger->checkpoint('create.table_created');
-            $ledger->writeTargetMarker($ownership['generation']);
+            $this->writeTargetMarker($ledger, $ownership['generation']);
             $ledger->checkpoint('create.marker_written');
-            $ledger->writeCreate('owned', $ownership['owns_registry'], $ownership['generation']);
+            $this->writeCreate('owned', $ownership['owns_registry'], $ownership['generation']);
             $ledger->checkpoint('create.ownership_committed');
 
             return;
@@ -39,45 +44,25 @@ return new class extends Migration
             return;
         }
 
-        $ownsRegistry = $ledger->ensureRegistry();
-        $generation = $ledger->newGeneration();
+        $ownsRegistry = $this->ensureRegistry($ledger);
+        $generation = bin2hex(random_bytes(self::GENERATION_BYTES));
         $ledger->checkpoint('create.registry_ready');
-        $ledger->writeCreate('creating', $ownsRegistry, $generation);
+        $this->writeCreate('creating', $ownsRegistry, $generation);
         $ledger->checkpoint('create.ownership_started');
         $this->createTable($generation);
         $ledger->checkpoint('create.table_created');
-        $ledger->writeTargetMarker($generation);
+        $this->writeTargetMarker($ledger, $generation);
         $ledger->checkpoint('create.marker_written');
-        $ledger->writeCreate('owned', $ownsRegistry, $generation);
+        $this->writeCreate('owned', $ownsRegistry, $generation);
         $ledger->checkpoint('create.ownership_committed');
     }
 
+    /**
+     * Rollback is intentionally non-destructive because portable database proof
+     * cannot distinguish the original table from an exact host-owned copy.
+     */
     public function down(): void
     {
-        $ledger = app(MigrationOwnershipLedger::class);
-        $ownership = $ledger->readCreate();
-
-        if ($ownership === null) {
-            return;
-        }
-
-        $this->assertOwnedState($ownership['state']);
-        $this->assertOwnedTableExists($ledger, $ownership['generation']);
-
-        $ledger->writeCreate('table_drop_started', $ownership['owns_registry'], $ownership['generation']);
-        $ledger->checkpoint('create.rollback_started');
-        Schema::drop(self::TABLE);
-        $ledger->checkpoint('create.table_dropped');
-
-        if ($ownership['owns_registry'] && $ledger->isSoleRecord(MigrationOwnershipLedger::CREATE_KEY)) {
-            $ledger->writeCreate('registry_drop_started', true, $ownership['generation']);
-            $ledger->checkpoint('create.registry_drop_started');
-            Schema::drop(MigrationOwnershipLedger::TABLE);
-
-            return;
-        }
-
-        $ledger->delete(MigrationOwnershipLedger::CREATE_KEY);
     }
 
     private function createTable(string $generation): void
@@ -106,6 +91,63 @@ return new class extends Migration
                 'aura_embedded_incarnation_guard_identity_unique',
             );
         });
+    }
+
+    private function ensureRegistry(MigrationOwnershipLedger $ledger): bool
+    {
+        if ($ledger->registryExists()) {
+            return false;
+        }
+
+        Schema::create(MigrationOwnershipLedger::TABLE, function (Blueprint $table): void {
+            $table->string('migration')->primary();
+            $table->longText('ownership');
+        });
+
+        return true;
+    }
+
+    private function markerIncarnation(string $generation): string
+    {
+        return substr($generation, 0, 8)
+            .'-'.substr($generation, 8, 4)
+            .'-'.substr($generation, 12, 4)
+            .'-'.substr($generation, 16, 4)
+            .'-'.substr($generation, 20, 12);
+    }
+
+    private function writeCreate(string $state, bool $ownsRegistry, string $generation): void
+    {
+        DB::table(MigrationOwnershipLedger::TABLE)->updateOrInsert(
+            ['migration' => MigrationOwnershipLedger::CREATE_KEY],
+            ['ownership' => json_encode([
+                'version' => self::FORMAT_VERSION,
+                'migration' => MigrationOwnershipLedger::CREATE_KEY,
+                'state' => $state,
+                'payload' => [
+                    'created_table' => true,
+                    'owns_registry' => $ownsRegistry,
+                    'generation' => $generation,
+                ],
+            ], JSON_THROW_ON_ERROR)],
+        );
+    }
+
+    private function writeTargetMarker(MigrationOwnershipLedger $ledger, string $generation): void
+    {
+        DB::table(self::TABLE)->insert([
+            'resource_type' => MigrationOwnershipLedger::MARKER_RESOURCE_TYPE,
+            'resource_key_hash' => hash('sha256', $generation),
+            'resource_key_type' => 'internal',
+            'resource_key' => $generation,
+            'incarnation' => $this->markerIncarnation($generation),
+            'version' => 1,
+            MigrationOwnershipLedger::markerColumn($generation) => $generation,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $ledger->assertTargetMarker($generation);
     }
 
     private function assertOwnedState(string $state): void

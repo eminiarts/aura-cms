@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Made embedded-resource incarnation rollbacks permanently non-destructive so copied ownership proof cannot authorize deletion of a host-recreated table or schema artifacts.
 - Dashboard team quick actions derive the edit route from the configured Team resource, disappear when the resource, route, current team, or policy is unavailable, and remain safe with teams disabled.
 - Create and edit return breadcrumbs now fall back to unlinked copy when their named route cannot be generated; plain breadcrumb titles are escaped while explicit `Htmlable` content remains supported.
 

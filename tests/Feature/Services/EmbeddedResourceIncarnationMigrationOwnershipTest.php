@@ -81,15 +81,114 @@ function core12StateCurrentRecord(string $migration, string $state, array $paylo
     ], JSON_THROW_ON_ERROR);
 }
 
+it('preserves an exactly recreated host table carrying copied create proof', function (): void {
+    $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+    $migration->up();
+
+    $record = json_decode(DB::table(CORE12_STATE_OWNERSHIP_TABLE)
+        ->where('migration', CORE12_STATE_CREATE_KEY)
+        ->value('ownership'), true, flags: JSON_THROW_ON_ERROR);
+    expect($record['version'])->toBe(2);
+    $generation = $record['payload']['generation'];
+    $markerColumn = MigrationOwnershipLedger::markerColumn($generation);
+    $marker = (array) DB::table(EmbeddedResourceIncarnationStore::TABLE)
+        ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
+        ->first();
+
+    Schema::drop(EmbeddedResourceIncarnationStore::TABLE);
+    core12StateCreateCompleteTable();
+    Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($markerColumn): void {
+        $table->char($markerColumn, 32)->nullable();
+        $table->string('host_data')->nullable();
+    });
+    DB::table(EmbeddedResourceIncarnationStore::TABLE)->insert($marker);
+    DB::table(EmbeddedResourceIncarnationStore::TABLE)->insert([
+        'resource_type' => 'HostResource',
+        'resource_key_hash' => str_repeat('c', 64),
+        'resource_key_type' => 'string',
+        'resource_key' => 'host-key',
+        'incarnation' => '00000000-0000-4000-8000-000000000003',
+        'version' => 1,
+        'host_data' => 'preserve-me',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $migration->down();
+    $migration->down();
+
+    expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue()
+        ->and(DB::table(EmbeddedResourceIncarnationStore::TABLE)->where('host_data', 'preserve-me')->exists())->toBeTrue();
+});
+
+it('preserves exactly recreated host upgrade artifacts carrying copied proof', function (): void {
+    core12StateCreateLegacyTable();
+    $migration = require dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub';
+    $migration->up();
+
+    $record = json_decode(DB::table(CORE12_STATE_OWNERSHIP_TABLE)
+        ->where('migration', CORE12_STATE_UPGRADE_KEY)
+        ->value('ownership'), true, flags: JSON_THROW_ON_ERROR);
+    expect($record['version'])->toBe(2);
+    $generation = $record['payload']['generation'];
+    $markerColumn = MigrationOwnershipLedger::markerColumn($generation);
+    $marker = (array) DB::table(EmbeddedResourceIncarnationStore::TABLE)
+        ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
+        ->first();
+
+    Schema::drop(EmbeddedResourceIncarnationStore::TABLE);
+    core12StateCreateCompleteTable();
+    Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($markerColumn): void {
+        $table->char($markerColumn, 32)->nullable();
+        $table->string('host_data')->nullable();
+    });
+    DB::table(EmbeddedResourceIncarnationStore::TABLE)->insert($marker);
+    DB::table(EmbeddedResourceIncarnationStore::TABLE)->insert([
+        'resource_type' => 'HostResource',
+        'resource_key_hash' => str_repeat('d', 64),
+        'resource_key_type' => 'string',
+        'resource_key' => 'host-key',
+        'incarnation' => '00000000-0000-4000-8000-000000000004',
+        'version' => 7,
+        'host_data' => 'preserve-me',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $migration->down();
+    $migration->down();
+
+    expect(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue()
+        ->and(Schema::hasIndex(EmbeddedResourceIncarnationStore::TABLE, 'aura_embedded_incarnation_guard_lookup'))->toBeTrue()
+        ->and(Schema::hasIndex(EmbeddedResourceIncarnationStore::TABLE, 'aura_embedded_incarnation_guard_identity_unique', 'unique'))->toBeTrue()
+        ->and(DB::table(EmbeddedResourceIncarnationStore::TABLE)->where('host_data', 'preserve-me')->exists())->toBeTrue();
+});
+
+it('does not expose migration ownership proof writers as public application APIs', function (): void {
+    $ledger = new ReflectionClass(MigrationOwnershipLedger::class);
+
+    expect(collect([
+        'delete',
+        'deleteTargetMarker',
+        'ensureRegistry',
+        'newGeneration',
+        'writeCreate',
+        'writeTargetMarker',
+        'writeUpgrade',
+    ])->filter(fn (string $method): bool => $ledger->hasMethod($method) && $ledger->getMethod($method)->isPublic()))
+        ->toBeEmpty();
+});
+
 it('rejects valid committed create ownership after a byte-identical host table recreation', function (): void {
     $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
     $migration->up();
     Schema::drop(EmbeddedResourceIncarnationStore::TABLE);
     core12StateCreateCompleteTable();
 
-    expect(fn () => $migration->up())->toThrow(RuntimeException::class)
-        ->and(fn () => $migration->down())->toThrow(RuntimeException::class)
-        ->and(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class);
+    $migration->down();
+
+    expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
 });
 
 it('makes an interrupted missing-target repair permanently non-droppable before host recreation', function (): void {
@@ -108,12 +207,13 @@ it('makes an interrupted missing-target repair permanently non-droppable before 
     app()->forgetInstance(MigrationOwnershipLedger::class);
     core12StateCreateCompleteTable();
 
-    expect(fn () => $migration->up())->toThrow(RuntimeException::class)
-        ->and(fn () => $migration->down())->toThrow(RuntimeException::class)
-        ->and(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class);
+    $migration->down();
+
+    expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
 });
 
-it('rejects missing tampered or wrong create generation proof before destructive DDL', function (string $failure): void {
+it('preserves create artifacts when generation proof is missing tampered or wrong', function (string $failure): void {
     $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
     $migration->up();
     $record = json_decode(DB::table(CORE12_STATE_OWNERSHIP_TABLE)
@@ -138,8 +238,10 @@ it('rejects missing tampered or wrong create generation proof before destructive
         });
     }
 
-    expect(fn () => $migration->down())->toThrow(RuntimeException::class)
-        ->and(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
+    $migration->down();
+    $migration->down();
+
+    expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
 })->with(['missing marker', 'tampered marker', 'copied foreign marker', 'wrong ledger token']);
 
 it('rejects valid committed upgrade ownership after byte-identical host artifacts are recreated', function (): void {
@@ -149,12 +251,13 @@ it('rejects valid committed upgrade ownership after byte-identical host artifact
     Schema::drop(EmbeddedResourceIncarnationStore::TABLE);
     core12StateCreateCompleteTable();
 
-    expect(fn () => $migration->up())->toThrow(RuntimeException::class)
-        ->and(fn () => $migration->down())->toThrow(RuntimeException::class)
-        ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class);
+    $migration->down();
+
+    expect(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
 });
 
-it('rejects missing tampered or wrong upgrade generation proof before destructive DDL', function (string $failure): void {
+it('preserves upgrade artifacts when generation proof is missing tampered or wrong', function (string $failure): void {
     core12StateCreateLegacyTable();
     $migration = require dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub';
     $migration->up();
@@ -180,8 +283,10 @@ it('rejects missing tampered or wrong upgrade generation proof before destructiv
         });
     }
 
-    expect(fn () => $migration->down())->toThrow(RuntimeException::class)
-        ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
+    $migration->down();
+    $migration->down();
+
+    expect(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
 })->with(['missing marker', 'tampered marker', 'copied foreign marker', 'wrong ledger token']);
 
 it('rejects stale create ownership before every early return and preserves a host table', function (): void {
@@ -206,9 +311,10 @@ it('rejects stale create ownership before every early return and preserves a hos
     ], JSON_THROW_ON_ERROR));
     $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
 
-    expect(fn () => $migration->up())->toThrow(RuntimeException::class)
-        ->and(fn () => $migration->down())->toThrow(RuntimeException::class)
-        ->and(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue()
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class);
+    $migration->down();
+
+    expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue()
         ->and(DB::table(EmbeddedResourceIncarnationStore::TABLE)->value('host_marker'))->toBe('preserve-me');
 });
 
@@ -225,9 +331,10 @@ it('rejects a null ownership value instead of treating its row as absent', funct
     core12StateCreateCompleteTable();
     $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
 
-    expect(fn () => $migration->up())->toThrow(RuntimeException::class)
-        ->and(fn () => $migration->down())->toThrow(RuntimeException::class)
-        ->and(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class);
+    $migration->down();
+
+    expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
 });
 
 it('rejects invalid upgrade ownership before missing or incomplete target early returns', function (string $ownership): void {
@@ -235,9 +342,10 @@ it('rejects invalid upgrade ownership before missing or incomplete target early 
     core12StateWriteRecord(CORE12_STATE_UPGRADE_KEY, $ownership);
     $migration = require dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub';
 
-    expect(fn () => $migration->up())->toThrow(Exception::class)
-        ->and(fn () => $migration->down())->toThrow(Exception::class)
-        ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeFalse();
+    expect(fn () => $migration->up())->toThrow(Exception::class);
+    $migration->down();
+
+    expect(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeFalse();
 })->with([
     'invalid json' => '{invalid-json',
     'legacy valid json' => json_encode([
@@ -286,13 +394,14 @@ it('treats interrupted create rollback records as permanently non-droppable', fu
     ));
     $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
 
-    expect(fn () => $migration->up())->toThrow(RuntimeException::class)
-        ->and(fn () => $migration->down())->toThrow(RuntimeException::class)
-        ->and(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue()
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class);
+    $migration->down();
+
+    expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue()
         ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'host_recreated_marker'))->toBeTrue();
 })->with(['creating', 'table_drop_started', 'registry_drop_started']);
 
-it('persists a non-droppable create transition before table rollback DDL', function (): void {
+it('never enters a create rollback transition or invokes destructive checkpoints', function (): void {
     $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
     $migration->up();
     app()->instance(MigrationOwnershipLedger::class, new MigrationOwnershipLedger(
@@ -303,14 +412,16 @@ it('persists a non-droppable create transition before table rollback DDL', funct
         },
     ));
 
-    expect(fn () => $migration->down())->toThrow(RuntimeException::class, 'simulated crash')
-        ->and(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
+    $migration->down();
+    $migration->down();
+
+    expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
 
     $record = json_decode(DB::table(CORE12_STATE_OWNERSHIP_TABLE)
         ->where('migration', CORE12_STATE_CREATE_KEY)
         ->value('ownership'), true, flags: JSON_THROW_ON_ERROR);
 
-    expect($record['state'])->toBe('table_drop_started');
+    expect($record['state'])->toBe('owned');
 
     app()->forgetInstance(MigrationOwnershipLedger::class);
     Schema::drop(EmbeddedResourceIncarnationStore::TABLE);
@@ -319,11 +430,12 @@ it('persists a non-droppable create transition before table rollback DDL', funct
         $table->string('host_recreated_marker')->nullable();
     });
 
-    expect(fn () => $migration->down())->toThrow(RuntimeException::class)
-        ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'host_recreated_marker'))->toBeTrue();
+    $migration->down();
+
+    expect(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'host_recreated_marker'))->toBeTrue();
 });
 
-it('persists a non-droppable upgrade transition before rollback DDL', function (): void {
+it('never enters an upgrade rollback transition or invokes destructive checkpoints', function (): void {
     core12StateCreateLegacyTable();
     $migration = require dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub';
     $migration->up();
@@ -335,18 +447,21 @@ it('persists a non-droppable upgrade transition before rollback DDL', function (
         },
     ));
 
-    expect(fn () => $migration->down())->toThrow(RuntimeException::class, 'simulated crash')
-        ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
+    $migration->down();
+    $migration->down();
+
+    expect(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
 
     $record = json_decode(DB::table(CORE12_STATE_OWNERSHIP_TABLE)
         ->where('migration', CORE12_STATE_UPGRADE_KEY)
         ->value('ownership'), true, flags: JSON_THROW_ON_ERROR);
 
-    expect($record['state'])->toBe('rollback_started');
+    expect($record['state'])->toBe('owned');
 
     app()->forgetInstance(MigrationOwnershipLedger::class);
-    expect(fn () => $migration->down())->toThrow(RuntimeException::class)
-        ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
+    $migration->down();
+
+    expect(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
 });
 
 it('records every create up crash phase without granting stale destructive ownership', function (
@@ -382,10 +497,12 @@ it('records every create up crash phase without granting stale destructive owner
         $migration->up();
         $migration->down();
 
-        expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeFalse();
+        expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
     } else {
-        expect(fn () => $migration->up())->toThrow(RuntimeException::class)
-            ->and(fn () => $migration->down())->toThrow(RuntimeException::class);
+        expect(fn () => $migration->up())->toThrow(RuntimeException::class);
+        $migration->down();
+
+        expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBe($tableExists);
     }
 })->with([
     'registry ready' => ['create.registry_ready', null, false],
@@ -434,10 +551,12 @@ it('records every upgrade up crash phase and never infers ownership from schema'
         $migration->up();
         $migration->down();
 
-        expect(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeFalse();
+        expect(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
     } else {
-        expect(fn () => $migration->up())->toThrow(RuntimeException::class)
-            ->and(fn () => $migration->down())->toThrow(RuntimeException::class);
+        expect(fn () => $migration->up())->toThrow(RuntimeException::class);
+        $migration->down();
+
+        expect(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
     }
 })->with([
     'registry ready' => ['upgrade.registry_ready', null],
@@ -449,10 +568,7 @@ it('records every upgrade up crash phase and never infers ownership from schema'
     'ownership committed' => ['upgrade.ownership_committed', 'owned'],
 ]);
 
-it('keeps a host-recreated table safe after every destructive create down crash phase', function (
-    string $checkpoint,
-    string $expectedState,
-): void {
+it('does not invoke former destructive create down crash phases', function (string $checkpoint): void {
     $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
     $migration->up();
     app()->instance(MigrationOwnershipLedger::class, new MigrationOwnershipLedger(
@@ -463,13 +579,15 @@ it('keeps a host-recreated table safe after every destructive create down crash 
         },
     ));
 
-    expect(fn () => $migration->down())->toThrow(RuntimeException::class, 'simulated crash');
+    $migration->down();
+    $migration->down();
 
     $record = json_decode(DB::table(CORE12_STATE_OWNERSHIP_TABLE)
         ->where('migration', CORE12_STATE_CREATE_KEY)
         ->value('ownership'), true, flags: JSON_THROW_ON_ERROR);
 
-    expect($record['state'])->toBe($expectedState);
+    expect($record['state'])->toBe('owned')
+        ->and(Schema::hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
 
     app()->forgetInstance(MigrationOwnershipLedger::class);
 
@@ -482,15 +600,16 @@ it('keeps a host-recreated table safe after every destructive create down crash 
         $table->string('host_recreated_marker')->nullable();
     });
 
-    expect(fn () => $migration->up())->toThrow(RuntimeException::class)
-        ->and(fn () => $migration->down())->toThrow(RuntimeException::class)
-        ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'host_recreated_marker'))->toBeTrue();
+    expect(fn () => $migration->up())->toThrow(RuntimeException::class);
+    $migration->down();
+
+    expect(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'host_recreated_marker'))->toBeTrue();
 })->with([
-    'rollback started' => ['create.rollback_started', 'table_drop_started'],
-    'table dropped' => ['create.table_dropped', 'table_drop_started'],
+    'rollback started' => ['create.rollback_started'],
+    'table dropped' => ['create.table_dropped'],
 ]);
 
-it('keeps recreated upgrade artifacts safe after every destructive down crash phase', function (
+it('does not invoke former destructive upgrade down crash phases', function (
     string $checkpoint,
 ): void {
     core12StateCreateLegacyTable();
@@ -504,13 +623,15 @@ it('keeps recreated upgrade artifacts safe after every destructive down crash ph
         },
     ));
 
-    expect(fn () => $migration->down())->toThrow(RuntimeException::class, 'simulated crash');
+    $migration->down();
+    $migration->down();
 
     $record = json_decode(DB::table(CORE12_STATE_OWNERSHIP_TABLE)
         ->where('migration', CORE12_STATE_UPGRADE_KEY)
         ->value('ownership'), true, flags: JSON_THROW_ON_ERROR);
 
-    expect($record['state'])->toBe('rollback_started');
+    expect($record['state'])->toBe('owned')
+        ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
     app()->forgetInstance(MigrationOwnershipLedger::class);
 
     if (! Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version')) {
@@ -520,9 +641,10 @@ it('keeps recreated upgrade artifacts safe after every destructive down crash ph
         });
     }
 
-    expect(fn () => $migration->up())->toThrow(RuntimeException::class)
-        ->and(fn () => $migration->down())->toThrow(RuntimeException::class)
-        ->and(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
+    $migration->up();
+    $migration->down();
+
+    expect(Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
 })->with([
     'rollback started' => ['upgrade.rollback_started'],
     'marker deleted' => ['upgrade.marker_deleted'],
@@ -530,37 +652,20 @@ it('keeps recreated upgrade artifacts safe after every destructive down crash ph
     'columns dropped' => ['upgrade.columns_dropped'],
 ]);
 
-it('persists registry ownership separately before dropping the registry', function (string $migrationType): void {
+it('never drops the ownership registry during rollback', function (string $migrationType): void {
     if ($migrationType === 'create') {
-        core12StateCreateCompleteTable();
-        $generation = str_repeat('a', 32);
-        Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($generation): void {
-            $table->char(MigrationOwnershipLedger::markerColumn($generation), 32)->nullable();
-        });
-        app(MigrationOwnershipLedger::class)->writeTargetMarker($generation);
         $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+        $migration->up();
         $ownershipKey = CORE12_STATE_CREATE_KEY;
         $checkpoint = 'create.registry_drop_started';
-        $ownership = core12StateCurrentRecord($ownershipKey, 'owned', [
-            'created_table' => true,
-            'owns_registry' => true,
-            'generation' => $generation,
-        ]);
     } else {
         core12StateCreateLegacyTable();
         $migration = require dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub';
         $migration->up();
         $ownershipKey = CORE12_STATE_UPGRADE_KEY;
         $checkpoint = 'upgrade.registry_drop_started';
-        $record = json_decode(DB::table(CORE12_STATE_OWNERSHIP_TABLE)
-            ->where('migration', $ownershipKey)
-            ->value('ownership'), true, flags: JSON_THROW_ON_ERROR);
-        $record['payload']['owns_registry'] = true;
-        $ownership = json_encode($record, JSON_THROW_ON_ERROR);
     }
 
-    DB::table(CORE12_STATE_OWNERSHIP_TABLE)->delete();
-    core12StateWriteRecord($ownershipKey, $ownership);
     app()->instance(MigrationOwnershipLedger::class, new MigrationOwnershipLedger(
         static function (string $actualCheckpoint) use ($checkpoint): void {
             if ($actualCheckpoint === $checkpoint) {
@@ -569,26 +674,22 @@ it('persists registry ownership separately before dropping the registry', functi
         },
     ));
 
-    expect(fn () => $migration->down())->toThrow(RuntimeException::class, 'simulated crash')
-        ->and(Schema::hasTable(CORE12_STATE_OWNERSHIP_TABLE))->toBeTrue();
+    $migration->down();
+    $migration->down();
+
+    expect(Schema::hasTable(CORE12_STATE_OWNERSHIP_TABLE))->toBeTrue();
 
     $record = json_decode(DB::table(CORE12_STATE_OWNERSHIP_TABLE)
         ->where('migration', $ownershipKey)
         ->value('ownership'), true, flags: JSON_THROW_ON_ERROR);
 
-    expect($record['state'])->toBe('registry_drop_started');
+    expect($record['state'])->toBe('owned');
 
     app()->forgetInstance(MigrationOwnershipLedger::class);
 
-    if ($migrationType === 'create') {
-        core12StateCreateCompleteTable();
-    } else {
-        Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
-            $table->unsignedBigInteger('version')->default(1);
-        });
-    }
+    $migration->up();
+    $migration->down();
 
-    expect(fn () => $migration->up())->toThrow(RuntimeException::class)
-        ->and(fn () => $migration->down())->toThrow(RuntimeException::class)
-        ->and(Schema::hasTable(CORE12_STATE_OWNERSHIP_TABLE))->toBeTrue();
+    expect(Schema::hasTable(CORE12_STATE_OWNERSHIP_TABLE))->toBeTrue()
+        ->and(DB::table(CORE12_STATE_OWNERSHIP_TABLE)->where('migration', $ownershipKey)->exists())->toBeTrue();
 })->with(['create', 'upgrade']);

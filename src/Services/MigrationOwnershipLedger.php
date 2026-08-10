@@ -3,7 +3,6 @@
 namespace Aura\Base\Services;
 
 use Closure;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
@@ -22,8 +21,6 @@ final class MigrationOwnershipLedger
     private const CREATE_STATES = ['creating', 'owned', 'table_drop_started', 'registry_drop_started'];
 
     private const FORMAT_VERSION = 2;
-
-    private const GENERATION_BYTES = 16;
 
     private const MARKER_COLUMN_PREFIX = 'aura_migration_owned_';
 
@@ -89,47 +86,9 @@ final class MigrationOwnershipLedger
         }
     }
 
-    public function delete(string $migration): void
-    {
-        DB::table(self::TABLE)->where('migration', $migration)->delete();
-    }
-
-    public function deleteTargetMarker(string $generation): void
-    {
-        $this->assertTargetMarker($generation);
-        DB::table(EmbeddedResourceIncarnationStore::TABLE)
-            ->where('resource_type', self::MARKER_RESOURCE_TYPE)
-            ->delete();
-    }
-
-    public function ensureRegistry(): bool
-    {
-        if ($this->registryExists()) {
-            return false;
-        }
-
-        Schema::create(self::TABLE, function (Blueprint $table): void {
-            $table->string('migration')->primary();
-            $table->longText('ownership');
-        });
-
-        return true;
-    }
-
-    public function isSoleRecord(string $migration): bool
-    {
-        return DB::table(self::TABLE)->count() === 1
-            && DB::table(self::TABLE)->where('migration', $migration)->exists();
-    }
-
     public static function markerColumn(string $generation): string
     {
         return self::MARKER_COLUMN_PREFIX.$generation;
-    }
-
-    public function newGeneration(): string
-    {
-        return bin2hex(random_bytes(self::GENERATION_BYTES));
     }
 
     /**
@@ -221,67 +180,6 @@ final class MigrationOwnershipLedger
         }
 
         return true;
-    }
-
-    public function writeCreate(string $state, bool $ownsRegistry, string $generation): void
-    {
-        if (! in_array($state, self::CREATE_STATES, true)) {
-            throw $this->invalidRecord(self::CREATE_KEY, 'state');
-        }
-
-        $this->assertGeneration($generation);
-
-        $this->write(self::CREATE_KEY, $state, [
-            'created_table' => true,
-            'owns_registry' => $ownsRegistry,
-            'generation' => $generation,
-        ]);
-    }
-
-    public function writeTargetMarker(string $generation): void
-    {
-        $this->assertGeneration($generation);
-        $markerColumn = self::markerColumn($generation);
-
-        DB::table(EmbeddedResourceIncarnationStore::TABLE)->insert([
-            'resource_type' => self::MARKER_RESOURCE_TYPE,
-            'resource_key_hash' => hash('sha256', $generation),
-            'resource_key_type' => 'internal',
-            'resource_key' => $generation,
-            'incarnation' => $this->markerIncarnation($generation),
-            'version' => 1,
-            $markerColumn => $generation,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $this->assertTargetMarker($generation);
-    }
-
-    /**
-     * @param  list<string>  $addedColumns
-     * @param  list<string>  $createdIndexes
-     */
-    public function writeUpgrade(
-        string $state,
-        array $addedColumns,
-        array $createdIndexes,
-        bool $ownsRegistry,
-        string $generation,
-    ): void {
-        if (! in_array($state, self::UPGRADE_STATES, true)) {
-            throw $this->invalidRecord(self::UPGRADE_KEY, 'state');
-        }
-
-        $this->assertAllowedList($addedColumns, self::UPGRADE_COLUMNS, self::UPGRADE_KEY, 'added_columns');
-        $this->assertAllowedList($createdIndexes, self::UPGRADE_INDEXES, self::UPGRADE_KEY, 'created_indexes');
-        $this->assertGeneration($generation);
-        $this->write(self::UPGRADE_KEY, $state, [
-            'added_columns' => $addedColumns,
-            'created_indexes' => $createdIndexes,
-            'owns_registry' => $ownsRegistry,
-            'generation' => $generation,
-        ]);
     }
 
     /**
@@ -385,21 +283,5 @@ final class MigrationOwnershipLedger
             'state' => $record['state'],
             'payload' => $record['payload'],
         ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $payload
-     */
-    private function write(string $migration, string $state, array $payload): void
-    {
-        DB::table(self::TABLE)->updateOrInsert(
-            ['migration' => $migration],
-            ['ownership' => json_encode([
-                'version' => self::FORMAT_VERSION,
-                'migration' => $migration,
-                'state' => $state,
-                'payload' => $payload,
-            ], JSON_THROW_ON_ERROR)],
-        );
     }
 }

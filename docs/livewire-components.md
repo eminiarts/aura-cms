@@ -1214,8 +1214,11 @@ durable row-incarnation token and version stored in
 migrations before deploying secure fields. The upgrade intentionally removes
 old incarnation rows, invalidating contexts issued under the previous contract.
 Both migrations record the exact table, columns, and indexes they create in
-`aura_migration_ownership`; rollback removes only those recorded artifacts and
-preserves a host application's pre-existing sidecar schema.
+`aura_migration_ownership` for fail-closed forward validation. Their `down()`
+methods are intentionally non-destructive because portable database metadata
+cannot distinguish the original objects from exact host-owned copies. Rolling
+back therefore leaves the incarnation table, ownership record, private marker,
+columns, and indexes in place; use a forward migration to correct them.
 
 Every concrete persisted resource class used by a secure embedded field must
 also install its database guard in an application deployment migration:
@@ -1240,7 +1243,8 @@ return new class extends Migration
 ```
 
 Run this application migration after Aura's incarnation migrations. On
-rollback, uninstall the application guards before rolling back Aura's upgrade.
+rollback, uninstall the application guards before rolling back Aura's upgrade;
+the Aura rollback itself intentionally leaves its incarnation schema in place.
 The migration connection needs permission to create/drop triggers (and
 functions on PostgreSQL); the runtime connection needs permission for the
 trigger to update the incarnation table. Installation, uninstallation, and

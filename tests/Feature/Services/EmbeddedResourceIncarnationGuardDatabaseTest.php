@@ -76,7 +76,7 @@ function core12ExternalGuardConnection(string $driver): array
     ];
 }
 
-test('portable database guards install upgrade invalidate and roll back', function (string $driver): void {
+test('portable database guards install upgrade invalidate and preserve migration artifacts on rollback', function (string $driver): void {
     if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
         $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with dedicated MySQL, MariaDB, and PostgreSQL test databases.');
     }
@@ -137,15 +137,15 @@ test('portable database guards install upgrade invalidate and roll back', functi
 
         $upgrade->down();
         $upgrade->down();
-        expect($schema->hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeFalse()
+        expect($schema->hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue()
             ->and($schema->hasIndex(
                 EmbeddedResourceIncarnationStore::TABLE,
                 'aura_embedded_incarnation_guard_lookup',
-            ))->toBeFalse()
+            ))->toBeTrue()
             ->and($schema->hasIndex(
                 EmbeddedResourceIncarnationStore::TABLE,
                 'aura_embedded_incarnation_guard_identity_unique',
-            ))->toBeFalse();
+            ))->toBeTrue();
         $schema->drop(EmbeddedResourceIncarnationStore::TABLE);
 
         $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
@@ -169,6 +169,14 @@ test('portable database guards install upgrade invalidate and roll back', functi
         $token = $incarnations->token($resource);
         $version = $incarnations->version($resource);
         $attributes = $resource->getRawOriginal();
+        $markerIncarnation = $connection->table(EmbeddedResourceIncarnationStore::TABLE)
+            ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
+            ->value('incarnation');
+
+        expect($token)->not->toBe($markerIncarnation)
+            ->and($connection->table(EmbeddedResourceIncarnationStore::TABLE)
+                ->where('resource_type', Core12ExternalGuardResource::class)
+                ->count())->toBe(1);
 
         $connection->table($prototype->getTable())->where('select', 'portable-key')->delete();
         $connection->table($prototype->getTable())->insert($attributes);
@@ -221,7 +229,7 @@ test('portable database guards install upgrade invalidate and roll back', functi
         $migration->down();
 
         expect($schema->hasTable($prototype->getTable()))->toBeFalse()
-            ->and($schema->hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeFalse();
+            ->and($schema->hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
     } finally {
         if ($schema->hasTable($prototype->getTable())) {
             try {
@@ -355,9 +363,8 @@ test('first canonical prime locks the owner while a second connection replaces i
 
         if ($migration) {
             $migration->down();
-        } else {
-            $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
         }
+        $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
         DB::disconnect($replacementConnectionName);
         DB::disconnect($connectionName);
         DB::setDefaultConnection($originalConnection);
@@ -430,7 +437,9 @@ test('portable migration generation markers reject host-recreated targets', func
         $connection->table(EmbeddedResourceIncarnationStore::TABLE)
             ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
             ->update(['resource_key' => 'tampered']);
-        expect(fn () => $migration->down())->toThrow(RuntimeException::class);
+        expect(fn () => $migration->up())->toThrow(RuntimeException::class);
+        $migration->down();
+        expect($schema->hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
         $connection->table(EmbeddedResourceIncarnationStore::TABLE)
             ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
             ->update(['resource_key' => $generation]);
@@ -438,7 +447,9 @@ test('portable migration generation markers reject host-recreated targets', func
         $schema->table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($foreignGeneration): void {
             $table->char(MigrationOwnershipLedger::markerColumn($foreignGeneration), 32)->nullable();
         });
-        expect(fn () => $migration->down())->toThrow(RuntimeException::class);
+        expect(fn () => $migration->up())->toThrow(RuntimeException::class);
+        $migration->down();
+        expect($schema->hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
         $schema->table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($foreignGeneration): void {
             $table->dropColumn(MigrationOwnershipLedger::markerColumn($foreignGeneration));
         });
@@ -447,7 +458,9 @@ test('portable migration generation markers reject host-recreated targets', func
         $connection->table(MigrationOwnershipLedger::TABLE)
             ->where('migration', $ownershipKey)
             ->update(['ownership' => json_encode($record, JSON_THROW_ON_ERROR)]);
-        expect(fn () => $migration->down())->toThrow(RuntimeException::class);
+        expect(fn () => $migration->up())->toThrow(RuntimeException::class);
+        $migration->down();
+        expect($schema->hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
         $record['payload']['generation'] = $generation;
         $connection->table(MigrationOwnershipLedger::TABLE)
             ->where('migration', $ownershipKey)
@@ -464,9 +477,9 @@ test('portable migration generation markers reject host-recreated targets', func
         $schema->drop(EmbeddedResourceIncarnationStore::TABLE);
         $createCompleteTable();
 
-        expect(fn () => $create->up())->toThrow(RuntimeException::class)
-            ->and(fn () => $create->down())->toThrow(RuntimeException::class)
-            ->and($schema->hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
+        expect(fn () => $create->up())->toThrow(RuntimeException::class);
+        $create->down();
+        expect($schema->hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue();
 
         $schema->drop(EmbeddedResourceIncarnationStore::TABLE);
         $schema->drop(MigrationOwnershipLedger::TABLE);
@@ -477,9 +490,9 @@ test('portable migration generation markers reject host-recreated targets', func
         $schema->drop(EmbeddedResourceIncarnationStore::TABLE);
         $createCompleteTable();
 
-        expect(fn () => $upgrade->up())->toThrow(RuntimeException::class)
-            ->and(fn () => $upgrade->down())->toThrow(RuntimeException::class)
-            ->and($schema->hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
+        expect(fn () => $upgrade->up())->toThrow(RuntimeException::class);
+        $upgrade->down();
+        expect($schema->hasColumn(EmbeddedResourceIncarnationStore::TABLE, 'version'))->toBeTrue();
     } finally {
         $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
         $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
