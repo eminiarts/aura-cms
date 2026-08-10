@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Services;
 
+use Illuminate\Database\MariaDbConnection;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Schema\Grammars\MariaDbGrammar;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
@@ -99,13 +102,24 @@ final class EmbeddedResourceIncarnationSchema
                 'created_at' => 'datetime',
                 'updated_at' => 'datetime',
             ],
-            'mysql', 'mariadb' => [
+            'mysql' => [
                 'id' => 'bigint unsigned',
                 'resource_type' => 'varchar(255)',
                 'resource_key_hash' => 'char(64)',
                 'resource_key_type' => 'varchar(16)',
                 'resource_key' => 'varchar(191)',
                 'incarnation' => 'char(36)',
+                'version' => 'bigint unsigned',
+                'created_at' => 'timestamp',
+                'updated_at' => 'timestamp',
+            ],
+            'mariadb' => [
+                'id' => 'bigint unsigned',
+                'resource_type' => 'varchar(255)',
+                'resource_key_hash' => 'char(64)',
+                'resource_key_type' => 'varchar(16)',
+                'resource_key' => 'varchar(191)',
+                'incarnation' => $this->expectedMariaDbUuidType(),
                 'version' => 'bigint unsigned',
                 'created_at' => 'timestamp',
                 'updated_at' => 'timestamp',
@@ -146,6 +160,40 @@ final class EmbeddedResourceIncarnationSchema
         ];
     }
 
+    private function expectedMariaDbUuidType(): string
+    {
+        $connection = Schema::getConnection();
+        $grammar = $connection->getSchemaGrammar();
+        $serverVersion = $connection->getServerVersion();
+
+        if (! $connection instanceof MariaDbConnection
+            || ! $grammar instanceof MariaDbGrammar
+            || preg_match('/\A\d+\.\d+\.\d+\z/D', $serverVersion) !== 1
+        ) {
+            throw new RuntimeException(
+                'Unable to determine the expected MariaDB UUID storage from reliable connection metadata.',
+            );
+        }
+
+        $blueprint = new Blueprint($connection, 'aura_embedded_resource_incarnation_schema_probe');
+        $blueprint->create();
+        $blueprint->uuid('incarnation');
+        $statements = $blueprint->toSql();
+        $matchCount = preg_match_all(
+            '/`incarnation`\s+(uuid|char\(36\))(?=\s|,|\))/i',
+            implode(' ', $statements),
+            $matches,
+        );
+
+        if ($matchCount !== 1 || ! isset($matches[1][0])) {
+            throw new RuntimeException(
+                'Unable to determine the expected MariaDB UUID storage from the active schema grammar.',
+            );
+        }
+
+        return strtolower($matches[1][0]);
+    }
+
     /**
      * @param  array{name: string, type: string, type_name: string, collation: string|null, nullable: bool, default: mixed, auto_increment: bool, comment: string|null, generation: array{type: string, expression: string|null}|null}  $actual
      */
@@ -156,7 +204,7 @@ final class EmbeddedResourceIncarnationSchema
     ): bool {
         $expected = $this->expectedDefinition($column, $allowHistoricalUpgradeDefaults);
 
-        return $this->normalizeType($column, (string) $actual['type']) === $expected['type']
+        return $this->normalizeType((string) $actual['type']) === $expected['type']
             && (bool) $actual['nullable'] === $expected['nullable']
             && (bool) $actual['auto_increment'] === $expected['auto_increment']
             && $actual['generation'] === null
@@ -198,17 +246,13 @@ final class EmbeddedResourceIncarnationSchema
         return $default;
     }
 
-    private function normalizeType(string $column, string $type): string
+    private function normalizeType(string $type): string
     {
         $type = strtolower(preg_replace('/\s+/', ' ', trim($type)) ?? $type);
 
         if (Schema::getConnection()->getDriverName() === 'mariadb') {
             if ($type === 'bigint(20) unsigned') {
                 return 'bigint unsigned';
-            }
-
-            if ($column === 'incarnation' && $type === 'uuid') {
-                return 'char(36)';
             }
         }
 

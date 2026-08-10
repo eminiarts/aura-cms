@@ -5,6 +5,7 @@ use Aura\Base\Services\EmbeddedComponentContextStore;
 use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
 use Aura\Base\Services\EmbeddedResourceIncarnationStore;
 use Aura\Base\Services\MigrationOwnershipLedger;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
@@ -74,6 +75,24 @@ function core12ExternalGuardConnection(string $driver): array
         'search_path' => 'public',
         'sslmode' => 'prefer',
     ];
+}
+
+function core12ExpectedMariaDbUuidType(Connection $connection): string
+{
+    $blueprint = new Blueprint($connection, 'aura_core12_uuid_grammar_probe');
+    $blueprint->create();
+    $blueprint->uuid('incarnation');
+    $matchCount = preg_match_all(
+        '/`incarnation`\s+(uuid|char\(36\))(?=\s|,|\))/i',
+        implode(' ', $blueprint->toSql()),
+        $matches,
+    );
+
+    if ($matchCount !== 1 || ! isset($matches[1][0])) {
+        throw new RuntimeException('Unable to determine the MariaDB UUID type emitted by the test connection grammar.');
+    }
+
+    return strtolower($matches[1][0]);
 }
 
 /**
@@ -271,7 +290,7 @@ test('portable database guards install upgrade invalidate and preserve migration
             $columns = collect($schema->getColumns(EmbeddedResourceIncarnationStore::TABLE));
 
             expect($columns->firstWhere('name', 'id')['type'])->toBe('bigint(20) unsigned')
-                ->and($columns->firstWhere('name', 'incarnation')['type'])->toBe('uuid')
+                ->and($columns->firstWhere('name', 'incarnation')['type'])->toBe(core12ExpectedMariaDbUuidType($connection))
                 ->and($columns->firstWhere('name', 'created_at')['default'])->toBe('NULL');
         }
 
@@ -458,7 +477,7 @@ test('first canonical prime locks the owner while a second connection replaces i
             $columns = collect($schema->getColumns(EmbeddedResourceIncarnationStore::TABLE));
 
             expect($columns->firstWhere('name', 'id')['type'])->toBe('bigint(20) unsigned')
-                ->and($columns->firstWhere('name', 'incarnation')['type'])->toBe('uuid')
+                ->and($columns->firstWhere('name', 'incarnation')['type'])->toBe(core12ExpectedMariaDbUuidType($connection))
                 ->and($columns->firstWhere('name', 'created_at')['default'])->toBe('NULL');
         }
 
@@ -582,7 +601,7 @@ test('portable migration ownership stays outside runtime rows and validates orde
             $columns = collect($schema->getColumns(EmbeddedResourceIncarnationStore::TABLE));
 
             expect($columns->firstWhere('name', 'id')['type'])->toBe('bigint(20) unsigned')
-                ->and($columns->firstWhere('name', 'incarnation')['type'])->toBe('uuid')
+                ->and($columns->firstWhere('name', 'incarnation')['type'])->toBe(core12ExpectedMariaDbUuidType($connection))
                 ->and($columns->firstWhere('name', 'created_at')['default'])->toBe('NULL');
         }
 
@@ -642,6 +661,141 @@ test('portable migration ownership stays outside runtime rows and validates orde
         }
     }
 })->with(['sqlite', 'mysql', 'mariadb', 'pgsql'])->group('database-guards');
+
+test('mariadb stale create requires the UUID storage emitted by the active grammar without mutating rejected schemas', function (): void {
+    if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
+        $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with a dedicated MariaDB test database.');
+    }
+
+    $connectionName = 'core12_mariadb_uuid_capability';
+    $configuration = core12ExternalGuardConnection('mariadb');
+    config(["database.connections.{$connectionName}" => $configuration]);
+    DB::purge($connectionName);
+    $originalConnection = DB::getDefaultConnection();
+    DB::setDefaultConnection($connectionName);
+    Schema::clearResolvedInstance('db.schema');
+    $connection = DB::connection($connectionName);
+    $schema = $connection->getSchemaBuilder();
+    $capabilityTable = 'aura_core12_uuid_capability_probe';
+    $schema->dropIfExists($capabilityTable);
+    $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+    $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+
+    $createTable = function (int $incarnationLength) use ($schema): void {
+        $schema->create(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table) use ($incarnationLength): void {
+            $table->id();
+            $table->string('resource_type');
+            $table->char('resource_key_hash', 64);
+            $table->string('resource_key_type', 16);
+            $table->string('resource_key', 191);
+            $table->char('incarnation', $incarnationLength);
+            $table->unsignedBigInteger('version')->default(1);
+            $table->timestamps();
+        });
+    };
+    $claimCreate = function (string $generation) use ($connection): void {
+        $connection->table(MigrationOwnershipLedger::TABLE)->insert([
+            'migration' => MigrationOwnershipLedger::CREATE_KEY,
+            'ownership' => json_encode([
+                'version' => 2,
+                'migration' => MigrationOwnershipLedger::CREATE_KEY,
+                'state' => 'creating',
+                'payload' => [
+                    'created_table' => true,
+                    'owns_registry' => false,
+                    'generation' => $generation,
+                ],
+            ], JSON_THROW_ON_ERROR),
+        ]);
+    };
+    $insertRow = function (string $incarnation) use ($connection): void {
+        $connection->table(EmbeddedResourceIncarnationStore::TABLE)->insert([
+            'resource_type' => 'UuidCapabilityResource',
+            'resource_key_hash' => str_repeat('a', 64),
+            'resource_key_type' => 'string',
+            'resource_key' => 'preserve-me',
+            'incarnation' => $incarnation,
+            'version' => 1,
+            'created_at' => null,
+            'updated_at' => null,
+        ]);
+    };
+    $assertRejectedWithoutMutation = function () use ($connection, $schema): void {
+        $columns = $schema->getColumns(EmbeddedResourceIncarnationStore::TABLE);
+        $indexes = $schema->getIndexes(EmbeddedResourceIncarnationStore::TABLE);
+        $rows = $connection->table(EmbeddedResourceIncarnationStore::TABLE)
+            ->orderBy('id')
+            ->get()
+            ->map(static fn (stdClass $row): array => (array) $row)
+            ->all();
+        $ownership = $connection->table(MigrationOwnershipLedger::TABLE)
+            ->where('migration', MigrationOwnershipLedger::CREATE_KEY)
+            ->value('ownership');
+        $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+
+        expect(fn () => $migration->up())->toThrow(RuntimeException::class, 'unexpected definition')
+            ->and($schema->getColumns(EmbeddedResourceIncarnationStore::TABLE))->toBe($columns)
+            ->and($schema->getIndexes(EmbeddedResourceIncarnationStore::TABLE))->toBe($indexes)
+            ->and($connection->table(EmbeddedResourceIncarnationStore::TABLE)
+                ->orderBy('id')
+                ->get()
+                ->map(static fn (stdClass $row): array => (array) $row)
+                ->all())->toBe($rows)
+            ->and($connection->table(MigrationOwnershipLedger::TABLE)
+                ->where('migration', MigrationOwnershipLedger::CREATE_KEY)
+                ->value('ownership'))->toBe($ownership)
+            ->and(app(MigrationOwnershipLedger::class)->readCreate()['state'])->toBe('creating');
+    };
+
+    try {
+        $schema->create($capabilityTable, function (Blueprint $table): void {
+            $table->uuid('incarnation');
+        });
+        $grammarUuidType = collect($schema->getColumns($capabilityTable))
+            ->firstWhere('name', 'incarnation')['type'];
+        $schema->drop($capabilityTable);
+
+        expect($connection->getServerVersion())->toMatch('/\A\d+\.\d+\.\d+\z/D')
+            ->and($grammarUuidType)->toBeIn(['uuid', 'char(36)']);
+
+        $schema->create(MigrationOwnershipLedger::TABLE, function (Blueprint $table): void {
+            $table->string('migration')->primary();
+            $table->longText('ownership');
+        });
+        $createTable(36);
+        $insertRow('00000000-0000-4000-8000-000000000091');
+        $claimCreate(str_repeat('d', 32));
+
+        if ($grammarUuidType === 'uuid') {
+            $assertRejectedWithoutMutation();
+        } else {
+            $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+            $migration->up();
+
+            expect(app(MigrationOwnershipLedger::class)->readCreate()['state'])->toBe('owned')
+                ->and($connection->table(EmbeddedResourceIncarnationStore::TABLE)
+                    ->where('resource_key', 'preserve-me')
+                    ->value('incarnation'))->toBe('00000000-0000-4000-8000-000000000091');
+        }
+
+        $schema->drop(EmbeddedResourceIncarnationStore::TABLE);
+        $connection->table(MigrationOwnershipLedger::TABLE)->delete();
+        app()->forgetInstance(MigrationOwnershipLedger::class);
+        $createTable(35);
+        $insertRow(str_repeat('a', 35));
+        $claimCreate(str_repeat('e', 32));
+
+        $assertRejectedWithoutMutation();
+    } finally {
+        app()->forgetInstance(MigrationOwnershipLedger::class);
+        $schema->dropIfExists($capabilityTable);
+        $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+        $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+        DB::disconnect($connectionName);
+        DB::setDefaultConnection($originalConnection);
+        Schema::clearResolvedInstance('db.schema');
+    }
+})->group('database-guards');
 
 test('portable migrations fail closed on malformed stale claimed schemas', function (string $driver): void {
     if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
@@ -848,7 +1002,8 @@ test('portable migrations reject duplicate-capable registries and resume after a
     $originalConnection = DB::getDefaultConnection();
     DB::setDefaultConnection($connectionName);
     Schema::clearResolvedInstance('db.schema');
-    $schema = DB::connection($connectionName)->getSchemaBuilder();
+    $connection = DB::connection($connectionName);
+    $schema = $connection->getSchemaBuilder();
     $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
     $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
 
@@ -884,7 +1039,7 @@ test('portable migrations reject duplicate-capable registries and resume after a
             $columns = collect($schema->getColumns(EmbeddedResourceIncarnationStore::TABLE));
 
             expect($columns->firstWhere('name', 'id')['type'])->toBe('bigint(20) unsigned')
-                ->and($columns->firstWhere('name', 'incarnation')['type'])->toBe('uuid')
+                ->and($columns->firstWhere('name', 'incarnation')['type'])->toBe(core12ExpectedMariaDbUuidType($connection))
                 ->and($columns->firstWhere('name', 'created_at')['default'])->toBe('NULL');
         }
 
