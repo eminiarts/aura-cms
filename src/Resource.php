@@ -21,6 +21,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Query\Grammars\Grammar;
+use Illuminate\Database\Query\Processors\Processor;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Events\NullDispatcher;
 use Illuminate\Support\Collection;
@@ -945,6 +947,8 @@ class Resource extends Model implements DefinesFields
     private function authorizePrivilegedPersistence(
         Connection $connection,
         Builder $query,
+        Grammar $queryGrammar,
+        Processor $queryProcessor,
         PDO $writePdo,
         string $table,
         int|string|null $teamId,
@@ -952,6 +956,9 @@ class Resource extends Model implements DefinesFields
         ?User $authenticatedUser,
         bool $authorizeUpdate,
         bool $globalWrite,
+        string $keyName,
+        mixed $keyForSaveQuery,
+        bool $assertSaveKey,
         ?array $expectedWheres = null,
         array $expectedWhereBindings = [],
     ): bool {
@@ -962,10 +969,15 @@ class Resource extends Model implements DefinesFields
         $assertIntent = function () use (
             $connection,
             $query,
+            $queryGrammar,
+            $queryProcessor,
             $writePdo,
             $table,
             $teamId,
             $ownerId,
+            $keyName,
+            $keyForSaveQuery,
+            $assertSaveKey,
             $expectedWheres,
             $expectedWhereBindings,
         ): void {
@@ -987,6 +999,11 @@ class Resource extends Model implements DefinesFields
 
             if ($this->getConnection() !== $connection
                 || $this->getTable() !== $table
+                || $this->getKeyName() !== $keyName
+                || ($assertSaveKey && $this->getKeyForSaveQuery() !== $keyForSaveQuery)
+                || $query->getQuery()->connection !== $connection
+                || $query->getQuery()->grammar !== $queryGrammar
+                || $query->getQuery()->processor !== $queryProcessor
                 || $query->getQuery()->from !== $table
                 || ($expectedWheres !== null && (
                     $query->getQuery()->wheres !== $expectedWheres
@@ -1148,12 +1165,15 @@ class Resource extends Model implements DefinesFields
     private function performGlobalInsert(
         Builder $query,
         Connection $connection,
+        Grammar $queryGrammar,
+        Processor $queryProcessor,
         PDO $writePdo,
         string $table,
         mixed $ownerId,
         ?User $authenticatedUser,
         int|string|null $teamId = null,
         bool $globalWrite = true,
+        string $keyName = 'id',
     ): bool {
         if ($this->usesUniqueIds()) {
             $this->setUniqueIds();
@@ -1171,6 +1191,8 @@ class Resource extends Model implements DefinesFields
         $authorize = fn (): bool => $this->authorizePrivilegedPersistence(
             $connection,
             $query,
+            $queryGrammar,
+            $queryProcessor,
             $writePdo,
             $table,
             $teamId,
@@ -1178,6 +1200,9 @@ class Resource extends Model implements DefinesFields
             $authenticatedUser,
             false,
             $globalWrite,
+            $keyName,
+            null,
+            false,
         );
 
         if ($this->getIncrementing()) {
@@ -1213,6 +1238,8 @@ class Resource extends Model implements DefinesFields
     private function performGlobalUpdate(
         Builder $query,
         Connection $connection,
+        Grammar $queryGrammar,
+        Processor $queryProcessor,
         PDO $writePdo,
         string $table,
         mixed $ownerId,
@@ -1220,6 +1247,8 @@ class Resource extends Model implements DefinesFields
         int|string|null $teamId,
         bool $authorizeUpdate,
         bool $globalWrite,
+        string $keyName,
+        mixed $keyForSaveQuery,
     ): bool {
         if (parent::fireModelEvent('updating') === false) {
             return false;
@@ -1236,6 +1265,8 @@ class Resource extends Model implements DefinesFields
         $authorize = fn (): bool => $this->authorizePrivilegedPersistence(
             $connection,
             $query,
+            $queryGrammar,
+            $queryProcessor,
             $writePdo,
             $table,
             $teamId,
@@ -1243,6 +1274,9 @@ class Resource extends Model implements DefinesFields
             $authenticatedUser,
             $authorizeUpdate,
             $globalWrite,
+            $keyName,
+            $keyForSaveQuery,
+            true,
             $expectedWheres,
             $expectedWhereBindings,
         );
@@ -1342,6 +1376,8 @@ class Resource extends Model implements DefinesFields
 
         $connection = $this->getConnection();
         $query = $this->newModelQuery();
+        $queryGrammar = $query->getQuery()->getGrammar();
+        $queryProcessor = $query->getQuery()->getProcessor();
         $writePdo = $connection->getPdo();
 
         if (! $writePdo instanceof PDO) {
@@ -1358,15 +1394,24 @@ class Resource extends Model implements DefinesFields
         );
         $teamId = $this->getAttribute('team_id');
         $ownerId = $this->getAttribute('user_id');
+        $exists = $this->exists;
+        $keyName = $this->getKeyName();
+        $keyForSaveQuery = $exists ? $this->getKeyForSaveQuery() : null;
 
         if (parent::fireModelEvent('saving') === false) {
             return false;
+        }
+
+        if ($this->exists !== $exists) {
+            throw new \LogicException('A named write cannot change whether its resource already exists.');
         }
 
         $saved = $this->exists
             ? $this->performGlobalUpdate(
                 $query,
                 $connection,
+                $queryGrammar,
+                $queryProcessor,
                 $writePdo,
                 $table,
                 $ownerId,
@@ -1374,16 +1419,21 @@ class Resource extends Model implements DefinesFields
                 $teamId,
                 $authorizeUpdate,
                 $globalWrite,
+                $keyName,
+                $keyForSaveQuery,
             )
             : $this->performGlobalInsert(
                 $query,
                 $connection,
+                $queryGrammar,
+                $queryProcessor,
                 $writePdo,
                 $table,
                 $ownerId,
                 $authenticatedUser,
                 $teamId,
                 $globalWrite,
+                $keyName,
             );
 
         if (! $saved) {

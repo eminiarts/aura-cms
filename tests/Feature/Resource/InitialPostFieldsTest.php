@@ -193,6 +193,27 @@ class BroadenedUpdateGlobalResource extends PhysicalWriterGuardedGlobalResource
     }
 }
 
+class MutatedQueryInfrastructureGlobalResource extends PhysicalWriterGuardedGlobalResource
+{
+    public static ?string $mutation = null;
+
+    public function newModelQuery()
+    {
+        $builder = parent::newModelQuery();
+        $builder->getQuery()->beforeQuery(function (QueryBuilder $query): void {
+            if (self::$mutation === 'grammar') {
+                $query->grammar = clone $query->grammar;
+            }
+
+            if (self::$mutation === 'processor') {
+                $query->processor = clone $query->processor;
+            }
+        });
+
+        return $builder;
+    }
+}
+
 class TouchingGlobalResource extends ExplicitNullSharedCustomResource
 {
     protected $fillable = ['name', 'team_id', 'user_id', 'parent_id'];
@@ -395,6 +416,7 @@ afterEach(function () {
     PhysicalWriterGuardedGlobalResource::$savingAttack = null;
     PhysicalWriterGuardedGlobalResource::$creatingAttack = null;
     LateBuilderCallbackGlobalResource::$substitutedWriter = null;
+    MutatedQueryInfrastructureGlobalResource::$mutation = null;
     MutatingGlobalResource::$mutatorInputs = [];
     Schema::dropIfExists('explicit_null_shared_custom_resources');
     DB::purge('core13_probe');
@@ -1094,6 +1116,42 @@ it('rejects a builder callback that broadens a privileged update predicate', fun
         ->toBe('Target row')
         ->and(DB::table('explicit_null_shared_custom_resources')->where('id', $collateralId)->value('name'))
         ->toBe('Collateral row');
+});
+
+it('rejects a builder callback that replaces privileged query infrastructure', function (string $mutation): void {
+    MutatedQueryInfrastructureGlobalResource::$mutation = $mutation;
+
+    expect(fn () => MutatedQueryInfrastructureGlobalResource::createGlobalForSystem([
+        'name' => 'Mutated query infrastructure',
+    ]))->toThrow(LogicException::class, 'resource, tenancy, owner, or physical database writer');
+
+    expect(DB::table('explicit_null_shared_custom_resources')->count())->toBe(0);
+})->with(['grammar', 'processor']);
+
+it('rejects a model callback that changes the privileged update key', function (): void {
+    $targetId = DB::table('explicit_null_shared_custom_resources')->insertGetId([
+        'name' => 'Key target row',
+    ]);
+    $collateralId = DB::table('explicit_null_shared_custom_resources')->insertGetId([
+        'name' => 'Key collateral row',
+    ]);
+    $attributes = (array) DB::table('explicit_null_shared_custom_resources')->find($targetId);
+    $resource = new PhysicalWriterGuardedGlobalResource;
+    $resource->setRawAttributes($attributes, true);
+    $resource->exists = true;
+    PhysicalWriterGuardedGlobalResource::$savingAttack = function (PhysicalWriterGuardedGlobalResource $savingResource) use ($collateralId): void {
+        $savingResource->setAttribute('id', $collateralId);
+        $savingResource->syncOriginalAttribute('id');
+    };
+
+    expect(fn () => $resource->assignOwnerForSystem(77, [
+        'name' => 'Redirected key update',
+    ]))->toThrow(LogicException::class, 'resource, tenancy, owner, or physical database writer');
+
+    expect(DB::table('explicit_null_shared_custom_resources')->where('id', $targetId)->value('name'))
+        ->toBe('Key target row')
+        ->and(DB::table('explicit_null_shared_custom_resources')->where('id', $collateralId)->value('name'))
+        ->toBe('Key collateral row');
 });
 
 it('runs final authorization after transaction callbacks register later connection callbacks', function (): void {
