@@ -583,6 +583,60 @@ test('postgres guard ignores same-named triggers on another owner table', functi
                 SQL,
             ['"core12 guarded-owners"'],
         )->name;
+        $ownedFunction = (string) $connection->selectOne(
+            <<<'SQL'
+                select p.proname as name
+                from pg_catalog.pg_trigger t
+                join pg_catalog.pg_class c on c.oid = t.tgrelid
+                join pg_catalog.pg_proc p on p.oid = t.tgfoid
+                where not t.tgisinternal
+                  and c.oid = pg_catalog.to_regclass(?)
+                  and t.tgname = ?
+                SQL,
+            ['"core12 guarded-owners"', $deleteTrigger],
+        )->name;
+        $currentRole = (string) $connection->selectOne('select current_user as name')->name;
+        $foreignRole = 'aura_core12_foreign_'.Str::lower(Str::random(12));
+        $quotedForeignRole = '"'.str_replace('"', '""', $foreignRole).'"';
+        $quotedCurrentRole = '"'.str_replace('"', '""', $currentRole).'"';
+        $quotedOwnedFunction = '"'.str_replace('"', '""', $ownedFunction).'"';
+
+        $connection->unprepared("create role {$quotedForeignRole} nologin");
+
+        try {
+            $connection->unprepared("alter function {$quotedOwnedFunction}() owner to {$quotedForeignRole}");
+            $triggerCount = (int) $connection->selectOne(
+                'select count(*) as aggregate from pg_catalog.pg_trigger where not tgisinternal and tgrelid = pg_catalog.to_regclass(?)',
+                ['"core12 guarded-owners"'],
+            )->aggregate;
+
+            expect($guard->isInstalled($prototype))->toBeFalse()
+                ->and(fn () => $guard->install($prototype))
+                ->toThrow(RuntimeException::class, 'foreign role')
+                ->and(fn () => $guard->uninstall($prototype))
+                ->toThrow(RuntimeException::class, 'foreign role')
+                ->and((int) $connection->selectOne(
+                    'select count(*) as aggregate from pg_catalog.pg_trigger where not tgisinternal and tgrelid = pg_catalog.to_regclass(?)',
+                    ['"core12 guarded-owners"'],
+                )->aggregate)->toBe($triggerCount)
+                ->and((string) $connection->selectOne(
+                    'select pg_catalog.pg_get_userbyid(proowner) as name from pg_catalog.pg_proc where proname = ? and pronamespace = pg_catalog.current_schema()::regnamespace',
+                    [$ownedFunction],
+                )->name)->toBe($foreignRole);
+        } finally {
+            $functionOwner = $connection->selectOne(
+                'select pg_catalog.pg_get_userbyid(proowner) as name from pg_catalog.pg_proc where proname = ? and pronamespace = pg_catalog.current_schema()::regnamespace',
+                [$ownedFunction],
+            );
+
+            if ($functionOwner !== null && (string) $functionOwner->name === $foreignRole) {
+                $connection->unprepared("alter function {$quotedOwnedFunction}() owner to {$quotedCurrentRole}");
+            }
+
+            $connection->unprepared("drop role if exists {$quotedForeignRole}");
+        }
+
+        expect($guard->isInstalled($prototype))->toBeTrue();
         $guard->uninstall($prototype);
         $connection->unprepared(
             'create function "'.$foreignFunction.'"() returns trigger as $aura$ begin return OLD; end; $aura$ language plpgsql',

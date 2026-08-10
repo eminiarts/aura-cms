@@ -75,6 +75,7 @@ final class EmbeddedResourceIncarnationGuard
     {
         $resource = $this->resource($resource);
         $connection = $resource->getConnection();
+        $this->assertPostgresFunctionsOwnedByCurrentRole($connection, $resource);
         $this->dropStatements($connection, $resource);
     }
 
@@ -83,6 +84,8 @@ final class EmbeddedResourceIncarnationGuard
         if ($connection->getDriverName() !== 'pgsql') {
             return;
         }
+
+        $this->assertPostgresFunctionsOwnedByCurrentRole($connection, $resource);
 
         $allowedDependencies = [];
 
@@ -156,6 +159,44 @@ final class EmbeddedResourceIncarnationGuard
             throw new RuntimeException(sprintf(
                 'Cannot install embedded incarnation guard because trigger [%s] belongs to another table.',
                 (string) ($foreign->name ?? ''),
+            ));
+        }
+    }
+
+    private function assertPostgresFunctionsOwnedByCurrentRole(Connection $connection, Model $resource): void
+    {
+        if ($connection->getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        $functions = [];
+
+        foreach (array_values(array_unique([1, self::CONTRACT_VERSION])) as $version) {
+            $functions[] = $this->functionName($resource, $version);
+            $functions[] = $this->insertFunctionName($resource, $version);
+        }
+
+        $foreignOwner = collect($connection->select(
+            <<<'SQL'
+                select p.proname as function_name,
+                       pg_catalog.pg_get_userbyid(p.proowner) as function_owner,
+                       current_user as current_role
+                from pg_catalog.pg_proc p
+                join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+                where n.nspname = current_schema()
+                  and p.proname in (?, ?, ?, ?)
+                  and pg_catalog.pg_get_function_identity_arguments(p.oid) = ''
+                  and pg_catalog.pg_get_userbyid(p.proowner) <> current_user
+                SQL,
+            $functions,
+        ))->first();
+
+        if ($foreignOwner !== null) {
+            throw new RuntimeException(sprintf(
+                'Cannot modify embedded incarnation guard because function [%s] belongs to foreign role [%s], not current role [%s].',
+                (string) $foreignOwner->function_name,
+                (string) $foreignOwner->function_owner,
+                (string) $foreignOwner->current_role,
             ));
         }
     }
@@ -500,6 +541,7 @@ final class EmbeddedResourceIncarnationGuard
                 select t.tgname as name, t.tgtype as trigger_type, t.tgenabled as enabled,
                        t.tgqual as condition,
                        p.proname as function_name, pn.nspname as function_schema, p.prosrc as function_source,
+                       pg_catalog.pg_get_userbyid(p.proowner) as function_owner, current_user as current_role,
                        p.prosecdef as security_definer, p.provolatile as volatility,
                        p.proparallel as parallel_safety, p.proleakproof as leakproof,
                        p.proconfig as runtime_config, l.lanname as language
@@ -530,6 +572,7 @@ final class EmbeddedResourceIncarnationGuard
                 || $row->condition !== null
                 || (string) $row->function_name !== $expectedFunction
                 || (string) $row->function_schema !== $functionSchema
+                || (string) $row->function_owner !== (string) $row->current_role
                 || (bool) $row->security_definer
                 || (string) $row->volatility !== 'v'
                 || (string) $row->parallel_safety !== 'u'
