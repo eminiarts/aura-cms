@@ -174,7 +174,13 @@ class BelongsTo extends Field implements PreloadsTableDisplay
         if (is_callable($resolver)) {
             $destination = $resolver($related, $field, $model, $context, $value);
 
-            return is_string($destination) && $destination !== '' ? $destination : null;
+            if (! is_string($destination) || $destination === '') {
+                return null;
+            }
+
+            if ($this->isSafeLinkDestination($destination)) {
+                return $destination;
+            }
         }
 
         $slug = method_exists($related, 'getSlug') ? $related->getSlug() : null;
@@ -197,7 +203,9 @@ class BelongsTo extends Field implements PreloadsTableDisplay
             }
 
             try {
-                return route($routeName, ['id' => $related->getKey()]);
+                $destination = route($routeName, ['id' => $related->getKey()]);
+
+                return $this->isSafeLinkDestination($destination) ? $destination : null;
             } catch (Throwable) {
                 return null;
             }
@@ -408,6 +416,35 @@ class BelongsTo extends Field implements PreloadsTableDisplay
         $policy = app(ResourcePolicy::class);
 
         return method_exists($policy, $ability) && (bool) $policy->{$ability}($user, $related);
+    }
+
+    protected function isSafeLinkDestination(string $destination): bool
+    {
+        if (
+            $destination === ''
+            || trim($destination) !== $destination
+            || preg_match('//u', $destination) !== 1
+            || preg_match('/[\x00-\x20\x7F\p{Z}]/u', $destination) === 1
+            || Str::startsWith($destination, '//')
+            || Str::contains($destination, '\\')
+            || html_entity_decode($destination, ENT_QUOTES | ENT_HTML5, 'UTF-8') !== $destination
+        ) {
+            return false;
+        }
+
+        if (preg_match('/^([a-z][a-z0-9+.-]*):/i', $destination, $matches) !== 1) {
+            return true;
+        }
+
+        if (! in_array(Str::lower($matches[1]), ['http', 'https'], true)) {
+            return false;
+        }
+
+        $components = parse_url($destination);
+
+        return is_array($components)
+            && is_string($components['host'] ?? null)
+            && $components['host'] !== '';
     }
 
     /**

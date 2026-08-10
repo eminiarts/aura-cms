@@ -184,6 +184,82 @@ describe('BelongsTo Field Display', function () {
             ->toContain('/posts/'.$related->id);
     });
 
+    test('accepts only safe custom relationship destinations', function (string $destination) {
+        $related = Post::factory()->create(['title' => 'Related Post']);
+        $definition = [
+            'resource' => Post::class,
+            'link_resolver' => fn (): string => $destination,
+        ];
+
+        foreach ([FieldValueContext::Index, FieldValueContext::View] as $context) {
+            $html = (new BelongsTo)->presentValue($related->id, $definition, $this->user, $context);
+
+            expect((string) $html)
+                ->toContain('<a')
+                ->toContain("href='".e($destination)."'");
+        }
+    })->with([
+        'root-relative path' => '/posts/1',
+        'relative path' => 'posts/1',
+        'dot-relative path' => './posts/1',
+        'absolute HTTPS URL' => 'https://example.test/posts/1?tab=activity#latest',
+        'absolute HTTP URL' => 'http://localhost/posts/1',
+    ]);
+
+    test('unsafe custom destinations fall back to the authorized default without reaching exports', function (string $destination) {
+        $related = Post::factory()->create(['title' => 'Related Post']);
+        $definition = [
+            'resource' => Post::class,
+            'link_resolver' => fn (): string => $destination,
+        ];
+        $safeDestination = route('aura.post.view', $related->id);
+        $field = new BelongsTo;
+
+        foreach ([FieldValueContext::Index, FieldValueContext::View] as $context) {
+            $html = $field->presentValue($related->id, $definition, $this->user, $context);
+
+            expect((string) $html)
+                ->toContain("href='".e($safeDestination)."'")
+                ->not->toContain("href='".e($destination)."'");
+        }
+
+        $export = $field->presentValue(
+            $related->id,
+            $definition,
+            $this->user,
+            FieldValueContext::Export,
+        );
+
+        expect((string) $export)
+            ->toBe($related->title())
+            ->not->toContain('<a')
+            ->not->toContain($destination);
+    })->with([
+        'javascript scheme' => 'javascript:alert(document.domain)',
+        'mixed-case javascript scheme' => 'JaVaScRiPt:alert(document.domain)',
+        'data scheme' => 'data:text/html,<svg onload=alert(document.domain)>',
+        'vbscript scheme' => 'VBScript:msgbox(document.domain)',
+        'file scheme' => 'file:///etc/passwd',
+        'protocol-relative URL' => '//attacker.example/collect',
+        'backslash protocol-relative URL' => '\\\\attacker.example\\collect',
+        'leading whitespace' => ' javascript:alert(document.domain)',
+        'embedded control character' => "java\tscript:alert(document.domain)",
+        'entity-obfuscated scheme' => 'java&#x73;cript:alert(document.domain)',
+        'entity-obfuscated colon' => 'javascript&colon;alert(document.domain)',
+    ]);
+
+    test('an empty custom destination intentionally renders plain text', function () {
+        $related = Post::factory()->create(['title' => 'Related Post']);
+
+        $html = (new BelongsTo)->display([
+            'resource' => Post::class,
+            'link_resolver' => fn (): string => '',
+        ], $related->id, $this->user);
+
+        expect((string) $html)->toBe($related->title())
+            ->not->toContain('<a');
+    });
+
     test('export context returns the related label without markup', function () {
         $related = Post::factory()->create(['title' => 'Exported Post']);
 
