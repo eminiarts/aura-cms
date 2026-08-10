@@ -9,6 +9,7 @@ use Livewire\Finder\Finder;
 use ReflectionClass;
 use ReflectionProperty;
 use Throwable;
+use WeakMap;
 
 class Livewire43CollisionInspector implements LivewireCollisionInspector
 {
@@ -29,6 +30,11 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         'classComponents',
         'viewComponents',
     ];
+
+    private const MAX_OWNED_CLAIMS = 100;
+
+    /** @var WeakMap<Finder, array<string, string>>|null */
+    private static ?WeakMap $ownedClaims = null;
 
     public function __construct(
         private readonly Finder $finder,
@@ -78,23 +84,32 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         $this->assertCollectionShapes();
     }
 
+    public function assertOwnedOrReservable(
+        string $identifier,
+        string $intrinsicComponent,
+        Closure $auraResolver,
+    ): void {
+        $claims = self::$ownedClaims !== null && isset(self::$ownedClaims[$this->finder])
+            ? self::$ownedClaims[$this->finder]
+            : [];
+        $allowedExactClaim = ($claims[$identifier] ?? null) === $intrinsicComponent
+            ? $intrinsicComponent
+            : null;
+
+        $this->assertReservableWithExactClaim(
+            $identifier,
+            $intrinsicComponent,
+            $auraResolver,
+            $allowedExactClaim,
+        );
+    }
+
     public function assertReservable(
         string $identifier,
         string $intrinsicComponent,
         Closure $auraResolver,
-        bool $allowExactClaim = false,
     ): void {
-        $this->assertCompatible();
-        $snapshot = $this->protectedClaimSnapshot();
-        $this->assertIdentifierUnclaimed(
-            $identifier,
-            $auraResolver,
-            allowedConventionalClass: $intrinsicComponent,
-            allowAuraReservation: false,
-            allowedExactClaim: $allowExactClaim ? $intrinsicComponent : null,
-            protectedClaimSnapshot: $snapshot,
-        );
-        $this->assertProtectedClaimSnapshotUnchanged($identifier, $snapshot);
+        $this->assertReservableWithExactClaim($identifier, $intrinsicComponent, $auraResolver);
     }
 
     public function assertUnclaimed(array $identifiers, Closure $auraResolver): void
@@ -118,6 +133,19 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         foreach ($identifiers as $identifier) {
             $this->assertProtectedClaimSnapshotUnchanged($identifier, $snapshot);
         }
+    }
+
+    public function rememberOwnedClaim(string $identifier, string $component): void
+    {
+        self::$ownedClaims ??= new WeakMap;
+        $claims = self::$ownedClaims[$this->finder] ?? [];
+
+        if (! array_key_exists($identifier, $claims) && count($claims) >= self::MAX_OWNED_CLAIMS) {
+            array_shift($claims);
+        }
+
+        $claims[$identifier] = $component;
+        self::$ownedClaims[$this->finder] = $claims;
     }
 
     private function assertCollectionShapes(): void
@@ -269,6 +297,25 @@ class Livewire43CollisionInspector implements LivewireCollisionInspector
         if ($this->protectedClaimSnapshot() !== $snapshot) {
             $this->collision($identifier, 'protected-claim-mutation', 'Livewire protected claims changed during inspection');
         }
+    }
+
+    private function assertReservableWithExactClaim(
+        string $identifier,
+        string $intrinsicComponent,
+        Closure $auraResolver,
+        ?string $allowedExactClaim = null,
+    ): void {
+        $this->assertCompatible();
+        $snapshot = $this->protectedClaimSnapshot();
+        $this->assertIdentifierUnclaimed(
+            $identifier,
+            $auraResolver,
+            allowedConventionalClass: $intrinsicComponent,
+            allowAuraReservation: false,
+            allowedExactClaim: $allowedExactClaim,
+            protectedClaimSnapshot: $snapshot,
+        );
+        $this->assertProtectedClaimSnapshotUnchanged($identifier, $snapshot);
     }
 
     private function assertStaticClaimsUnclaimed(

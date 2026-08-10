@@ -199,25 +199,55 @@ test('inspector detects existing Factory cache entries before normal resolution'
         ->toThrow(ComponentSlotCollision::class, 'factory-cache');
 })->with(protectedComponentSlotIdentifiers());
 
-test('inspector permits only an explicitly allowed exact owned claim', function () {
+test('inspector permits only an exact claim owned by the current livewire runtime', function () {
     [$inspector, $finder, $factory] = freshCollisionInspector();
     $identifier = 'aura-record-panel-owned';
     $finder->addComponent(name: $identifier, class: CollisionFixture::class);
     setLivewireInternal($factory, 'resolvedComponentCache', [$identifier => CollisionFixture::class]);
+    $inspector->rememberOwnedClaim($identifier, CollisionFixture::class);
 
-    $inspector->assertReservable(
+    $inspector->assertOwnedOrReservable(
         $identifier,
         CollisionFixture::class,
         static fn (): null => null,
-        allowExactClaim: true,
     );
 
-    expect(fn () => $inspector->assertReservable(
+    expect(fn () => $inspector->assertOwnedOrReservable(
         $identifier,
         GlobalSearch::class,
         static fn (): null => null,
-        allowExactClaim: true,
     ))->toThrow(ComponentSlotCollision::class, CollisionFixture::class);
+
+    [$freshInspector, $freshFinder] = freshCollisionInspector();
+    $freshFinder->addComponent(name: $identifier, class: CollisionFixture::class);
+
+    expect(fn () => $freshInspector->assertOwnedOrReservable(
+        $identifier,
+        CollisionFixture::class,
+        static fn (): null => null,
+    ))->toThrow(ComponentSlotCollision::class, CollisionFixture::class);
+});
+
+test('owned livewire claims are bounded per runtime', function () {
+    [$inspector, $finder] = freshCollisionInspector();
+
+    foreach (range(1, 101) as $index) {
+        $identifier = 'aura-record-panel-'.$index;
+        $finder->addComponent(name: $identifier, class: CollisionFixture::class);
+        $inspector->rememberOwnedClaim($identifier, CollisionFixture::class);
+    }
+
+    expect(fn () => $inspector->assertOwnedOrReservable(
+        'aura-record-panel-1',
+        CollisionFixture::class,
+        static fn (): null => null,
+    ))->toThrow(ComponentSlotCollision::class, CollisionFixture::class);
+
+    $inspector->assertOwnedOrReservable(
+        'aura-record-panel-101',
+        CollisionFixture::class,
+        static fn (): null => null,
+    );
 });
 
 test('inspector converts errors from third party missing resolvers into collision diagnostics', function () {

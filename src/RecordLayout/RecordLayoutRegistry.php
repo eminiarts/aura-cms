@@ -24,9 +24,6 @@ final class RecordLayoutRegistry
 
     private bool $finalized = false;
 
-    /** @var array<string, class-string> */
-    private static array $ownedTransports = [];
-
     /** @var array<string, RegisteredRecordLayoutPanel> */
     private array $panels = [];
 
@@ -58,7 +55,10 @@ final class RecordLayoutRegistry
 
             foreach ($pending as $registered) {
                 Livewire::component($registered->transport(), $registered->panel->component);
-                self::$ownedTransports[$registered->transport()] = $registered->panel->component;
+                $this->collisionInspector->rememberOwnedClaim(
+                    $registered->transport(),
+                    $registered->panel->component,
+                );
             }
 
             $this->panels = $pending;
@@ -166,11 +166,10 @@ final class RecordLayoutRegistry
         $transport = $registered->transport();
         $component = $registered->panel->component;
 
-        $this->collisionInspector->assertReservable(
+        $this->collisionInspector->assertOwnedOrReservable(
             $transport,
             $component,
             static fn (?string $name): ?string => null,
-            (self::$ownedTransports[$transport] ?? null) === $component,
         );
     }
 
