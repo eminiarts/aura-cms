@@ -10,11 +10,11 @@
                   class="absolute inset-y-0 left-0 w-0.5 bg-primary-600" aria-hidden="true"></span>
             <x-aura::input.checkbox
     id="checkbox_{{ $row->id }}"
-    x-bind:checked="isRowSelected(@js($row->getKey()))"
+    x-bind:checked="isRowSelected({{ \Illuminate\Support\Js::from($row->getKey()) }})"
     hideLabel
     :label="$row->id"
     :value="$row->id"
-    x-on:click.stop.prevent="toggleRow($event, @js($row->getKey()))"
+    x-on:click.stop.prevent="toggleRow($event, {{ \Illuminate\Support\Js::from($row->getKey()) }})"
 />
         </x-aura::table.cell>
     @endif
