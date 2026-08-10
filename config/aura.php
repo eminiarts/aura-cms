@@ -228,11 +228,16 @@ return [
 
         'generate_thumbnails' => true,
         'security' => [
-            // Configure an explicitly named, dedicated file or database store
-            // with atomic locks. Also set Laravel's global
-            // cache.serializable_classes option to false. Null, the default
-            // store, Redis, DynamoDB, Memcached, failover, process-local, and
-            // custom or proxied stores fail closed.
+            // Configure an explicitly named, non-default Laravel database store
+            // with dedicated, distinct cache and lock tables. It must not alias
+            // the default cache's physical tables, including database children
+            // of a default failover store, custom defaults that resolve to a database,
+            // and aliases created by connection prefixes or alternate paths to the
+            // same database. Use unqualified lowercase base-table identifiers;
+            // views, temporary tables, and synonyms fail closed. Also set Laravel's global
+            // cache.serializable_classes option to false. File, Redis, DynamoDB,
+            // Memcached, failover, process-local, custom, and proxied stores fail
+            // closed. Multi-node deployments need one shared network database.
             'cache_store' => null,
             'owner_token_ttl' => 900,
             'selection_ttl' => 15,

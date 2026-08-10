@@ -7,6 +7,8 @@ use Aura\Base\Providers\AuthServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Foundation\Testing\Concerns\InteractsWithViews;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Intervention\Image\Laravel\ServiceProvider as ImageServiceProvider;
 use Lab404\Impersonate\ImpersonateServiceProvider;
 use Laravel\Fortify\FortifyServiceProvider;
@@ -14,6 +16,7 @@ use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\Concerns\WithWorkbench;
 use Orchestra\Testbench\TestCase as Orchestra;
 use ReflectionObject;
+use RuntimeException;
 use Spatie\LaravelRay\RayServiceProvider;
 
 class TestCase extends Orchestra
@@ -52,6 +55,7 @@ class TestCase extends Orchestra
         config()->set('app.env', 'testing');
         config()->set('filesystems.default', 'local');
         $this->app['cache']->store('aura-media-security')->clear();
+        DB::connection('media-security-testing')->table('media_security_cache_locks')->delete();
 
         Factory::guessFactoryNamesUsing(
             fn (string $modelName) => 'Aura\\Base\\Database\\Factories\\'.class_basename($modelName).'Factory'
@@ -76,19 +80,78 @@ class TestCase extends Orchestra
 
         $migration = require __DIR__.'/../database/migrations/create_aura_tables.php.stub';
         $migration->up();
+
+        $mediaSecuritySchema = Schema::connection('media-security-testing');
+
+        if (! $mediaSecuritySchema->hasTable('media_security_cache')) {
+            $mediaSecuritySchema->create('media_security_cache', function ($table) {
+                $table->string('key')->primary();
+                $table->mediumText('value');
+                $table->integer('expiration');
+            });
+        }
+
+        if (! $mediaSecuritySchema->hasTable('media_security_cache_locks')) {
+            $mediaSecuritySchema->create('media_security_cache_locks', function ($table) {
+                $table->string('key')->primary();
+                $table->string('owner');
+                $table->integer('expiration');
+            });
+        }
+
+        if (! $mediaSecuritySchema->hasTable('ordinary_default_cache')) {
+            $mediaSecuritySchema->create('ordinary_default_cache', function ($table) {
+                $table->string('key')->primary();
+                $table->mediumText('value');
+                $table->integer('expiration');
+            });
+        }
+
+        if (! $mediaSecuritySchema->hasTable('ordinary_default_locks')) {
+            $mediaSecuritySchema->create('ordinary_default_locks', function ($table) {
+                $table->string('key')->primary();
+                $table->string('owner');
+                $table->integer('expiration');
+            });
+        }
     }
 
     protected function defineEnvironment($app)
     {
         $this->useIsolatedFilesystemPaths($app);
 
+        $mediaSecurityDirectory = $app->storagePath('framework/cache');
+
+        if (! is_dir($mediaSecurityDirectory)) {
+            mkdir($mediaSecurityDirectory, 0755, true);
+        }
+
+        $mediaSecurityDirectory = realpath($mediaSecurityDirectory);
+
+        if ($mediaSecurityDirectory === false) {
+            throw new RuntimeException('Unable to resolve the media security test cache directory.');
+        }
+
+        $mediaSecurityDatabase = $mediaSecurityDirectory.'/media-security.sqlite';
+
+        if (! is_file($mediaSecurityDatabase)) {
+            touch($mediaSecurityDatabase);
+        }
+
         // Prevent actual file upload handling
         $app['config']->set('livewire.temporary_file_upload.disk', 'local');
         $app['config']->set('livewire.temporary_file_upload.middleware', null);
         $app['config']->set('cache.stores.aura-media-security', [
-            'driver' => 'file',
-            'path' => $app->storagePath('framework/cache/data/media-security'),
-            'lock_path' => $app->storagePath('framework/cache/data/media-security-locks'),
+            'driver' => 'database',
+            'connection' => 'media-security-testing',
+            'table' => 'media_security_cache',
+            'lock_connection' => 'media-security-testing',
+            'lock_table' => 'media_security_cache_locks',
+        ]);
+        $app['config']->set('database.connections.media-security-testing', [
+            'driver' => 'sqlite',
+            'database' => $mediaSecurityDatabase,
+            'prefix' => '',
         ]);
         $app['config']->set('cache.serializable_classes', false);
         $app['config']->set('aura.media.security.cache_store', 'aura-media-security');

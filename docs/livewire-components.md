@@ -596,11 +596,27 @@ delete, or release outcome without permitting a successful consume to replay.
 
 ### Media Security Cache Store
 
-`aura.media.security.cache_store` must resolve to one shared file, database,
-Redis, Memcached, or DynamoDB cache store that supports atomic locks. Every web
-and worker process must use the same store. Process-local stores, including the
-array store, are rejected when media security services resolve. Owner contexts, selection records/indexes,
-details snapshots, and their locks all use this store.
+`aura.media.security.cache_store` must name a non-default store that resolves
+through Laravel's actual cache manager to an exact built-in database store. Its
+cache and lock connections must resolve through Laravel's actual database
+manager, and its data and lock tables must be distinct physical tables that do
+not alias either table used by the default cache store. This check includes
+database children of a default failover store, connection table prefixes, and
+custom default drivers that resolve to a database store. Table names must be
+unqualified lowercase base-table identifiers; views, temporary tables, and synonyms fail closed.
+PostgreSQL relations are resolved through the active
+search path and SQL Server relations through `OBJECT_ID`. Alternate paths to
+the same SQLite inode are treated as the same database. Set
+`cache.serializable_classes` to `false`; Aura verifies that setting on the
+resolved store before every operation. File, Redis, Memcached, DynamoDB,
+failover, process-local, custom, subclassed, and proxied stores fail closed.
+Aura pins cache I/O to validated write PDO instances, disables reconnects on
+those private connections, and rejects separate read or direct PDO targets.
+
+Every web and worker process must reach the same database and tables. For a
+multi-node deployment, use one shared network database; a node-local SQLite
+database does not share media security state. Owner contexts, selection
+records/indexes, details snapshots, and their locks all use this store.
 
 Cache `add`, `put`, `forget`, lock acquisition, and lock release results are
 authoritative. A false result or exception fails closed. Aura does not report a

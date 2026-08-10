@@ -98,7 +98,7 @@ Configure media settings in `config/aura.php`:
 
     // Server-side owner/selection/details protocol
     'security' => [
-        'cache_store' => null, // Null uses Laravel's default cache store
+        'cache_store' => 'aura-media-security', // Required dedicated database store
         'owner_token_ttl' => 900,
         'selection_ttl' => 15,
         'selection_retention' => 60,
@@ -538,10 +538,27 @@ not replace the server snapshot.
 
 ### Security Cache Store
 
-Set `aura.media.security.cache_store` to a shared file, database, Redis,
-Memcached, or DynamoDB cache store with atomic locks. All web and worker
-processes must use the same store. Aura rejects process-local stores such as
-`array` when the media security services resolve.
+Set `aura.media.security.cache_store` to a named, non-default store that resolves
+through Laravel's actual cache manager to an exact built-in database store. Set
+`cache.serializable_classes` to `false`. The configured cache and lock
+connections must be the instances returned by Laravel's database manager, and
+the cache and lock tables must be distinct physical tables that do not alias the
+default cache's data or lock table. Database children of a default failover
+store and custom defaults that resolve to database stores are checked; connection table prefixes
+and alternate paths to the same SQLite inode are included in alias
+detection. Table names must be unqualified lowercase base-table identifiers.
+views, temporary tables, and synonyms fail closed. PostgreSQL search-path
+resolution and SQL Server `OBJECT_ID` resolution are verified. File, Redis,
+Memcached, DynamoDB, failover,
+process-local, custom, subclassed, and proxied stores fail closed.
+
+Aura pins security operations to validated write PDO instances, disables
+reconnects on those private connections, and rejects separate read or direct
+PDO targets.
+
+All web and worker processes must use the same database and tables. Multi-node
+deployments therefore need a shared network database; node-local SQLite does
+not provide shared media security state.
 
 Every cache `add`, `put`, `forget`, lock acquisition, and lock release result is
 authoritative. False results and exceptions fail closed. An incomplete begin is

@@ -7,13 +7,9 @@ use Aura\Base\Livewire\Media\MediaDetailsBroker;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Livewire\Media\MediaSecurityStore;
 use Aura\Base\Livewire\Media\MediaSelectionBroker;
-use Illuminate\Cache\FileStore;
-use Illuminate\Cache\Repository as CacheRepository;
-use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\Encryption\StringEncrypter;
-use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
 use RuntimeException;
 
@@ -145,16 +141,6 @@ final readonly class FaultInjectingMediaLock implements Lock
     }
 }
 
-final readonly class FixedMediaCacheFactory implements CacheFactory
-{
-    public function __construct(private CacheRepository $repository) {}
-
-    public function store($name = null): CacheRepository
-    {
-        return $this->repository;
-    }
-}
-
 final readonly class FaultInjectingMediaEnvironment
 {
     public function __construct(
@@ -166,19 +152,14 @@ final readonly class FaultInjectingMediaEnvironment
 
     public static function install(Application $app): self
     {
-        $directory = $app->storagePath('framework/cache/data/media-faults-'.bin2hex(random_bytes(6)));
-        $fileStore = (new FileStore(
-            $app->make(Filesystem::class),
-            $directory,
-            null,
-            false,
-        ))->setLockDirectory($directory.'-locks');
-        $repository = new CacheRepository($fileStore);
         $config = $app->make(ConfigRepository::class);
         $config->set('cache.serializable_classes', false);
-        $config->set('cache.stores.aura-media-security.path', $directory);
-        $config->set('cache.stores.aura-media-security.lock_path', $directory.'-locks');
-        $security = new FaultInjectingMediaSecurityStore(new FixedMediaCacheFactory($repository), $config);
+        $security = new FaultInjectingMediaSecurityStore(
+            $app->make('cache'),
+            $config,
+            $app->make('db'),
+            $app,
+        );
         $owners = new MediaOwnerTokenBroker(
             $security,
             $config,
