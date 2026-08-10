@@ -9,6 +9,9 @@ trait ProvidesEmbeddedAuthorizationAttributes
      */
     public function embeddedAuthorizationAttributeNames(): array
     {
-        return ['team_id', 'user_id'];
+        return array_values(array_filter([
+            static::getTeamColumn(),
+            static::getOwnerColumn(),
+        ]));
     }
 }

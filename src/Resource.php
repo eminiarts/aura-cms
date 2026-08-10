@@ -116,7 +116,7 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
      */
     protected FieldValueContext $fieldValueContext = FieldValueContext::Model;
 
-    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'team_id', 'created_at', 'updated_at', 'deleted_at'];
+    protected $fillable = ['title', 'content', 'type', 'status', 'slug', 'user_id', 'parent_id', 'order', 'team_id', 'created_at', 'updated_at', 'deleted_at'];
 
     protected $hidden = ['meta'];
 
@@ -204,7 +204,8 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
     {
         parent::__construct();
 
-        $this->baseFillable = parent::getFillable();
+        $this->baseFillable = array_values(array_diff(parent::getFillable(), ['fields']));
+        $this->fillable($this->baseFillable);
         $this->fieldDefinitionStateReady = true;
 
         $this->ensureFieldDefinitionState();
@@ -338,7 +339,9 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
      */
     public function assignOwnerForSystem(int|string $ownerId, array $attributes = []): bool
     {
-        $attributes['user_id'] = $ownerId;
+        static::ensureOwnerWriteIsSupported();
+        $ownerColumn = static::getOwnerColumn();
+        $attributes[$ownerColumn] = $ownerId;
         $this->fill($attributes);
 
         return $this->saveSystemResource(
@@ -400,7 +403,9 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         array $attributes = [],
         ?Connection $connection = null,
     ): static {
-        $attributes['user_id'] = $ownerId;
+        static::ensureOwnerWriteIsSupported();
+        $ownerColumn = static::getOwnerColumn();
+        $attributes[$ownerColumn] = $ownerId;
         $resource = static::resourceModelOnConnection($connection);
         $instance = static::ensureStaticResource($resource->newInstance($attributes));
         $instance->saveSystemResource(trustedOwnerIntent: true, trustedOwnerId: $ownerId);
@@ -420,13 +425,15 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
     ): static {
         static::ensureTeamWriteIsSupported();
 
-        $attributes['team_id'] = $teamId;
+        $teamColumn = static::getTeamColumn();
+        $ownerColumn = static::getOwnerColumn();
+        $attributes[$teamColumn] = $teamId;
         $resource = static::resourceModelOnConnection($connection);
         $instance = static::ensureStaticResource($resource->newInstance($attributes));
-        $hasOwnerIntent = array_key_exists('user_id', $attributes);
+        $hasOwnerIntent = $ownerColumn !== null && array_key_exists($ownerColumn, $attributes);
         $instance->saveSystemResource(
             trustedOwnerIntent: $hasOwnerIntent,
-            trustedOwnerId: $attributes['user_id'] ?? null,
+            trustedOwnerId: $ownerColumn === null ? null : ($attributes[$ownerColumn] ?? null),
             trustedTeamIntent: true,
             trustedTeamId: $teamId,
         );
@@ -479,7 +486,7 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         return static::createGlobalRecord(
             $attributes,
             $resource->getConnection(),
-            trustedOwnerIntent: array_key_exists('user_id', $attributes),
+            trustedOwnerIntent: static::attributesContainOwner($attributes),
         );
     }
 
@@ -488,6 +495,47 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         return $this->getConnection()->transaction(
             fn (): int|false => $this->incrementOrDecrement($column, $amount, $extra, 'decrement'),
         );
+    }
+
+    /**
+     * Keep Eloquent mass assignment limited to trusted physical columns while
+     * retaining the legacy Resource::create(['meta_slug' => ...]) API.
+     * Declared meta values travel through Aura's normalized fields payload;
+     * unknown keys are left for Eloquent's normal mass-assignment rejection.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function fill(array $attributes)
+    {
+        if (static::isUnguarded()) {
+            return parent::fill($attributes);
+        }
+
+        $this->ensureFieldDefinitionState();
+
+        $fieldPayload = is_array($attributes['fields'] ?? null)
+            ? $this->declaredFieldPayload($attributes['fields'])
+            : [];
+
+        foreach ($attributes as $key => $value) {
+            if (! is_string($key) || $key === 'fields' || ! $this->isMetaField($key)) {
+                continue;
+            }
+
+            $fieldPayload[$key] = $value;
+            unset($attributes[$key]);
+        }
+
+        unset($attributes['fields']);
+
+        if ($fieldPayload !== []) {
+            $this->setAttribute('fields', array_replace(
+                is_array($this->getAttribute('fields')) ? $this->getAttribute('fields') : [],
+                $fieldPayload,
+            ));
+        }
+
+        return parent::fill($attributes);
     }
 
     /**
@@ -742,6 +790,13 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         });
     }
 
+    public function getOwnerId(): mixed
+    {
+        $ownerColumn = static::getOwnerColumn();
+
+        return $ownerColumn === null ? null : $this->getAttribute($ownerColumn);
+    }
+
     /**
      * Return the previous save snapshot visible in the active provider context.
      *
@@ -821,6 +876,13 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         return $this->tableDisplayCache[$slug] ?? null;
     }
 
+    public function getTeamId(): mixed
+    {
+        $teamColumn = static::getTeamColumn();
+
+        return $teamColumn === null ? null : $this->getAttribute($teamColumn);
+    }
+
     /**
      * Determine whether an attribute exists after synchronizing dynamic field
      * state for the active provider context.
@@ -893,6 +955,14 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         return false;
     }
 
+    public function isOwnedBy(mixed $user): bool
+    {
+        return static::usesOwnerScope()
+            && $user instanceof User
+            && $this->getOwnerId() !== null
+            && (string) $this->getOwnerId() === (string) $user->getKey();
+    }
+
     // Override isRelation
     public function isRelation($key)
     {
@@ -925,7 +995,9 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
     {
         static::ensureGlobalWriteIsSupported();
 
-        if (! $this->exists || $this->getAttribute('team_id') !== null) {
+        $teamColumn = static::getTeamColumn();
+
+        if ($teamColumn === null || ! $this->exists || $this->getAttribute($teamColumn) !== null) {
             throw new LogicException('Only a persisted global resource can be moved to a team.');
         }
 
@@ -935,9 +1007,9 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
 
         Gate::authorize('update', $this);
 
-        return TeamScope::forTeam($teamId, function () use ($attributes, $teamId): bool {
+        return TeamScope::forTeam($teamId, function () use ($attributes, $teamColumn, $teamId): bool {
             $this->fill($attributes);
-            $this->setAttribute('team_id', $teamId);
+            $this->setAttribute($teamColumn, $teamId);
 
             return $this->save();
         }, $this->getConnection());
@@ -952,12 +1024,14 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
     {
         static::ensureTeamWriteIsSupported();
 
+        $teamColumn = static::getTeamColumn();
+        $ownerColumn = static::getOwnerColumn();
         $this->fill($attributes);
-        $this->setAttribute('team_id', $teamId);
+        $this->setAttribute($teamColumn, $teamId);
 
         return $this->saveSystemResource(
-            trustedOwnerIntent: array_key_exists('user_id', $attributes),
-            trustedOwnerId: $attributes['user_id'] ?? null,
+            trustedOwnerIntent: $ownerColumn !== null && array_key_exists($ownerColumn, $attributes),
+            trustedOwnerId: $ownerColumn === null ? null : ($attributes[$ownerColumn] ?? null),
             trustedTeamIntent: true,
             trustedTeamId: $teamId,
         );
@@ -988,8 +1062,9 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         Gate::authorize('update', $this);
         Gate::authorize('createGlobal', $this);
 
+        $teamColumn = static::getTeamColumn();
         $this->fill($attributes);
-        $this->setAttribute('team_id', null);
+        $this->setAttribute($teamColumn, null);
 
         $authenticatedUser = auth()->user();
 
@@ -1367,7 +1442,7 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
      */
     public function user()
     {
-        return $this->belongsTo(config('aura.resources.user'));
+        return $this->belongsTo(config('aura.resources.user'), static::getOwnerColumn() ?? 'user_id');
     }
 
     public function wasPhysicalFieldPacked(string $slug): bool
@@ -1386,6 +1461,14 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
 
             return $item;
         });
+    }
+
+    /** @param  array<string, mixed>  $attributes */
+    protected static function attributesContainOwner(array $attributes): bool
+    {
+        $ownerColumn = static::getOwnerColumn();
+
+        return $ownerColumn !== null && array_key_exists($ownerColumn, $attributes);
     }
 
     /**
@@ -1449,7 +1532,8 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         ?User $authenticatedUser = null,
         bool $trustedOwnerIntent = false,
     ): static {
-        $attributes['team_id'] = null;
+        $teamColumn = static::getTeamColumn();
+        $attributes[$teamColumn] = null;
         $instance = static::ensureStaticResource($resource->newInstance($attributes));
 
         return tap($instance, function (Resource $instance) use ($authenticatedUser, $trustedOwnerIntent): void {
@@ -1473,8 +1557,15 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
 
     protected static function ensureGlobalWriteIsSupported(): void
     {
-        if (! config('aura.teams') || ! static::sharesRecordsAcrossTeams()) {
+        if (! config('aura.teams') || ! static::usesTeamScope() || ! static::sharesRecordsAcrossTeams()) {
             throw new LogicException('Global writes require teams and an opted-in shared resource.');
+        }
+    }
+
+    protected static function ensureOwnerWriteIsSupported(): void
+    {
+        if (! static::usesOwnerScope() || static::getOwnerColumn() === null) {
+            throw new LogicException('Owner writes require an owner-scoped resource with an owner column.');
         }
     }
 
@@ -1489,7 +1580,7 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
 
     protected static function ensureTeamWriteIsSupported(): void
     {
-        if (! config('aura.teams')) {
+        if (! config('aura.teams') || ! static::usesTeamScope() || static::getTeamColumn() === null) {
             throw new LogicException('Team writes require teams to be enabled.');
         }
     }
@@ -1536,8 +1627,9 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         Resource $resource,
     ): static {
         $resource->assertCallerTransactionDoesNotExposeConnectionCallbacks($resource->getConnection());
-        $attributes['team_id'] = null;
-        unset($values['team_id']);
+        $teamColumn = static::getTeamColumn();
+        $attributes[$teamColumn] = null;
+        unset($values[$teamColumn]);
 
         $query = $resource->newQueryWithoutScopes()->useWritePdo();
         $existing = $resource->firstGlobalRecordOnCapturedWriter($query, $attributes);
@@ -1549,7 +1641,7 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         $create = fn (): static => static::createGlobalResourceInstance(
             array_merge($attributes, $values),
             $resource,
-            trustedOwnerIntent: array_key_exists('user_id', array_merge($attributes, $values)),
+            trustedOwnerIntent: static::attributesContainOwner(array_merge($attributes, $values)),
         );
 
         try {
@@ -1683,7 +1775,10 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
             $this->quarantineInactiveProviderFieldState(overwriteExisting: true);
 
             $this->fillable($preservedFillable);
-            $this->mergeFillable($currentSlugs);
+
+            if ($this->usesCustomTable() && ! $this->usesMeta() && static::$physicalFields === []) {
+                $this->mergeFillable($currentSlugs);
+            }
 
             $this->resolvedInputFieldSlugs = $currentSlugs;
             $this->fieldDefinitionStateKey = $resolution->cacheKey;
@@ -1702,14 +1797,15 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         array $values,
         Resource $resource,
     ): static {
-        unset($values['team_id']);
+        $teamColumn = static::getTeamColumn();
+        unset($values[$teamColumn]);
         $instance = static::firstOrCreateGlobalRecord($attributes, $values, $resource);
 
         if (! $instance->wasRecentlyCreated) {
             $instance->fill($values);
             $merged = array_merge($attributes, $values);
             $instance->saveGlobalResource(
-                trustedOwnerIntent: array_key_exists('user_id', $merged),
+                trustedOwnerIntent: static::attributesContainOwner($merged),
             );
         }
 
@@ -1884,9 +1980,9 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
                     $query->getQuery()->wheres !== $expectedWheres
                     || $query->getQuery()->getRawBindings()['where'] !== $expectedWhereBindings
                 ))
-                || ($this->getAttribute('team_id') === null) !== ($teamId === null)
-                || (string) $this->getAttribute('team_id') !== (string) $teamId
-                || $this->getAttribute('user_id') !== $ownerId) {
+                || ($this->getTeamId() === null) !== ($teamId === null)
+                || (string) $this->getTeamId() !== (string) $teamId
+                || $this->getOwnerId() !== $ownerId) {
                 throw new LogicException('A named write cannot change its resource, tenancy, owner, or physical database writer.');
             }
         };
@@ -1956,6 +2052,26 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         }
 
         return array_keys($columns);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function declaredFieldPayload(array $payload): array
+    {
+        $declaredSlugs = array_fill_keys($this->inputFieldsSlugs(), true);
+
+        return collect($payload)
+            ->filter(function (mixed $value, mixed $key) use ($declaredSlugs): bool {
+                if (! is_string($key)) {
+                    return false;
+                }
+
+                return isset($declaredSlugs[$key])
+                    || method_exists($this, 'set'.Str::studly($key).'Field');
+            })
+            ->all();
     }
 
     private function discardQuarantinedAttributeStateForRefresh(): void
@@ -2841,7 +2957,7 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
             authenticatedUser: $authenticatedUser,
             authorizeUpdate: $authorizeUpdate,
             trustedOwnerIntent: $trustedOwnerIntent,
-            trustedOwnerId: $this->getAttribute('user_id'),
+            trustedOwnerId: $this->getOwnerId(),
             options: $options,
         );
     }
@@ -2879,8 +2995,8 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
                 trustedTeamIntent: $trustedTeamIntent,
                 trustedTeamId: $trustedTeamId,
             );
-            $teamId = $this->getAttribute('team_id');
-            $ownerId = $this->getAttribute('user_id');
+            $teamId = $this->getTeamId();
+            $ownerId = $this->getOwnerId();
             $exists = $this->exists;
             $keyName = $this->getKeyName();
             $keyForSaveQuery = $exists ? $this->getKeyForSaveQuery() : null;

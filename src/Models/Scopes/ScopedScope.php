@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Models\Scopes;
 
+use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,6 +36,10 @@ class ScopedScope implements Scope
             return $builder;
         }
 
+        if ($model instanceof Resource && ! $model::usesOwnerScope()) {
+            return;
+        }
+
         $user = auth()->user();
 
         if (! $user instanceof User) {
@@ -49,7 +54,11 @@ class ScopedScope implements Scope
         }
 
         if ($isScoped) {
-            $builder->where($model->getTable().'.user_id', $user->id);
+            $ownerColumn = $model instanceof Resource ? $model::getOwnerColumn() : 'user_id';
+
+            if ($ownerColumn !== null) {
+                $builder->where($model->qualifyColumn($ownerColumn), $user->getKey());
+            }
         }
 
         // Check access?

@@ -57,6 +57,11 @@ class Product extends Resource
     // Disable meta table usage (optional, default is true)
     public static bool $usesMeta = false;
 
+    // Explicit physical schema contract used by Aura and migration generation
+    public static array $physicalFields = [
+        'name', 'price', 'description', 'status', 'user_id', 'team_id',
+    ];
+
     // Define the table name (must match your migration)
     protected $table = 'products';
 
@@ -108,8 +113,9 @@ class Product extends Resource
 |----------|------|---------|-------------|
 | `$customTable` | `bool` | `false` | Enable dedicated table storage |
 | `$usesMeta` | `bool` | `true` | Store overflow fields in meta table |
+| `$physicalFields` | `array` | model `$fillable` | Actual table columns represented by Aura fields |
 | `$table` | `string` | `'posts'` | Database table name |
-| `$fillable` | `array` | `[]` | Fields that can be mass assigned |
+| `$fillable` | `array` | `[]` | Writable physical columns; Aura never adds meta slugs to this list |
 | `$casts` | `array` | `[]` | Attribute type casting |
 
 ### Global Configuration
@@ -304,6 +310,10 @@ class Product extends Resource
 
     protected $table = 'products';
 
+    public static array $physicalFields = [
+        'name', 'price', 'status', 'user_id', 'team_id',
+    ];
+
     // Only core fields in the table
     protected $fillable = [
         'name',
@@ -343,7 +353,31 @@ class Product extends Resource
 }
 ```
 
-Fields in `$fillable` are stored in the custom table; other fields go to the meta table.
+`$physicalFields` classifies storage. `$fillable` is the narrower mass-assignment allow-list.
+Declared input fields outside `$physicalFields` go to meta; unknown keys go nowhere. Existing
+resources without `$physicalFields` retain the historical `$fillable` classification. Custom-table
+resources without meta also retain their legacy all-input-fields-are-columns behavior, but new
+resources should declare the physical list so generated migrations and runtime writes agree.
+
+## Ownership and scoping
+
+Every resource declares one scope mode. The default is `owner`, preserving Aura's historical
+`user_id` plus `team_id` behavior. The owner column and relation name are configurable:
+
+```php
+class AssignedRecord extends Resource
+{
+    public static string $scopeMode = self::SCOPE_OWNER;
+    public static ?string $ownerColumn = 'owner_id';
+    public static ?string $ownerRelation = 'assignee';
+    public static ?string $teamColumn = 'team_id';
+}
+```
+
+Use `SCOPE_TEAM` for tables with a team column but no user owner, and `SCOPE_GLOBAL` for shared
+tables with neither column. Owner and team named-write helpers reject resources that do not declare
+the corresponding capability. `aura:create-resource-migration` emits only declared physical,
+owner, and team columns.
 
 ## Performance Considerations
 

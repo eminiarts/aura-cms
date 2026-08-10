@@ -148,7 +148,10 @@ The invitation email is sent using the `Aura\Base\Mail\TeamInvitation` mailable,
 <a name="resource-isolation"></a>
 ## Resource Isolation
 
-Resources in Aura CMS are scoped to the current team by default when teams are enabled. A resource must explicitly opt in before global catalog rows can be visible across teams.
+Resources use `Resource::SCOPE_OWNER` by default, which keeps both owner and current-team scoping
+when teams are enabled. Use `Resource::SCOPE_TEAM` for team-owned tables without a user owner, or
+`Resource::SCOPE_GLOBAL` for tables with neither ownership column. A team-scoped resource must
+explicitly opt in before nullable-team catalog rows can be visible across teams.
 
 ### How It Works
 

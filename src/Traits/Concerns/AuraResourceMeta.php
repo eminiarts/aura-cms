@@ -8,6 +8,9 @@ trait AuraResourceMeta
 {
     public static $customTable = false;
 
+    /** @var list<string> */
+    public static array $physicalFields = [];
+
     public static bool $usesMeta = true;
 
     protected $baseFillable = [];
@@ -27,6 +30,29 @@ trait AuraResourceMeta
         return $this->meta()->getRelated()->getTable();
 
         // return (new Meta())->getTable();
+    }
+
+    /**
+     * Return the trusted columns Aura may fill from declared resource fields.
+     * Existing model fillable declarations remain the compatibility baseline.
+     * Custom tables without meta historically treated every input as physical.
+     *
+     * @return list<string>
+     */
+    public function getPhysicalFields(): array
+    {
+        $physicalFields = static::$physicalFields !== []
+            ? static::$physicalFields
+            : $this->getBaseFillable();
+
+        if ($this->usesCustomTable() && ! $this->usesMeta() && static::$physicalFields === []) {
+            $physicalFields = array_merge($physicalFields, $this->inputFieldsSlugs());
+        }
+
+        return array_values(array_unique(array_filter(
+            $physicalFields,
+            static fn (mixed $field): bool => is_string($field) && $field !== '',
+        )));
     }
 
     /**
@@ -50,7 +76,7 @@ trait AuraResourceMeta
         }
 
         // If the key is in Base fillable, it is not a meta field
-        if (in_array($key, $this->getBaseFillable(), true)) {
+        if ($this->isTableField($key)) {
             return false;
         }
 
@@ -71,15 +97,7 @@ trait AuraResourceMeta
      */
     public function isTableField($key): bool
     {
-        if (in_array($key, $this->getBaseFillable(), true)) {
-            return true;
-        }
-
-        if ($this->usesCustomTable() && ! $this->usesMeta()) {
-            return in_array($key, $this->inputFieldsSlugs(), true);
-        }
-
-        return false;
+        return is_string($key) && in_array($key, $this->getPhysicalFields(), true);
     }
 
     /**

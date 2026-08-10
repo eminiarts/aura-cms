@@ -174,7 +174,7 @@ trait SaveMetaFields
                         continue;
                     }
 
-                    if (in_array($key, $post->getFillable())) {
+                    if ($post->isMetaField($key)) {
                         // Save the meta field to the model, so it can be saved in the Meta table
                         $post->saveMetaField([$key => $value]);
                     }

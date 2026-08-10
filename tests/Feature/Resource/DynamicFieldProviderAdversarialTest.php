@@ -1387,8 +1387,7 @@ it('refreshes all definition-derived state on an existing Resource instance', fu
     $resource->metaFields['old_slug'] = 'queued old value';
     $resource->setTableDisplayValue('old_slug', 'cached display');
 
-    expect($resource->getFillable())->toContain('old_slug', 'cast_value')
-        ->and($resource->getFillable())->not->toContain('new_slug')
+    expect($resource->getFillable())->not->toContain('old_slug', 'new_slug', 'cast_value')
         ->and($resource->fields->keys()->all())->toBe(['old_slug', 'cast_value'])
         ->and($resource->getMeta('cast_value'))->toBeFalse()
         ->and($resource->hasTableDisplayValue('old_slug'))->toBeTrue();
@@ -1396,8 +1395,7 @@ it('refreshes all definition-derived state on an existing Resource instance', fu
     Core08RefreshProviderState::$teamId = 2;
     Aura::flushFieldCache();
 
-    expect($resource->getFillable())->toContain('new_slug', 'cast_value')
-        ->and($resource->getFillable())->not->toContain('old_slug')
+    expect($resource->getFillable())->not->toContain('old_slug', 'new_slug', 'cast_value')
         ->and($resource->getAttributes())->not->toHaveKey('old_slug')
         ->and($resource->metaFields)->not->toHaveKey('old_slug')
         ->and($resource->fields->keys()->all())->toBe(['new_slug', 'cast_value'])

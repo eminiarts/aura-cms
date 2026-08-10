@@ -58,21 +58,30 @@ class CreateResourceMigration extends Command
             ],
         ]);
 
-        $fields = method_exists($resource, 'inputFields') ? $resource->inputFields() : [];
+        $fields = method_exists($resource, 'inputFields')
+            ? $resource->inputFields()->filter(
+                fn (array $field): bool => $resource->isTableField($field['slug'] ?? null),
+            )
+            : collect();
 
-        $ownershipFields = [
-            [
-                'name' => 'User Id',
-                'type' => 'Aura\\Base\\Fields\\BelongsTo',
-                'slug' => 'user_id',
-            ],
-        ];
+        $ownershipFields = [];
+        $ownerColumn = $resource::getOwnerColumn();
 
-        if (config('aura.teams')) {
+        if ($ownerColumn !== null) {
             $ownershipFields[] = [
-                'name' => 'Team Id',
+                'name' => Str::headline($ownerColumn),
                 'type' => 'Aura\\Base\\Fields\\BelongsTo',
-                'slug' => 'team_id',
+                'slug' => $ownerColumn,
+            ];
+        }
+
+        $teamColumn = $resource::getTeamColumn();
+
+        if ($teamColumn !== null) {
+            $ownershipFields[] = [
+                'name' => Str::headline($teamColumn),
+                'type' => 'Aura\\Base\\Fields\\BelongsTo',
+                'slug' => $teamColumn,
             ];
         }
 

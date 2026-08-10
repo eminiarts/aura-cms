@@ -105,12 +105,7 @@ trait SaveFieldAttributes
             }
 
             // Dont unset Field if it is in baseFillable
-            if (in_array($slug, $post->baseFillable)) {
-                return;
-            }
-
-            // Dont unset Field if it is uses customTable
-            if ($post->usesCustomTable() && ! $post->usesMeta()) {
+            if ($post->isTableField($slug)) {
                 return;
             }
             // if ($post->usesCustomTable() && $post->usesCustomMeta()) {

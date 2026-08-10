@@ -31,8 +31,13 @@ trait AuraModelConfig
     use Concerns\AuraResourceUrls;
     use Concerns\AuraResourceViews;
 
+    public function owner()
+    {
+        return $this->belongsTo(config('aura.resources.user'), static::getOwnerColumn() ?? 'user_id');
+    }
+
     public function team()
     {
-        return $this->belongsTo(config('aura.resources.team'));
+        return $this->belongsTo(config('aura.resources.team'), static::getTeamColumn() ?? 'team_id');
     }
 }

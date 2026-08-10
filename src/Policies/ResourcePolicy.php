@@ -2,7 +2,6 @@
 
 namespace Aura\Base\Policies;
 
-use App\Models\Post;
 use Aura\Base\Contracts\ScopesMediaVisibility;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
@@ -65,7 +64,7 @@ class ResourcePolicy implements ScopesMediaVisibility
     /**
      * Determine whether the user can delete the model.
      *
-     * @param  Post  $resource
+     * @param  \Aura\Base\Resource  $resource
      * @return Response|bool
      */
     public function delete($user, $resource)
@@ -84,11 +83,7 @@ class ResourcePolicy implements ScopesMediaVisibility
 
         // Scoped Posts
         if ($user->hasPermissionTo('scope', $resource) && $user->hasPermissionTo('delete', $resource)) {
-            if ($resource->user_id == $user->id) {
-                return true;
-            } else {
-                return false;
-            }
+            return ! $resource::usesOwnerScope() || $resource->isOwnedBy($user);
         }
 
         if ($user->hasPermissionTo('delete', $resource)) {
@@ -101,7 +96,7 @@ class ResourcePolicy implements ScopesMediaVisibility
     /**
      * Determine whether the user can permanently delete the model.
      *
-     * @param  Post  $resource
+     * @param  \Aura\Base\Resource  $resource
      * @return Response|bool
      */
     public function forceDelete($user, $resource)
@@ -128,7 +123,7 @@ class ResourcePolicy implements ScopesMediaVisibility
     /**
      * Determine whether the user can restore the model.
      *
-     * @param  Post  $resource
+     * @param  \Aura\Base\Resource  $resource
      * @return Response|bool
      */
     public function restore(User $user, $resource)
@@ -165,7 +160,11 @@ class ResourcePolicy implements ScopesMediaVisibility
         }
 
         if ($actor->hasPermissionTo('scope', $resource) && $actor->hasPermissionTo('view', $resource)) {
-            return $query->where($resource->qualifyColumn('user_id'), $actor->getAuthIdentifier());
+            $ownerColumn = $resource::getOwnerColumn();
+
+            return $ownerColumn === null
+                ? $query
+                : $query->where($resource->qualifyColumn($ownerColumn), $actor->getAuthIdentifier());
         }
 
         return $actor->hasPermissionTo('view', $resource)
@@ -176,7 +175,7 @@ class ResourcePolicy implements ScopesMediaVisibility
     /**
      * Determine whether the user can update the model.
      *
-     * @param  Post  $resource
+     * @param  \Aura\Base\Resource  $resource
      * @return Response|bool
      */
     public function update($user, $resource)
@@ -199,11 +198,7 @@ class ResourcePolicy implements ScopesMediaVisibility
 
         // Scoped Posts
         if ($user->hasPermissionTo('scope', $resource) && $user->hasPermissionTo('update', $resource)) {
-            if ($resource->user_id == $user->id) {
-                return true;
-            } else {
-                return false;
-            }
+            return ! $resource::usesOwnerScope() || $resource->isOwnedBy($user);
         }
 
         if ($user->hasPermissionTo('update', $resource)) {
@@ -216,7 +211,7 @@ class ResourcePolicy implements ScopesMediaVisibility
     /**
      * Determine whether the user can view the model.
      *
-     * @param  Post  $resource
+     * @param  \Aura\Base\Resource  $resource
      * @return Response|bool
      */
     public function view($user, $resource)
@@ -242,11 +237,7 @@ class ResourcePolicy implements ScopesMediaVisibility
 
         // Scoped Posts
         if ($user->hasPermissionTo('scope', $resource) && $user->hasPermissionTo('view', $resource)) {
-            if ($resource->user_id == $user->id) {
-                return true;
-            } else {
-                return false;
-            }
+            return ! $resource::usesOwnerScope() || $resource->isOwnedBy($user);
         }
 
         if ($user->hasPermissionTo('view', $resource)) {
@@ -296,7 +287,7 @@ class ResourcePolicy implements ScopesMediaVisibility
         if (! ($resource instanceof Resource)
             || ! $resource::sharesRecordsAcrossTeams()
             || ! $resource->exists
-            || $resource->getAttribute('team_id') !== null) {
+            || $resource->getTeamId() !== null) {
             return false;
         }
 

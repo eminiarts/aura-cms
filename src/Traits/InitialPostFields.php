@@ -35,6 +35,8 @@ trait InitialPostFields
         $attributes = $post->getAttributes();
         $user = auth()->user();
         $connection = $post->getConnection();
+        $ownerColumn = $post::getOwnerColumn();
+        $teamColumn = $post::getTeamColumn();
         $hasTeamContext = $trustedTeamIntent || TeamScope::hasContextForConnection($connection);
         $hasOwnerContext = $trustedOwnerIntent;
         $actorUsesConnection = $user instanceof User
@@ -58,28 +60,29 @@ trait InitialPostFields
             $post->content = '';
         }
 
-        if (! $post->exists
+        if ($ownerColumn !== null
+            && ! $post->exists
             && $actorUsesConnection
             && ! $trustedOwnerIntent
-            && ! array_key_exists('user_id', $attributes)) {
-            $post->user_id = $user->getKey();
+            && ! array_key_exists($ownerColumn, $attributes)) {
+            $post->setAttribute($ownerColumn, $user->getKey());
         }
 
-        if (config('aura.teams')
+        if ($teamColumn !== null
             && $post->exists
             && $post::sharesRecordsAcrossTeams()
-            && $post->isDirty('team_id')
-            && $post->getOriginal('team_id') !== null
-            && $post->getAttribute('team_id') === null
+            && $post->isDirty($teamColumn)
+            && $post->getOriginal($teamColumn) !== null
+            && $post->getAttribute($teamColumn) === null
             && ! $globalWrite) {
             throw new \LogicException('Use promoteToGlobal() to change a shared resource to global scope.');
         }
 
-        if (config('aura.teams')
+        if ($teamColumn !== null
             && ! $post->exists
             && $actorUsesConnection
-            && ! array_key_exists('team_id', $attributes)) {
-            $post->team_id = $actorTeamId;
+            && ! array_key_exists($teamColumn, $attributes)) {
+            $post->setAttribute($teamColumn, $actorTeamId);
         }
 
         static::authorizeInitialPostFieldPersistence(
@@ -115,6 +118,8 @@ trait InitialPostFields
         $attributes = $post->getAttributes();
         $user = auth()->user();
         $connection = $post->getConnection();
+        $ownerColumn = $post::getOwnerColumn();
+        $teamColumn = $post::getTeamColumn();
         $hasTeamContext = $trustedTeamIntent || TeamScope::hasContextForConnection($connection);
         $hasOwnerContext = $trustedOwnerIntent;
         $actorUsesConnection = $user instanceof User
@@ -124,9 +129,9 @@ trait InitialPostFields
             ? $user->currentTeamIdForAuthorization()
             : null;
 
-        if (config('aura.teams')
+        if ($teamColumn !== null
             && ! $post->exists
-            && $post->getAttribute('team_id') === null
+            && $post->getAttribute($teamColumn) === null
             && ! $globalWrite
             && ! $hasTeamContext) {
             $message = $post::sharesRecordsAcrossTeams()
@@ -136,13 +141,14 @@ trait InitialPostFields
             throw new \LogicException($message);
         }
 
-        $hasTenantAttribute = config('aura.teams') && array_key_exists('team_id', $attributes);
-        $hasOwnerAttribute = array_key_exists('user_id', $attributes);
+        $hasTenantAttribute = $teamColumn !== null && array_key_exists($teamColumn, $attributes);
+        $hasOwnerAttribute = $ownerColumn !== null && array_key_exists($ownerColumn, $attributes);
 
         if (! $post->exists
-            && $post->isFillable('user_id')
+            && $ownerColumn !== null
+            && $post->isFillable($ownerColumn)
             && $hasOwnerAttribute
-            && $post->getAttribute('user_id') === null
+            && $post->getAttribute($ownerColumn) === null
             && ! $globalWrite
             && ! $hasTeamContext
             && ! $hasOwnerContext) {
@@ -150,33 +156,33 @@ trait InitialPostFields
         }
 
         if ($hasTenantAttribute
-            && (! $post->exists || $post->isDirty('team_id'))
-            && $attributes['team_id'] !== null) {
-            if ($trustedTeamIntent && (string) $trustedTeamId !== (string) $attributes['team_id']) {
+            && (! $post->exists || $post->isDirty($teamColumn))
+            && $attributes[$teamColumn] !== null) {
+            if ($trustedTeamIntent && (string) $trustedTeamId !== (string) $attributes[$teamColumn]) {
                 throw new \LogicException('The resource team no longer matches the named system operation.');
             }
 
             $authorizedTeamId = TeamScope::currentContextTeamId($connection) ?? $actorTeamId;
 
             if (! $trustedTeamIntent
-                && ($authorizedTeamId === null || (string) $authorizedTeamId !== (string) $attributes['team_id'])) {
+                && ($authorizedTeamId === null || (string) $authorizedTeamId !== (string) $attributes[$teamColumn])) {
                 throw new \LogicException('Use createForTeamForSystem() or moveToTeamForSystem() for a foreign team assignment.');
             }
         }
 
         if ($hasOwnerAttribute
-            && $attributes['user_id'] !== null
-            && (! $post->exists || $post->isDirty('user_id'))
+            && $attributes[$ownerColumn] !== null
+            && (! $post->exists || $post->isDirty($ownerColumn))
             && $trustedOwnerIntent
-            && (string) $trustedOwnerId !== (string) $attributes['user_id']) {
+            && (string) $trustedOwnerId !== (string) $attributes[$ownerColumn]) {
             throw new \LogicException('The resource owner no longer matches the named system operation.');
         }
 
         if ($hasOwnerAttribute
-            && $attributes['user_id'] !== null
-            && (! $post->exists || $post->isDirty('user_id'))
+            && $attributes[$ownerColumn] !== null
+            && (! $post->exists || $post->isDirty($ownerColumn))
             && ! $trustedOwnerIntent
-            && ! $post::isOwnerWriteAuthorized($attributes['user_id'], $connection)) {
+            && ! $post::isOwnerWriteAuthorized($attributes[$ownerColumn], $connection)) {
             throw new \LogicException('A resource owner must match the authenticated actor or an explicit named system operation.');
         }
     }

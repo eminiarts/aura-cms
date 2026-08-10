@@ -104,12 +104,24 @@ class TeamScope implements Scope
                 return;
             }
 
+            if ($model instanceof Resource && ! $model::usesTeamScope()) {
+                return;
+            }
+
+            $teamColumn = $model instanceof Resource
+                ? $model::getTeamColumn()
+                : 'team_id';
+
+            if ($teamColumn === null) {
+                return;
+            }
+
             $sharesRecordsAcrossTeams = $model instanceof Resource
                 && $model::sharesRecordsAcrossTeams();
 
             if ($currentTeamId === null) {
                 if ($authUser && $sharesRecordsAcrossTeams) {
-                    $builder->whereNull($model->getTable().'.team_id');
+                    $builder->whereNull($model->qualifyColumn($teamColumn));
                 } else {
                     $builder->whereRaw('1 = 0');
                 }
@@ -118,7 +130,7 @@ class TeamScope implements Scope
             }
 
             if ($sharesRecordsAcrossTeams) {
-                $column = $model->getTable().'.team_id';
+                $column = $model->qualifyColumn($teamColumn);
 
                 $builder->where(function (Builder $query) use ($column, $currentTeamId) {
                     $query->where($column, $currentTeamId)->orWhereNull($column);
@@ -127,7 +139,7 @@ class TeamScope implements Scope
                 return;
             }
 
-            $builder->where($model->getTable().'.team_id', $currentTeamId);
+            $builder->where($model->qualifyColumn($teamColumn), $currentTeamId);
         } finally {
             self::$applying = false;
         }

@@ -111,7 +111,7 @@ trait InteractsWithFields
         }
 
         $attributes = $this->filterWritableFormValues($validatedFields, $formFields);
-        Arr::forget($attributes, $this->protectedFormColumns);
+        Arr::forget($attributes, $this->protectedFormColumnNames());
 
         return $attributes;
     }
@@ -163,5 +163,19 @@ trait InteractsWithFields
         }
 
         return $attributes;
+    }
+
+    /** @return list<string> */
+    private function protectedFormColumnNames(): array
+    {
+        $columns = $this->protectedFormColumns;
+
+        foreach ([$this->model::getOwnerColumn(), $this->model::getTeamColumn()] as $column) {
+            if (is_string($column) && $column !== '') {
+                $columns[] = $column;
+            }
+        }
+
+        return array_values(array_unique($columns));
     }
 }

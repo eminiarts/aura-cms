@@ -856,54 +856,6 @@ parameters:
 			path: src/Policies/MetaPolicy.php
 
 		-
-			message: '#^Access to property \$user_id on an unknown class App\\Models\\Post\.$#'
-			identifier: class.notFound
-			count: 3
-			path: src/Policies/ResourcePolicy.php
-
-		-
-			message: '#^Access to static property \$editEnabled on an unknown class App\\Models\\Post\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/ResourcePolicy.php
-
-		-
-			message: '#^Access to static property \$viewEnabled on an unknown class App\\Models\\Post\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/ResourcePolicy.php
-
-		-
-			message: '#^Parameter \$resource of method Aura\\Base\\Policies\\ResourcePolicy\:\:delete\(\) has invalid type App\\Models\\Post\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/ResourcePolicy.php
-
-		-
-			message: '#^Parameter \$resource of method Aura\\Base\\Policies\\ResourcePolicy\:\:forceDelete\(\) has invalid type App\\Models\\Post\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/ResourcePolicy.php
-
-		-
-			message: '#^Parameter \$resource of method Aura\\Base\\Policies\\ResourcePolicy\:\:restore\(\) has invalid type App\\Models\\Post\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/ResourcePolicy.php
-
-		-
-			message: '#^Parameter \$resource of method Aura\\Base\\Policies\\ResourcePolicy\:\:update\(\) has invalid type App\\Models\\Post\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/ResourcePolicy.php
-
-		-
-			message: '#^Parameter \$resource of method Aura\\Base\\Policies\\ResourcePolicy\:\:view\(\) has invalid type App\\Models\\Post\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/ResourcePolicy.php
-
-		-
 			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:create\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
 			identifier: return.missing
 			count: 1
