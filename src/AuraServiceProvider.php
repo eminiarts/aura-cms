@@ -493,7 +493,10 @@ class AuraServiceProvider extends PackageServiceProvider
         app('aura')::registerFields(app('aura')::getAppFields());
     }
 
-    public function registeringPackage() {}
+    public function registeringPackage()
+    {
+        Resource::registerGlobalWriteConnectionResolvers();
+    }
 
     protected function getResources(): array
     {
