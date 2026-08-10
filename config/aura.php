@@ -129,6 +129,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Secure Embedded Components
+    |--------------------------------------------------------------------------
+    |
+    | Signed owner contexts expire so long-open pages must refresh before they
+    | can invoke a component action. Increment the revision to invalidate every
+    | outstanding context after a security-sensitive configuration change.
+    |
+    */
+
+    'embedded_components' => [
+        'context_ttl' => 3600,
+        'context_revision' => '1',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Resources
     |--------------------------------------------------------------------------
     |

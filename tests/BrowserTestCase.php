@@ -8,12 +8,14 @@ use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
 use Aura\Base\Tests\Fixtures\ComponentSlots\BrowserGlobalSearch;
 use Aura\Base\Tests\Fixtures\ComponentSlots\BrowserMediaManager;
 use Aura\Base\Tests\Resources\GalleryPage;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
+use Livewire\Livewire;
 
 class BrowserTestCase extends TestCase
 {
@@ -42,10 +44,20 @@ class BrowserTestCase extends TestCase
         // Re-capture the baseline afterwards: Queue::after triggers
         // Aura::flushState(), which would otherwise drop the registration
         // as soon as any sync job (e.g. thumbnail generation) runs.
-        Aura::registerResources([GalleryPage::class]);
+        Aura::registerResources([
+            Resources\EmbeddedComponentPage::class,
+            GalleryPage::class,
+        ]);
+        Aura::registerRoutes('embedded-component-page');
         Aura::registerRoutes('gallery-page');
         Aura::captureBaselineState();
         $this->registerComponentSlotAliasesRoute();
+
+        Livewire::component(
+            'aura-tests.embedded-field',
+            Browser\Support\EmbeddedFieldComponent::class,
+        );
+        app(EmbeddedResourceIncarnationGuard::class)->install(Resources\EmbeddedComponentPage::class);
 
         $this->serveBuiltAssets();
     }
