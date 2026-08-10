@@ -983,10 +983,14 @@ class Resource extends Model implements DefinesFields
             $expectedWheres,
             $expectedWhereBindings,
         ): void {
-            if ($connection->getRawPdo() !== $writePdo) {
+            $writerChanged = $connection->getRawPdo() !== $writePdo;
+            $transactionChanged = $connection->transactionLevel() !== $transactionLevel
+                || ($transactionLevel > 0) !== $writePdo->inTransaction();
+
+            if ($writerChanged || $transactionChanged) {
                 $this->restorePhysicalWriter($connection, $writePdo, $transactionLevel);
 
-                throw new \LogicException('A named write cannot change its physical database writer.');
+                throw new \LogicException('A named write cannot change its physical database writer or transaction state.');
             }
 
             if ($this->getConnection() !== $connection
@@ -1355,13 +1359,12 @@ class Resource extends Model implements DefinesFields
         PDO $writePdo,
         int $transactionLevel,
     ): void {
-        if ($connection->getRawPdo() === $writePdo) {
-            return;
+        if ($connection->getRawPdo() !== $writePdo) {
+            $connection->setPdo($writePdo);
         }
 
-        $connection->setPdo($writePdo);
-
-        if (($transactionLevel > 0) !== $writePdo->inTransaction()) {
+        if ($connection->transactionLevel() !== 0
+            || ($transactionLevel > 0) !== $writePdo->inTransaction()) {
             return;
         }
 

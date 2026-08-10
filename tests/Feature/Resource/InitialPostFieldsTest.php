@@ -1079,6 +1079,53 @@ it('restores nested transaction depth after rejecting a swapped writer', functio
         ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
 });
 
+it('rejects same-writer transaction state changes before persistence', function (string $attack, int $depth): void {
+    $connection = core13InstallConnectionProbe();
+    $writer = $connection->getPdo();
+    $armed = true;
+
+    for ($level = 0; $level < $depth; $level++) {
+        $connection->beginTransaction();
+    }
+
+    $connection->beforeExecuting(function () use ($attack, $connection, $writer, &$armed): void {
+        if (! $armed) {
+            return;
+        }
+
+        $armed = false;
+
+        match ($attack) {
+            'commit' => $connection->commit(),
+            'rollback' => $connection->rollBack(),
+            'same-pdo' => $connection->setPdo($writer),
+        };
+    });
+
+    try {
+        expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+            'name' => 'Transaction state redirected write',
+        ], $connection))->toThrow(LogicException::class, 'transaction state');
+    } finally {
+        while ($connection->transactionLevel() > 0) {
+            $connection->rollBack();
+        }
+
+        if ($writer->inTransaction()) {
+            $writer->rollBack();
+        }
+    }
+
+    expect(core13PhysicalWriterRowCount($writer))->toBe(0);
+})->with([
+    'commit at depth one' => ['commit', 1],
+    'commit at depth two' => ['commit', 2],
+    'rollback at depth one' => ['rollback', 1],
+    'rollback at depth two' => ['rollback', 2],
+    'same PDO reset at depth one' => ['same-pdo', 1],
+    'same PDO reset at depth two' => ['same-pdo', 2],
+]);
+
 it('runs final authorization after builder callbacks register later connection callbacks', function (): void {
     $connection = DB::connection();
     $originalWriter = $connection->getPdo();
