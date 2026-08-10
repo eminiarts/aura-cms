@@ -13,6 +13,7 @@ use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\TypeScope;
 use Aura\Base\ResourceLifecycle\ResourceDependentCleaner;
 use Aura\Base\ResourceLifecycle\ResourceLifecycleDispatcher;
+use Aura\Base\ResourceLifecycle\ResourceLifecycleOperation;
 use Aura\Base\ResourceLifecycle\ResourceLifecycleState;
 use Aura\Base\Resources\User;
 use Aura\Base\Traits\AuraModelConfig;
@@ -1593,7 +1594,7 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
 
             app(ResourceLifecycleDispatcher::class)->dispatchSaved($resource, $resource->resourceLifecycleState);
 
-            if ($resource->resourceLifecycleState->operation !== 'restore') {
+            if ($resource->resourceLifecycleState->operation !== ResourceLifecycleOperation::Restore) {
                 $resource->resourceLifecycleState = null;
             }
         });
@@ -1607,11 +1608,12 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
                 return;
             }
 
-            app(ResourceLifecycleDispatcher::class)->dispatchDeleted($resource, $resource->resourceLifecycleState);
-
-            if (! method_exists($resource, 'isForceDeleting') || ! $resource->isForceDeleting()) {
-                $resource->resourceLifecycleState = null;
+            if (method_exists($resource, 'isForceDeleting') && $resource->isForceDeleting()) {
+                return;
             }
+
+            app(ResourceLifecycleDispatcher::class)->dispatchDeleted($resource, $resource->resourceLifecycleState);
+            $resource->resourceLifecycleState = null;
         });
 
         static::registerModelEvent('restoring', function (Resource $resource): void {
@@ -1623,8 +1625,9 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
                 return;
             }
 
-            app(ResourceLifecycleDispatcher::class)->dispatchRestored($resource, $resource->resourceLifecycleState);
+            $state = $resource->resourceLifecycleState;
             $resource->resourceLifecycleState = null;
+            app(ResourceLifecycleDispatcher::class)->dispatchRestored($resource, $state);
         });
 
         static::registerModelEvent('forceDeleted', function (Resource $resource): void {
@@ -1632,8 +1635,9 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
                 return;
             }
 
-            app(ResourceLifecycleDispatcher::class)->dispatchForceDeleted($resource, $resource->resourceLifecycleState);
+            $state = $resource->resourceLifecycleState;
             $resource->resourceLifecycleState = null;
+            app(ResourceLifecycleDispatcher::class)->dispatchForceDeleted($resource, $state);
         });
     }
 

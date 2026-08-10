@@ -10,8 +10,11 @@ use Aura\Base\Events\ResourceForceDeleted;
 use Aura\Base\Events\ResourceRestored;
 use Aura\Base\Events\ResourceUpdated;
 use Aura\Base\Resource;
+use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use LogicException;
+use Throwable;
 
 final class ResourceLifecycleDispatcher
 {
@@ -19,75 +22,150 @@ final class ResourceLifecycleDispatcher
 
     public function beginDelete(Resource $resource): ResourceLifecycleState
     {
-        return $this->begin($resource, 'delete');
+        return $this->begin($resource, ResourceLifecycleOperation::Delete);
     }
 
     public function beginRestore(Resource $resource): ResourceLifecycleState
     {
-        return $this->begin($resource, 'restore');
+        return $this->begin($resource, ResourceLifecycleOperation::Restore);
     }
 
     public function beginSave(Resource $resource): ResourceLifecycleState
     {
-        return $this->begin($resource, $resource->exists ? 'update' : 'create');
+        return $this->begin(
+            $resource,
+            $resource->exists ? ResourceLifecycleOperation::Update : ResourceLifecycleOperation::Create,
+        );
     }
 
     public function dispatchDeleted(Resource $resource, ResourceLifecycleState $state): void
     {
-        $physicalChanges = $this->snapshot->changes($state->oldPhysical, []);
-        $metaChanges = $this->snapshot->changes($state->oldMeta, []);
+        $this->assertState($resource, $state, ResourceLifecycleOperation::Delete);
 
-        $this->dispatch(ResourceDeleting::class, $resource, $state, $physicalChanges, $metaChanges);
-        $this->dispatch(ResourceDeleted::class, $resource, $state, $physicalChanges, $metaChanges);
+        $newPhysical = $state->hardDelete ? [] : $this->snapshot->currentPhysical($resource);
+        $newMeta = $state->hardDelete ? [] : $this->snapshot->currentMeta($resource);
+        $physicalChanges = $this->snapshot->changes($state->oldPhysical, $newPhysical);
+        $metaChanges = $this->snapshot->changes($state->oldMeta, $newMeta);
+
+        $this->publishCommittedDeletion($resource, [
+            $this->event(ResourceDeleting::class, $resource, $state, $physicalChanges, $metaChanges),
+            $this->event(ResourceDeleted::class, $resource, $state, $physicalChanges, $metaChanges),
+        ]);
     }
 
     public function dispatchForceDeleted(Resource $resource, ResourceLifecycleState $state): void
     {
-        $this->dispatch(
-            ResourceForceDeleted::class,
-            $resource,
-            $state,
-            $this->snapshot->changes($state->oldPhysical, []),
-            $this->snapshot->changes($state->oldMeta, []),
-        );
+        $this->assertState($resource, $state, ResourceLifecycleOperation::Delete);
+
+        if (! $state->hardDelete) {
+            throw new LogicException('A soft-delete lifecycle state cannot be used for force-delete publication.');
+        }
+
+        $physicalChanges = $this->snapshot->changes($state->oldPhysical, []);
+        $metaChanges = $this->snapshot->changes($state->oldMeta, []);
+
+        $this->publishCommittedDeletion($resource, [
+            $this->event(ResourceDeleting::class, $resource, $state, $physicalChanges, $metaChanges),
+            $this->event(ResourceDeleted::class, $resource, $state, $physicalChanges, $metaChanges),
+            $this->event(ResourceForceDeleted::class, $resource, $state, $physicalChanges, $metaChanges),
+        ]);
     }
 
     public function dispatchRestored(Resource $resource, ResourceLifecycleState $state): void
     {
-        $this->dispatch(
+        $this->assertState($resource, $state, ResourceLifecycleOperation::Restore);
+
+        $this->dispatch($this->event(
             ResourceRestored::class,
             $resource,
             $state,
             $this->snapshot->changes($state->oldPhysical, $this->snapshot->currentPhysical($resource)),
             $this->snapshot->changes($state->oldMeta, $this->snapshot->currentMeta($resource)),
-        );
+        ));
     }
 
     public function dispatchSaved(Resource $resource, ResourceLifecycleState $state): void
     {
-        if ($state->operation === 'restore') {
+        $this->assertState(
+            $resource,
+            $state,
+            ResourceLifecycleOperation::Create,
+            ResourceLifecycleOperation::Update,
+            ResourceLifecycleOperation::Restore,
+        );
+
+        if ($state->operation === ResourceLifecycleOperation::Restore) {
             return;
         }
 
         $physicalChanges = $this->snapshot->changes($state->oldPhysical, $this->snapshot->currentPhysical($resource));
         $metaChanges = $this->snapshot->changes($state->oldMeta, $this->snapshot->currentMeta($resource));
 
-        if ($state->operation === 'update' && $physicalChanges === [] && $metaChanges === []) {
+        if ($state->operation === ResourceLifecycleOperation::Update
+            && $this->onlyAutomaticTimestampsChanged($resource, $physicalChanges)
+            && $metaChanges === []) {
             return;
         }
 
-        $eventClass = $state->operation === 'create' ? ResourceCreated::class : ResourceUpdated::class;
-        $this->dispatch($eventClass, $resource, $state, $physicalChanges, $metaChanges);
+        $eventClass = $state->operation === ResourceLifecycleOperation::Create
+            ? ResourceCreated::class
+            : ResourceUpdated::class;
+
+        $this->dispatch($this->event($eventClass, $resource, $state, $physicalChanges, $metaChanges));
     }
 
-    private function begin(Resource $resource, string $operation): ResourceLifecycleState
+    private function assertState(
+        Resource $resource,
+        ResourceLifecycleState $state,
+        ResourceLifecycleOperation ...$allowedOperations,
+    ): void {
+        if (! in_array($state->operation, $allowedOperations, true)) {
+            throw new LogicException(sprintf(
+                'Resource lifecycle operation [%s] cannot be used for this dispatch method.',
+                $state->operation->value,
+            ));
+        }
+
+        $resourceId = $this->snapshot->scalarValue($resource->getKey());
+        $connection = $resource->getConnection();
+        $identityMatches = $state->resourceObjectId === spl_object_id($resource)
+            && $state->resourceClass === $resource::class
+            && $state->resourceMorphType === $resource->getMorphClass()
+            && ($state->resourceId === null || $state->resourceId === $resourceId)
+            && $state->connectionName === $this->connectionName($resource)
+            && $state->connectionIdentity === User::connectionCacheIdentity($connection)
+            && $state->table === $resource->getTable()
+            && $state->keyName === $resource->getKeyName();
+
+        if (! $identityMatches) {
+            throw new LogicException('Resource lifecycle state does not belong to the supplied resource and connection.');
+        }
+    }
+
+    private function begin(Resource $resource, ResourceLifecycleOperation $operation): ResourceLifecycleState
     {
-        return new ResourceLifecycleState(
+        return ResourceLifecycleState::capture(
+            resource: $resource,
             operation: $operation,
+            snapshot: $this->snapshot,
             operationId: (string) Str::uuid(),
-            oldPhysical: $resource->exists ? $this->snapshot->originalPhysical($resource) : [],
-            oldMeta: $resource->exists ? $this->snapshot->currentMeta($resource) : [],
         );
+    }
+
+    private function connectionName(Resource $resource): string
+    {
+        return (string) ($resource->getConnection()->getName() ?? config('database.default'));
+    }
+
+    /** @param  array<string, bool|float|int|string|null>  $attributes */
+    private function contextValue(array $attributes, ?string $column): bool|float|int|string|null
+    {
+        return $column === null ? null : $this->snapshot->scalarValue($attributes[$column] ?? null);
+    }
+
+    private function dispatch(ResourceEvent $event): void
+    {
+        Event::dispatch($event);
     }
 
     /**
@@ -95,39 +173,72 @@ final class ResourceLifecycleDispatcher
      * @param  array<string, array{old: bool|float|int|string|null, new: bool|float|int|string|null}>  $physicalChanges
      * @param  array<string, array{old: bool|float|int|string|null, new: bool|float|int|string|null}>  $metaChanges
      */
-    private function dispatch(
+    private function event(
         string $eventClass,
         Resource $resource,
         ResourceLifecycleState $state,
         array $physicalChanges,
         array $metaChanges,
-    ): void {
-        $ownerColumn = $resource::getOwnerColumn();
-        $teamColumn = $resource::getTeamColumn();
+    ): ResourceEvent {
+        $currentAttributes = $this->snapshot->currentPhysical($resource);
+        $useStoredPreOperationContext = $state->operation === ResourceLifecycleOperation::Delete;
+        $ownerId = $useStoredPreOperationContext
+            ? $state->ownerId
+            : $this->contextValue($currentAttributes, $state->ownerColumn);
+        $teamId = $useStoredPreOperationContext
+            ? $state->teamId
+            : $this->contextValue($currentAttributes, $state->teamColumn);
 
-        Event::dispatch(new $eventClass(
+        return new $eventClass(
             eventId: (string) Str::uuid(),
             operationId: $state->operationId,
-            resourceClass: $resource::class,
+            resourceClass: $state->resourceClass,
             resourceType: $resource::getType(),
-            resourceMorphType: $resource->getMorphClass(),
-            resourceId: $this->scalar($resource->getKey()),
-            connectionName: $resource->getConnectionName(),
-            table: $resource->getTable(),
-            scopeMode: $resource::getScopeMode(),
-            teamId: $teamColumn === null ? null : $this->scalar($resource->getAttribute($teamColumn)),
-            ownerId: $ownerColumn === null ? null : $this->scalar($resource->getAttribute($ownerColumn)),
+            resourceMorphType: $state->resourceMorphType,
+            resourceId: $this->snapshot->scalarValue($resource->getKey()),
+            occurredAt: now()->toISOString(),
+            connectionName: $state->connectionName,
+            connectionIdentity: $state->connectionIdentity,
+            table: $state->table,
+            keyName: $state->keyName,
+            inheritanceColumn: $state->inheritanceColumn,
+            inheritanceValue: $state->inheritanceValue,
+            scopeMode: $state->scopeMode,
+            teamColumn: $state->teamColumn,
+            teamId: $teamId,
+            ownerColumn: $state->ownerColumn,
+            ownerId: $ownerId,
+            sharedAcrossTeams: $state->sharedAcrossTeams,
+            hardDelete: $state->hardDelete,
             physicalChanges: $physicalChanges,
             metaChanges: $metaChanges,
-        ));
+        );
     }
 
-    private function scalar(mixed $value): bool|float|int|string|null
+    /**
+     * @param  array<string, array{old: bool|float|int|string|null, new: bool|float|int|string|null}>  $physicalChanges
+     */
+    private function onlyAutomaticTimestampsChanged(Resource $resource, array $physicalChanges): bool
     {
-        if ($value === null || is_scalar($value)) {
-            return $value;
-        }
+        $automaticTimestamps = array_filter([
+            $resource->getCreatedAtColumn(),
+            $resource->getUpdatedAtColumn(),
+        ]);
 
-        return (string) $value;
+        return array_diff(array_keys($physicalChanges), $automaticTimestamps) === [];
+    }
+
+    /** @param  array<int, ResourceEvent>  $events */
+    private function publishCommittedDeletion(Resource $resource, array $events): void
+    {
+        $resource->getConnection()->afterCommit(function () use ($events): void {
+            foreach ($events as $event) {
+                try {
+                    $this->dispatch($event);
+                } catch (Throwable $exception) {
+                    report($exception);
+                }
+            }
+        });
     }
 }

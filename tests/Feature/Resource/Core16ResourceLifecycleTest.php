@@ -9,12 +9,14 @@ use Aura\Base\Events\ResourceRestored;
 use Aura\Base\Events\ResourceUpdated;
 use Aura\Base\Fields\Text;
 use Aura\Base\Resource;
+use Aura\Base\ResourceLifecycle\ResourceLifecycleDispatcher;
 use Illuminate\Database\DatabaseTransactionsManager;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Schema;
 
 class Core16LifecycleDocument extends Resource
@@ -151,6 +153,9 @@ test('no-op saves and without model events do not dispatch lifecycle events', fu
     $document = Core16LifecycleDocument::create(['name' => 'Same', 'notes' => 'Same meta']);
     Event::fake([ResourceCreated::class, ResourceUpdated::class]);
 
+    $this->travel(2)->minutes();
+    $document->save();
+    $document->setUpdatedAt(now());
     $document->save();
     Core16LifecycleDocument::withoutEvents(function () use ($document): void {
         $document->name = 'Quiet';
@@ -213,6 +218,14 @@ test('hard delete dispatches stable operation events and cleans only exact Aura 
 
 test('soft delete retains dependents then restore and force delete expose lifecycle events', function (): void {
     $document = Core16SoftLifecycleDocument::create(['name' => 'Soft', 'notes' => 'Retained']);
+    $related = Core16LifecycleDocument::create(['name' => 'Related']);
+    DB::table('post_relations')->insert([
+        'resource_type' => $document->getMorphClass(),
+        'resource_id' => $document->getKey(),
+        'related_type' => $related->getMorphClass(),
+        'related_id' => $related->getKey(),
+        'slug' => 'soft-retained',
+    ]);
     Event::fake([
         ResourceDeleting::class,
         ResourceDeleted::class,
@@ -222,16 +235,56 @@ test('soft delete retains dependents then restore and force delete expose lifecy
     ]);
 
     expect($document->delete())->toBeTrue()
-        ->and(DB::table('meta')->where('metable_type', $document->getMorphClass())->where('metable_id', $document->getKey())->count())->toBe(1);
+        ->and(DB::table('meta')->where('metable_type', $document->getMorphClass())->where('metable_id', $document->getKey())->count())->toBe(1)
+        ->and(DB::table('post_relations')->where('slug', 'soft-retained')->count())->toBe(1);
+
+    $softDeleted = Event::dispatched(ResourceDeleted::class)->sole()[0];
+    expect($softDeleted->physicalChanges)->toHaveKey('deleted_at')
+        ->and($softDeleted->physicalChanges)->not->toHaveKey('name')
+        ->and($softDeleted->metaChanges)->toBe([]);
 
     expect($document->restore())->toBeTrue();
     Event::assertDispatchedTimes(ResourceRestored::class, 1);
     Event::assertNotDispatched(ResourceUpdated::class);
 
     expect($document->forceDelete())->toBeTrue()
-        ->and(DB::table('meta')->where('metable_type', $document->getMorphClass())->where('metable_id', $document->getKey())->count())->toBe(0);
+        ->and(DB::table('meta')->where('metable_type', $document->getMorphClass())->where('metable_id', $document->getKey())->count())->toBe(0)
+        ->and(DB::table('post_relations')->where('slug', 'soft-retained')->count())->toBe(0);
 
     Event::assertDispatchedTimes(ResourceForceDeleted::class, 1);
+});
+
+test('force delete completes its native and typed terminal lifecycle when a typed listener fails', function (): void {
+    $document = Core16SoftLifecycleDocument::create(['name' => 'Force listener failure', 'notes' => 'Cleanup']);
+    $observed = [];
+    Exceptions::fake();
+
+    Event::listen(ResourceDeleting::class, function () use (&$observed): never {
+        $observed[] = ResourceDeleting::class;
+
+        throw new RuntimeException('typed deleting listener failed');
+    });
+    Event::listen(ResourceDeleted::class, function () use (&$observed): void {
+        $observed[] = ResourceDeleted::class;
+    });
+    Event::listen(ResourceForceDeleted::class, function () use (&$observed): void {
+        $observed[] = ResourceForceDeleted::class;
+    });
+    Core16SoftLifecycleDocument::forceDeleted(function () use (&$observed): void {
+        $observed[] = 'eloquent.forceDeleted';
+    });
+
+    expect($document->forceDelete())->toBeTrue()
+        ->and($document->isForceDeleting())->toBeFalse()
+        ->and($observed)->toBe([
+            ResourceDeleting::class,
+            ResourceDeleted::class,
+            ResourceForceDeleted::class,
+            'eloquent.forceDeleted',
+        ])
+        ->and(Core16SoftLifecycleDocument::withTrashed()->whereKey($document->getKey())->exists())->toBeFalse();
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'typed deleting listener failed');
 });
 
 test('native deleting veto prevents cleanup and lifecycle dispatch', function (): void {
@@ -281,6 +334,37 @@ test('post STI lifecycle identity and cleanup use the exact morph type', functio
 
     expect(DB::table('meta')->where('metable_type', Core16PostLifecycleAlpha::class)->where('metable_id', $alpha->getKey())->count())->toBe(0)
         ->and(DB::table('meta')->where('metable_type', Core16PostLifecycleBeta::class)->where('metable_id', $alpha->getKey())->count())->toBe(1);
+});
+
+test('dispatcher state is bound to one resource operation and connection', function (): void {
+    $first = Core16LifecycleDocument::create(['name' => 'First']);
+    $second = Core16LifecycleDocument::create(['name' => 'Second']);
+    $dispatcher = app(ResourceLifecycleDispatcher::class);
+    $state = $dispatcher->beginDelete($first);
+
+    expect(fn (): mixed => $dispatcher->dispatchDeleted($second, $state))
+        ->toThrow(LogicException::class, 'does not belong to the supplied resource');
+
+    $saveState = $dispatcher->beginSave($first);
+    expect(fn (): mixed => $dispatcher->dispatchForceDeleted($first, $saveState))
+        ->toThrow(LogicException::class, 'cannot be used for');
+});
+
+test('deletion events use persisted ownership context and resolved connection identity', function (): void {
+    $document = Core16LifecycleDocument::create(['name' => 'Stored context']);
+    $persistedTeamId = $document->getRawOriginal('team_id');
+    $persistedOwnerId = $document->getRawOriginal('user_id');
+    $document->setAttribute('team_id', 999999);
+    $document->setAttribute('user_id', 999999);
+    Event::fake([ResourceDeleting::class, ResourceDeleted::class]);
+
+    $document->delete();
+    $event = Event::dispatched(ResourceDeleted::class)->sole()[0];
+
+    expect($event->teamId)->toBe($persistedTeamId)
+        ->and($event->ownerId)->toBe($persistedOwnerId)
+        ->and($event->connectionName)->toBe(DB::connection()->getName())
+        ->and($event->connectionIdentity)->toBeString()->not->toBeEmpty();
 });
 
 test('a synchronous deleted listener failure rolls back the row and dependent cleanup', function (): void {

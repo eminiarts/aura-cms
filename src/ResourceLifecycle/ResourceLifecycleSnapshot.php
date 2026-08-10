@@ -60,6 +60,11 @@ final class ResourceLifecycleSnapshot
         return $this->scalarAttributes($resource->getRawOriginal());
     }
 
+    public function scalarValue(mixed $value): bool|float|int|string|null
+    {
+        return $this->scalar($value);
+    }
+
     private function scalar(mixed $value): bool|float|int|string|null
     {
         if ($value === null || is_scalar($value)) {

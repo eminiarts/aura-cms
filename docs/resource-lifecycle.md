@@ -20,10 +20,12 @@ The common payload is:
 - `eventId`: unique UUID for this event.
 - `operationId`: UUID shared by events from one operation. The deleting/deleted pair and force-deleted event from one force delete share it.
 - `resourceClass`, `resourceType`, `resourceMorphType`, `resourceId`.
-- `connectionName`, `table`, `scopeMode`, `teamId`, `ownerId`.
+- `occurredAt`, resolved `connectionName`, `connectionIdentity`, `table`, and `keyName`.
+- `inheritanceColumn`, `inheritanceValue`, `scopeMode`, owner/team columns and IDs, and `sharedAcrossTeams`.
+- `hardDelete`, which distinguishes removal from a restorable soft deletion.
 - `physicalChanges` and `metaChanges`, keyed by stored field name. Each value is `['old' => scalar|null, 'new' => scalar|null]`.
 
-Payload values represent raw stored state. Creates compare an empty old snapshot with the committed state. Updates include physical timestamps when Eloquent changed them and are omitted entirely when both change maps are empty. Deletes compare the last stored state with `null`. Restore changes include the restored physical columns. Meta values are read after Aura's existing `metaSaved` persistence step, so an event never exposes pending form state.
+Payload values represent raw stored state. Creates compare an empty old snapshot with the committed state. Updates include physical timestamps alongside a business change, but a timestamp-only write does not emit `ResourceUpdated`. Hard deletes compare the last stored state with `null`. Soft deletes report only the retained row's stored transition, normally `deleted_at` and `updated_at`, while retained meta has no removal delta. Restore changes include the restored physical columns. Meta values are read after Aura's existing `metaSaved` persistence step, so an event never exposes pending form state.
 
 ## Timing and ordering
 
@@ -48,11 +50,10 @@ Cleanup uses the resource's database connection and shares the delete transactio
 
 ## Listener failure policy
 
-Lifecycle listeners are post-commit observers. An exception from a synchronous lifecycle listener is propagated to the caller, but the committed resource mutation is not rolled back. Queueable listeners follow Laravel's normal queue retry and failure policy. Put fallible or remote work in queued listeners.
+Lifecycle listeners are post-commit observers. An exception from a synchronous create, update, or restore listener is propagated to the caller, but the committed resource mutation is not rolled back. Deletion is terminal: exceptions from synchronous deleting, deleted, and force-deleted lifecycle listeners are reported through Laravel's exception handler, while Aura continues the remaining typed and native terminal notifications. This prevents one observer from stranding a committed force delete in an incomplete state. Queueable listeners follow Laravel's normal queue retry and failure policy. Put fallible or remote work in queued listeners.
 
 ## Suppression and explicit writes
 
 Laravel's `Model::withoutEvents()`, `saveQuietly()`, `deleteQuietly()`, and force-delete quiet variants intentionally suppress lifecycle events. Exact hard-delete cleanup still runs because referential integrity does not depend on event delivery. Callers that need the complete normalization, persistence, cleanup, and event pipeline must use the normal Resource write methods rather than quiet or query-builder writes.
 
-`Aura\Base\ResourceLifecycle\ResourceLifecycleDispatcher` is the public dispatcher seam for Aura's explicit write pipeline and first-party integrations. Its `beginSave()`, `beginDelete()`, and `beginRestore()` methods capture an operation snapshot; the matching `dispatchSaved()`, `dispatchDeleted()`, `dispatchRestored()`, and `dispatchForceDeleted()` methods publish the immutable events. Keep capture and dispatch on the same Resource instance and database connection. Ordinary consumers should listen for the event classes instead of dispatching them manually.
-
+`Aura\Base\ResourceLifecycle\ResourceLifecycleDispatcher` is the public dispatcher seam for Aura's explicit write pipeline and first-party integrations. Its `beginSave()`, `beginDelete()`, and `beginRestore()` methods return a controlled operation snapshot bound to the resource object, stored subject, resolved connection fingerprint, table, and operation kind. The matching `dispatchSaved()`, `dispatchDeleted()`, `dispatchRestored()`, and `dispatchForceDeleted()` methods validate those invariants and reject mixed resources, connections, or operation types. Ordinary consumers should listen for the event classes instead of dispatching them manually.
