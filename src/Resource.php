@@ -1592,11 +1592,12 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
                 return;
             }
 
-            app(ResourceLifecycleDispatcher::class)->dispatchSaved($resource, $resource->resourceLifecycleState);
-
-            if ($resource->resourceLifecycleState->operation !== ResourceLifecycleOperation::Restore) {
-                $resource->resourceLifecycleState = null;
+            if ($resource->resourceLifecycleState->operation === ResourceLifecycleOperation::Restore) {
+                return;
             }
+
+            app(ResourceLifecycleDispatcher::class)->dispatchSaved($resource, $resource->resourceLifecycleState);
+            $resource->resourceLifecycleState = null;
         });
 
         static::deleting(function (Resource $resource): void {

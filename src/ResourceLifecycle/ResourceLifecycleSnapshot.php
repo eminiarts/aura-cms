@@ -60,6 +60,21 @@ final class ResourceLifecycleSnapshot
         return $this->scalarAttributes($resource->getRawOriginal());
     }
 
+    /** @return array<string, bool|float|int|string|null>|null */
+    public function persistedPhysical(Resource $resource): ?array
+    {
+        if ($resource->getKey() === null) {
+            return null;
+        }
+
+        $row = $resource->getConnection()
+            ->table($resource->getTable())
+            ->where($resource->getKeyName(), $resource->getKey())
+            ->first();
+
+        return $row === null ? null : $this->scalarAttributes((array) $row);
+    }
+
     public function scalarValue(mixed $value): bool|float|int|string|null
     {
         return $this->scalar($value);

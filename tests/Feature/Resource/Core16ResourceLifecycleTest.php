@@ -361,9 +361,33 @@ test('dispatcher state is bound to one resource operation and connection', funct
     expect(fn (): mixed => $dispatcher->dispatchDeleted($second, $state))
         ->toThrow(LogicException::class, 'does not belong to the supplied resource');
 
+    expect(fn (): mixed => $dispatcher->dispatchDeleted($first, $state))
+        ->toThrow(LogicException::class, 'hard-delete resource lifecycle operation has not completed');
+
     $saveState = $dispatcher->beginSave($first);
     expect(fn (): mixed => $dispatcher->dispatchForceDeleted($first, $saveState))
         ->toThrow(LogicException::class, 'cannot be used for');
+
+    $first->name = 'Not persisted';
+    $prematureSaveState = $dispatcher->beginSave($first);
+    expect(fn (): mixed => $dispatcher->dispatchSaved($first, $prematureSaveState))
+        ->toThrow(LogicException::class, 'update operation has not completed');
+
+    $soft = Core16SoftLifecycleDocument::create(['name' => 'Restore operation']);
+    $soft->deleteQuietly();
+    $restoreState = $dispatcher->beginRestore($soft);
+    expect(fn (): mixed => $dispatcher->dispatchSaved($soft, $restoreState))
+        ->toThrow(LogicException::class, 'cannot be used for');
+
+    $first->name = 'Explicit seam update';
+    $explicitSaveState = $dispatcher->beginSave($first);
+    $first->saveQuietly();
+    Event::fake([ResourceUpdated::class]);
+    $dispatcher->dispatchSaved($first, $explicitSaveState);
+    Event::assertDispatchedTimes(ResourceUpdated::class, 1);
+
+    expect(fn (): mixed => $dispatcher->dispatchSaved($first, $explicitSaveState))
+        ->toThrow(LogicException::class, 'already been dispatched');
 });
 
 test('deletion events use persisted ownership context and resolved connection identity', function (): void {

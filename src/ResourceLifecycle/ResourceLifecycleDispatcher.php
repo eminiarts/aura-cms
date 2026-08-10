@@ -18,6 +18,9 @@ use Throwable;
 
 final class ResourceLifecycleDispatcher
 {
+    /** @var \WeakMap<ResourceLifecycleState, true>|null */
+    private static ?\WeakMap $consumedStates = null;
+
     public function __construct(private readonly ResourceLifecycleSnapshot $snapshot) {}
 
     public function beginDelete(Resource $resource): ResourceLifecycleState
@@ -41,6 +44,8 @@ final class ResourceLifecycleDispatcher
     public function dispatchDeleted(Resource $resource, ResourceLifecycleState $state): void
     {
         $this->assertState($resource, $state, ResourceLifecycleOperation::Delete);
+        $this->assertDeleteCompleted($resource, $state);
+        $this->claimState($state);
 
         $newPhysical = $state->hardDelete ? [] : $this->snapshot->currentPhysical($resource);
         $newMeta = $state->hardDelete ? [] : $this->snapshot->currentMeta($resource);
@@ -61,6 +66,9 @@ final class ResourceLifecycleDispatcher
             throw new LogicException('A soft-delete lifecycle state cannot be used for force-delete publication.');
         }
 
+        $this->assertDeleteCompleted($resource, $state);
+        $this->claimState($state);
+
         $physicalChanges = $this->snapshot->changes($state->oldPhysical, []);
         $metaChanges = $this->snapshot->changes($state->oldMeta, []);
 
@@ -74,6 +82,8 @@ final class ResourceLifecycleDispatcher
     public function dispatchRestored(Resource $resource, ResourceLifecycleState $state): void
     {
         $this->assertState($resource, $state, ResourceLifecycleOperation::Restore);
+        $this->assertRestoreCompleted($resource);
+        $this->claimState($state);
 
         $this->dispatch($this->event(
             ResourceRestored::class,
@@ -91,12 +101,9 @@ final class ResourceLifecycleDispatcher
             $state,
             ResourceLifecycleOperation::Create,
             ResourceLifecycleOperation::Update,
-            ResourceLifecycleOperation::Restore,
         );
-
-        if ($state->operation === ResourceLifecycleOperation::Restore) {
-            return;
-        }
+        $this->assertSaveCompleted($resource, $state);
+        $this->claimState($state);
 
         $physicalChanges = $this->snapshot->changes($state->oldPhysical, $this->snapshot->currentPhysical($resource));
         $metaChanges = $this->snapshot->changes($state->oldMeta, $this->snapshot->currentMeta($resource));
@@ -112,6 +119,48 @@ final class ResourceLifecycleDispatcher
             : ResourceUpdated::class;
 
         $this->dispatch($this->event($eventClass, $resource, $state, $physicalChanges, $metaChanges));
+    }
+
+    private function assertDeleteCompleted(Resource $resource, ResourceLifecycleState $state): void
+    {
+        if ($state->hardDelete && $resource->exists) {
+            throw new LogicException('The hard-delete resource lifecycle operation has not completed.');
+        }
+
+        if (! $state->hardDelete
+            && (! $resource->exists || ! method_exists($resource, 'trashed') || ! $resource->trashed())) {
+            throw new LogicException('The soft-delete resource lifecycle operation has not completed.');
+        }
+    }
+
+    private function assertRestoreCompleted(Resource $resource): void
+    {
+        if (! $resource->exists || (method_exists($resource, 'trashed') && $resource->trashed())) {
+            throw new LogicException('The restore resource lifecycle operation has not completed.');
+        }
+    }
+
+    private function assertSaveCompleted(Resource $resource, ResourceLifecycleState $state): void
+    {
+        $persistedPhysical = $this->snapshot->persistedPhysical($resource);
+        $expectedPhysical = $this->snapshot->currentPhysical($resource);
+
+        unset(
+            $expectedPhysical[$resource->getCreatedAtColumn()],
+            $expectedPhysical[$resource->getUpdatedAtColumn()],
+        );
+
+        $matchesPersistedState = $persistedPhysical !== null
+            && collect($expectedPhysical)->every(
+                fn (bool|float|int|string|null $value, string $key): bool => ($persistedPhysical[$key] ?? null) == $value,
+            );
+
+        if (! $resource->exists || ! $matchesPersistedState) {
+            throw new LogicException(sprintf(
+                'The resource lifecycle %s operation has not completed.',
+                $state->operation->value,
+            ));
+        }
     }
 
     private function assertState(
@@ -150,6 +199,17 @@ final class ResourceLifecycleDispatcher
             snapshot: $this->snapshot,
             operationId: (string) Str::uuid(),
         );
+    }
+
+    private function claimState(ResourceLifecycleState $state): void
+    {
+        self::$consumedStates ??= new \WeakMap;
+
+        if (isset(self::$consumedStates[$state])) {
+            throw new LogicException('Resource lifecycle state has already been dispatched.');
+        }
+
+        self::$consumedStates[$state] = true;
     }
 
     private function connectionName(Resource $resource): string
