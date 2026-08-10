@@ -16,8 +16,11 @@ trait BulkActions
     /**
      * Handle bulk action on the selected rows.
      */
-    public function bulkAction(string $action, TableMutationDispatcher $mutations): void
-    {
+    public function bulkAction(
+        string $action,
+        TableMutationDispatcher $mutations,
+        array $parameters = [],
+    ): void {
         $model = $this->mutationModel();
         $trustedModel = new TableMutationModelDescriptor($model);
         $declaredActions = (array) $model->getBulkActions();
@@ -31,6 +34,7 @@ trait BulkActions
             (bool) $this->selectAll,
             'record',
             $this->selectAllExclusions,
+            $parameters,
         );
 
         $this->resetSelectionForScopeChange();
@@ -38,8 +42,11 @@ trait BulkActions
         $this->notify('Success: '.$action);
     }
 
-    public function bulkCollectionAction(string $action, TableMutationDispatcher $mutations): ?StreamedResponse
-    {
+    public function bulkCollectionAction(
+        string $action,
+        TableMutationDispatcher $mutations,
+        array $parameters = [],
+    ): ?StreamedResponse {
         $model = $this->mutationModel();
         $trustedModel = new TableMutationModelDescriptor($model);
         $declaredActions = (array) $model->getBulkActions();
@@ -53,6 +60,7 @@ trait BulkActions
             (bool) $this->selectAll,
             'collection',
             $this->selectAllExclusions,
+            $parameters,
         );
 
         if ($response instanceof StreamedResponse) {

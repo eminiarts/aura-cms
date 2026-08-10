@@ -83,7 +83,10 @@ final class TableMutationDispatcher
         'year',
     ];
 
-    public function __construct(private readonly Gate $gate) {}
+    public function __construct(
+        private readonly BulkActionParameters $bulkActionParameters,
+        private readonly Gate $gate,
+    ) {}
 
     public function abilityFor(string $action, mixed $definition = null): string
     {
@@ -265,6 +268,7 @@ final class TableMutationDispatcher
         bool $selectAll,
         string $expectedMode,
         mixed $selectAllExclusions = [],
+        array $parameters = [],
     ): mixed {
         $descriptor = $this->descriptor($action, $declaredActions, bulk: true);
 
@@ -273,17 +277,25 @@ final class TableMutationDispatcher
         }
 
         $this->assertConditionAvailable($descriptor);
+        $validatedParameters = $this->bulkActionParameters->validate(
+            is_array($declaredActions[$action]) ? $declaredActions[$action] : [],
+            $parameters,
+        );
+        $hasParameters = is_array($declaredActions[$action])
+            && array_key_exists('parameters', $declaredActions[$action]);
 
         return $this->transactionWithPreLockRetries($modelDescriptor->connectionInstance(), function (
             Closure $markLockAcquired,
         ) use (
             $action,
             $descriptor,
+            $hasParameters,
             $modelDescriptor,
             $scope,
             $selectAll,
             $selectAllExclusions,
             $selected,
+            $validatedParameters,
         ): mixed {
             $modelDescriptor->assertMatches($scope);
             $records = $this->resolveExactSelection(
@@ -301,7 +313,7 @@ final class TableMutationDispatcher
                 abort(422, 'Bulk mutations require an Aura table resource.');
             }
 
-            $this->mutationMethod($receiver, $action, $descriptor['mode']);
+            $this->mutationMethod($receiver, $action, $descriptor['mode'], $hasParameters);
 
             foreach ($records->chunk($this->recordChunkSize()) as $recordChunk) {
                 $recordChunk->each(function (Model $record) use ($descriptor, $modelDescriptor): void {
@@ -316,7 +328,9 @@ final class TableMutationDispatcher
                 $result = null;
 
                 foreach (array_chunk($ids, $this->recordChunkSize()) as $idChunk) {
-                    $result = $receiver->{$action}($idChunk);
+                    $result = $hasParameters
+                        ? $receiver->{$action}($idChunk, $validatedParameters)
+                        : $receiver->{$action}($idChunk);
                 }
 
                 return $result;
@@ -326,7 +340,9 @@ final class TableMutationDispatcher
 
             foreach ($records->chunk($this->recordChunkSize()) as $recordChunk) {
                 foreach ($recordChunk as $record) {
-                    $result = $record->{$action}();
+                    $result = $hasParameters
+                        ? $record->{$action}($validatedParameters)
+                        : $record->{$action}();
                 }
             }
 
@@ -1429,16 +1445,21 @@ final class TableMutationDispatcher
         return $keys;
     }
 
-    private function mutationMethod(Model $receiver, string $action, string $mode): ReflectionMethod
-    {
+    private function mutationMethod(
+        Model $receiver,
+        string $action,
+        string $mode,
+        bool $hasParameters = false,
+    ): ReflectionMethod {
         if (! method_exists($receiver, $action)) {
             abort(422, 'The declared table action cannot be executed.');
         }
 
         $method = new ReflectionMethod($receiver, $action);
-        $validParameterCount = $mode === self::BULK_MODE_COLLECTION
-            ? $method->getNumberOfParameters() === 1
-            : $method->getNumberOfRequiredParameters() === 0;
+        $expectedParameterCount = $mode === self::BULK_MODE_COLLECTION
+            ? ($hasParameters ? 2 : 1)
+            : ($hasParameters ? 1 : 0);
+        $validParameterCount = $method->getNumberOfParameters() === $expectedParameterCount;
 
         if (! $method->isPublic() || $method->isStatic() || ! $validParameterCount) {
             abort(422, 'The declared table action cannot be executed.');
