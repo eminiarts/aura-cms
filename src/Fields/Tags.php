@@ -2,12 +2,15 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\ProvidesFilterCapability;
 use Aura\Base\Contracts\ProvidesTableEagerLoad;
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
-class Tags extends Field implements ProvidesTableEagerLoad
+class Tags extends Field implements ProvidesFilterCapability, ProvidesTableEagerLoad
 {
     public $edit = 'aura::fields.tags';
 
@@ -132,6 +135,15 @@ class Tags extends Field implements ProvidesTableEagerLoad
     public function isRelation()
     {
         return true;
+    }
+
+    public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::relationship(
+            operators: $this->filterOptions(),
+            component: $this->filter(),
+            resourceType: $field['resource'],
+        );
     }
 
     public function relationship($model, $field)

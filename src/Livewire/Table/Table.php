@@ -30,8 +30,9 @@ use Livewire\Component;
 /**
  * Class Table
  *
- * @property-read mixed $rows       Livewire computed: paginated result set.
- * @property-read mixed $rowsQuery  Livewire computed: base query builder.
+ * @property-read Collection $fieldsForFilter Livewire computed: filter descriptors keyed by field slug.
+ * @property-read mixed      $rows            Livewire computed: paginated result set.
+ * @property-read mixed      $rowsQuery       Livewire computed: base query builder.
  */
 class Table extends Component
 {

@@ -2,7 +2,11 @@
 
 namespace Aura\Base\Fields;
 
-class Datetime extends Field
+use Aura\Base\Contracts\ProvidesFilterCapability;
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Resource;
+
+class Datetime extends Field implements ProvidesFilterCapability
 {
     public $edit = 'aura::fields.datetime';
 
@@ -119,6 +123,11 @@ class Datetime extends Field
                 'instructions' => 'The day the week starts on. 0 (Sunday) to 6 (Saturday). Default is 1 (Monday).',
             ],
         ]);
+    }
+
+    public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::datetime($this->filterOptions(), $field['format'] ?? 'd.m.Y H:i');
     }
 
     public function set($post, $field, $value)

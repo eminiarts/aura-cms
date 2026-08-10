@@ -527,7 +527,39 @@ The filtering system allows building complex queries with a visual interface.
 
 ### Filter Configuration
 
-Each field type provides its own filter operators via `filterOptions()`. The `QueryFilters` trait handles applying these filters to both regular table fields and meta fields.
+Each field type provides a `FilterCapability` that declares its operators,
+input component, normalized values, and query handler. The default handler
+applies filters to regular table fields or meta fields, while relationship and
+package-defined handlers can own their query behavior without adding a switch
+to the table. The older `filterOptions()` and `getFilterValues()` hooks remain
+the inputs used by the built-in capability factories. See
+[Creating Fields](creating-fields.md#providesfiltercapability) for the
+third-party extension contract.
+
+The public `fieldsForFilter` computed descriptor remains additive for existing
+table views: `type`, `filterOptions`, and the raw `filterValues` shape are
+preserved. Canonical `{value, wire_value, label}` rows are available through
+`canonicalFilterValues` and `filter.values`. Existing protected `QueryFilters`
+helpers remain as deprecated compatibility adapters for Table subclasses; new
+extensions should declare behavior on the field capability or its query
+handler instead.
+
+Choice filters restore scalar value types before querying. Scalar choice fields
+reject option sets whose values collapse to the same persisted string, while
+JSON-backed multiple-value fields preserve typed identities and use exact
+database JSON membership. Dates and datetimes normalize the browser's ISO
+payload for formatted meta storage or native custom-table columns. Scalar text
+operators reject arrays and objects; only `in` and `not_in` accept flat scalar
+lists. Invalid value shape, field, operator, handler, nested structure, unknown
+payload key, and AND/OR value fail closed. Saved flat filter lists remain
+supported and are normalized to a single group.
+
+Datetime filter input is an application-timezone wall time. DST gaps and folds
+fail closed. PostgreSQL and SQLite native timestamps compare that canonical wall
+time; MySQL/MariaDB `TIMESTAMP` compares Unix instants so results do not depend
+on the current database session timezone. MySQL values outside its portable
+1970–2038 `TIMESTAMP` range fail closed. The filter layer does not rewrite
+persisted values; write normalization and migration remain CORE-10 scope.
 
 **Available Filter Operators** (from `QueryFilters` trait):
 
@@ -565,6 +597,14 @@ Each field type provides its own filter operators via `filterOptions()`. The `Qu
 'date_on_or_after'  => 'DATE >= value'
 'date_is_empty'     => 'NULL OR empty'
 'date_is_not_empty' => 'NOT NULL AND not empty'
+
+// Datetime operators
+'is'           => 'DATETIME = value'
+'is_not'       => 'DATETIME != value'
+'before'       => 'DATETIME < value'
+'after'        => 'DATETIME > value'
+'on_or_before' => 'DATETIME <= value'
+'on_or_after'  => 'DATETIME >= value'
 ```
 
 ### Custom Filters
@@ -582,7 +622,7 @@ $filters = [
                     'name' => 'status',           // Field slug
                     'operator' => 'equals',       // Filter operator
                     'value' => 'published',       // Filter value
-                    'main_operator' => 'and',     // AND/OR with next filter
+                    'main_operator' => 'and',     // AND/OR with previous filter
                     'options' => [],              // Field-specific options
                 ],
                 [
@@ -597,6 +637,13 @@ $filters = [
     ],
 ];
 ```
+
+Groups are folded left-associatively in their listed order. The `operator` on
+each group after the first connects that group to the complete result before
+it; `main_operator` does the same for each filter after the first within its
+group. Empty groups and the exact blank UI placeholder (`name`, `operator`, and
+`value` empty, `options` empty) are inert. Filters cannot nest further, and
+unknown group or leaf keys reject the complete custom-filter payload.
 
 **Available Methods:**
 

@@ -2,7 +2,11 @@
 
 namespace Aura\Base\Fields;
 
-class Boolean extends Field
+use Aura\Base\Contracts\ProvidesFilterCapability;
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Resource;
+
+class Boolean extends Field implements ProvidesFilterCapability
 {
     public $edit = 'aura::fields.boolean';
 
@@ -17,6 +21,18 @@ class Boolean extends Field
         } else {
             return '<svg class="w-6 h-6 text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'; // X icon from Heroicons
         }
+    }
+
+    public function filterOptions()
+    {
+        return [
+            'equals' => __('equals'),
+            'not_equals' => __('does not equal'),
+            'is' => __('is'),
+            'is_not' => __('is not'),
+            'is_empty' => __('is empty'),
+            'is_not_empty' => __('is not empty'),
+        ];
     }
 
     public function get($class, $value, $field = null)
@@ -43,6 +59,11 @@ class Boolean extends Field
             ],
 
         ]);
+    }
+
+    public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::boolean($this->filterOptions());
     }
 
     public function set($post, $field, $value)

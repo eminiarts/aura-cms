@@ -245,7 +245,7 @@ describe('does_not_contain filter on custom table', function () {
 
         $component->call('addFilterGroup');
 
-        $component->set('filters.custom.0.name', 'name');
+        $component->set('filters.custom.0.filters.0.name', 'name');
         $component->set('filters.custom.0.filters.0.operator', 'does_not_contain');
         $component->set('filters.custom.0.filters.0.value', 'Post 1');
 

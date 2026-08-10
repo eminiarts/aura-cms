@@ -2,7 +2,11 @@
 
 namespace Aura\Base\Fields;
 
-class Status extends Field
+use Aura\Base\Contracts\ProvidesFilterCapability;
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Resource;
+
+class Status extends Field implements ProvidesFilterCapability
 {
     public $edit = 'aura::fields.status';
 
@@ -11,6 +15,18 @@ class Status extends Field
     public $optionGroup = 'Choice Fields';
 
     public $view = 'aura::fields.status-view';
+
+    public function filterOptions()
+    {
+        return [
+            'contains' => __('contains'),
+            'does_not_contain' => __('does not contain'),
+            'is' => __('is'),
+            'is_not' => __('is not'),
+            'is_empty' => __('is empty'),
+            'is_not_empty' => __('is not empty'),
+        ];
+    }
 
     public function getFields()
     {
@@ -131,6 +147,11 @@ class Status extends Field
         ]);
     }
 
+    public function getFilterValues($model, $field)
+    {
+        return $this->options($model, $field);
+    }
+
     // public $view = 'components.fields.select';
 
     public function options($model, $field)
@@ -142,5 +163,10 @@ class Status extends Field
 
         // return the options defined in the field
         return $field['options'] ?? [];
+    }
+
+    public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::scalarOption($this->filterOptions(), $this->getFilterValues($model, $field));
     }
 }

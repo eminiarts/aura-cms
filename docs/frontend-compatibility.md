@@ -215,7 +215,11 @@ table, and PHP status field. It verifies their expected literal classes before
 copying them. Both compiler lanes scan that same source snapshot plus the
 gate-only semantic probe. The audited source snapshot contains five files and
 uses the fixed, machine-readable expectation in `source-baseline.json`.
-Audited source SHA-256: `8b69df60182ad73ddfc9ae064bd1ffa7e5605fc4e5337d0e895d3a652df57190`.
+Audited source SHA-256: `d23bf2e9e451c188f90fcb82bcb6d7d1c95f033674f723cbc3165965f93b7b28`.
+The CORE-09 integration re-authenticated this snapshot after the selected
+`src/Fields/Status.php` source gained its filter-capability contract; the
+selected paths, expected literal classes, and compiler-output baselines did not
+change.
 
 The `aura-source-records-v2-length-prefixed` canonicalization starts with a
 domain identifier and record count. Each manifest-ordered record contains the

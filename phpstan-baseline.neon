@@ -586,12 +586,6 @@ parameters:
 			path: src/Livewire/Table/Table.php
 
 		-
-			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Table\\Table\:\:\$fieldsForFilter\.$#'
-			identifier: property.notFound
-			count: 3
-			path: src/Livewire/Table/Table.php
-
-		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Table\\Table\:\:\$rowIds\.$#'
 			identifier: property.notFound
 			count: 1

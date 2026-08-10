@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Aura\Base\Fields\Field;
+use Aura\Base\Fields\Filters\FieldFilterCapabilityResolver;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 
@@ -41,9 +43,11 @@ trait Filters
      */
     public function addFilter()
     {
+        $fieldSlug = $this->fieldsForFilter->keys()->first();
+
         $this->filters['custom'][] = [
-            'name' => $this->fieldsForFilter->keys()->first(),
-            'operator' => 'contains',
+            'name' => $fieldSlug,
+            'operator' => $this->defaultOperatorFor($fieldSlug),
             'value' => null,
             'main_operator' => 'and',
         ];
@@ -111,12 +115,20 @@ trait Filters
         return $this->fields->mapWithKeys(function ($field) {
             $fieldInstance = app($field['type']);
 
+            if (! $fieldInstance instanceof Field) {
+                return [];
+            }
+
+            $filter = (new FieldFilterCapabilityResolver)->resolve($fieldInstance, $this->model, $field)->toArray();
+
             return [
                 $field['slug'] => [
                     'name' => $field['name'],
                     'type' => class_basename($field['type']),
-                    'filterOptions' => $fieldInstance->filterOptions(),
+                    'filterOptions' => $filter['operators'],
                     'filterValues' => $fieldInstance->getFilterValues($this->model, $field),
+                    'canonicalFilterValues' => $filter['values'],
+                    'filter' => $filter,
                 ],
             ];
         });
@@ -221,17 +233,57 @@ trait Filters
         $this->clearFiltersCache();
     }
 
+    /**
+     * Livewire invokes this trait hook with the full property path and value.
+     */
+    public function updatedFilters(mixed $path, mixed $value = null): void
+    {
+        if (! is_string($path) || ! str_starts_with($path, 'filters.custom.')) {
+            return;
+        }
+
+        $parts = explode('.', substr($path, strlen('filters.custom.')));
+
+        if (count($parts) !== 4 || $parts[1] !== 'filters' || ! ctype_digit($parts[0]) || ! ctype_digit($parts[2])) {
+            return;
+        }
+
+        [$groupKey, , $filterKey, $property] = $parts;
+
+        if (! isset($this->filters['custom'][(int) $groupKey]['filters'][(int) $filterKey])) {
+            return;
+        }
+
+        if ($property === 'operator') {
+            $this->filters['custom'][(int) $groupKey]['filters'][(int) $filterKey]['value'] = null;
+
+            return;
+        }
+
+        if ($property !== 'name') {
+            return;
+        }
+
+        $operator = is_string($value) && isset($this->fieldsForFilter[$value])
+            ? $this->defaultOperatorFor($value)
+            : null;
+
+        $this->filters['custom'][(int) $groupKey]['filters'][(int) $filterKey]['operator'] = $operator;
+        $this->filters['custom'][(int) $groupKey]['filters'][(int) $filterKey]['value'] = null;
+    }
+
+    /**
+     * @deprecated Livewire 4 invokes updatedFilters() with the complete property path.
+     */
     public function updatedFiltersCustom($value, $key)
     {
-        $parts = explode('.', $key);
-        if (count($parts) === 5 && $parts[4] === 'name') {
-            $groupKey = $parts[1];
-            $filterKey = $parts[3];
-            // Reset the operator when the field changes
-            $this->filters['custom'][$groupKey]['filters'][$filterKey]['operator'] = array_key_first($this->fieldsForFilter[$value]['filterOptions']);
-            // Also reset the value
-            $this->filters['custom'][$groupKey]['filters'][$filterKey]['value'] = null;
+        if (! is_string($key)) {
+            return;
         }
+
+        $path = str_starts_with($key, 'filters.custom.') ? $key : 'filters.'.$key;
+
+        $this->updatedFilters($path, $value);
     }
 
     /**
@@ -297,11 +349,22 @@ trait Filters
         return collect($userFilters)->merge($teamFilters)->keyBy('slug')->toArray();
     }
 
-    private function newFilter()
+    private function defaultOperatorFor(?string $fieldSlug): ?string
     {
+        if ($fieldSlug === null) {
+            return null;
+        }
+
+        return array_key_first($this->fieldsForFilter[$fieldSlug]['filterOptions'] ?? []);
+    }
+
+    private function newFilter(): array
+    {
+        $fieldSlug = $this->fieldsForFilter->keys()->first();
+
         return [
-            'name' => $this->fieldsForFilter->keys()->first(),
-            'operator' => 'contains',
+            'name' => $fieldSlug,
+            'operator' => $this->defaultOperatorFor($fieldSlug),
             'value' => null,
             'options' => [],
         ];

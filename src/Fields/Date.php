@@ -2,7 +2,11 @@
 
 namespace Aura\Base\Fields;
 
-class Date extends Field
+use Aura\Base\Contracts\ProvidesFilterCapability;
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Resource;
+
+class Date extends Field implements ProvidesFilterCapability
 {
     public $edit = 'aura::fields.date';
 
@@ -103,6 +107,11 @@ class Date extends Field
                 'instructions' => 'The day the week starts on. 0 (Sunday) to 6 (Saturday). Default is 1 (Monday).',
             ],
         ]);
+    }
+
+    public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::date($this->filterOptions(), $field['format'] ?? 'd.m.Y');
     }
 
     public function set($post, $field, $value)

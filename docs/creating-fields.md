@@ -248,6 +248,165 @@ public function getFilterValues($model, $field)
 }
 ```
 
+#### `ProvidesFilterCapability`
+
+Table filters use a field-owned `FilterCapability` for both their input UI and
+their query behavior. Fields that do not opt in receive the default text
+capability. Choice, boolean, date, and relationship fields implement
+`ProvidesFilterCapability` to declare a more specific capability. Discovery is
+outside the `Field` inheritance method namespace, so existing package fields may
+keep unrelated legacy methods without signature collisions. The table does not
+inspect the field class name.
+
+Table subclasses may continue overriding Aura's former protected query-filter
+helpers during the compatibility window. Those helpers are deprecated adapters;
+new field behavior belongs in `ProvidesFilterCapability` and
+`AppliesFieldFilter`. The default adapters still resolve the server-owned field
+capability and apply its query handler once.
+
+```php
+use Aura\Base\Contracts\ProvidesFilterCapability;
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Resource;
+
+class RatingField extends Field implements ProvidesFilterCapability
+{
+    public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::scalarOption(
+            operators: $this->filterOptions(),
+            values: $this->getFilterValues($model, $field),
+        );
+    }
+}
+```
+
+The available factories are:
+
+- `text($operators)` for scalar text or number input.
+- `scalarOption($operators, $values)` for a fixed set stored in a scalar column.
+- `option($operators, $values, ..., $multiple)` for typed values whose storage
+  representation is owned by the supplied handler, including JSON lists.
+- `boolean($operators)` for a typed yes/no value.
+- `date($operators, $storageFormat)`, `datetime($operators, $storageFormat)`,
+  and `dateRange($operators, $storageFormat)` for browser ISO input backed by a
+  fixed-width stored format.
+- `relationship(...)` for Aura's `post_relations` pivot.
+- `custom(...)` for a package-owned Blade component and query handler.
+
+Option capabilities accept both associative `value => label` maps and
+list-style rows such as `['key' => 'open', 'value' => 'Open']`. Aura converts
+them to canonical `value`, `wire_value`, and `label` rows. Empty or malformed
+options are omitted. Capability declarations accept arrays, traversable values, or null;
+other option containers are rejected.
+The original scalar value is restored before the query is applied, so an
+integer option remains an integer even though HTML submits a string. Legacy
+wire values remain unchanged when unambiguous. JSON-backed multiple-value
+fields can use stable typed wire values for collisions such as `false`, `0`,
+and `'0'`. `scalarOption()` rejects option sets whose values have the same
+form/database string representation because a scalar query cannot distinguish
+the stored identities. Built-in `Select`, `Status`, and `Radio` filters use this
+opt-in capability. The check happens when building the filter capability; it
+does not alter field write hooks or persistence. Use unique scalar keys or a
+JSON-backed multiple-value field instead. `Select::getFilterValues()` remains
+available, and `Status`, `Radio`, and `Checkbox` expose the same method through
+this shared path.
+
+Text capabilities accept only scalar values for scalar operators. Structured
+values fail closed before the query handler runs. `in` and `not_in` accept a
+flat scalar list or a comma-separated scalar string; associative, nested, or
+object values fail closed.
+
+Date and datetime controls submit timezone-free ISO values. Datetimes are local
+wall times in `config('app.timezone')`; nonexistent DST-gap times and ambiguous
+DST-fold times fail closed. Meta-backed fields retain the declared fixed-width
+`format`, including the built-in `d.m.Y` and `d.m.Y H:i` defaults, and Aura
+constructs a portable chronological expression for that text. Text storage
+formats must be fixed-width combinations of `Y`, `m`, `d`, `H`, `i`, and
+optional `s`; an unsupported format fails closed.
+
+Native custom-table `date` columns compare canonical `Y-m-d` values directly.
+PostgreSQL `timestamp without time zone` and SQLite timestamp text compare the
+canonical application-local wall time directly. MySQL/MariaDB `TIMESTAMP`
+comparisons use the column's Unix timestamp and an application-timezone instant,
+so changing the MySQL session timezone cannot change the result. Values outside
+MySQL's portable `1970-01-01 00:00:01 UTC` through
+`2038-01-19 03:14:07 UTC` range fail closed. Native empty operators use null
+semantics only.
+
+Filtering does not transform values during writes. Resources must already store
+values in the representation required by their native column and driver, using
+their existing model casts or `set()` hooks. Persistence normalization and data
+migration remain the separate CORE-10 responsibility.
+
+JSON-backed multiple values can opt into exact, portable membership queries:
+
+```php
+use Aura\Base\Fields\Filters\JsonFieldFilter;
+
+return FilterCapability::option(
+    operators: $this->filterOptions(),
+    values: $this->getFilterValues($model, $field),
+    queryHandler: JsonFieldFilter::class,
+    multiple: true,
+);
+```
+
+This uses the database JSON operators rather than substring `LIKE` matching,
+so value `1` does not match `10`.
+
+For a completely custom filter, register the package's anonymous Blade
+component in its service provider and declare a handler implementing
+`AppliesFieldFilter`:
+
+```php
+use Aura\Base\Contracts\AppliesFieldFilter;
+use Aura\Base\Contracts\ProvidesFilterCapability;
+use Aura\Base\Fields\Filters\FilterCapability;
+use Aura\Base\Resource;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Blade;
+
+Blade::anonymousComponentPath(__DIR__.'/../resources/views/components', 'acme');
+
+class PriorityField extends Field implements ProvidesFilterCapability
+{
+    public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
+    {
+        return FilterCapability::custom(
+            component: 'acme::priority-filter',
+            operators: ['is' => __('is')],
+            queryHandler: PriorityFilter::class,
+            values: ['urgent' => __('Urgent'), 'routine' => __('Routine')],
+        );
+    }
+}
+
+final class PriorityFilter implements AppliesFieldFilter
+{
+    public function apply(
+        Builder $query,
+        Resource $resource,
+        array $field,
+        array $filter,
+        FilterCapability $capability,
+    ): void {
+        $query->where(
+            $query->getModel()->qualifyColumn('priority'),
+            $filter['value'],
+        );
+    }
+}
+```
+
+The component receives `model`, `field`, `capability`, and `size` props. Query
+handlers receive only the server-resolved field and capability; client-provided
+field classes, SQL columns, and handler names are never executed. Unsupported
+operators and invalid fixed-option values fail closed. Handler classes are
+validated when the capability is declared and must implement
+`AppliesFieldFilter`. A null or blank value simply leaves an incomplete filter
+inactive, except for explicit empty/not-empty operators.
+
 ### Helper Methods
 
 #### `isDisabled($model, $field)`
