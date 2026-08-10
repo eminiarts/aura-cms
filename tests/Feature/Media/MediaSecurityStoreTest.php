@@ -108,6 +108,30 @@ function verifyCore20NativeSecurityDatabase(array $connectionConfig): void
 
         expect($security->put('native-relation', 'verified', 60))->toBeTrue()
             ->and($security->get('native-relation'))->toBe('verified');
+
+        if (in_array($connectionConfig['driver'] ?? null, ['mysql', 'mariadb'], true)) {
+            $schema->drop('core20_security_cache');
+            $schema->create('core20_security_cache', function ($table) {
+                $table->string('key')->primary();
+                $table->mediumText('value');
+                $table->integer('expiration');
+            });
+
+            expect(fn () => $security->get('native-relation'))
+                ->toThrow(InvalidArgumentException::class, 'object-free reads');
+
+            app()->forgetInstance(MediaSecurityStore::class);
+            $security = app(MediaSecurityStore::class);
+            $schema->drop('core20_security_locks');
+            $schema->create('core20_security_locks', function ($table) {
+                $table->string('key')->primary();
+                $table->string('owner');
+                $table->integer('expiration');
+            });
+
+            expect(fn () => $security->lock('native-relation-lock', 10)->get())
+                ->toThrow(InvalidArgumentException::class, 'object-free reads');
+        }
     } finally {
         app()->forgetInstance(MediaSecurityStore::class);
         app('cache')->forgetDriver('aura-media-security');
@@ -507,6 +531,35 @@ test('security cache rejects a PDO retarget after the last boundary identity que
         ->and($identityQueries)->toBe(2);
 });
 
+test('security cache operation remains bound when a final validation listener creates a temporary shadow', function () {
+    $security = app(MediaSecurityStore::class);
+    $connection = app('db')->connection('media-security-testing');
+    $security->put('final-listener-shadow', 'trusted', 60);
+    $shadowCreated = false;
+
+    app('events')->listen(QueryExecuted::class, function (QueryExecuted $event) use ($connection, &$shadowCreated): void {
+        if ($shadowCreated
+            || $event->connection !== $connection
+            || ! str_contains($event->sql, 'main.sqlite_schema')
+            || ($event->bindings[0] ?? null) !== 'media_security_cache_locks') {
+            return;
+        }
+
+        $shadowCreated = true;
+        $pdo = $connection->getRawPdo();
+        $pdo->exec('CREATE TEMP TABLE media_security_cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expiration INTEGER NOT NULL)');
+        $statement = $pdo->prepare('INSERT INTO media_security_cache (key, value, expiration) VALUES (?, ?, ?)');
+        $statement->execute(['aura-cache-final-listener-shadow', serialize('rogue'), time() + 60]);
+    });
+
+    try {
+        expect($security->get('final-listener-shadow'))->toBe('trusted')
+            ->and($shadowCreated)->toBeTrue();
+    } finally {
+        $connection->getRawPdo()->exec('DROP TABLE IF EXISTS temp.media_security_cache');
+    }
+});
+
 test('security cache rejects a default store connection swapped during alias validation', function () {
     config()->set('cache.default', 'database-default-retarget');
     config()->set('cache.stores.database-default-retarget', [
@@ -758,6 +811,8 @@ test('media security configuration and docs publish the database-only boundary',
         ->toContain('non-default Laravel database store')
         ->toContain('database children')
         ->toContain('unqualified lowercase')
+        ->toContain('schema-qualified')
+        ->toContain('dictionary table IDs')
         ->toContain('views, temporary tables, and synonyms fail closed')
         ->toContain('Multi-node deployments need one shared network database')
         ->and($componentDocs)
@@ -765,6 +820,8 @@ test('media security configuration and docs publish the database-only boundary',
         ->toContain('connection table prefixes')
         ->toContain('same SQLite inode')
         ->toContain('validated write PDO instances')
+        ->toContain('schema-qualified')
+        ->toContain('dictionary table IDs')
         ->toContain('views, temporary tables, and synonyms fail closed')
         ->toContain('node-local SQLite')
         ->not->toContain('one shared file, database, Redis')
@@ -773,6 +830,8 @@ test('media security configuration and docs publish the database-only boundary',
         ->toContain('connection table prefixes')
         ->toContain('same SQLite inode')
         ->toContain('validated write PDO instances')
+        ->toContain('schema-qualified')
+        ->toContain('dictionary table IDs')
         ->toContain('node-local SQLite')
         ->not->toContain('shared file, database, Redis');
 });

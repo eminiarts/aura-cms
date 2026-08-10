@@ -43,6 +43,8 @@ class MediaSecurityStore implements LockProvider
 
     private readonly PDO $dataPdo;
 
+    private readonly string $dataQualifiedTable;
+
     private readonly string $dataTableIdentity;
 
     private readonly string $lockDatabaseIdentity;
@@ -50,6 +52,8 @@ class MediaSecurityStore implements LockProvider
     private readonly Connection $lockOperationConnection;
 
     private readonly PDO $lockPdo;
+
+    private readonly string $lockQualifiedTable;
 
     private readonly string $lockTableIdentity;
 
@@ -137,6 +141,20 @@ class MediaSecurityStore implements LockProvider
         );
         $this->dataPdo = $this->stableWritePdo($dataConnection);
         $this->lockPdo = $this->stableWritePdo($lockConnection);
+        $dataTableBoundary = $this->tableBoundary(
+            $dataConnection,
+            $this->dataDatabaseIdentity,
+            (string) $this->property($store, 'table'),
+        );
+        $lockTableBoundary = $this->tableBoundary(
+            $lockConnection,
+            $this->lockDatabaseIdentity,
+            (string) $this->property($store, 'lockTable'),
+        );
+        $this->dataTableIdentity = $dataTableBoundary['identity'];
+        $this->dataQualifiedTable = $dataTableBoundary['qualified_table'];
+        $this->lockTableIdentity = $lockTableBoundary['identity'];
+        $this->lockQualifiedTable = $lockTableBoundary['qualified_table'];
         $this->dataOperationConnection = $this->pinnedConnection($dataConnection, $this->dataPdo);
         $this->lockOperationConnection = $lockConnection === $dataConnection
             ? $this->dataOperationConnection
@@ -144,17 +162,9 @@ class MediaSecurityStore implements LockProvider
         $this->operationStore = clone $store;
         $this->operationStore->setConnection($this->dataOperationConnection);
         $this->operationStore->setLockConnection($this->lockOperationConnection);
+        $this->setProperty($this->operationStore, 'table', $this->dataQualifiedTable);
+        $this->setProperty($this->operationStore, 'lockTable', $this->lockQualifiedTable);
         $this->operationRepository = new CacheRepository($this->operationStore);
-        $this->dataTableIdentity = $this->tableIdentity(
-            $dataConnection,
-            $this->dataDatabaseIdentity,
-            (string) $this->property($store, 'table'),
-        );
-        $this->lockTableIdentity = $this->tableIdentity(
-            $lockConnection,
-            $this->lockDatabaseIdentity,
-            (string) $this->property($store, 'lockTable'),
-        );
         $this->cache = $this;
         $this->locks = $this;
         $this->assertSafeBoundary();
@@ -233,6 +243,10 @@ class MediaSecurityStore implements LockProvider
             || $this->stableWritePdo($lockConnection) !== $this->lockPdo
             || $this->operationStore->getConnection() !== $this->dataOperationConnection
             || $this->operationStore->getLockConnection() !== $this->lockOperationConnection
+            || $this->property($this->operationStore, 'table') !== $this->dataQualifiedTable
+            || $this->property($this->operationStore, 'lockTable') !== $this->lockQualifiedTable
+            || $this->dataOperationConnection->getTablePrefix() !== ''
+            || $this->lockOperationConnection->getTablePrefix() !== ''
             || $this->stableWritePdo($this->dataOperationConnection) !== $this->dataPdo
             || $this->stableWritePdo($this->lockOperationConnection) !== $this->lockPdo) {
             $this->rejectConfigurationMutation();
@@ -571,15 +585,20 @@ class MediaSecurityStore implements LockProvider
         return false;
     }
 
-    private function physicalRelationIdentity(Connection $connection, string $table): string
+    /** @return array{identity: string, qualified_table: string} */
+    private function physicalRelationBoundary(Connection $connection, string $table): array
     {
         $row = match (get_class($connection)) {
             SQLiteConnection::class => $connection->selectFromWriteConnection(
                 'SELECT name AS relation_name, type AS relation_type, CAST(rootpage AS TEXT) AS relation_id FROM main.sqlite_schema WHERE name = ? LIMIT 1',
                 [$table],
             )[0] ?? null,
-            MariaDbConnection::class, MySqlConnection::class => $connection->selectFromWriteConnection(
-                'SELECT TABLE_SCHEMA AS table_schema, TABLE_NAME AS relation_name, TABLE_TYPE AS relation_type FROM information_schema.tables WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1',
+            MariaDbConnection::class => $connection->selectFromWriteConnection(
+                "SELECT t.TABLE_SCHEMA AS table_schema, t.TABLE_NAME AS relation_name, t.TABLE_TYPE AS relation_type, CAST(i.TABLE_ID AS CHAR) AS relation_id FROM information_schema.tables t INNER JOIN information_schema.INNODB_SYS_TABLES i ON i.NAME = CONCAT(t.TABLE_SCHEMA, '/', t.TABLE_NAME) WHERE t.TABLE_SCHEMA = DATABASE() AND t.TABLE_NAME = ? LIMIT 1",
+                [$table],
+            )[0] ?? null,
+            MySqlConnection::class => $connection->selectFromWriteConnection(
+                "SELECT t.TABLE_SCHEMA AS table_schema, t.TABLE_NAME AS relation_name, t.TABLE_TYPE AS relation_type, CAST(i.TABLE_ID AS CHAR) AS relation_id FROM information_schema.tables t INNER JOIN information_schema.INNODB_TABLES i ON i.NAME = CONCAT(t.TABLE_SCHEMA, '/', t.TABLE_NAME) WHERE t.TABLE_SCHEMA = DATABASE() AND t.TABLE_NAME = ? LIMIT 1",
                 [$table],
             )[0] ?? null,
             PostgresConnection::class => $connection->selectFromWriteConnection(
@@ -615,7 +634,9 @@ class MediaSecurityStore implements LockProvider
         $schema = is_object($row) ? ($row->table_schema ?? 'main') : null;
         $relationId = is_object($row) ? ($row->relation_id ?? $relationName) : null;
 
-        if (! is_string($schema) || ! is_string($relationId)) {
+        if (! is_string($schema)
+            || preg_match('/\A[a-z][a-z0-9_]*\z/D', $schema) !== 1
+            || ! is_string($relationId)) {
             $this->rejectConfigurationMutation();
         }
 
@@ -627,12 +648,16 @@ class MediaSecurityStore implements LockProvider
             $this->rejectConfigurationMutation();
         }
 
-        return $schema."\0".$relationId;
+        return [
+            'identity' => $schema."\0".$relationId,
+            'qualified_table' => $schema.'.'.$relationName,
+        ];
     }
 
     private function pinnedConnection(Connection $connection, PDO $pdo): Connection
     {
         $pinned = clone $connection;
+        $pinned->setTablePrefix('');
         $pinned->setPdo($pdo);
         $pinned->setReadPdo($pdo);
 
@@ -662,6 +687,18 @@ class MediaSecurityStore implements LockProvider
         throw new InvalidArgumentException(
             'Aura media security cache configuration changed or no longer guarantees object-free reads.',
         );
+    }
+
+    private function setProperty(object $object, string $property, mixed $value): void
+    {
+        try {
+            (new ReflectionProperty($object, $property))->setValue($object, $value);
+        } catch (Throwable $exception) {
+            throw new InvalidArgumentException(
+                'Aura media security could not bind the validated cache relation.',
+                previous: $exception,
+            );
+        }
     }
 
     private function sqliteIdentity(SQLiteConnection $connection): string
@@ -721,7 +758,8 @@ class MediaSecurityStore implements LockProvider
         return $storeConfig;
     }
 
-    private function tableIdentity(Connection $connection, string $databaseIdentity, string $table): string
+    /** @return array{identity: string, qualified_table: string} */
+    private function tableBoundary(Connection $connection, string $databaseIdentity, string $table): array
     {
         $pdo = $this->stableWritePdo($connection);
         $physicalTable = $connection->getTablePrefix().$table;
@@ -732,12 +770,20 @@ class MediaSecurityStore implements LockProvider
             );
         }
 
-        $relationIdentity = $this->physicalRelationIdentity($connection, $physicalTable);
+        $relationBoundary = $this->physicalRelationBoundary($connection, $physicalTable);
 
         if ($this->stableWritePdo($connection) !== $pdo) {
             $this->rejectConfigurationMutation();
         }
 
-        return hash('sha256', $databaseIdentity."\0".$relationIdentity);
+        return [
+            'identity' => hash('sha256', $databaseIdentity."\0".$relationBoundary['identity']),
+            'qualified_table' => $relationBoundary['qualified_table'],
+        ];
+    }
+
+    private function tableIdentity(Connection $connection, string $databaseIdentity, string $table): string
+    {
+        return $this->tableBoundary($connection, $databaseIdentity, $table)['identity'];
     }
 }

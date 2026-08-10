@@ -234,8 +234,11 @@ return [
             // of a default failover store, custom defaults that resolve to a database,
             // and aliases created by connection prefixes or alternate paths to the
             // same database. Use unqualified lowercase base-table identifiers;
-            // views, temporary tables, and synonyms fail closed. Also set Laravel's global
-            // cache.serializable_classes option to false. File, Redis, DynamoDB,
+            // Aura binds operations to the validated schema-qualified tables.
+            // MySQL and MariaDB tables must be InnoDB so their dictionary table IDs
+            // can detect same-name replacement. All views, temporary tables, and synonyms fail closed.
+            // Also set Laravel's global cache.serializable_classes option
+            // to false. File, Redis, DynamoDB,
             // Memcached, failover, process-local, custom, and proxied stores fail
             // closed. Multi-node deployments need one shared network database.
             'cache_store' => null,
