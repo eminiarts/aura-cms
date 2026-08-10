@@ -312,16 +312,19 @@ final class TableMutationDispatcher
             $selected,
             $validatedParameters,
         ): mixed {
-            $modelDescriptor->assertMatches($scope);
-            $records = $this->withCurrentActorTeamContext(function () use (
+            return $this->withCurrentActorTeamContext(function () use (
+                $action,
                 $descriptor,
+                $hasParameters,
                 $markLockAcquired,
                 $modelDescriptor,
                 $scope,
                 $selectAll,
                 $selectAllExclusions,
                 $selected,
-            ): Collection {
+                $validatedParameters,
+            ): mixed {
+                $modelDescriptor->assertMatches($scope);
                 $records = $this->resolveExactSelection(
                     $scope,
                     $modelDescriptor,
@@ -333,42 +336,40 @@ final class TableMutationDispatcher
                 );
 
                 $this->authorizeBulkRecords($records, $modelDescriptor, $descriptor['ability']);
+                $receiver = $records->first();
 
-                return $records;
+                if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
+                    abort(422, 'Bulk mutations require an Aura table resource.');
+                }
+
+                $this->mutationMethod($receiver, $action, $descriptor['mode'], $hasParameters);
+
+                $ids = $records->map(fn (Model $record): mixed => $record->getKey())->all();
+
+                if ($descriptor['mode'] === self::BULK_MODE_COLLECTION) {
+                    $results = [];
+
+                    foreach (array_chunk($ids, $this->recordChunkSize()) as $idChunk) {
+                        $results[] = $hasParameters
+                            ? $receiver->{$action}($idChunk, $validatedParameters)
+                            : $receiver->{$action}($idChunk);
+                    }
+
+                    return $this->combineCollectionResults($results);
+                }
+
+                $result = null;
+
+                foreach ($records->chunk($this->recordChunkSize()) as $recordChunk) {
+                    foreach ($recordChunk as $record) {
+                        $result = $hasParameters
+                            ? $record->{$action}($validatedParameters)
+                            : $record->{$action}();
+                    }
+                }
+
+                return $result;
             });
-            $receiver = $records->first();
-
-            if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
-                abort(422, 'Bulk mutations require an Aura table resource.');
-            }
-
-            $this->mutationMethod($receiver, $action, $descriptor['mode'], $hasParameters);
-
-            $ids = $records->map(fn (Model $record): mixed => $record->getKey())->all();
-
-            if ($descriptor['mode'] === self::BULK_MODE_COLLECTION) {
-                $results = [];
-
-                foreach (array_chunk($ids, $this->recordChunkSize()) as $idChunk) {
-                    $results[] = $hasParameters
-                        ? $receiver->{$action}($idChunk, $validatedParameters)
-                        : $receiver->{$action}($idChunk);
-                }
-
-                return $this->combineCollectionResults($results);
-            }
-
-            $result = null;
-
-            foreach ($records->chunk($this->recordChunkSize()) as $recordChunk) {
-                foreach ($recordChunk as $record) {
-                    $result = $hasParameters
-                        ? $record->{$action}($validatedParameters)
-                        : $record->{$action}();
-                }
-            }
-
-            return $result;
         });
     }
 

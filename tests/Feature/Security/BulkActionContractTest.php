@@ -129,13 +129,30 @@ class Core06BulkResource extends Resource
             'label' => 'Small download',
             'method' => 'collection',
         ],
+        'throwingCollection' => [
+            'ability' => 'update',
+            'label' => 'Throwing collection',
+            'method' => 'collection',
+        ],
     ];
+
+    /** @var list<int|string|null> */
+    public static array $collectionHandlerTeamContexts = [];
+
+    /** @var list<list<int|string>> */
+    public static array $collectionHandlerVisibleTeamIds = [];
 
     /** @var list<list<int|string>> */
     public static array $downloadChunks = [];
 
     /** @var list<int|string|null> */
     public static array $downloadTeamContexts = [];
+
+    /** @var list<int|string|null> */
+    public static array $recordHandlerTeamContexts = [];
+
+    /** @var list<list<int|string>> */
+    public static array $recordHandlerVisibleTeamIds = [];
 
     public static $singularName = 'Core06 bulk resource';
 
@@ -145,6 +162,10 @@ class Core06BulkResource extends Resource
 
     public function assignOwner(array $parameters): void
     {
+        self::$recordHandlerTeamContexts[] = TeamScope::currentContextTeamId($this->getConnection());
+        self::$recordHandlerVisibleTeamIds[] = config('aura.teams')
+            ? Team::query()->pluck('id')->all()
+            : [];
         $this->content = get_debug_type($parameters['owner_id']).':'.$parameters['owner_id'];
         $this->save();
     }
@@ -208,6 +229,11 @@ class Core06BulkResource extends Resource
 
     public function smallDownload(array $ids): StreamedResponse
     {
+        self::$collectionHandlerTeamContexts[] = TeamScope::currentContextTeamId($this->getConnection());
+        self::$collectionHandlerVisibleTeamIds[] = config('aura.teams')
+            ? Team::query()->pluck('id')->all()
+            : [];
+
         return response()->streamDownload(
             static fn () => print implode("\n", $ids)."\n",
             'small.txt',
@@ -226,6 +252,13 @@ class Core06BulkResource extends Resource
             ->orderBy($this->qualifyColumn('title'), 'desc');
     }
 
+    public function throwingCollection(array $ids): void
+    {
+        self::$collectionHandlerTeamContexts[] = TeamScope::currentContextTeamId($this->getConnection());
+
+        throw new RuntimeException('Expected bulk handler failure.');
+    }
+
     public function untypedDownload($ids): string
     {
         return implode(',', $ids);
@@ -236,6 +269,11 @@ class Core06BulkResourcePolicy
 {
     /** @var list<int|string|null> */
     public static array $viewTeamContexts = [];
+
+    public function update(User $user, Core06BulkResource $resource): bool
+    {
+        return $user->exists && $resource->exists;
+    }
 
     public function view(User $user, Core06BulkResource $resource): bool
     {
@@ -250,8 +288,12 @@ beforeEach(function () {
     Aura::registerResources([Core06BulkResource::class]);
     Aura::setModel(new Core06BulkResource);
     Cache::clear();
+    Core06BulkResource::$collectionHandlerTeamContexts = [];
+    Core06BulkResource::$collectionHandlerVisibleTeamIds = [];
     Core06BulkResource::$downloadChunks = [];
     Core06BulkResource::$downloadTeamContexts = [];
+    Core06BulkResource::$recordHandlerTeamContexts = [];
+    Core06BulkResource::$recordHandlerVisibleTeamIds = [];
     Core06BulkResourcePolicy::$viewTeamContexts = [];
 
     $this->actingAs(createSuperAdmin());
@@ -551,6 +593,53 @@ test('declared bulk parameters are validated, typed, and passed to a record acti
         ->assertHasNoErrors();
 
     expect($resource->fresh()->content)->toBe('int:42');
+});
+
+test('record and collection bulk handlers retain strict team visibility', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team context is only applicable when teams are enabled.');
+    }
+
+    $actor = createAdmin();
+    $this->actingAs($actor);
+    Gate::policy(Core06BulkResource::class, Core06BulkResourcePolicy::class);
+    $foreignTeam = foreignTeam();
+    $resource = Core06BulkResource::create(['title' => 'Context-bound bulk handler']);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core06BulkResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('bulkAction', 'assignOwner', ['owner_id' => 42])
+        ->assertHasNoErrors();
+
+    livewire(Table::class, ['query' => null, 'model' => new Core06BulkResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('bulkCollectionAction', 'smallDownload')
+        ->assertFileDownloaded('small.txt');
+
+    expect(Core06BulkResource::$recordHandlerTeamContexts)->toBe([$actor->current_team_id])
+        ->and(Core06BulkResource::$recordHandlerVisibleTeamIds)->toBe([[$actor->current_team_id]])
+        ->and(Core06BulkResource::$recordHandlerVisibleTeamIds)->not->toContain([$foreignTeam->getKey()])
+        ->and(Core06BulkResource::$collectionHandlerTeamContexts)->toBe([$actor->current_team_id])
+        ->and(Core06BulkResource::$collectionHandlerVisibleTeamIds)->toBe([[$actor->current_team_id]])
+        ->and(Core06BulkResource::$collectionHandlerVisibleTeamIds)->not->toContain([$foreignTeam->getKey()]);
+});
+
+test('bulk handler exceptions restore the previous team context', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team context is only applicable when teams are enabled.');
+    }
+
+    $actor = createAdmin();
+    $this->actingAs($actor);
+    Gate::policy(Core06BulkResource::class, Core06BulkResourcePolicy::class);
+    $resource = Core06BulkResource::create(['title' => 'Throwing bulk handler']);
+
+    expect(fn () => livewire(Table::class, ['query' => null, 'model' => new Core06BulkResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('bulkCollectionAction', 'throwingCollection'))
+        ->toThrow(RuntimeException::class, 'Expected bulk handler failure.')
+        ->and(Core06BulkResource::$collectionHandlerTeamContexts)->toBe([$actor->current_team_id])
+        ->and(TeamScope::currentContextTeamId($actor->getConnection()))->toBeNull();
 });
 
 test('the bulk action menu renders declared parameter inputs without public component state', function () {
