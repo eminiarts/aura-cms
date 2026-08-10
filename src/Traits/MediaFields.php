@@ -169,6 +169,23 @@ trait MediaFields
         return $token;
     }
 
+    public function mediaOwnerTokenForRender(string $slug): ?string
+    {
+        if (! isset($this->model) || ! $this->model instanceof Resource) {
+            return null;
+        }
+
+        if ($this->model->exists) {
+            $modelKey = $this->model->getKey();
+
+            if ($modelKey === null || ! $this->model->newQuery()->whereKey($modelKey)->exists()) {
+                return null;
+            }
+        }
+
+        return $this->mediaOwnerToken($slug);
+    }
+
     public function removeMediaFromField($slug, $id)
     {
         $this->mediaOwnerToken((string) $slug);

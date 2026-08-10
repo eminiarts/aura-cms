@@ -220,6 +220,17 @@ test('media owner tokens can only be issued for an actual media field on the own
         ->toThrow(InvalidArgumentException::class);
 });
 
+test('media field rendering omits an owner token for a placeholder persisted model', function () {
+    $owner = Livewire::test(Core20ProductionMediaOwnerHarness::class);
+    $placeholder = new Post;
+    $placeholder->setAttribute($placeholder->getKeyName(), 999999);
+    $placeholder->exists = true;
+    $owner->instance()->model = $placeholder;
+
+    expect($owner->instance()->mediaOwnerTokenForRender('image'))->toBeNull()
+        ->and($owner->get('mediaOwnerTokenDigests'))->toBe([]);
+});
+
 test('simultaneous forms with the same slug route a selection only to its token owner', function () {
     $firstOwner = Livewire::test(Core20MediaOwnerHarness::class);
     $secondOwner = Livewire::test(Core20MediaOwnerHarness::class);

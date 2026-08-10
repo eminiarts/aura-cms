@@ -29,6 +29,9 @@ class MediaTable extends Table
     public $field;
 
     #[Locked]
+    public ?string $legacyResource = null;
+
+    #[Locked]
     public $model;
 
     #[Locked]
@@ -39,6 +42,9 @@ class MediaTable extends Table
 
     #[Locked]
     public $query;
+
+    #[Locked]
+    public bool $usesLegacyFieldAuthorization = false;
 
     public function action(array $data, TableMutationDispatcher $mutations): mixed
     {
@@ -256,6 +262,27 @@ class MediaTable extends Table
 
         if (! $this->model instanceof Resource || $attachmentClass !== $this->model::class || $this->query !== null) {
             abort(403);
+        }
+
+        if ($this->usesLegacyFieldAuthorization) {
+            if ($owner->context->action !== 'library'
+                || ! is_string($this->legacyResource)
+                || ! is_array($this->field)
+                || ! is_string($this->field['slug'] ?? null)) {
+                abort(403);
+            }
+
+            $authorized = app(MediaFieldAuthorization::class)->authorizeField(
+                $this->legacyResource,
+                $this->field['slug'],
+                (array) $this->selected,
+            );
+
+            if (($authorized['field']['type'] ?? null) !== ($this->field['type'] ?? null)) {
+                abort(403);
+            }
+
+            return;
         }
 
         if ($owner->context->action === 'library') {

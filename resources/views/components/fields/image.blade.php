@@ -93,6 +93,8 @@
 
         @can('viewAny', config('aura.resources.attachment'))
             @if($selectionIsRenderable)
+            @php($ownerToken = $this->mediaOwnerTokenForRender($field['slug']))
+            @if($ownerToken !== null)
             <livewire:aura::media-uploader
                 :table="false"
                 :field="$field"
@@ -102,9 +104,10 @@
                 :button="true"
                 :model="app('Aura\Base\Resources\Attachment')"
                 :for="get_class($this->model)"
-                :owner-token="$this->mediaOwnerToken($field['slug'])"
+                :owner-token="$ownerToken"
                 :disabled="$field['disabled'] ?? false"
             />
+            @endif
             @endif
         @endcan
 

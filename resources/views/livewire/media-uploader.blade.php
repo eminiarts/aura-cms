@@ -379,7 +379,7 @@
                     </h1>
                 </div>
 
-                <livewire:aura::media-table :model="$model" :field="$field" :owner-token="$ownerToken" :details-component-id="$detailsComponentId" />
+                <livewire:aura::media-table :model="$model" :field="$field" :owner-token="$ownerToken" :details-component-id="$detailsComponentId" :legacy-resource="$resource" :uses-legacy-field-authorization="$usesLegacyAuthorization && $resource !== null && $fieldSlug !== null" />
             </div>
         @endif
     </div>
