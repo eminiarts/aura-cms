@@ -2,10 +2,14 @@
 
 namespace Aura\Base\Services;
 
+use Illuminate\Database\Grammar;
 use Illuminate\Database\MariaDbConnection;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Grammars\MariaDbGrammar;
 use Illuminate\Support\Facades\Schema;
+use PDO;
+use Pdo\Mysql as PdoMySql;
+use ReflectionProperty;
 use RuntimeException;
 
 final class EmbeddedResourceIncarnationSchema
@@ -73,6 +77,20 @@ final class EmbeddedResourceIncarnationSchema
         }
     }
 
+    public function assertReliableConnectionCapability(): void
+    {
+        $connection = Schema::getConnection();
+        $grammar = $connection->getSchemaGrammar();
+
+        if ($connection->getDriverName() === 'mariadb'
+            || $connection->getConfig('driver') === 'mariadb'
+            || $connection instanceof MariaDbConnection
+            || $grammar instanceof MariaDbGrammar
+        ) {
+            $this->reliableMariaDbUuidType();
+        }
+    }
+
     public function hasColumn(string $column, bool $allowHistoricalUpgradeDefaults = false): bool
     {
         if (! Schema::hasColumn(EmbeddedResourceIncarnationStore::TABLE, $column)) {
@@ -82,6 +100,27 @@ final class EmbeddedResourceIncarnationSchema
         $this->assertColumns([$column], $allowHistoricalUpgradeDefaults);
 
         return true;
+    }
+
+    private function compiledMariaDbUuidType(MariaDbConnection $connection): string
+    {
+        $blueprint = new Blueprint($connection, 'aura_embedded_resource_incarnation_schema_probe');
+        $blueprint->create();
+        $blueprint->uuid('incarnation');
+        $statements = $blueprint->toSql();
+        $matchCount = preg_match_all(
+            '/`incarnation`\s+(uuid|char\(36\))(?=\s|,|\))/i',
+            implode(' ', $statements),
+            $matches,
+        );
+
+        if ($matchCount !== 1 || ! isset($matches[1][0])) {
+            throw new RuntimeException(
+                'Unable to determine the expected MariaDB UUID storage from the configured schema grammar.',
+            );
+        }
+
+        return strtolower($matches[1][0]);
     }
 
     /**
@@ -162,36 +201,12 @@ final class EmbeddedResourceIncarnationSchema
 
     private function expectedMariaDbUuidType(): string
     {
-        $connection = Schema::getConnection();
-        $grammar = $connection->getSchemaGrammar();
-        $serverVersion = $connection->getServerVersion();
+        return $this->reliableMariaDbUuidType();
+    }
 
-        if (! $connection instanceof MariaDbConnection
-            || ! $grammar instanceof MariaDbGrammar
-            || preg_match('/\A\d+\.\d+\.\d+\z/D', $serverVersion) !== 1
-        ) {
-            throw new RuntimeException(
-                'Unable to determine the expected MariaDB UUID storage from reliable connection metadata.',
-            );
-        }
-
-        $blueprint = new Blueprint($connection, 'aura_embedded_resource_incarnation_schema_probe');
-        $blueprint->create();
-        $blueprint->uuid('incarnation');
-        $statements = $blueprint->toSql();
-        $matchCount = preg_match_all(
-            '/`incarnation`\s+(uuid|char\(36\))(?=\s|,|\))/i',
-            implode(' ', $statements),
-            $matches,
-        );
-
-        if ($matchCount !== 1 || ! isset($matches[1][0])) {
-            throw new RuntimeException(
-                'Unable to determine the expected MariaDB UUID storage from the active schema grammar.',
-            );
-        }
-
-        return strtolower($matches[1][0]);
+    private function grammarConnection(MariaDbGrammar $grammar): mixed
+    {
+        return (new ReflectionProperty(Grammar::class, 'connection'))->getValue($grammar);
     }
 
     /**
@@ -257,5 +272,72 @@ final class EmbeddedResourceIncarnationSchema
         }
 
         return $type;
+    }
+
+    private function parseMariaDbServerVersion(mixed $metadata): ?string
+    {
+        if (! is_string($metadata)
+            || preg_match(
+                '/\A(?:5\.5\.5-)?(?<version>\d+\.\d+\.\d+)-MariaDB(?:[-+][0-9A-Za-z._~]+)*\z/D',
+                $metadata,
+                $matches,
+            ) !== 1
+        ) {
+            return null;
+        }
+
+        return $matches['version'];
+    }
+
+    private function reliableMariaDbUuidType(): string
+    {
+        $connection = Schema::getConnection();
+        $grammar = $connection->getSchemaGrammar();
+
+        if ($connection::class !== MariaDbConnection::class
+            || $connection->getConfig('driver') !== 'mariadb'
+            || $grammar::class !== MariaDbGrammar::class
+            || $this->grammarConnection($grammar) !== $connection
+        ) {
+            throw new RuntimeException(
+                'Unable to determine the expected MariaDB UUID storage from trusted framework connection metadata.',
+            );
+        }
+
+        $serverVersion = $this->verifiedMariaDbServerVersion($connection);
+        $compiledUuidType = $this->compiledMariaDbUuidType($connection);
+        $expectedUuidType = version_compare($serverVersion, '10.7.0', '<') ? 'char(36)' : 'uuid';
+
+        if ($compiledUuidType !== $expectedUuidType) {
+            throw new RuntimeException(
+                'The configured MariaDB schema grammar does not match the verified server UUID capability.',
+            );
+        }
+
+        return $expectedUuidType;
+    }
+
+    private function verifiedMariaDbServerVersion(MariaDbConnection $connection): string
+    {
+        $pdo = $connection->getPdo();
+        $attributeVersion = $this->parseMariaDbServerVersion($pdo->getAttribute(PDO::ATTR_SERVER_VERSION));
+        $statement = $pdo->query('select version()');
+        $queryVersion = $statement === false
+            ? null
+            : $this->parseMariaDbServerVersion($statement->fetchColumn());
+        $frameworkVersion = $connection->getServerVersion();
+
+        if (! in_array($pdo::class, [PDO::class, PdoMySql::class], true)
+            || $attributeVersion === null
+            || $queryVersion === null
+            || $queryVersion !== $attributeVersion
+            || $frameworkVersion !== $attributeVersion
+        ) {
+            throw new RuntimeException(
+                'Unable to determine the expected MariaDB UUID storage from independently verified server metadata.',
+            );
+        }
+
+        return $attributeVersion;
     }
 }

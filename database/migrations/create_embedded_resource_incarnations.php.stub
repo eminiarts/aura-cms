@@ -38,6 +38,8 @@ return new class extends Migration
 
     public function up(): void
     {
+        app(EmbeddedResourceIncarnationSchema::class)->assertReliableConnectionCapability();
+
         $ledger = app(MigrationOwnershipLedger::class);
         $ownership = $ledger->readCreate();
 

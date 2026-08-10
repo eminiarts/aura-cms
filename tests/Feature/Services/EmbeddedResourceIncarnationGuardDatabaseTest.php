@@ -7,9 +7,12 @@ use Aura\Base\Services\EmbeddedResourceIncarnationStore;
 use Aura\Base\Services\MigrationOwnershipLedger;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Database\MariaDbConnection;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Schema\Grammars\MariaDbGrammar;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Fluent;
 
 class Core12ExternalGuardResource extends BaseResource
 {
@@ -79,20 +82,7 @@ function core12ExternalGuardConnection(string $driver): array
 
 function core12ExpectedMariaDbUuidType(Connection $connection): string
 {
-    $blueprint = new Blueprint($connection, 'aura_core12_uuid_grammar_probe');
-    $blueprint->create();
-    $blueprint->uuid('incarnation');
-    $matchCount = preg_match_all(
-        '/`incarnation`\s+(uuid|char\(36\))(?=\s|,|\))/i',
-        implode(' ', $blueprint->toSql()),
-        $matches,
-    );
-
-    if ($matchCount !== 1 || ! isset($matches[1][0])) {
-        throw new RuntimeException('Unable to determine the MariaDB UUID type emitted by the test connection grammar.');
-    }
-
-    return strtolower($matches[1][0]);
+    return version_compare($connection->getServerVersion(), '10.7.0', '<') ? 'char(36)' : 'uuid';
 }
 
 /**
@@ -662,7 +652,7 @@ test('portable migration ownership stays outside runtime rows and validates orde
     }
 })->with(['sqlite', 'mysql', 'mariadb', 'pgsql'])->group('database-guards');
 
-test('mariadb stale create requires the UUID storage emitted by the active grammar without mutating rejected schemas', function (): void {
+test('mariadb stale create requires canonical UUID storage and rejects hostile grammar rebindings without mutation', function (): void {
     if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
         $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with a dedicated MariaDB test database.');
     }
@@ -733,7 +723,7 @@ test('mariadb stale create requires the UUID storage emitted by the active gramm
             ->value('ownership');
         $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
 
-        expect(fn () => $migration->up())->toThrow(RuntimeException::class, 'unexpected definition')
+        expect(fn () => $migration->up())->toThrow(RuntimeException::class)
             ->and($schema->getColumns(EmbeddedResourceIncarnationStore::TABLE))->toBe($columns)
             ->and($schema->getIndexes(EmbeddedResourceIncarnationStore::TABLE))->toBe($indexes)
             ->and($connection->table(EmbeddedResourceIncarnationStore::TABLE)
@@ -781,6 +771,47 @@ test('mariadb stale create requires the UUID storage emitted by the active gramm
         $schema->drop(EmbeddedResourceIncarnationStore::TABLE);
         $connection->table(MigrationOwnershipLedger::TABLE)->delete();
         app()->forgetInstance(MigrationOwnershipLedger::class);
+        $createTable(36);
+        $insertRow('00000000-0000-4000-8000-000000000092');
+        $claimCreate(str_repeat('f', 32));
+        $originalGrammar = $connection->getSchemaGrammar();
+        $connection->setSchemaGrammar(new class($connection) extends MariaDbGrammar
+        {
+            protected function typeUuid(Fluent $column): string
+            {
+                return 'char(36)';
+            }
+        });
+
+        try {
+            $assertRejectedWithoutMutation();
+        } finally {
+            $connection->setSchemaGrammar($originalGrammar);
+        }
+
+        $schema->drop(EmbeddedResourceIncarnationStore::TABLE);
+        $connection->table(MigrationOwnershipLedger::TABLE)->delete();
+        app()->forgetInstance(MigrationOwnershipLedger::class);
+        $createTable(36);
+        $insertRow('00000000-0000-4000-8000-000000000093');
+        $claimCreate(str_repeat('b', 32));
+        $reboundConnectionName = 'core12_mariadb_uuid_rebound';
+        config(["database.connections.{$reboundConnectionName}" => $configuration]);
+        DB::purge($reboundConnectionName);
+        $reboundConnection = DB::connection($reboundConnectionName);
+        $reboundConnection->getSchemaBuilder();
+        $connection->setSchemaGrammar(new MariaDbGrammar($reboundConnection));
+
+        try {
+            $assertRejectedWithoutMutation();
+        } finally {
+            $connection->setSchemaGrammar($originalGrammar);
+            DB::disconnect($reboundConnectionName);
+        }
+
+        $schema->drop(EmbeddedResourceIncarnationStore::TABLE);
+        $connection->table(MigrationOwnershipLedger::TABLE)->delete();
+        app()->forgetInstance(MigrationOwnershipLedger::class);
         $createTable(35);
         $insertRow(str_repeat('a', 35));
         $claimCreate(str_repeat('e', 32));
@@ -789,6 +820,169 @@ test('mariadb stale create requires the UUID storage emitted by the active gramm
     } finally {
         app()->forgetInstance(MigrationOwnershipLedger::class);
         $schema->dropIfExists($capabilityTable);
+        $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+        $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+        DB::disconnect($connectionName);
+        DB::setDefaultConnection($originalConnection);
+        Schema::clearResolvedInstance('db.schema');
+    }
+})->group('database-guards');
+
+test('mariadb canonical capability preserves configured table prefixes', function (): void {
+    if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
+        $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with a dedicated MariaDB test database.');
+    }
+
+    $connectionName = 'core12_mariadb_prefixed_capability';
+    $configuration = core12ExternalGuardConnection('mariadb');
+    $configuration['prefix'] = 'core12_prefix_';
+    config(["database.connections.{$connectionName}" => $configuration]);
+    DB::purge($connectionName);
+    $originalConnection = DB::getDefaultConnection();
+    DB::setDefaultConnection($connectionName);
+    Schema::clearResolvedInstance('db.schema');
+    $schema = DB::connection($connectionName)->getSchemaBuilder();
+    $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+    $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+
+    try {
+        $create = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+        $create->up();
+
+        expect($schema->hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeTrue()
+            ->and($schema->hasTable(MigrationOwnershipLedger::TABLE))->toBeTrue()
+            ->and(collect($schema->getColumns(EmbeddedResourceIncarnationStore::TABLE))
+                ->firstWhere('name', 'incarnation')['type'])
+            ->toBe(core12ExpectedMariaDbUuidType(DB::connection($connectionName)));
+    } finally {
+        $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+        $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+        DB::disconnect($connectionName);
+        DB::setDefaultConnection($originalConnection);
+        Schema::clearResolvedInstance('db.schema');
+    }
+})->group('database-guards');
+
+test('mariadb proxied connection preflight fails closed before creating artifacts', function (): void {
+    if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
+        $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with a dedicated MariaDB test database.');
+    }
+
+    $sourceConnectionName = 'core12_mariadb_proxy_source';
+    $proxyConnectionName = 'core12_mariadb_proxy';
+    $configuration = core12ExternalGuardConnection('mariadb');
+    config([
+        "database.connections.{$sourceConnectionName}" => $configuration,
+        "database.connections.{$proxyConnectionName}" => $configuration,
+    ]);
+    DB::purge($sourceConnectionName);
+    DB::purge($proxyConnectionName);
+    $sourceConnection = DB::connection($sourceConnectionName);
+    DB::extend($proxyConnectionName, static function (array $config) use ($sourceConnection): MariaDbConnection {
+        return new class($sourceConnection->getPdo(), $config['database'], $config['prefix'], $config) extends MariaDbConnection {};
+    });
+    $originalConnection = DB::getDefaultConnection();
+    DB::setDefaultConnection($sourceConnectionName);
+    Schema::clearResolvedInstance('db.schema');
+    $sourceSchema = $sourceConnection->getSchemaBuilder();
+    $sourceSchema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+    $sourceSchema->dropIfExists(MigrationOwnershipLedger::TABLE);
+    DB::setDefaultConnection($proxyConnectionName);
+    Schema::clearResolvedInstance('db.schema');
+    $proxySchema = DB::connection($proxyConnectionName)->getSchemaBuilder();
+
+    try {
+        $create = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+
+        expect(fn () => $create->up())
+            ->toThrow(RuntimeException::class, 'trusted framework connection metadata')
+            ->and($proxySchema->hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeFalse()
+            ->and($proxySchema->hasTable(MigrationOwnershipLedger::TABLE))->toBeFalse();
+    } finally {
+        DB::setDefaultConnection($sourceConnectionName);
+        Schema::clearResolvedInstance('db.schema');
+        $sourceSchema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+        $sourceSchema->dropIfExists(MigrationOwnershipLedger::TABLE);
+        DB::disconnect($proxyConnectionName);
+        DB::disconnect($sourceConnectionName);
+        DB::forgetExtension($proxyConnectionName);
+        DB::setDefaultConnection($originalConnection);
+        Schema::clearResolvedInstance('db.schema');
+    }
+})->group('database-guards');
+
+test('mariadb hostile grammar preflight rejects create and upgrade before any mutation', function (): void {
+    if (getenv('AURA_TEST_DATABASE_GUARDS') !== '1') {
+        $this->markTestSkipped('Set AURA_TEST_DATABASE_GUARDS=1 with a dedicated MariaDB test database.');
+    }
+
+    $connectionName = 'core12_mariadb_hostile_preflight';
+    config(["database.connections.{$connectionName}" => core12ExternalGuardConnection('mariadb')]);
+    DB::purge($connectionName);
+    $originalConnection = DB::getDefaultConnection();
+    DB::setDefaultConnection($connectionName);
+    Schema::clearResolvedInstance('db.schema');
+    $connection = DB::connection($connectionName);
+    $schema = $connection->getSchemaBuilder();
+    $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
+    $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
+    $originalGrammar = $connection->getSchemaGrammar();
+    $hostileGrammar = new class($connection) extends MariaDbGrammar
+    {
+        protected function typeUuid(Fluent $column): string
+        {
+            return 'char(36)';
+        }
+    };
+
+    try {
+        $connection->setSchemaGrammar($hostileGrammar);
+        $create = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
+
+        expect(fn () => $create->up())
+            ->toThrow(RuntimeException::class, 'trusted framework connection metadata')
+            ->and($schema->hasTable(EmbeddedResourceIncarnationStore::TABLE))->toBeFalse()
+            ->and($schema->hasTable(MigrationOwnershipLedger::TABLE))->toBeFalse();
+
+        $connection->setSchemaGrammar($originalGrammar);
+        $schema->create(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
+            $table->id();
+            $table->string('resource_type');
+            $table->char('resource_key_hash', 64);
+            $table->char('incarnation', 36);
+            $table->timestamps();
+            $table->unique(
+                ['resource_type', 'resource_key_hash'],
+                'aura_embedded_incarnation_resource_unique',
+            );
+        });
+        $connection->table(EmbeddedResourceIncarnationStore::TABLE)->insert([
+            'resource_type' => 'HostilePreflightResource',
+            'resource_key_hash' => str_repeat('c', 64),
+            'incarnation' => '00000000-0000-4000-8000-000000000094',
+            'created_at' => null,
+            'updated_at' => null,
+        ]);
+        $columns = $schema->getColumns(EmbeddedResourceIncarnationStore::TABLE);
+        $indexes = $schema->getIndexes(EmbeddedResourceIncarnationStore::TABLE);
+        $rows = $connection->table(EmbeddedResourceIncarnationStore::TABLE)
+            ->get()
+            ->map(static fn (stdClass $row): array => (array) $row)
+            ->all();
+        $connection->setSchemaGrammar($hostileGrammar);
+        $upgrade = require dirname(__DIR__, 3).'/database/migrations/upgrade_embedded_resource_incarnations.php.stub';
+
+        expect(fn () => $upgrade->up())
+            ->toThrow(RuntimeException::class, 'trusted framework connection metadata')
+            ->and($schema->hasTable(MigrationOwnershipLedger::TABLE))->toBeFalse()
+            ->and($schema->getColumns(EmbeddedResourceIncarnationStore::TABLE))->toBe($columns)
+            ->and($schema->getIndexes(EmbeddedResourceIncarnationStore::TABLE))->toBe($indexes)
+            ->and($connection->table(EmbeddedResourceIncarnationStore::TABLE)
+                ->get()
+                ->map(static fn (stdClass $row): array => (array) $row)
+                ->all())->toBe($rows);
+    } finally {
+        $connection->setSchemaGrammar($originalGrammar);
         $schema->dropIfExists(EmbeddedResourceIncarnationStore::TABLE);
         $schema->dropIfExists(MigrationOwnershipLedger::TABLE);
         DB::disconnect($connectionName);
