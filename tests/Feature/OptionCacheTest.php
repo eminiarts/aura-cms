@@ -139,7 +139,7 @@ test('role team and user cache generations invalidate together after writes', fu
     $shadow->delete();
 
     expect($user->cachedRoles()->firstWhere('slug', 'admin')->is($globalAdmin))->toBeTrue();
-});
+})->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
 
 test('template catalog survives a serialized cache read in a fresh application container', function () {
     $cache = serializedOptionCacheRepository();
