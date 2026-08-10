@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\GlobalSearch\DatabaseGlobalSearchAdapter;
 use Aura\Base\Livewire\Dashboard;
 use Aura\Base\Livewire\MediaManager;
 use Aura\Base\Livewire\Profile;
@@ -294,6 +295,48 @@ return [
             'display_format' => 'd.m.Y H:i',
             'storage_timezone' => null,
             'display_timezone' => null,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Global Search
+    |--------------------------------------------------------------------------
+    |
+    | Search work is bounded at the resource, field, candidate, and global
+    | levels. Ranking combines match quality with each searchable field's
+    | configured weight; ties use resource registration order and model key.
+    |
+    */
+
+    'global_search' => [
+        'adapter' => DatabaseGlobalSearchAdapter::class,
+        'execution_backend' => 'process',
+        'worker_php' => null,
+        'worker_artisan' => null,
+        'worker_autoload' => null,
+        'worker_bootstrap' => null,
+        'worker_connections' => ['@default'],
+        'minimum_query_length' => 2,
+        'maximum_query_length' => 64,
+        'max_resources' => 25,
+        'max_resource_candidates' => 100,
+        'max_fields_per_resource' => 8,
+        'candidate_limit' => 100,
+        'per_resource_limit' => 5,
+        'global_limit' => 15,
+        'max_title_dependencies' => 4,
+        'max_queries_per_resource' => 4,
+        'max_total_queries' => 100,
+        'per_resource_timeout_ms' => 500,
+        'total_timeout_ms' => 3_000,
+        'isolated_payload_bytes' => 1_048_576,
+        'icon_bytes' => 8_192,
+        'allowed_route_names' => ['aura.*'],
+        'ranking' => [
+            'exact' => 300,
+            'prefix' => 200,
+            'contains' => 100,
         ],
     ],
 

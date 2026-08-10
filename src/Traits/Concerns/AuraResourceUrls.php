@@ -65,6 +65,28 @@ trait AuraResourceUrls
         return route('aura.'.$this->getSlug().'.index');
     }
 
+    /**
+     * Named destination used by global search after policy authorization.
+     *
+     * @return array{route: string, parameters: array<string, mixed>}
+     */
+    public function globalSearchDestination()
+    {
+        return [
+            'route' => 'aura.'.$this->getSlug().'.view',
+            'parameters' => ['id' => $this->getKey()],
+        ];
+    }
+
+    /**
+     * Legacy extension point. Global search validates overrides as a same-origin
+     * GET route; new resources should override globalSearchDestination().
+     */
+    public function globalSearchUrl()
+    {
+        return $this->viewUrl();
+    }
+
     public function indexUrl()
     {
         $name = 'aura.'.$this->getSlug().'.index';

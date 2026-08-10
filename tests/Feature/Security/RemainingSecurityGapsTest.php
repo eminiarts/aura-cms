@@ -181,6 +181,12 @@ it('isolates global search results by team', function () {
     config(['aura.features.global_search' => true]);
 
     $otherTeam = Team::factory()->createQuietly();
+    SecurityGapResource::create([
+        'team_id' => $this->user->current_team_id,
+        'type' => SecurityGapResource::$type,
+        'title' => 'Current team global search needle',
+    ]);
+
     SecurityGapResource::createForTeamForSystem($otherTeam->id, [
         'type' => SecurityGapResource::$type,
         'title' => 'Other team global search needle',
@@ -191,7 +197,8 @@ it('isolates global search results by team', function () {
     Aura::setModel(new SecurityGapResource);
 
     livewire(GlobalSearch::class)
-        ->set('search', 'Other team global search needle')
+        ->set('search', 'team global search needle')
+        ->assertSee('Current team global search needle')
         ->assertDontSee('Other team global search needle');
 })->skip(fn () => ! config('aura.teams'), 'Cross-team search isolation requires teams enabled.');
 

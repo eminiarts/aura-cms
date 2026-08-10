@@ -17,6 +17,7 @@ use Aura\Base\Commands\MakeUser;
 use Aura\Base\Commands\MigrateFromPostsToCustomTable;
 use Aura\Base\Commands\MigratePostMetaToMeta;
 use Aura\Base\Commands\PublishCommand;
+use Aura\Base\Commands\RunGlobalSearchWorker;
 use Aura\Base\Commands\TransferFromPostsToCustomTable;
 use Aura\Base\Commands\TransformTableToResource;
 use Aura\Base\Commands\UpdateSchemaFromMigration;
@@ -263,6 +264,7 @@ class AuraServiceProvider extends PackageServiceProvider
                 CreateAuraPlugin::class,
                 MakeField::class,
                 PublishCommand::class,
+                RunGlobalSearchWorker::class,
                 CreateResourceMigration::class,
                 DatabaseToResources::class,
                 TransformTableToResource::class,
