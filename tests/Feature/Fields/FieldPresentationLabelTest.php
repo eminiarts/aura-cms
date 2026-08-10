@@ -87,6 +87,29 @@ test('composed field presentation labels preserve strict option key semantics', 
         ->and($labels->current(null, $options))->toBeNull();
 });
 
+test('plain option maps resolve a stored string zero without coercing false', function () {
+    $labels = new FieldPresentationLabel;
+    $options = ['0' => 'String zero'];
+
+    expect($labels->current('0', $options))->toBe('String zero')
+        ->and($labels->current(false, $options))->toBeFalse();
+});
+
+test('legacy json multi-select values resolve labels on index view and export surfaces', function () {
+    $record = new PresentationLabelRecord;
+    $record->setAttribute('state', '["open","0","unknown"]');
+
+    expect(strip_tags((string) $record->display('state')))
+        ->toContain('Open now')
+        ->toContain('String zero')
+        ->toContain('unknown')
+        ->not->toContain('["open","0","unknown"]')
+        ->and((string) $record->displayInContext('state', FieldValueContext::View))
+        ->toBe('Open now, String zero, unknown')
+        ->and((string) $record->exportFieldValue('state'))
+        ->toBe('Open now, String zero, unknown');
+});
+
 test('select resource presentation resolves historical labels on index view and export surfaces', function () {
     $record = new PresentationLabelRecord;
     $record->setAttribute('state', 'legacy-closed');
@@ -166,4 +189,49 @@ test('legacy custom display extensions receive the raw hydrated value', function
     expect((string) $field->presentValue('open', $definition, null, FieldValueContext::Index))
         ->toBe('legacy:open')
         ->and($field->receivedValue)->toBe('open');
+});
+
+test('select and status display overrides delegating to parent preserve labels and context', function () {
+    $record = new PresentationLabelRecord;
+    $record->setAttribute('state', 'open');
+    $record->setAttribute('status', 'open');
+    $definitions = collect(PresentationLabelRecord::getFields())->keyBy('slug');
+    $fields = [
+        'state' => new class extends Select
+        {
+            public mixed $receivedValue = null;
+
+            public function display($field, $value, $model)
+            {
+                $this->receivedValue = $value;
+
+                return parent::display($field, $value, $model);
+            }
+        },
+        'status' => new class extends Status
+        {
+            public mixed $receivedValue = null;
+
+            public function display($field, $value, $model)
+            {
+                $this->receivedValue = $value;
+
+                return parent::display($field, $value, $model);
+            }
+        },
+    ];
+
+    foreach ($fields as $slug => $field) {
+        $definition = $definitions->get($slug);
+
+        expect(strip_tags((string) $field->presentValue('open', $definition, $record)))
+            ->toContain('Open now')
+            ->and($field->receivedValue)->toBe('open')
+            ->and((string) $field->presentValue('open', $definition, $record, FieldValueContext::View))
+            ->toBe('Open now')
+            ->and($field->receivedValue)->toBe('open')
+            ->and((string) $field->presentValue('open', $definition, $record, FieldValueContext::Export))
+            ->toBe('Open now')
+            ->and($field->receivedValue)->toBe('open');
+    }
 });

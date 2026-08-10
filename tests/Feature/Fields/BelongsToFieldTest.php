@@ -10,10 +10,12 @@ use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\BelongsTo as EloquentBelongsTo;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
+use RuntimeException;
 
 class BelongsToPresentationRow extends Resource
 {
@@ -22,6 +24,19 @@ class BelongsToPresentationRow extends Resource
     public static string $type = 'PresentationRow';
 
     public static bool $usesMeta = false;
+}
+
+class BelongsToPresentationUser extends User
+{
+    public function manager(): EloquentBelongsTo
+    {
+        return $this->belongsTo(Post::class, 'manager_id');
+    }
+}
+
+class BelongsToRouteFallbackPost extends Post
+{
+    public static ?string $slug = 'fallback-post';
 }
 
 beforeEach(function () {
@@ -207,7 +222,7 @@ describe('BelongsTo Field Display', function () {
             ->not->toContain("href='".route('aura.post.view', $related->id)."'");
     });
 
-    test('renders unauthorized and missing relations as plain text', function () {
+    test('does not disclose unauthorized relation labels on any presentation surface', function () {
         $viewer = createAdmin();
         $viewer->roles()->first()->update(['permissions' => [
             'view-post' => false,
@@ -219,13 +234,81 @@ describe('BelongsTo Field Display', function () {
         $field = new BelongsTo;
         $definition = ['resource' => Post::class];
 
-        $unauthorized = $field->display($definition, $related->id, $viewer);
+        $unauthorizedIndex = $field->presentValue($related->id, $definition, $viewer);
+        $unauthorizedView = $field->presentValue(
+            $related->id,
+            $definition,
+            $viewer,
+            FieldValueContext::View,
+        );
+        $unauthorizedExport = $field->presentValue(
+            $related->id,
+            $definition,
+            $viewer,
+            FieldValueContext::Export,
+        );
         $missing = $field->display($definition, 999999, $viewer);
 
-        expect((string) $unauthorized)->toBe($related->title())
-            ->and((string) $unauthorized)->not->toContain('<a')
+        expect((string) $unauthorizedIndex)->toBe((string) $related->id)
+            ->and((string) $unauthorizedView)->toBe((string) $related->id)
+            ->and((string) $unauthorizedExport)->toBe((string) $related->id)
+            ->and((string) $unauthorizedIndex)->not->toContain($related->title())
+            ->and((string) $unauthorizedView)->not->toContain($related->title())
+            ->and((string) $unauthorizedExport)->not->toContain($related->title())
             ->and((string) $missing)->toBe('999999')
             ->and((string) $missing)->not->toContain('<a');
+    });
+
+    test('treats a constrained eager-loaded null relation as authoritative without a fallback query', function () {
+        $related = Post::factory()->create(['title' => 'Hidden Loaded Post']);
+        $user = User::factory()->create();
+        $row = BelongsToPresentationUser::withoutGlobalScopes()->findOrFail($user->getKey());
+        $row->setAttribute('manager_id', $related->id);
+        $row->load(['manager' => fn ($query) => $query->whereKey(-1)]);
+        $definition = [
+            'resource' => Post::class,
+            'relation' => 'manager',
+            'slug' => 'manager_id',
+        ];
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $label = (new BelongsTo)->presentValue(
+            $related->id,
+            $definition,
+            $row,
+            FieldValueContext::Export,
+        );
+
+        expect((string) $label)->toBe((string) $related->id)
+            ->and((string) $label)->not->toContain($related->title())
+            ->and(DB::getQueryLog())->toHaveCount(0);
+    });
+
+    test('does not use an eager-loaded relation whose key differs from the stored value', function () {
+        $stored = Post::factory()->create(['title' => 'Stored Post']);
+        $stale = Post::factory()->create(['title' => 'Stale Loaded Post']);
+        $row = User::factory()->create();
+        $row->setRelation('manager', $stale);
+        $definition = [
+            'resource' => Post::class,
+            'relation' => 'manager',
+            'slug' => 'manager_id',
+        ];
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $label = (new BelongsTo)->presentValue(
+            $stored->id,
+            $definition,
+            $row,
+            FieldValueContext::Export,
+        );
+
+        expect((string) $label)->toBe((string) $stored->id)
+            ->and((string) $label)->not->toContain($stored->title())
+            ->and((string) $label)->not->toContain($stale->title())
+            ->and(DB::getQueryLog())->toHaveCount(0);
     });
 
     test('supports custom relationship label and link destination resolvers', function () {
@@ -242,7 +325,7 @@ describe('BelongsTo Field Display', function () {
             ->toContain('/posts/'.$related->id);
     });
 
-    test('accepts only safe custom relationship destinations', function (string $destination) {
+    test('accepts safe relative custom relationship destinations', function (string $destination) {
         $related = Post::factory()->create(['title' => 'Related Post']);
         $definition = [
             'resource' => Post::class,
@@ -260,9 +343,22 @@ describe('BelongsTo Field Display', function () {
         'root-relative path' => '/posts/1',
         'relative path' => 'posts/1',
         'dot-relative path' => './posts/1',
-        'absolute HTTPS URL' => 'https://example.test/posts/1?tab=activity#latest',
-        'absolute HTTP URL' => 'http://localhost/posts/1',
     ]);
+
+    test('accepts same-origin absolute custom relationship destinations', function () {
+        $related = Post::factory()->create(['title' => 'Related Post']);
+        $destination = url('/posts/'.$related->id.'?tab=activity#latest');
+        $definition = [
+            'resource' => Post::class,
+            'link_resolver' => fn (): string => $destination,
+        ];
+
+        $html = (new BelongsTo)->presentValue($related->id, $definition, $this->user);
+
+        expect((string) $html)
+            ->toContain('<a')
+            ->toContain("href='".e($destination)."'");
+    });
 
     test('unsafe custom destinations fall back to the authorized default without reaching exports', function (string $destination) {
         $related = Post::factory()->create(['title' => 'Related Post']);
@@ -304,7 +400,59 @@ describe('BelongsTo Field Display', function () {
         'embedded control character' => "java\tscript:alert(document.domain)",
         'entity-obfuscated scheme' => 'java&#x73;cript:alert(document.domain)',
         'entity-obfuscated colon' => 'javascript&colon;alert(document.domain)',
+        'cross-origin HTTPS URL' => 'https://example.test/posts/1',
+        'cross-origin HTTP URL' => 'http://attacker.example/posts/1',
     ]);
+
+    test('falls through to an authorized edit route when view route generation fails', function () {
+        $related = Post::factory()->create(['title' => 'Fallback Route Post']);
+
+        Route::get('/broken-fallback-post/{id}/{missing}', fn (): string => 'view')
+            ->name('aura.fallback-post.view');
+        Route::get('/fallback-post/{id}/edit', fn (): string => 'edit')
+            ->name('aura.fallback-post.edit');
+        Route::getRoutes()->refreshNameLookups();
+
+        $html = (new BelongsTo)->display(
+            ['resource' => BelongsToRouteFallbackPost::class],
+            $related->id,
+            $this->user,
+        );
+
+        expect((string) $html)
+            ->toContain($related->title())
+            ->toContain("href='".route('aura.fallback-post.edit', $related->id)."'");
+    });
+
+    test('does not swallow unexpected route generation failures', function () {
+        $related = Post::factory()->create(['title' => 'Broken Route Post']);
+        $field = new class extends BelongsTo
+        {
+            protected function isSafeLinkDestination(string $destination): bool
+            {
+                throw new RuntimeException('unexpected route failure');
+            }
+        };
+
+        expect(fn () => $field->display(['resource' => Post::class], $related->id, $this->user))
+            ->toThrow(RuntimeException::class, 'unexpected route failure');
+    });
+
+    test('does not disclose relation labels to guests', function () {
+        $related = Post::factory()->create(['title' => 'Guest Hidden Post']);
+        auth()->logout();
+        $field = new BelongsTo;
+        $definition = ['resource' => Post::class];
+
+        foreach ([FieldValueContext::Index, FieldValueContext::View, FieldValueContext::Export] as $context) {
+            $result = $field->presentValue($related->id, $definition, $this->user, $context);
+
+            expect((string) $result)
+                ->toBe((string) $related->id)
+                ->not->toContain($related->title())
+                ->not->toContain('<a');
+        }
+    });
 
     test('an empty custom destination intentionally renders plain text', function () {
         $related = Post::factory()->create(['title' => 'Related Post']);
@@ -351,8 +499,12 @@ describe('BelongsTo Field Display', function () {
             FieldValueContext::Export,
         );
 
+        $relatedQueries = collect(DB::getQueryLog())->filter(
+            fn (array $query): bool => in_array(Post::$type, $query['bindings'], true),
+        );
+
         expect((string) $label)->toContain($related->title())
-            ->and(DB::getQueryLog())->toHaveCount(0);
+            ->and($relatedQueries)->toHaveCount(0);
     });
 
     test('preloads relationship labels in one bounded query', function () {

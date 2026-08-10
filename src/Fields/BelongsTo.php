@@ -11,11 +11,12 @@ use Aura\Base\Support\FieldDisplayValue;
 use Aura\Base\Support\FieldPresentationLabel;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Routing\Exceptions\UrlGenerationException;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
-use Throwable;
 
 class BelongsTo extends Field implements PreloadsTableDisplay
 {
@@ -198,8 +199,8 @@ class BelongsTo extends Field implements PreloadsTableDisplay
                 $destination = route($routeName, ['id' => $related->getKey()]);
 
                 return $this->isSafeLinkDestination($destination) ? $destination : null;
-            } catch (Throwable) {
-                return null;
+            } catch (UrlGenerationException) {
+                continue;
             }
         }
 
@@ -301,13 +302,17 @@ class BelongsTo extends Field implements PreloadsTableDisplay
         }
 
         $related = $this->resolveDisplayModel($field, $value, $model);
-        $label = $this->resolveRelationLabel($value, $field, $model, $related, $context);
+        $authorizedRelated = $related instanceof Model
+            && ($this->canAccessDestination('view', $related) || $this->canAccessDestination('update', $related))
+                ? $related
+                : null;
+        $label = $this->resolveRelationLabel($value, $field, $model, $authorizedRelated, $context);
 
-        if ($context === FieldValueContext::Export || ! $related instanceof Model) {
+        if ($context === FieldValueContext::Export || ! $authorizedRelated instanceof Model) {
             return FieldDisplayValue::secure($label);
         }
 
-        $destination = $this->linkDestination($related, $field, $model, $context, $value);
+        $destination = $this->linkDestination($authorizedRelated, $field, $model, $context, $value);
 
         if ($destination === null) {
             return FieldDisplayValue::secure($label);
@@ -436,9 +441,19 @@ class BelongsTo extends Field implements PreloadsTableDisplay
 
         $components = parse_url($destination);
 
-        return is_array($components)
-            && is_string($components['host'] ?? null)
-            && $components['host'] !== '';
+        if (
+            ! is_array($components)
+            || ! is_string($components['host'] ?? null)
+            || $components['host'] === ''
+        ) {
+            return false;
+        }
+
+        $application = parse_url(URL::to('/'));
+
+        return is_array($application)
+            && Str::lower((string) ($components['host'] ?? '')) === Str::lower((string) ($application['host'] ?? ''))
+            && ($components['port'] ?? null) === ($application['port'] ?? null);
     }
 
     /**
@@ -481,9 +496,11 @@ class BelongsTo extends Field implements PreloadsTableDisplay
         if ($relationName !== null) {
             $related = $model->getRelation($relationName);
 
-            if ($related instanceof Model) {
+            if ($related instanceof Model && (string) $related->getKey() === (string) $value) {
                 return $related;
             }
+
+            return;
         }
 
         $resource = $field['resource'] ?? null;

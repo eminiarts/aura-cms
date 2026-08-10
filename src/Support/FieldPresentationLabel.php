@@ -23,6 +23,14 @@ final class FieldPresentationLabel
             return $rawValue;
         }
 
+        if (is_string($rawValue) && str_starts_with($rawValue, '[')) {
+            $decoded = json_decode($rawValue, true);
+
+            if (is_array($decoded)) {
+                $rawValue = $decoded;
+            }
+        }
+
         if (is_array($rawValue)) {
             return array_map(
                 fn (mixed $item): mixed => $this->current($item, $options),
@@ -39,7 +47,10 @@ final class FieldPresentationLabel
                 continue;
             }
 
-            if (! is_bool($rawValue) && $key === $rawValue) {
+            if (
+                ! is_bool($rawValue)
+                && ($key === $rawValue || (is_int($key) && is_string($rawValue) && (string) $key === $rawValue))
+            ) {
                 return $option;
             }
         }

@@ -57,6 +57,10 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
 
     public $wrapper = null;
 
+    private ?FieldValueContext $inheritedDisplayContext = null;
+
+    private bool $presentingInheritedDisplay = false;
+
     /**
      * Preserve calls to the typed displayValue() API without declaring that
      * method on the base class. Older Aura documentation encouraged subclasses
@@ -99,6 +103,25 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
 
     public function display($field, $value, $model)
     {
+        if ($this->presentingInheritedDisplay) {
+            $field = is_array($field) ? $field : [];
+            $context = $this->inheritedDisplayContext ?? FieldValueContext::Index;
+            $label = $this->resolveAuraPresentationLabel(
+                $value,
+                $field,
+                $model instanceof Model ? $model : null,
+                $context,
+            );
+            $usesDeclarativeLabels = array_key_exists('options', $field)
+                || array_key_exists('label_resolver', $field)
+                || $this->hasAccessibleOptionsProvider();
+
+            if ($context !== FieldValueContext::Index && $usesDeclarativeLabels && empty($field['display_view'])) {
+                return FieldDisplayValue::secure($label);
+            }
+
+            $value = $label;
+        }
 
         if (optional($field)['display_view']) {
             return FieldDisplayValue::sanitizedHtml(
@@ -405,7 +428,16 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
         } elseif (! $usesBaseDisplay) {
             // Existing display() extensions historically receive the raw or
             // hydrated value. Keep that source and behavior contract intact.
-            $display = $this->display($field, $value, $model);
+            $previousContext = $this->inheritedDisplayContext;
+            $this->inheritedDisplayContext = $context;
+            $this->presentingInheritedDisplay = true;
+
+            try {
+                $display = $this->display($field, $value, $model);
+            } finally {
+                $this->presentingInheritedDisplay = false;
+                $this->inheritedDisplayContext = $previousContext;
+            }
         } else {
             $label = $this->resolveAuraPresentationLabel($value, $field, $model, $context);
             $usesDeclarativeLabels = array_key_exists('options', $field)
