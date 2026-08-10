@@ -36,6 +36,15 @@ class Core25InvalidInputPanel extends Component
     public string $model = '';
 }
 
+class Core25ConflictingMountPanel extends Component
+{
+    public bool $inModal = false;
+
+    public Resource $model;
+
+    public function mount(string $model, int $inModal): void {}
+}
+
 class Core25DuplicatePanelResource extends Resource implements DefinesRecordLayoutPanels
 {
     public static string $type = 'Core25DuplicatePanelResource';
@@ -167,6 +176,10 @@ test('invalid or missing panel components are rejected atomically', function () 
     expect(fn () => $registry->register('acme/panels', [
         new RecordLayoutPanel('bad-inputs', RecordLayoutRegion::MainContent, Core25InvalidInputPanel::class),
     ]))->toThrow(InvalidRecordLayoutPanel::class);
+
+    expect(fn () => $registry->register('acme/panels', [
+        new RecordLayoutPanel('conflicting-mount', RecordLayoutRegion::MainContent, Core25ConflictingMountPanel::class),
+    ]))->toThrow(InvalidRecordLayoutPanel::class);
 });
 
 test('resource declarations use the same duplicate and preference invariants', function () {
@@ -211,9 +224,34 @@ test('panel transports reject even same-class claims through the core collision 
     $registered = new RegisteredRecordLayoutPanel('acme/panels', $panel);
     Livewire::component($registered->transport(), TestPanel::class);
 
-    expect(fn () => $registry->register('acme/panels', [$panel]))
+    $registry->register('acme/panels', [$panel]);
+
+    expect(fn () => $registry->captureBaselineState())
         ->toThrow(ComponentSlotCollision::class);
     expect($registry->panelsFor(new Post))->toBe([]);
+});
+
+test('a failed batch preflight does not claim earlier livewire transports', function () {
+    $registry = core25Registry();
+    $first = new RegisteredRecordLayoutPanel(
+        'acme/panels',
+        new RecordLayoutPanel('first', RecordLayoutRegion::MainContent, TestPanel::class),
+    );
+    $claimed = new RegisteredRecordLayoutPanel(
+        'acme/panels',
+        new RecordLayoutPanel('claimed', RecordLayoutRegion::MainContent, SecondPanel::class),
+    );
+    Livewire::component($claimed->transport(), SecondPanel::class);
+
+    $registry->register('acme/panels', [$first->panel, $claimed->panel]);
+
+    expect(fn () => $registry->captureBaselineState())
+        ->toThrow(ComponentSlotCollision::class);
+    expect(fn () => app(LivewireCollisionInspector::class)->assertReservable(
+        $first->transport(),
+        TestPanel::class,
+        static fn (?string $name): ?string => null,
+    ))->not->toThrow(ComponentSlotCollision::class);
 });
 
 test('shared eager loads and preference reads stay bounded as panels increase', function () {

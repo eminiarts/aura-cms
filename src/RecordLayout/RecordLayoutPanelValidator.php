@@ -37,6 +37,8 @@ final class RecordLayoutPanelValidator
         }
 
         foreach (['model', 'inModal'] as $input) {
+            $acceptsProperty = false;
+
             if ($reflection->hasProperty($input) && $reflection->getProperty($input)->isPublic()) {
                 $property = $reflection->getProperty($input);
 
@@ -45,17 +47,17 @@ final class RecordLayoutPanelValidator
                     $this->fail($source, $panel, "a writable [{$input}] property with a compatible type");
                 }
 
-                continue;
+                $acceptsProperty = true;
             }
 
             $parameter = collect($mount?->getParameters() ?? [])
                 ->first(fn ($parameter): bool => $parameter->getName() === $input);
 
-            if ($parameter === null) {
+            if (! $acceptsProperty && $parameter === null) {
                 $this->fail($source, $panel, "a public [{$input}] property or mount parameter");
             }
 
-            if (! $this->acceptsInput($parameter->getType(), $input)) {
+            if ($parameter !== null && ! $this->acceptsInput($parameter->getType(), $input)) {
                 $this->fail($source, $panel, "a compatible [{$input}] mount input");
             }
         }

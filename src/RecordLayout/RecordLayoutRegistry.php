@@ -9,6 +9,7 @@ use Aura\Base\Preferences\PreferenceValueType;
 use Aura\Base\Resource;
 use InvalidArgumentException;
 use Livewire\Livewire;
+use Throwable;
 
 final class RecordLayoutRegistry
 {
@@ -35,18 +36,35 @@ final class RecordLayoutRegistry
     /** @param  list<class-string>  $resources */
     public function captureBaselineState(array $resources = []): void
     {
-        foreach ($resources as $resource) {
-            $this->registerResourcePanels($resource);
+        try {
+            $pending = $this->panels;
+
+            foreach ($resources as $resource) {
+                [$source, $panels] = $this->resourcePanels($resource);
+
+                if ($source !== null) {
+                    $pending = $this->mergedPanels($pending, $source, $panels);
+                }
+            }
+
+            $this->validatePreferences($pending);
+
+            foreach ($pending as $registered) {
+                $this->preflightTransport($registered);
+            }
+
+            foreach ($pending as $registered) {
+                Livewire::component($registered->transport(), $registered->panel->component);
+            }
+
+            $this->panels = $pending;
+            $this->baselinePanels = $pending;
+            $this->finalized = true;
+        } catch (Throwable $exception) {
+            $this->panels = $this->baselinePanels;
+
+            throw $exception;
         }
-
-        if (count($this->panels) > self::MAX_PANELS) {
-            throw new InvalidArgumentException('The record layout panel registry limit was exceeded.');
-        }
-
-        $this->validatePreferences();
-
-        $this->baselinePanels = $this->panels;
-        $this->finalized = true;
     }
 
     public function flushState(): void
@@ -90,7 +108,7 @@ final class RecordLayoutRegistry
             throw new InvalidArgumentException("Record layout source [{$source}] must be a lowercase Composer package name.");
         }
 
-        $this->mergePanels($source, $panels);
+        $this->panels = $this->mergedPanels($this->panels, $source, $panels);
     }
 
     private function matchesResource(RecordLayoutPanel $panel, Resource $resource): bool
@@ -108,9 +126,9 @@ final class RecordLayoutRegistry
     }
 
     /** @param  list<RecordLayoutPanel>  $panels */
-    private function mergePanels(string $source, array $panels): void
+    private function mergedPanels(array $current, string $source, array $panels): array
     {
-        $pending = $this->panels;
+        $pending = $current;
 
         foreach ($panels as $panel) {
             if (! $panel instanceof RecordLayoutPanel) {
@@ -136,18 +154,26 @@ final class RecordLayoutRegistry
             throw new InvalidArgumentException('The record layout panel registry limit was exceeded.');
         }
 
-        foreach (array_diff_key($pending, $this->panels) as $registered) {
-            $this->registerTransport($registered);
-        }
-
-        $this->panels = $pending;
+        return $pending;
     }
 
-    /** @param  class-string  $resource */
-    private function registerResourcePanels(string $resource): void
+    private function preflightTransport(RegisteredRecordLayoutPanel $registered): void
+    {
+        $this->collisionInspector->assertReservable(
+            $registered->transport(),
+            $registered->panel->component,
+            static fn (?string $name): ?string => null,
+        );
+    }
+
+    /**
+     * @param  class-string  $resource
+     * @return array{?string, list<RecordLayoutPanel>}
+     */
+    private function resourcePanels(string $resource): array
     {
         if (! is_subclass_of($resource, DefinesRecordLayoutPanels::class)) {
-            return;
+            return [null, []];
         }
 
         $source = 'resource/record-layout-'.substr(hash('sha256', $resource), 0, 16);
@@ -172,22 +198,13 @@ final class RecordLayoutRegistry
             );
         }
 
-        $this->mergePanels($source, $panels);
+        return [$source, $panels];
     }
 
-    private function registerTransport(RegisteredRecordLayoutPanel $registered): void
+    /** @param  array<string, RegisteredRecordLayoutPanel>  $panels */
+    private function validatePreferences(array $panels): void
     {
-        $this->collisionInspector->assertReservable(
-            $registered->transport(),
-            $registered->panel->component,
-            static fn (?string $name): ?string => null,
-        );
-        Livewire::component($registered->transport(), $registered->panel->component);
-    }
-
-    private function validatePreferences(): void
-    {
-        foreach ($this->panels as $registered) {
+        foreach ($panels as $registered) {
             $key = $registered->panel->preferenceKey;
 
             if ($key === null) {
