@@ -5,6 +5,7 @@ namespace Aura\Base\Routing;
 use Aura\Base\Livewire\Resource\View;
 use Illuminate\Contracts\Routing\UrlRoutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionNamedType;
@@ -56,5 +57,15 @@ final class ResourceViewRoute
         }
 
         return 'id';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function parameters(string $routeName, Model $record): array
+    {
+        $parameter = Route::getRoutes()->getByName($routeName)?->parameterNames()[0] ?? 'id';
+
+        return [$parameter => $parameter === 'id' ? $record->getKey() : $record];
     }
 }

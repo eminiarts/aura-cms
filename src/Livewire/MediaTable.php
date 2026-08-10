@@ -9,6 +9,7 @@ use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Livewire\Table\TableMutationDispatcher;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
+use Aura\Base\Routing\ResourceViewRoute;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -59,8 +60,9 @@ class MediaTable extends Table
 
         if ($action === 'view') {
             Gate::authorize('view', $attachment);
+            $routeName = 'aura.'.$attachment->getSlug().'.view';
 
-            return redirect()->route('aura.'.$attachment->getSlug().'.view', [$attachment]);
+            return redirect()->route($routeName, ResourceViewRoute::parameters($routeName, $attachment));
         }
 
         if ($action === 'edit') {

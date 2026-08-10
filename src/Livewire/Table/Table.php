@@ -18,6 +18,7 @@ use Aura\Base\Livewire\Table\Traits\Settings;
 use Aura\Base\Livewire\Table\Traits\Sorting;
 use Aura\Base\Livewire\Table\Traits\SwitchView;
 use Aura\Base\Resources\User;
+use Aura\Base\Routing\ResourceViewRoute;
 use Closure;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -160,8 +161,9 @@ class Table extends Component
         if ($data['action'] == 'view') {
             $record = $mutations->findRecord(clone $this->mutationQuery(), $trustedModel, $data['id']);
             $mutations->authorize($record, 'view');
+            $routeName = 'aura.'.$resourceSlug.'.view';
 
-            return redirect()->route('aura.'.$resourceSlug.'.view', [$record]);
+            return redirect()->route($routeName, ResourceViewRoute::parameters($routeName, $record));
         }
         // edit
         if ($data['action'] == 'edit') {

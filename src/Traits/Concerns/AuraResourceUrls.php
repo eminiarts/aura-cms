@@ -3,6 +3,7 @@
 namespace Aura\Base\Traits\Concerns;
 
 use Aura\Base\RouteTarget;
+use Aura\Base\Routing\ResourceViewRoute;
 use Illuminate\Routing\Exceptions\UrlGenerationException;
 use Illuminate\Support\Facades\Route;
 
@@ -134,8 +135,6 @@ trait AuraResourceUrls
      */
     private function recordRouteParameters(string $name): array
     {
-        $parameter = Route::getRoutes()->getByName($name)?->parameterNames()[0] ?? 'id';
-
-        return [$parameter => $this];
+        return ResourceViewRoute::parameters($name, $this);
     }
 }
