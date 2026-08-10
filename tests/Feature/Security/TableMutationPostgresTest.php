@@ -4,6 +4,7 @@ use Aura\Base\BaseResource;
 use Aura\Base\Livewire\Table\TableMutationDispatcher;
 use Aura\Base\Livewire\Table\TableMutationModelDescriptor;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -286,6 +287,20 @@ test('postgres globally orders multiple locked chunks from current values after 
         fread($signals[1], 1);
         $childMounted = core05PostgresMountedResource('core05_pgsql_child');
         Core05PostgresMutationResource::$capturedIds = [];
+        $snapshotSignalled = false;
+        DB::connection('core05_pgsql_child')->listen(function (QueryExecuted $query) use (
+            &$snapshotSignalled,
+            $signals,
+        ): void {
+            if ($snapshotSignalled || ! str_contains($query->sql, '__aura_mutation_key')) {
+                return;
+            }
+
+            $snapshotSignalled = true;
+            fwrite($signals[1], "snapshot\n");
+            fflush($signals[1]);
+            fread($signals[1], 1);
+        });
 
         try {
             app(TableMutationDispatcher::class)->dispatchBulk(
@@ -313,8 +328,10 @@ test('postgres globally orders multiple locked chunks from current values after 
         ->where('id', $resources[0]->getKey())
         ->update(['content' => '40']);
     fwrite($signals[0], '1');
-    usleep(300_000);
+    stream_set_timeout($signals[0], 5);
+    $barrier = trim((string) fgets($signals[0]));
     $writer->commit();
+    fwrite($signals[0], '1');
     pcntl_waitpid($child, $status);
     $childResult = stream_get_contents($signals[0]);
     fclose($signals[0]);
@@ -322,6 +339,7 @@ test('postgres globally orders multiple locked chunks from current values after 
 
     expect(pcntl_wifexited($status))->toBeTrue()
         ->and(pcntl_wexitstatus($status))->toBe(0, $childResult)
+        ->and($barrier)->toBe('snapshot')
         ->and($capturedIds)->toBe([
             $resources[1]->getKey(),
             $resources[2]->getKey(),
