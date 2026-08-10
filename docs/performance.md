@@ -52,25 +52,40 @@ Exact entries use `['found' => bool, 'value' => mixed]`. This keeps a missing op
 
 ### Navigation Caching
 
-Navigation is automatically cached per user and team for 1 hour. Its context fingerprints the registered resources and the ordered identity of deterministic hooks, so different callbacks cannot collide merely because both containers registered the same number of hooks. Authorization-filtered navigation is never shared between users.
+Aura caches only the deduplicated resource class registry for 1 hour. The structural key
+fingerprints registered resource class names and the teams configuration. The payload contains
+only class strings; it contains no evaluated resource definition, badge, hook output, user ID,
+team ID, role, permission, or visibility result. After authentication in every call to
+`Aura::navigation()`, Aura rebuilds each resource definition, runs every navigation hook, applies
+resource `viewAny`, non-resource `policy`, and legacy `conditional_logic` checks to the current
+guard user, then removes hidden dropdown children and empty groups.
 
 ```php
-// Automatic caching in Aura::navigation() - src/Aura.php
-public function navigation()
-{
-    $payload = VersionedCache::remember(
-        'navigation',
-        $this->navigationCacheContext(),
-        3600,
-        fn () => ['groups' => $this->buildNavigation()],
-    );
-
-    // Preserve the existing Collection return type at the public boundary.
-    return collect($payload['groups'])->map(fn ($items) => collect($items));
-}
+Navigation::add([[
+    'name' => 'Reports',
+    'route' => 'reports.index',
+    'group' => 'Analytics',
+    'policy' => Navigation::policy('view-reports'),
+]]);
 ```
 
-String/static callables and scalar `Navigation::add()` configurations receive stable fingerprints. Closures, object-bound callables, resources, and any recursively non-scalar payload bypass persistent caching. The same recursive safety check runs on the completed navigation payload, preventing nested values from reaching a serializing cache store. A before/after hook revision check retries a build when registration changes while it is in flight. Role writes and Membership role changes advance the navigation generation after commit, so permission-filtered menus do not retain the prior grant set. Rollback also advances the process-local role catalog version, discarding permission snapshots resolved from transaction-local data.
+`Navigation::policy($ability, $arguments)` returns the canonical cache-safe Gate contract. The
+arguments must be scalar or recursively scalar arrays; class strings are suitable policy subjects.
+The compact forms `'policy' => 'view-reports'` and `'policy' => ['viewAny', Report::class]` are also
+accepted. Resource items always retain their `viewAny` check, and an additional item policy is an
+extra requirement. Non-resource items without a policy remain visible to authenticated users for
+backward compatibility. Guests fail closed before definitions or callbacks are resolved.
+
+Resource `navigation()` methods and `getBadge()` may query current user or TeamScope state, and
+string, static, closure, or object-bound hooks may branch on authentication. Aura therefore never
+persists their evaluated output, even when all resulting values happen to be scalar. Arbitrary
+non-scalar decoration may exist for the current call, but only the structural class-string payload
+reaches a serializing cache store. The legacy second `Navigation::add()` auth callback is registered
+without executing during provider boot and runs only during authenticated navigation resolution.
+Callback values and policy metadata are removed before the grouped menu reaches Livewire, so they
+cannot be hydrated back as executable callbacks. A before/after hook revision check retries when
+registration changes while a definition is built; the authenticated user and team context are
+checked again before returning, protecting impersonation, team switches, and long-running workers.
 
 ### Team and Template Catalog Caching
 
@@ -1239,7 +1254,7 @@ Aura CMS caches automatically. Leverage it:
 // Options are cached automatically - just use them
 $settings = Aura::getOption('media');
 
-// Navigation is cached per user/team
+// Navigation resource discovery is cached; definitions and authorization run now
 $nav = Aura::navigation();
 
 // Clear all caches when needed

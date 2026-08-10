@@ -114,10 +114,30 @@ $allOptions = Aura::options();
 ### Navigation
 
 ```php
-// Get the navigation structure (cached per user/team)
+use Aura\Base\Navigation\Navigation;
+
+// Resource class discovery may be cached; definitions and visibility are rebuilt now.
 $navigation = Aura::navigation();
-// Returns grouped navigation items based on user permissions
+
+// A non-resource link restricted by a Gate ability.
+Navigation::add([[
+    'name' => 'Reports',
+    'route' => 'reports.index',
+    'group' => 'Analytics',
+    'policy' => Navigation::policy('view-reports'),
+]]);
+
+// Supply a scalar Gate argument, such as a policy subject class.
+$resourcePolicy = Navigation::policy('viewAny', Report::class);
 ```
+
+Registered resource items always require their normal `viewAny` policy. A non-resource item
+without `policy` is visible to any authenticated user; guests receive an empty navigation. The
+canonical policy payload is `['ability' => string, 'arguments' => scalar|array|null]`. Invalid or
+non-scalar payloads fail closed. Resource `navigation()` methods, badges, and navigation hooks run
+for the current authenticated request and are never stored in the persistent navigation cache. The
+legacy second callback argument to `Navigation::add()` is evaluated only when an authenticated
+request resolves navigation; the callback itself is never serialized or returned to Livewire.
 
 ### Route Registration
 

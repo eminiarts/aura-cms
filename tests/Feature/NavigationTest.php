@@ -5,21 +5,71 @@ use Aura\Base\HookManager;
 use Aura\Base\Navigation\Navigation as NavigationRegistry;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
+use Aura\Base\Services\VersionedCache;
 use Illuminate\Cache\ArrayStore;
 use Illuminate\Cache\Repository;
+use Illuminate\Contracts\Queue\Job;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
+use Lab404\Impersonate\Services\ImpersonateManager;
 
-function serializedNavigationCacheRepository(): Repository
+/**
+ * @template TStore of ArrayStore
+ *
+ * @param  class-string<TStore>  $storeClass
+ * @return TStore
+ */
+function serializedNavigationArrayStore(string $storeClass = ArrayStore::class): ArrayStore
 {
     $constructor = new ReflectionMethod(ArrayStore::class, '__construct');
 
     if ($constructor->getNumberOfParameters() === 1) {
-        return new Repository(new ArrayStore(serializesValues: true));
+        return new $storeClass(serializesValues: true);
     }
 
-    return new Repository(new ArrayStore(serializesValues: true, serializableClasses: false));
+    return new $storeClass(serializesValues: true, serializableClasses: false);
+}
+
+function serializedNavigationCacheRepository(): Repository
+{
+    return new Repository(serializedNavigationArrayStore());
+}
+
+/** @return list<string> */
+function navigationArrayStoreKeys(ArrayStore $store): array
+{
+    $property = new ReflectionProperty(ArrayStore::class, 'storage');
+
+    /** @var array<string, mixed> $storage */
+    $storage = $property->getValue($store);
+
+    return array_keys($storage);
+}
+
+/** @return array<string, mixed> */
+function navigationArrayStoreValues(ArrayStore $store): array
+{
+    return collect(navigationArrayStoreKeys($store))
+        ->mapWithKeys(fn (string $key): array => [$key => $store->get($key)])
+        ->all();
+}
+
+/** @return list<array{resources: list<string>}> */
+function navigationStructuralCachePayloads(ArrayStore $store): array
+{
+    return collect(navigationArrayStoreValues($store))
+        ->filter(fn (mixed $value): bool => is_array($value)
+            && array_keys($value) === ['resources']
+            && is_array($value['resources']))
+        ->values()
+        ->all();
 }
 
 class InterleavingNavigationArrayStore extends ArrayStore
@@ -47,6 +97,41 @@ class InterleavingNavigationArrayStore extends ArrayStore
     }
 }
 
+class CachedPolicyNavigationHook
+{
+    public static int $invocations = 0;
+
+    public static function apply(Collection $navigation): Collection
+    {
+        self::$invocations++;
+
+        return $navigation->push(customNonResourceNavigationItem('CachedPolicyPage', extra: [
+            'policy' => NavigationRegistry::policy(User::GLOBAL_ADMIN_GATE),
+        ]));
+    }
+}
+
+class AuthContextNavigationHook
+{
+    public static ?int $allowedTeamId = null;
+
+    public static int|string|null $allowedUserId = null;
+
+    public static int $invocations = 0;
+
+    public static function apply(Collection $navigation): Collection
+    {
+        self::$invocations++;
+
+        if (auth()->id() !== self::$allowedUserId
+            || (self::$allowedTeamId !== null && auth()->user()?->current_team_id !== self::$allowedTeamId)) {
+            return $navigation;
+        }
+
+        return $navigation->push(customNonResourceNavigationItem('AuthContextPage'));
+    }
+}
+
 function customNavigationItem(string $resource, string $group = 'Custom Group', array $extra = []): array
 {
     return array_merge([
@@ -61,6 +146,14 @@ function customNavigationItem(string $resource, string $group = 'Custom Group', 
         'dropdown' => false,
         'showInNavigation' => true,
     ], $extra);
+}
+
+function customNonResourceNavigationItem(string $name, string $group = 'Custom Group', array $extra = []): array
+{
+    $item = customNavigationItem($name, $group, $extra);
+    unset($item['resource']);
+
+    return $item;
 }
 
 beforeEach(function () {
@@ -78,6 +171,45 @@ class NavigationModel extends Resource
 
     public static string $type = 'NavigationModel';
 }
+
+class UserAwareBadgeNavigationModel extends Resource
+{
+    public static $pluralName = 'User Aware Badge Navigation Models';
+
+    public static ?string $slug = 'user-aware-badge-navigation-model';
+
+    public static string $type = 'UserAwareBadgeNavigationModel';
+
+    public function getBadge(): int|string|null
+    {
+        return auth()->id();
+    }
+
+    public function getIndexRoute(): string
+    {
+        return '#';
+    }
+}
+
+class TeamScopedBadgeNavigationModel extends Resource
+{
+    public static $pluralName = 'Team Scoped Badge Navigation Models';
+
+    public static ?string $slug = 'team-scoped-badge-navigation-model';
+
+    public static string $type = 'TeamScopedBadgeNavigationModel';
+
+    public function getBadge(): int
+    {
+        return static::query()->count();
+    }
+
+    public function getIndexRoute(): string
+    {
+        return '#';
+    }
+}
+
 class NavigationHiddenModel extends Resource
 {
     public static $pluralName = 'NavigationModels';
@@ -175,6 +307,359 @@ test('navigation item is hidden when the Role has no access to it', function () 
     $this->get(route('aura.dashboard'))
         ->assertDontSee('NavigationModels');
 
+});
+
+test('navigation auth callbacks are deferred until an authenticated navigation request', function () {
+    $evaluatedUserIds = [];
+    $allowedUserId = $this->user->getAuthIdentifier();
+
+    NavigationRegistry::add(
+        [customNonResourceNavigationItem('DeferredPage')],
+        function () use (&$evaluatedUserIds, $allowedUserId): bool {
+            $evaluatedUserIds[] = auth()->id();
+
+            return auth()->id() === $allowedUserId;
+        },
+    );
+
+    expect($evaluatedUserIds)->toBe([]);
+
+    auth()->logout();
+
+    expect(Aura::navigation())->toBeEmpty()
+        ->and($evaluatedUserIds)->toBe([]);
+
+    $this->actingAs($this->user);
+
+    expect(collect(Aura::navigation()['Custom Group'])->pluck('type'))
+        ->toContain('DeferredPage')
+        ->and($evaluatedUserIds)->toBe([$allowedUserId]);
+
+    $deniedUser = createAdmin();
+    $this->actingAs($deniedUser);
+
+    expect(Aura::navigation())->not->toHaveKey('Custom Group')
+        ->and($evaluatedUserIds)->toBe([$allowedUserId, $deniedUser->getAuthIdentifier()]);
+});
+
+test('console and queue boot never evaluate navigation auth callbacks', function () {
+    $callbackInvocations = 0;
+    auth()->logout();
+
+    NavigationRegistry::add(
+        [customNonResourceNavigationItem('QueuePolicyPage')],
+        function () use (&$callbackInvocations): bool {
+            $callbackInvocations++;
+
+            return true;
+        },
+    );
+
+    $job = Mockery::mock(Job::class);
+    $job->shouldReceive('payload')->andReturn([]);
+    Event::dispatch(new JobProcessing('sync', $job));
+
+    expect(app()->runningInConsole())->toBeTrue()
+        ->and($callbackInvocations)->toBe(0)
+        ->and(Aura::navigation())->toBeEmpty()
+        ->and($callbackInvocations)->toBe(0);
+});
+
+test('non resource navigation policies use the current authenticated user', function () {
+    Cache::swap(serializedNavigationCacheRepository());
+    $allowedUser = createGlobalAdmin();
+    $deniedUser = createAdmin();
+
+    NavigationRegistry::add([
+        customNonResourceNavigationItem('PolicyPage', extra: [
+            'policy' => NavigationRegistry::policy(User::GLOBAL_ADMIN_GATE),
+        ]),
+    ]);
+
+    $this->actingAs($allowedUser);
+
+    $allowedItem = collect(Aura::navigation()['Custom Group'])->firstWhere('type', 'PolicyPage');
+
+    expect($allowedItem)
+        ->not->toBeNull()
+        ->not->toHaveKey('policy');
+
+    $this->actingAs($deniedUser);
+
+    expect(Aura::navigation())->not->toHaveKey('Custom Group');
+
+    $this->actingAs($allowedUser);
+
+    expect(collect(Aura::navigation()['Custom Group'])->pluck('type'))
+        ->toContain('PolicyPage');
+});
+
+test('request local hook definitions are reauthorized after a fresh application container', function () {
+    $cache = serializedNavigationCacheRepository();
+    Cache::swap($cache);
+    CachedPolicyNavigationHook::$invocations = 0;
+    app('hook_manager')->addHook('navigation', [CachedPolicyNavigationHook::class, 'apply']);
+    $allowedUser = createGlobalAdmin();
+    $deniedUser = createAdmin();
+    $this->actingAs($allowedUser);
+
+    expect(collect(Aura::navigation()['Custom Group'])->pluck('type'))
+        ->toContain('CachedPolicyPage')
+        ->and(CachedPolicyNavigationHook::$invocations)->toBe(1);
+
+    $this->refreshApplication();
+    Cache::swap($cache);
+    $this->actingAs($deniedUser);
+    Aura::fake();
+    app('hook_manager')->addHook('navigation', [CachedPolicyNavigationHook::class, 'apply']);
+
+    expect(Aura::navigation())->not->toHaveKey('Custom Group')
+        ->and(CachedPolicyNavigationHook::$invocations)->toBe(2);
+
+    $this->actingAs($allowedUser);
+
+    expect(collect(Aura::navigation()['Custom Group'])->pluck('type'))
+        ->toContain('CachedPolicyPage')
+        ->and(CachedPolicyNavigationHook::$invocations)->toBe(3);
+});
+
+test('user aware resource badges are rebuilt after a serialized cache read in a fresh container', function () {
+    $store = serializedNavigationArrayStore();
+    $cache = new Repository($store);
+    Cache::swap($cache);
+    Aura::registerResources([UserAwareBadgeNavigationModel::class]);
+    $firstUser = createGlobalAdmin();
+    $secondUser = createGlobalAdmin();
+    $this->actingAs($firstUser);
+
+    $firstBadge = collect(Aura::navigation()['Resources'])
+        ->firstWhere('resource', UserAwareBadgeNavigationModel::class)['badge'];
+
+    $this->refreshApplication();
+    Cache::swap($cache);
+    $this->actingAs($secondUser);
+    Aura::fake();
+    Aura::registerResources([UserAwareBadgeNavigationModel::class]);
+
+    $secondBadge = collect(Aura::navigation()['Resources'])
+        ->firstWhere('resource', UserAwareBadgeNavigationModel::class)['badge'];
+
+    expect($firstBadge)->toBe($firstUser->id)
+        ->and($secondBadge)->toBe($secondUser->id)
+        ->and(navigationStructuralCachePayloads($store))->toBe([[
+            'resources' => [UserAwareBadgeNavigationModel::class],
+        ]]);
+});
+
+test('team scoped resource badges are rebuilt after same user switches teams', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team-scoped badges require teams enabled.');
+    }
+
+    Cache::swap(serializedNavigationCacheRepository());
+    $user = createSuperAdmin();
+    $firstTeam = Team::findOrFail($user->current_team_id);
+    $secondTeam = Team::create([
+        'name' => 'Second Badge Team',
+        'user_id' => $user->id,
+    ]);
+    $this->actingAs($user);
+
+    TeamScopedBadgeNavigationModel::withoutGlobalScopes()->create([
+        'team_id' => $firstTeam->id,
+        'type' => TeamScopedBadgeNavigationModel::$type,
+        'title' => 'First team one',
+    ]);
+    TeamScopedBadgeNavigationModel::withoutGlobalScopes()->create([
+        'team_id' => $firstTeam->id,
+        'type' => TeamScopedBadgeNavigationModel::$type,
+        'title' => 'First team two',
+    ]);
+    TeamScopedBadgeNavigationModel::withoutGlobalScopes()->create([
+        'team_id' => $secondTeam->id,
+        'type' => TeamScopedBadgeNavigationModel::$type,
+        'title' => 'Second team one',
+    ]);
+    Aura::registerResources([TeamScopedBadgeNavigationModel::class]);
+
+    $badge = fn (): int => collect(Aura::navigation()['Resources'])
+        ->firstWhere('resource', TeamScopedBadgeNavigationModel::class)['badge'];
+
+    expect($user->switchTeam($firstTeam))->toBeTrue()
+        ->and($badge())->toBe(2)
+        ->and($user->switchTeam($secondTeam))->toBeTrue()
+        ->and($badge())->toBe(1)
+        ->and($user->switchTeam($firstTeam))->toBeTrue()
+        ->and($badge())->toBe(2);
+});
+
+test('authenticated static hooks rebuild membership for each user', function () {
+    $store = serializedNavigationArrayStore();
+    Cache::swap(new Repository($store));
+    $allowedUser = createGlobalAdmin();
+    $deniedUser = createGlobalAdmin();
+    AuthContextNavigationHook::$allowedUserId = $allowedUser->id;
+    AuthContextNavigationHook::$allowedTeamId = null;
+    AuthContextNavigationHook::$invocations = 0;
+    app('hook_manager')->addHook('navigation', [AuthContextNavigationHook::class, 'apply']);
+    $this->actingAs($allowedUser);
+
+    expect(collect(Aura::navigation()['Custom Group'])->pluck('type'))
+        ->toContain('AuthContextPage');
+
+    $this->actingAs($deniedUser);
+
+    expect(Aura::navigation())->not->toHaveKey('Custom Group')
+        ->and(AuthContextNavigationHook::$invocations)->toBe(2)
+        ->and(navigationStructuralCachePayloads($store))->toBe([[
+            'resources' => [],
+        ]]);
+});
+
+test('long workers rebuild static hooks across team switches and guest login cycles', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team switching is a teams-on navigation concern.');
+    }
+
+    Cache::swap(serializedNavigationCacheRepository());
+    $user = createSuperAdmin();
+    $allowedTeam = Team::findOrFail($user->current_team_id);
+    $deniedTeam = Team::create([
+        'name' => 'Denied Hook Team',
+        'user_id' => $user->id,
+    ]);
+    $this->actingAs($user);
+    AuthContextNavigationHook::$allowedUserId = $user->id;
+    AuthContextNavigationHook::$allowedTeamId = $allowedTeam->id;
+    AuthContextNavigationHook::$invocations = 0;
+    app('hook_manager')->addHook('navigation', [AuthContextNavigationHook::class, 'apply']);
+
+    expect($user->switchTeam($allowedTeam))->toBeTrue()
+        ->and(collect(Aura::navigation()['Custom Group'])->pluck('type'))
+        ->toContain('AuthContextPage')
+        ->and(AuthContextNavigationHook::$invocations)->toBe(1)
+        ->and($user->switchTeam($deniedTeam))->toBeTrue()
+        ->and(Aura::navigation())->not->toHaveKey('Custom Group')
+        ->and(AuthContextNavigationHook::$invocations)->toBe(2);
+
+    auth()->logout();
+
+    expect(Aura::navigation())->toBeEmpty()
+        ->and(AuthContextNavigationHook::$invocations)->toBe(2);
+
+    auth()->login($user);
+
+    expect($user->switchTeam($allowedTeam))->toBeTrue()
+        ->and(collect(Aura::navigation()['Custom Group'])->pluck('type'))
+        ->toContain('AuthContextPage')
+        ->and(AuthContextNavigationHook::$invocations)->toBe(3);
+});
+
+test('navigation policies are reevaluated after a team switch', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team switching is a teams-on navigation concern.');
+    }
+
+    Cache::swap(serializedNavigationCacheRepository());
+    $user = createSuperAdmin();
+    $allowedTeam = Team::findOrFail($user->current_team_id);
+    $deniedTeam = Team::create([
+        'name' => 'Denied Navigation Team',
+        'user_id' => $user->id,
+    ]);
+    $this->actingAs($user);
+
+    Gate::define('view-navigation-in-team', function (User $actor, int $teamId): bool {
+        return (int) $actor->current_team_id === $teamId;
+    });
+
+    NavigationRegistry::add([
+        customNonResourceNavigationItem('TeamPolicyPage', extra: [
+            'policy' => NavigationRegistry::policy('view-navigation-in-team', $allowedTeam->id),
+        ]),
+    ]);
+
+    expect($user->switchTeam($allowedTeam))->toBeTrue()
+        ->and(collect(Aura::navigation()['Custom Group'])->pluck('type'))
+        ->toContain('TeamPolicyPage')
+        ->and($user->switchTeam($deniedTeam))->toBeTrue()
+        ->and(Aura::navigation())->not->toHaveKey('Custom Group')
+        ->and($user->switchTeam($allowedTeam))->toBeTrue()
+        ->and(collect(Aura::navigation()['Custom Group'])->pluck('type'))
+        ->toContain('TeamPolicyPage');
+});
+
+test('navigation policies follow impersonation changes in the active guard', function () {
+    Cache::swap(serializedNavigationCacheRepository());
+    $globalAdmin = createGlobalAdmin();
+    $member = User::factory()->create();
+    $this->actingAs($globalAdmin);
+
+    NavigationRegistry::add([
+        customNonResourceNavigationItem('ImpersonationPolicyPage', extra: [
+            'policy' => NavigationRegistry::policy(User::GLOBAL_ADMIN_GATE),
+        ]),
+    ]);
+
+    expect(collect(Aura::navigation()['Custom Group'])->pluck('type'))
+        ->toContain('ImpersonationPolicyPage');
+
+    $member->impersonateAction();
+
+    expect(auth()->id())->toBe($member->id)
+        ->and(Aura::navigation())->not->toHaveKey('Custom Group');
+
+    expect(app(ImpersonateManager::class)->leave())->toBeTrue()
+        ->and(auth()->id())->toBe($globalAdmin->id)
+        ->and(collect(Aura::navigation()['Custom Group'])->pluck('type'))
+        ->toContain('ImpersonationPolicyPage');
+});
+
+test('hidden dropdown children and their empty groups are removed after authorization', function () {
+    $user = createGlobalAdmin();
+    $this->actingAs($user);
+
+    NavigationRegistry::add([
+        customNonResourceNavigationItem('AllowedChild', extra: [
+            'dropdown' => 'Policy Dropdown',
+            'policy' => NavigationRegistry::policy(User::GLOBAL_ADMIN_GATE),
+        ]),
+        customNonResourceNavigationItem('DeniedChild', extra: [
+            'dropdown' => 'Policy Dropdown',
+            'policy' => NavigationRegistry::policy('missing-navigation-ability'),
+        ]),
+        customNonResourceNavigationItem('OnlyDeniedChild', 'Empty Policy Group', [
+            'dropdown' => 'Empty Dropdown',
+            'policy' => NavigationRegistry::policy('missing-navigation-ability'),
+        ]),
+    ]);
+
+    $navigation = Aura::navigation();
+    $dropdown = collect($navigation['Custom Group'])->firstWhere('dropdown', 'Policy Dropdown');
+
+    expect(collect($dropdown['items'])->pluck('type')->all())->toBe(['AllowedChild'])
+        ->and($navigation)->not->toHaveKey('Empty Policy Group');
+});
+
+test('navigation policy payloads never execute forged callbacks', function () {
+    $callbackInvocations = 0;
+
+    NavigationRegistry::add([
+        customNonResourceNavigationItem('ForgedCallbackPage', extra: [
+            'policy' => [
+                'ability' => function () use (&$callbackInvocations): bool {
+                    $callbackInvocations++;
+
+                    return true;
+                },
+            ],
+        ]),
+        customNavigationItem('MissingNavigationResource', 'Invalid Resource Group'),
+    ]);
+
+    expect(Aura::navigation())->not->toHaveKey('Custom Group')
+        ->not->toHaveKey('Invalid Resource Group')
+        ->and($callbackInvocations)->toBe(0);
 });
 
 test('role permission changes invalidate warmed navigation', function () {
@@ -349,7 +834,7 @@ test('navigation items can be dropdown', function () {
         ->assertSee('NavigationModels');
 });
 
-test('navigation survives a serialized cache read in a fresh application container', function () {
+test('navigation resource structure survives a serialized cache read in a fresh application container', function () {
     $cache = serializedNavigationCacheRepository();
     Cache::swap($cache);
     Aura::registerResources([NavigationModel::class]);
@@ -363,6 +848,7 @@ test('navigation survives a serialized cache read in a fresh application contain
     $this->actingAs($this->user);
     Aura::fake();
     Aura::registerResources([NavigationModel::class]);
+    Route::get('/navigation-test/navmodel', fn (): string => '')->name('aura.navmodel.index');
 
     expect(Aura::navigation())
         ->toBeInstanceOf(Collection::class)
@@ -389,22 +875,11 @@ test('navigation cache changes when navigation hooks change', function () {
 
     expect(Aura::navigation())->not->toHaveKey('Custom Group');
 
-    NavigationRegistry::add([[
-        'icon' => '',
-        'resource' => 'CustomPage',
-        'type' => 'CustomPage',
-        'name' => 'Custom Page',
-        'slug' => 'custom-page',
-        'sort' => 100,
-        'group' => 'Custom Group',
-        'route' => '#',
-        'dropdown' => false,
-        'showInNavigation' => true,
-    ]]);
+    NavigationRegistry::add([customNonResourceNavigationItem('CustomPage')]);
 
     expect(Aura::navigation())
         ->toHaveKey('Custom Group')
-        ->and(collect(Aura::navigation()['Custom Group'])->firstWhere('resource', 'CustomPage'))
+        ->and(collect(Aura::navigation()['Custom Group'])->firstWhere('type', 'CustomPage'))
         ->not->toBeNull();
 });
 
@@ -415,10 +890,10 @@ test('different opaque hooks in fresh managers never share navigation cache entr
     $firstManager = new HookManager;
     app()->instance('hook_manager', $firstManager);
     $firstManager->addHook('navigation', function (Collection $navigation): Collection {
-        return $navigation->push(customNavigationItem('FirstCallbackPage'));
+        return $navigation->push(customNonResourceNavigationItem('FirstCallbackPage'));
     });
 
-    expect(collect(Aura::navigation()['Custom Group'])->pluck('resource'))
+    expect(collect(Aura::navigation()['Custom Group'])->pluck('type'))
         ->toContain('FirstCallbackPage');
 
     $this->refreshApplication();
@@ -429,10 +904,10 @@ test('different opaque hooks in fresh managers never share navigation cache entr
     $secondManager = new HookManager;
     app()->instance('hook_manager', $secondManager);
     $secondManager->addHook('navigation', function (Collection $navigation): Collection {
-        return $navigation->push(customNavigationItem('SecondCallbackPage'));
+        return $navigation->push(customNonResourceNavigationItem('SecondCallbackPage'));
     });
 
-    expect(collect(Aura::navigation()['Custom Group'])->pluck('resource'))
+    expect(collect(Aura::navigation()['Custom Group'])->pluck('type'))
         ->toContain('SecondCallbackPage')
         ->not->toContain('FirstCallbackPage');
 });
@@ -457,7 +932,7 @@ test('hook cache fingerprints are stable only for deterministic callables', func
 });
 
 test('navigation registration fingerprints are stable across fresh managers', function () {
-    $item = customNavigationItem('StablePage');
+    $item = customNonResourceNavigationItem('StablePage');
 
     $firstManager = new HookManager;
     app()->instance('hook_manager', $firstManager);
@@ -469,27 +944,27 @@ test('navigation registration fingerprints are stable across fresh managers', fu
 
     $differentManager = new HookManager;
     app()->instance('hook_manager', $differentManager);
-    NavigationRegistry::add([customNavigationItem('DifferentPage')]);
+    NavigationRegistry::add([customNonResourceNavigationItem('DifferentPage')]);
 
     expect($firstManager->cacheFingerprint('navigation'))
         ->toBe($secondManager->cacheFingerprint('navigation'))
         ->not->toBe($differentManager->cacheFingerprint('navigation'));
 });
 
-test('nested non-scalar navigation payloads bypass serialization', function (Closure $makeUnsafeValue) {
-    $store = new ArrayStore(serializesValues: true, serializableClasses: false);
+test('nested non-scalar navigation decorations are never serialized', function (Closure $makeUnsafeValue) {
+    $store = serializedNavigationArrayStore();
     Cache::swap(new Repository($store));
     Aura::registerResources([NavigationModel::class]);
 
     $unsafeValue = $makeUnsafeValue();
     NavigationRegistry::add([
-        customNavigationItem('UnsafePage', 'Unsafe Group', [
+        customNonResourceNavigationItem('UnsafePage', 'Unsafe Group', [
             'metadata' => ['unsafe' => $unsafeValue],
         ]),
     ]);
 
     $readUnsafeValue = function () {
-        $item = collect(Aura::navigation()['Unsafe Group'])->firstWhere('resource', 'UnsafePage');
+        $item = collect(Aura::navigation()['Unsafe Group'])->firstWhere('type', 'UnsafePage');
 
         return $item['metadata']['unsafe'];
     };
@@ -497,9 +972,13 @@ test('nested non-scalar navigation payloads bypass serialization', function (Clo
     expect(get_debug_type($readUnsafeValue()))->toBe(get_debug_type($unsafeValue))
         ->and(get_debug_type($readUnsafeValue()))->toBe(get_debug_type($unsafeValue));
 
-    foreach (array_keys($store->all(false)) as $key) {
-        expect(str_starts_with($key, 'aura.navigation.') || str_starts_with($key, 'aura.cache.value.'))
-            ->toBeFalse();
+    $cachedNavigationValues = collect(navigationArrayStoreValues($store))
+        ->filter(fn (mixed $value, string $key): bool => str_starts_with($key, 'aura.cache.value.'));
+
+    expect($cachedNavigationValues)->not->toBeEmpty();
+
+    foreach ($cachedNavigationValues as $value) {
+        expect(VersionedCache::isSafe($value))->toBeTrue();
     }
 
     if (is_resource($unsafeValue)) {
@@ -512,17 +991,17 @@ test('nested non-scalar navigation payloads bypass serialization', function (Clo
 ]);
 
 test('navigation retries when a deterministic hook races its first cache write', function () {
-    $store = new InterleavingNavigationArrayStore(serializesValues: true, serializableClasses: false);
+    $store = serializedNavigationArrayStore(InterleavingNavigationArrayStore::class);
     Cache::swap(new Repository($store));
     Aura::registerResources([NavigationModel::class]);
 
     $store->beforeNextNavigationPut(function (): void {
-        NavigationRegistry::add([customNavigationItem('RacingPage', 'Racing Group')]);
+        NavigationRegistry::add([customNonResourceNavigationItem('RacingPage', 'Racing Group')]);
     });
 
-    expect(collect(Aura::navigation()['Racing Group'])->pluck('resource'))
+    expect(collect(Aura::navigation()['Racing Group'])->pluck('type'))
         ->toContain('RacingPage')
-        ->and(collect(Aura::navigation()['Racing Group'])->pluck('resource'))
+        ->and(collect(Aura::navigation()['Racing Group'])->pluck('type'))
         ->toContain('RacingPage');
 });
 
@@ -538,7 +1017,7 @@ test('navigation accepts a legitimate one-time hook mutation', function () {
             $mutated = true;
             $hookManager->addHook(
                 'navigation',
-                fn (Collection $items): Collection => $items->push(customNavigationItem('LatePage')),
+                fn (Collection $items): Collection => $items->push(customNonResourceNavigationItem('LatePage')),
                 'navigation.late-page.v1',
             );
         }
@@ -546,7 +1025,7 @@ test('navigation accepts a legitimate one-time hook mutation', function () {
         return $navigation;
     }, 'navigation.one-time-mutation.v1');
 
-    expect(collect(Aura::navigation()['Custom Group'])->pluck('resource'))
+    expect(collect(Aura::navigation()['Custom Group'])->pluck('type'))
         ->toContain('LatePage')
         ->and($invocations)->toBe(2);
 });
