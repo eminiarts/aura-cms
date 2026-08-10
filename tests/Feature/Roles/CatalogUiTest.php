@@ -216,6 +216,35 @@ describe('Global Roles are visibly marked read-only in a team context', function
 });
 
 describe('the Global Admin manages the catalog through the Role form', function () {
+    it('derives a role slug on create instead of trusting a forged disabled value', function () {
+        $ga = promoteToGlobalAdmin(createSuperAdmin());
+        $this->actingAs($ga);
+
+        livewire(Create::class, ['slug' => 'role'])
+            ->set('form.fields.name', 'Harmless Name')
+            ->set('form.fields.slug', 'forged_security_identity')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect(Role::withoutGlobalScopes()->where('name', 'Harmless Name')->sole()->slug)
+            ->toBe('harmless_name');
+    });
+
+    it('derives a role slug on edit instead of trusting a forged disabled value', function () {
+        $ga = promoteToGlobalAdmin(createSuperAdmin());
+        $this->actingAs($ga);
+
+        $role = catalogTeamRole($ga->current_team_id, 'original_name', ['name' => 'Original Name']);
+
+        livewire(Edit::class, ['slug' => 'role', 'id' => $role->id])
+            ->set('form.fields.name', 'Harmless Name')
+            ->set('form.fields.slug', 'forged_security_identity')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect($role->fresh()->slug)->toBe('harmless_name');
+    });
+
     it('creates a Global Role when a Global Admin checks the global toggle', function () {
         $ga = promoteToGlobalAdmin(createSuperAdmin());
         $this->actingAs($ga);
@@ -272,9 +301,10 @@ describe('a team Super Admin creates Team Roles including Shadows', function () 
             ->and($member->hasPermissionTo('delete', new Post))->toBeFalse();
 
         // The team Super Admin creates a Team Role with the SAME slug (a Shadow)
-        // through the ordinary Role create form — no unique-slug rejection.
+        // through the ordinary Role create form. The protected slug is derived
+        // from the matching name and is not rejected as a duplicate globally.
         livewire(Create::class, ['slug' => 'role'])
-            ->set('form.fields.name', 'Team Editor')
+            ->set('form.fields.name', 'Editor')
             ->set('form.fields.slug', 'editor')
             ->set('form.fields.permissions', ['delete-post' => true])
             ->call('save')

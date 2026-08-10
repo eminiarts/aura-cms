@@ -10,6 +10,20 @@ class Slug extends Field
 
     public $view = 'aura::fields.view-value';
 
+    public function deriveValue(mixed $value): string
+    {
+        if (! is_scalar($value) && ! $value instanceof \Stringable) {
+            return '';
+        }
+
+        $normalized = \Normalizer::normalize((string) $value, \Normalizer::FORM_D);
+        $normalized = preg_replace('/[\x{0300}-\x{036f}]/u', '', $normalized ?: '') ?? '';
+        $normalized = strtolower($normalized);
+        $normalized = preg_replace('/^\s+|\s+$/u', '', $normalized) ?? '';
+
+        return preg_replace('/[^a-z0-9_]+/u', '_', $normalized) ?? '';
+    }
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [

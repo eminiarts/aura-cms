@@ -35,6 +35,16 @@ class SlugFieldModel extends Resource
                 'slug' => 'slug',
                 'based_on' => 'text',
             ],
+            [
+                'name' => 'Custom Slug for Test',
+                'type' => 'Aura\\Base\\Fields\\Slug',
+                'validation' => 'nullable|alpha_dash',
+                'conditional_logic' => [],
+                'slug' => 'custom_slug',
+                'based_on' => 'text',
+                'custom' => true,
+                'disabled' => true,
+            ],
         ];
     }
 }
@@ -253,6 +263,17 @@ describe('Slug Field in Livewire', function () {
         expect($post->slug)->toBe('updated-slug');
     });
 
+    test('preserves an explicitly custom slug when its input starts disabled', function () {
+        Livewire::test(Create::class, ['slug' => 'slug-model'])
+            ->set('form.fields.text', 'Custom Title')
+            ->set('form.fields.slug', 'custom-title')
+            ->set('form.fields.custom_slug', 'user-selected-slug')
+            ->call('save')
+            ->assertHasNoErrors(['form.fields.custom_slug']);
+
+        expect(SlugFieldModel::query()->sole()->fields['custom_slug'])->toBe('user-selected-slug');
+    });
+
     test('rejects invalid slug on edit', function () {
         // Create model
         Livewire::test(Create::class, ['slug' => 'slug-model'])
@@ -277,6 +298,13 @@ describe('Slug Field in Livewire', function () {
 });
 
 describe('Slug Field Value Handling', function () {
+    test('derives values with the browser slug normalization semantics', function () {
+        $slugField = new Slug;
+
+        expect($slugField->deriveValue('  Héllo -- WORLD & More  '))->toBe('hello_world_more')
+            ->and($slugField->deriveValue('Crème brûlée'))->toBe('creme_brulee');
+    });
+
     test('get method returns value unchanged', function () {
         $slugField = new Slug;
 

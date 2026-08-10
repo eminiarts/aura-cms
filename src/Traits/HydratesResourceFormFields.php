@@ -84,11 +84,31 @@ trait HydratesResourceFormFields
     {
         $values = is_array($this->form['fields'] ?? null) ? $this->form['fields'] : [];
         $sanitized = [];
+        $writableFields = $this->writableResourceFormFields($context);
+        $writableSlugs = $writableFields->pluck('slug');
 
-        foreach ($this->writableResourceFormFields($context) as $field) {
+        foreach ($writableFields as $field) {
             $slug = $field['slug'] ?? null;
 
-            if (! is_string($slug) || ! Arr::has($values, $slug)) {
+            if (! is_string($slug)) {
+                continue;
+            }
+
+            if ($this->isServerDerivedSlugField($field)) {
+                $basedOn = $field['based_on'] ?? null;
+
+                if (! is_string($basedOn)
+                    || ! $writableSlugs->contains($basedOn)
+                    || ! Arr::has($values, $basedOn)) {
+                    continue;
+                }
+
+                Arr::set($sanitized, $slug, $field['field']->deriveValue(Arr::get($values, $basedOn)));
+
+                continue;
+            }
+
+            if (! Arr::has($values, $slug)) {
                 continue;
             }
 
@@ -165,5 +185,15 @@ trait HydratesResourceFormFields
     {
         return $field['field'] instanceof Slug
             || ! $field['field']->isDisabled($this->model, $field);
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     */
+    private function isServerDerivedSlugField(array $field): bool
+    {
+        return $field['field'] instanceof Slug
+            && $field['field']->isDisabled($this->model, $field)
+            && ! ($field['custom'] ?? false);
     }
 }

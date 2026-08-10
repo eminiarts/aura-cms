@@ -4,6 +4,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Boolean;
 use Aura\Base\Fields\Number;
 use Aura\Base\Fields\Panel;
+use Aura\Base\Fields\Slug;
 use Aura\Base\Fields\Text;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
@@ -67,6 +68,7 @@ class FormFieldHydrationResource extends Resource
             ['name' => 'Edit hidden panel', 'slug' => 'edit_hidden_panel', 'type' => Panel::class, 'on_edit' => false],
             ['name' => 'Edit parent hidden', 'slug' => 'edit_parent_hidden', 'type' => Text::class, 'default' => 'edit parent hidden'],
             ['name' => 'Legacy nullable', 'slug' => 'legacy_nullable', 'type' => NullUnsafeLegacyHydrationField::class],
+            ['name' => 'Derived provider slug', 'slug' => 'derived_provider_slug', 'type' => Slug::class, 'based_on' => 'sensitive_provider_field', 'custom' => false, 'disabled' => true],
         ];
 
         if (self::$sensitiveFieldVisible) {
@@ -219,12 +221,14 @@ test('query values and a changed field provider cannot seed or persist unavailab
             Aura::flushFieldCache();
         })
         ->set('form.fields.sensitive_provider_field', 'forged after provider change')
+        ->set('form.fields.derived_provider_slug', 'forged_security_identity')
         ->call('save')
         ->assertHasNoErrors();
 
     $created = FormFieldHydrationResource::query()->sole();
 
     expect($created->getMeta('sensitive_provider_field'))->toBeNull()
+        ->and($created->getMeta('derived_provider_slug'))->toBeNull()
         ->and($created->getMeta('create_hidden'))->toBeNull()
         ->and($created->getMeta('parent_hidden'))->toBeNull();
 });
