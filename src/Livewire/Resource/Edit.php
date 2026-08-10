@@ -177,6 +177,7 @@ class Edit extends Component
     public function save()
     {
         $this->validate();
+        $this->validateMediaFieldsBeforePersistence();
 
         // unset this post fields group
         if ($this->model->usesCustomTable()) {

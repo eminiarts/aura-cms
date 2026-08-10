@@ -177,6 +177,7 @@ class Create extends Component
     public function save()
     {
         $this->validate();
+        $this->validateMediaFieldsBeforePersistence();
 
         $attributes = collect($this->form['fields'])
             ->except(['team_id', 'user_id', 'type', 'current_team_id'])

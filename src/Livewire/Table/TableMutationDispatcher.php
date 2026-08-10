@@ -1760,13 +1760,7 @@ final class TableMutationDispatcher
             ]);
         }
 
-        if (count($selected) > $this->maximumRecordCount()) {
-            throw ValidationException::withMessages([
-                'selected' => 'The selected records exceed the configured mutation limit.',
-            ]);
-        }
-
-        $normalized = [];
+        $expectedKeys = [];
 
         foreach ($selected as $id) {
             if ((! is_int($id) && ! is_string($id)) || (is_string($id) && $id === '')) {
@@ -1775,20 +1769,24 @@ final class TableMutationDispatcher
                 ]);
             }
 
-            $normalized[(string) $id] = $id;
+            $identity = $modelDescriptor->canonicalIdentity($id);
+
+            if (! array_key_exists($identity, $expectedKeys)) {
+                $expectedKeys[$identity] = $id;
+            }
         }
 
-        if ($normalized === []) {
+        if ($expectedKeys === []) {
             throw ValidationException::withMessages([
                 'selected' => 'Select at least one record.',
             ]);
         }
 
-        $expectedKeys = collect($normalized)
-            ->mapWithKeys(
-                fn (int|string $id): array => [$modelDescriptor->canonicalIdentity($id) => $id]
-            )
-            ->all();
+        if (count($expectedKeys) > $this->maximumRecordCount()) {
+            throw ValidationException::withMessages([
+                'selected' => 'The selected records exceed the configured mutation limit.',
+            ]);
+        }
 
         $records = $this->authoritativeRecordsForExpectedKeys(
             $scope,

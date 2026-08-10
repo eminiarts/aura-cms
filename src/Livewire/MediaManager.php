@@ -23,6 +23,9 @@ class MediaManager extends Component
     public $modalAttributes;
 
     #[Locked]
+    public string $model;
+
+    #[Locked]
     public string $resource;
 
     public $rowIds = [];
@@ -50,6 +53,7 @@ class MediaManager extends Component
             $selection,
         );
         $this->field = $authorized['field'];
+        $this->model = $authorized['resource']::class;
         $this->resource = $authorized['resource_slug'];
 
         return $authorized['selected'];

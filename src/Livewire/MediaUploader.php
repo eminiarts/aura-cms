@@ -110,6 +110,10 @@ class MediaUploader extends Component
 
         try {
             $this->validate([
+                'media' => [
+                    'array',
+                    'max:'.self::MAX_FILES,
+                ],
                 'media.*' => [
                     'required',
                     'max:'.self::MAX_FILE_SIZE_KILOBYTES,

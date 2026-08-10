@@ -15,6 +15,62 @@ final class MediaFieldAuthorization
     private const MAX_SELECTED_MEDIA = 500;
 
     /**
+     * @param  array<int, array<string, mixed>>  $fields
+     */
+    public function authorizeDeclaredField(array $fields, string $fieldSlug, mixed $selected): void
+    {
+        $field = collect($fields)->first(
+            static fn (mixed $field): bool => is_array($field)
+                && ($field['slug'] ?? null) === $fieldSlug,
+        );
+
+        if (! is_array($field) || ! $this->isMediaField($field)) {
+            abort(422, 'The media field is invalid.');
+        }
+
+        $ids = $this->normalizeDeclaredSelection($selected);
+
+        if ($ids === []) {
+            return;
+        }
+
+        $attachment = $this->authorizeAttachment(false);
+        $this->authorizeSelectedAttachments($attachment, $ids);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $fields
+     * @param  array<string, mixed>  $values
+     */
+    public function authorizeDeclaredFields(array $fields, array $values): void
+    {
+        $selected = [];
+
+        foreach ($fields as $field) {
+            if (! is_array($field) || ! $this->isMediaField($field)) {
+                continue;
+            }
+
+            $fieldSlug = $field['slug'] ?? null;
+
+            if (! is_string($fieldSlug) || $fieldSlug === '') {
+                abort(422, 'The media field is invalid.');
+            }
+
+            foreach ($this->normalizeDeclaredSelection($values[$fieldSlug] ?? null) as $id) {
+                $selected[$id] = $id;
+            }
+        }
+
+        if ($selected === []) {
+            return;
+        }
+
+        $attachment = $this->authorizeAttachment(false);
+        $this->authorizeSelectedAttachments($attachment, array_values($selected));
+    }
+
+    /**
      * @param  array<int, mixed>  $selected
      * @return array{attachment: Model, field: array<string, mixed>, resource: BaseResource|resource, resource_slug: string, selected: list<string>}
      */
@@ -26,13 +82,10 @@ final class MediaFieldAuthorization
     ): array {
         $resource = $this->registeredResourceBySlug($resourceSlug);
         $field = $resource->fieldBySlug($fieldSlug);
-        $fieldType = is_array($field) ? ($field['type'] ?? null) : null;
-
         if (
             ! is_array($field)
             || ($field['slug'] ?? null) !== $fieldSlug
-            || ! is_string($fieldType)
-            || (! is_a($fieldType, Image::class, true) && ! is_a($fieldType, File::class, true))
+            || ! $this->isMediaField($field)
         ) {
             abort(422, 'The media manager resource field is invalid.');
         }
@@ -41,15 +94,7 @@ final class MediaFieldAuthorization
         $attachment = $this->authorizeAttachment($authorizeCreate);
         $ids = $this->normalizeSelected($selected);
 
-        if ($ids !== []) {
-            $attachments = $attachment->newQuery()->whereKey($ids)->get();
-
-            if ($attachments->count() !== count($ids)) {
-                abort(422, 'The selected media are invalid.');
-            }
-
-            $attachments->each(static fn (Model $record) => Gate::authorize('view', $record));
-        }
+        $this->authorizeSelectedAttachments($attachment, $ids);
 
         return [
             'attachment' => $attachment,
@@ -111,6 +156,49 @@ final class MediaFieldAuthorization
         }
 
         return app($attachmentClass);
+    }
+
+    /** @param list<string> $ids */
+    private function authorizeSelectedAttachments(Model $attachment, array $ids): void
+    {
+        if ($ids === []) {
+            return;
+        }
+
+        $attachments = $attachment->newQuery()->whereKey($ids)->get();
+
+        if ($attachments->count() !== count($ids)) {
+            abort(422, 'The selected media are invalid.');
+        }
+
+        $attachments->each(static fn (Model $record) => Gate::authorize('view', $record));
+    }
+
+    /** @param array<string, mixed> $field */
+    private function isMediaField(array $field): bool
+    {
+        $fieldType = $field['type'] ?? null;
+
+        return is_string($fieldType)
+            && (is_a($fieldType, Image::class, true) || is_a($fieldType, File::class, true));
+    }
+
+    /** @return list<string> */
+    private function normalizeDeclaredSelection(mixed $selected): array
+    {
+        if ($selected === null || $selected === '') {
+            return [];
+        }
+
+        if (is_int($selected) || is_string($selected)) {
+            return $this->normalizeSelected([$selected]);
+        }
+
+        if (! is_array($selected)) {
+            abort(422, 'The selected media are invalid.');
+        }
+
+        return $this->normalizeSelected($selected);
     }
 
     /** @return list<string> */

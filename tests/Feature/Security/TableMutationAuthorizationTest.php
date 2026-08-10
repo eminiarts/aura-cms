@@ -3,11 +3,16 @@
 use Aura\Base\BaseResource;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Facades\DynamicFunctions;
+use Aura\Base\Fields\File as FileField;
 use Aura\Base\Fields\HasMany;
 use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\MediaManager;
 use Aura\Base\Livewire\MediaUploader;
 use Aura\Base\Livewire\Modals;
+use Aura\Base\Livewire\Profile;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Livewire\Settings;
 use Aura\Base\Livewire\SignedModalRequest;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Livewire\Table\TableMutationDispatcher;
@@ -122,6 +127,9 @@ class Core05MutationResource extends Resource
         ],
     ];
 
+    /** @var array<int, array<int, int|string>> */
+    public static array $capturedCollectionIdChunks = [];
+
     public static bool $countIndexBeforeQueryInvocations = false;
 
     public static int $dynamicBeforeQueryInvocations = 0;
@@ -149,6 +157,7 @@ class Core05MutationResource extends Resource
 
     public function captureCollectionAttributes(array $ids): void
     {
+        static::$capturedCollectionIdChunks[] = $ids;
         $snapshot = $this->mutationAttributeSnapshot();
         $snapshot['ids'] = $ids;
 
@@ -413,6 +422,11 @@ class Core05MediaResource extends Resource
                 'name' => 'Hero image',
                 'slug' => 'hero_image',
                 'type' => Image::class,
+            ],
+            [
+                'name' => 'Document',
+                'slug' => 'document',
+                'type' => FileField::class,
             ],
         ];
     }
@@ -851,6 +865,7 @@ beforeEach(function () {
     Core05MutationResource::$authoritativeReadCallback = null;
     Core05MutationResource::$beforeQueryCallback = null;
     Core05MutationResource::$beforeQueryInvocations = 0;
+    Core05MutationResource::$capturedCollectionIdChunks = [];
     Core05MutationResource::$countIndexBeforeQueryInvocations = false;
     Core05MutationResource::$dynamicBeforeQueryInvocations = 0;
     Core05MutationResource::$indexBeforeQueryInvocations = 0;
@@ -1357,14 +1372,186 @@ test('media manager safely preserves the documented legacy model argument', func
         ])
         ->assertSeeHtml('data-media-picker-root');
 
-    livewire(MediaManager::class, [
+    $component = livewire(MediaManager::class, [
         'model' => Core05MediaResource::class,
         'slug' => 'hero_image',
         'selected' => [],
         'modalAttributes' => [],
     ])
         ->assertSet('resource', Core05MediaResource::$slug)
+        ->assertSet('model', Core05MediaResource::class)
         ->assertOk();
+
+    $component
+        ->call('tableMounted')
+        ->assertSet('resource', Core05MediaResource::$slug)
+        ->assertSet('model', Core05MediaResource::class);
+});
+
+test('media manager exposes a locked canonical model for resource mounts and hydrated APIs', function () {
+    $this->actingAs(createSuperAdmin());
+    Aura::setModel(new Core05MediaResource);
+    $component = livewire(MediaManager::class, [
+        'resource' => Core05MediaResource::$slug,
+        'slug' => 'hero_image',
+        'selected' => [],
+        'modalAttributes' => [],
+    ])
+        ->assertSet('resource', Core05MediaResource::$slug)
+        ->assertSet('model', Core05MediaResource::class);
+
+    expect(fn () => $component->set('model', Core05MutationResource::class))
+        ->toThrow(CannotUpdateLockedPropertyException::class);
+
+    $component
+        ->call('select', [])
+        ->assertSet('resource', Core05MediaResource::$slug)
+        ->assertSet('model', Core05MediaResource::class);
+});
+
+test('resource create rejects forged media field updates before mutating public form state', function () {
+    $this->actingAs(createSuperAdmin());
+    Aura::setModel(new Core05MediaResource);
+
+    livewire(Create::class, ['slug' => Core05MediaResource::$slug])
+        ->call('updateField', [
+            'slug' => 'forged_media',
+            'value' => [PHP_INT_MAX],
+        ])
+        ->assertStatus(422)
+        ->assertSet('form.fields.forged_media', null);
+});
+
+test('resource create validates direct public media state before persistence', function () {
+    $this->actingAs(createSuperAdmin());
+    Aura::setModel(new Core05MediaResource);
+    $before = Core05MediaResource::query()->count();
+
+    livewire(Create::class, ['slug' => Core05MediaResource::$slug])
+        ->set('form.fields.hero_image', [PHP_INT_MAX])
+        ->call('save')
+        ->assertStatus(422);
+
+    expect(Core05MediaResource::query()->count())->toBe($before);
+});
+
+test('media field updates preserve explicit empty values and accept owned image and file attachments', function () {
+    $this->actingAs(createSuperAdmin());
+    Aura::setModel(new Core05MediaResource);
+    $attachment = Attachment::create(['title' => 'Owned parent field attachment']);
+    $component = livewire(Create::class, ['slug' => Core05MediaResource::$slug]);
+
+    foreach ([null, '', []] as $emptyValue) {
+        $component
+            ->call('updateField', ['slug' => 'hero_image', 'value' => $emptyValue])
+            ->assertSet('form.fields.hero_image', $emptyValue);
+    }
+
+    $component
+        ->call('updateField', ['slug' => 'hero_image', 'value' => [$attachment->getKey()]])
+        ->assertSet('form.fields.hero_image', [$attachment->getKey()])
+        ->call('updateField', ['slug' => 'document', 'value' => [$attachment->getKey()]])
+        ->assertSet('form.fields.document', [$attachment->getKey()]);
+});
+
+test('explicit empty media values do not require attachment access', function () {
+    $this->actingAs(createSuperAdmin());
+    Aura::setModel(new Core05MediaResource);
+    Gate::policy(Attachment::class, Core05DenyAttachmentPolicy::class);
+    $before = Core05MediaResource::query()->count();
+
+    livewire(Create::class, ['slug' => Core05MediaResource::$slug])
+        ->call('updateField', ['slug' => 'hero_image', 'value' => null])
+        ->assertOk();
+
+    livewire(Create::class, ['slug' => Core05MediaResource::$slug])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Core05MediaResource::query()->count())->toBe($before + 1);
+});
+
+test('parent media field updates reject attachments outside the current team scope', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('This test exercises team-only behavior.');
+    }
+
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    Aura::setModel(new Core05MediaResource);
+    $attachment = Attachment::create(['title' => 'Foreign parent field attachment']);
+    DB::table('posts')->where('id', $attachment->getKey())->update([
+        'team_id' => ((int) $actor->current_team_id) + 999,
+    ]);
+
+    livewire(Create::class, ['slug' => Core05MediaResource::$slug])
+        ->call('updateField', [
+            'slug' => 'hero_image',
+            'value' => [$attachment->getKey()],
+        ])
+        ->assertStatus(422)
+        ->assertSet('form.fields.hero_image', null);
+});
+
+test('resource edit validates declared file state before persistence', function () {
+    $this->actingAs(createSuperAdmin());
+    Aura::setModel(new Core05MediaResource);
+    $resource = Core05MediaResource::create([
+        'fields' => [
+            'hero_image' => null,
+            'document' => null,
+        ],
+    ]);
+
+    livewire(Edit::class, [
+        'id' => $resource->getKey(),
+        'slug' => Core05MediaResource::$slug,
+    ])
+        ->set('form.fields.document', [PHP_INT_MAX])
+        ->call('save')
+        ->assertStatus(422);
+
+    expect($resource->fresh()->document)->toBeNull();
+});
+
+test('settings validates direct logo state before persistence', function () {
+    $this->actingAs(createSuperAdmin());
+    $component = livewire(Settings::class);
+    $settings = $component->get('model');
+    $originalValue = $settings->value;
+
+    $component
+        ->set('form.fields.logo', [PHP_INT_MAX])
+        ->call('save')
+        ->assertStatus(422);
+
+    expect($settings->fresh()->value)->toBe($originalValue);
+});
+
+test('profile validates direct avatar state before persistence', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    $originalAvatar = $actor->avatar;
+
+    livewire(Profile::class)
+        ->set('form.fields.avatar', [PHP_INT_MAX])
+        ->call('save')
+        ->assertStatus(422);
+
+    expect($actor->fresh()->avatar)->toBe($originalAvatar);
+});
+
+test('profile validates media updates at the public event boundary', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+
+    livewire(Profile::class)
+        ->call('updateField', [
+            'slug' => 'avatar',
+            'value' => [PHP_INT_MAX],
+        ])
+        ->assertStatus(422)
+        ->assertSet('form.fields.avatar', $actor->avatar);
 });
 
 test('legacy media manager model input never resolves an unregistered container class', function () {
@@ -3782,6 +3969,37 @@ test('select all applies its cap after duplicate join identities are deduplicate
 
     expect($duplicated->fresh()->content)->toBe('reviewed-by-bulk-action')
         ->and($second->fresh()->content)->toBe('reviewed-by-bulk-action');
+});
+
+test('explicit selections deduplicate canonical identities before applying the cap', function () {
+    $this->actingAs(createSuperAdmin());
+    config()->set('aura.security.table_mutations.max_records', 2);
+    config()->set('aura.security.table_mutations.chunk_size', 1);
+    $first = Core05MutationResource::create([
+        'title' => 'First explicit identity',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $second = Core05MutationResource::create([
+        'title' => 'Second explicit identity',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selected', [
+            $second->getKey(),
+            (string) $second->getKey(),
+            $first->getKey(),
+            (string) $first->getKey(),
+        ])
+        ->call('bulkCollectionAction', 'captureCollectionAttributes')
+        ->assertHasNoErrors();
+
+    expect(Core05MutationResource::$capturedCollectionIdChunks)->toBe([
+        [$second->getKey()],
+        [$first->getKey()],
+    ]);
 });
 
 test('select all preserves the effective displayed order before applying a query limit', function () {
