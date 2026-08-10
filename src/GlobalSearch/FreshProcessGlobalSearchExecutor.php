@@ -222,9 +222,16 @@ SH;
 
         $output = $process->getOutput();
         $markerPosition = strpos($output, RunGlobalSearchWorker::RESPONSE_MARKER);
+        $attestationMarkerPosition = strpos(
+            $output,
+            FreshProcessGlobalSearchSupervisor::SUPERVISOR_ATTESTATION_MARKER,
+        );
 
         if ($markerPosition === false
+            || $attestationMarkerPosition === false
             || substr_count($output, RunGlobalSearchWorker::RESPONSE_MARKER) !== 1
+            || substr_count($output, FreshProcessGlobalSearchSupervisor::SUPERVISOR_ATTESTATION_MARKER) !== 1
+            || $attestationMarkerPosition <= $markerPosition
             || str_contains(substr($output, 0, $markerPosition), "\x1eAURA_GLOBAL_SEARCH_")) {
             throw new GlobalSearchExecutionFailed('The global search worker returned no response envelope.');
         }
@@ -232,10 +239,19 @@ SH;
         $encodedEnvelope = trim(substr(
             $output,
             $markerPosition + strlen(RunGlobalSearchWorker::RESPONSE_MARKER),
+            $attestationMarkerPosition
+                - $markerPosition
+                - strlen(RunGlobalSearchWorker::RESPONSE_MARKER),
+        ));
+        $encodedAttestation = trim(substr(
+            $output,
+            $attestationMarkerPosition
+                + strlen(FreshProcessGlobalSearchSupervisor::SUPERVISOR_ATTESTATION_MARKER),
         ));
 
         try {
             $envelope = json_decode($encodedEnvelope, true, 32, JSON_THROW_ON_ERROR);
+            $attestation = json_decode($encodedAttestation, true, 8, JSON_THROW_ON_ERROR);
         } catch (Throwable $exception) {
             throw new GlobalSearchExecutionFailed(
                 'The global search worker returned malformed JSON.',
@@ -244,6 +260,12 @@ SH;
         }
 
         if (! is_array($envelope)
+            || ! is_array($attestation)
+            || array_keys($attestation) !== ['worker_pid', 'contained', 'completion_exit_code']
+            || ! is_int($attestation['worker_pid'] ?? null)
+            || $attestation['worker_pid'] < 2
+            || ($attestation['contained'] ?? null) !== true
+            || ($attestation['completion_exit_code'] ?? null) !== $exitCode
             || array_keys($envelope) !== ['successful', 'result']
             || ($envelope['successful'] ?? null) !== true
             || ! is_array($envelope['result'] ?? null)
@@ -251,7 +273,11 @@ SH;
             throw new GlobalSearchExecutionFailed('The global search worker failed closed.');
         }
 
-        return $envelope['result'];
+        return [
+            ...$envelope['result'],
+            'worker_pid' => $attestation['worker_pid'],
+            'contained' => true,
+        ];
     }
 
     public static function terminateAll(): void
@@ -495,20 +521,16 @@ SH;
         $operation = $request['operation'] ?? null;
         $queryLimit = $request['query_limit'] ?? null;
         $queryCount = $result['query_count'] ?? null;
-        $workerProcessId = $result['worker_pid'] ?? null;
 
         if (! is_int($queryLimit)
             || ! is_int($queryCount)
             || $queryCount < 1
-            || $queryCount > $queryLimit
-            || ! is_int($workerProcessId)
-            || $workerProcessId < 2
-            || ($result['contained'] ?? null) !== true) {
+            || $queryCount > $queryLimit) {
             return false;
         }
 
         if ($operation === 'discover') {
-            return array_keys($result) === ['resources', 'query_count', 'worker_pid', 'contained']
+            return array_keys($result) === ['resources', 'query_count']
                 && is_array($result['resources'])
                 && count($result['resources']) <= 100
                 && collect($result['resources'])->every(
@@ -520,7 +542,7 @@ SH;
         $globalLimit = $request['global_limit'] ?? null;
 
         return $operation === 'search'
-            && array_keys($result) === ['results', 'query_count', 'worker_pid', 'contained']
+            && array_keys($result) === ['results', 'query_count']
             && is_int($globalLimit)
             && is_array($result['results'])
             && count($result['results']) <= $globalLimit;

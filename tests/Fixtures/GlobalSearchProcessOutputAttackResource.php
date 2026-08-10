@@ -32,9 +32,7 @@ final class GlobalSearchProcessOutputAttackAdapter implements GlobalSearchAdapte
                     'url' => '/admin/process-search-output-attack/2',
                     'rank' => 999,
                 ]],
-                'query_count' => 0,
-                'worker_pid' => getmypid(),
-                'contained' => true,
+                'query_count' => 1,
             ],
         ], JSON_THROW_ON_ERROR);
 
@@ -50,6 +48,10 @@ final class GlobalSearchProcessOutputAttackAdapter implements GlobalSearchAdapte
 
         if ($mode === 'forged-completed-code') {
             echo $forgedEnvelope;
+            exit(RunGlobalSearchWorker::COMPLETED_EXIT_CODE);
+        }
+
+        if ($mode === 'provider-forged-completed-code') {
             exit(RunGlobalSearchWorker::COMPLETED_EXIT_CODE);
         }
 

@@ -19,6 +19,7 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessBeforeQueryMutationResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessBlockingDiscoveryResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessCapturedManagerConnectionChurnResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessConnectionChurnResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessDefaultConnectionResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessDeniedConstructionResource;
@@ -2003,6 +2004,25 @@ test('fresh workers meter purge and reconnect after connection listeners are rem
     }
 });
 
+test('fresh workers meter a manager captured during provider boot after listeners are removed', function () {
+    $harness = configureFreshProcessSearchHarness('query-churn-captured-manager', [
+        GlobalSearchProcessCapturedManagerConnectionChurnResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+
+    try {
+        $this->actingAs($harness['user']);
+
+        Livewire::test(GlobalSearch::class)
+            ->set('search', 'Fresh Process Needle')
+            ->assertSee('Fresh Process Needle Current Team');
+
+        expect(strlen((string) @file_get_contents($harness['marker'])))->toBeLessThanOrEqual(7);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
 test('fresh workers reject forged stdout envelopes and abnormal termination', function (string $mode) {
     $harness = configureFreshProcessSearchHarness($mode, [GlobalSearchProcessOutputAttackResource::class]);
     $executor = app(FreshProcessGlobalSearchExecutor::class);
@@ -2029,6 +2049,29 @@ test('fresh workers reject forged stdout envelopes and abnormal termination', fu
     'multiple forged envelopes' => 'forged-multiple',
     'partial forged envelope' => 'forged-partial',
 ]);
+
+test('fresh workers reject a provider bootstrap shutdown callback forging completion', function () {
+    $harness = configureFreshProcessSearchHarness(
+        'provider-forged-completed-code',
+        [GlobalSearchProcessOutputAttackResource::class],
+    );
+    $executor = app(FreshProcessGlobalSearchExecutor::class);
+
+    try {
+        expect(fn () => $executor->run([
+            'operation' => 'search',
+            'context' => signedFreshProcessContext($harness['user']),
+            'query_limit' => 20,
+            'resource' => GlobalSearchProcessOutputAttackResource::class,
+            'resource_order' => 0,
+            'search_term' => 'Fresh Process Needle',
+            'global_limit' => 15,
+            'execution_timeout_ms' => 1_500,
+        ], 1_500, 1_048_576))->toThrow(GlobalSearchExecutionFailed::class);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
 
 test('fresh workers ignore stderr diagnostics while accepting one normal response', function () {
     $harness = configureFreshProcessSearchHarness('stderr-noise', [

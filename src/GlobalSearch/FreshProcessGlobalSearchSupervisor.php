@@ -8,6 +8,14 @@ final class FreshProcessGlobalSearchSupervisor
 {
     public const CONFIGURATION_EXIT_CODE = 78;
 
+    public const SUPERVISOR_ATTESTATION_MARKER = "\x1eAURA_GLOBAL_SEARCH_ATTESTATION\x1f";
+
+    public const WORKER_COMPLETED_EXIT_CODE = 64;
+
+    public const WORKER_EARLY_TERMINATION_EXIT_CODE = 70;
+
+    public const WORKER_RESPONSE_MARKER = "\x1eAURA_GLOBAL_SEARCH_RESPONSE\x1f";
+
     private const MAXIMUM_PROTOCOL_BYTES = 512;
 
     private const REQUIRED_FUNCTIONS = [
@@ -35,6 +43,15 @@ final class FreshProcessGlobalSearchSupervisor
         'stream_set_blocking',
         'stream_socket_pair',
     ];
+
+    private static bool $applicationWorkerCompleted = false;
+
+    private static bool $applicationWorkerSentinelRegistered = false;
+
+    public static function markApplicationWorkerCompleted(): void
+    {
+        self::$applicationWorkerCompleted = true;
+    }
 
     /** @param array<int, string> $arguments */
     public static function run(array $arguments): int
@@ -252,6 +269,8 @@ final class FreshProcessGlobalSearchSupervisor
             return self::CONFIGURATION_EXIT_CODE;
         }
 
+        self::registerApplicationWorkerSentinel();
+
         $_SERVER['argv'] = [$artisanPath, 'aura:global-search-worker', '--no-interaction'];
         $_SERVER['argc'] = count($_SERVER['argv']);
         $GLOBALS['argv'] = $_SERVER['argv'];
@@ -423,6 +442,25 @@ final class FreshProcessGlobalSearchSupervisor
         }
     }
 
+    private static function registerApplicationWorkerSentinel(): void
+    {
+        self::$applicationWorkerCompleted = false;
+
+        if (self::$applicationWorkerSentinelRegistered) {
+            return;
+        }
+
+        self::$applicationWorkerSentinelRegistered = true;
+        register_shutdown_function(static function (): void {
+            if (self::$applicationWorkerCompleted) {
+                return;
+            }
+
+            @fwrite(STDOUT, self::WORKER_RESPONSE_MARKER.'{"successful":false}');
+            exit(self::WORKER_EARLY_TERMINATION_EXIT_CODE);
+        });
+    }
+
     /** @param array<int, int> $signalMask */
     private static function restoreSignalMask(array $signalMask): bool
     {
@@ -552,7 +590,18 @@ final class FreshProcessGlobalSearchSupervisor
                     return is_int($terminationSignal) ? 128 + $terminationSignal : 125;
                 }
 
-                return self::exitCode($workerStatus);
+                $workerExitCode = self::exitCode($workerStatus);
+
+                if ($workerExitCode === self::WORKER_COMPLETED_EXIT_CODE
+                    && ! self::writeSupervisorAttestation(
+                        $workerProcessId,
+                        $workerExitCode,
+                        $deadlineNanoseconds,
+                    )) {
+                    return 126;
+                }
+
+                return $workerExitCode;
             }
 
             if ($waitedWorkerProcessId === -1 && pcntl_get_last_error() !== PCNTL_EINTR) {
@@ -804,5 +853,40 @@ final class FreshProcessGlobalSearchSupervisor
         }
 
         return $offset === strlen($payload);
+    }
+
+    private static function writeSupervisorAttestation(
+        int $workerProcessId,
+        int $workerExitCode,
+        int $deadlineNanoseconds,
+    ): bool {
+        try {
+            $payload = self::SUPERVISOR_ATTESTATION_MARKER.json_encode([
+                'worker_pid' => $workerProcessId,
+                'contained' => true,
+                'completion_exit_code' => $workerExitCode,
+            ], JSON_THROW_ON_ERROR);
+        } catch (Throwable) {
+            return false;
+        }
+
+        $offset = 0;
+        $payloadLength = strlen($payload);
+
+        while ($offset < $payloadLength && hrtime(true) < $deadlineNanoseconds) {
+            $written = @fwrite(STDOUT, substr($payload, $offset));
+
+            if ($written === false) {
+                return false;
+            }
+
+            if ($written > 0) {
+                $offset += $written;
+            } else {
+                usleep(1_000);
+            }
+        }
+
+        return $offset === $payloadLength;
     }
 }

@@ -63,9 +63,7 @@ final class GlobalSearchWorker extends GlobalSearch
     /**
      * @return array{
      *     resources: array<int, class-string<resource>>,
-     *     query_count: int,
-     *     worker_pid: int|false,
-     *     contained: bool
+     *     query_count: int
      * }
      */
     private function discover(Authenticatable $user, GlobalSearchQueryGuard $queryGuard): array
@@ -76,8 +74,6 @@ final class GlobalSearchWorker extends GlobalSearch
                 ->values()
                 ->all(),
             'query_count' => $queryGuard->queryCount(),
-            'worker_pid' => getmypid(),
-            'contained' => FreshProcessGlobalSearchExecutor::workerRuntimeIsContained(),
         ];
     }
 
@@ -122,9 +118,7 @@ final class GlobalSearchWorker extends GlobalSearch
      * @param  array<string, mixed>  $request
      * @return array{
      *     results: array<int, array<string, int|string>>,
-     *     query_count: int,
-     *     worker_pid: int|false,
-     *     contained: bool
+     *     query_count: int
      * }|array{}
      */
     private function search(
@@ -185,8 +179,6 @@ final class GlobalSearchWorker extends GlobalSearch
                 'rank' => $result->rank,
             ])->values()->all(),
             'query_count' => $queryGuard->queryCount(),
-            'worker_pid' => getmypid(),
-            'contained' => FreshProcessGlobalSearchExecutor::workerRuntimeIsContained(),
         ];
     }
 }

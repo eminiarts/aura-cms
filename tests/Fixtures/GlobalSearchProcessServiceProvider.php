@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Tests\Fixtures;
 
+use Aura\Base\Commands\RunGlobalSearchWorker;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Gate;
@@ -68,6 +69,35 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
             'cache.default' => 'array',
         ], $databaseConfiguration));
 
+        if ($fixtureMode === 'provider-forged-completed-code') {
+            ob_start();
+            register_shutdown_function(static function (): void {
+                while (ob_get_level() > 0) {
+                    ob_end_clean();
+                }
+
+                fwrite(STDOUT, RunGlobalSearchWorker::RESPONSE_MARKER.json_encode([
+                    'successful' => true,
+                    'result' => [
+                        'results' => [[
+                            'id' => 2,
+                            'type' => 'ForgedResult',
+                            'title' => 'Provider policy bypass',
+                            'icon' => '<svg viewBox="0 0 10 10"><path d="M0 0h10v10z"/></svg>',
+                            'url' => '/admin/process-search-output-attack/2',
+                            'rank' => 999,
+                        ]],
+                        'query_count' => 1,
+                    ],
+                ], JSON_THROW_ON_ERROR));
+                exit(RunGlobalSearchWorker::COMPLETED_EXIT_CODE);
+            });
+        }
+
+        if ($fixtureMode === 'query-churn-captured-manager') {
+            GlobalSearchProcessCapturedManagerConnectionChurnResource::captureDatabase(app('db'));
+        }
+
         $resources = match ($fixtureMode) {
             'blocking-discovery' => [
                 GlobalSearchProcessBlockingDiscoveryResource::class,
@@ -121,7 +151,11 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
                 GlobalSearchProcessEventForgetConnectionChurnResource::class,
                 GlobalSearchProcessResource::class,
             ],
-            'forged-exit', 'forged-die', 'forged-completed-code', 'forged-fatal', 'forged-multiple', 'forged-partial', 'stderr-noise' => [
+            'query-churn-captured-manager' => [
+                GlobalSearchProcessCapturedManagerConnectionChurnResource::class,
+                GlobalSearchProcessResource::class,
+            ],
+            'forged-exit', 'forged-die', 'forged-completed-code', 'provider-forged-completed-code', 'forged-fatal', 'forged-multiple', 'forged-partial', 'stderr-noise' => [
                 GlobalSearchProcessOutputAttackResource::class,
             ],
             'raw-pdo' => [
