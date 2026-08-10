@@ -11,12 +11,14 @@ final readonly class TableColumnCapability
 {
     /**
      * @param  list<string>  $operators
+     * @param  Closure(array<string, mixed>): bool|null  $validateFilter
      * @param  Closure(Builder, resource, array<string, mixed>): void|null  $applyFilter
      * @param  Closure(Builder, resource, 'asc'|'desc'): void|null  $applySort
      */
     private function __construct(
         public string $key,
         public array $operators,
+        private ?Closure $validateFilter,
         private ?Closure $applyFilter,
         private ?Closure $applySort,
     ) {
@@ -34,13 +36,27 @@ final readonly class TableColumnCapability
     /**
      * @param  array<string, mixed>  $filter
      */
-    public function applyFilter(Builder $query, Resource $resource, array $filter): bool
+    public function acceptsFilter(array $filter): bool
     {
         $operator = $filter['operator'] ?? null;
 
-        if ($this->applyFilter === null
-            || ! is_string($operator)
-            || ! in_array($operator, $this->operators, true)) {
+        return $this->applyFilter !== null
+            && is_string($operator)
+            && in_array($operator, $this->operators, true)
+            && ($this->validateFilter === null || ($this->validateFilter)($filter));
+    }
+
+    public function acceptsSort(): bool
+    {
+        return $this->applySort !== null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filter
+     */
+    public function applyFilter(Builder $query, Resource $resource, array $filter): bool
+    {
+        if ($this->applyFilter === null || ! $this->acceptsFilter($filter)) {
             return false;
         }
 
@@ -62,15 +78,17 @@ final readonly class TableColumnCapability
 
     /**
      * @param  list<string>  $operators
+     * @param  Closure(array<string, mixed>): bool|null  $validateFilter
      * @param  Closure(Builder, resource, array<string, mixed>): void|null  $applyFilter
      * @param  Closure(Builder, resource, 'asc'|'desc'): void|null  $applySort
      */
     public static function computed(
         string $key,
         array $operators = [],
+        ?Closure $validateFilter = null,
         ?Closure $applyFilter = null,
         ?Closure $applySort = null,
     ): self {
-        return new self($key, array_values(array_unique($operators)), $applyFilter, $applySort);
+        return new self($key, array_values(array_unique($operators)), $validateFilter, $applyFilter, $applySort);
     }
 }

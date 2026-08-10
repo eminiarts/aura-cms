@@ -15,6 +15,38 @@ final class TableQueryStateApplier
         private readonly TableParentScopeResolver $parentScopes = new TableParentScopeResolver,
     ) {}
 
+    public function accepts(Resource $resource, TableQueryState $state): bool
+    {
+        if ($state->parent !== null && ! $this->parentScopes->accepts($resource, $state->parent)) {
+            return false;
+        }
+
+        foreach ($state->filters as $group) {
+            foreach ($group['filters'] as $filter) {
+                if (! in_array($filter['operator'], ['is_empty', 'is_not_empty', 'date_is_empty', 'date_is_not_empty'], true)
+                    && ! FilterCapability::hasValue($filter['value'] ?? null)) {
+                    continue;
+                }
+
+                $capability = $this->resolveCapability($resource, $filter['name']);
+
+                if ($capability === null || ! $capability->acceptsFilter($filter)) {
+                    return false;
+                }
+            }
+        }
+
+        foreach ($state->sorts as $sort) {
+            $capability = $this->resolveCapability($resource, $sort['key']);
+
+            if ($capability === null || ! $capability->acceptsSort()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function apply(Builder $query, Resource $resource, TableQueryState $state): Builder
     {
         if ($state->parent !== null) {

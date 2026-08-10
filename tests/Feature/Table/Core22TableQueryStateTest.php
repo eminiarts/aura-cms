@@ -174,6 +174,7 @@ test('trusted server-owned computed capabilities apply callbacks and unknown key
             return TableColumnCapability::computed(
                 key: 'weighted_score',
                 operators: ['greater_than'],
+                validateFilter: static fn (array $filter): bool => is_string($filter['value'] ?? null),
                 applyFilter: function (Builder $query, Resource $resource, array $filter): void {
                     $query->where($resource->qualifyColumn('title'), 'like', '%'.$filter['value'].'%');
                 },

@@ -14,6 +14,14 @@ final class TableParentScopeResolver
     /**
      * @param  array{scope: string, id: int|string}  $state
      */
+    public function accepts(Resource $resource, array $state): bool
+    {
+        return $this->resolveDescriptor($resource, $state['scope']) !== null;
+    }
+
+    /**
+     * @param  array{scope: string, id: int|string}  $state
+     */
     public function apply(
         Builder $query,
         Resource $resource,

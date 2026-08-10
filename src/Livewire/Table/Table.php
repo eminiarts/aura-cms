@@ -701,7 +701,14 @@ class Table extends Component
         }
 
         if ($this->tableState !== '') {
-            return $this->tableQueryStateApplier()->apply($query, $this->model(), $this->currentTableQueryState());
+            $state = $this->currentTableQueryState();
+            $applier = $this->tableQueryStateApplier();
+
+            if (! $applier->accepts($this->model(), $state)) {
+                abort(422, 'The table mutation query state is invalid.');
+            }
+
+            return $applier->apply($query, $this->model(), $state);
         }
 
         $this->assertValidMutationFilters();

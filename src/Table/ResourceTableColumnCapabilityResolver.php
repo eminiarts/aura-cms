@@ -36,6 +36,7 @@ final class ResourceTableColumnCapabilityResolver implements TableColumnCapabili
         return TableColumnCapability::computed(
             key: $key,
             operators: array_keys($filterCapability->toArray()['operators']),
+            validateFilter: static fn (array $filter): bool => $filterCapability->accepts($filter),
             applyFilter: static function (Builder $query, Resource $resource, array $filter) use ($field, $filterCapability): void {
                 if (! $filterCapability->accepts($filter)) {
                     $query->whereRaw('1 = 0');
