@@ -206,6 +206,16 @@ Event handlers, nested field saves, and re-entrant saves do not inherit the oute
 operation's authority. A callback that needs another global or tenant write must
 invoke an independently authorized named API for that operation.
 
+Eloquent model-event listeners remain trusted application code. Aura preserves
+their normal ordering and veto behavior, but it cannot sandbox a listener that
+directly commits, rolls back, or replaces a raw PDO transaction. Such a listener
+already holds the application's database credentials and can subvert any Laravel
+transaction, so it must follow the application's transaction boundary. Aura does
+fail closed before package-managed query or connection callbacks can control a
+caller's transaction, including callbacks registered immediately before the
+privileged statement. Transaction-start hooks are rejected because Aura must own
+that boundary to prevent reconnect and retry on another writer.
+
 This is a Resource API authorization boundary, not a sandbox for trusted
 application code. Code that directly uses PDO or SQL while holding the
 application's database credentials acts with those database credentials and is

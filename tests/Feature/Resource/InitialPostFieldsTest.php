@@ -877,7 +877,18 @@ it('lets a connection callback use an independently named system contract', func
             ->exists())->toBeTrue();
 });
 
-it('preserves Laravel event order and cancellation around a global insert', function (): void {
+it('preserves ordinary model events and their veto behavior around global inserts', function (): void {
+    $created = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Created through trusted model events',
+    ]);
+
+    expect($created->exists)->toBeTrue()
+        ->and(array_column(
+            PhysicalWriterGuardedGlobalResource::$observedGlobalWriteCapability,
+            'event',
+        ))->toBe(['saving', 'creating', 'created', 'saved']);
+
+    PhysicalWriterGuardedGlobalResource::$observedGlobalWriteCapability = [];
     PhysicalWriterGuardedGlobalResource::$cancelCreating = true;
 
     $cancelled = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
@@ -885,7 +896,7 @@ it('preserves Laravel event order and cancellation around a global insert', func
     ]);
 
     expect($cancelled->exists)->toBeFalse()
-        ->and(PhysicalWriterGuardedGlobalResource::withoutGlobalScopes()->count())->toBe(0)
+        ->and(PhysicalWriterGuardedGlobalResource::withoutGlobalScopes()->count())->toBe(1)
         ->and(array_column(
             PhysicalWriterGuardedGlobalResource::$observedGlobalWriteCapability,
             'event',
