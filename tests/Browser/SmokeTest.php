@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Cache;
 
@@ -60,7 +61,17 @@ test('global search handles enter with no results without console errors', funct
 
 test('global search hides a forbidden resource in a real browser', function () {
     $admin = createAdmin();
-    $admin->roles->first()->update([
+    $this->actingAs($admin);
+
+    $role = Role::resolveForTeam(
+        'editor',
+        $admin->current_team_id,
+        $admin->getConnection(),
+    );
+
+    expect($role)->toBeInstanceOf(Role::class);
+
+    $role->update([
         'permissions' => [
             'view-user' => false,
             'viewAny-user' => false,
