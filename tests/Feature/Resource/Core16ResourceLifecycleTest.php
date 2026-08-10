@@ -49,6 +49,22 @@ final class Core16SoftLifecycleDocument extends Core16LifecycleDocument
     public static string $type = 'Core16SoftLifecycleDocument';
 }
 
+final class Core16TeamLifecycleDocument extends Core16LifecycleDocument
+{
+    public static string $scopeMode = self::SCOPE_TEAM;
+
+    public static string $type = 'Core16TeamLifecycleDocument';
+}
+
+final class Core16SharedLifecycleDocument extends Core16LifecycleDocument
+{
+    public static string $scopeMode = self::SCOPE_GLOBAL;
+
+    public static bool $sharedAcrossTeams = true;
+
+    public static string $type = 'Core16SharedLifecycleDocument';
+}
+
 final class Core16GlobalLifecycleDocument extends Resource
 {
     public static $customTable = true;
@@ -365,6 +381,34 @@ test('deletion events use persisted ownership context and resolved connection id
         ->and($event->ownerId)->toBe($persistedOwnerId)
         ->and($event->connectionName)->toBe(DB::connection()->getName())
         ->and($event->connectionIdentity)->toBeString()->not->toBeEmpty();
+});
+
+test('team and global lifecycle payloads expose only their declared ownership context', function (): void {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team ownership context is only available with teams enabled.');
+    }
+
+    Event::fake([ResourceCreated::class]);
+    $team = Core16TeamLifecycleDocument::createForTeamForSystem(
+        $this->actor->current_team_id,
+        ['name' => 'Team context'],
+    );
+    $global = Core16SharedLifecycleDocument::create(['name' => 'Global context']);
+
+    $teamEvent = Event::dispatched(ResourceCreated::class)
+        ->first(fn (array $payload): bool => $payload[0]->resourceId === $team->getKey()
+            && $payload[0]->resourceClass === Core16TeamLifecycleDocument::class)[0];
+    $globalEvent = Event::dispatched(ResourceCreated::class)
+        ->first(fn (array $payload): bool => $payload[0]->resourceId === $global->getKey()
+            && $payload[0]->resourceClass === Core16SharedLifecycleDocument::class)[0];
+
+    expect($teamEvent->scopeMode)->toBe(Resource::SCOPE_TEAM)
+        ->and($teamEvent->teamId)->toBe($this->actor->current_team_id)
+        ->and($teamEvent->ownerId)->toBeNull()
+        ->and($globalEvent->scopeMode)->toBe(Resource::SCOPE_GLOBAL)
+        ->and($globalEvent->teamId)->toBeNull()
+        ->and($globalEvent->ownerId)->toBeNull()
+        ->and($globalEvent->sharedAcrossTeams)->toBeTrue();
 });
 
 test('a synchronous deleted listener failure rolls back the row and dependent cleanup', function (): void {

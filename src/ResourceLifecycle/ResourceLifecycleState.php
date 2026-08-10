@@ -65,7 +65,8 @@ final readonly class ResourceLifecycleState
             sharedAcrossTeams: $resource::sharesRecordsAcrossTeams(),
             inheritanceColumn: $resource::getInheritanceColumn(),
             inheritanceValue: $resource::getInheritanceValue(),
-            hardDelete: ! method_exists($resource, 'isForceDeleting') || $resource->isForceDeleting(),
+            hardDelete: $operation === ResourceLifecycleOperation::Delete
+                && (! method_exists($resource, 'isForceDeleting') || $resource->isForceDeleting()),
             oldPhysical: $oldPhysical,
             oldMeta: $resource->exists ? $snapshot->currentMeta($resource) : [],
         );
