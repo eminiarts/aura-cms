@@ -184,11 +184,11 @@ Current reproducible results (including CORE-24):
   an unstaged or staged rebuild cannot validate itself merely by making
   `git diff` empty.
 - The manifest is 331 bytes (SHA-256
-  `0996c28f876f39a710f12fe3270d8f250c2558f4212edb21f1a1a7b1f7ddb02d`)
-  and references `assets/app-DjUdBHPY.css` and
+  `81b0acf8adceed01a3bfc3531ef793c1f32a1f398a7630d4553347c348b230ce`)
+  and references `assets/app-CKyC0Fy1.css` and
   `assets/app-ccnW50-_.js`.
-- The reproduced CSS is 218,091 bytes (SHA-256
-  `a11ad176ccd35c248e9533099afa02543ae741ea4db9ad6e160df7c7690d1164`);
+- The reproduced CSS is 218,229 bytes (SHA-256
+  `5d214cdfc9f2e554987f444ecbba647620ab6fcf44f6e60d202e8c522a051dea`);
   the reproduced JavaScript is 267,729 bytes (SHA-256
   `9fdf0e55d0f5a74ddb65467a2686701e989bba921de45dfdc339c77f13647253`).
 - Composer dependencies are a build precondition: Aura's Tailwind content
@@ -216,7 +216,7 @@ expected literal classes before copying them. Both compiler lanes scan that
 same source snapshot plus the gate-only semantic probe. The audited source
 snapshot contains seven files and uses the fixed, machine-readable expectation
 in `source-baseline.json`.
-Audited source SHA-256: `253ff9b9e7a2153c06d739bcf09016f2e2286c7403f337afa86582dd03573cb9`.
+Audited source SHA-256: `cc8ee06b18ad39bcb5d7974e13296b83ce32a7d6b6f337b8f15329e79dc37d40`.
 
 The `aura-source-records-v2-length-prefixed` canonicalization starts with a
 domain identifier and record count. Each manifest-ordered record contains the
@@ -308,11 +308,11 @@ explicitly reviewed baseline update as well as the rebuilt assets.
 
 Current reproducible results (including CORE-24):
 
-- Tailwind `3.4.19`: pass, 544 parsed assertions, 19,301 output bytes,
-  SHA-256 `91bbebf08d4409ebfa26b910cf7aa5f9c073670e8b87ec9300a5daf72317d625`.
-- Tailwind `4.3.3` through Vite `8.2.1`: pass, 528 parsed assertions,
-  23,473 output bytes, SHA-256
-  `d0c7b066347facdd9d2aac73cda567cde3f3b949322318a78ad0639a7247e20d`.
+- Tailwind `3.4.19`: pass, 551 parsed assertions, 19,651 output bytes,
+  SHA-256 `74a17638884f659441bff193b7d5edd06f8eb504217c40d312bfbd89d87cb318`.
+- Tailwind `4.3.3` through Vite `8.2.1`: pass, 534 parsed assertions,
+  23,503 output bytes, SHA-256
+  `ed063b7f48b89de1589e9f81afc2f0d2f63ed1a19a137ea6227793eea843ca3b`.
 
 The v4 lane copies only the committed isolated fixture and shared contract into
 the temporary workspace, runs `npm ci` against its lockfile, and builds its

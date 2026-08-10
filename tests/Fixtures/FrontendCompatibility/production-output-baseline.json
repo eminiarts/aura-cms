@@ -13,14 +13,14 @@
             "sha256": "0aa12703fc30a3a582336ad2dba842d8a4e6666bb865bc4e0f622de191fc2995"
         },
         {
-            "path": "resources/dist/assets/app-DjUdBHPY.css",
-            "bytes": 218091,
-            "sha256": "a11ad176ccd35c248e9533099afa02543ae741ea4db9ad6e160df7c7690d1164"
+            "path": "resources/dist/assets/app-CKyC0Fy1.css",
+            "bytes": 218229,
+            "sha256": "5d214cdfc9f2e554987f444ecbba647620ab6fcf44f6e60d202e8c522a051dea"
         },
         {
             "path": "resources/dist/manifest.json",
             "bytes": 331,
-            "sha256": "0996c28f876f39a710f12fe3270d8f250c2558f4212edb21f1a1a7b1f7ddb02d"
+            "sha256": "81b0acf8adceed01a3bfc3531ef793c1f32a1f398a7630d4553347c348b230ce"
         }
     ]
 }

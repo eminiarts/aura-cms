@@ -125,3 +125,69 @@ it('formats a number to 2 decimals', function () {
     expect($widget->format(2))->toBe('2');
     expect($widget->format(2.00))->toBe('2');
 });
+
+function core24RelativeLuminance(array $rgb): float
+{
+    $channels = array_map(static function (int $channel): float {
+        $value = $channel / 255;
+
+        return $value <= 0.04045
+            ? $value / 12.92
+            : (($value + 0.055) / 1.055) ** 2.4;
+    }, $rgb);
+
+    return (0.2126 * $channels[0]) + (0.7152 * $channels[1]) + (0.0722 * $channels[2]);
+}
+
+function core24ContrastRatio(array $foreground, array $background): float
+{
+    $lighter = max(core24RelativeLuminance($foreground), core24RelativeLuminance($background));
+    $darker = min(core24RelativeLuminance($foreground), core24RelativeLuminance($background));
+
+    return ($lighter + 0.05) / ($darker + 0.05);
+}
+
+it('renders accessible mode-specific goal positive and negative badges', function (
+    array $widget,
+    Carbon $start,
+    string $classes,
+): void {
+    Livewire::test(ValueWidget::class, [
+        'widget' => $widget,
+        'model' => new Post,
+    ])
+        ->set('start', $start)
+        ->set('end', Carbon::now())
+        ->call('loadWidget')
+        ->assertSeeHtml($classes);
+})->with([
+    'goal' => [
+        ['method' => 'count', 'name' => 'Goal', 'slug' => 'goal', 'goal' => 4],
+        fn (): Carbon => Carbon::now()->subDays(30),
+        'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200',
+    ],
+    'positive' => [
+        ['method' => 'count', 'name' => 'Positive', 'slug' => 'positive'],
+        fn (): Carbon => Carbon::now()->subDays(30),
+        'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200',
+    ],
+    'negative' => [
+        ['method' => 'count', 'name' => 'Negative', 'slug' => 'negative'],
+        fn (): Carbon => Carbon::now()->subDays(10),
+        'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200',
+    ],
+]);
+
+it('keeps every badge text and background pair above WCAG AA contrast', function (
+    array $foreground,
+    array $background,
+): void {
+    expect(core24ContrastRatio($foreground, $background))->toBeGreaterThanOrEqual(4.5);
+})->with([
+    'goal light' => [[30, 64, 175], [219, 234, 254]],
+    'goal dark' => [[191, 219, 254], [23, 37, 84]],
+    'positive light' => [[22, 101, 52], [220, 252, 231]],
+    'positive dark' => [[187, 247, 208], [5, 46, 22]],
+    'negative light' => [[153, 27, 27], [254, 226, 226]],
+    'negative dark' => [[254, 202, 202], [69, 10, 10]],
+]);

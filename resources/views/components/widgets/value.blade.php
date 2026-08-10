@@ -15,12 +15,12 @@
                         $goal = str_replace("'", '', $widget['goal']);
                         $change = round(($currentValue / $goal) * 100, 2);
                     @endphp
-                    <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-aura-primary/10 text-aura-primary shrink-0">
+                    <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200 shrink-0">
                         {{ $change }}%
                     </span>
                 @elseif($hasPrevious)
                     @if($this->values['change'] >= 0)
-                        <span class="inline-flex items-center gap-0.5 rounded-full bg-aura-success/10 px-2 py-0.5 text-xs font-medium text-aura-success shrink-0">
+                        <span class="inline-flex items-center gap-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200 px-2 py-0.5 text-xs font-medium shrink-0">
                             <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 19V5M5 12l7-7 7 7" />
                             </svg>
@@ -28,7 +28,7 @@
                             {{ $this->values['change'] }}%
                         </span>
                     @else
-                        <span class="inline-flex items-center gap-0.5 rounded-full bg-aura-danger/10 px-2 py-0.5 text-xs font-medium text-aura-danger shrink-0">
+                        <span class="inline-flex items-center gap-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200 px-2 py-0.5 text-xs font-medium shrink-0">
                             <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 5v14M5 12l7 7 7-7" />
                             </svg>
