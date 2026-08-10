@@ -5,7 +5,6 @@ namespace Aura\Base\Traits;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 trait InitialPostFields
@@ -34,12 +33,15 @@ trait InitialPostFields
         $connection = $post->getConnection();
         $hasTeamContext = TeamScope::hasContextForConnection($connection);
         $hasOwnerContext = $post::hasTrustedOwnerContextForConnection($connection);
-        $actorUsesConnection = $user instanceof Model
+        $actorUsesConnection = $user instanceof User
             && User::connectionCacheIdentity($user->getConnection())
                 === User::connectionCacheIdentity($connection);
+        $actorTeamId = $actorUsesConnection
+            ? $user->currentTeamIdForAuthorization()
+            : null;
 
         if ($user !== null
-            && (! $user instanceof Model
+            && (! $user instanceof User
                 || User::connectionCacheIdentity($user->getConnection())
                     !== User::connectionCacheIdentity($connection))
             && ! $globalWrite
@@ -55,7 +57,7 @@ trait InitialPostFields
         if (! $post->exists
             && $actorUsesConnection
             && ! array_key_exists('user_id', $attributes)) {
-            $post->user_id = $user->id;
+            $post->user_id = $user->getKey();
         }
 
         if (config('aura.teams')
@@ -72,7 +74,7 @@ trait InitialPostFields
             && ! $post->exists
             && $actorUsesConnection
             && ! array_key_exists('team_id', $attributes)) {
-            $post->team_id = $user->current_team_id;
+            $post->team_id = $actorTeamId;
         }
 
         if (config('aura.teams')
@@ -104,7 +106,7 @@ trait InitialPostFields
         if ($hasTenantAttribute
             && (! $post->exists || $post->isDirty('team_id'))
             && $attributes['team_id'] !== null) {
-            $authorizedTeamId = TeamScope::currentContextTeamId($connection) ?? data_get($user, 'current_team_id');
+            $authorizedTeamId = TeamScope::currentContextTeamId($connection) ?? $actorTeamId;
 
             if ($authorizedTeamId === null || (string) $authorizedTeamId !== (string) $attributes['team_id']) {
                 throw new \LogicException('Use createForTeamForSystem() or moveToTeamForSystem() for a foreign team assignment.');

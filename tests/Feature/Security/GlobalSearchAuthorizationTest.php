@@ -4,6 +4,8 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Illuminate\Auth\GenericUser;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Livewire;
 
@@ -88,4 +90,18 @@ test('global search hides users when the current user cannot view users', functi
     Livewire::test(GlobalSearch::class)
         ->set('search', $needle)
         ->assertDontSee($needle);
+});
+
+test('global search fails closed for a non-Eloquent authenticated actor', function () {
+    Auth::setUser(new GenericUser([
+        'id' => 1,
+        'name' => 'External Actor',
+        'email' => 'external-actor@example.test',
+        'password' => 'password',
+    ]));
+
+    $globalSearch = new GlobalSearch;
+    $globalSearch->search = 'external';
+
+    expect($globalSearch->getSearchResultsProperty())->toBeEmpty();
 });

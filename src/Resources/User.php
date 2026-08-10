@@ -152,13 +152,17 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function belongsToTeam($team)
     {
-        if (! $this->isTeamOnOwnConnection($team)) {
+        if ($this->getKey() === null
+            || $this->getKey() === ''
+            || ! $this->isTeamOnOwnConnection($team)
+        ) {
             return false;
         }
 
-        return $this->teams->contains(function ($t) use ($team) {
-            return $this->isTeamOnOwnConnection($t) && $t->getKey() === $team->getKey();
-        });
+        return $this->teams()
+            ->useWritePdo()
+            ->whereKey($team->getKey())
+            ->exists();
     }
 
     /**
@@ -183,9 +187,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
         $connection = $this->getConnection();
         $connectionName = $connection->getName();
-        $teamId = config('aura.teams')
-            ? (TeamScope::currentContextTeamId($connection) ?? $this->current_team_id)
-            : null;
+        $teamId = $this->currentTeamIdForAuthorization();
         $cacheKey = static::connectionCacheIdentity($connection)
             .':'.($teamId ?? 'global')
             .':'.Role::catalogVersion($connection);
@@ -201,6 +203,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         // (which would leak roles from teams the user is not currently in). In
         // Teams-off mode the pivot has no team_id column, so it is a flat read.
         $roleIds = $connection->table('user_role')
+            ->useWritePdo()
             ->where('user_id', $this->id)
             ->when(
                 config('aura.teams'),
@@ -218,6 +221,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         // the catalog seam. Bypass scopes to read slugs of global rows too.
         $slugs = Role::on($connectionName)
             ->withoutGlobalScopes()
+            ->useWritePdo()
             ->whereIn('id', $roleIds)
             ->pluck('slug')
             ->unique();
@@ -291,6 +295,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             return;
         }
 
+        $this->setAttribute('current_team_id', $this->currentTeamIdForAuthorization());
+
         if (is_null($this->current_team_id)
             && $this->getKey() !== null
             && $this->getKey() !== ''
@@ -298,7 +304,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             // Fall back to the user's first Membership. A Global Admin with no
             // Membership has no team here — current team stays null and they
             // operate by visiting a team explicitly via switchTeam().
-            $team = $this->teams()->first();
+            $team = $this->teams()->useWritePdo()->first();
 
             if ($team) {
                 $this->switchTeam($team);
@@ -311,7 +317,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         $team->setConnection($this->getConnectionName());
 
         return $this->newBelongsTo(
-            $team->newQuery(),
+            $team->newQuery()->useWritePdo(),
             $this,
             'current_team_id',
             $team->getKeyName(),
@@ -368,6 +374,21 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         $epoch = static::currentTeamCacheEpoch($userId, $connection);
 
         return "aura_current_team_{$connectionIdentity}_user_{$userId}_epoch_{$epoch}";
+    }
+
+    public function currentTeamIdForAuthorization(): int|string|null
+    {
+        if (! config('aura.teams')) {
+            return null;
+        }
+
+        $contextTeamId = TeamScope::currentContextTeamId($this->getConnection());
+
+        if ($contextTeamId !== null) {
+            return $contextTeamId;
+        }
+
+        return TeamScope::currentTeamIdForUser($this);
     }
 
     public function deleteOption($option)
@@ -861,7 +882,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             // Global Role carries team_id = null, so keying off the role row would
             // wrongly exclude members who hold a Global Role (e.g. global admin).
             return $query->whereHas('roles', function ($query) {
-                $query->where('user_role.team_id', Auth::user()->current_team_id);
+                $authenticatedUser = Auth::user();
+                $currentTeamId = $authenticatedUser instanceof self
+                    ? $authenticatedUser->currentTeamIdForAuthorization()
+                    : null;
+
+                $query->where('user_role.team_id', $currentTeamId);
             });
         }
 
@@ -1124,7 +1150,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     protected function getCacheKeyForRoles(): string
     {
         return static::connectionScopedCacheKey(
-            $this->current_team_id.'.user.'.$this->id.'.roles',
+            $this->currentTeamIdForAuthorization().'.user.'.$this->id.'.roles',
             $this->getConnection(),
         );
     }

@@ -85,6 +85,8 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function boot()
     {
+        $this->configureAuraAuthProviders();
+
         parent::boot();
 
         $this->app->booted(fn () => Aura::captureBaselineState());
@@ -106,7 +108,15 @@ class AuraServiceProvider extends PackageServiceProvider
         // app providers boot after package providers, so a later Gate::define
         // wins. A required $user param means guests are denied automatically.
         Gate::define(User::GLOBAL_ADMIN_GATE, function ($user) {
-            return (bool) ($user->global_admin ?? false);
+            if (! $user instanceof User || $user->getAuthIdentifier() === null) {
+                return false;
+            }
+
+            return (bool) $user->getConnection()
+                ->table($user->getTable())
+                ->useWritePdo()
+                ->where($user->getAuthIdentifierName(), $user->getAuthIdentifier())
+                ->value('global_admin');
         });
 
         return $this;
@@ -419,11 +429,7 @@ class AuraServiceProvider extends PackageServiceProvider
             return new AuraEloquentUserProvider($app['hash'], $config['model']);
         });
 
-        foreach (config('auth.providers', []) as $name => $provider) {
-            if (($provider['driver'] ?? null) === 'eloquent') {
-                config()->set("auth.providers.{$name}.driver", 'aura-eloquent');
-            }
-        }
+        $this->configureAuraAuthProviders();
 
         $this->app->singleton('hook_manager', function ($app) {
             return new HookManager;
@@ -492,5 +498,20 @@ class AuraServiceProvider extends PackageServiceProvider
     protected function getResources(): array
     {
         return config('aura.resources');
+    }
+
+    private function configureAuraAuthProviders(): void
+    {
+        foreach (config('auth.providers', []) as $name => $provider) {
+            $model = is_array($provider) ? ($provider['model'] ?? null) : null;
+
+            if (is_array($provider)
+                && ($provider['driver'] ?? null) === 'eloquent'
+                && is_string($model)
+                && is_a($model, User::class, true)
+            ) {
+                config()->set("auth.providers.{$name}.driver", 'aura-eloquent');
+            }
+        }
     }
 }

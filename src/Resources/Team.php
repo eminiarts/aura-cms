@@ -8,7 +8,6 @@ use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -272,6 +271,7 @@ class Team extends Resource
             Cache::forget(User::globalAdminTeamsCacheKey($connection));
 
             $connection->table('user_role')
+                ->useWritePdo()
                 ->where('team_id', $team->getKey())
                 ->pluck('user_id')
                 ->unique()
@@ -288,7 +288,14 @@ class Team extends Resource
             unset($team->team_id);
 
             $authenticatedUser = auth()->user();
-            $authenticatedUserId = $authenticatedUser?->getAuthIdentifier();
+
+            if ($authenticatedUser !== null && ! $authenticatedUser instanceof User) {
+                throw new \LogicException('Only authenticated Aura users may create or update teams.');
+            }
+
+            $authenticatedUserId = $authenticatedUser instanceof User
+                ? $authenticatedUser->getKey()
+                : null;
 
             if (($team->user_id === null || $team->user_id === '')
                 && $authenticatedUserId !== null
@@ -304,26 +311,12 @@ class Team extends Resource
             $connection = $team->getConnection();
             $connectionName = $connection->getName();
             $authenticatedUser = auth()->user();
-            $authenticatedUserId = $authenticatedUser?->getAuthIdentifier();
             $authenticatedUserMatchesConnection = self::authenticatedUserUsesConnection(
                 $authenticatedUser,
                 $connection,
             );
 
-            if ($authenticatedUserMatchesConnection && $authenticatedUser instanceof User) {
-                $user = $authenticatedUser;
-            } elseif ($authenticatedUserMatchesConnection && $authenticatedUserId !== null) {
-                $userModel = app(config('aura.resources.user'));
-
-                if (! $userModel instanceof Model) {
-                    $user = null;
-                } else {
-                    $userModel->setConnection($connectionName);
-                    $user = $userModel->newQueryWithoutScopes()->whereKey($authenticatedUserId)->first();
-                }
-            } else {
-                $user = null;
-            }
+            $user = $authenticatedUserMatchesConnection ? $authenticatedUser : null;
 
             if ($user) {
                 // Change the current team id of the user
@@ -361,21 +354,29 @@ class Team extends Resource
             $connectionName = $connection->getName();
             $teamId = $team->getKey();
             $affectedMemberIds = $connection->table('user_role')
+                ->useWritePdo()
                 ->where('team_id', $teamId)
                 ->pluck('user_id');
 
             // Get all users who had the deleted team as their current team
             $users = User::on($connectionName)
                 ->withoutGlobalScopes()
+                ->without('meta')
+                ->useWritePdo()
                 ->where('current_team_id', $teamId)
                 ->get();
             $reassignedUserIds = $users->pluck('id');
 
             // Loop through the users and update their current_team_id
             foreach ($users as $user) {
-                $firstTeam = $user->teams()->first();
-                $user->setAttribute('current_team_id', $firstTeam ? $firstTeam->id : null);
-                $user->save();
+                $firstTeam = $user->teams()
+                    ->withoutGlobalScope(TeamScope::class)
+                    ->without('meta')
+                    ->useWritePdo()
+                    ->first();
+                $currentTeamId = $firstTeam?->getKey();
+
+                $user->forceFill(['current_team_id' => $currentTeamId])->saveQuietly();
 
                 User::clearCurrentTeamCache($user->getKey(), $connection);
             }
@@ -440,7 +441,7 @@ class Team extends Resource
 
     private static function authenticatedUserUsesConnection(mixed $authenticatedUser, Connection $connection): bool
     {
-        return $authenticatedUser instanceof Model
+        return $authenticatedUser instanceof User
             && User::connectionCacheIdentity($authenticatedUser->getConnection())
                 === User::connectionCacheIdentity($connection);
     }

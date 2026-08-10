@@ -77,7 +77,7 @@ class TeamScope implements Scope
                 }
 
                 if ($authUser && ! $hasTenantContext) {
-                    $builder->whereKey($authUser->getAuthIdentifier());
+                    $builder->whereKey($authUser->getKey());
 
                     return;
                 }
@@ -140,6 +140,49 @@ class TeamScope implements Scope
         }
 
         return $context['team_id'];
+    }
+
+    /**
+     * Resolve an authenticated user's current team from the authoritative
+     * connection while retaining this scope's request and epoch cache.
+     */
+    public static function currentTeamIdForUser(User $user): int|string|null
+    {
+        $userId = $user->getKey();
+
+        if ($userId === null || $userId === '') {
+            return null;
+        }
+
+        $connection = $user->getConnection();
+
+        if (self::hasActiveApplicationTransaction($connection)) {
+            return $connection->table($user->getTable())
+                ->useWritePdo()
+                ->where($user->getKeyName(), $userId)
+                ->value('current_team_id');
+        }
+
+        $cacheKey = User::currentTeamCacheKey($userId, $connection);
+
+        if (array_key_exists($cacheKey, self::$currentTeamIds)) {
+            return self::$currentTeamIds[$cacheKey];
+        }
+
+        if (Cache::has($cacheKey)) {
+            $cachedTeamId = Cache::get($cacheKey);
+
+            return self::$currentTeamIds[$cacheKey] = $cachedTeamId === false ? null : $cachedTeamId;
+        }
+
+        $currentTeamId = $connection->table($user->getTable())
+            ->useWritePdo()
+            ->where($user->getKeyName(), $userId)
+            ->value('current_team_id');
+
+        Cache::put($cacheKey, $currentTeamId ?? false, now()->addHour());
+
+        return self::$currentTeamIds[$cacheKey] = $currentTeamId;
     }
 
     public static function flushState(): void
@@ -296,7 +339,7 @@ class TeamScope implements Scope
         $authenticatedUser = Auth::user();
 
         return $authenticatedUser === null
-            || ($authenticatedUser instanceof Model
+            || ($authenticatedUser instanceof User
                 && User::connectionCacheIdentity($authenticatedUser->getConnection()) === $modelIdentity);
     }
 
@@ -315,39 +358,11 @@ class TeamScope implements Scope
             return null;
         }
 
-        $userId = $authenticatedUser->getAuthIdentifier();
-        $connection = $authenticatedUser instanceof Model
-            ? $authenticatedUser->getConnection()
-            : $model->getConnection();
-
-        if (self::hasActiveApplicationTransaction($connection)) {
-            return $connection->table('users')
-                ->useWritePdo()
-                ->where('id', $userId)
-                ->value('current_team_id');
+        if (! $authenticatedUser instanceof User) {
+            return null;
         }
 
-        $cacheKey = User::currentTeamCacheKey($userId, $connection);
-
-        if (array_key_exists($cacheKey, self::$currentTeamIds)) {
-            return self::$currentTeamIds[$cacheKey];
-        }
-
-        if (Cache::has($cacheKey)) {
-            $cachedTeamId = Cache::get($cacheKey);
-
-            return self::$currentTeamIds[$cacheKey] = $cachedTeamId === false ? null : $cachedTeamId;
-        }
-
-        // Direct database query to avoid triggering scopes.
-        $currentTeamId = $connection->table('users')
-            ->useWritePdo()
-            ->where('id', $userId)
-            ->value('current_team_id');
-
-        Cache::put($cacheKey, $currentTeamId ?? false, now()->addHour());
-
-        return self::$currentTeamIds[$cacheKey] = $currentTeamId;
+        return self::currentTeamIdForUser($authenticatedUser);
     }
 
     private static function hasActiveApplicationTransaction(Connection $connection): bool

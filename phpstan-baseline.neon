@@ -1042,12 +1042,6 @@ parameters:
 			path: src/Providers/RouteServiceProvider.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Resource.php
-
-		-
 			message: '#^Access to an undefined property Aura\\Base\\Resources\\Attachment\:\:\$mime_type\.$#'
 			identifier: property.notFound
 			count: 3
@@ -1096,12 +1090,6 @@ parameters:
 			path: src/Resources/Tag.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Resources/Team.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:isAuraGlobalAdmin\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -1116,17 +1104,11 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Resources\\User\:\:\$current_team_id\.$#'
 			identifier: property.notFound
-			count: 4
+			count: 2
 			path: src/Resources/User.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Resources/User.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
 			identifier: property.notFound
 			count: 1
 			path: src/Resources/User.php

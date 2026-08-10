@@ -4,6 +4,7 @@ use Aura\Base\Mail\TeamInvitation as TeamInvitationMail;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\TeamInvitation;
 use Aura\Base\Resources\User;
+use Illuminate\Foundation\Auth\User as FrameworkAuthenticatable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -11,6 +12,11 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 
 uses(RefreshDatabase::class);
+
+class NonAuraInvitationActor extends FrameworkAuthenticatable
+{
+    protected $table = 'users';
+}
 
 beforeEach(function () {
     if (! Schema::hasTable('teams')) {
@@ -82,6 +88,38 @@ it('rejects accepting an invitation with a different authenticated email', funct
 
     expect(TeamInvitation::withoutGlobalScopes()->whereKey($invitation->id)->exists())->toBeTrue();
     expect(DB::table('user_role')->where('team_id', $team->id)->where('user_id', $otherUser->id)->exists())->toBeFalse();
+});
+
+it('rejects a colliding non-Aura authenticated actor', function () {
+    $team = $this->user->currentTeam;
+    $role = Role::first();
+    $existingUser = User::factory()->create([
+        'email' => 'external-provider-collision@example.com',
+        'current_team_id' => null,
+    ]);
+    $externalActor = NonAuraInvitationActor::query()->findOrFail($existingUser->getKey());
+
+    $invitation = TeamInvitation::create([
+        'team_id' => $team->id,
+        'email' => $existingUser->email,
+        'role' => $role->id,
+    ]);
+
+    $url = URL::temporarySignedRoute(
+        'aura.team-invitations.accept',
+        now()->addDays(config('aura.auth.invitation_expiry')),
+        ['invitation' => $invitation],
+    );
+
+    $this->actingAs($externalActor)
+        ->get($url)
+        ->assertForbidden();
+
+    expect(TeamInvitation::withoutGlobalScopes()->whereKey($invitation->id)->exists())->toBeTrue()
+        ->and(DB::table('user_role')
+            ->where('team_id', $team->id)
+            ->where('user_id', $existingUser->id)
+            ->exists())->toBeFalse();
 });
 
 it('revokes a pending team invitation', function () {

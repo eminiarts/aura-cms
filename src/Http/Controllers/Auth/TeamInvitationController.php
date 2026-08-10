@@ -8,7 +8,6 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\TeamInvitation;
 use Aura\Base\Resources\User;
 use Aura\Base\Services\InvitationConnectionResolver;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -25,7 +24,7 @@ class TeamInvitationController extends Controller
         abort_unless(config('aura.teams'), 404);
 
         $authenticatedUser = $request->user();
-        abort_unless($authenticatedUser instanceof Model, 403);
+        abort_unless($authenticatedUser instanceof User, 403);
 
         $connection = app(InvitationConnectionResolver::class)
             ->resolve($request, $authenticatedUser->getConnection());
@@ -38,13 +37,19 @@ class TeamInvitationController extends Controller
         $invitationResource = app(config('aura.resources.team-invitation'));
         $invitationResource = $invitationResource->newInstance();
         $invitationResource->setConnection($connection->getName());
-        $invitation = $invitationResource->newQueryWithoutScopes()->findOrFail($invitation);
+        $invitation = $invitationResource->newQueryWithoutScopes()
+            ->without('meta')
+            ->useWritePdo()
+            ->findOrFail($invitation);
+        $invitation = $this->loadInvitationMetaFromWriter($invitation);
 
         /** @var Team $teamResource */
         $teamResource = app(config('aura.resources.team'));
         $teamResource = $teamResource->newInstance();
         $teamResource->setConnection($connection->getName());
-        $team = $teamResource->newQueryWithoutScopes()->findOrFail($invitation->team_id);
+        $team = $teamResource->newQueryWithoutScopes()
+            ->useWritePdo()
+            ->findOrFail($invitation->team_id);
         $userId = $authenticatedUser->getAuthIdentifier();
 
         abort_unless(is_int($userId) || is_string($userId), 403);
@@ -53,12 +58,15 @@ class TeamInvitationController extends Controller
         $userResource = app(config('aura.resources.user'));
         $userResource = $userResource->newInstance();
         $userResource->setConnection($connection->getName());
-        $user = $userResource->newQueryWithoutScopes()->whereKey($userId)->firstOrFail();
+        $user = $userResource->newQueryWithoutScopes()
+            ->useWritePdo()
+            ->where($authenticatedUser->getAuthIdentifierName(), $userId)
+            ->firstOrFail();
         $userEmail = $user->getAttribute('email');
 
         abort_unless(is_string($userEmail) && strcasecmp($userEmail, $invitation->email) === 0, 403);
 
-        if (! $user->teams()->whereKey($team->id)->exists()) {
+        if (! $user->teams()->useWritePdo()->whereKey($team->id)->exists()) {
             // The invitation may carry a Team Role owned by this team or a shared
             // Global Role (team_id = null). Accept either, but still refuse a role
             // owned by a different team so invitations cannot inject cross-team
@@ -68,6 +76,7 @@ class TeamInvitationController extends Controller
             $roleResource = $roleResource->newInstance();
             $roleResource->setConnection($connection->getName());
             $role = $roleResource->newQueryWithoutScopes()
+                ->useWritePdo()
                 ->whereKey($invitation->role)
                 ->visibleToTeam($team->id)
                 ->firstOrFail();
@@ -121,7 +130,7 @@ class TeamInvitationController extends Controller
         $authenticatedUser = $request->user();
 
         abort_unless(
-            $authenticatedUser instanceof Model
+            $authenticatedUser instanceof User
                 && User::connectionCacheIdentity($authenticatedUser->getConnection())
                     === User::connectionCacheIdentity($team->getConnection()),
             404,
@@ -135,9 +144,20 @@ class TeamInvitationController extends Controller
         $invitationResource = $invitationResource->newInstance();
         $invitationResource->setConnection($team->getConnectionName());
 
-        return $invitationResource->newQueryWithoutScopes()
+        $invitation = $invitationResource->newQueryWithoutScopes()
+            ->without('meta')
+            ->useWritePdo()
             ->whereKey($invitation)
             ->where('team_id', $team->id)
             ->firstOrFail();
+
+        return $this->loadInvitationMetaFromWriter($invitation);
+    }
+
+    protected function loadInvitationMetaFromWriter(TeamInvitation $invitation): TeamInvitation
+    {
+        $invitation->setRelation('meta', $invitation->meta()->useWritePdo()->get());
+
+        return $invitation;
     }
 }

@@ -290,7 +290,7 @@ class ResourcePolicy
 
     private function usesSameConnection(mixed $user, mixed $resource): bool
     {
-        return $user instanceof Model
+        return $user instanceof User
             && $resource instanceof Model
             && User::connectionCacheIdentity($user->getConnection())
                 === User::connectionCacheIdentity($resource->getConnection());

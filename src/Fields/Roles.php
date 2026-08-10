@@ -6,6 +6,7 @@ use Aura\Base\Contracts\PreloadsTableDisplay;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
+use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Collection;
 
 class Roles extends AdvancedSelect implements PreloadsTableDisplay
@@ -101,6 +102,16 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
 
     public function saved($post, $field, $value)
     {
+        $actingUser = auth()->user();
+
+        abort_if(
+            $actingUser !== null
+            && (! $actingUser instanceof User
+                || User::connectionCacheIdentity($actingUser->getConnection())
+                    !== User::connectionCacheIdentity($post->getConnection())),
+            403,
+        );
+
         if (is_string($value)) {
             $value = json_decode($value, true);
         }
@@ -114,7 +125,8 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
         $roleIds = collect($value)->flatten()->filter()->values()->all();
 
         $currentRoles = $post->roles();
-        $assignableRoles = Role::on($post->getConnectionName());
+        $currentRoles->useWritePdo();
+        $assignableRoles = Role::on($post->getConnectionName())->useWritePdo();
 
         if (config('aura.teams')) {
             $teamId = TeamScope::currentContextTeamId($post->getConnection())
@@ -152,14 +164,10 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
                 ->contains('super_admin', true);
 
         if ($changesSuperAdminAccess) {
-            $actingUser = auth()->user();
-            if ($actingUser && ! method_exists($actingUser, 'isSuperAdmin')) {
-                $user = app(config('aura.resources.user'));
-                $user->setConnection($post->getConnectionName());
-                $actingUser = $user->newQueryWithoutScopes()->find($actingUser->getAuthIdentifier());
-            }
-
-            abort_if($actingUser && (! method_exists($actingUser, 'isSuperAdmin') || ! $actingUser->isSuperAdmin()), 403);
+            abort_if(
+                $actingUser instanceof User && ! $actingUser->isSuperAdmin(),
+                403,
+            );
         }
 
         if (empty($roleIds)) {

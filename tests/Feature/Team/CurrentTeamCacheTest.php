@@ -9,6 +9,8 @@ use Aura\Base\Livewire\UserTeams;
 use Aura\Base\Mail\TeamInvitation as TeamInvitationMail;
 use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Policies\ResourcePolicy;
+use Aura\Base\Providers\AuraEloquentUserProvider;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Permission;
 use Aura\Base\Resources\Role;
@@ -25,6 +27,7 @@ use Illuminate\Contracts\Queue\Job;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Foundation\Auth\User as FrameworkAuthenticatable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\InteractsWithQueue;
@@ -39,6 +42,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 use function Pest\Livewire\livewire;
 
@@ -82,6 +86,11 @@ class ConnectionAwareUserTeamsProbe extends UserTeams
         return $this->assignableRole($teamId, $roleId);
     }
 
+    public function canManageTeamForTest(int $teamId): bool
+    {
+        return $this->canManageTeam($teamId);
+    }
+
     public function resolvedRoleForTest(string|int $userId, int $teamId): ?Role
     {
         return $this->resolvedRoleForUser($userId, $teamId);
@@ -112,6 +121,31 @@ class CurrentTeamConnectionSearchResource extends Resource
     }
 }
 
+class CurrentTeamTenantAuthUser extends User
+{
+    protected $connection = 'current_team_tenant';
+}
+
+class EmailIdentifiedCurrentTeamUser extends CurrentTeamTenantAuthUser
+{
+    public function getAuthIdentifierName(): string
+    {
+        return 'email';
+    }
+
+    public function getForeignKey(): string
+    {
+        return 'user_id';
+    }
+}
+
+class NonAuraCurrentTeamActor extends FrameworkAuthenticatable
+{
+    protected $connection = 'current_team_tenant';
+
+    protected $table = 'users';
+}
+
 function currentTeamTenantConnection(): Connection
 {
     config()->set('database.connections.current_team_tenant', [
@@ -140,6 +174,8 @@ function currentTeamTenantConnection(): Connection
     Schema::connection('current_team_tenant')->create('posts', function (Blueprint $table): void {
         $table->id();
         $table->text('title')->nullable();
+        $table->longText('content')->nullable();
+        $table->string('slug')->nullable();
         $table->string('type', 20);
         $table->string('status', 20)->default('publish')->nullable();
         $table->foreignId('user_id')->nullable();
@@ -534,6 +570,106 @@ it('isolates current team snapshots and cache keys by the authenticated model co
         ->and(Cache::get($tenantCacheKey))->toBe(910020);
 });
 
+it('fails closed when an authenticated Eloquent actor is not an Aura User', function () {
+    $connection = currentTeamTenantConnection();
+    $user = seedCurrentTeamConnection($connection, 910100, 910110, 910111, 'Non Aura Actor');
+    $actor = NonAuraCurrentTeamActor::on($connection->getName())->findOrFail($user->getKey());
+
+    Auth::setUser($actor);
+
+    expect(Post::on($connection->getName())->count())->toBe(0);
+});
+
+it('fails closed for a colliding non-Aura actor at authorization and deletion seams', function () {
+    $connection = currentTeamTenantConnection();
+    $tenant = seedTeamListConnection($connection, 'Non Aura Authorization');
+    $actor = NonAuraCurrentTeamActor::on($connection->getName())
+        ->findOrFail($tenant['global_admin']->getKey());
+
+    Auth::setUser($actor);
+
+    $component = app(ConnectionAwareUserTeamsProbe::class);
+    $component->userId = $tenant['member']->getKey();
+    $resource = (new Post)->setConnection($connection->getName());
+
+    expect($component->canManageTeamForTest($tenant['team']->getKey()))->toBeFalse()
+        ->and(app(ResourcePolicy::class)->viewAny($actor, $resource))->toBeFalse();
+
+    expect(fn () => Post::on($connection->getName())->withoutGlobalScopes()->create([
+        'title' => 'Non Aura Resource Write',
+    ]))->toThrow(LogicException::class, 'authenticated actor and resource');
+
+    expect(fn () => $tenant['team']->delete())
+        ->toThrow(LogicException::class, 'Only authenticated Aura users may delete resources.');
+});
+
+it('rejects team writes from a colliding non-Aura actor', function () {
+    $connection = currentTeamTenantConnection();
+    $tenant = seedTeamListConnection($connection, 'Non Aura Team Hook');
+    $actor = NonAuraCurrentTeamActor::on($connection->getName())
+        ->findOrFail($tenant['global_admin']->getKey());
+
+    Auth::setUser($actor);
+
+    expect(fn () => Team::on($connection->getName())->create([
+        'name' => 'Non Aura Unowned Team',
+        'user_id' => $actor->getKey(),
+    ]))->toThrow(LogicException::class, 'Only authenticated Aura users may create or update teams.');
+
+    expect($connection->table('teams')
+        ->where('name', 'Non Aura Unowned Team')
+        ->exists())->toBeFalse()
+        ->and($connection->table('users')
+            ->where('id', $actor->getKey())
+            ->value('current_team_id'))->toBe($tenant['team']->getKey());
+});
+
+it('rejects role escalation changes from a colliding non-Aura actor', function () {
+    $connection = currentTeamTenantConnection();
+    $tenant = seedRoleIsolationConnection($connection, 'Non Aura Role Field', true);
+    $actor = NonAuraCurrentTeamActor::on($connection->getName())
+        ->findOrFail($tenant['user']->getKey());
+
+    Auth::setUser($actor);
+
+    expect(fn () => app(RolesField::class)->saved($tenant['user'], [], []))
+        ->toThrow(HttpException::class);
+
+    expect($connection->table('user_role')
+        ->where('team_id', $tenant['team']->getKey())
+        ->where('user_id', $tenant['user']->getKey())
+        ->where('role_id', $tenant['role']->getKey())
+        ->exists())->toBeTrue();
+});
+
+it('rejects ordinary role changes from a colliding non-Aura actor', function () {
+    $connection = currentTeamTenantConnection();
+    $tenant = seedTeamListConnection($connection, 'Non Aura Ordinary Role');
+    $replacementRoleId = $tenant['role']->getKey() + 1;
+    $connection->table('roles')->insert([
+        'id' => $replacementRoleId,
+        'name' => 'Replacement Member',
+        'slug' => 'replacement-member',
+        'super_admin' => false,
+        'permissions' => '[]',
+        'team_id' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $actor = NonAuraCurrentTeamActor::on($connection->getName())
+        ->findOrFail($tenant['global_admin']->getKey());
+
+    Auth::setUser($actor);
+
+    expect(fn () => app(RolesField::class)->saved($tenant['member'], [], [$replacementRoleId]))
+        ->toThrow(HttpException::class);
+
+    expect($connection->table('user_role')
+        ->where('team_id', $tenant['team']->getKey())
+        ->where('user_id', $tenant['member']->getKey())
+        ->value('role_id'))->toBe($tenant['role']->getKey());
+});
+
 it('fails closed when an actor or explicit team context queries another connection with colliding ids', function () {
     $userId = 911000;
     $defaultConnection = DB::connection();
@@ -776,11 +912,20 @@ it('binds mailed guest invitation links to an allowed signed connection identity
         ->where('id', $tenant['member']->getKey())
         ->update(['email' => 'tenant-mailed-guest@example.test']);
 
+    $readPdo = new PDO('sqlite::memory:');
+    $readPdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $readPdo->exec('CREATE TABLE posts (id INTEGER PRIMARY KEY, title TEXT NULL, type TEXT, status TEXT, user_id INTEGER NULL, team_id INTEGER NULL, created_at TEXT NULL, updated_at TEXT NULL, deleted_at TEXT NULL)');
+    $readPdo->exec('CREATE TABLE meta (id INTEGER PRIMARY KEY, metable_type TEXT, metable_id INTEGER, key TEXT NULL, value TEXT NULL)');
+    $readPdo->exec('CREATE TABLE roles (id INTEGER PRIMARY KEY, name TEXT, slug TEXT, description TEXT NULL, super_admin INTEGER NOT NULL DEFAULT 0, permissions TEXT NULL, user_id INTEGER NULL, team_id INTEGER NULL, created_at TEXT NULL, updated_at TEXT NULL)');
+    $readPdo->exec('CREATE TABLE user_role (team_id INTEGER, user_id INTEGER, role_id INTEGER, created_at TEXT NULL, updated_at TEXT NULL)');
+    $readPdo->exec("INSERT INTO posts (id, type, status, team_id) VALUES ({$invitationId}, 'teaminvitation', 'publish', {$tenant['team']->getKey()})");
+    $tenantConnection->setReadPdo($readPdo);
+
     $this->actingAs($tenant['member'])
         ->get($acceptUrl)
         ->assertRedirect(route('aura.dashboard'));
 
-    expect($tenantConnection->table('posts')->where('id', $invitationId)->exists())->toBeFalse()
+    expect($tenantConnection->table('posts')->useWritePdo()->where('id', $invitationId)->exists())->toBeFalse()
         ->and($defaultConnection->table('posts')->where('id', $invitationId)->exists())->toBeTrue();
 
     Auth::logout();
@@ -1226,6 +1371,36 @@ it('keeps membership editor lookups and role-field writes on the user connection
             ->where('user_id', $default['member']->getKey())
             ->where('team_id', $default['team']->getKey())
             ->value('role_id'))->toBe($default['role']->getKey());
+});
+
+it('uses writer membership and catalog state for membership-editor authorization', function () {
+    $connection = currentTeamTenantConnection();
+    $writer = seedRoleIsolationConnection($connection, 'Writer Membership', true);
+    $userId = $writer['user']->getKey();
+    $teamId = $writer['team']->getKey();
+    $roleId = $writer['role']->getKey();
+    $readerOnlyRoleId = $roleId + 1;
+    $readPdo = new PDO('sqlite::memory:');
+    $readPdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $readPdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, current_team_id INTEGER NULL, global_admin INTEGER NOT NULL DEFAULT 0)');
+    $readPdo->exec('CREATE TABLE roles (id INTEGER PRIMARY KEY, name TEXT, slug TEXT, description TEXT NULL, super_admin INTEGER NOT NULL DEFAULT 0, permissions TEXT NULL, user_id INTEGER NULL, team_id INTEGER NULL, created_at TEXT NULL, updated_at TEXT NULL)');
+    $readPdo->exec('CREATE TABLE user_role (team_id INTEGER, user_id INTEGER, role_id INTEGER, created_at TEXT NULL, updated_at TEXT NULL)');
+    $readPdo->exec("INSERT INTO users (id, current_team_id, global_admin) VALUES ({$userId}, {$teamId}, 0)");
+    $readPdo->exec("INSERT INTO roles (id, name, slug, super_admin, permissions, team_id) VALUES ({$roleId}, 'Stale Super Admin', 'shared-role', 1, '[]', NULL)");
+    $readPdo->exec("INSERT INTO roles (id, name, slug, super_admin, permissions, team_id) VALUES ({$readerOnlyRoleId}, 'Reader Only Role', 'reader-only-role', 0, '[]', {$teamId})");
+    $readPdo->exec("INSERT INTO user_role (team_id, user_id, role_id) VALUES ({$teamId}, {$userId}, {$roleId})");
+
+    $connection->table('user_role')
+        ->where('team_id', $teamId)
+        ->where('user_id', $userId)
+        ->delete();
+    $connection->setReadPdo($readPdo);
+    Auth::setUser($writer['user']);
+
+    $component = app(ConnectionAwareUserTeamsProbe::class);
+
+    expect($component->canManageTeamForTest($teamId))->toBeFalse()
+        ->and($component->assignableRoleForTest($teamId, $readerOnlyRoleId))->toBeNull();
 });
 
 it('keeps team deletion cleanup on the deleted model connection across rollback and commit', function () {
@@ -1827,6 +2002,133 @@ it('uses the write pdo for a cold current-team lookup after epoch rotation', fun
         ->toBe(980011);
 });
 
+it('defaults ordinary resource writes from the authoritative current team', function () {
+    $connection = currentTeamTenantConnection();
+    $user = seedCurrentTeamConnection($connection, 980500, 980510, 980511, 'Writer Default');
+
+    $connection->table('users')->where('id', $user->getKey())->update([
+        'current_team_id' => 980511,
+    ]);
+    User::rotateCurrentTeamCacheEpoch($user->getKey(), $connection);
+    Aura::flushState();
+    Auth::setUser($user);
+
+    $post = Post::on($connection->getName())->withoutGlobalScopes()->create([
+        'title' => 'Writer Default Resource',
+    ]);
+
+    expect($user->getAttribute('current_team_id'))->toBe(980510)
+        ->and($post->getAttribute('team_id'))->toBe(980511)
+        ->and($post->getAttribute('user_id'))->toBe($user->getKey());
+});
+
+it('hydrates Aura authentication identities from the writer connection', function () {
+    $connection = currentTeamTenantConnection();
+    seedCurrentTeamConnection($connection, 981000, 981010, 981011, 'Writer Auth');
+    $readPdo = new PDO('sqlite::memory:');
+    $readPdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $readPdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT, password TEXT, current_team_id INTEGER NULL, global_admin INTEGER NOT NULL DEFAULT 0)');
+    $readPdo->exec('CREATE TABLE meta (id INTEGER PRIMARY KEY, metable_type TEXT, metable_id INTEGER, key TEXT NULL, value TEXT NULL)');
+    $readPdo->exec("INSERT INTO users (id, name, email, password, current_team_id, global_admin) VALUES (981000, 'Stale Auth', 'stale-auth@example.test', 'password', 981010, 1)");
+
+    $connection->table('users')->where('id', 981000)->update([
+        'current_team_id' => 981011,
+        'global_admin' => false,
+    ]);
+    $connection->setReadPdo($readPdo);
+
+    $provider = new AuraEloquentUserProvider(app('hash'), CurrentTeamTenantAuthUser::class);
+    $authenticatedUser = $provider->retrieveById(981000);
+
+    expect($authenticatedUser)->toBeInstanceOf(CurrentTeamTenantAuthUser::class)
+        ->and($authenticatedUser?->getAttribute('current_team_id'))->toBe(981011)
+        ->and($authenticatedUser?->getAttribute('global_admin'))->toBeFalse();
+});
+
+it('keys current-team authorization by model primary key for custom auth identifiers', function () {
+    $connection = currentTeamTenantConnection();
+    $user = seedCurrentTeamConnection($connection, 981100, 981110, 981111, 'Email Identifier');
+    $authenticatedUser = EmailIdentifiedCurrentTeamUser::on($connection->getName())
+        ->withoutGlobalScopes()
+        ->findOrFail($user->getKey());
+
+    expect($authenticatedUser->getAuthIdentifier())->toBe($user->getAttribute('email'))
+        ->and($authenticatedUser->currentTeamIdForAuthorization())->toBe(981110)
+        ->and(Cache::get(User::currentTeamCacheKey($user->getKey(), $connection)))->toBe(981110);
+
+    Auth::setUser($authenticatedUser);
+
+    $team = Team::on($connection->getName())->create([
+        'name' => 'Primary Key Owned Team',
+    ]);
+
+    expect($team->getAttribute('user_id'))->toBe($user->getKey());
+});
+
+it('uses writer state when revoked global and team role authority remains stale on the reader', function () {
+    $connection = currentTeamTenantConnection();
+    $writer = seedRoleIsolationConnection($connection, 'Writer Revoked', false);
+    $userId = $writer['user']->getKey();
+    $writerTeamId = $writer['team']->getKey();
+    $writerRoleId = $writer['role']->getKey();
+    $staleTeamId = $writerTeamId + 1;
+    $readPdo = new PDO('sqlite::memory:');
+    $readPdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $readPdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, current_team_id INTEGER NULL, global_admin INTEGER NOT NULL DEFAULT 0)');
+    $readPdo->exec('CREATE TABLE roles (id INTEGER PRIMARY KEY, name TEXT, slug TEXT, description TEXT NULL, super_admin INTEGER NOT NULL DEFAULT 0, permissions TEXT NULL, user_id INTEGER NULL, team_id INTEGER NULL, created_at TEXT NULL, updated_at TEXT NULL)');
+    $readPdo->exec('CREATE TABLE user_role (team_id INTEGER, user_id INTEGER, role_id INTEGER, created_at TEXT NULL, updated_at TEXT NULL)');
+    $readPdo->exec("INSERT INTO users (id, current_team_id, global_admin) VALUES ({$userId}, {$staleTeamId}, 1)");
+    $readPdo->exec("INSERT INTO roles (id, name, slug, super_admin, permissions, team_id) VALUES ({$writerRoleId}, 'Stale Admin', 'shared-role', 1, '[]', NULL)");
+    $readPdo->exec("INSERT INTO user_role (team_id, user_id, role_id) VALUES ({$staleTeamId}, {$userId}, {$writerRoleId})");
+
+    $connection->setReadPdo($readPdo);
+    $staleActor = $writer['user'];
+    $staleActor->forceFill([
+        'current_team_id' => $staleTeamId,
+        'global_admin' => true,
+    ]);
+    Auth::setUser($staleActor);
+
+    expect($staleActor->isAuraGlobalAdmin())->toBeFalse()
+        ->and($staleActor->isSuperAdmin())->toBeFalse()
+        ->and(Role::currentTeamIdForResolution())->toBe($writerTeamId);
+
+    $connection->beginTransaction();
+    $connection->table('users')->where('id', $userId)->update([
+        'current_team_id' => $staleTeamId,
+    ]);
+
+    expect(Role::currentTeamIdForResolution())->toBe($staleTeamId);
+
+    $connection->rollBack();
+
+    expect(Role::currentTeamIdForResolution())->toBe($writerTeamId);
+});
+
+it('authorizes and queries the same actor-connected User model in global search', function () {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedTeamListConnection($defaultConnection, 'Default Search User');
+    $tenant = seedTeamListConnection($tenantConnection, 'Tenant Search User');
+
+    $defaultConnection->table('users')->where('id', $default['member']->getKey())->update([
+        'name' => 'Default Connection User Needle',
+    ]);
+    $tenantConnection->table('users')->where('id', $tenant['member']->getKey())->update([
+        'name' => 'Tenant Connection User Needle',
+    ]);
+
+    Aura::fake();
+    Auth::setUser($tenant['global_admin']);
+
+    $globalSearch = new GlobalSearch;
+    $globalSearch->search = 'Connection User Needle';
+
+    expect($globalSearch->getSearchResultsProperty()->flatten(1)->pluck('name')->all())
+        ->toBe(['Tenant Connection User Needle'])
+        ->and($default['member']->getKey())->toBe($tenant['member']->getKey());
+});
+
 it('fails closed for failover cache stores before a recovered primary can revive stale epochs', function () {
     $originalCache = Cache::getFacadeRoot();
 
@@ -1943,24 +2245,110 @@ it('allows direct same-connection resource deletes', function (string $deleteMet
     'quiet force delete' => 'forceDeleteQuietly',
 ]);
 
-it('provides a narrow trusted-system bypass for a connection-bound resource delete', function (string $deleteMethod) {
+it('keeps unauthenticated internal cleanup bound to the resource connection', function () {
     $defaultConnection = DB::connection();
     $tenantConnection = currentTeamTenantConnection();
-    $default = seedTeamListConnection($defaultConnection, 'Default System Delete');
-    $tenant = seedTeamListConnection($tenantConnection, 'Tenant System Delete');
+    $default = seedTeamDeletionConnection($defaultConnection, 'Default Internal Cleanup');
+    $tenant = seedTeamDeletionConnection($tenantConnection, 'Tenant Internal Cleanup');
+    $readPdo = new PDO('sqlite::memory:');
+    $readPdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $readPdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, current_team_id INTEGER NULL)');
+    $readPdo->exec('CREATE TABLE user_role (team_id INTEGER, user_id INTEGER, role_id INTEGER)');
+    $tenantConnection->setReadPdo($readPdo);
 
+    Auth::forgetUser();
+
+    expect($tenant['team']->delete())->toBeTrue()
+        ->and($tenantConnection->table('teams')->useWritePdo()->where('id', $tenant['team']->getKey())->whereNotNull('deleted_at')->exists())
+        ->toBeTrue()
+        ->and($tenantConnection->table('users')->useWritePdo()->where('id', $tenant['user']->getKey())->value('current_team_id'))
+        ->toBe($tenant['remaining_team_id'])
+        ->and($tenantConnection->table('user_role')->useWritePdo()->where('team_id', $tenant['team']->getKey())->exists())
+        ->toBeFalse()
+        ->and($defaultConnection->table('teams')->useWritePdo()->where('id', $default['team']->getKey())->whereNull('deleted_at')->exists())
+        ->toBeTrue()
+        ->and($defaultConnection->table('user_role')->useWritePdo()->where('team_id', $default['team']->getKey())->exists())
+        ->toBeTrue();
+});
+
+it('rejects a deleting listener that rebinds the model before physical deletion', function (string $deleteMethod, string $beforeEvent, string $afterEvent) {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedTeamListConnection($defaultConnection, 'Default Listener Delete');
+    $tenant = seedTeamListConnection($tenantConnection, 'Tenant Listener Delete');
+    $events = [];
+
+    Event::listen("eloquent.{$beforeEvent}: ".Team::class, function (Team $team) use (&$events, $beforeEvent, $tenantConnection): void {
+        $events[] = $beforeEvent;
+        $team->setConnection($tenantConnection->getName());
+    });
+    Event::listen("eloquent.{$afterEvent}: ".Team::class, function () use (&$events, $afterEvent): void {
+        $events[] = $afterEvent;
+    });
     Auth::setUser($default['global_admin']);
 
-    expect($tenant['team']->{$deleteMethod}())->toBeTrue();
+    expect(fn () => $default['team']->{$deleteMethod}())
+        ->toThrow(LogicException::class, 'A resource connection cannot change during deletion.')
+        ->and($events)->toBe([$beforeEvent])
+        ->and($defaultConnection->table('teams')->where('id', $default['team']->getKey())->whereNull('deleted_at')->exists())
+        ->toBeTrue()
+        ->and($tenantConnection->table('teams')->where('id', $tenant['team']->getKey())->whereNull('deleted_at')->exists())
+        ->toBeTrue()
+        ->and($defaultConnection->table('user_role')->where('team_id', $default['team']->getKey())->exists())
+        ->toBeTrue()
+        ->and($tenantConnection->table('user_role')->where('team_id', $tenant['team']->getKey())->exists())
+        ->toBeTrue();
+})->with([
+    'delete' => ['delete', 'deleting', 'deleted'],
+    'force delete' => ['forceDelete', 'forceDeleting', 'forceDeleted'],
+]);
 
-    $teamQuery = $tenantConnection->table('teams')->where('id', $tenant['team']->getKey());
+it('preserves successful delete lifecycle ordering on the bound connection', function (string $deleteMethod, array $expectedEvents) {
+    $connection = DB::connection();
+    $data = seedTeamListConnection($connection, 'Delete Event Order');
+    $events = [];
 
-    if ($deleteMethod === 'forceDeleteForSystem') {
-        expect($teamQuery->exists())->toBeFalse();
+    foreach (['forceDeleting', 'deleting', 'deleted', 'forceDeleted'] as $event) {
+        Event::listen("eloquent.{$event}: ".Team::class, function () use (&$events, $event): void {
+            $events[] = $event;
+        });
+    }
+
+    Auth::setUser($data['global_admin']);
+
+    expect($data['team']->{$deleteMethod}())->toBeTrue()
+        ->and($events)->toBe($expectedEvents);
+})->with([
+    'delete' => ['delete', ['deleting', 'deleted']],
+    'force delete' => ['forceDelete', ['forceDeleting', 'deleting', 'deleted', 'forceDeleted']],
+]);
+
+it('keeps quiet deletes on their original connection without dispatching listeners', function (string $deleteMethod) {
+    $defaultConnection = DB::connection();
+    $tenantConnection = currentTeamTenantConnection();
+    $default = seedTeamListConnection($defaultConnection, 'Default Quiet Delete');
+    $tenant = seedTeamListConnection($tenantConnection, 'Tenant Quiet Delete');
+    $events = [];
+
+    Event::listen('eloquent.deleting: '.Team::class, function (Team $team) use (&$events, $tenantConnection): void {
+        $events[] = 'deleting';
+        $team->setConnection($tenantConnection->getName());
+    });
+    Auth::setUser($default['global_admin']);
+
+    expect($default['team']->{$deleteMethod}())->toBeTrue()
+        ->and($events)->toBeEmpty()
+        ->and($tenantConnection->table('teams')->where('id', $tenant['team']->getKey())->whereNull('deleted_at')->exists())
+        ->toBeTrue();
+
+    $defaultTeamQuery = $defaultConnection->table('teams')->where('id', $default['team']->getKey());
+
+    if ($deleteMethod === 'forceDeleteQuietly') {
+        expect($defaultTeamQuery->exists())->toBeFalse();
     } else {
-        expect($teamQuery->whereNotNull('deleted_at')->exists())->toBeTrue();
+        expect($defaultTeamQuery->whereNotNull('deleted_at')->exists())->toBeTrue();
     }
 })->with([
-    'delete' => 'deleteForSystem',
-    'force delete' => 'forceDeleteForSystem',
+    'quiet delete' => 'deleteQuietly',
+    'quiet force delete' => 'forceDeleteQuietly',
 ]);

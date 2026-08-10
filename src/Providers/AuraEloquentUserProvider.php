@@ -14,6 +14,8 @@ class AuraEloquentUserProvider extends EloquentUserProvider
 {
     protected function newModelQuery($model = null)
     {
-        return parent::newModelQuery($model)->withoutGlobalScope(TeamScope::class);
+        return parent::newModelQuery($model)
+            ->withoutGlobalScope(TeamScope::class)
+            ->useWritePdo();
     }
 }

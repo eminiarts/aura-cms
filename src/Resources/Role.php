@@ -157,7 +157,13 @@ class Role extends Resource
             return (int) $contextTeamId;
         }
 
-        return optional(auth()->user())->current_team_id;
+        if (! $authenticatedUser instanceof User) {
+            return null;
+        }
+
+        $currentTeamId = $authenticatedUser->currentTeamIdForAuthorization();
+
+        return $currentTeamId === null ? null : (int) $currentTeamId;
     }
 
     /**
@@ -376,7 +382,9 @@ class Role extends Resource
 
         // Bypass TeamScope (and any other global scopes) so both the current
         // team's rows and the global (team_id = null) rows are considered.
-        $base = static::on($connection->getName())->withoutGlobalScopes();
+        $base = static::on($connection->getName())
+            ->withoutGlobalScopes()
+            ->useWritePdo();
 
         // Teams-off mode: the roles table has no team_id column, so there is a
         // single flat catalog. The global role simply is the role.

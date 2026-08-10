@@ -4,7 +4,6 @@ namespace Aura\Base\Livewire;
 
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 
@@ -51,7 +50,7 @@ class GlobalSearch extends Component
             $model = app($resource);
             $authenticatedUser = auth()->user();
 
-            if (! $authenticatedUser instanceof Model
+            if (! $authenticatedUser instanceof User
                 || User::connectionCacheIdentity($authenticatedUser->getConnection())
                     !== User::connectionCacheIdentity($model->getConnection())
                 || ! Gate::allows('viewAny', $model)) {
@@ -93,20 +92,19 @@ class GlobalSearch extends Component
         // Search in User model, but only if the current user may view users.
         /** @var User $configuredUser */
         $configuredUser = app(config('aura.resources.user'));
+        $user = $configuredUser->newInstance();
+        $authenticatedUser = auth()->user();
 
-        if (Gate::allows('viewAny', $configuredUser)) {
-            $user = $configuredUser->newInstance();
-            $authenticatedUser = auth()->user();
+        if ($authenticatedUser instanceof User) {
+            $user->setConnection($authenticatedUser->getConnectionName());
 
-            if ($authenticatedUser instanceof Model) {
-                $user->setConnection($authenticatedUser->getConnectionName());
+            if (Gate::allows('viewAny', $user)) {
+                $userResults = $user->newQuery()
+                    ->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('email', 'like', '%'.$this->search.'%')
+                    ->get();
+                $searchResults->push(...$userResults);
             }
-
-            $userResults = $user->newQuery()
-                ->where('name', 'like', '%'.$this->search.'%')
-                ->orWhere('email', 'like', '%'.$this->search.'%')
-                ->get();
-            $searchResults->push(...$userResults);
         }
 
         $searchResults = $searchResults->flatten()->map(function ($item) {
