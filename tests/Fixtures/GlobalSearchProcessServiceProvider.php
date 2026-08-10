@@ -117,6 +117,13 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
                 GlobalSearchProcessConnectionChurnResource::class,
                 GlobalSearchProcessResource::class,
             ],
+            'query-churn-event-forget' => [
+                GlobalSearchProcessEventForgetConnectionChurnResource::class,
+                GlobalSearchProcessResource::class,
+            ],
+            'forged-exit', 'forged-die', 'forged-completed-code', 'forged-fatal', 'forged-multiple', 'forged-partial', 'stderr-noise' => [
+                GlobalSearchProcessOutputAttackResource::class,
+            ],
             'raw-pdo' => [
                 GlobalSearchProcessRawPdoAdapterResource::class,
                 GlobalSearchProcessResource::class,

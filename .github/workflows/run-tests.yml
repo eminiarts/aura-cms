@@ -43,7 +43,7 @@ jobs:
         run: composer update --prefer-dist --no-interaction --no-progress
 
       - name: Run tests in parallel
-        run: php -d memory_limit=1G vendor/bin/pest --no-coverage --parallel --exclude-testsuite Browser
+        run: composer test
 
   teams-off:
     name: Teams-off

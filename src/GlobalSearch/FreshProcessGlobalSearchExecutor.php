@@ -216,18 +216,21 @@ SH;
             );
         }
 
-        if ($exitCode !== 0) {
+        if ($exitCode !== RunGlobalSearchWorker::COMPLETED_EXIT_CODE) {
             throw new GlobalSearchExecutionFailed("The global search worker exited unsuccessfully ({$exitCode}).");
         }
 
-        $markerPosition = strrpos($process->getOutput(), RunGlobalSearchWorker::RESPONSE_MARKER);
+        $output = $process->getOutput();
+        $markerPosition = strpos($output, RunGlobalSearchWorker::RESPONSE_MARKER);
 
-        if ($markerPosition === false) {
+        if ($markerPosition === false
+            || substr_count($output, RunGlobalSearchWorker::RESPONSE_MARKER) !== 1
+            || str_contains(substr($output, 0, $markerPosition), "\x1eAURA_GLOBAL_SEARCH_")) {
             throw new GlobalSearchExecutionFailed('The global search worker returned no response envelope.');
         }
 
         $encodedEnvelope = trim(substr(
-            $process->getOutput(),
+            $output,
             $markerPosition + strlen(RunGlobalSearchWorker::RESPONSE_MARKER),
         ));
 
@@ -241,8 +244,10 @@ SH;
         }
 
         if (! is_array($envelope)
+            || array_keys($envelope) !== ['successful', 'result']
             || ($envelope['successful'] ?? null) !== true
-            || ! is_array($envelope['result'] ?? null)) {
+            || ! is_array($envelope['result'] ?? null)
+            || ! $this->resultMatchesRequest($envelope['result'], $request)) {
             throw new GlobalSearchExecutionFailed('The global search worker failed closed.');
         }
 
@@ -479,6 +484,46 @@ SH;
         }
 
         self::$asynchronousSignalsWereEnabled = null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     * @param  array<string, mixed>  $request
+     */
+    private function resultMatchesRequest(array $result, array $request): bool
+    {
+        $operation = $request['operation'] ?? null;
+        $queryLimit = $request['query_limit'] ?? null;
+        $queryCount = $result['query_count'] ?? null;
+        $workerProcessId = $result['worker_pid'] ?? null;
+
+        if (! is_int($queryLimit)
+            || ! is_int($queryCount)
+            || $queryCount < 1
+            || $queryCount > $queryLimit
+            || ! is_int($workerProcessId)
+            || $workerProcessId < 2
+            || ($result['contained'] ?? null) !== true) {
+            return false;
+        }
+
+        if ($operation === 'discover') {
+            return array_keys($result) === ['resources', 'query_count', 'worker_pid', 'contained']
+                && is_array($result['resources'])
+                && count($result['resources']) <= 100
+                && collect($result['resources'])->every(
+                    fn (mixed $resource): bool => is_string($resource)
+                        && is_subclass_of($resource, \Aura\Base\Resource::class),
+                );
+        }
+
+        $globalLimit = $request['global_limit'] ?? null;
+
+        return $operation === 'search'
+            && array_keys($result) === ['results', 'query_count', 'worker_pid', 'contained']
+            && is_int($globalLimit)
+            && is_array($result['results'])
+            && count($result['results']) <= $globalLimit;
     }
 
     private static function terminate(Process $process): void

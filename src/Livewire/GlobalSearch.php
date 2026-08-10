@@ -35,6 +35,7 @@ use ReflectionException;
 use ReflectionMethod;
 use Stringable;
 use Throwable;
+use WeakMap;
 
 class GlobalSearch extends Component
 {
@@ -99,6 +100,9 @@ class GlobalSearch extends Component
     private ?array $resolvedDestinationPatterns = null;
 
     private bool $resolvedDestinationPatternsOnce = false;
+
+    /** @var WeakMap<resource, Collection<int, array<string, mixed>>>|null */
+    private ?WeakMap $searchableFieldsCache = null;
 
     #[Computed]
     public function getSearchResultsProperty()
@@ -341,7 +345,7 @@ class GlobalSearch extends Component
 
             $resource = $this->resolveSearchableResource($resourceClass, $user);
 
-            if ($resource instanceof Resource) {
+            if ($resource instanceof Resource && $this->searchableFields($resource)->isNotEmpty()) {
                 $resources->push($resource);
             }
         }
@@ -363,16 +367,7 @@ class GlobalSearch extends Component
         bool $isolatedExecution = false,
     ): Collection {
         $startedAt = hrtime(true);
-        $maximumFields = $this->configuredLimit(
-            'max_fields_per_resource',
-            self::DEFAULT_MAX_FIELDS_PER_RESOURCE,
-            self::HARD_MAX_FIELDS_PER_RESOURCE,
-        );
-        $fields = collect($resource->getGlobalSearchableFields())
-            ->filter(fn (mixed $field): bool => is_array($field) && is_string($field['slug'] ?? null))
-            ->unique('slug')
-            ->take($maximumFields)
-            ->values();
+        $fields = $this->searchableFields($resource);
 
         if ($fields->isEmpty()) {
             return collect();
@@ -849,6 +844,32 @@ class GlobalSearch extends Component
         $elapsedMilliseconds = intdiv(hrtime(true) - $startedAt, 1_000_000);
 
         return max(0, $totalMilliseconds - $elapsedMilliseconds);
+    }
+
+    /** @return Collection<int, array<string, mixed>> */
+    private function searchableFields(Resource $resource): Collection
+    {
+        $this->searchableFieldsCache ??= new WeakMap;
+
+        if (isset($this->searchableFieldsCache[$resource])) {
+            return $this->searchableFieldsCache[$resource];
+        }
+
+        try {
+            $fields = collect($resource->getGlobalSearchableFields())
+                ->filter(fn (mixed $field): bool => is_array($field) && is_string($field['slug'] ?? null))
+                ->unique('slug')
+                ->take($this->configuredLimit(
+                    'max_fields_per_resource',
+                    self::DEFAULT_MAX_FIELDS_PER_RESOURCE,
+                    self::HARD_MAX_FIELDS_PER_RESOURCE,
+                ))
+                ->values();
+        } catch (Throwable) {
+            $fields = collect();
+        }
+
+        return $this->searchableFieldsCache[$resource] = $fields;
     }
 
     /**

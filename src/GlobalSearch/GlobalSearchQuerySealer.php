@@ -22,7 +22,7 @@ final class GlobalSearchQuerySealer
 
     public function seal(Resource $resource, Builder $query, Authenticatable $user): ?Builder
     {
-        $preparedQuery = $query->applyScopes();
+        $preparedQuery = (clone $query)->applyScopes();
         $preparedQuery = $resource->applyGlobalSearchVisibility($preparedQuery, $user);
 
         if (! $preparedQuery instanceof Builder) {
@@ -31,48 +31,52 @@ final class GlobalSearchQuerySealer
 
         $baseQuery = $preparedQuery->getQuery();
         $callbackShape = $this->immutableCallbackShape($baseQuery);
+        $authorizedShape = $this->immutableAuthorizedShape($baseQuery);
         $allowedRawFragments = $this->rawFragments($baseQuery);
-        $allowedRawValues = $this->rawFragments($baseQuery, false);
         $allowedOperators = $this->allowedOperators($baseQuery);
-        $executedCallbacks = $this->drainCallbacks($baseQuery);
+        $callbacks = $baseQuery->beforeQueryCallbacks;
 
         if ($callbackShape === null
+            || $authorizedShape === null
             || $allowedRawFragments === null
-            || $allowedRawValues === null
             || $allowedOperators === null
-            || $executedCallbacks === null
-            || $this->immutableCallbackShape($baseQuery) !== $callbackShape
-            || ! $this->rawFragmentsAreSubset($baseQuery, $allowedRawFragments)
-            || ! $this->whereClausesAreSafe($baseQuery, $allowedOperators)) {
-            return null;
-        }
-
-        if (! $this->groupCallbackWhereClauses($baseQuery)) {
-            return null;
-        }
-
-        $sealedQuery = $preparedQuery->applyScopes();
-        $sealedQuery = $resource->applyGlobalSearchVisibility($sealedQuery, $user);
-
-        if (! $sealedQuery instanceof Builder) {
-            return null;
-        }
-
-        $baseQuery = $sealedQuery->getQuery();
-
-        if (! is_array($baseQuery->beforeQueryCallbacks)
-            || count($baseQuery->beforeQueryCallbacks) > $executedCallbacks
-            || $this->immutableCallbackShape($baseQuery) !== $callbackShape
-            || ! $this->rawFragmentCountsAreBounded($baseQuery, $allowedRawValues, 2)
+            || ! is_array($callbacks)
+            || count($callbacks) > self::MAXIMUM_CALLBACKS
             || ! $this->whereClausesAreSafe($baseQuery, $allowedOperators)) {
             return null;
         }
 
         $baseQuery->beforeQueryCallbacks = [];
-        $sealedQuery->withoutGlobalScopes();
+        $callbackQuery = clone $baseQuery;
+        $callbackQuery->wheres = [];
+        $callbackQuery->bindings['where'] = [];
+        $callbackQuery->beforeQueryCallbacks = $callbacks;
+        $executedCallbacks = $this->drainCallbacks($callbackQuery);
+
+        $verificationQuery = (clone $query)->applyScopes();
+        $verificationQuery = $resource->applyGlobalSearchVisibility($verificationQuery, $user);
+
+        if (! $verificationQuery instanceof Builder) {
+            return null;
+        }
+
+        $verificationBaseQuery = $verificationQuery->getQuery();
+
+        if ($executedCallbacks === null
+            || $this->immutableAuthorizedShape($baseQuery) !== $authorizedShape
+            || $this->immutableAuthorizedShape($verificationBaseQuery) !== $authorizedShape
+            || $this->immutableCallbackShape($callbackQuery) !== $callbackShape
+            || ! $this->rawFragmentsAreSubset($callbackQuery, $allowedRawFragments)
+            || ! $this->whereClausesAreSafe($callbackQuery, $allowedOperators)
+            || ! $this->appendCallbackConstraints($baseQuery, $callbackQuery)) {
+            return null;
+        }
+
+        $baseQuery->beforeQueryCallbacks = [];
+        $preparedQuery->withoutGlobalScopes();
 
         return $this->queryIsSafeForDefaultAdapter($resource, $baseQuery)
-            ? $sealedQuery
+            ? $preparedQuery
             : null;
     }
 
@@ -96,6 +100,38 @@ final class GlobalSearchQuerySealer
         }
 
         return $allowed;
+    }
+
+    private function appendCallbackConstraints(
+        BaseQueryBuilder $authorizedQuery,
+        BaseQueryBuilder $callbackQuery,
+    ): bool {
+        if (! is_array($callbackQuery->wheres)
+            || ! is_array($callbackQuery->bindings)
+            || ! is_array($callbackQuery->bindings['where'] ?? null)
+            || ! is_array($callbackQuery->bindings['order'] ?? null)
+            || ! is_array($authorizedQuery->bindings)
+            || ! is_array($authorizedQuery->bindings['order'] ?? null)) {
+            return false;
+        }
+
+        try {
+            if ($callbackQuery->wheres !== []) {
+                $nestedQuery = $authorizedQuery->forNestedWhere();
+                $nestedQuery->wheres = $callbackQuery->wheres;
+                $nestedQuery->bindings['where'] = $callbackQuery->bindings['where'];
+                $authorizedQuery->addNestedWhereQuery($nestedQuery, 'and');
+            }
+
+            $authorizedQuery->orders = $callbackQuery->orders;
+            $authorizedQuery->limit = $callbackQuery->limit;
+            $authorizedQuery->offset = $callbackQuery->offset;
+            $authorizedQuery->bindings['order'] = $callbackQuery->bindings['order'] ?? [];
+        } catch (Throwable) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -234,30 +270,28 @@ final class GlobalSearchQuerySealer
         return $query->beforeQueryCallbacks === [] ? $executedCallbacks : null;
     }
 
-    private function groupCallbackWhereClauses(BaseQueryBuilder $query): bool
+    /** @return array<string, mixed>|null */
+    private function immutableAuthorizedShape(BaseQueryBuilder $query): ?array
     {
-        if ($query->wheres === []) {
-            return true;
-        }
-
-        if (! is_array($query->wheres)
-            || ! is_array($query->bindings)
-            || ! is_array($query->bindings['where'] ?? null)) {
-            return false;
-        }
-
         try {
-            $nestedQuery = $query->forNestedWhere();
-            $nestedQuery->wheres = $query->wheres;
-            $nestedQuery->bindings['where'] = $query->bindings['where'];
-            $query->wheres = [];
-            $query->bindings['where'] = [];
-            $query->addNestedWhereQuery($nestedQuery);
-        } catch (Throwable) {
-            return false;
-        }
+            $shape = clone $query;
+            $shape->beforeQueryCallbacks = [];
 
-        return true;
+            return [
+                'sql' => $shape->toSql(),
+                'bindings' => $shape->getRawBindings(),
+                'connection' => spl_object_id($shape->connection),
+                'grammar' => spl_object_id($shape->grammar),
+                'processor' => spl_object_id($shape->processor),
+                'operators' => $shape->operators,
+                'bitwise_operators' => $shape->bitwiseOperators,
+                'use_write_pdo' => $shape->useWritePdo,
+                'fetch_using' => $shape->fetchUsing,
+                'timeout' => $shape->timeout,
+            ];
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /** @return array<string, mixed>|null */
@@ -334,27 +368,6 @@ final class GlobalSearchQuerySealer
             && $query->from === $resource->getTable()
             && $query->beforeQueryCallbacks === []
             && ! $this->queryContainsUnion($query, $seenQueries, $remainingNodes, 0);
-    }
-
-    /** @param array<string, int> $allowedRawValues */
-    private function rawFragmentCountsAreBounded(
-        BaseQueryBuilder $query,
-        array $allowedRawValues,
-        int $multiplier,
-    ): bool {
-        $actualRawValues = $this->rawFragments($query, false);
-
-        if ($actualRawValues === null) {
-            return false;
-        }
-
-        foreach ($actualRawValues as $fragment => $count) {
-            if ($count > (($allowedRawValues[$fragment] ?? 0) * $multiplier)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /** @return array<string, int>|null */

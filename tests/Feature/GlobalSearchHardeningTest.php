@@ -23,7 +23,9 @@ use Aura\Base\Tests\Fixtures\GlobalSearchProcessConnectionChurnResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessDefaultConnectionResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessDeniedConstructionResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessDescriptorProbeResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessEventForgetConnectionChurnResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessHostRestrictionResource;
+use Aura\Base\Tests\Fixtures\GlobalSearchProcessOutputAttackResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessPolicy;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessQueryFloodAdapterResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessQueryFloodPolicyResource;
@@ -37,6 +39,7 @@ use Aura\Base\Tests\Fixtures\GlobalSearchProcessStallingResource;
 use Aura\Base\Tests\Fixtures\GlobalSearchProcessUnionMutationResource;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Events\ConnectionEstablished;
 use Illuminate\Database\Query\Builder as BaseQueryBuilder;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
@@ -230,6 +233,38 @@ class HardeningSecondPassUnionResource extends HardeningSearchResource
 
         return $query;
     }
+}
+
+class HardeningSecondPassPredicateErasingResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-second-pass-predicate-erasing';
+
+    public static string $type = 'HardeningSecondPassPredicateErasing';
+
+    public static int $visibilityPass = 0;
+
+    public function applyGlobalSearchVisibility($query, $user)
+    {
+        static::$visibilityPass++;
+
+        if (static::$visibilityPass === 1) {
+            return $query->where('team_id', data_get($user, 'current_team_id'));
+        }
+
+        $query->getQuery()->wheres = [];
+        $query->getQuery()->bindings['where'] = [];
+
+        return $query;
+    }
+}
+
+class HardeningEmptySearchableFieldsResource extends HardeningSearchResource
+{
+    public static ?string $slug = 'hardening-empty-searchable-fields';
+
+    public static string $type = 'HardeningEmptySearchableFields';
+
+    protected static array $searchable = ['missing'];
 }
 
 class HardeningDeniedHooksResource extends HardeningSearchResource
@@ -1040,6 +1075,22 @@ test('viewAny authorization happens before the searchable resource cap', functio
         ->assertSee('Authorization Cap Needle Allowed');
 });
 
+test('resources without valid searchable fields do not consume the searchable resource cap', function () {
+    config(['aura.global_search.max_resources' => 1]);
+    registerHardeningSearchResources([
+        HardeningEmptySearchableFieldsResource::class,
+        HardeningAllowedResource::class,
+    ]);
+    Gate::policy(HardeningEmptySearchableFieldsResource::class, HardeningSearchPolicy::class);
+    Gate::policy(HardeningAllowedResource::class, HardeningSearchPolicy::class);
+
+    HardeningAllowedResource::create(['title' => 'Eligible Resource Cap Needle']);
+
+    Livewire::test(GlobalSearch::class)
+        ->set('search', 'Eligible Resource Cap Needle')
+        ->assertSee('Eligible Resource Cap Needle');
+});
+
 test('viewAny authorization runs before every resource-controlled discovery hook', function () {
     registerHardeningSearchResources([HardeningDeniedHooksResource::class]);
     Gate::policy(HardeningDeniedHooksResource::class, HardeningDeniedHooksPolicy::class);
@@ -1165,6 +1216,32 @@ test('the inline default adapter validates the final visibility pass', function 
 
     expect($component->getSearchResultsProperty())->toBeEmpty()
         ->and(HardeningSecondPassUnionResource::$visibilityPass)->toBe(2);
+});
+
+test('the inline default adapter preserves first pass visibility predicates and bindings', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('This regression test exercises tenant visibility.');
+    }
+
+    config(['aura.global_search.execution_backend' => 'inline-testing']);
+    registerHardeningSearchResources([HardeningSecondPassPredicateErasingResource::class]);
+    Gate::policy(HardeningSecondPassPredicateErasingResource::class, HardeningSearchPolicy::class);
+
+    HardeningSecondPassPredicateErasingResource::withoutGlobalScopes()->create([
+        'title' => 'Current Tenant Predicate Needle',
+        'team_id' => $this->searchUser->current_team_id,
+    ]);
+    HardeningSecondPassPredicateErasingResource::withoutGlobalScopes()->create([
+        'title' => 'Cross Tenant Predicate Needle',
+        'team_id' => Team::factory()->createQuietly()->getKey(),
+    ]);
+    HardeningSecondPassPredicateErasingResource::$visibilityPass = 0;
+
+    $component = app(GlobalSearch::class);
+    $component->search = 'Predicate Needle';
+
+    expect($component->getSearchResultsProperty())->toBeEmpty()
+        ->and(HardeningSecondPassPredicateErasingResource::$visibilityPass)->toBe(2);
 });
 
 test('the inline default adapter rejects raw callbacks', function () {
@@ -1872,6 +1949,109 @@ test('the central query guard meters every purged connection incarnation', funct
             ->toHaveCount($initialGuardedConnectionCount);
     } finally {
         DB::purge($connectionName);
+    }
+});
+
+test('the central query guard survives removal of Laravel connection listeners', function () {
+    $connectionName = 'global_search_guard_event_forget';
+    config(["database.connections.{$connectionName}" => [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+        'foreign_key_constraints' => true,
+    ]]);
+    DB::purge($connectionName);
+    $queryGuard = new GlobalSearchQueryGuard(2);
+    $queryGuard->install();
+    Event::forget(ConnectionEstablished::class);
+    DB::purge($connectionName);
+    $completedQueries = 0;
+
+    try {
+        foreach (range(1, 5) as $iteration) {
+            try {
+                DB::connection($connectionName)->select('select 1');
+                $completedQueries++;
+            } catch (GlobalSearchExecutionFailed) {
+                break;
+            }
+        }
+
+        expect($completedQueries)->toBe(2)
+            ->and($queryGuard->queryCount())->toBe(2);
+    } finally {
+        DB::purge($connectionName);
+    }
+});
+
+test('fresh workers meter purge and reconnect after connection listeners are removed', function () {
+    $harness = configureFreshProcessSearchHarness('query-churn-event-forget', [
+        GlobalSearchProcessEventForgetConnectionChurnResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+
+    try {
+        $this->actingAs($harness['user']);
+
+        Livewire::test(GlobalSearch::class)
+            ->set('search', 'Fresh Process Needle')
+            ->assertSee('Fresh Process Needle Current Team');
+
+        expect(strlen((string) @file_get_contents($harness['marker'])))->toBeLessThanOrEqual(7);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh workers reject forged stdout envelopes and abnormal termination', function (string $mode) {
+    $harness = configureFreshProcessSearchHarness($mode, [GlobalSearchProcessOutputAttackResource::class]);
+    $executor = app(FreshProcessGlobalSearchExecutor::class);
+
+    try {
+        expect(fn () => $executor->run([
+            'operation' => 'search',
+            'context' => signedFreshProcessContext($harness['user']),
+            'query_limit' => 20,
+            'resource' => GlobalSearchProcessOutputAttackResource::class,
+            'resource_order' => 0,
+            'search_term' => 'Fresh Process Needle',
+            'global_limit' => 15,
+            'execution_timeout_ms' => 1_500,
+        ], 1_500, 1_048_576))->toThrow(GlobalSearchExecutionFailed::class);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+})->with([
+    'forged success followed by exit' => 'forged-exit',
+    'forged success followed by die' => 'forged-die',
+    'forged success followed by the normal completion code' => 'forged-completed-code',
+    'forged success followed by fatal error' => 'forged-fatal',
+    'multiple forged envelopes' => 'forged-multiple',
+    'partial forged envelope' => 'forged-partial',
+]);
+
+test('fresh workers ignore stderr diagnostics while accepting one normal response', function () {
+    $harness = configureFreshProcessSearchHarness('stderr-noise', [
+        GlobalSearchProcessOutputAttackResource::class,
+    ]);
+    $executor = app(FreshProcessGlobalSearchExecutor::class);
+
+    try {
+        $result = $executor->run([
+            'operation' => 'search',
+            'context' => signedFreshProcessContext($harness['user']),
+            'query_limit' => 20,
+            'resource' => GlobalSearchProcessOutputAttackResource::class,
+            'resource_order' => 0,
+            'search_term' => 'Fresh Process Needle',
+            'global_limit' => 15,
+            'execution_timeout_ms' => 1_500,
+        ], 1_500, 1_048_576);
+
+        expect(collect($result['results'] ?? [])->pluck('title')->all())
+            ->toBe(['Fresh Process Needle Current Team']);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
     }
 });
 

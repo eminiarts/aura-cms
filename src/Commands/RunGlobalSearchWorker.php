@@ -9,6 +9,10 @@ use Throwable;
 
 final class RunGlobalSearchWorker extends Command
 {
+    public const COMPLETED_EXIT_CODE = 64;
+
+    public const EARLY_TERMINATION_EXIT_CODE = 70;
+
     public const RESPONSE_MARKER = "\x1eAURA_GLOBAL_SEARCH_RESPONSE\x1f";
 
     protected $description = 'Execute one isolated global search operation';
@@ -19,6 +23,15 @@ final class RunGlobalSearchWorker extends Command
 
     public function handle(GlobalSearchWorker $worker): int
     {
+        $completed = false;
+        register_shutdown_function(static function () use (&$completed): void {
+            if ($completed) {
+                return;
+            }
+
+            self::writeEnvelope(['successful' => false]);
+            exit(self::EARLY_TERMINATION_EXIT_CODE);
+        });
         $envelope = ['successful' => false];
 
         try {
@@ -27,12 +40,16 @@ final class RunGlobalSearchWorker extends Command
             if (! FreshProcessGlobalSearchExecutor::workerRuntimeIsContained()
                 || ! is_string($input)
                 || strlen($input) > 65_536) {
+                $completed = true;
+
                 return $this->respond($envelope);
             }
 
             $request = json_decode($input, true, 32, JSON_THROW_ON_ERROR);
 
             if (! is_array($request)) {
+                $completed = true;
+
                 return $this->respond($envelope);
             }
 
@@ -49,11 +66,21 @@ final class RunGlobalSearchWorker extends Command
             // data, and exception messages never cross this failure boundary.
         }
 
+        $completed = true;
+
         return $this->respond($envelope);
     }
 
     /** @param  array<string, mixed>  $envelope */
     private function respond(array $envelope): int
+    {
+        self::writeEnvelope($envelope);
+
+        return self::COMPLETED_EXIT_CODE;
+    }
+
+    /** @param  array<string, mixed>  $envelope */
+    private static function writeEnvelope(array $envelope): void
     {
         try {
             $encoded = json_encode($envelope, JSON_THROW_ON_ERROR);
@@ -61,8 +88,6 @@ final class RunGlobalSearchWorker extends Command
             $encoded = '{"successful":false}';
         }
 
-        $this->output->write(self::RESPONSE_MARKER.$encoded);
-
-        return 0;
+        fwrite(STDOUT, self::RESPONSE_MARKER.$encoded);
     }
 }

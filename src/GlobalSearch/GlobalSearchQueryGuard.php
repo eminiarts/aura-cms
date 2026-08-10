@@ -5,8 +5,8 @@ namespace Aura\Base\GlobalSearch;
 use Aura\Base\Exceptions\GlobalSearchExecutionFailed;
 use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
-use Illuminate\Database\Events\ConnectionEstablished;
-use Illuminate\Events\Dispatcher;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use WeakMap;
 
 /**
@@ -28,28 +28,7 @@ final class GlobalSearchQueryGuard
         $this->guardedConnections = new WeakMap;
     }
 
-    public function install(): void
-    {
-        /** @var DatabaseManager $database */
-        $database = app('db');
-        /** @var Dispatcher $events */
-        $events = app('events');
-
-        foreach ($database->getConnections() as $connection) {
-            $this->guard($connection);
-        }
-
-        $events->listen(ConnectionEstablished::class, function (ConnectionEstablished $event): void {
-            $this->guard($event->connection);
-        });
-    }
-
-    public function queryCount(): int
-    {
-        return $this->queryCount;
-    }
-
-    private function guard(Connection $connection): void
+    public function guard(Connection $connection): void
     {
         if (isset($this->guardedConnections[$connection])) {
             return;
@@ -63,5 +42,21 @@ final class GlobalSearchQueryGuard
 
             $this->queryCount++;
         });
+    }
+
+    public function install(): void
+    {
+        /** @var DatabaseManager $database */
+        $database = app('db');
+        $guardedDatabase = new GlobalSearchGuardedDatabaseManager($database, $this);
+
+        app()->instance('db', $guardedDatabase);
+        DB::swap($guardedDatabase);
+        Model::setConnectionResolver($guardedDatabase);
+    }
+
+    public function queryCount(): int
+    {
+        return $this->queryCount;
     }
 }
