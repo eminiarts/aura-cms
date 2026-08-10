@@ -210,7 +210,7 @@ test('authorization denial opening media creates no browser error', function () 
     $this->actingAs($limitedUser);
 
     $page = visit('/admin/gallery-page/create');
-    $page->click('[data-media-picker-button="gallery"]')->wait(2)
+    $page->assertNotPresent('[data-media-picker-button="gallery"]')
         ->assertNotPresent('[data-media-picker-root]')
         ->assertNoSmoke();
 });
