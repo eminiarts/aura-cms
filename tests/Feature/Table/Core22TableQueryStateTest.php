@@ -246,11 +246,11 @@ test('unknown and cross-team parent scopes fail closed', function () {
         'parent' => ['scope' => 'forged', 'id' => 1],
     ]);
 
-    expect(fn () => (new TableQueryStateApplier)->apply(
+    expect((new TableQueryStateApplier)->apply(
         Core22QueryResource::query(),
         new Core22QueryResource,
         $unknown,
-    ))->toThrow(InvalidArgumentException::class);
+    )->pluck('id')->all())->toBe([]);
 
     if (! config('aura.teams')) {
         return;

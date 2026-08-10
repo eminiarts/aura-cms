@@ -21,6 +21,13 @@ final class TableParentScopeResolver
         ?Authenticatable $actor = null,
     ): Builder {
         $descriptor = $this->resolveDescriptor($resource, $state['scope']);
+
+        if ($descriptor === null) {
+            $query->whereRaw('1 = 0');
+
+            return $query;
+        }
+
         $parentClass = $descriptor->parentResource;
         $parent = $parentClass::query()->findOrFail($state['id']);
         $actor ??= auth()->user();
@@ -39,10 +46,10 @@ final class TableParentScopeResolver
         );
     }
 
-    private function resolveDescriptor(Resource $resource, string $key): TableParentScope
+    private function resolveDescriptor(Resource $resource, string $key): ?TableParentScope
     {
         if (! $resource instanceof DeclaresTableParentScopes) {
-            throw new InvalidArgumentException('This resource does not declare table parent scopes.');
+            return null;
         }
 
         foreach ($resource->tableParentScopes() as $declaredKey => $descriptor) {
@@ -55,6 +62,6 @@ final class TableParentScopeResolver
             }
         }
 
-        throw new InvalidArgumentException('Unknown table parent scope.');
+        return null;
     }
 }
