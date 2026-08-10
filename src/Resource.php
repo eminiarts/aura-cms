@@ -1526,13 +1526,17 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
     }
 
     /**
-     * The "booted" method of the model.
-     *
-     * @return void
+     * Bootstrap Aura's non-optional resource behavior before consumer booted
+     * hooks run. Eloquent invokes this once for each concrete model class.
      */
-    protected static function booted()
+    final protected static function boot(): void
     {
-        if (! static::$customTable) {
+        parent::boot();
+
+        $inheritanceColumn = static::getInheritanceColumn();
+        $inheritanceValue = static::getInheritanceValue();
+
+        if ($inheritanceColumn !== null && $inheritanceValue !== null) {
             static::addGlobalScope(app(TypeScope::class));
         }
 
@@ -1540,12 +1544,21 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
 
         static::addGlobalScope(app(ScopedScope::class));
 
-        static::creating(function ($model) {});
+        static::creating(function (Resource $resource) use ($inheritanceColumn, $inheritanceValue): void {
+            if ($inheritanceColumn !== null && $inheritanceValue !== null) {
+                $resource->setAttribute($inheritanceColumn, $inheritanceValue);
+            }
+        });
 
-        static::saved(function ($model) {
-            $model->clearFieldsAttributeCache();
+        static::saved(function (Resource $resource): void {
+            $resource->clearFieldsAttributeCache();
         });
     }
+
+    /**
+     * Consumer resource hook. Aura boot behavior is already registered.
+     */
+    protected static function booted() {}
 
     protected function clearDefinitionDerivedInstanceCaches(): void
     {

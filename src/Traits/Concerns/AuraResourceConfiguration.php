@@ -20,6 +20,18 @@ trait AuraResourceConfiguration
 
     public static bool $indexViewEnabled = true;
 
+    /**
+     * Custom-table resources opt in to single-table inheritance by declaring
+     * the discriminator column. Post-table resources keep the historical
+     * `type` discriminator when this is null.
+     */
+    public static ?string $inheritanceColumn = null;
+
+    /**
+     * The discriminator value defaults to the resource type.
+     */
+    public static ?string $inheritanceValue = null;
+
     public static ?string $ownerColumn = 'user_id';
 
     public static ?string $ownerRelation = 'user';
@@ -123,6 +135,53 @@ trait AuraResourceConfiguration
             })
             ->filter()
             ->values();
+    }
+
+    public static function getInheritanceColumn(): ?string
+    {
+        $column = static::$inheritanceColumn;
+
+        if ($column === null) {
+            if (! static::$customTable) {
+                return 'type';
+            }
+
+            if (static::$inheritanceValue !== null) {
+                throw new \LogicException(sprintf(
+                    'Resource [%s] cannot declare an inheritance value without an inheritance column.',
+                    static::class,
+                ));
+            }
+
+            return null;
+        }
+
+        if (trim($column) === '') {
+            throw new \LogicException(sprintf(
+                'Resource [%s] must declare a non-empty inheritance column.',
+                static::class,
+            ));
+        }
+
+        return $column;
+    }
+
+    public static function getInheritanceValue(): ?string
+    {
+        if (static::getInheritanceColumn() === null) {
+            return null;
+        }
+
+        $value = static::$inheritanceValue ?? static::getType();
+
+        if (trim($value) === '') {
+            throw new \LogicException(sprintf(
+                'Resource [%s] must declare a non-empty inheritance value.',
+                static::class,
+            ));
+        }
+
+        return $value;
     }
 
     public static function getOwnerColumn(): ?string
