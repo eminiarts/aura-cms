@@ -2,6 +2,8 @@
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Livewire\Table\TableMutationDispatcher;
+use Aura\Base\Livewire\Table\TableMutationModelDescriptor;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Tag;
 use Illuminate\Database\Eloquent\Builder;
@@ -97,6 +99,16 @@ class CustomTableSortingModel extends Resource
 
 class NativeCustomTableSortingModel extends Resource
 {
+    public array $bulkActions = [
+        'captureNativeOrder' => [
+            'label' => 'Capture native order',
+            'ability' => 'update',
+            'method' => 'collection',
+        ],
+    ];
+
+    public static array $capturedMutationIds = [];
+
     public static $customTable = true;
 
     public static string $nativeConnectionName = '';
@@ -119,6 +131,11 @@ class NativeCustomTableSortingModel extends Resource
         'created_at',
         'updated_at',
     ];
+
+    public function captureNativeOrder(array $ids): void
+    {
+        array_push(static::$capturedMutationIds, ...$ids);
+    }
 
     public function getConnectionName(): ?string
     {
@@ -273,6 +290,29 @@ test('native physical number sorting keeps equal decimal pagination deterministi
         })->all();
 
         expect($paginated)->toBe($expected);
+
+        config()->set('aura.security.table_mutations.chunk_size', 2);
+        NativeCustomTableSortingModel::$capturedMutationIds = [];
+        app(TableMutationDispatcher::class)->dispatchBulk(
+            $component->rowsQuery(),
+            new TableMutationModelDescriptor($component->model),
+            'captureNativeOrder',
+            $component->model->getBulkActions(),
+            $connection->table($nativeTable)->pluck('id')->all(),
+            false,
+            'collection',
+        );
+        $capturedNames = $connection->table($nativeTable)
+            ->whereIn('id', NativeCustomTableSortingModel::$capturedMutationIds)
+            ->get()
+            ->keyBy('id');
+
+        expect(collect(NativeCustomTableSortingModel::$capturedMutationIds)
+            ->map(fn (int|string $id): string => $capturedNames[$id]->name)
+            ->all())->toBe($expected)
+            ->and(NativeCustomTableSortingModel::$capturedMutationIds)->toHaveCount(8)
+            ->and(array_values(array_unique(NativeCustomTableSortingModel::$capturedMutationIds)))
+            ->toBe(NativeCustomTableSortingModel::$capturedMutationIds);
 
         $component->sorts = ['amount' => "{$direction}; drop table {$nativeTable}"];
         $forgedOrders = $component->rowsQuery()->getQuery()->orders;

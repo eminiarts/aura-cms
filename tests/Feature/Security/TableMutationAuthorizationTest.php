@@ -1966,6 +1966,60 @@ test('chunked bulk mutations preserve one global contextual display order withou
     'select-all chunked provider-sorted selection' => true,
 ]);
 
+test('maximum explicit contextual selection has a bounded query budget and remains globally ordered', function () {
+    $this->actingAs(createSuperAdmin());
+    config()->set('aura.security.table_mutations.max_records', 500);
+    config()->set('aura.security.table_mutations.chunk_size', 100);
+    $resources = collect(range(1, 500))->map(fn (int $amount) => Core05MutationResource::create([
+        'title' => 'Maximum contextual amount '.$amount,
+        'content' => (string) (501 - $amount),
+        'status' => 'draft',
+    ]));
+    Aura::registerFieldProvider(
+        Core05ContextualSortFieldProvider::class,
+        resources: [Core05MutationResource::class],
+    );
+    $table = new Table;
+    $table->model = new Core05MutationResource;
+    $table->sorts = ['content' => 'asc'];
+    $scope = $table->rowsQuery();
+    $connection = DB::connection();
+    $originalGrammar = $connection->getQueryGrammar();
+
+    $connection->setQueryGrammar(new Core05LockObservingSQLiteGrammar($connection));
+    $connection->flushQueryLog();
+    $connection->enableQueryLog();
+
+    try {
+        app(TableMutationDispatcher::class)->dispatchBulk(
+            $scope,
+            new TableMutationModelDescriptor($table->model),
+            'captureCollectionOrder',
+            $table->model->getBulkActions(),
+            $resources->pluck('id')->all(),
+            false,
+            'collection',
+        );
+        $queries = $connection->getQueryLog();
+    } finally {
+        $connection->disableQueryLog();
+        $connection->flushQueryLog();
+        $connection->setQueryGrammar($originalGrammar);
+    }
+
+    $capturedIds = collect(Core05MutationResource::$capturedCollectionIdChunks)->flatten()->all();
+    $expectedIds = $resources->reverse()->pluck('id')->values()->all();
+    $lockingQueries = collect($queries)->filter(
+        fn (array $query): bool => str_contains($query['query'], '/* core05-lock-for-update */'),
+    );
+
+    expect(count($queries))->toBeLessThanOrEqual(40)
+        ->and($lockingQueries)->toHaveCount(5)
+        ->and($capturedIds)->toBe($expectedIds)
+        ->and($capturedIds)->toHaveCount(500)
+        ->and(array_values(array_unique($capturedIds)))->toBe($capturedIds);
+});
+
 test('bulk mutations reject a provider sort withdrawn after selection without writing', function (bool $selectAll) {
     $this->actingAs(createSuperAdmin());
     $resources = collect(range(1, 3))->map(fn (int $amount) => Core05MutationResource::create([

@@ -1084,7 +1084,6 @@ final class TableMutationDispatcher
         ?Closure $markLockAcquired = null,
         ?Closure $captureScope = null,
     ): Collection {
-        $model = $modelDescriptor->model();
         $capturedPages = [];
         $recordChunks = [];
 
@@ -1112,12 +1111,13 @@ final class TableMutationDispatcher
             'pages' => $capturedPages,
         ]);
 
-        return $model->newCollection($this->mergeMutationRecordChunks(
+        return $this->orderLockedMutationRecords(
             $recordChunks,
             $scope,
             $modelDescriptor,
             $trashed,
-        ));
+            $expectedKeys,
+        );
     }
 
     /**
@@ -1339,83 +1339,6 @@ final class TableMutationDispatcher
     }
 
     /**
-     * Merge independently queried identifier chunks using the authoritative
-     * database ordering. Pair comparisons remain bounded to two identifiers,
-     * so arbitrary resource sort callbacks and exact-decimal ordering retain
-     * their database semantics without rebuilding a comparator in PHP.
-     *
-     * @param  array<int, array<int, Model&TableResource>>  $recordChunks
-     * @return array<int, Model&TableResource>
-     */
-    private function mergeMutationRecordChunks(
-        array $recordChunks,
-        Builder $scope,
-        TableMutationModelDescriptor $modelDescriptor,
-        ?string $trashed,
-    ): array {
-        while (count($recordChunks) > 1) {
-            $mergedChunks = [];
-
-            for ($index = 0; $index < count($recordChunks); $index += 2) {
-                if (! isset($recordChunks[$index + 1])) {
-                    $mergedChunks[] = $recordChunks[$index];
-
-                    continue;
-                }
-
-                $mergedChunks[] = $this->mergeMutationRecordPair(
-                    $recordChunks[$index],
-                    $recordChunks[$index + 1],
-                    $scope,
-                    $modelDescriptor,
-                    $trashed,
-                );
-            }
-
-            $recordChunks = $mergedChunks;
-        }
-
-        return $recordChunks[0] ?? [];
-    }
-
-    /**
-     * @param  array<int, Model&TableResource>  $left
-     * @param  array<int, Model&TableResource>  $right
-     * @return array<int, Model&TableResource>
-     */
-    private function mergeMutationRecordPair(
-        array $left,
-        array $right,
-        Builder $scope,
-        TableMutationModelDescriptor $modelDescriptor,
-        ?string $trashed,
-    ): array {
-        $merged = [];
-        $leftIndex = 0;
-        $rightIndex = 0;
-
-        while (isset($left[$leftIndex], $right[$rightIndex])) {
-            if ($this->mutationRecordPrecedes(
-                $left[$leftIndex],
-                $right[$rightIndex],
-                $scope,
-                $modelDescriptor,
-                $trashed,
-            )) {
-                $merged[] = $left[$leftIndex++];
-            } else {
-                $merged[] = $right[$rightIndex++];
-            }
-        }
-
-        return array_merge(
-            $merged,
-            array_slice($left, $leftIndex),
-            array_slice($right, $rightIndex),
-        );
-    }
-
-    /**
      * @return array{
      *     fixed: mixed,
      *     wheres: list<mixed>,
@@ -1522,42 +1445,6 @@ final class TableMutationDispatcher
         }
 
         return $method;
-    }
-
-    private function mutationRecordPrecedes(
-        Model&TableResource $left,
-        Model&TableResource $right,
-        Builder $scope,
-        TableMutationModelDescriptor $modelDescriptor,
-        ?string $trashed,
-    ): bool {
-        $comparisonScope = clone $scope;
-        $comparisonQuery = $comparisonScope->getQuery();
-        $comparisonQuery->limit = null;
-        $comparisonQuery->offset = null;
-        $comparisonQuery->unionLimit = null;
-        $comparisonQuery->unionOffset = null;
-        $expectedKeys = [];
-
-        foreach ([$left, $right] as $record) {
-            $expectedKeys[$modelDescriptor->canonicalIdentity($record->getKey())] = $record->getKey();
-        }
-
-        $ordered = $this->authoritativeRecords(
-            $comparisonScope->whereKey(array_values($expectedKeys)),
-            $modelDescriptor,
-            $expectedKeys,
-            $trashed,
-        );
-
-        if ($ordered->count() !== 2) {
-            throw ValidationException::withMessages([
-                'selected' => 'The selected records are no longer valid.',
-            ]);
-        }
-
-        return $modelDescriptor->canonicalIdentity($ordered->first()->getKey())
-            === $modelDescriptor->canonicalIdentity($left->getKey());
     }
 
     /**
@@ -1815,6 +1702,106 @@ final class TableMutationDispatcher
             'keys' => $keys,
             'pages' => $pages,
         ];
+    }
+
+    /**
+     * Reorder already locked records with one database query so custom SQL
+     * ordering retains its exact semantics without comparison queries.
+     *
+     * @param  array<int, array<int, Model&TableResource>>  $recordChunks
+     * @param  array<string, int|string>  $expectedKeys
+     * @return Collection<int, Model&TableResource>
+     */
+    private function orderLockedMutationRecords(
+        array $recordChunks,
+        Builder $scope,
+        TableMutationModelDescriptor $modelDescriptor,
+        ?string $trashed,
+        array $expectedKeys,
+    ): Collection {
+        $model = $modelDescriptor->model();
+        $lockedByIdentity = [];
+
+        foreach ($recordChunks as $recordChunk) {
+            foreach ($recordChunk as $record) {
+                $modelDescriptor->assertModelMatches($record);
+                $identity = $modelDescriptor->canonicalIdentity($record->getKey());
+
+                if (! array_key_exists($identity, $expectedKeys) || array_key_exists($identity, $lockedByIdentity)) {
+                    abort(422, 'The authoritative table mutation query returned an invalid record.');
+                }
+
+                $lockedByIdentity[$identity] = $record;
+            }
+        }
+
+        if (
+            array_diff_key($expectedKeys, $lockedByIdentity) !== []
+            || array_diff_key($lockedByIdentity, $expectedKeys) !== []
+        ) {
+            throw ValidationException::withMessages([
+                'selected' => 'The selected records are no longer valid.',
+            ]);
+        }
+
+        $keyAlias = '__aura_mutation_key';
+        $qualifiedKey = $modelDescriptor->table.'.'.$modelDescriptor->keyName;
+        $effectiveQuery = $model->registerGlobalScopes(
+            (clone $scope)->whereKey(array_values($expectedKeys)),
+        );
+        $effectiveQuery = $this->applyTrashedMode($effectiveQuery, $trashed);
+        $effectiveQuery = $this->applyScopesOnce($effectiveQuery);
+        $modelDescriptor->assertMatches($effectiveQuery);
+
+        if ($effectiveQuery->getQuery()->aggregate !== null) {
+            abort(422, 'Aggregate table mutation scopes cannot identify authoritative records.');
+        }
+
+        $effectiveQuery->select($qualifiedKey.' as '.$keyAlias);
+
+        if ($effectiveQuery->getQuery()->orders === null && $effectiveQuery->getQuery()->unionOrders === null) {
+            $effectiveQuery->orderBy($qualifiedKey);
+        }
+
+        $effectiveBaseQuery = $effectiveQuery->getQuery();
+        // Every identifier already passed the verified callback constraints in
+        // its locked chunk. Re-running callbacks here would change their
+        // once-per-locked-chunk semantics; they cannot alter ordering or joins.
+        $effectiveBaseQuery->beforeQueryCallbacks = [];
+        $modelDescriptor->assertMatches($effectiveQuery);
+        $orderedKeys = $this->mutationKeysFromRows(
+            $effectiveBaseQuery->getConnection()->select(
+                $effectiveBaseQuery->toSql(),
+                $effectiveBaseQuery->getBindings(),
+                false,
+            ),
+            $keyAlias,
+            $modelDescriptor,
+            $expectedKeys,
+        );
+
+        if (
+            array_diff_key($expectedKeys, $orderedKeys) !== []
+            || array_diff_key($orderedKeys, $expectedKeys) !== []
+        ) {
+            throw ValidationException::withMessages([
+                'selected' => 'The selected records are no longer valid.',
+            ]);
+        }
+
+        $orderedRecords = [];
+
+        foreach ($orderedKeys as $identity => $id) {
+            $record = $lockedByIdentity[$identity] ?? null;
+
+            if (! $record instanceof Model || (string) $record->getKey() !== (string) $id) {
+                abort(422, 'The selected record identity changed after it was locked.');
+            }
+
+            $orderedRecords[] = $record;
+        }
+
+        return $model->newCollection($orderedRecords);
     }
 
     private function recordChunkSize(): int
