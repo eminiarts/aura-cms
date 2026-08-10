@@ -1036,10 +1036,46 @@ it('fails closed when a connection callback swaps the writer immediately before 
             'name' => 'Connection callback redirected write',
         ], $connection))->toThrow(LogicException::class, 'physical database writer');
     } finally {
-        $connection->setPdo($originalWriter);
+        if ($connection->getRawPdo() !== $originalWriter) {
+            $connection->setPdo($originalWriter);
+        }
     }
 
     expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
+        ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
+});
+
+it('restores nested transaction depth after rejecting a swapped writer', function (): void {
+    $connection = core13InstallConnectionProbe();
+    $originalWriter = $connection->getPdo();
+    $substitutedWriter = core13PhysicalWriter();
+    $armed = true;
+    $baselineTransactionLevel = $connection->transactionLevel();
+
+    $connection->transaction(function () use ($connection, $substitutedWriter, &$armed, $baselineTransactionLevel): void {
+        $connection->table('explicit_null_shared_custom_resources')->insert(['name' => 'Outer row before rejection']);
+
+        expect(fn () => $connection->transaction(function () use ($connection, $substitutedWriter, &$armed): void {
+            $connection->table('explicit_null_shared_custom_resources')->insert(['name' => 'Inner row to roll back']);
+            $connection->beforeExecuting(function () use ($connection, $substitutedWriter, &$armed): void {
+                if ($armed) {
+                    $armed = false;
+                    $connection->setPdo($substitutedWriter);
+                }
+            });
+
+            PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+                'name' => 'Nested redirected write',
+            ], $connection);
+        }))->toThrow(LogicException::class, 'physical database writer');
+
+        expect($connection->transactionLevel())->toBe($baselineTransactionLevel + 1);
+        $connection->table('explicit_null_shared_custom_resources')->insert(['name' => 'Outer row after rejection']);
+    });
+
+    expect($connection->transactionLevel())->toBe($baselineTransactionLevel)
+        ->and($connection->table('explicit_null_shared_custom_resources')->pluck('name')->all())
+        ->toBe(['Outer row before rejection', 'Outer row after rejection'])
         ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
 });
 
@@ -1055,7 +1091,9 @@ it('runs final authorization after builder callbacks register later connection c
         ], $connection))->toThrow(LogicException::class, 'physical database writer');
     } finally {
         LateBuilderCallbackGlobalResource::$substitutedWriter = null;
-        $connection->setPdo($originalWriter);
+        if ($connection->getRawPdo() !== $originalWriter) {
+            $connection->setPdo($originalWriter);
+        }
     }
 
     expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
@@ -1259,7 +1297,9 @@ it('fails closed before the outer global insert when a saving listener swaps the
         ]))->toThrow(LogicException::class, 'physical database writer');
     } finally {
         PhysicalWriterGuardedGlobalResource::$savingAttack = null;
-        $connection->setPdo($originalWriter);
+        if ($connection->getRawPdo() !== $originalWriter) {
+            $connection->setPdo($originalWriter);
+        }
     }
 
     expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
@@ -1281,7 +1321,9 @@ it('fails closed when a creating listener swaps the writer after the saving even
         ]))->toThrow(LogicException::class, 'physical database writer');
     } finally {
         PhysicalWriterGuardedGlobalResource::$creatingAttack = null;
-        $connection->setPdo($originalWriter);
+        if ($connection->getRawPdo() !== $originalWriter) {
+            $connection->setPdo($originalWriter);
+        }
     }
 
     expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
@@ -1307,7 +1349,9 @@ it('keeps the package-owned global insert on its captured writer after an ordina
         ]))->toThrow(LogicException::class, 'physical database writer');
     } finally {
         PhysicalWriterGuardedGlobalResource::$savingAttack = null;
-        $connection->setPdo($originalWriter);
+        if ($connection->getRawPdo() !== $originalWriter) {
+            $connection->setPdo($originalWriter);
+        }
     }
 
     expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
@@ -1336,7 +1380,9 @@ it('fails closed when a saving listener swaps the writer and re-enters save on t
         ]))->toThrow(LogicException::class, 'createGlobal');
     } finally {
         PhysicalWriterGuardedGlobalResource::$savingAttack = null;
-        $connection->setPdo($originalWriter);
+        if ($connection->getRawPdo() !== $originalWriter) {
+            $connection->setPdo($originalWriter);
+        }
     }
 
     expect($reentered)->toBeTrue()
@@ -1361,7 +1407,9 @@ it('cleans physical writer authority after an attack throws and permits a later 
         ]))->toThrow(Error::class, 'physical writer attack');
     } finally {
         PhysicalWriterGuardedGlobalResource::$savingAttack = null;
-        $connection->setPdo($originalWriter);
+        if ($connection->getRawPdo() !== $originalWriter) {
+            $connection->setPdo($originalWriter);
+        }
     }
 
     expect(fn () => PhysicalWriterGuardedGlobalResource::withoutGlobalScopes()->create([
@@ -1459,7 +1507,9 @@ it('does not leak global writer authority across repeated long worker failures',
                 'name' => 'Long worker attack '.$attempt,
             ]))->toThrow(LogicException::class, 'physical database writer');
         } finally {
-            $connection->setPdo($originalWriter);
+            if ($connection->getRawPdo() !== $originalWriter) {
+                $connection->setPdo($originalWriter);
+            }
         }
     }
 

@@ -959,6 +959,7 @@ class Resource extends Model implements DefinesFields
         string $keyName,
         mixed $keyForSaveQuery,
         bool $assertSaveKey,
+        int $transactionLevel,
         ?array $expectedWheres = null,
         array $expectedWhereBindings = [],
     ): bool {
@@ -978,24 +979,15 @@ class Resource extends Model implements DefinesFields
             $keyName,
             $keyForSaveQuery,
             $assertSaveKey,
+            $transactionLevel,
             $expectedWheres,
             $expectedWhereBindings,
         ): void {
-            $restoreTransactionState = static function () use ($connection, $writePdo): void {
-                if ($writePdo->inTransaction() && $connection->transactionLevel() === 0) {
-                    $transactionsProperty = new \ReflectionProperty(Connection::class, 'transactions');
-                    $transactionsProperty->setValue($connection, 1);
-                }
-            };
-
             if ($connection->getRawPdo() !== $writePdo) {
-                $connection->setPdo($writePdo);
-                $restoreTransactionState();
+                $this->restorePhysicalWriter($connection, $writePdo, $transactionLevel);
 
                 throw new \LogicException('A named write cannot change its physical database writer.');
             }
-
-            $restoreTransactionState();
 
             if ($this->getConnection() !== $connection
                 || $this->getTable() !== $table
@@ -1076,13 +1068,14 @@ class Resource extends Model implements DefinesFields
      *
      * @template TValue
      *
-     * @param  callable(): bool  $authorize
+     * @param  callable(int): bool  $authorize
      * @param  callable(): TValue  $persist
      * @return TValue
      */
     private function executeWithFinalConnectionAuthorization(
         Connection $connection,
         PDO $writePdo,
+        int $transactionLevel,
         callable $authorize,
         callable $persist,
     ): mixed {
@@ -1092,7 +1085,7 @@ class Resource extends Model implements DefinesFields
 
             public function __construct(private readonly mixed $authorize) {}
 
-            public function authorize(): void
+            public function authorize(int $transactionLevel): void
             {
                 if ($this->authorizing) {
                     return;
@@ -1101,30 +1094,34 @@ class Resource extends Model implements DefinesFields
                 $this->authorizing = true;
 
                 try {
-                    ($this->authorize)();
+                    ($this->authorize)($transactionLevel);
                 } finally {
                     $this->authorizing = false;
                 }
             }
         };
-        $execute = function () use ($connection, $operation, $persist): mixed {
+        $execute = function () use ($connection, $writePdo, $transactionLevel, $operation, $persist): mixed {
+            $expectedTransactionLevel = $connection->getRawPdo() === $writePdo
+                ? $connection->transactionLevel()
+                : $transactionLevel;
             $callbacksProperty = new \ReflectionProperty(Connection::class, 'beforeExecutingCallbacks');
             /** @var list<callable> $originalCallbacks */
             $originalCallbacks = $callbacksProperty->getValue($connection);
             $dispatcher = static function (string $query, array $bindings, Connection $executingConnection) use (
                 $operation,
                 $originalCallbacks,
+                $expectedTransactionLevel,
             ): void {
                 foreach ($originalCallbacks as $callback) {
                     $callback($query, $bindings, $executingConnection);
                 }
 
-                $operation->authorize();
+                $operation->authorize($expectedTransactionLevel);
             };
             $callbacksProperty->setValue($connection, [$dispatcher]);
 
             try {
-                $operation->authorize();
+                $operation->authorize($expectedTransactionLevel);
 
                 return $persist();
             } finally {
@@ -1145,7 +1142,7 @@ class Resource extends Model implements DefinesFields
             return $execute();
         }
 
-        $operation->authorize();
+        $operation->authorize($transactionLevel);
 
         try {
             return $connection->transaction(function () use ($connection, $writePdo, $execute): mixed {
@@ -1174,6 +1171,7 @@ class Resource extends Model implements DefinesFields
         int|string|null $teamId = null,
         bool $globalWrite = true,
         string $keyName = 'id',
+        int $transactionLevel = 0,
     ): bool {
         if ($this->usesUniqueIds()) {
             $this->setUniqueIds();
@@ -1188,7 +1186,7 @@ class Resource extends Model implements DefinesFields
         }
 
         $attributes = $this->getAttributesForInsert();
-        $authorize = fn (): bool => $this->authorizePrivilegedPersistence(
+        $authorize = fn (int $expectedTransactionLevel): bool => $this->authorizePrivilegedPersistence(
             $connection,
             $query,
             $queryGrammar,
@@ -1203,6 +1201,7 @@ class Resource extends Model implements DefinesFields
             $keyName,
             null,
             false,
+            $expectedTransactionLevel,
         );
 
         if ($this->getIncrementing()) {
@@ -1212,6 +1211,7 @@ class Resource extends Model implements DefinesFields
                 $this->executeWithFinalConnectionAuthorization(
                     $connection,
                     $writePdo,
+                    $transactionLevel,
                     $authorize,
                     fn (): mixed => $query->insertGetId($attributes, $this->getKeyName()),
                 ),
@@ -1221,11 +1221,12 @@ class Resource extends Model implements DefinesFields
             $this->executeWithFinalConnectionAuthorization(
                 $connection,
                 $writePdo,
+                $transactionLevel,
                 $authorize,
                 fn (): bool => $query->insert($attributes),
             );
         } else {
-            $authorize();
+            $authorize($transactionLevel);
         }
 
         $this->exists = true;
@@ -1249,6 +1250,7 @@ class Resource extends Model implements DefinesFields
         bool $globalWrite,
         string $keyName,
         mixed $keyForSaveQuery,
+        int $transactionLevel,
     ): bool {
         if (parent::fireModelEvent('updating') === false) {
             return false;
@@ -1262,7 +1264,7 @@ class Resource extends Model implements DefinesFields
         $saveQuery = $this->setKeysForSaveQuery($query);
         $expectedWheres = $saveQuery->getQuery()->wheres;
         $expectedWhereBindings = $saveQuery->getQuery()->getRawBindings()['where'];
-        $authorize = fn (): bool => $this->authorizePrivilegedPersistence(
+        $authorize = fn (int $expectedTransactionLevel): bool => $this->authorizePrivilegedPersistence(
             $connection,
             $query,
             $queryGrammar,
@@ -1277,6 +1279,7 @@ class Resource extends Model implements DefinesFields
             $keyName,
             $keyForSaveQuery,
             true,
+            $expectedTransactionLevel,
             $expectedWheres,
             $expectedWhereBindings,
         );
@@ -1286,13 +1289,14 @@ class Resource extends Model implements DefinesFields
             $this->executeWithFinalConnectionAuthorization(
                 $connection,
                 $writePdo,
+                $transactionLevel,
                 $authorize,
                 fn (): int => $saveQuery->update($dirty),
             );
             $this->syncChanges();
             parent::fireModelEvent('updated', false);
         } else {
-            $authorize();
+            $authorize($transactionLevel);
         }
 
         return true;
@@ -1346,6 +1350,25 @@ class Resource extends Model implements DefinesFields
         return $value;
     }
 
+    private function restorePhysicalWriter(
+        Connection $connection,
+        PDO $writePdo,
+        int $transactionLevel,
+    ): void {
+        if ($connection->getRawPdo() === $writePdo) {
+            return;
+        }
+
+        $connection->setPdo($writePdo);
+
+        if (($transactionLevel > 0) !== $writePdo->inTransaction()) {
+            return;
+        }
+
+        $transactionsProperty = new \ReflectionProperty(Connection::class, 'transactions');
+        $transactionsProperty->setValue($connection, $transactionLevel);
+    }
+
     private function saveGlobalResource(
         ?User $authenticatedUser = null,
         bool $authorizeUpdate = false,
@@ -1379,70 +1402,77 @@ class Resource extends Model implements DefinesFields
         $queryGrammar = $query->getQuery()->getGrammar();
         $queryProcessor = $query->getQuery()->getProcessor();
         $writePdo = $connection->getPdo();
+        $transactionLevel = $connection->transactionLevel();
 
         if (! $writePdo instanceof PDO) {
             throw new \LogicException('A named write requires an active physical database writer.');
         }
 
-        $table = $this->getTable();
-        $this->prepareFieldAttributesForPersistence(
-            globalWrite: $globalWrite,
-            trustedOwnerIntent: $trustedOwnerIntent,
-            trustedOwnerId: $trustedOwnerId,
-            trustedTeamIntent: $trustedTeamIntent,
-            trustedTeamId: $trustedTeamId,
-        );
-        $teamId = $this->getAttribute('team_id');
-        $ownerId = $this->getAttribute('user_id');
-        $exists = $this->exists;
-        $keyName = $this->getKeyName();
-        $keyForSaveQuery = $exists ? $this->getKeyForSaveQuery() : null;
-
-        if (parent::fireModelEvent('saving') === false) {
-            return false;
-        }
-
-        if ($this->exists !== $exists) {
-            throw new \LogicException('A named write cannot change whether its resource already exists.');
-        }
-
-        $saved = $this->exists
-            ? $this->performGlobalUpdate(
-                $query,
-                $connection,
-                $queryGrammar,
-                $queryProcessor,
-                $writePdo,
-                $table,
-                $ownerId,
-                $authenticatedUser,
-                $teamId,
-                $authorizeUpdate,
-                $globalWrite,
-                $keyName,
-                $keyForSaveQuery,
-            )
-            : $this->performGlobalInsert(
-                $query,
-                $connection,
-                $queryGrammar,
-                $queryProcessor,
-                $writePdo,
-                $table,
-                $ownerId,
-                $authenticatedUser,
-                $teamId,
-                $globalWrite,
-                $keyName,
+        try {
+            $table = $this->getTable();
+            $this->prepareFieldAttributesForPersistence(
+                globalWrite: $globalWrite,
+                trustedOwnerIntent: $trustedOwnerIntent,
+                trustedOwnerId: $trustedOwnerId,
+                trustedTeamIntent: $trustedTeamIntent,
+                trustedTeamId: $trustedTeamId,
             );
+            $teamId = $this->getAttribute('team_id');
+            $ownerId = $this->getAttribute('user_id');
+            $exists = $this->exists;
+            $keyName = $this->getKeyName();
+            $keyForSaveQuery = $exists ? $this->getKeyForSaveQuery() : null;
 
-        if (! $saved) {
-            return false;
+            if (parent::fireModelEvent('saving') === false) {
+                return false;
+            }
+
+            if ($this->exists !== $exists) {
+                throw new \LogicException('A named write cannot change whether its resource already exists.');
+            }
+
+            $saved = $this->exists
+                ? $this->performGlobalUpdate(
+                    $query,
+                    $connection,
+                    $queryGrammar,
+                    $queryProcessor,
+                    $writePdo,
+                    $table,
+                    $ownerId,
+                    $authenticatedUser,
+                    $teamId,
+                    $authorizeUpdate,
+                    $globalWrite,
+                    $keyName,
+                    $keyForSaveQuery,
+                    $transactionLevel,
+                )
+                : $this->performGlobalInsert(
+                    $query,
+                    $connection,
+                    $queryGrammar,
+                    $queryProcessor,
+                    $writePdo,
+                    $table,
+                    $ownerId,
+                    $authenticatedUser,
+                    $teamId,
+                    $globalWrite,
+                    $keyName,
+                    $transactionLevel,
+                );
+
+            if (! $saved) {
+                return false;
+            }
+
+            $this->finishSave($options);
+
+            return true;
+        } finally {
+            $this->restorePhysicalWriter($connection, $writePdo, $transactionLevel);
         }
-
-        $this->finishSave($options);
-
-        return true;
     }
 
     private function saveSystemResource(
