@@ -63,6 +63,49 @@ describe('BelongsTo Field Value Handling', function () {
 });
 
 describe('BelongsTo Field Display', function () {
+    test('legacy subclasses receive the raw value in display overrides', function () {
+        $field = new class extends BelongsTo
+        {
+            public mixed $receivedValue = null;
+
+            public function display($field, $value, $model)
+            {
+                $this->receivedValue = $value;
+
+                return 'custom:'.$value;
+            }
+        };
+
+        $result = $field->presentValue(
+            'raw',
+            ['resource' => Post::class],
+            $this->user,
+            FieldValueContext::View,
+        );
+
+        expect((string) $result)->toBe('custom:raw')
+            ->and($field->receivedValue)->toBe('raw');
+    });
+
+    test('legacy subclasses can delegate display to the native relationship presenter', function () {
+        $related = Post::factory()->create(['title' => 'Delegated Post']);
+        $field = new class extends BelongsTo
+        {
+            public function display($field, $value, $model)
+            {
+                return parent::display($field, $value, $model);
+            }
+        };
+
+        $result = $field->presentValue(
+            $related->id,
+            ['resource' => Post::class],
+            $this->user,
+        );
+
+        expect((string) $result)->toContain('Delegated Post');
+    });
+
     test('prefers the authorized related resource view page', function () {
         $related = Post::factory()->create(['title' => 'Related Post']);
 

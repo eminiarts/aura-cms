@@ -54,6 +54,27 @@ class PresentationLabelRecord extends Resource
     }
 }
 
+class DynamicStatusPresentationRecord extends Resource
+{
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Status',
+                'slug' => 'status',
+                'type' => Status::class,
+            ],
+        ];
+    }
+
+    public function getStatusOptions(): array
+    {
+        return [
+            ['key' => 'open', 'value' => 'Dynamic open', 'color' => 'bg-green-100'],
+        ];
+    }
+}
+
 test('composed field presentation labels preserve strict option key semantics', function () {
     $labels = new FieldPresentationLabel;
     $options = PresentationLabelRecord::getFields()[0]['options'];
@@ -84,6 +105,15 @@ test('status resource presentation uses resolved current labels on index view an
     expect(strip_tags((string) $record->display('status')))->toContain('Open now')
         ->and((string) $record->displayInContext('status', FieldValueContext::View))->toBe('Open now')
         ->and((string) $record->exportFieldValue('status'))->toBe('Open now');
+});
+
+test('status index presentation supports dynamic options without a static options key', function () {
+    $record = new DynamicStatusPresentationRecord;
+    $record->setAttribute('status', 'open');
+
+    expect(strip_tags((string) $record->display('status')))->toContain('Dynamic open')
+        ->and((string) $record->displayInContext('status', FieldValueContext::View))->toBe('Dynamic open')
+        ->and((string) $record->exportFieldValue('status'))->toBe('Dynamic open');
 });
 
 test('unknown option codes remain visible across resource presentation surfaces', function () {

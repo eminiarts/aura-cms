@@ -5,7 +5,8 @@
             $field['slug'],
             \Aura\Base\Contracts\FieldValueContext::View,
         );
-        $statusOption = collect($field['options'])->first(
+        $options = collect(app('Aura\Base\Fields\Status')->options($this->model, $field));
+        $statusOption = $options->first(
             fn (mixed $option): bool => is_array($option)
                 && array_key_exists('key', $option)
                 && $option['key'] === $rawStatus,

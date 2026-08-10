@@ -409,7 +409,8 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
         } else {
             $label = $this->resolveAuraPresentationLabel($value, $field, $model, $context);
             $usesDeclarativeLabels = array_key_exists('options', $field)
-                || array_key_exists('label_resolver', $field);
+                || array_key_exists('label_resolver', $field)
+                || method_exists($this, 'options');
             $display = $context === FieldValueContext::Index
                 || ! $usesDeclarativeLabels
                 || ! empty($field['display_view'])

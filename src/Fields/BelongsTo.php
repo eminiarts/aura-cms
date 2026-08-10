@@ -31,6 +31,8 @@ class BelongsTo extends Field implements PreloadsTableDisplay
 
     public $view = 'aura::fields.view-value';
 
+    private bool $presentingInheritedDisplay = false;
+
     // public function get($class, $model, $field)
     // {
     //     $relationshipQuery = $this->relationship($model, $field);
@@ -268,6 +270,20 @@ class BelongsTo extends Field implements PreloadsTableDisplay
         ?Model $model,
         FieldValueContext $context = FieldValueContext::Index,
     ): mixed {
+        $displayMethod = new \ReflectionMethod($this, 'display');
+
+        if (! $this->presentingInheritedDisplay && $displayMethod->getDeclaringClass()->getName() !== self::class) {
+            $this->presentingInheritedDisplay = true;
+
+            try {
+                $display = $this->display($field, $value, $model);
+            } finally {
+                $this->presentingInheritedDisplay = false;
+            }
+
+            return FieldDisplayValue::secure($display);
+        }
+
         if (optional($field)['display_view']) {
             return FieldDisplayValue::sanitizedHtml(
                 view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render(),

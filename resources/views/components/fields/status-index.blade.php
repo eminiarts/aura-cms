@@ -1,7 +1,8 @@
 <div class="truncate">
         @php
         $rawStatus = $row->{$field['slug']};
-        $statusOption = collect($field['options'])->first(
+        $options = collect(app('Aura\Base\Fields\Status')->options($row, $field));
+        $statusOption = $options->first(
             fn (mixed $option): bool => is_array($option)
                 && array_key_exists('key', $option)
                 && $option['key'] === $rawStatus,
