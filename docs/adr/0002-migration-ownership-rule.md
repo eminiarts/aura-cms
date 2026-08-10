@@ -6,5 +6,6 @@ The Aura install migration's `down()` used to unconditionally drop framework/hos
 
 - The migration must record (or reliably detect) which tables it created in `up()`.
 - Install/rollback safety is covered by tests: fresh install, install into an existing app, and rollback never touching foreign tables.
-- The embedded-resource incarnation create and upgrade migrations are intentionally forward-only. Their `down()` methods are non-destructive no-ops because a host can recreate the table and copy every portable ownership marker; the migration cannot then prove that destructive rollback still targets the original package-created object.
-- Rolling those migrations back leaves the incarnation table, ownership registry row, marker row and column, added columns, and indexes in place. Correcting a failed deployment requires a forward migration, not destructive rollback.
+- The embedded-resource incarnation create and upgrade migrations are intentionally forward-only. Their `down()` methods are non-destructive no-ops because portable metadata cannot prove that destructive rollback still targets the original package-created object.
+- Ownership is claimed atomically and advanced with compare-and-swap state transitions in `aura_migration_ownership`. It is never encoded as rows or columns in the runtime incarnation table. Forward runs clean up legacy reserved marker rows and empty marker columns while preserving columns containing host data.
+- Rolling those migrations back leaves the incarnation table, ownership registry row, added columns, and indexes in place. Correcting a failed deployment requires a forward migration, not destructive rollback.

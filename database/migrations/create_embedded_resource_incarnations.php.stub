@@ -2,6 +2,7 @@
 
 use Aura\Base\Services\MigrationOwnershipLedger;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -19,42 +20,23 @@ return new class extends Migration
         $ledger = app(MigrationOwnershipLedger::class);
         $ownership = $ledger->readCreate();
 
-        if ($ownership !== null) {
-            $this->assertOwnedState($ownership['state']);
-
+        if ($ownership === null) {
             if (Schema::hasTable(self::TABLE)) {
-                $this->assertOwnedTableExists($ledger, $ownership['generation']);
-
                 return;
             }
 
-            $this->writeCreate('creating', $ownership['owns_registry'], $ownership['generation']);
-            $ledger->checkpoint('create.ownership_started');
-            $this->createTable($ownership['generation']);
-            $ledger->checkpoint('create.table_created');
-            $this->writeTargetMarker($ledger, $ownership['generation']);
-            $ledger->checkpoint('create.marker_written');
-            $this->writeCreate('owned', $ownership['owns_registry'], $ownership['generation']);
-            $ledger->checkpoint('create.ownership_committed');
+            $ownsRegistry = $this->ensureRegistry($ledger);
+            $generation = bin2hex(random_bytes(self::GENERATION_BYTES));
+            $ledger->checkpoint('create.registry_ready');
+            $this->claimCreate($ownsRegistry, $generation);
+            $ownership = $ledger->readCreate();
 
-            return;
+            if ($ownership === null) {
+                throw new RuntimeException('Unable to claim CORE-12 create migration ownership.');
+            }
         }
 
-        if (Schema::hasTable(self::TABLE)) {
-            return;
-        }
-
-        $ownsRegistry = $this->ensureRegistry($ledger);
-        $generation = bin2hex(random_bytes(self::GENERATION_BYTES));
-        $ledger->checkpoint('create.registry_ready');
-        $this->writeCreate('creating', $ownsRegistry, $generation);
-        $ledger->checkpoint('create.ownership_started');
-        $this->createTable($generation);
-        $ledger->checkpoint('create.table_created');
-        $this->writeTargetMarker($ledger, $generation);
-        $ledger->checkpoint('create.marker_written');
-        $this->writeCreate('owned', $ownsRegistry, $generation);
-        $ledger->checkpoint('create.ownership_committed');
+        $this->resume($ledger, $ownership);
     }
 
     /**
@@ -65,9 +47,88 @@ return new class extends Migration
     {
     }
 
-    private function createTable(string $generation): void
+    /**
+     * @param  array{state: string, created_table: true, owns_registry: bool, generation: string}  $ownership
+     */
+    private function resume(MigrationOwnershipLedger $ledger, array $ownership): void
     {
-        Schema::create(self::TABLE, function (Blueprint $table) use ($generation): void {
+        if ($ownership['state'] === 'owned') {
+            $this->assertOwnedTableExists();
+            $this->cleanupLegacyMarker($ownership['generation']);
+
+            return;
+        }
+
+        if ($ownership['state'] !== 'creating') {
+            throw new RuntimeException(
+                "Aura migration ownership for [".MigrationOwnershipLedger::CREATE_KEY."] is interrupted in state [{$ownership['state']}].",
+            );
+        }
+
+        $ledger->checkpoint('create.ownership_started');
+
+        if (! Schema::hasTable(self::TABLE)) {
+            try {
+                $this->createTable();
+            } catch (QueryException $exception) {
+                if (! Schema::hasTable(self::TABLE)) {
+                    throw $exception;
+                }
+            }
+        }
+
+        $ledger->checkpoint('create.table_created');
+        $this->assertOwnedTableExists();
+        $this->cleanupLegacyMarker($ownership['generation']);
+        $ledger->checkpoint('create.legacy_markers_cleaned');
+        $this->transitionCreate($ownership, 'owned');
+        $ledger->checkpoint('create.ownership_committed');
+    }
+
+    private function claimCreate(bool $ownsRegistry, string $generation): void
+    {
+        DB::table(MigrationOwnershipLedger::TABLE)->insertOrIgnore([
+            'migration' => MigrationOwnershipLedger::CREATE_KEY,
+            'ownership' => $this->createRecord('creating', $ownsRegistry, $generation),
+        ]);
+    }
+
+    private function cleanupLegacyMarker(string $generation): void
+    {
+        DB::table(self::TABLE)
+            ->where('resource_type', MigrationOwnershipLedger::MARKER_RESOURCE_TYPE)
+            ->delete();
+
+        $markerColumn = MigrationOwnershipLedger::markerColumn($generation);
+
+        if (! Schema::hasColumn(self::TABLE, $markerColumn)
+            || DB::table(self::TABLE)->whereNotNull($markerColumn)->exists()
+        ) {
+            return;
+        }
+
+        Schema::table(self::TABLE, function (Blueprint $table) use ($markerColumn): void {
+            $table->dropColumn($markerColumn);
+        });
+    }
+
+    private function createRecord(string $state, bool $ownsRegistry, string $generation): string
+    {
+        return json_encode([
+            'version' => self::FORMAT_VERSION,
+            'migration' => MigrationOwnershipLedger::CREATE_KEY,
+            'state' => $state,
+            'payload' => [
+                'created_table' => true,
+                'owns_registry' => $ownsRegistry,
+                'generation' => $generation,
+            ],
+        ], JSON_THROW_ON_ERROR);
+    }
+
+    private function createTable(): void
+    {
+        Schema::create(self::TABLE, function (Blueprint $table): void {
             $table->id();
             $table->string('resource_type');
             $table->char('resource_key_hash', 64);
@@ -75,7 +136,6 @@ return new class extends Migration
             $table->string('resource_key', 191);
             $table->uuid('incarnation');
             $table->unsignedBigInteger('version')->default(1);
-            $table->char(MigrationOwnershipLedger::markerColumn($generation), 32)->nullable();
             $table->timestamps();
 
             $table->unique(
@@ -99,67 +159,32 @@ return new class extends Migration
             return false;
         }
 
-        Schema::create(MigrationOwnershipLedger::TABLE, function (Blueprint $table): void {
-            $table->string('migration')->primary();
-            $table->longText('ownership');
-        });
+        try {
+            Schema::create(MigrationOwnershipLedger::TABLE, function (Blueprint $table): void {
+                $table->string('migration')->primary();
+                $table->longText('ownership');
+            });
 
-        return true;
-    }
+            return true;
+        } catch (QueryException $exception) {
+            if (! $ledger->registryExists()) {
+                throw $exception;
+            }
 
-    private function markerIncarnation(string $generation): string
-    {
-        return substr($generation, 0, 8)
-            .'-'.substr($generation, 8, 4)
-            .'-'.substr($generation, 12, 4)
-            .'-'.substr($generation, 16, 4)
-            .'-'.substr($generation, 20, 12);
-    }
-
-    private function writeCreate(string $state, bool $ownsRegistry, string $generation): void
-    {
-        DB::table(MigrationOwnershipLedger::TABLE)->updateOrInsert(
-            ['migration' => MigrationOwnershipLedger::CREATE_KEY],
-            ['ownership' => json_encode([
-                'version' => self::FORMAT_VERSION,
-                'migration' => MigrationOwnershipLedger::CREATE_KEY,
-                'state' => $state,
-                'payload' => [
-                    'created_table' => true,
-                    'owns_registry' => $ownsRegistry,
-                    'generation' => $generation,
-                ],
-            ], JSON_THROW_ON_ERROR)],
-        );
-    }
-
-    private function writeTargetMarker(MigrationOwnershipLedger $ledger, string $generation): void
-    {
-        DB::table(self::TABLE)->insert([
-            'resource_type' => MigrationOwnershipLedger::MARKER_RESOURCE_TYPE,
-            'resource_key_hash' => hash('sha256', $generation),
-            'resource_key_type' => 'internal',
-            'resource_key' => $generation,
-            'incarnation' => $this->markerIncarnation($generation),
-            'version' => 1,
-            MigrationOwnershipLedger::markerColumn($generation) => $generation,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $ledger->assertTargetMarker($generation);
-    }
-
-    private function assertOwnedState(string $state): void
-    {
-        if ($state !== 'owned') {
-            throw new RuntimeException(
-                "Aura migration ownership for [".MigrationOwnershipLedger::CREATE_KEY."] is interrupted in state [{$state}].",
-            );
+            return false;
         }
     }
 
-    private function assertOwnedTableExists(MigrationOwnershipLedger $ledger, string $generation): void
+    private function hasExactIndex(string $name, array $columns, bool $unique): bool
+    {
+        return collect(Schema::getIndexes(self::TABLE))->contains(
+            static fn (array $index): bool => $index['name'] === $name
+                && $index['columns'] === $columns
+                && (bool) $index['unique'] === $unique,
+        );
+    }
+
+    private function assertOwnedTableExists(): void
     {
         if (! Schema::hasTable(self::TABLE)
             || ! Schema::hasColumns(self::TABLE, [
@@ -173,15 +198,48 @@ return new class extends Migration
                 'created_at',
                 'updated_at',
             ])
-            || ! Schema::hasIndex(self::TABLE, 'aura_embedded_incarnation_resource_unique', 'unique')
-            || ! Schema::hasIndex(self::TABLE, 'aura_embedded_incarnation_guard_lookup')
-            || ! Schema::hasIndex(self::TABLE, 'aura_embedded_incarnation_guard_identity_unique', 'unique')
+            || ! $this->hasExactIndex('aura_embedded_incarnation_resource_unique', ['resource_type', 'resource_key_hash'], true)
+            || ! $this->hasExactIndex('aura_embedded_incarnation_guard_lookup', ['resource_type', 'resource_key_type', 'resource_key'], false)
+            || ! $this->hasExactIndex('aura_embedded_incarnation_guard_identity_unique', ['resource_type', 'resource_key_type', 'resource_key'], true)
         ) {
+            $indexes = json_encode(Schema::getIndexes(self::TABLE), JSON_THROW_ON_ERROR);
+            $connection = Schema::getConnection()->getName();
+
             throw new RuntimeException(
-                'The table claimed by CORE-12 create migration ownership is missing or has an unexpected schema.',
+                "The table claimed by CORE-12 create migration ownership is missing or has an unexpected schema on [{$connection}]. Indexes: {$indexes}",
             );
         }
+    }
 
-        $ledger->assertTargetMarker($generation);
+    /**
+     * @param  array{state: string, created_table: true, owns_registry: bool, generation: string}  $ownership
+     */
+    private function transitionCreate(array $ownership, string $state): void
+    {
+        $updated = DB::table(MigrationOwnershipLedger::TABLE)
+            ->where('migration', MigrationOwnershipLedger::CREATE_KEY)
+            ->where('ownership', $this->createRecord(
+                $ownership['state'],
+                $ownership['owns_registry'],
+                $ownership['generation'],
+            ))
+            ->update(['ownership' => $this->createRecord(
+                $state,
+                $ownership['owns_registry'],
+                $ownership['generation'],
+            )]);
+
+        if ($updated === 1) {
+            return;
+        }
+
+        $current = app(MigrationOwnershipLedger::class)->readCreate();
+
+        if ($current === null
+            || $current['state'] !== 'owned'
+            || $current['generation'] !== $ownership['generation']
+        ) {
+            throw new RuntimeException('CORE-12 create migration ownership changed concurrently.');
+        }
     }
 };

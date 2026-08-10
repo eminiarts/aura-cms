@@ -333,10 +333,11 @@ abstract class Field implements Wireable
      */
     public function rendersConfiguredFieldOnIndex(array $field): bool
     {
-        return $this->rendersOnIndex();
+        return (bool) $this->rendersOnIndex();
     }
 
-    public function rendersOnIndex(): bool
+    /** @return bool */
+    public function rendersOnIndex()
     {
         return $this->index !== null;
     }

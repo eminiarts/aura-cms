@@ -147,3 +147,13 @@ it('propagates database write failures while installing a guard', function () {
     expect(app(EmbeddedResourceIncarnationGuard::class)->isInstalled(new Core12QuotedGuardResource))
         ->toBeFalse();
 });
+
+it('rejects a same-name identity index with the wrong ordered columns', function (): void {
+    Schema::table(EmbeddedResourceIncarnationStore::TABLE, function (Blueprint $table): void {
+        $table->dropUnique('aura_embedded_incarnation_guard_identity_unique');
+        $table->unique('id', 'aura_embedded_incarnation_guard_identity_unique');
+    });
+
+    expect(fn () => app(EmbeddedResourceIncarnationGuard::class)->install(Core12QuotedGuardResource::class))
+        ->toThrow(RuntimeException::class, 'Run the embedded resource incarnation migrations');
+});

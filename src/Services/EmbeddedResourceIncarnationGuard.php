@@ -13,6 +13,8 @@ final class EmbeddedResourceIncarnationGuard
 {
     private const CONTRACT_VERSION = 2;
 
+    private const IDENTITY_INDEX = 'aura_embedded_incarnation_guard_identity_unique';
+
     /** @var array<string, true> */
     private array $verified = [];
 
@@ -118,10 +120,10 @@ final class EmbeddedResourceIncarnationGuard
                 'incarnation',
                 'version',
             ])
-            || ! $schema->hasIndex(
-                EmbeddedResourceIncarnationStore::TABLE,
-                'aura_embedded_incarnation_guard_identity_unique',
-                'unique',
+            || ! collect($schema->getIndexes(EmbeddedResourceIncarnationStore::TABLE))->contains(
+                static fn (array $index): bool => $index['name'] === self::IDENTITY_INDEX
+                    && $index['columns'] === ['resource_type', 'resource_key_type', 'resource_key']
+                    && (bool) $index['unique'],
             )
         ) {
             throw new RuntimeException('Run the embedded resource incarnation migrations before installing guards.');

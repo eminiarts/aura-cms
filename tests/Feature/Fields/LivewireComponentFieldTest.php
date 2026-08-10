@@ -18,6 +18,7 @@ use Aura\Base\Services\EmbeddedComponentResolver;
 use Aura\Base\Services\EmbeddedComponentSurface;
 use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
 use Aura\Base\Services\EmbeddedResourceIncarnationStore;
+use Aura\Base\Services\MigrationOwnershipLedger;
 use Aura\Base\Traits\AuthorizesEmbeddedComponent;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
@@ -132,7 +133,7 @@ class Core12MissingAuthorizationTraitComponent extends Component implements Embe
 
 class Core12ZeroArgumentIndexField extends Field
 {
-    public function rendersOnIndex(): bool
+    public function rendersOnIndex()
     {
         return true;
     }
@@ -1042,6 +1043,9 @@ describe('embedded component security and identity', function () {
             expect(fn () => app(EmbeddedResourceIncarnationStore::class)->rotate($resource))
                 ->toThrow(QueryException::class);
         } finally {
+            DB::table(MigrationOwnershipLedger::TABLE)
+                ->where('migration', MigrationOwnershipLedger::CREATE_KEY)
+                ->delete();
             $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
             $migration->up();
         }
@@ -1066,6 +1070,9 @@ describe('embedded component security and identity', function () {
         try {
             expect(fn () => $component->call('ping'))->toThrow(QueryException::class);
         } finally {
+            DB::table(MigrationOwnershipLedger::TABLE)
+                ->where('migration', MigrationOwnershipLedger::CREATE_KEY)
+                ->delete();
             $migration = require dirname(__DIR__, 3).'/database/migrations/create_embedded_resource_incarnations.php.stub';
             $migration->up();
         }
