@@ -84,6 +84,8 @@ trait BulkActions
         );
 
         if ($response instanceof StreamedResponse) {
+            $this->completeBulkAction($action);
+
             return $response;
         }
 

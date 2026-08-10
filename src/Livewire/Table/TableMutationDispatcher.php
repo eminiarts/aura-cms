@@ -675,6 +675,8 @@ final class TableMutationDispatcher
             abort(422, 'Bulk downloads require collection execution mode.');
         }
 
+        $this->assertConditionAvailable($descriptor);
+
         $definition = $declaredActions[$context['action']];
 
         if (! is_array($definition)) {
@@ -1594,7 +1596,7 @@ final class TableMutationDispatcher
         $query = $effectiveQuery->getQuery();
         $this->applyVerifiedBeforeQueryCallbacks($query);
         $modelDescriptor->assertMatches($effectiveQuery);
-        $bindings = $query->getBindings();
+        $bindings = $query->getConnection()->prepareBindings($query->getBindings());
         $this->normalizeMutationConstraintList($bindings, $query);
 
         return [

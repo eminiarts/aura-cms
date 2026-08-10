@@ -50,12 +50,7 @@ final class SignedBulkDownloadRequest
         }
 
         $cache = $this->cache();
-
-        if (! $cache->add($this->consumedKey($token), true, $this->ttl())) {
-            abort(422, 'The bulk download request was already consumed.');
-        }
-
-        $stored = $cache->pull($this->contextKey($token));
+        $stored = $cache->get($this->contextKey($token));
 
         if (
             ! is_array($stored)
@@ -64,6 +59,14 @@ final class SignedBulkDownloadRequest
             || (string) $stored['user_id'] !== (string) Auth::id()
             || (string) $stored['team_id'] !== (string) data_get(Auth::user(), 'current_team_id')
         ) {
+            abort(422, 'The bulk download request is invalid or expired.');
+        }
+
+        if (! $cache->add($this->consumedKey($token), true, $this->ttl())) {
+            abort(422, 'The bulk download request was already consumed.');
+        }
+
+        if ($cache->pull($this->contextKey($token)) !== $stored) {
             abort(422, 'The bulk download request is invalid or expired.');
         }
 

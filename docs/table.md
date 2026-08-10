@@ -866,11 +866,26 @@ class Article extends Resource
         return [
             'delete' => 'Delete Selected',
             'publish' => ['label' => 'Publish Selected', 'ability' => 'update'],
-            'export' => [
-                'label' => 'Export to CSV',
-                'ability' => 'view',
-                'method' => 'collection',
+        'export' => [
+            'label' => 'Export to CSV',
+            'ability' => 'view',
+            'method' => 'collection',
+            'parameters' => [
+                'delimiter' => [
+                    'label' => 'Delimiter',
+                    'type' => 'string',
+                    'rules' => ['required', 'in:comma,semicolon'],
+                    'options' => [
+                        'comma' => 'Comma',
+                        'semicolon' => 'Semicolon',
+                    ],
+                ],
             ],
+            'download' => [
+                'content_type' => 'text/csv',
+                'filename' => 'articles.csv',
+            ],
+        ],
         ];
     }
     
@@ -883,32 +898,51 @@ class Article extends Resource
     
     // Handle bulk action on collection
     // Method receives array of IDs
-    public function export($ids)
+    public function export(array $ids, array $parameters): string
     {
-        $articles = static::whereIn('id', $ids)->get();
-        
-        return Excel::download(
-            new ArticlesExport($articles), 
-            'articles.csv'
-        );
+        // Aura calls collection handlers once per bounded ID chunk. Return a
+        // string, yield string chunks, echo content, or return a StreamedResponse.
+        return $this->csvChunk($ids, $parameters['delimiter']);
     }
 }
 ```
 
+Bulk parameters are passed directly with the action request; Aura does not keep them in public
+Livewire component state. Every parameter must be declared by slug with a `label`, one supported
+`type` (`string`, `integer`, `float`, `boolean`, or `array`), and a Laravel `rules` array. An
+optional `options` array renders a select. Undeclared values are rejected, validation runs before
+authorization or handlers, and scalar values are cast to the declared type.
+
+Collection actions marked with `download` do not send their content through Livewire. The
+Livewire action validates and authorizes the exact current selection, clears the selection UI, and
+redirects the browser to a single-use temporary signed HTTP URL. The HTTP response repeats
+per-record authorization and invokes the handler in bounded chunks while streaming. Configure
+`aura.security.bulk_downloads.chunk_size`, `max_records`, `ttl_seconds`, and `cache_store`; use a
+shared atomic cache store on multi-node deployments. The default file store is intended only for a
+single application host.
+
+Small collection handlers may still return a `StreamedResponse` directly. Livewire supports that
+response but buffers the entire download before sending it to the browser; Aura now clears the
+selection before returning it. Prefer the declared signed-download shape for large exports.
+
 **Bulk Action Methods in Table Component:**
 
 ```php
-// Execute action on each selected row
-$this->bulkAction('publish');
+// Execute action on each selected row, optionally with declared parameters
+$this->bulkAction('publish', ['channel' => 'web']);
 
 // Execute action on collection (for exports, etc.)
-$this->bulkCollectionAction('export');
+$this->bulkCollectionAction('export', ['delimiter' => 'comma']);
 
 // Open the modal declared by the server-side bulk action definition
 $this->openBulkActionModal('assign_category');
 ```
 
 Only the built-in `delete`, `forceDelete`, `restore`, and `update` actions infer an ability. Every custom row, bulk, or bulk-modal action must declare a valid `ability`; a missing or malformed custom ability returns HTTP 422. An action name absent from the resource declaration returns HTTP 403.
+
+Explicit selections and select-all both use the exact effective rows query, including resource and
+team scopes, parent relationship scope, filters, search, quick filters, sorting, result windows, and
+select-all exclusions. A bulk request never falls back to a fresh unfiltered resource query.
 
 **Special Action Prefixes:**
 

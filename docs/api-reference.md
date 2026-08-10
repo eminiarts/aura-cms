@@ -443,6 +443,18 @@ public array $bulkActions = [
         'label' => 'Export',
         'ability' => 'view',
         'method' => 'collection',
+        'parameters' => [
+            'format' => [
+                'label' => 'Format',
+                'type' => 'string',
+                'rules' => ['required', 'in:csv,tsv'],
+                'options' => ['csv' => 'CSV', 'tsv' => 'TSV'],
+            ],
+        ],
+        'download' => [
+            'content_type' => 'text/csv',
+            'filename' => 'export.csv',
+        ],
     ],
 ];
 
@@ -452,6 +464,12 @@ $bulkActions = $post->getBulkActions();
 ```
 
 Only the built-in `delete`, `forceDelete`, `restore`, and `update` names infer a policy ability. Custom row and bulk actions must declare `ability`; missing or malformed custom abilities return HTTP 422, while action names not declared by the resource return HTTP 403.
+
+Bulk `parameters` are a server-side allowlist. Each entry declares `label`, `type`, and Laravel
+`rules`; `options` is optional. Collection actions with a `download` declaration use Aura's
+single-use temporary signed HTTP stream instead of Livewire's buffered download payload. Handlers
+receive one bounded ID chunk at a time, followed by the validated parameter array when parameters
+are declared.
 
 ### Table Configuration
 
