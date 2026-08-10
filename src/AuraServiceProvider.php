@@ -30,6 +30,7 @@ use Aura\Base\Livewire\CreateResource;
 use Aura\Base\Livewire\EditResourceField;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\InviteUser;
+use Aura\Base\Livewire\MediaFieldAuthorization;
 use Aura\Base\Livewire\MediaManager;
 use Aura\Base\Livewire\MediaUploader;
 use Aura\Base\Livewire\ModalActionRegistry;
@@ -532,14 +533,19 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura::media-manager',
             'aura::media-manager',
             [
-                'arguments.resource' => ['required', 'string'],
+                'arguments.model' => ['sometimes', 'string'],
+                'arguments.resource' => ['sometimes', 'string'],
                 'arguments.selected' => ['present', 'array'],
                 'arguments.selected.*' => [$resourceIdentifier],
                 'arguments.slug' => ['required', 'string'],
             ],
             static function (array $arguments): void {
+                $resource = app(MediaFieldAuthorization::class)->normalizeResourceReference(
+                    $arguments['resource'] ?? null,
+                    $arguments['model'] ?? null,
+                );
                 $manager = app(MediaManager::class);
-                $manager->resource = $arguments['resource'];
+                $manager->resource = $resource;
                 $manager->fieldSlug = $arguments['slug'];
                 $manager->selected = $arguments['selected'];
                 $manager->authorizeRequest();

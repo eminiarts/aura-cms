@@ -41,6 +41,7 @@ trait Filters
      */
     public function addFilter()
     {
+        $this->resetSelectionForScopeChange();
         $this->filters['custom'][] = [
             'name' => $this->fieldsForFilter->keys()->first(),
             'operator' => 'contains',
@@ -51,6 +52,7 @@ trait Filters
 
     public function addFilterGroup()
     {
+        $this->resetSelectionForScopeChange();
         $this->filters['custom'][] = [
             'filters' => [
                 $this->newFilter(),
@@ -60,6 +62,7 @@ trait Filters
 
     public function addSubFilter($groupKey)
     {
+        $this->resetSelectionForScopeChange();
         $this->filters['custom'][$groupKey]['filters'][] = $this->newFilter();
     }
 
@@ -79,6 +82,7 @@ trait Filters
      */
     public function deleteFilter($filterName)
     {
+        $this->resetSelectionForScopeChange();
         // Retrieve the filter using the provided key
         $filter = $this->userFilters[$filterName] ?? null;
 
@@ -149,12 +153,14 @@ trait Filters
      */
     public function removeCustomFilter($index)
     {
+        $this->resetSelectionForScopeChange();
         unset($this->filters['custom'][$index]);
         $this->filters['custom'] = array_values($this->filters['custom']);
     }
 
     public function removeFilter($groupKey, $filterKey)
     {
+        $this->resetSelectionForScopeChange();
         unset($this->filters['custom'][$groupKey]['filters'][$filterKey]);
         $this->filters['custom'][$groupKey]['filters'] = array_values($this->filters['custom'][$groupKey]['filters']);
 
@@ -165,6 +171,7 @@ trait Filters
 
     public function removeFilterGroup($groupKey)
     {
+        $this->resetSelectionForScopeChange();
         unset($this->filters['custom'][$groupKey]);
         $this->filters['custom'] = array_values($this->filters['custom']);
     }
@@ -176,6 +183,7 @@ trait Filters
      */
     public function resetFilter()
     {
+        $this->resetSelectionForScopeChange();
         $this->reset('filters');
     }
 
@@ -186,6 +194,7 @@ trait Filters
      */
     public function saveFilter()
     {
+        $this->resetSelectionForScopeChange();
         $this->validate([
             'filter.name' => 'required',
             'filter.public' => 'required',
@@ -223,6 +232,7 @@ trait Filters
 
     public function updatedFiltersCustom($value, $key)
     {
+        $this->resetSelectionForScopeChange();
         $parts = explode('.', $key);
         if (count($parts) === 5 && $parts[4] === 'name') {
             $groupKey = $parts[1];
@@ -243,6 +253,7 @@ trait Filters
      */
     public function updatedSelectedFilter($filter)
     {
+        $this->resetSelectionForScopeChange();
         $this->clearFiltersCache();
 
         // Reset filters first

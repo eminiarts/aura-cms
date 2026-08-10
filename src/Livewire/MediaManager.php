@@ -2,13 +2,8 @@
 
 namespace Aura\Base\Livewire;
 
-use Aura\Base\Facades\Aura;
-use Aura\Base\Fields\File;
-use Aura\Base\Fields\Image;
-use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -16,8 +11,6 @@ use Livewire\Component;
 
 class MediaManager extends Component
 {
-    private const MAX_SELECTED_MEDIA = 500;
-
     #[Locked]
     public $field;
 
@@ -45,40 +38,21 @@ class MediaManager extends Component
      */
     public function authorizeRequest(mixed $selected = null): array
     {
-        $resource = Aura::findResourceBySlug($this->resource);
-        $field = $resource?->fieldBySlug($this->fieldSlug);
-        $fieldType = is_array($field) ? ($field['type'] ?? null) : null;
+        $selection = $selected ?? $this->selected;
 
-        if (
-            ! $resource instanceof Resource
-            || $resource->getSlug() !== $this->resource
-            || ! is_array($field)
-            || ($field['slug'] ?? null) !== $this->fieldSlug
-            || ! is_string($fieldType)
-            || (! is_a($fieldType, Image::class, true) && ! is_a($fieldType, File::class, true))
-        ) {
-            abort(422, 'The media manager resource field is invalid.');
-        }
-
-        Gate::authorize('viewAny', $resource);
-        Gate::authorize('viewAny', config('aura.resources.attachment'));
-
-        $this->field = $field;
-        $ids = $this->normalizeSelected($selected ?? $this->selected);
-
-        if ($ids === []) {
-            return [];
-        }
-
-        $attachments = $this->attachmentQuery()->whereKey($ids)->get();
-
-        if ($attachments->count() !== count($ids)) {
+        if (! is_array($selection)) {
             abort(422, 'The selected media are invalid.');
         }
 
-        $attachments->each(static fn (Model $attachment) => Gate::authorize('view', $attachment));
+        $authorized = app(MediaFieldAuthorization::class)->authorizeField(
+            $this->resource,
+            $this->fieldSlug,
+            $selection,
+        );
+        $this->field = $authorized['field'];
+        $this->resource = $authorized['resource_slug'];
 
-        return $ids;
+        return $authorized['selected'];
     }
 
     public function hydrate(): void
@@ -91,9 +65,14 @@ class MediaManager extends Component
         return 'max-w-7xl';
     }
 
-    public function mount(string $resource, string $slug, array $selected, array $modalAttributes): void
-    {
-        $this->resource = $resource;
+    public function mount(
+        string $slug,
+        array $selected,
+        array $modalAttributes,
+        ?string $resource = null,
+        ?string $model = null,
+    ): void {
+        $this->resource = app(MediaFieldAuthorization::class)->normalizeResourceReference($resource, $model);
         $this->selected = $selected;
         $this->fieldSlug = $slug;
         $this->modalAttributes = $modalAttributes;
@@ -176,31 +155,5 @@ class MediaManager extends Component
         abort_unless($attachment instanceof Model, 422, 'The media resource is invalid.');
 
         return $attachment->newQuery();
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function normalizeSelected(mixed $selected): array
-    {
-        if (! is_array($selected) || count($selected) > self::MAX_SELECTED_MEDIA) {
-            abort(422, 'The selected media are invalid.');
-        }
-
-        $normalized = [];
-
-        foreach ($selected as $id) {
-            if ((! is_int($id) && ! is_string($id)) || (string) $id === '') {
-                abort(422, 'The selected media are invalid.');
-            }
-
-            $normalized[(string) $id] = (string) $id;
-        }
-
-        if (count($normalized) !== count($selected)) {
-            abort(422, 'The selected media are invalid.');
-        }
-
-        return array_values($normalized);
     }
 }

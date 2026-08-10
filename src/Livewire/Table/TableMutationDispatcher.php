@@ -171,10 +171,12 @@ final class TableMutationDispatcher
                 $selectAllExclusions,
             );
 
-            $records->each(function (Model $record) use ($descriptor, $modelDescriptor): void {
-                $modelDescriptor->assertModelMatches($record);
-                $this->authorize($record, $descriptor['ability']);
-            });
+            foreach ($records->chunk($this->recordChunkSize()) as $recordChunk) {
+                $recordChunk->each(function (Model $record) use ($descriptor, $modelDescriptor): void {
+                    $modelDescriptor->assertModelMatches($record);
+                    $this->authorize($record, $descriptor['ability']);
+                });
+            }
 
             $ids = $records->map(fn (Model $record): mixed => $record->getKey())->all();
 
@@ -301,21 +303,31 @@ final class TableMutationDispatcher
 
             $this->mutationMethod($receiver, $action, $descriptor['mode']);
 
-            $records->each(function (Model $record) use ($descriptor, $modelDescriptor): void {
-                $modelDescriptor->assertModelMatches($record);
-                $this->authorize($record, $descriptor['ability']);
-            });
+            foreach ($records->chunk($this->recordChunkSize()) as $recordChunk) {
+                $recordChunk->each(function (Model $record) use ($descriptor, $modelDescriptor): void {
+                    $modelDescriptor->assertModelMatches($record);
+                    $this->authorize($record, $descriptor['ability']);
+                });
+            }
 
             $ids = $records->map(fn (Model $record): mixed => $record->getKey())->all();
 
             if ($descriptor['mode'] === self::BULK_MODE_COLLECTION) {
-                return $receiver->{$action}($ids);
+                $result = null;
+
+                foreach (array_chunk($ids, $this->recordChunkSize()) as $idChunk) {
+                    $result = $receiver->{$action}($idChunk);
+                }
+
+                return $result;
             }
 
             $result = null;
 
-            foreach ($records as $record) {
-                $result = $record->{$action}();
+            foreach ($records->chunk($this->recordChunkSize()) as $recordChunk) {
+                foreach ($recordChunk as $record) {
+                    $result = $record->{$action}();
+                }
             }
 
             return $result;
@@ -441,48 +453,79 @@ final class TableMutationDispatcher
         $scope = $context['scope'];
 
         if (
-            array_keys($scope) !== ['bindings', 'key_alias', 'sql']
-            || ! is_array($scope['bindings'])
+            array_keys($scope) !== ['excluded', 'key_alias', 'pages']
+            || ! is_array($scope['excluded'])
             || ! is_string($scope['key_alias'])
             || $scope['key_alias'] !== '__aura_mutation_key'
-            || ! is_string($scope['sql'])
-            || $scope['sql'] === ''
+            || ! is_array($scope['pages'])
+            || $scope['pages'] === []
         ) {
             abort(422, 'The stored bulk modal scope is invalid.');
         }
+
+        foreach ($scope['pages'] as $page) {
+            if (
+                ! is_array($page)
+                || array_keys($page) !== ['bindings', 'sql']
+                || ! is_array($page['bindings'])
+                || ! is_string($page['sql'])
+                || $page['sql'] === ''
+            ) {
+                abort(422, 'The stored bulk modal scope is invalid.');
+            }
+        }
+
+        $excludedKeys = $this->normalizeExclusionKeys($scope['excluded'], $modelDescriptor);
+
+        if (array_intersect_key($expectedKeys, $excludedKeys) !== []) {
+            abort(422, 'The stored bulk modal scope is invalid.');
+        }
+
+        $allowedKeys = $expectedKeys + $excludedKeys;
 
         return $this->transactionWithPreLockRetries(
             $modelDescriptor->connectionInstance(),
             function (Closure $markLockAcquired) use (
                 $context,
                 $descriptor,
+                $excludedKeys,
                 $expectedKeys,
                 $modelDescriptor,
+                $allowedKeys,
                 $scope,
             ): array {
-                $qualifiedKey = $modelDescriptor->table.'.'.$modelDescriptor->keyName;
                 $ids = array_values($expectedKeys);
-                $lockedRows = $modelDescriptor->connectionInstance()
-                    ->table($modelDescriptor->table)
-                    ->select($modelDescriptor->table.'.*')
-                    ->whereIn($qualifiedKey, $ids)
-                    ->orderBy($qualifiedKey)
-                    ->lockForUpdate()
-                    ->get();
-
-                $markLockAcquired();
-
-                $revalidatedRows = $modelDescriptor->connectionInstance()->select(
-                    $scope['sql'],
-                    $scope['bindings'],
-                    false,
-                );
-                $revalidatedKeys = $this->mutationKeysFromRows(
-                    $revalidatedRows,
-                    $scope['key_alias'],
+                $lockedRows = $this->lockedRows(
+                    $modelDescriptor->connectionInstance(),
                     $modelDescriptor,
-                    $expectedKeys,
+                    $ids,
+                    lockForUpdate: true,
+                    markLockAcquired: $markLockAcquired,
                 );
+                $revalidatedKeys = [];
+
+                foreach ($scope['pages'] as $page) {
+                    $pageKeys = $this->mutationKeysFromRows(
+                        $modelDescriptor->connectionInstance()->select(
+                            $page['sql'],
+                            $page['bindings'],
+                            false,
+                        ),
+                        $scope['key_alias'],
+                        $modelDescriptor,
+                        $allowedKeys,
+                    );
+
+                    foreach ($pageKeys as $identity => $id) {
+                        $revalidatedKeys[$identity] ??= $id;
+                    }
+                }
+
+                if (array_diff_key($excludedKeys, $revalidatedKeys) !== []) {
+                    abort(422, 'The bulk modal selection is no longer valid.');
+                }
+
+                $revalidatedKeys = array_diff_key($revalidatedKeys, $excludedKeys);
 
                 if (array_keys($expectedKeys) !== array_keys($revalidatedKeys)) {
                     abort(422, 'The bulk modal selection is no longer valid.');
@@ -499,14 +542,16 @@ final class TableMutationDispatcher
                     $lockedByIdentity[$modelDescriptor->canonicalIdentity($record->getKey())] = $record;
                 }
 
-                foreach ($expectedKeys as $identity => $id) {
-                    $record = $lockedByIdentity[$identity] ?? null;
+                foreach (array_chunk($expectedKeys, $this->recordChunkSize(), true) as $expectedChunk) {
+                    foreach ($expectedChunk as $identity => $id) {
+                        $record = $lockedByIdentity[$identity] ?? null;
 
-                    if (! $record instanceof Model || (string) $record->getKey() !== (string) $id) {
-                        abort(422, 'The bulk modal selection is no longer valid.');
+                        if (! $record instanceof Model || (string) $record->getKey() !== (string) $id) {
+                            abort(422, 'The bulk modal selection is no longer valid.');
+                        }
+
+                        $this->authorize($record, $descriptor['ability']);
                     }
-
-                    $this->authorize($record, $descriptor['ability']);
                 }
 
                 return [
@@ -896,6 +941,7 @@ final class TableMutationDispatcher
         bool $lockForUpdate = false,
         ?Closure $markLockAcquired = null,
         ?Closure $captureScope = null,
+        array $excludedKeys = [],
     ): Collection {
         $modelDescriptor->assertMatches($scope);
         $model = $modelDescriptor->model();
@@ -914,81 +960,69 @@ final class TableMutationDispatcher
         }
 
         $effectiveQuery->select($qualifiedKey.' as '.$keyAlias);
-        $effectiveQuery->reorder($qualifiedKey);
+
+        if ($effectiveQuery->getQuery()->orders === null && $effectiveQuery->getQuery()->unionOrders === null) {
+            $effectiveQuery->orderBy($qualifiedKey);
+        }
 
         $effectiveBaseQuery = $effectiveQuery->getQuery();
         $this->applyVerifiedBeforeQueryCallbacks($effectiveBaseQuery);
         $modelDescriptor->assertMatches($effectiveQuery);
-        $maximumRecords = $this->maximumRecordCount();
-        $existingLimit = $effectiveBaseQuery->limit;
-
-        if (! is_int($existingLimit) || $existingLimit > $maximumRecords + 1) {
-            $effectiveBaseQuery->limit($maximumRecords + 1);
-        }
-
-        $captureScope?->__invoke([
-            'bindings' => $effectiveBaseQuery->getBindings(),
-            'key_alias' => $keyAlias,
-            'sql' => $effectiveBaseQuery->toSql(),
-        ]);
-        $candidateRows = $effectiveBaseQuery->getConnection()->select(
-            $effectiveBaseQuery->toSql(),
-            $effectiveBaseQuery->getBindings(),
-            ! $effectiveBaseQuery->useWritePdo,
-        );
-        $candidateKeys = $this->mutationKeysFromRows(
-            $candidateRows,
+        $selection = $this->orderedMutationSelection(
+            $effectiveBaseQuery,
             $keyAlias,
             $modelDescriptor,
             $expectedKeys,
+            ignoredKeys: $excludedKeys,
         );
+        $displayedKeys = $selection['keys'];
 
-        if (count($candidateKeys) > $maximumRecords) {
+        if (array_diff_key($excludedKeys, $displayedKeys) !== []) {
             throw ValidationException::withMessages([
-                'selected' => 'The selected records exceed the configured mutation limit.',
+                'selected' => 'The select-all exclusions are invalid.',
             ]);
         }
+
+        $candidateKeys = array_diff_key($displayedKeys, $excludedKeys);
+        $captureScope?->__invoke([
+            'excluded' => array_values($excludedKeys),
+            'key_alias' => $keyAlias,
+            'pages' => $selection['pages'],
+        ]);
 
         if ($candidateKeys === []) {
             return $model->newCollection();
         }
 
         $candidateIds = array_values($candidateKeys);
-        $lockQuery = $effectiveBaseQuery->getConnection()
-            ->table($modelDescriptor->table)
-            ->select($modelDescriptor->table.'.*')
-            ->whereIn($qualifiedKey, $candidateIds)
-            ->orderBy($qualifiedKey);
-
-        if ($lockForUpdate) {
-            $lockQuery->lockForUpdate();
-        }
-
-        $lockedRows = $lockQuery->get();
-
-        $markLockAcquired?->__invoke();
-
-        $revalidationQuery = clone $effectiveBaseQuery;
-        $revalidationQuery->whereIn($qualifiedKey, $candidateIds);
-        $revalidationGrammar = $revalidationQuery->getGrammar();
-
-        if ($revalidationGrammar instanceof MariaDbGrammar) {
-            $revalidationQuery->lock('lock in share mode');
-        } elseif ($revalidationGrammar instanceof MySqlGrammar) {
-            $revalidationQuery->lock('for share');
-        }
-
-        $revalidatedRows = $revalidationQuery->getConnection()->select(
-            $revalidationQuery->toSql(),
-            $revalidationQuery->getBindings(),
-            ! $revalidationQuery->useWritePdo,
+        $lockedRows = $this->lockedRows(
+            $effectiveBaseQuery->getConnection(),
+            $modelDescriptor,
+            $candidateIds,
+            $lockForUpdate,
+            $markLockAcquired,
         );
-        $revalidatedKeys = $this->mutationKeysFromRows(
-            $revalidatedRows,
+        $revalidationGrammar = $effectiveBaseQuery->getGrammar();
+        $sharedLock = $revalidationGrammar instanceof MariaDbGrammar
+            ? 'lock in share mode'
+            : ($revalidationGrammar instanceof MySqlGrammar ? 'for share' : null);
+        $revalidatedSelection = $this->orderedMutationSelection(
+            clone $effectiveBaseQuery,
             $keyAlias,
             $modelDescriptor,
             $expectedKeys,
+            $sharedLock,
+            $excludedKeys,
         );
+        $revalidatedDisplayedKeys = $revalidatedSelection['keys'];
+
+        if (array_diff_key($excludedKeys, $revalidatedDisplayedKeys) !== []) {
+            throw ValidationException::withMessages([
+                'selected' => 'The select-all exclusions are invalid.',
+            ]);
+        }
+
+        $revalidatedKeys = array_diff_key($revalidatedDisplayedKeys, $excludedKeys);
 
         if ($expectedKeys === null && array_keys($candidateKeys) !== array_keys($revalidatedKeys)) {
             throw ValidationException::withMessages([
@@ -1032,6 +1066,55 @@ final class TableMutationDispatcher
         });
 
         return $this->canonicalizeRecords($records, $modelDescriptor);
+    }
+
+    /**
+     * Resolve an explicit identifier set in bounded database chunks. Each
+     * chunk still uses the authoritative displayed query and its ordering.
+     *
+     * @param  array<string, int|string>  $expectedKeys
+     * @return Collection<int, Model&TableResource>
+     */
+    private function authoritativeRecordsForExpectedKeys(
+        Builder $scope,
+        TableMutationModelDescriptor $modelDescriptor,
+        array $expectedKeys,
+        ?string $trashed,
+        bool $lockForUpdate = false,
+        ?Closure $markLockAcquired = null,
+        ?Closure $captureScope = null,
+    ): Collection {
+        $model = $modelDescriptor->model();
+        $records = [];
+        $capturedPages = [];
+
+        foreach (array_chunk($expectedKeys, $this->recordChunkSize(), true) as $expectedChunk) {
+            $chunkRecords = $this->authoritativeRecords(
+                (clone $scope)->whereKey(array_values($expectedChunk)),
+                $modelDescriptor,
+                $expectedChunk,
+                $trashed,
+                $lockForUpdate,
+                $markLockAcquired,
+                static function (array $snapshot) use (&$capturedPages): void {
+                    foreach ($snapshot['pages'] as $page) {
+                        $capturedPages[] = $page;
+                    }
+                },
+            );
+
+            foreach ($chunkRecords as $record) {
+                $records[] = $record;
+            }
+        }
+
+        $captureScope?->__invoke([
+            'excluded' => [],
+            'key_alias' => '__aura_mutation_key',
+            'pages' => $capturedPages,
+        ]);
+
+        return $model->newCollection($records);
     }
 
     /**
@@ -1191,6 +1274,54 @@ final class TableMutationDispatcher
     private function hasConstraintPrefix(array $constraints, array $mandatoryConstraints): bool
     {
         return array_slice($constraints, 0, count($mandatoryConstraints)) === $mandatoryConstraints;
+    }
+
+    /**
+     * @param  list<int|string>  $candidateIds
+     * @return list<object>
+     */
+    private function lockedRows(
+        ConnectionInterface $connection,
+        TableMutationModelDescriptor $modelDescriptor,
+        array $candidateIds,
+        bool $lockForUpdate,
+        ?Closure $markLockAcquired = null,
+    ): array {
+        $qualifiedKey = $modelDescriptor->table.'.'.$modelDescriptor->keyName;
+        $rows = [];
+        $marked = false;
+        $lockIds = array_values($candidateIds);
+        usort(
+            $lockIds,
+            static fn (int|string $left, int|string $right): int => strcmp((string) $left, (string) $right),
+        );
+
+        foreach (array_chunk($lockIds, $this->recordChunkSize()) as $candidateChunk) {
+            $query = $connection
+                ->table($modelDescriptor->table)
+                ->select($modelDescriptor->table.'.*')
+                ->whereIn($qualifiedKey, $candidateChunk)
+                ->orderBy($qualifiedKey);
+
+            if ($lockForUpdate) {
+                $query->lockForUpdate();
+            }
+
+            foreach ($query->get() as $row) {
+                if (! is_object($row)) {
+                    abort(422, 'The authoritative table mutation query returned an invalid record.');
+                }
+
+                $rows[] = $row;
+            }
+
+            if (! $marked) {
+                $markLockAcquired?->__invoke();
+                $marked = true;
+            }
+        }
+
+        return $rows;
     }
 
     private function maximumRecordCount(): int
@@ -1473,6 +1604,115 @@ final class TableMutationDispatcher
     }
 
     /**
+     * Read the effective displayed query in bounded raw-result pages while
+     * retaining only the first occurrence of each resource identifier.
+     *
+     * @param  array<string, int|string>|null  $expectedKeys
+     * @return array{
+     *     keys: array<string, int|string>,
+     *     pages: list<array{bindings: array<int, mixed>, sql: string}>
+     * }
+     */
+    private function orderedMutationSelection(
+        QueryBuilder $query,
+        string $keyAlias,
+        TableMutationModelDescriptor $modelDescriptor,
+        ?array $expectedKeys,
+        ?string $lock = null,
+        array $ignoredKeys = [],
+    ): array {
+        $usesUnions = is_array($query->unions) && $query->unions !== [];
+        $configuredLimit = $usesUnions ? $query->unionLimit : $query->limit;
+        $configuredOffset = $usesUnions ? $query->unionOffset : $query->offset;
+
+        if (
+            ($configuredLimit !== null && (! is_int($configuredLimit) || $configuredLimit < 0))
+            || ($configuredOffset !== null && (! is_int($configuredOffset) || $configuredOffset < 0))
+        ) {
+            abort(422, 'The table mutation query contains an invalid result window.');
+        }
+
+        if ($configuredLimit === 0) {
+            return ['keys' => [], 'pages' => []];
+        }
+
+        $chunkSize = $this->recordChunkSize();
+        $maximumRecords = $this->maximumRecordCount();
+        $remainingRows = $configuredLimit;
+        $offset = $configuredOffset ?? 0;
+        $keys = [];
+        $pages = [];
+
+        while ($remainingRows === null || $remainingRows > 0) {
+            $pageSize = $remainingRows === null
+                ? $chunkSize
+                : min($chunkSize, $remainingRows);
+            $page = clone $query;
+            $page->limit($pageSize)->offset($offset);
+
+            if ($lock !== null) {
+                $page->lock($lock);
+            }
+
+            $sql = $page->toSql();
+            $bindings = $page->getBindings();
+            $pages[] = [
+                'bindings' => $bindings,
+                'sql' => $sql,
+            ];
+            $rows = $page->getConnection()->select(
+                $sql,
+                $bindings,
+                ! $page->useWritePdo,
+            );
+            $pageKeys = $this->mutationKeysFromRows(
+                $rows,
+                $keyAlias,
+                $modelDescriptor,
+                $expectedKeys,
+            );
+
+            foreach ($pageKeys as $identity => $id) {
+                $keys[$identity] ??= $id;
+            }
+
+            if (count(array_diff_key($keys, $ignoredKeys)) > $maximumRecords) {
+                throw ValidationException::withMessages([
+                    'selected' => 'The selected records exceed the configured mutation limit.',
+                ]);
+            }
+
+            $rowCount = count($rows);
+
+            if ($rowCount < $pageSize) {
+                break;
+            }
+
+            $offset += $pageSize;
+
+            if ($remainingRows !== null) {
+                $remainingRows -= $pageSize;
+            }
+        }
+
+        return [
+            'keys' => $keys,
+            'pages' => $pages,
+        ];
+    }
+
+    private function recordChunkSize(): int
+    {
+        $chunkSize = config('aura.security.table_mutations.chunk_size', 100);
+
+        if (! is_int($chunkSize) || $chunkSize < 1 || $chunkSize > 500) {
+            abort(422, 'The table mutation chunk size is invalid.');
+        }
+
+        return min($chunkSize, $this->maximumRecordCount());
+    }
+
+    /**
      * @return Collection<int, Model&TableResource>
      */
     private function resolveExactSelection(
@@ -1488,23 +1728,6 @@ final class TableMutationDispatcher
         if ($selectAll) {
             $excludedKeys = $this->normalizeExclusionKeys($excluded, $modelDescriptor);
 
-            if ($excludedKeys !== []) {
-                $excludedRecords = $this->authoritativeRecords(
-                    (clone $scope)->whereKey(array_values($excludedKeys)),
-                    $modelDescriptor,
-                    $excludedKeys,
-                    $trashed,
-                );
-
-                if (count($this->canonicalIdentities($excludedRecords, $modelDescriptor)) !== count($excludedKeys)) {
-                    throw ValidationException::withMessages([
-                        'selected' => 'The select-all exclusions are invalid.',
-                    ]);
-                }
-
-                $scope = (clone $scope)->whereKeyNot(array_values($excludedKeys));
-            }
-
             $records = $this->authoritativeRecords(
                 $scope,
                 $modelDescriptor,
@@ -1513,6 +1736,7 @@ final class TableMutationDispatcher
                 lockForUpdate: true,
                 markLockAcquired: $markLockAcquired,
                 captureScope: $captureScope,
+                excludedKeys: $excludedKeys,
             );
 
             if ($records->isEmpty()) {
@@ -1566,8 +1790,8 @@ final class TableMutationDispatcher
             )
             ->all();
 
-        $records = $this->authoritativeRecords(
-            (clone $scope)->whereKey(array_values($normalized)),
+        $records = $this->authoritativeRecordsForExpectedKeys(
+            $scope,
             $modelDescriptor,
             $expectedKeys,
             $trashed,

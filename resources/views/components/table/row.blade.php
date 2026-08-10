@@ -1,20 +1,20 @@
 <tr class="transition-colors duration-150 ease-in-out cm-table-row hover:bg-gray-50/80 dark:hover:bg-white/[0.04]"
     wire:key="{{ $row->id }}"
     data-id="{{ $row->id }}"
-    :class="{ 'bg-primary-50/60 dark:bg-primary-500/10': selected.includes('{{ $row->id }}') }"
+    :class="{ 'bg-primary-50/60 dark:bg-primary-500/10': isRowSelected(@js($row->getKey())) }"
     >
 
     @if ($this->settings['selectable'])
         <x-aura::table.cell class="relative pr-0">
-            <span x-show="selected.includes('{{ $row->id }}')" x-cloak
+            <span x-show="isRowSelected(@js($row->getKey()))" x-cloak
                   class="absolute inset-y-0 left-0 w-0.5 bg-primary-600" aria-hidden="true"></span>
             <x-aura::input.checkbox
     id="checkbox_{{ $row->id }}"
-    x-bind:checked="selected.includes({{ $row->id }})"
+    x-bind:checked="isRowSelected(@js($row->getKey()))"
     hideLabel
     :label="$row->id"
     :value="$row->id"
-    x-on:click.stop.prevent="toggleRow($event, {{ $row->id }})"
+    x-on:click.stop.prevent="toggleRow($event, @js($row->getKey()))"
 />
         </x-aura::table.cell>
     @endif

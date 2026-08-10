@@ -19,6 +19,7 @@ trait SwitchView
     public function switchView($view)
     {
         if (in_array($view, ['list', 'kanban', 'grid'])) {
+            $this->resetSelectionForScopeChange();
             $this->currentView = $view;
             $this->saveViewPreference();
         }

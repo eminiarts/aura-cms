@@ -56,6 +56,7 @@ return [
             'ttl_seconds' => 120,
         ],
         'table_mutations' => [
+            'chunk_size' => 100,
             'max_records' => 500,
         ],
     ],

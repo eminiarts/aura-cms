@@ -25,6 +25,7 @@ trait Sorting
      */
     public function sortBy($field)
     {
+        $this->resetSelectionForScopeChange();
         $this->sorts = collect($this->sorts)->filter(function ($value, $key) use ($field) {
             return $key === $field;
         })->toArray();
@@ -67,6 +68,7 @@ trait Sorting
             // We want to add custom Sorting. If the model has a custom sorting method, we want to use that instead of the default one. Name of the method is sort_{$field}
             if (method_exists($this->model, 'sort_'.$field)) {
                 $this->model->{'sort_'.$field}($query, $direction);
+                $query->orderBy($qualifiedKeyName);
 
                 return $query;
             }
@@ -105,7 +107,9 @@ trait Sorting
 
                 return $query;
             } else {
-                $query->orderBy($field, $direction);
+                $query
+                    ->orderBy($this->model->qualifyColumn($field), $direction)
+                    ->orderBy($qualifiedKeyName);
 
                 return $query;
             }
@@ -114,7 +118,12 @@ trait Sorting
         $query->getQuery()->orders = null;
 
         // default sort
-        $query->orderBy($this->model->getTable().'.'.$this->model->defaultTableSort(), $this->model->defaultTableSortDirection());
+        $query
+            ->orderBy(
+                $this->model->qualifyColumn($this->model->defaultTableSort()),
+                $this->model->defaultTableSortDirection(),
+            )
+            ->orderBy($this->model->getQualifiedKeyName());
 
         return $query;
     }

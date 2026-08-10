@@ -33,10 +33,7 @@ trait BulkActions
             $this->selectAllExclusions,
         );
 
-        // Clear the selected array
-        $this->selected = [];
-        $this->selectAll = false;
-        $this->selectAllExclusions = [];
+        $this->resetSelectionForScopeChange();
 
         $this->notify('Success: '.$action);
     }
@@ -62,10 +59,7 @@ trait BulkActions
             return $response;
         }
 
-        // reset selected rows
-        $this->selected = [];
-        $this->selectAll = false;
-        $this->selectAllExclusions = [];
+        $this->resetSelectionForScopeChange();
 
         $this->notify('Success: '.$action);
 

@@ -6,6 +6,7 @@ use Aura\Base\Facades\DynamicFunctions;
 use Aura\Base\Fields\HasMany;
 use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\MediaManager;
+use Aura\Base\Livewire\MediaUploader;
 use Aura\Base\Livewire\Modals;
 use Aura\Base\Livewire\SignedModalRequest;
 use Aura\Base\Livewire\Table\Table;
@@ -21,9 +22,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Query\Grammars\SQLiteGrammar;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
@@ -433,11 +436,34 @@ class Core05DenyMediaPolicy
     }
 }
 
+class Core05ToggleMediaPolicy
+{
+    public static bool $allowed = true;
+
+    public function viewAny(User $user, Core05MediaResource $resource): bool
+    {
+        return static::$allowed;
+    }
+}
+
 class Core05DenyAttachmentPolicy
 {
     public function viewAny(User $user): bool
     {
         return false;
+    }
+}
+
+class Core05DenyAttachmentCreatePolicy
+{
+    public function create(User $user): bool
+    {
+        return false;
+    }
+
+    public function viewAny(User $user): bool
+    {
+        return true;
     }
 }
 
@@ -728,6 +754,24 @@ class Core05DenyingMutationPolicy
     }
 }
 
+class Core05DenyLastChunkMutationPolicy
+{
+    public static int|string|null $deniedKey = null;
+
+    public function update(User $user, Core05MutationResource $resource): bool
+    {
+        if (! $resource->exists) {
+            return $user->exists;
+        }
+
+        $resource->getConnection()->table($resource->getTable())
+            ->where($resource->getKeyName(), $resource->getKey())
+            ->update(['content' => 'changed-during-chunked-authorization']);
+
+        return (string) $resource->getKey() !== (string) static::$deniedKey;
+    }
+}
+
 class Core05AuthoritativeCollisionPolicy
 {
     public function update(User $user, Core05MutationResource $resource): bool
@@ -819,6 +863,8 @@ beforeEach(function () {
     Core05MutationResource::$updateTransactionLevels = [];
     Core05ForgedModal::$mounts = 0;
     Core05DangerousContainerBinding::$constructions = 0;
+    Core05DenyLastChunkMutationPolicy::$deniedKey = null;
+    Core05ToggleMediaPolicy::$allowed = true;
     Core05TransactionMutationPolicy::$transactionLevels = [];
     Livewire::component('core05-authorized-bulk-modal', Core05AuthorizedBulkModal::class);
     Livewire::component('core05-forged-modal', Core05ForgedModal::class);
@@ -1299,6 +1345,42 @@ test('media manager rejects arbitrary container bindings before resolving them',
     expect(Core05DangerousContainerBinding::$constructions)->toBe(0);
 });
 
+test('media manager safely preserves the documented legacy model argument', function () {
+    $this->actingAs(createSuperAdmin());
+    Aura::setModel(new Core05MediaResource);
+
+    livewire(Modals::class)
+        ->call('openModal', 'aura::media-manager', [
+            'model' => Core05MediaResource::class,
+            'slug' => 'hero_image',
+            'selected' => [],
+        ])
+        ->assertSeeHtml('data-media-picker-root');
+
+    livewire(MediaManager::class, [
+        'model' => Core05MediaResource::class,
+        'slug' => 'hero_image',
+        'selected' => [],
+        'modalAttributes' => [],
+    ])
+        ->assertSet('resource', Core05MediaResource::$slug)
+        ->assertOk();
+});
+
+test('legacy media manager model input never resolves an unregistered container class', function () {
+    $this->actingAs(createSuperAdmin());
+
+    livewire(Modals::class)
+        ->call('openModal', 'aura::media-manager', [
+            'model' => Core05DangerousContainerBinding::class,
+            'slug' => 'hero_image',
+            'selected' => [],
+        ])
+        ->assertStatus(422);
+
+    expect(Core05DangerousContainerBinding::$constructions)->toBe(0);
+});
+
 test('media manager resolves only an owned media field on an authorized registered resource', function () {
     $this->actingAs(createSuperAdmin());
     Aura::setModel(new Core05MediaResource);
@@ -1406,6 +1488,81 @@ test('media manager rejects selected records outside the current team scope', fu
     ])->assertStatus(422);
 });
 
+test('nested media uploader reauthorizes a revoked resource on every hydrated child request', function () {
+    $this->actingAs(createSuperAdmin());
+    Aura::setModel(new Core05MediaResource);
+    Storage::fake('public');
+    Gate::policy(Core05MediaResource::class, Core05ToggleMediaPolicy::class);
+    $field = (new Core05MediaResource)->fieldBySlug('hero_image');
+    $component = livewire(MediaUploader::class, [
+        'resource' => Core05MediaResource::$slug,
+        'fieldSlug' => 'hero_image',
+        'field' => $field,
+        'selected' => [],
+        'table' => true,
+    ])->assertOk();
+
+    Core05ToggleMediaPolicy::$allowed = false;
+
+    $component
+        ->call('selectedMediaUpdated', ['slug' => 'hero_image', 'value' => []])
+        ->assertForbidden();
+
+    expect(Attachment::query()->count())->toBe(0);
+    Storage::disk('public')->assertMissing('media/revoked.png');
+});
+
+test('nested media uploader authorizes attachment creation before storage or database writes', function () {
+    $this->actingAs(createSuperAdmin());
+    Aura::setModel(new Core05MediaResource);
+    Gate::policy(Attachment::class, Core05DenyAttachmentCreatePolicy::class);
+    Storage::fake('public');
+
+    livewire(MediaUploader::class, [
+        'resource' => Core05MediaResource::$slug,
+        'fieldSlug' => 'hero_image',
+        'field' => (new Core05MediaResource)->fieldBySlug('hero_image'),
+        'selected' => [],
+        'table' => true,
+    ])
+        ->set('media', [UploadedFile::fake()->image('denied.png')])
+        ->assertForbidden();
+
+    expect(Attachment::query()->count())->toBe(0);
+    Storage::disk('public')->assertMissing('media/denied.png');
+});
+
+test('nested media uploader rejects forged and cross-team picker state', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    Aura::setModel(new Core05MediaResource);
+
+    livewire(MediaUploader::class, [
+        'resource' => Core05MutationResource::$slug,
+        'fieldSlug' => 'status',
+        'field' => (new Core05MutationResource)->fieldBySlug('status'),
+        'selected' => [],
+        'table' => true,
+    ])->assertStatus(422);
+
+    if (! config('aura.teams')) {
+        return;
+    }
+
+    $attachment = Attachment::create(['title' => 'Foreign picker attachment']);
+    DB::table('posts')->where('id', $attachment->getKey())->update([
+        'team_id' => ((int) $actor->current_team_id) + 999,
+    ]);
+
+    livewire(MediaUploader::class, [
+        'resource' => Core05MediaResource::$slug,
+        'fieldSlug' => 'hero_image',
+        'field' => (new Core05MediaResource)->fieldBySlug('hero_image'),
+        'selected' => [$attachment->getKey()],
+        'table' => true,
+    ])->assertStatus(422);
+});
+
 test('bulk mutations fail closed before an explicit or select-all selection exceeds the configured bound', function (
     bool $selectAll,
 ) {
@@ -1504,6 +1661,77 @@ test('select all bulk mutations honor filters and validated exclusions', functio
         ->and($excluded->fresh()->content)->toBe('unchanged')
         ->and($filteredOut->fresh()->content)->toBe('unchanged');
 });
+
+test('select all interaction keeps exact scoped mode while rows are excluded and reselected', function () {
+    $this->actingAs(createSuperAdmin());
+    $included = Core05MutationResource::create([
+        'title' => 'Needle included',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $excluded = Core05MutationResource::create([
+        'title' => 'Needle excluded',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    Core05MutationResource::create([
+        'title' => 'Outside search',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    $component = livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('search', 'Needle')
+        ->call('selectAllRows')
+        ->assertSet('selectAll', true)
+        ->assertSet('selected', [])
+        ->assertSet('selectAllExclusions', []);
+
+    $component
+        ->call('updateRowSelection', [$excluded->getKey()], false)
+        ->assertSet('selectAll', true)
+        ->assertSet('selectAllExclusions', [$excluded->getKey()])
+        ->call('bulkAction', 'markBulkReviewed')
+        ->assertHasNoErrors();
+
+    expect($included->fresh()->content)->toBe('reviewed-by-bulk-action')
+        ->and($excluded->fresh()->content)->toBe('unchanged');
+
+    $component
+        ->set('search', 'Needle')
+        ->call('selectAllRows')
+        ->call('updateRowSelection', [$excluded->getKey()], false)
+        ->call('updateRowSelection', [$excluded->getKey()], true)
+        ->assertSet('selectAll', true)
+        ->assertSet('selectAllExclusions', []);
+});
+
+test('effective scope changes reset an active select all lifecycle', function (string $property, mixed $value) {
+    $this->actingAs(createSuperAdmin());
+    Core05MutationResource::create([
+        'title' => 'Lifecycle target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->call('selectAllRows')
+        ->call('updateRowSelection', [Core05MutationResource::query()->value('id')], false)
+        ->set($property, $value)
+        ->assertSet('selectAll', false)
+        ->assertSet('selectAllExclusions', []);
+})->with([
+    'search' => ['search', 'changed'],
+    'custom filter' => ['filters.custom', [[
+        'filters' => [[
+            'name' => 'status',
+            'operator' => 'is',
+            'value' => 'draft',
+            'main_operator' => 'and',
+        ]],
+    ]]],
+    'quick filter' => ['quickFilters', ['type' => 'image']],
+]);
 
 test('select all bulk mutations reject forged exclusions outside the effective scope', function () {
     $this->actingAs(createSuperAdmin());
@@ -3191,7 +3419,7 @@ test('aggregate effective scopes fail closed before authorization or handlers', 
         ->and($resource->fresh()->content)->toBe('unchanged');
 });
 
-test('bulk mutation locks and dispatches records in deterministic primary-key order', function (bool $selectAll) {
+test('bulk mutation preserves display order while locking base rows in deterministic primary-key order', function (bool $selectAll) {
     $this->actingAs(createSuperAdmin());
 
     $resources = collect([
@@ -3211,7 +3439,7 @@ test('bulk mutation locks and dispatches records in deterministic primary-key or
             'status' => 'draft',
         ]),
     ]);
-    $expectedIds = $resources->pluck('id')->sort()->values()->all();
+    $expectedIds = $resources->pluck('id')->sortDesc()->values()->all();
     Core05MutationResource::$authoritativeQueryCallback = 'observe transaction';
 
     $component = livewire(Table::class, [
@@ -3356,6 +3584,38 @@ test('a denied mutation rolls back row changes made during authorization', funct
     'Kanban update' => 'Kanban update',
 ]);
 
+test('chunked bulk selection bounds every lock query and rolls back a denial in a later chunk', function () {
+    $this->actingAs(createSuperAdmin());
+    config()->set('aura.security.table_mutations.max_records', 5);
+    config()->set('aura.security.table_mutations.chunk_size', 2);
+    Gate::policy(Core05MutationResource::class, Core05DenyLastChunkMutationPolicy::class);
+    $resources = collect(range(1, 5))->map(fn (int $number) => Core05MutationResource::create([
+        'title' => 'Chunked authorization target '.$number,
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]));
+    Core05DenyLastChunkMutationPolicy::$deniedKey = $resources->last()->getKey();
+    $mounted = new Core05MutationResource;
+
+    $lockingQueries = core05CaptureLockedMutationQueries(
+        fn (): mixed => expect(fn (): mixed => app(TableMutationDispatcher::class)->dispatchBulk(
+            $mounted->newQuery(),
+            new TableMutationModelDescriptor($mounted),
+            'markBulkReviewed',
+            $mounted->getBulkActions(),
+            [],
+            true,
+            'record',
+        ))->toThrow(AuthorizationException::class),
+    );
+
+    expect($lockingQueries)->toHaveCount(3)
+        ->and(collect($lockingQueries)->every(
+            fn (array $query): bool => count($query['bindings']) <= 2,
+        ))->toBeTrue()
+        ->and($resources->map->fresh()->pluck('content')->all())->each->toBe('unchanged');
+});
+
 test('matching UUID mutation identities remain exact on every mutation surface', function (string $surface) {
     $this->actingAs(createSuperAdmin());
 
@@ -3495,6 +3755,96 @@ test('poisoned duplicate joins still invoke one authoritative record once', func
         ->assertHasNoErrors();
 
     expect($resource->fresh()->content)->toBe('1');
+});
+
+test('select all applies its cap after duplicate join identities are deduplicated', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    config()->set('aura.security.table_mutations.max_records', 2);
+    config()->set('aura.security.table_mutations.chunk_size', 1);
+    $duplicated = Core05MutationResource::create([
+        'title' => 'Duplicated first identity',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $second = Core05MutationResource::create([
+        'title' => 'Second identity',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    core05CreateMutationCollision($duplicated, $actor, duplicates: 5);
+    core05CreateMutationCollision($second, $actor);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->call('selectAllRows')
+        ->call('bulkAction', 'markBulkReviewed')
+        ->assertHasNoErrors();
+
+    expect($duplicated->fresh()->content)->toBe('reviewed-by-bulk-action')
+        ->and($second->fresh()->content)->toBe('reviewed-by-bulk-action');
+});
+
+test('select all preserves the effective displayed order before applying a query limit', function () {
+    $this->actingAs(createSuperAdmin());
+    $oldest = Core05MutationResource::create([
+        'title' => 'Oldest',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $middle = Core05MutationResource::create([
+        'title' => 'Middle',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $newest = Core05MutationResource::create([
+        'title' => 'Newest',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $queryHash = DynamicFunctions::add(
+        fn (): Builder => Core05MutationResource::query()->limit(2)
+    );
+
+    livewire(Table::class, ['query' => $queryHash, 'model' => new Core05MutationResource])
+        ->call('selectAllRows')
+        ->call('bulkAction', 'markBulkReviewed')
+        ->assertHasNoErrors();
+
+    expect($oldest->fresh()->content)->toBe('unchanged')
+        ->and($middle->fresh()->content)->toBe('reviewed-by-bulk-action')
+        ->and($newest->fresh()->content)->toBe('reviewed-by-bulk-action');
+});
+
+test('select all exclusions do not backfill rows outside the displayed query limit', function () {
+    $this->actingAs(createSuperAdmin());
+    $oldest = Core05MutationResource::create([
+        'title' => 'Oldest excluded-window resource',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $middle = Core05MutationResource::create([
+        'title' => 'Middle excluded-window resource',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $newest = Core05MutationResource::create([
+        'title' => 'Newest excluded-window resource',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $queryHash = DynamicFunctions::add(
+        fn (): Builder => Core05MutationResource::query()->limit(2)
+    );
+
+    livewire(Table::class, ['query' => $queryHash, 'model' => new Core05MutationResource])
+        ->call('selectAllRows')
+        ->call('updateRowSelection', [$newest->getKey()], false)
+        ->call('bulkAction', 'markBulkReviewed')
+        ->assertHasNoErrors();
+
+    expect($oldest->fresh()->content)->toBe('unchanged')
+        ->and($middle->fresh()->content)->toBe('reviewed-by-bulk-action')
+        ->and($newest->fresh()->content)->toBe('unchanged');
 });
 
 test('authoritative rehydration reapplies the resource type scope to dynamic mutation queries', function () {

@@ -1,157 +1,110 @@
 <div @selectfieldrows.window="selectRows($event.detail)" {{-- wire:poll.10000ms --}} x-data="{
-    selected: @entangle('selected'),
+    selected: $wire.entangle('selected'),
+    exclusions: $wire.entangle('selectAllExclusions'),
     rows: @js($rowIds),
     lastSelectedId: null,
     total: @js($rows->total()),
     selectPage: false,
-    currentPage: @entangle('paginators.page'),
-    selectAll: @entangle('selectAll'),
+    currentPage: $wire.entangle('paginators.page'),
+    selectAll: $wire.entangle('selectAll'),
     loading: false,
-    oldSelected: null,
 
     @if($field)
     selectRows(detail) {
         if (detail.slug == '{{ $field['slug'] }}') {
-            this.selected = detail.value
+            this.applySelection({ selected: detail.value, selectAll: false, exclusions: [] });
         }
     },
     @endif
 
     init() {
         $wire.on('selectedRows', (updatedSelected) => {
-            this.selected = updatedSelected[0];
+            this.applySelection({ selected: updatedSelected[0] || [], selectAll: false, exclusions: [] });
         });
 
         $wire.on('rowIdsUpdated', (ids) => {
-            this.rows = ids[0];
-            this.selectPage = false;
+            this.rows = ids[0] || [];
+            this.refreshPageSelection();
         });
 
-        if (this.selectAll) {
-            this.selectPage = true;
-        }
+        this.refreshPageSelection();
 
         @if($field)
-        {{-- Need to refactor this maybe because it's field specific --}}
         this.$watch('selected', value => {
-            // Emit an event with the new value
-            {{-- console.log('dispatch selection-changed', this.selected, value); --}}
             this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
         });
         @endif
 
-        // watch rows for changes
-        this.$watch('rows', (rows) => {
-            // Check if rows (array of ids) is included in this.selected. if so, set this.selectPage to true
-
-            //this.selectPage = rows.every(row => this.selected.includes(row.toString()));
-        });
-
-        this.$watch('currentPage', (rows) => {
-            this.$nextTick(() => {
-                this.selectPage = this.rows.every(row => this.selected.includes(row));
-            });
+        this.$watch('currentPage', () => {
+            this.$nextTick(() => this.refreshPageSelection());
         });
     },
 
-    selectCurrentPage() {
-        this.$nextTick(() => {
-            if (this.selectPage) {
-                // add this.rows to existing this.selected, unique
-                this.selected = Array.from(new Set([...this.selected.map(Number), ...this.rows.map(Number)]));
-
-                // if all rows are selected, set this.selectAll to true
-                this.selectAll = this.selected.length === this.total;
-            } else {
-
-                this.selectAll = false;
-
-                // remove this.rows from existing this.selected with new Set
-                this.selected = [...new Set([...this.selected.map(Number)].filter(item => !this.rows.map(Number).includes(item)))];
-            }
-        });
+    applySelection(state) {
+        this.selected = state.selected || [];
+        this.selectAll = Boolean(state.selectAll);
+        this.exclusions = state.exclusions || [];
+        this.refreshPageSelection();
     },
 
-    selectAllRows: async function() {
-
-        this.loading = true
-
-        let allSelected = await $wire.getAllTableRows()
-        this.selectAll = true
-
-        this.loading = false
-
-        this.$nextTick(() => {
-            // this.selected = allSelected with set
-            this.selected = [...new Set([...this.selected.map(Number), ...allSelected.map(Number)])];
-            this.selectPage = true;
-        });
+    contains(ids, id) {
+        return (ids || []).some(value => String(value) === String(id));
     },
 
-    resetBulk() {
-        this.selected = [];
-        this.selectPage = false;
-        this.selectAll = false;
+    isRowSelected(id) {
+        return this.selectAll
+            ? !this.contains(this.exclusions, id)
+            : this.contains(this.selected, id);
     },
 
-    deselectRows(ids) {
-        for (id of ids) {
-            let index = this.selected.indexOf(id)
-
-            if (index === -1) {
-                continue
-            }
-
-            this.selected.splice(index, 1)
-            {{-- this.toggleRow(false, id) --}}
-        }
+    selectionCount() {
+        return this.selectAll
+            ? Math.max(0, this.total - (this.exclusions || []).length)
+            : (this.selected || []).length;
     },
 
-    toggleRow(event, id) {
-    this.$nextTick(() => {
+    refreshPageSelection() {
+        this.selectPage = this.rows.length > 0 && this.rows.every(id => this.isRowSelected(id));
+    },
+
+    async selectCurrentPage() {
+        const shouldSelect = ! this.selectPage;
+
+        this.loading = true;
+        this.applySelection(await $wire.updateRowSelection(this.rows, Boolean(shouldSelect)));
+        this.loading = false;
+    },
+
+    async selectAllRows() {
+        this.loading = true;
+        this.applySelection(await $wire.selectAllRows());
+        this.loading = false;
+    },
+
+    async resetBulk() {
+        this.applySelection(await $wire.clearSelection());
+    },
+
+    async deselectRows(ids) {
+        this.applySelection(await $wire.updateRowSelection(ids, false));
+    },
+
+    async toggleRow(event, id) {
+        let ids = [id];
+
         if (event.shiftKey && this.lastSelectedId !== null) {
-            // Handle shift-select range
-            const currentIndex = this.rows.indexOf(id);
-            const lastIndex = this.rows.indexOf(this.lastSelectedId);
-            
+            const currentIndex = this.rows.findIndex(row => String(row) === String(id));
+            const lastIndex = this.rows.findIndex(row => String(row) === String(this.lastSelectedId));
+
             if (currentIndex !== -1 && lastIndex !== -1) {
-                const start = Math.min(lastIndex, currentIndex);
-                const end = Math.max(lastIndex, currentIndex);
-                
-                const rangeIds = this.rows.slice(start, end + 1);
-
-                // Determine whether to select or deselect based on the current state of the clicked checkbox
-                const shouldSelect = !this.selected.includes(id);
-
-                if (shouldSelect) {
-                    // Select the range
-                    this.selected = [...new Set([...this.selected, ...rangeIds])];
-                } else {
-                    // Deselect the range
-                    this.selected = this.selected.filter(selectedId => !rangeIds.includes(selectedId));
-                }
-            }
-        } else {
-            // Regular single row toggle
-            if (this.selected.includes(id)) {
-                // Deselect if already selected
-                this.selected = this.selected.filter(selectedId => selectedId !== id);
-            } else {
-                // Select if not already selected
-                this.selected.push(id);
+                ids = this.rows.slice(Math.min(lastIndex, currentIndex), Math.max(lastIndex, currentIndex) + 1);
             }
         }
 
-        // Update lastSelectedId for future shift-selects
+        const shouldSelect = !this.isRowSelected(id);
+        this.applySelection(await $wire.updateRowSelection(ids, shouldSelect));
         this.lastSelectedId = id;
-
-        // Update selectAll status
-        this.selectAll = this.selected.length === this.total;
-
-        // Update selectPage status
-        this.selectPage = this.rows.every(rowId => this.selected.includes(rowId));
-    });
-}
+    }
 }">
     {{-- Be aware that this file opens a div which closes at the end --}}
     @include('aura::components.table.context-menu')

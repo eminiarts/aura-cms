@@ -91,14 +91,18 @@
 
         {{-- @dump('field',  $field['slug']) --}}
 
-        <livewire:aura::media-uploader
-            :table="false"
-            :field="$field"
-            :selected="$selected"
-            :button="true"
-            :model="app('Aura\Base\Resources\Attachment')"
-            :for="$this->model->getSlug()"
-            :disabled="$field['disabled'] ?? false"
-        />
+        @can('viewAny', config('aura.resources.attachment'))
+            <livewire:aura::media-uploader
+                :table="false"
+                :field="$field"
+                :field-slug="$field['slug']"
+                :resource="$this->model->getSlug()"
+                :selected="$selected"
+                :button="true"
+                :model="app('Aura\Base\Resources\Attachment')"
+                :for="$this->model->getSlug()"
+                :disabled="$field['disabled'] ?? false"
+            />
+        @endcan
 
     </x-aura::fields.wrapper>

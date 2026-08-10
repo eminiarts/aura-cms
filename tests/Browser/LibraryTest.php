@@ -133,3 +133,25 @@ test('bulk selection deletes multiple attachments', function () {
         ->and(Attachment::query()->find($second->id))->toBeNull()
         ->and(Attachment::query()->find($third->id))->not->toBeNull();
 });
+
+test('filtered select all keeps unchecked rows excluded without selecting hidden attachments', function () {
+    $included = seedLibraryAttachment('target-included.jpg', 'image/jpeg');
+    $excluded = seedLibraryAttachment('target-excluded.jpg', 'image/jpeg');
+    $hidden = seedLibraryAttachment('hidden.jpg', 'image/jpeg');
+
+    $page = visit('/admin/attachment');
+
+    $page->type('table-search', 'target')->wait(2);
+    $page->check('checkbox_grid_'.$included->id)->wait(1);
+    $page->click('Select all')->wait(1);
+    $page->uncheck('checkbox_grid_'.$excluded->id)->wait(1);
+    $page->assertSee('You have selected all');
+    $page->click('Actions')->wait(1);
+    $page->click('Delete')->wait(2);
+
+    expect(Attachment::query()->find($included->id))->toBeNull()
+        ->and(Attachment::query()->find($excluded->id))->not->toBeNull()
+        ->and(Attachment::query()->find($hidden->id))->not->toBeNull();
+
+    $page->assertNoJavascriptErrors()->assertNoConsoleLogs();
+});

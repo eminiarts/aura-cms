@@ -23,13 +23,13 @@
                 <div class="relative">
                     <div class="overflow-hidden relative w-full bg-gray-100 rounded-lg shadow-sm transition-all duration-300 ease-in-out dark:bg-gray-800 aspect-w-10 aspect-h-7 hover:shadow-md focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100"
                         :class="{
-                            'shadow-[inset_0_0_0_4px_theme(colors.primary.500)]': selected.includes('{{ $row->id }}'),
-                            'opacity-50': maxFilesReached && !selected.includes('{{ $row->id }}'),
+                            'shadow-[inset_0_0_0_4px_theme(colors.primary.500)]': isRowSelected('{{ $row->id }}'),
+                            'opacity-50': maxFilesReached && !isRowSelected('{{ $row->id }}'),
                             'ring-2 ring-green-400 ring-offset-2 dark:ring-offset-gray-900': recentUploads.includes('{{ $row->id }}')
                         }">
                         @include('aura::attachment.thumbnail')
                         <div class="rounded-lg absolute inset-0 opacity-0 shadow-[inset_0_0_0_4px_theme(colors.primary.500)]"
-                             :class="{ 'opacity-100': selected.includes('{{ $row->id }}') }"></div>
+                             :class="{ 'opacity-100': isRowSelected('{{ $row->id }}') }"></div>
                     </div>
 
                     @if ($field)
@@ -55,13 +55,13 @@
                     <div class="absolute top-3 left-3">
                         <x-aura::input.checkbox
                             id="checkbox_grid_{{ $row->id }}"
-                            x-bind:checked="selected.includes('{{ $row->id }}')"
+                            x-bind:checked="isRowSelected('{{ $row->id }}')"
                             :value="$row->id"
                             x-bind:class="{
-                                'opacity-0 group-hover:opacity-100': !selected.includes('{{ $row->id }}'),
-                                'opacity-100': selected.includes('{{ $row->id }}')
+                                'opacity-0 group-hover:opacity-100': !isRowSelected('{{ $row->id }}'),
+                                'opacity-100': isRowSelected('{{ $row->id }}')
                             }"
-                            x-bind:disabled="maxFilesReached && !selected.includes('{{ $row->id }}')"
+                            x-bind:disabled="maxFilesReached && !isRowSelected('{{ $row->id }}')"
                             x-on:click.stop="toggleRow($event, {{ $row->id }})"
                         />
                     </div>

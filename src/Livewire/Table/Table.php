@@ -61,11 +61,7 @@ class Table extends Component
 
     public $disabled;
 
-    /**
-     * The field of the parent.
-     *
-     * @var string
-     */
+    /** @var array<string, mixed>|null The field of the parent. */
     #[Locked]
     public $field;
 
@@ -227,9 +223,9 @@ class Table extends Component
         return $this->model()->inputFields();
     }
 
-    public function getAllTableRows()
+    public function getAllTableRows(): array
     {
-        return $this->query()->pluck('id')->all();
+        return array_values($this->rowIds());
     }
 
     public function getParentModel()
@@ -388,7 +384,7 @@ class Table extends Component
     #[On('refreshTableSelected')]
     public function refreshTableSelected()
     {
-        $this->selected = [];
+        $this->resetSelectionForScopeChange();
     }
 
     /**
@@ -507,6 +503,7 @@ class Table extends Component
      */
     public function setQuickFilter(string $key, string|int|float|bool|array|null $value): void
     {
+        $this->resetSelectionForScopeChange();
         if ($value === null || $value === '') {
             unset($this->quickFilters[$key]);
         } else {
@@ -544,6 +541,13 @@ class Table extends Component
         $this->notify('Card status updated successfully');
     }
 
+    public function updated(string $property): void
+    {
+        if ($property === 'search') {
+            $this->resetSelectionForScopeChange();
+        }
+    }
+
     /**
      * Update the columns in the table.
      *
@@ -558,6 +562,11 @@ class Table extends Component
         }
     }
 
+    public function updatedQuickFilters(): void
+    {
+        $this->resetSelectionForScopeChange();
+    }
+
     /**
      * Update the selected rows in the table.
      *
@@ -566,6 +575,7 @@ class Table extends Component
     public function updatedSelected()
     {
         $this->selectAll = false;
+        $this->selectAllExclusions = [];
         $this->selectPage = false;
 
         // Only allow the max number of selected rows.
@@ -577,6 +587,11 @@ class Table extends Component
         } else {
             $this->dispatch('selectedRows', $this->selected);
         }
+    }
+
+    public function updatedSorts(): void
+    {
+        $this->resetSelectionForScopeChange();
     }
 
     /**
@@ -596,7 +611,10 @@ class Table extends Component
             abort(422, 'The table mutation search is invalid.');
         }
 
-        return $this->applySearch($query);
+        $query = $this->applySearch($query);
+        $this->assertValidMutationSorting();
+
+        return $this->applySorting($query);
     }
 
     /**
@@ -629,9 +647,9 @@ class Table extends Component
      * Security scope for every table mutation.
      *
      * Includes model global scopes, resource indexQuery(), parent relationship
-     * constraints, declared dynamic queries, and Kanban constraints. Search,
-     * saved UI filters, and sorting are presentation-only and intentionally
-     * live in rowsQuery() instead.
+     * constraints, declared dynamic queries, and Kanban constraints. Bulk
+     * selection composes its validated display filters, search, and sorting on
+     * top of this trusted base scope.
      */
     protected function mutationQuery(bool $forKanban = false)
     {
@@ -783,5 +801,29 @@ class Table extends Component
         }
 
         return array_values(array_unique($relations));
+    }
+
+    private function assertValidMutationSorting(): void
+    {
+        if (! is_array($this->sorts)) {
+            abort(422, 'The table mutation sorting is invalid.');
+        }
+
+        $allowedFields = collect($this->mutationModel()->getFields())
+            ->pluck('slug')
+            ->filter(static fn (mixed $slug): bool => is_string($slug))
+            ->push($this->mutationModel()->getKeyName())
+            ->unique();
+
+        foreach ($this->sorts as $field => $direction) {
+            if (
+                ! is_string($field)
+                || ! $allowedFields->containsStrict($field)
+                || ! is_string($direction)
+                || ! in_array(strtolower($direction), ['asc', 'desc'], true)
+            ) {
+                abort(422, 'The table mutation sorting is invalid.');
+            }
+        }
     }
 }

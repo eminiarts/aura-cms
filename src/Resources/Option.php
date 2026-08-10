@@ -54,6 +54,22 @@ class Option extends Resource
                     'width' => '100',
                 ],
             ],
+            [
+                'name' => 'Logo',
+                'type' => 'Aura\\Base\\Fields\\Image',
+                'on_create' => false,
+                'on_edit' => false,
+                'on_index' => false,
+                'slug' => 'logo',
+            ],
+            [
+                'name' => 'Logo Darkmode',
+                'type' => 'Aura\\Base\\Fields\\Image',
+                'on_create' => false,
+                'on_edit' => false,
+                'on_index' => false,
+                'slug' => 'logo-darkmode',
+            ],
         ];
     }
 
