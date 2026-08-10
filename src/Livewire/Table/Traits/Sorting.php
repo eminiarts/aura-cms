@@ -149,6 +149,10 @@ trait Sorting
 
                 $query->orderBy($field, $direction);
 
+                if ($this->model->isNumberField($field)) {
+                    $query->orderBy($qualifiedKeyName, 'desc');
+                }
+
                 return $query;
             }
         }
