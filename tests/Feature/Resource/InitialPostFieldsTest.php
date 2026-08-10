@@ -54,6 +54,30 @@ class ThrowingGlobalCustomResource extends ExplicitNullSharedCustomResource
     }
 }
 
+class PhysicalWriterGuardedGlobalResource extends ExplicitNullSharedCustomResource
+{
+    public static ?Closure $creatingAttack = null;
+
+    public static ?Closure $savingAttack = null;
+
+    protected static function booted(): void
+    {
+        parent::booted();
+
+        static::saving(function (self $resource): void {
+            if (self::$savingAttack !== null) {
+                (self::$savingAttack)($resource);
+            }
+        });
+
+        static::creating(function (self $resource): void {
+            if (self::$creatingAttack !== null) {
+                (self::$creatingAttack)($resource);
+            }
+        });
+    }
+}
+
 class NestedNonSharedTag extends Resource
 {
     public static string $type = 'NestedNonSharedTag';
@@ -119,9 +143,37 @@ beforeEach(function () {
 });
 
 afterEach(function () {
+    PhysicalWriterGuardedGlobalResource::$savingAttack = null;
+    PhysicalWriterGuardedGlobalResource::$creatingAttack = null;
     Schema::dropIfExists('explicit_null_shared_custom_resources');
     DB::purge('nested_global_write');
+    DB::purge('global_write_reconnect');
 });
+
+function core13PhysicalWriter(): PDO
+{
+    $writer = new PDO('sqlite::memory:');
+    $writer->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $writer->exec(<<<'SQL'
+        CREATE TABLE explicit_null_shared_custom_resources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR NOT NULL,
+            team_id INTEGER NULL,
+            user_id INTEGER NULL,
+            created_at DATETIME NULL,
+            updated_at DATETIME NULL
+        )
+        SQL);
+
+    return $writer;
+}
+
+function core13PhysicalWriterRowCount(PDO $writer): int
+{
+    return (int) $writer
+        ->query('SELECT COUNT(*) FROM explicit_null_shared_custom_resources')
+        ->fetchColumn();
+}
 
 it('rejects explicitly null team and creator values in ordinary creates', function () {
     $actor = createSuperAdmin();
@@ -224,6 +276,238 @@ it('restores the global-write invariant after a model event throws an Error', fu
     ]))->toThrow(Error::class, 'global write failure');
 
     expect(Resource::isGlobalWriteInProgress())->toBeFalse();
+});
+
+it('fails closed before the outer global insert when a saving listener swaps the physical writer', function () {
+    $connection = DB::connection();
+    $originalWriter = $connection->getPdo();
+    $substitutedWriter = core13PhysicalWriter();
+
+    PhysicalWriterGuardedGlobalResource::$savingAttack = function (PhysicalWriterGuardedGlobalResource $resource) use ($substitutedWriter): void {
+        $resource->getConnection()->setPdo($substitutedWriter);
+    };
+
+    try {
+        expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+            'name' => 'Redirected outer write',
+        ]))->toThrow(LogicException::class, 'physical database writer');
+    } finally {
+        PhysicalWriterGuardedGlobalResource::$savingAttack = null;
+        $connection->setPdo($originalWriter);
+    }
+
+    expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
+        ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
+});
+
+it('fails closed when a creating listener swaps the writer after the saving event', function () {
+    $connection = DB::connection();
+    $originalWriter = $connection->getPdo();
+    $substitutedWriter = core13PhysicalWriter();
+
+    PhysicalWriterGuardedGlobalResource::$creatingAttack = function (PhysicalWriterGuardedGlobalResource $resource) use ($substitutedWriter): void {
+        $resource->getConnection()->setPdo($substitutedWriter);
+    };
+
+    try {
+        expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+            'name' => 'Redirected creating write',
+        ]))->toThrow(LogicException::class, 'physical database writer');
+    } finally {
+        PhysicalWriterGuardedGlobalResource::$creatingAttack = null;
+        $connection->setPdo($originalWriter);
+    }
+
+    expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
+        ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
+});
+
+it('blocks a saving listener from issuing a query on the substituted writer', function () {
+    $connection = DB::connection();
+    $originalWriter = $connection->getPdo();
+    $substitutedWriter = core13PhysicalWriter();
+
+    PhysicalWriterGuardedGlobalResource::$savingAttack = function (PhysicalWriterGuardedGlobalResource $resource) use ($substitutedWriter): void {
+        $connection = $resource->getConnection();
+        $connection->setPdo($substitutedWriter);
+        $connection->table('explicit_null_shared_custom_resources')->insert([
+            'name' => 'Listener side-channel write',
+        ]);
+    };
+
+    try {
+        expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+            'name' => 'Outer side-channel candidate',
+        ]))->toThrow(LogicException::class, 'physical database writer');
+    } finally {
+        PhysicalWriterGuardedGlobalResource::$savingAttack = null;
+        $connection->setPdo($originalWriter);
+    }
+
+    expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
+        ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
+});
+
+it('fails closed when a saving listener swaps the writer and re-enters save on the same resource', function () {
+    $connection = DB::connection();
+    $originalWriter = $connection->getPdo();
+    $substitutedWriter = core13PhysicalWriter();
+    $reentered = false;
+
+    PhysicalWriterGuardedGlobalResource::$savingAttack = function (PhysicalWriterGuardedGlobalResource $resource) use ($substitutedWriter, &$reentered): void {
+        if ($reentered) {
+            return;
+        }
+
+        $reentered = true;
+        $resource->getConnection()->setPdo($substitutedWriter);
+        $resource->save();
+    };
+
+    try {
+        expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+            'name' => 'Reentrant redirected write',
+        ]))->toThrow(LogicException::class, 'physical database writer');
+    } finally {
+        PhysicalWriterGuardedGlobalResource::$savingAttack = null;
+        $connection->setPdo($originalWriter);
+    }
+
+    expect($reentered)->toBeTrue()
+        ->and(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
+        ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
+});
+
+it('cleans physical writer authority after an attack throws and permits a later global write', function () {
+    $connection = DB::connection();
+    $originalWriter = $connection->getPdo();
+    $substitutedWriter = core13PhysicalWriter();
+
+    PhysicalWriterGuardedGlobalResource::$savingAttack = function (PhysicalWriterGuardedGlobalResource $resource) use ($substitutedWriter): void {
+        $resource->getConnection()->setPdo($substitutedWriter);
+
+        throw new Error('physical writer attack');
+    };
+
+    try {
+        expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+            'name' => 'Throwing redirected write',
+        ]))->toThrow(Error::class, 'physical writer attack');
+    } finally {
+        PhysicalWriterGuardedGlobalResource::$savingAttack = null;
+        $connection->setPdo($originalWriter);
+    }
+
+    expect(fn () => PhysicalWriterGuardedGlobalResource::withoutGlobalScopes()->create([
+        'name' => 'Capability leak candidate',
+        'team_id' => null,
+    ]))->toThrow(LogicException::class, 'Use createGlobal() or createGlobalForSystem()');
+
+    $recovered = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Recovered global write',
+    ]);
+
+    expect($recovered->name)->toBe('Recovered global write')
+        ->and(core13PhysicalWriterRowCount($originalWriter))->toBe(1)
+        ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
+});
+
+it('invalidates global writer authority when the connection is reconnected or purged', function (string $attack): void {
+    $database = tempnam(sys_get_temp_dir(), 'aura-core13-writer-');
+
+    if ($database === false) {
+        throw new RuntimeException('Unable to create a temporary SQLite database.');
+    }
+
+    config()->set('database.connections.global_write_reconnect', [
+        'driver' => 'sqlite',
+        'database' => $database,
+        'prefix' => '',
+        'foreign_key_constraints' => false,
+    ]);
+    DB::purge('global_write_reconnect');
+
+    $connection = DB::connection('global_write_reconnect');
+    $connection->getPdo()->exec(<<<'SQL'
+        CREATE TABLE explicit_null_shared_custom_resources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR NOT NULL,
+            team_id INTEGER NULL,
+            user_id INTEGER NULL,
+            created_at DATETIME NULL,
+            updated_at DATETIME NULL
+        )
+        SQL);
+    $originalWriter = $connection->getPdo();
+
+    PhysicalWriterGuardedGlobalResource::$savingAttack = function () use ($attack): void {
+        if ($attack === 'reconnect') {
+            DB::reconnect('global_write_reconnect');
+
+            return;
+        }
+
+        DB::purge('global_write_reconnect');
+        DB::connection('global_write_reconnect');
+    };
+
+    try {
+        expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+            'name' => ucfirst($attack).' redirected write',
+        ], $connection))->toThrow(LogicException::class, 'physical database writer');
+
+        $currentConnection = DB::connection('global_write_reconnect');
+
+        expect($currentConnection->getPdo())->not->toBe($originalWriter)
+            ->and((int) $currentConnection->table('explicit_null_shared_custom_resources')->count())->toBe(0);
+
+        PhysicalWriterGuardedGlobalResource::$savingAttack = null;
+        $recovered = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+            'name' => ucfirst($attack).' recovery',
+        ], $currentConnection);
+
+        expect($recovered->name)->toBe(ucfirst($attack).' recovery')
+            ->and((int) $currentConnection->table('explicit_null_shared_custom_resources')->count())->toBe(1);
+    } finally {
+        PhysicalWriterGuardedGlobalResource::$savingAttack = null;
+        DB::purge('global_write_reconnect');
+        @unlink($database);
+    }
+})->with(['reconnect', 'purge']);
+
+it('does not leak global writer authority across repeated long worker failures', function () {
+    $connection = DB::connection();
+    $originalWriter = $connection->getPdo();
+    $substitutedWriters = [];
+
+    for ($attempt = 1; $attempt <= 3; $attempt++) {
+        $substitutedWriter = core13PhysicalWriter();
+        $substitutedWriters[] = $substitutedWriter;
+
+        PhysicalWriterGuardedGlobalResource::$savingAttack = function (PhysicalWriterGuardedGlobalResource $resource) use ($substitutedWriter): void {
+            $resource->getConnection()->setPdo($substitutedWriter);
+        };
+
+        try {
+            expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+                'name' => 'Long worker attack '.$attempt,
+            ]))->toThrow(LogicException::class, 'physical database writer');
+        } finally {
+            $connection->setPdo($originalWriter);
+        }
+    }
+
+    PhysicalWriterGuardedGlobalResource::$savingAttack = null;
+    $recovered = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Long worker recovery',
+    ]);
+
+    expect($recovered->name)->toBe('Long worker recovery')
+        ->and(core13PhysicalWriterRowCount($originalWriter))->toBe(1);
+
+    foreach ($substitutedWriters as $substitutedWriter) {
+        expect(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
+    }
 });
 
 it('does not grant a nested Tags save the parent global-write capability', function (string $api) {

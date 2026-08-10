@@ -24,6 +24,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use PDO;
 
 /**
  * Dynamic property access on a Resource resolves in a fixed precedence order,
@@ -104,9 +105,12 @@ class Resource extends Model implements DefinesFields
     /**
      * Exact model instances authorized by a named global-write contract.
      *
-     * @var \WeakMap<self, array{class: class-string<self>, connection: string, depth: int}>|null
+     * @var \WeakMap<self, array{class: class-string<self>, connection: Connection, writePdo: PDO, depth: int}>|null
      */
     private static ?\WeakMap $globalWriteCapabilities = null;
+
+    /** @var \WeakMap<Connection, bool>|null */
+    private static ?\WeakMap $globalWriteConnectionGuards = null;
 
     /** @var list<array{connection: string, owner_id: int|string|null}> */
     private static array $trustedOwnerContexts = [];
@@ -489,8 +493,7 @@ class Resource extends Model implements DefinesFields
 
         $capability = self::$globalWriteCapabilities[$resource];
 
-        return $capability['class'] === $resource::class
-            && $capability['connection'] === User::connectionCacheIdentity($resource->getConnection());
+        return self::globalWriteCapabilityMatches($resource, $capability);
     }
 
     // Override isRelation
@@ -819,8 +822,14 @@ class Resource extends Model implements DefinesFields
      */
     protected function fireModelEvent($event, $halt = true)
     {
+        $this->assertGlobalWriteCapabilityMatchesPhysicalWriter();
+
         if ($event !== 'deleting' && $event !== 'forceDeleting') {
-            return parent::fireModelEvent($event, $halt);
+            $result = parent::fireModelEvent($event, $halt);
+
+            $this->assertGlobalWriteCapabilityMatchesPhysicalWriter();
+
+            return $result;
         }
 
         $connectionIdentity = User::connectionCacheIdentity($this->getConnection());
@@ -948,23 +957,35 @@ class Resource extends Model implements DefinesFields
     {
         self::$globalWriteCapabilities ??= new \WeakMap;
 
-        $connectionIdentity = User::connectionCacheIdentity($resource->getConnection());
+        $connection = $resource->getConnection();
+        $writePdo = $connection->getPdo();
+
+        if (! $writePdo instanceof PDO) {
+            throw new \LogicException('A global write requires an active physical database writer.');
+        }
+
+        self::guardGlobalWriteConnection($connection);
         $existing = self::$globalWriteCapabilities[$resource] ?? null;
 
         if ($existing !== null
             && ($existing['class'] !== $resource::class
-                || $existing['connection'] !== $connectionIdentity)) {
-            throw new \LogicException('A global-write capability cannot change resource or database connection.');
+                || $existing['connection'] !== $connection
+                || $existing['writePdo'] !== $writePdo)) {
+            throw new \LogicException('A global-write capability cannot change resource or physical database writer.');
         }
 
         self::$globalWriteCapabilities[$resource] = [
             'class' => $resource::class,
-            'connection' => $connectionIdentity,
+            'connection' => $connection,
+            'writePdo' => $writePdo,
             'depth' => ($existing['depth'] ?? 0) + 1,
         ];
 
         try {
-            return $callback();
+            $result = $callback();
+            $resource->assertGlobalWriteCapabilityMatchesPhysicalWriter();
+
+            return $result;
         } finally {
             $capability = self::$globalWriteCapabilities[$resource] ?? null;
 
@@ -1006,6 +1027,18 @@ class Resource extends Model implements DefinesFields
         }
     }
 
+    private function assertGlobalWriteCapabilityMatchesPhysicalWriter(): void
+    {
+        if (self::$globalWriteCapabilities === null
+            || ! isset(self::$globalWriteCapabilities[$this])) {
+            return;
+        }
+
+        if (! self::globalWriteCapabilityMatches($this, self::$globalWriteCapabilities[$this])) {
+            throw new \LogicException('A global-write capability cannot change resource or physical database writer.');
+        }
+    }
+
     private function ensureDeleteUsesAuthenticatedConnection(): void
     {
         $connectionIdentity = User::connectionCacheIdentity($this->getConnection());
@@ -1025,6 +1058,42 @@ class Resource extends Model implements DefinesFields
                 'Authenticated actors cannot delete resources on another database connection.',
             );
         }
+    }
+
+    /**
+     * @param  array{class: class-string<self>, connection: Connection, writePdo: PDO, depth: int}  $capability
+     */
+    private static function globalWriteCapabilityMatches(Resource $resource, array $capability): bool
+    {
+        $connection = $resource->getConnection();
+
+        return $capability['class'] === $resource::class
+            && $capability['connection'] === $connection
+            && $capability['writePdo'] === $connection->getRawPdo();
+    }
+
+    private static function guardGlobalWriteConnection(Connection $connection): void
+    {
+        self::$globalWriteConnectionGuards ??= new \WeakMap;
+
+        if (isset(self::$globalWriteConnectionGuards[$connection])) {
+            return;
+        }
+
+        $connection->beforeExecuting(static function (mixed $_query, mixed $_bindings, Connection $queryConnection): void {
+            if (self::$globalWriteCapabilities === null) {
+                return;
+            }
+
+            foreach (self::$globalWriteCapabilities as $resource => $capability) {
+                if ($capability['connection'] === $queryConnection
+                    && ! self::globalWriteCapabilityMatches($resource, $capability)) {
+                    throw new \LogicException('A global-write capability cannot change resource or physical database writer.');
+                }
+            }
+        });
+
+        self::$globalWriteConnectionGuards[$connection] = true;
     }
 
     /**
