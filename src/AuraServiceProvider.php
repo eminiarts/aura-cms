@@ -536,9 +536,12 @@ class AuraServiceProvider extends PackageServiceProvider
         });
         $this->app->singleton(PreferenceManager::class);
 
-        // Register before Livewire boots its built-in SupportEvents hook. This
-        // lets secure embedded components authorize `__dispatch` before an
-        // event listener can execute, including later calls in one batch.
+        // Package discovery can load eminiarts/aura-cms before livewire/livewire
+        // (alphabetical order). Register Livewire's services before installing
+        // Aura's hook so its request listener uses Livewire's persistent event
+        // bus, while still preceding Livewire's executable hooks during boot.
+        // Application::register() is a no-op if Livewire is already registered.
+        $this->app->register(LivewireServiceProvider::class);
         ComponentHookRegistry::register(EmbeddedComponentAuthorizationHook::class);
 
         // Bind the concrete Aura instance as a process-persistent singleton so
@@ -549,13 +552,6 @@ class AuraServiceProvider extends PackageServiceProvider
         // registration after the first request. Per-request mutable state is
         // reset back to the boot baseline via Aura::flushState() instead.
         $this->app->singleton(Aura::class);
-
-        // Package discovery can load eminiarts/aura-cms before livewire/livewire
-        // (alphabetical order). Component-slot services resolve livewire.finder /
-        // livewire.factory during register when Aura is made below, so ensure
-        // Livewire has bound those services first. Application::register() is a
-        // no-op if Livewire is already registered.
-        $this->app->register(LivewireServiceProvider::class);
 
         $this->app->singleton(ComponentSlotCandidateValidator::class);
         $this->app->singleton(
