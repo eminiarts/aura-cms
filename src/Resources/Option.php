@@ -12,6 +12,8 @@ class Option extends Resource
 {
     use SoftDeletes;
 
+    public const EVERYONE_TEAM_ID = 0;
+
     public static $customTable = true;
 
     public static $globalSearch = false;
@@ -87,6 +89,13 @@ class Option extends Resource
         return [];
     }
 
+    public static function isEveryoneTeamId(mixed $teamId): bool
+    {
+        return $teamId !== null
+            && $teamId !== ''
+            && (string) $teamId === (string) self::EVERYONE_TEAM_ID;
+    }
+
     /**
      * Persist logical null as JSON `null` because the option value column is
      * intentionally non-nullable and SQL null means no stored row to callers.
@@ -146,8 +155,16 @@ class Option extends Resource
             $teamIds->push($this->getRawOriginal('team_id'));
         }
 
+        if ($teamIds->contains(fn ($teamId): bool => $teamId === null
+            || $teamId === ''
+            || self::isEveryoneTeamId($teamId))) {
+            Aura::clearGlobalOptionCache($connection);
+        }
+
         $teamIds
-            ->filter(fn ($teamId): bool => $teamId !== null && $teamId !== '')
+            ->filter(fn ($teamId): bool => $teamId !== null
+                && $teamId !== ''
+                && ! self::isEveryoneTeamId($teamId))
             ->unique()
             ->each(function ($teamId) use ($connection): void {
                 Team::clearOptionCacheForTeam($teamId, $connection);
