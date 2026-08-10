@@ -119,6 +119,11 @@ class CurrentTeamConnectionSearchResource extends Resource
             ],
         ];
     }
+
+    public function title(): mixed
+    {
+        return $this->getAttribute('title');
+    }
 }
 
 class CurrentTeamTenantAuthUser extends User
@@ -1288,6 +1293,7 @@ it('keeps container-connected non-user global search queries on that database', 
     if (! Route::has('aura.post.view')) {
         Route::get('/current-team-connection-search/{id}', fn () => null)
             ->name('aura.post.view');
+        Route::getRoutes()->refreshNameLookups();
     }
 
     Auth::setUser($tenant['global_admin']);
@@ -2348,7 +2354,7 @@ it('authorizes and queries the same actor-connected User model in global search'
     $globalSearch = new GlobalSearch;
     $globalSearch->search = 'Connection User Needle';
 
-    expect($globalSearch->getSearchResultsProperty()->flatten(1)->pluck('name')->all())
+    expect($globalSearch->getSearchResultsProperty()->flatten(1)->pluck('title')->all())
         ->toBe(['Tenant Connection User Needle'])
         ->and($default['member']->getKey())->toBe($tenant['member']->getKey());
 });

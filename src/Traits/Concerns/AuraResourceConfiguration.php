@@ -141,7 +141,7 @@ trait AuraResourceConfiguration
 
     public function newGlobalSearchQuery()
     {
-        return static::query();
+        return $this->newQuery();
     }
 
     public static function sharesRecordsAcrossTeams(): bool

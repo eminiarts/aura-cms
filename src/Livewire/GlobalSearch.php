@@ -286,13 +286,23 @@ class GlobalSearch extends Component
 
             $authorizationSubject = $reflection->newInstanceWithoutConstructor();
 
-            if (! $authorizationSubject instanceof Resource
-                || ! Gate::forUser($user)->allows('viewAny', $authorizationSubject)
+            if (! $authorizationSubject instanceof Resource) {
+                return null;
+            }
+
+            $authorizationSubject->setConnection($user->getConnectionName());
+
+            if (! Gate::forUser($user)->allows('viewAny', $authorizationSubject)
                 || $resourceClass::getGlobalSearch() !== true) {
                 return null;
             }
 
             $resource = app($resourceClass);
+
+            if ($resource instanceof User && $resourceClass === config('aura.resources.user')) {
+                $resource = $resource->newInstance();
+                $resource->setConnection($user->getConnectionName());
+            }
 
             if (! $resource instanceof Resource
                 || $resource::class !== $resourceClass
