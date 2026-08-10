@@ -1,13 +1,17 @@
 <?php
 
+use Aura\Base\Database\GuardedDatabaseManager;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Connection;
+use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Events\ConnectionEstablished;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\SQLiteConnection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
@@ -478,6 +482,9 @@ it('invalidates global writer authority when the connection is reconnected or pu
 })->with(['reconnect', 'purge']);
 
 it('blocks a purged same-name replacement connection from writing during a global save', function (): void {
+    expect(DB::getFacadeRoot())->toBeInstanceOf(GuardedDatabaseManager::class)
+        ->and(app(DatabaseManager::class))->toBe(DB::getFacadeRoot());
+
     $database = tempnam(sys_get_temp_dir(), 'aura-core13-purge-write-');
 
     if ($database === false) {
@@ -510,9 +517,10 @@ it('blocks a purged same-name replacement connection from writing during a globa
     PhysicalWriterGuardedGlobalResource::$savingAttack = function () use (&$replacementConnection): void {
         DB::purge('global_write_reconnect');
         $replacementConnection = DB::connection('global_write_reconnect');
-        $replacementConnection->table('explicit_null_shared_custom_resources')->insert([
-            'name' => 'Replacement listener side-channel write',
-        ]);
+        $replacementConnection->getPdo()->exec(<<<'SQL'
+            INSERT INTO explicit_null_shared_custom_resources (name)
+            VALUES ('Replacement listener raw PDO side-channel write')
+            SQL);
     };
 
     try {
@@ -520,12 +528,81 @@ it('blocks a purged same-name replacement connection from writing during a globa
             'name' => 'Outer purge candidate',
         ], $originalConnection))->toThrow(LogicException::class, 'physical database writer');
 
-        expect($replacementConnection)->not->toBeNull()
-            ->and($replacementConnection)->not->toBe($originalConnection)
-            ->and($replacementConnection->getPdo())->not->toBe($originalWriter)
-            ->and((int) $replacementConnection->table('explicit_null_shared_custom_resources')->count())->toBe(0);
+        expect($replacementConnection)->toBeNull();
+
+        $inspectionConnection = DB::connection('global_write_reconnect');
+
+        expect($inspectionConnection)->not->toBe($originalConnection)
+            ->and($inspectionConnection->getPdo())->not->toBe($originalWriter)
+            ->and((int) $inspectionConnection->table('explicit_null_shared_custom_resources')->count())->toBe(0);
     } finally {
         PhysicalWriterGuardedGlobalResource::$savingAttack = null;
+        DB::purge('global_write_reconnect');
+        @unlink($database);
+    }
+});
+
+it('blocks a late connection resolver from replacing the guarded writer during a global save', function (): void {
+    $database = tempnam(sys_get_temp_dir(), 'aura-core13-late-resolver-');
+
+    if ($database === false) {
+        throw new RuntimeException('Unable to create a temporary SQLite database.');
+    }
+
+    config()->set('database.connections.global_write_reconnect', [
+        'driver' => 'sqlite',
+        'database' => $database,
+        'prefix' => '',
+        'foreign_key_constraints' => false,
+    ]);
+    DB::purge('global_write_reconnect');
+
+    $originalConnection = DB::connection('global_write_reconnect');
+    $originalConnection->getPdo()->exec(<<<'SQL'
+        CREATE TABLE explicit_null_shared_custom_resources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR NOT NULL,
+            team_id INTEGER NULL,
+            user_id INTEGER NULL,
+            created_at DATETIME NULL,
+            updated_at DATETIME NULL
+        )
+        SQL);
+    $originalWriter = $originalConnection->getPdo();
+    $originalResolver = Connection::getResolver('sqlite');
+    $replacementConnection = null;
+
+    PhysicalWriterGuardedGlobalResource::$savingAttack = function () use (&$replacementConnection): void {
+        Connection::resolverFor(
+            'sqlite',
+            static fn (mixed $pdo, string $database, string $prefix, array $config): SQLiteConnection => new SQLiteConnection($pdo, $database, $prefix, $config),
+        );
+        DB::purge('global_write_reconnect');
+        $replacementConnection = DB::connection('global_write_reconnect');
+        $replacementConnection->table('explicit_null_shared_custom_resources')->insert([
+            'name' => 'Late resolver side-channel write',
+        ]);
+    };
+
+    try {
+        expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+            'name' => 'Outer late resolver candidate',
+        ], $originalConnection))->toThrow(LogicException::class, 'physical database writer');
+
+        expect($replacementConnection)->toBeNull();
+
+        $inspectionConnection = DB::connection('global_write_reconnect');
+
+        expect($inspectionConnection)->not->toBe($originalConnection)
+            ->and($inspectionConnection->getPdo())->not->toBe($originalWriter)
+            ->and((int) $inspectionConnection->table('explicit_null_shared_custom_resources')->count())->toBe(0);
+    } finally {
+        PhysicalWriterGuardedGlobalResource::$savingAttack = null;
+
+        if ($originalResolver instanceof Closure) {
+            Connection::resolverFor('sqlite', $originalResolver);
+        }
+
         DB::purge('global_write_reconnect');
         @unlink($database);
     }

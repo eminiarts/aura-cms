@@ -20,11 +20,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Database\MariaDbConnection;
-use Illuminate\Database\MySqlConnection;
-use Illuminate\Database\PostgresConnection;
-use Illuminate\Database\SQLiteConnection;
-use Illuminate\Database\SqlServerConnection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
@@ -117,9 +112,6 @@ class Resource extends Model implements DefinesFields
     /** @var \WeakMap<Connection, bool>|null */
     private static ?\WeakMap $globalWriteConnectionGuards = null;
 
-    /** @var array<string, \Closure> */
-    private static array $globalWriteConnectionResolvers = [];
-
     /** @var list<array{connection: string, owner_id: int|string|null}> */
     private static array $trustedOwnerContexts = [];
 
@@ -198,6 +190,32 @@ class Resource extends Model implements DefinesFields
     public function __isset($key)
     {
         return ! is_null($this->resolveDynamicAttribute($key));
+    }
+
+    public static function assertGlobalWriteConnectionMayBeAcquired(
+        string $connectionName,
+        ?Connection $connection = null,
+        bool $replacing = false,
+    ): void {
+        if (self::$globalWriteCapabilities === null) {
+            return;
+        }
+
+        $connectionName = Str::before($connectionName, '::');
+
+        foreach (self::$globalWriteCapabilities as $capability) {
+            if ($capability['connection']->getName() !== $connectionName) {
+                continue;
+            }
+
+            if (! $replacing
+                && $capability['connection'] === $connection
+                && $capability['writePdo'] === $connection->getRawPdo()) {
+                continue;
+            }
+
+            throw new \LogicException('A global-write capability cannot change resource or physical database writer.');
+        }
     }
 
     /**
@@ -603,45 +621,6 @@ class Resource extends Model implements DefinesFields
         });
     }
 
-    public static function registerGlobalWriteConnectionResolvers(): void
-    {
-        /** @var array<string, class-string<Connection>> $connectionClasses */
-        $connectionClasses = [
-            'mariadb' => MariaDbConnection::class,
-            'mysql' => MySqlConnection::class,
-            'pgsql' => PostgresConnection::class,
-            'sqlite' => SQLiteConnection::class,
-            'sqlsrv' => SqlServerConnection::class,
-        ];
-
-        foreach ($connectionClasses as $driver => $connectionClass) {
-            $currentResolver = Connection::getResolver($driver);
-
-            if (array_key_exists($driver, self::$globalWriteConnectionResolvers)
-                && self::$globalWriteConnectionResolvers[$driver] === $currentResolver) {
-                continue;
-            }
-
-            $guardedResolver = static function (
-                mixed $pdo,
-                string $database,
-                string $prefix,
-                array $config,
-            ) use ($currentResolver, $connectionClass): Connection {
-                $connection = $currentResolver !== null
-                    ? $currentResolver($pdo, $database, $prefix, $config)
-                    : new $connectionClass($pdo, $database, $prefix, $config);
-
-                self::guardGlobalWriteConnection($connection);
-
-                return $connection;
-            };
-
-            self::$globalWriteConnectionResolvers[$driver] = $guardedResolver;
-            Connection::resolverFor($driver, $guardedResolver);
-        }
-    }
-
     /**
      * Resolve a single field's raw (pre-display) value.
      *
@@ -1002,7 +981,6 @@ class Resource extends Model implements DefinesFields
      */
     protected static function withinGlobalWrite(Resource $resource, callable $callback): mixed
     {
-        self::registerGlobalWriteConnectionResolvers();
         self::$globalWriteCapabilities ??= new \WeakMap;
 
         $connection = $resource->getConnection();
