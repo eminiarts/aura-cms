@@ -8,7 +8,6 @@ use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Policies\ResourcePolicy;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
-use Aura\Base\Resources\Role;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
@@ -189,16 +188,25 @@ test('picker details reject a valid snapshot issued for another picker component
 
 test('the attachment id cannot bypass the view policy', function () {
     $user = createAdmin();
-    $role = Role::where('slug', 'editor')->firstOrFail();
+    $roles = $user->roles()->where('slug', 'editor');
+
+    if (config('aura.teams')) {
+        $roles->wherePivot('team_id', $user->current_team_id);
+    }
+
+    $role = $roles->firstOrFail();
     $permissions = $role->permissions;
     $permissions['view-attachment'] = false;
     $permissions['viewAny-attachment'] = true;
     $role->update(['permissions' => $permissions]);
 
-    $this->actingAs($user->refresh());
+    $this->actingAs($user = $user->refresh());
     Gate::policy(Attachment::class, ResourcePolicy::class);
 
     $attachment = detailsAttachment('private.jpg');
+
+    expect($user->isSuperAdmin())->toBeFalse()
+        ->and($user->hasPermissionTo('view', $attachment))->toBeFalse();
 
     livewire(AttachmentDetails::class)
         ->call('open', $attachment->id)

@@ -16,36 +16,27 @@ use function Pest\Livewire\livewire;
  */
 function membershipRole(int $teamId, array $attributes = []): Role
 {
-    return Role::withoutGlobalScopes()->create(array_merge([
+    return Role::createForTeamForSystem($teamId, array_merge([
         'type' => 'Role',
         'name' => 'Member',
         'slug' => 'member-'.$teamId.'-'.uniqid(),
         'super_admin' => false,
         'permissions' => [],
-        'team_id' => $teamId,
     ], $attributes));
 }
 
 /**
- * A Global Role (team_id = null) in the shared catalog. Written with
- * saveQuietly() so the InitialPostFields saving hook does not re-team the null
- * team_id to the current team — the same posture Role::firstOrCreateCatalogRole
- * uses.
+ * A Global Role in the shared catalog, created through the trusted test contract.
  */
 function catalogRole(string $slug, string $name, bool $superAdmin = false): Role
 {
-    $role = Role::withoutGlobalScopes()->newModelInstance([
+    return Role::createGlobalForSystem([
         'type' => 'Role',
         'name' => $name,
         'slug' => $slug,
         'super_admin' => $superAdmin,
         'permissions' => [],
-        'team_id' => null,
     ]);
-
-    $role->saveQuietly();
-
-    return $role;
 }
 
 /** Record a Membership: user in $team with role $roleId (pivot team_id). */
@@ -386,7 +377,9 @@ describe('Constraints and guards', function () {
         $role = membershipRole($team->id);
         $viewed = User::factory()->create();
 
-        Cache::put('user.'.$viewed->id.'.teams', collect(['stale']), now()->addHour());
+        $cacheKey = User::teamListCacheKey($viewed->id, $viewed->getConnection());
+
+        Cache::put($cacheKey, collect(['stale']), now()->addHour());
 
         livewire(UserTeams::class, ['userId' => $viewed->id])
             ->set('attachTeamId', $team->id)
@@ -394,7 +387,7 @@ describe('Constraints and guards', function () {
             ->call('attach')
             ->assertHasNoErrors();
 
-        expect(Cache::has('user.'.$viewed->id.'.teams'))->toBeFalse();
+        expect(Cache::has($cacheKey))->toBeFalse();
     });
 });
 

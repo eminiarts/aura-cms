@@ -400,7 +400,6 @@ test('request local hook definitions are reauthorized after a fresh application 
     CachedPolicyNavigationHook::$invocations = 0;
     app('hook_manager')->addHook('navigation', [CachedPolicyNavigationHook::class, 'apply']);
     $allowedUser = createGlobalAdmin();
-    $deniedUser = createAdmin();
     $this->actingAs($allowedUser);
 
     expect(collect(Aura::navigation()['Custom Group'])->pluck('type'))
@@ -409,6 +408,7 @@ test('request local hook definitions are reauthorized after a fresh application 
 
     $this->refreshApplication();
     Cache::swap($cache);
+    $deniedUser = createAdmin();
     $this->actingAs($deniedUser);
     Aura::fake();
     app('hook_manager')->addHook('navigation', [CachedPolicyNavigationHook::class, 'apply']);
@@ -416,7 +416,8 @@ test('request local hook definitions are reauthorized after a fresh application 
     expect(Aura::navigation())->not->toHaveKey('Custom Group')
         ->and(CachedPolicyNavigationHook::$invocations)->toBe(2);
 
-    $this->actingAs($allowedUser);
+    $freshAllowedUser = createGlobalAdmin();
+    $this->actingAs($freshAllowedUser);
 
     expect(collect(Aura::navigation()['Custom Group'])->pluck('type'))
         ->toContain('CachedPolicyPage')
@@ -429,7 +430,6 @@ test('user aware resource badges are rebuilt after a serialized cache read in a 
     Cache::swap($cache);
     Aura::registerResources([UserAwareBadgeNavigationModel::class]);
     $firstUser = createGlobalAdmin();
-    $secondUser = createGlobalAdmin();
     $this->actingAs($firstUser);
 
     $firstBadge = collect(Aura::navigation()['Resources'])
@@ -437,6 +437,7 @@ test('user aware resource badges are rebuilt after a serialized cache read in a 
 
     $this->refreshApplication();
     Cache::swap($cache);
+    $secondUser = createGlobalAdmin(['id' => $firstUser->getKey() + 1000]);
     $this->actingAs($secondUser);
     Aura::fake();
     Aura::registerResources([UserAwareBadgeNavigationModel::class]);
@@ -465,6 +466,8 @@ test('team scoped resource badges are rebuilt after same user switches teams', f
     ]);
     $this->actingAs($user);
 
+    expect($user->switchTeam($firstTeam))->toBeTrue();
+
     TeamScopedBadgeNavigationModel::withoutGlobalScopes()->create([
         'team_id' => $firstTeam->id,
         'type' => TeamScopedBadgeNavigationModel::$type,
@@ -475,11 +478,20 @@ test('team scoped resource badges are rebuilt after same user switches teams', f
         'type' => TeamScopedBadgeNavigationModel::$type,
         'title' => 'First team two',
     ]);
-    TeamScopedBadgeNavigationModel::withoutGlobalScopes()->create([
+    $secondTeamAttributes = [
         'team_id' => $secondTeam->id,
         'type' => TeamScopedBadgeNavigationModel::$type,
         'title' => 'Second team one',
-    ]);
+    ];
+
+    expect($user->teams()->whereKey($secondTeam->getKey())->exists())->toBeTrue()
+        ->and(fn () => TeamScopedBadgeNavigationModel::withoutGlobalScopes()->create($secondTeamAttributes))
+        ->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+    TeamScopedBadgeNavigationModel::createForTeamForSystem(
+        $secondTeam->getKey(),
+        $secondTeamAttributes,
+    );
     Aura::registerResources([TeamScopedBadgeNavigationModel::class]);
 
     $badge = fn (): int => collect(Aura::navigation()['Resources'])

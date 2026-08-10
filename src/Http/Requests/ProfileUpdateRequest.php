@@ -2,7 +2,6 @@
 
 namespace Aura\Base\Http\Requests;
 
-use Aura\Base\Resources\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,9 +14,13 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules()
     {
+        $user = $this->user();
+        $connectionName = $user->getConnectionName();
+        $usersTable = ($connectionName ? $connectionName.'.' : '').$user->getTable();
+
         return [
             'name' => ['string', 'max:255'],
-            'email' => ['email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
+            'email' => ['email', 'max:255', Rule::unique($usersTable)->ignore($user->getKey())],
         ];
     }
 }

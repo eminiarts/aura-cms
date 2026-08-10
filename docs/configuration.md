@@ -492,9 +492,18 @@ Override any view to customize the UI:
     'redirect' => '/admin',
     '2fa' => true,
     'user_invitations' => true,
+    'invitation_expiry' => 7,
+    'invitation_connections' => [],
+    'invitation_legacy_connection' => null,
     'create_teams' => true,
 ],
 ```
+
+Invitation URLs sign both the connection name and its database fingerprint.
+List additional named database connections in `invitation_connections`. The
+configured Team and TeamInvitation resource connections are allowed
+automatically. Pre-binding links resolve only on `invitation_legacy_connection`;
+`null` means the configured TeamInvitation resource connection.
 
 Configure authentication behavior for different scenarios:
 

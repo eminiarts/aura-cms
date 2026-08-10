@@ -9,7 +9,6 @@ use Aura\Base\Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Cache;
 use Pest\Browser\Api\PendingAwaitablePage;
 
 uses(TestCase::class)->in(__DIR__.'/Feature', __DIR__.'/FeatureWithDatabaseMigrations', __DIR__.'/Unit');
@@ -62,7 +61,23 @@ uses()->afterEach(function () {
 
 function createPost(array $attributes = []): Post
 {
-    return Post::factory()->create($attributes);
+    if (! config('aura.teams')) {
+        $post = Post::factory()->make($attributes);
+        $ownerId = $post->getAttribute('user_id');
+
+        if ($ownerId === null) {
+            return Post::withoutGlobalScopes()->create($post->getAttributes());
+        }
+
+        return Post::createForOwnerForSystem($ownerId, $post->getAttributes());
+    }
+
+    $post = Post::factory()->make($attributes);
+
+    return Post::createForTeamForSystem(
+        $post->getAttribute('team_id'),
+        $post->getAttributes(),
+    );
 }
 
 /**
@@ -106,8 +121,12 @@ function foreignTeam(): Team
  */
 function soleMemberOf(Team $team): User
 {
-    $role = Role::where('team_id', $team->id)->first()
-        ?? Role::factory()->create(['team_id' => $team->id]);
+    $role = Role::withoutGlobalScopes()->where('team_id', $team->id)->first();
+
+    if (! $role) {
+        $roleAttributes = Role::factory()->make(['team_id' => $team->id])->getAttributes();
+        $role = Role::createForTeamForSystem($team->id, $roleAttributes);
+    }
 
     $member = User::factory()->create();
     $member->roles()->attach($role->id, ['team_id' => $team->id]);
@@ -134,8 +153,8 @@ function createSuperAdmin()
     // Set current_team_id of the user
     $user->update(['current_team_id' => $team->id]);
 
-    // Clear the cache for the user's current_team_id to ensure TeamScope uses the updated value
-    Cache::forget("user_{$user->id}_current_team_id");
+    // Clear the connection-specific cache so TeamScope observes the updated value.
+    User::clearCurrentTeamCache($user->id, $user->getConnection());
 
     $user->refresh();
 
@@ -184,11 +203,11 @@ function createAdmin()
 
     $team = null;
     if (config('aura.teams')) {
-        $team = Team::first() ?: Team::factory()->create();
+        $team = Team::withoutGlobalScopes()->first() ?: Team::factory()->create();
         $user->update(['current_team_id' => $team->id]);
     }
 
-    $role = Role::create([...($team ? ['team_id' => $team->id] : []), 'type' => 'Role', 'title' => 'Editor', 'slug' => 'editor', 'name' => 'Editor', 'description' => 'Editor has limited permissions.', 'super_admin' => false, 'permissions' => [
+    $roleAttributes = ['type' => 'Role', 'title' => 'Editor', 'slug' => 'editor', 'name' => 'Editor', 'description' => 'Editor has limited permissions.', 'super_admin' => false, 'permissions' => [
         'view-attachment' => true,
         'viewAny-attachment' => true,
         'create-attachment' => true,
@@ -253,7 +272,11 @@ function createAdmin()
         'delete-TeamInvitation' => false,
         'forceDelete-TeamInvitation' => false,
         'scope-TeamInvitation' => false,
-    ]]);
+    ]];
+
+    $role = $team
+        ? Role::createForTeamForSystem($team->id, $roleAttributes)
+        : Role::create($roleAttributes);
 
     // Associate the role with the user using the proper relationship
     if (config('aura.teams')) {
@@ -262,6 +285,7 @@ function createAdmin()
         $user->roles()->sync([$role->id]);
     }
 
+    $user->unsetRelation('roles');
     $user->refresh();
 
     return $user;

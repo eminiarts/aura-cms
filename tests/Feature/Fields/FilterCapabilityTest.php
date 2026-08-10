@@ -923,12 +923,21 @@ test('nonempty malformed payloads fail closed without escaping tenant or parent 
         'stage' => 'draft',
     ]);
     if (config('aura.teams')) {
-        ParentScopedFilterCapabilityResource::withoutGlobalScopes()->create([
+        $foreignTeam = foreignTeam();
+        $foreignAttributes = [
             'type' => ParentScopedFilterCapabilityResource::$type,
             'title' => 'Other tenant outside parent',
-            'team_id' => $this->user->current_team_id + 1000,
+            'team_id' => $foreignTeam->getKey(),
             'stage' => 'draft',
-        ]);
+        ];
+
+        expect(fn () => ParentScopedFilterCapabilityResource::withoutGlobalScopes()->create($foreignAttributes))
+            ->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+        ParentScopedFilterCapabilityResource::createForTeamForSystem(
+            $foreignTeam->getKey(),
+            $foreignAttributes,
+        );
     }
 
     $component = livewire(Table::class, ['model' => $parent, 'parent' => $parent]);

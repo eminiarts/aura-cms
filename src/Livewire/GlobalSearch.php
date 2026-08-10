@@ -55,13 +55,22 @@ class GlobalSearch extends Component
 
         foreach ($resources as $resource) {
             $model = app($resource);
+            $authenticatedUser = auth()->user();
+
+            if (! $authenticatedUser instanceof User
+                || User::connectionCacheIdentity($authenticatedUser->getConnection())
+                    !== User::connectionCacheIdentity($model->getConnection())
+                || ! Gate::allows('viewAny', $model)) {
+                continue;
+            }
+
             $searchableFields = $model->getSearchableFields()->pluck('slug');
 
             if ($searchableFields->isEmpty()) {
                 continue;
             }
 
-            $results = $resource::query()
+            $results = $model->newQuery()
                 ->select($model->getTable().'.*')
                 ->where(function (Builder $query) use ($model, $searchableFields): void {
                     foreach ($searchableFields as $field) {
@@ -88,10 +97,13 @@ class GlobalSearch extends Component
             $searchResults->push(...$results);
         }
 
-        $userPrototype = app(User::class);
+        /** @var User $configuredUser */
+        $configuredUser = app(config('aura.resources.user'));
+        $userPrototype = $configuredUser->newInstance();
+        $userPrototype->setConnection($actor->getConnectionName());
 
         if ($actorGate->allows('viewAny', $userPrototype)) {
-            $userResults = User::query()
+            $userResults = $userPrototype->newQuery()
                 ->where(function (Builder $query): void {
                     $query->where('name', 'like', '%'.$this->search.'%')
                         ->orWhere('email', 'like', '%'.$this->search.'%');

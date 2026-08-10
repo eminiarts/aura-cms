@@ -1496,13 +1496,21 @@ test('role-side bulk detach invalidates every affected membership without invali
     $actor = createSuperAdmin();
     $firstTeam = $actor->currentTeam;
     $secondTeam = Team::factory()->create(['name' => 'Second team']);
-    $role = Role::withoutGlobalScopes()->create([
+
+    expect(fn () => Role::withoutGlobalScopes()->create([
+        'name' => 'Rejected foreign role',
+        'slug' => 'rejected-foreign-role',
+        'user_id' => $actor->id,
+        'team_id' => $firstTeam->id,
+    ]))->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+    $role = Role::createForTeamForSystem($firstTeam->id, [
         'name' => 'Bulk membership role',
         'slug' => 'bulk-membership-role',
         'permissions' => [],
         'super_admin' => false,
-        'team_id' => $firstTeam->id,
-    ]);
+        'user_id' => $actor->id,
+    ], $firstTeam->getConnection());
     $member = User::factory()->create(['current_team_id' => $firstTeam->id]);
     $unrelatedMember = User::factory()->create(['current_team_id' => $secondTeam->id]);
 
@@ -1529,7 +1537,15 @@ test('pivot-constrained detach preserves the same role membership in another tea
     $actor = createSuperAdmin();
     $firstTeam = $actor->currentTeam;
     $secondTeam = Team::factory()->create();
-    $role = Role::factory()->create(['team_id' => $firstTeam->id]);
+
+    expect(fn () => Role::factory()->create(['team_id' => $firstTeam->id]))
+        ->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+    $role = Role::createForTeamForSystem($firstTeam->id, [
+        'name' => 'Pivot constrained role',
+        'slug' => 'pivot-constrained-role',
+        'user_id' => $actor->id,
+    ], $firstTeam->getConnection());
     $member = User::factory()->create(['current_team_id' => $firstTeam->id]);
 
     $member->roles()->attach($role->id, ['team_id' => $firstTeam->id]);
@@ -1770,7 +1786,7 @@ test('wildcard option reads preserve numeric suffix keys across legacy and canon
     ]);
 });
 
-test('regular user teams survive a serialized cache read in a fresh application container', function () {
+test('regular user teams survive a serialized cache read while reauthorizing in a fresh application container', function () {
     $cache = serializedOptionCacheRepository();
     Cache::swap($cache);
 
@@ -1791,7 +1807,9 @@ test('regular user teams survive a serialized cache read in a fresh application 
     expect($user->getTeams())
         ->toBeInstanceOf(EloquentCollection::class)
         ->each->toBeInstanceOf(Team::class)
-        ->and($queries)->toBeEmpty();
+        ->and($queries)->toHaveCount(1)
+        ->and($queries[0])->toContain('"global_admin"')
+        ->and($queries[0])->not->toContain('"teams"');
 })->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
 
 test('regular user team snapshots preserve membership pivot class and attributes', function () {
@@ -1812,7 +1830,7 @@ test('regular user team snapshots preserve membership pivot class and attributes
     $assertMembership($user->getTeams()->firstWhere('id', $relationshipTeam->id));
 })->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
 
-test('global admin teams survive a serialized cache read in a fresh application container', function () {
+test('global admin teams survive a serialized cache read while reauthorizing in a fresh application container', function () {
     $cache = serializedOptionCacheRepository();
     Cache::swap($cache);
 
@@ -1835,7 +1853,9 @@ test('global admin teams survive a serialized cache read in a fresh application 
     expect($globalAdmin->getTeams())
         ->toBeInstanceOf(EloquentCollection::class)
         ->each->toBeInstanceOf(Team::class)
-        ->and($queries)->toBeEmpty();
+        ->and($queries)->toHaveCount(2)
+        ->and($queries[0])->toContain('"global_admin"')
+        ->and($queries[1])->toContain('from "teams" inner join "user_role"');
 })->skip(fn () => ! config('aura.teams'), 'Team option context requires teams enabled.');
 
 test('global admin team snapshots retain soft delete filtering', function () {
@@ -1964,12 +1984,18 @@ test('team option reads require an authorized current team across users and requ
     $firstMember = soleMemberOf($firstTeam);
     $secondMember = soleMemberOf($secondTeam);
 
+    expect(fn () => Option::withoutGlobalScopes()->create([
+        'team_id' => $firstTeam->id,
+        'name' => 'rejected-foreign-secret',
+        'value' => ['team' => $firstTeam->id],
+    ]))->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
     foreach ([$firstTeam, $secondTeam] as $team) {
-        Option::withoutGlobalScopes()->create([
-            'team_id' => $team->id,
+        Option::createForTeamForSystem($team->id, [
+            'user_id' => null,
             'name' => 'legacy-unscoped-secret',
             'value' => ['team' => $team->id],
-        ]);
+        ], $team->getConnection());
     }
 
     $firstNoTeamUser = User::factory()->create(['current_team_id' => null]);

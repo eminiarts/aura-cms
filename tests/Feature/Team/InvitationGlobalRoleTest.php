@@ -92,16 +92,12 @@ it('lets an existing user accept an invitation carrying a team Shadow role id', 
     $team = $this->user->currentTeam;
 
     // A Global Role and the current team's Shadow of it (same slug, team-owned).
-    // saveQuietly keeps the global row's team_id null (no auto-team from the
-    // acting user's context).
-    $global = Role::withoutGlobalScopes()->newModelInstance([
+    $global = Role::createGlobalForSystem([
         'name' => 'Global Editor',
         'slug' => 'editor',
         'super_admin' => false,
         'permissions' => [],
-        'team_id' => null,
     ]);
-    $global->saveQuietly();
 
     $shadow = Role::withoutGlobalScopes()->create([
         'name' => 'Team Editor',
@@ -150,10 +146,9 @@ it('lets an existing user accept an invitation carrying a team Shadow role id', 
 it('still refuses an invitation whose role belongs to another team', function () {
     $team = $this->user->currentTeam;
     $otherTeam = Team::factory()->createQuietly();
-    $otherTeamRole = Role::create([
+    $otherTeamRole = Role::createForTeamForSystem($otherTeam->id, [
         'name' => 'Other Role',
         'slug' => 'other-role',
-        'team_id' => $otherTeam->id,
         'super_admin' => false,
         'permissions' => [],
     ]);

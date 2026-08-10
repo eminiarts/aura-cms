@@ -2,9 +2,12 @@
 
 namespace Aura\Base\Models\Scopes;
 
+use Aura\Base\Resource;
 use Aura\Base\Resources\Option;
-use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Connection;
+use Illuminate\Database\DatabaseTransactionRecord;
+use Illuminate\Database\DatabaseTransactionsManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
@@ -15,141 +18,392 @@ use Illuminate\Support\Facades\Gate;
 
 class TeamScope implements Scope
 {
-    // Static flag to prevent recursive calls
-    private static $applying = false;
+    private static bool $applying = false;
+
+    private static int $bypassDepth = 0;
+
+    /** @var array<string, int|string|null> */
+    private static array $currentTeamIds = [];
+
+    /** @var list<array{connection: string, team_id: int|string}> */
+    private static array $trustedTeamContexts = [];
 
     /**
      * Apply the scope to a given Eloquent query builder.
-     *
-     * @return void
      */
-    public function apply(Builder $builder, Model $model)
+    public function apply(Builder $builder, Model $model): void
     {
-        if (! config('aura.teams')) {
+        if (! config('aura.teams') || self::$bypassDepth > 0) {
             return;
         }
 
-        // Prevent recursive calls
         if (self::$applying) {
             return;
         }
 
-        // Don't apply scope in console (optional, as you commented it out)
-        // if (app()->runningInConsole()) {
-        //     return;
-        // }
-
         self::$applying = true;
 
         try {
-            $currentTeamId = $this->getCurrentTeamId();
+            if (! $this->contextUsesModelConnection($model)) {
+                $builder->whereRaw('1 = 0');
+
+                return;
+            }
+
+            $currentTeamId = $this->getCurrentTeamId($model);
+            $authUser = Auth::user();
+            $hasTenantContext = self::$trustedTeamContexts !== [];
 
             if (Option::isEveryoneTeamId($currentTeamId)) {
                 $builder->whereRaw('1 = 0');
-                self::$applying = false;
 
                 return;
             }
 
-            // Handle User model specially
             if ($model->getTable() === 'users') {
+                if ($hasTenantContext && $currentTeamId !== null) {
+                    $builder->whereHas('teams', function ($query) use ($currentTeamId) {
+                        $query->where('teams.id', $currentTeamId);
+                    });
 
-                // Only apply team scoping if teams are enabled
-                if (config('aura.teams') && $currentTeamId !== null && $currentTeamId !== '') {
-                    // A Global Admin transcends the tenant boundary: their user
-                    // queries are never restricted to current-team members. The
-                    // bypass is gated strictly on the authenticated user being a
-                    // Global Admin, so it never leaks into ordinary requests.
-                    // (Auth::user() is already resolved here; the $applying guard
-                    // above prevents any re-entry while it is read.) The gate is
-                    // consulted directly so the check is host-overridable and safe
-                    // for any authenticatable, not only the Aura User model.
-                    $authUser = Auth::user();
-
-                    if (! ($authUser && Gate::forUser($authUser)->allows(User::GLOBAL_ADMIN_GATE))) {
-                        $builder->whereHas('teams', function ($query) use ($currentTeamId) {
-                            $query->where('teams.id', $currentTeamId);
-                        });
-                    }
+                    return;
                 }
 
-                self::$applying = false;
+                $isGlobalAdmin = $authUser && Gate::forUser($authUser)->allows(User::GLOBAL_ADMIN_GATE);
 
-                return;  // Early return is important.
-            }
+                if ($isGlobalAdmin) {
+                    return;
+                }
 
-            // --- Rest of your scope (for other models) ---
+                if ($currentTeamId !== null) {
+                    $builder->whereHas('teams', function ($query) use ($currentTeamId) {
+                        $query->where('teams.id', $currentTeamId);
+                    });
 
-            // For team-enabled filtering
-            if ($currentTeamId === null || $currentTeamId === '') {
-                self::$applying = false;
+                    return;
+                }
+
+                if ($authUser && ! $hasTenantContext) {
+                    $builder->whereKey($authUser->getKey());
+
+                    return;
+                }
+
+                $builder->whereRaw('1 = 0');
 
                 return;
             }
 
-            // For Team model, don't apply team scope
             if ($model->getTable() === 'teams') {
-                self::$applying = false;
+                if ($hasTenantContext && $currentTeamId !== null) {
+                    $builder->whereKey($currentTeamId);
+                } elseif (! $authUser) {
+                    $builder->whereRaw('1 = 0');
+                }
 
                 return;
             }
 
-            // Roles resolve against the Role Catalog: within a team, queries see
-            // both the team's own Team Roles and the shared Global Roles
-            // (team_id = null). The merged/de-duplicated Roles UI is handled
-            // elsewhere; here we only make Global Roles visible at the query
-            // layer. Shadow resolution itself goes through Role::resolveForTeam.
-            if ($model instanceof Role) {
-                $model->scopeVisibleToTeam($builder, $currentTeamId);
+            $sharesRecordsAcrossTeams = $model instanceof Resource
+                && $model::sharesRecordsAcrossTeams();
 
-                self::$applying = false;
+            if ($currentTeamId === null) {
+                if ($authUser && $sharesRecordsAcrossTeams) {
+                    $builder->whereNull($model->getTable().'.team_id');
+                } else {
+                    $builder->whereRaw('1 = 0');
+                }
 
                 return;
             }
 
-            // For all other models, filter by team_id
+            if ($sharesRecordsAcrossTeams) {
+                $column = $model->getTable().'.team_id';
+
+                $builder->where(function (Builder $query) use ($column, $currentTeamId) {
+                    $query->where($column, $currentTeamId)->orWhereNull($column);
+                });
+
+                return;
+            }
+
             $builder->where($model->getTable().'.team_id', $currentTeamId);
-
+        } finally {
             self::$applying = false;
-
-            return;
-
-        } catch (\Exception $e) {
-            self::$applying = false;
-            throw $e;
         }
+    }
+
+    public static function currentContextTeamId(?Connection $connection = null): int|string|null
+    {
+        if (self::$trustedTeamContexts === []) {
+            return null;
+        }
+
+        $context = self::$trustedTeamContexts[array_key_last(self::$trustedTeamContexts)];
+
+        if ($connection !== null
+            && $context['connection'] !== User::connectionCacheIdentity($connection)) {
+            return null;
+        }
+
+        return $context['team_id'];
+    }
+
+    /**
+     * Resolve an authenticated user's current team from the authoritative
+     * connection while retaining this scope's request and epoch cache.
+     */
+    public static function currentTeamIdForUser(User $user): int|string|null
+    {
+        $userId = $user->getKey();
+
+        if ($userId === null || $userId === '') {
+            return null;
+        }
+
+        $connection = $user->getConnection();
+
+        if (self::hasActiveApplicationTransaction($connection)) {
+            return $connection->table($user->getTable())
+                ->useWritePdo()
+                ->where($user->getKeyName(), $userId)
+                ->value('current_team_id');
+        }
+
+        $cacheKey = User::currentTeamCacheKey($userId, $connection);
+
+        if (array_key_exists($cacheKey, self::$currentTeamIds)) {
+            return self::$currentTeamIds[$cacheKey];
+        }
+
+        if (Cache::has($cacheKey)) {
+            $cachedTeamId = Cache::get($cacheKey);
+
+            return self::$currentTeamIds[$cacheKey] = $cachedTeamId === false ? null : $cachedTeamId;
+        }
+
+        $currentTeamId = $connection->table($user->getTable())
+            ->useWritePdo()
+            ->where($user->getKeyName(), $userId)
+            ->value('current_team_id');
+
+        Cache::put($cacheKey, $currentTeamId ?? false, now()->addHour());
+
+        return self::$currentTeamIds[$cacheKey] = $currentTeamId;
     }
 
     public static function flushState(): void
     {
         self::$applying = false;
+        self::$bypassDepth = 0;
+        self::$currentTeamIds = [];
+        self::$trustedTeamContexts = [];
+    }
+
+    public static function forgetCurrentTeamId(
+        string|int|null $userId,
+        ?Connection $connection = null,
+    ): void {
+        if ($userId === null || $userId === '') {
+            return;
+        }
+
+        $connection ??= self::resolveConnection();
+
+        unset(self::$currentTeamIds[User::currentTeamCacheKey($userId, $connection)]);
+    }
+
+    /**
+     * Execute a complete background query inside an explicit tenant context.
+     *
+     * @template TValue
+     *
+     * @param  callable(): TValue  $callback
+     * @return TValue
+     */
+    public static function forTeam(
+        int|string $teamId,
+        callable $callback,
+        ?Connection $connection = null,
+    ): mixed {
+        $connection ??= self::resolveConnection();
+        self::$trustedTeamContexts[] = [
+            'connection' => User::connectionCacheIdentity($connection),
+            'team_id' => $teamId,
+        ];
+
+        try {
+            return $callback();
+        } finally {
+            array_pop(self::$trustedTeamContexts);
+        }
+    }
+
+    public static function hasContextForConnection(Connection $connection): bool
+    {
+        if (self::$trustedTeamContexts === []) {
+            return false;
+        }
+
+        $context = self::$trustedTeamContexts[array_key_last(self::$trustedTeamContexts)];
+
+        return $context['connection'] === User::connectionCacheIdentity($connection);
+    }
+
+    /**
+     * Invalidate a user's request snapshot now, but preserve the last committed
+     * shared-cache value until an open transaction actually commits.
+     */
+    public static function invalidateCurrentTeamId(
+        string|int|null $userId,
+        ?Connection $connection = null,
+    ): void {
+        if ($userId === null || $userId === '') {
+            return;
+        }
+
+        $connection ??= self::resolveConnection();
+        $cacheKey = User::currentTeamCacheKey($userId, $connection);
+
+        unset(self::$currentTeamIds[$cacheKey]);
+
+        self::afterApplicationCommit($connection, function () use ($cacheKey, $connection, $userId): void {
+            unset(self::$currentTeamIds[$cacheKey]);
+            User::rotateCurrentTeamCacheEpoch($userId, $connection);
+            Cache::forget($cacheKey);
+        });
+    }
+
+    /**
+     * Execute a complete trusted query without tenant constraints.
+     *
+     * @template TValue
+     *
+     * @param  callable(): TValue  $callback
+     * @return TValue
+     */
+    public static function withoutTenantScope(callable $callback): mixed
+    {
+        self::$bypassDepth++;
+
+        try {
+            return $callback();
+        } finally {
+            self::$bypassDepth--;
+        }
+    }
+
+    private static function afterApplicationCommit(Connection $connection, callable $callback): void
+    {
+        $transactionsManager = self::transactionsManager();
+
+        if ($transactionsManager) {
+            $transaction = self::applicationTransaction($transactionsManager, $connection);
+
+            if ($transaction) {
+                // Bind to this connection's outer application transaction. The
+                // framework's generic afterCommit() callback attaches to the
+                // most recently opened transaction across every connection,
+                // which can publish tenant state at an unrelated boundary.
+                $transaction->addCallback($callback);
+
+                return;
+            }
+
+            $callback();
+
+            return;
+        }
+
+        if ($connection->transactionLevel() > 0) {
+            $connection->afterCommit($callback);
+
+            return;
+        }
+
+        $callback();
+    }
+
+    private static function applicationTransaction(
+        DatabaseTransactionsManager $transactionsManager,
+        Connection $connection,
+    ): ?DatabaseTransactionRecord {
+        return $transactionsManager
+            ->callbackApplicableTransactions()
+            ->first(fn (DatabaseTransactionRecord $transaction): bool => $transaction->connection === $connection->getName());
+    }
+
+    private function contextUsesModelConnection(Model $model): bool
+    {
+        $modelIdentity = User::connectionCacheIdentity($model->getConnection());
+
+        if (self::$trustedTeamContexts !== []) {
+            $context = self::$trustedTeamContexts[array_key_last(self::$trustedTeamContexts)];
+
+            return $context['connection'] === $modelIdentity;
+        }
+
+        $authenticatedUser = Auth::user();
+
+        return $authenticatedUser === null
+            || ($authenticatedUser instanceof User
+                && User::connectionCacheIdentity($authenticatedUser->getConnection()) === $modelIdentity);
     }
 
     /**
      * Get the current team ID without triggering the scope again.
-     *
-     * @return int|null
      */
-    private function getCurrentTeamId()
+    private function getCurrentTeamId(Model $model): int|string|null
     {
-        if (! Auth::check()) {
-            return;
+        if (self::$trustedTeamContexts !== []) {
+            return self::currentContextTeamId($model->getConnection());
         }
 
-        $userId = Auth::id();
-        $cacheKey = User::currentTeamCacheKey($userId);
+        $authenticatedUser = Auth::user();
 
-        if (Cache::has($cacheKey)) {
-            return Cache::get($cacheKey);
+        if (! $authenticatedUser) {
+            return null;
         }
 
-        // Direct database query to avoid triggering scopes.
-        $currentTeamId = DB::table('users')->where('id', $userId)->value('current_team_id');
-
-        if ($currentTeamId !== null) {
-            Cache::forever($cacheKey, $currentTeamId);
+        if (! $authenticatedUser instanceof User) {
+            return null;
         }
 
-        return $currentTeamId;
+        return self::currentTeamIdForUser($authenticatedUser);
+    }
+
+    private static function hasActiveApplicationTransaction(Connection $connection): bool
+    {
+        $transactionsManager = self::transactionsManager();
+
+        if ($transactionsManager) {
+            return self::applicationTransaction($transactionsManager, $connection) !== null;
+        }
+
+        return $connection->transactionLevel() > 0;
+    }
+
+    private static function resolveConnection(): Connection
+    {
+        $authenticatedUser = Auth::user();
+
+        if ($authenticatedUser instanceof Model) {
+            return $authenticatedUser->getConnection();
+        }
+
+        return DB::connection();
+    }
+
+    private static function transactionsManager(): ?DatabaseTransactionsManager
+    {
+        if (! app()->bound('db.transactions')) {
+            return null;
+        }
+
+        $transactionsManager = app('db.transactions');
+
+        return $transactionsManager instanceof DatabaseTransactionsManager
+            ? $transactionsManager
+            : null;
     }
 }

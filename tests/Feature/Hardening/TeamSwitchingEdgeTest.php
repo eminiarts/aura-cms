@@ -53,14 +53,15 @@ it('refuses switching into a team after the Membership was removed in another se
     // Creating a team auto-joins the creator and makes it current; switch back to A
     // so the user is a member of both A and B with A current.
     $teamB = Team::factory()->create();
+    $this->user->refresh();
     $this->user->switchTeam($teamA);
 
     // Another session detaches the user from team B (raw pivot delete + cache bust).
     DB::table('user_role')->where('user_id', $this->user->id)->where('team_id', $teamB->id)->delete();
-    Cache::forget('user.'.$this->user->id.'.teams');
+    Cache::forget(User::teamListCacheKey($this->user->id, $this->user->getConnection()));
 
     // Next request: the switch is refused because the user is no longer a member.
-    $this->actingAs(User::find($this->user->id))
+    $this->actingAs(User::withoutGlobalScopes()->findOrFail($this->user->id))
         ->put(route('aura.current-team.update'), ['team_id' => $teamB->id])
         ->assertForbidden();
 

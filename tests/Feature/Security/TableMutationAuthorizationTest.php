@@ -1000,6 +1000,17 @@ beforeEach(function () {
         $table->timestamps();
         $table->softDeletes();
     });
+    Schema::connection('core05_mutation_secondary')->dropIfExists('users');
+    Schema::connection('core05_mutation_secondary')->create('users', function (Blueprint $table): void {
+        $table->id();
+        $table->unsignedBigInteger('current_team_id')->nullable();
+    });
+    Schema::connection('core05_mutation_secondary')->dropIfExists('user_role');
+    Schema::connection('core05_mutation_secondary')->create('user_role', function (Blueprint $table): void {
+        $table->unsignedBigInteger('user_id');
+        $table->unsignedBigInteger('role_id');
+        $table->unsignedBigInteger('team_id')->nullable();
+    });
     Schema::connection('core05_mutation_secondary')->dropIfExists('meta');
     Schema::connection('core05_mutation_secondary')->create('meta', function (Blueprint $table): void {
         $table->id();
@@ -1305,12 +1316,24 @@ test('bulk modal rejects denied and cross-team records before opening', function
     }
 
     Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
-    $foreign = Core05MutationResource::withoutGlobalScopes()->create([
+    $foreignTeam = foreignTeam();
+    $foreignAttributes = [
         'title' => 'Foreign modal target',
         'content' => 'unchanged',
         'status' => 'draft',
-        'team_id' => ((int) $actor->current_team_id) + 999,
-    ]);
+        'user_id' => $foreignTeam->user_id,
+    ];
+
+    expect(fn () => Core05MutationResource::withoutGlobalScopes()->create([
+        ...$foreignAttributes,
+        'team_id' => $foreignTeam->getKey(),
+    ]))->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+    $foreign = Core05MutationResource::createForTeamForSystem(
+        $foreignTeam->getKey(),
+        $foreignAttributes,
+        $actor->getConnection(),
+    );
 
     livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
         ->set('selected', [$foreign->getKey()])
@@ -1354,12 +1377,24 @@ test('global modal manager rejects forged component names through calls and even
         ->assertNotFound();
 
     if (config('aura.teams')) {
-        $foreign = Core05MutationResource::withoutGlobalScopes()->create([
+        $foreignTeam = foreignTeam();
+        $foreignAttributes = [
             'title' => 'Foreign global modal target',
             'content' => 'unchanged',
             'status' => 'draft',
-            'team_id' => ((int) $actor->current_team_id) + 999,
-        ]);
+            'user_id' => $foreignTeam->user_id,
+        ];
+
+        expect(fn () => Core05MutationResource::withoutGlobalScopes()->create([
+            ...$foreignAttributes,
+            'team_id' => $foreignTeam->getKey(),
+        ]))->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+        $foreign = Core05MutationResource::createForTeamForSystem(
+            $foreignTeam->getKey(),
+            $foreignAttributes,
+            $actor->getConnection(),
+        );
 
         livewire(Modals::class)
             ->call('openModal', 'aura::resource-view-modal', [
@@ -1532,10 +1567,22 @@ test('parent media field updates reject attachments outside the current team sco
     $actor = createSuperAdmin();
     $this->actingAs($actor);
     Aura::setModel(new Core05MediaResource);
-    $attachment = Attachment::create(['title' => 'Foreign parent field attachment']);
-    DB::table('posts')->where('id', $attachment->getKey())->update([
-        'team_id' => ((int) $actor->current_team_id) + 999,
-    ]);
+    $foreignTeam = foreignTeam();
+    $foreignAttributes = [
+        'title' => 'Foreign parent field attachment',
+        'user_id' => $foreignTeam->user_id,
+    ];
+
+    expect(fn () => Attachment::withoutGlobalScopes()->create([
+        ...$foreignAttributes,
+        'team_id' => $foreignTeam->getKey(),
+    ]))->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+    $attachment = Attachment::createForTeamForSystem(
+        $foreignTeam->getKey(),
+        $foreignAttributes,
+        $actor->getConnection(),
+    );
 
     livewire(Create::class, ['slug' => Core05MediaResource::$slug])
         ->call('updateField', [
@@ -1713,12 +1760,22 @@ test('media manager rejects selected records outside the current team scope', fu
     $actor = createSuperAdmin();
     $this->actingAs($actor);
     Aura::setModel(new Core05MediaResource);
-    $attachment = Attachment::create([
+    $foreignTeam = foreignTeam();
+    $foreignAttributes = [
         'title' => 'Foreign attachment',
-    ]);
-    DB::table('posts')->where('id', $attachment->getKey())->update([
-        'team_id' => ((int) $actor->current_team_id) + 999,
-    ]);
+        'user_id' => $foreignTeam->user_id,
+    ];
+
+    expect(fn () => Attachment::withoutGlobalScopes()->create([
+        ...$foreignAttributes,
+        'team_id' => $foreignTeam->getKey(),
+    ]))->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+    $attachment = Attachment::createForTeamForSystem(
+        $foreignTeam->getKey(),
+        $foreignAttributes,
+        $actor->getConnection(),
+    );
 
     livewire(MediaManager::class, [
         'resource' => Core05MediaResource::$slug,
@@ -1789,10 +1846,22 @@ test('nested media uploader rejects forged and cross-team picker state', functio
         return;
     }
 
-    $attachment = Attachment::create(['title' => 'Foreign picker attachment']);
-    DB::table('posts')->where('id', $attachment->getKey())->update([
-        'team_id' => ((int) $actor->current_team_id) + 999,
-    ]);
+    $foreignTeam = foreignTeam();
+    $foreignAttributes = [
+        'title' => 'Foreign picker attachment',
+        'user_id' => $foreignTeam->user_id,
+    ];
+
+    expect(fn () => Attachment::withoutGlobalScopes()->create([
+        ...$foreignAttributes,
+        'team_id' => $foreignTeam->getKey(),
+    ]))->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+    $attachment = Attachment::createForTeamForSystem(
+        $foreignTeam->getKey(),
+        $foreignAttributes,
+        $actor->getConnection(),
+    );
 
     livewire(MediaUploader::class, [
         'resource' => Core05MediaResource::$slug,
@@ -2335,24 +2404,77 @@ function core05CreateMutationCollision(
 
 function core05CreateAuthoritativeMutationResource(User $actor): Core05MutationResource
 {
+    expect(auth()->id())->toBe($actor->getKey());
+
     $resource = Core05MutationResource::create([
         'title' => 'Authoritative title',
         'content' => 'authoritative-content',
         'status' => 'draft',
     ]);
+    $foreignOwner = User::factory()->create();
 
     $attributes = [
-        'user_id' => User::factory()->create()->getKey(),
         'data' => 'authoritative-data',
     ];
 
-    if (config('aura.teams')) {
-        $attributes['team_id'] = $actor->getAttribute('current_team_id');
-    }
+    expect(fn () => $resource->forceFill([
+        ...$attributes,
+        'user_id' => $foreignOwner->getKey(),
+    ])->save())->toThrow(
+        LogicException::class,
+        'A resource owner must match the authenticated actor or an explicit named system operation.',
+    );
 
-    $resource->forceFill($attributes)->saveQuietly();
+    $resource->refresh();
+    $resource->forceFill($attributes);
+    expect($resource->assignOwnerForSystem($foreignOwner->getKey()))->toBeTrue();
 
     return $resource->refresh();
+}
+
+/**
+ * @param  array<string, mixed>  $attributes
+ */
+function core05CreateMutationResourceOnSecondaryConnection(array $attributes): Core05MutationResource
+{
+    $actor = auth()->user();
+    expect($actor)->toBeInstanceOf(User::class);
+
+    $attributes['user_id'] ??= $actor->getKey();
+    $secondary = DB::connection('core05_mutation_secondary');
+    $model = (new Core05MutationResource)->setConnection($secondary->getName());
+
+    expect(fn () => $model->newQuery()->create($attributes))
+        ->toThrow(LogicException::class, 'authenticated actor and resource must use the same database connection');
+
+    if (config('aura.teams')) {
+        return Core05MutationResource::createForTeamForSystem(
+            $attributes['team_id'] ?? $actor->current_team_id,
+            $attributes,
+            $secondary,
+        );
+    }
+
+    return Core05MutationResource::createForOwnerForSystem(
+        $attributes['user_id'],
+        $attributes,
+        $secondary,
+    );
+}
+
+function core05AuthenticateActorOnSecondaryConnection(User $actor): User
+{
+    $secondary = DB::connection('core05_mutation_secondary');
+    $secondary->table('users')->insert([
+        'id' => $actor->getKey(),
+        'current_team_id' => $actor->current_team_id,
+    ]);
+
+    $secondaryActor = clone $actor;
+    $secondaryActor->setConnection($secondary->getName());
+    auth()->setUser($secondaryActor);
+
+    return $secondaryActor;
 }
 
 function core05FailingMutationQuery(string $failure): string
@@ -2397,7 +2519,7 @@ function core05IdentitySubstitution(string $substitution, User $actor): array
         })(),
         'connection switch' => (function () use ($attributes): array {
             $model = (new Core05MutationResource)->setConnection('core05_mutation_secondary');
-            $target = $model->newQuery()->create($attributes);
+            $target = core05CreateMutationResourceOnSecondaryConnection($attributes);
 
             return [$model, $target, $target->getKey()];
         })(),
@@ -2571,7 +2693,8 @@ test('table action rejects an undeclared model method', function () {
 
 test('table action denies a declared mutation when its policy denies the record', function () {
     $user = createAdmin();
-    $user->roles()->first()->update([
+    $this->actingAs($user);
+    $user->roles()->firstOrFail()->update([
         'permissions' => [
             'viewAny-core05-mutation' => true,
             'view-core05-mutation' => true,
@@ -2595,7 +2718,8 @@ test('table action denies a declared mutation when its policy denies the record'
 
 test('table action uses the destructive policy ability for a declared delete action', function () {
     $user = createAdmin();
-    $user->roles()->first()->update([
+    $this->actingAs($user);
+    $user->roles()->firstOrFail()->update([
         'permissions' => [
             'viewAny-core05-mutation' => true,
             'view-core05-mutation' => true,
@@ -2703,7 +2827,8 @@ test('table action runs an authorized declared mutation', function () {
 
 test('kanban status change denies a record the policy does not allow updating', function () {
     $user = createAdmin();
-    $user->roles()->first()->update([
+    $this->actingAs($user);
+    $user->roles()->firstOrFail()->update([
         'permissions' => [
             'viewAny-core05-mutation' => true,
             'view-core05-mutation' => true,
@@ -2789,15 +2914,27 @@ test('table action cannot resolve a record from another team', function () {
         $this->markTestSkipped('Team isolation only applies when teams are enabled.');
     }
 
-    $this->actingAs(createSuperAdmin());
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
 
     $otherTeam = foreignTeam();
-    $foreignResource = Core05MutationResource::withoutGlobalScopes()->create([
+    $foreignAttributes = [
         'title' => 'Other team',
         'content' => 'unchanged',
         'status' => 'draft',
-        'team_id' => $otherTeam->id,
-    ]);
+        'user_id' => $otherTeam->user_id,
+    ];
+
+    expect(fn () => Core05MutationResource::withoutGlobalScopes()->create([
+        ...$foreignAttributes,
+        'team_id' => $otherTeam->getKey(),
+    ]))->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+    $foreignResource = Core05MutationResource::createForTeamForSystem(
+        $otherTeam->getKey(),
+        $foreignAttributes,
+        $actor->getConnection(),
+    );
 
     livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
         ->call('action', ['action' => 'markReviewed', 'id' => $foreignResource->id])
@@ -2812,14 +2949,26 @@ test('kanban status change cannot resolve a record from another team', function 
         $this->markTestSkipped('Team isolation only applies when teams are enabled.');
     }
 
-    $this->actingAs(createSuperAdmin());
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
 
     $otherTeam = foreignTeam();
-    $foreignResource = Core05MutationResource::withoutGlobalScopes()->create([
+    $foreignAttributes = [
         'title' => 'Other team card',
         'status' => 'draft',
-        'team_id' => $otherTeam->id,
-    ]);
+        'user_id' => $otherTeam->user_id,
+    ];
+
+    expect(fn () => Core05MutationResource::withoutGlobalScopes()->create([
+        ...$foreignAttributes,
+        'team_id' => $otherTeam->getKey(),
+    ]))->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+    $foreignResource = Core05MutationResource::createForTeamForSystem(
+        $otherTeam->getKey(),
+        $foreignAttributes,
+        $actor->getConnection(),
+    );
 
     livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
         ->call('updateCardStatus', $foreignResource->id, 'reviewed')
@@ -3942,15 +4091,17 @@ test('bulk mutation preserves display order while locking base rows in determini
 ]);
 
 test('mutation transactions retry a deadlock before lock acquisition', function () {
-    $this->actingAs(createSuperAdmin());
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
     Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
 
     $mounted = (new Core05MutationResource)->setConnection('core05_mutation_secondary');
-    $resource = $mounted->newQuery()->create([
+    $resource = core05CreateMutationResourceOnSecondaryConnection([
         'title' => 'Deadlock retry target',
         'content' => 'unchanged',
         'status' => 'draft',
     ]);
+    core05AuthenticateActorOnSecondaryConnection($actor);
 
     Core05MutationResource::$beforeQueryCallback = static function ($query): void {
         if (Core05MutationResource::$beforeQueryInvocations === 1) {
@@ -3975,15 +4126,17 @@ test('mutation transactions retry a deadlock before lock acquisition', function 
 });
 
 test('mutation transactions never retry after a handler effect begins', function () {
-    $this->actingAs(createSuperAdmin());
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
     Gate::policy(Core05MutationResource::class, Core05MutationBoundaryPolicy::class);
 
     $mounted = (new Core05MutationResource)->setConnection('core05_mutation_secondary');
-    $resource = $mounted->newQuery()->create([
+    $resource = core05CreateMutationResourceOnSecondaryConnection([
         'title' => 'Post-handler deadlock target',
         'content' => 'unchanged',
         'status' => 'draft',
     ]);
+    core05AuthenticateActorOnSecondaryConnection($actor);
 
     expect(fn () => app(TableMutationDispatcher::class)->dispatchAction(
         $mounted->newQuery(),
@@ -4375,15 +4528,27 @@ test('authoritative rehydration reapplies the team scope to dynamic mutation que
         $this->markTestSkipped('Team isolation only applies when teams are enabled.');
     }
 
-    $this->actingAs(createSuperAdmin());
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
 
     $foreignTeam = foreignTeam();
-    $foreignResource = Core05MutationResource::withoutGlobalScopes()->create([
+    $foreignAttributes = [
         'title' => 'Foreign unscoped dynamic row',
         'content' => 'unchanged',
         'status' => 'draft',
+        'user_id' => $foreignTeam->user_id,
+    ];
+
+    expect(fn () => Core05MutationResource::withoutGlobalScopes()->create([
+        ...$foreignAttributes,
         'team_id' => $foreignTeam->getKey(),
-    ]);
+    ]))->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+    $foreignResource = Core05MutationResource::createForTeamForSystem(
+        $foreignTeam->getKey(),
+        $foreignAttributes,
+        $actor->getConnection(),
+    );
     $queryHash = DynamicFunctions::add(
         fn (): Builder => Core05MutationResource::withoutGlobalScopes()->whereKey($foreignResource->getKey())
     );

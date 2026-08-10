@@ -96,7 +96,7 @@ describe('Global Admin sees and can manage all teams', function () {
     it('offers every team to a Global Admin through getTeams (switcher source)', function () {
         $ga = createGlobalAdmin();
         $this->actingAs($ga);
-        Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
+        Cache::forget(User::globalAdminTeamsCacheKey($ga->getConnection()));
 
         $ids = $ga->getTeams()->pluck('id');
 

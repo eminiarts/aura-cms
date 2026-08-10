@@ -4,6 +4,7 @@ namespace Aura\Base\Rules;
 
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -41,7 +42,12 @@ class CaseInsensitiveUniqueEmail implements ValidationRule
             return;
         }
 
-        $query = DB::table('users')
+        $authenticatedUser = auth()->user();
+        $connection = $authenticatedUser instanceof Model
+            ? $authenticatedUser->getConnection()
+            : DB::connection();
+
+        $query = $connection->table('users')
             ->whereRaw('lower(email) = ?', [mb_strtolower($value)]);
 
         if ($this->ignoreId !== null) {

@@ -98,19 +98,13 @@ if (! function_exists('hardeningMemberIn')) {
 
 if (! function_exists('hardeningGlobalRole')) {
     /**
-     * A Global Role (team_id = null) written quietly so InitialPostFields' saving
-     * hook never re-teams it to the acting user's current team. Bumps the catalog
-     * version the same way the seeder/self-heal path does.
+     * A Global Role created through the trusted test-infrastructure contract.
      */
     function hardeningGlobalRole(string $slug, array $permissions): Role
     {
-        $role = Role::withoutGlobalScopes()->newModelInstance([
+        return Role::createGlobalForSystem([
             'name' => ucfirst($slug), 'slug' => $slug, 'super_admin' => false,
-            'permissions' => $permissions, 'team_id' => null,
+            'permissions' => $permissions,
         ]);
-        $role->saveQuietly();
-        Role::bumpCatalogVersion();
-
-        return $role;
     }
 }

@@ -45,12 +45,18 @@ if (! function_exists('browserTeamRole')) {
      */
     function browserTeamRole(int $teamId, string $name = 'Editor', string $slug = 'editor'): Role
     {
-        return Role::factory()->create([
+        $role = Role::factory()->make([
             'team_id' => $teamId,
             'name' => $name,
             'slug' => $slug,
             'super_admin' => false,
         ]);
+
+        return Role::createForTeamForSystem(
+            $teamId,
+            $role->getAttributes(),
+            $role->getConnection(),
+        );
     }
 }
 
@@ -187,23 +193,15 @@ if (! function_exists('browserQuietTeam')) {
 
 if (! function_exists('browserGlobalRole')) {
     /**
-     * A Global Role (team_id = null) written quietly so InitialPostFields' saving
-     * hook never re-teams it to the acting user's current team. Bumps the catalog
-     * version the same way the seeder/self-heal path does.
+     * A Global Role created through the trusted test-infrastructure contract.
      */
     function browserGlobalRole(string $slug, string $name, array $attributes = []): Role
     {
-        $role = Role::withoutGlobalScopes()->newModelInstance(array_merge([
+        return Role::createGlobalForSystem(array_merge([
             'name' => $name,
             'slug' => $slug,
             'super_admin' => false,
             'permissions' => [],
-            'team_id' => null,
         ], $attributes));
-
-        $role->saveQuietly();
-        Role::bumpCatalogVersion();
-
-        return $role->refresh();
     }
 }

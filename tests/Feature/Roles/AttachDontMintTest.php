@@ -89,10 +89,9 @@ describe('Roles field team-ownership and escalation guards', function () {
     it('refuses assigning a role owned by another team', function () {
         // A Team Role owned by a different team must never be assignable here.
         $otherTeam = Team::factory()->createQuietly();
-        $otherTeamRole = Role::create([
+        $otherTeamRole = Role::createForTeamForSystem($otherTeam->id, [
             'name' => 'Other Editor',
             'slug' => 'other-editor',
-            'team_id' => $otherTeam->id,
             'super_admin' => false,
             'permissions' => [],
         ]);

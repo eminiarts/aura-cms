@@ -39,7 +39,7 @@ test('a super admin can perform any action', function () {
     if (config('aura.teams')) {
         $team = Team::factory()->create();
         $user->update(['current_team_id' => $team->id]);
-        $r->update(['team_id' => $team->id]);
+        $r->moveToTeamForSystem($team->id);
         $user->roles()->syncWithPivotValues([$r->id], ['team_id' => $team->id]);
     } else {
         $user->roles()->sync([$r->id]);
@@ -275,10 +275,10 @@ test('scoped posts', function () {
     $user2 = User::factory()->create();
 
     // Create Post
-    $post = Post::create(['type' => 'Post', 'title' => 'Test Post', 'slug' => 'test-post', 'name' => 'Test Post', 'description' => 'Test Post', 'fields' => [], 'user_id' => 1]);
+    $post = createPost(['type' => 'Post', 'title' => 'Test Post', 'slug' => 'test-post', 'user_id' => $this->user->id]);
 
     // Post 2
-    $post2 = Post::create(['type' => 'Post', 'title' => 'Test Post', 'slug' => 'test-post', 'name' => 'Test Post', 'description' => 'Test Post', 'fields' => [], 'user_id' => 2]);
+    $post2 = createPost(['type' => 'Post', 'title' => 'Test Post', 'slug' => 'test-post', 'user_id' => $user2->id]);
 
     // assert there is a role in the db
     $this->assertDatabaseHas('posts', ['type' => 'Post', 'id' => $post->id]);
@@ -334,8 +334,7 @@ test('scoped posts', function () {
 test('a admin can access users', function () {
     $team = Team::factory()->create();
 
-    $role = Role::create(['name' => 'Team Admin', 'slug' => 'team_admin', 'description' => 'Team Admin has can perform almost everything.', 'super_admin' => false,
-        'team_id' => $team->id,
+    $role = Role::createForTeamForSystem($team->id, ['name' => 'Team Admin', 'slug' => 'team_admin', 'description' => 'Team Admin has can perform almost everything.', 'super_admin' => false,
         'permissions' => [
             'viewAny-user' => true,
             'view-user' => true,
@@ -417,8 +416,8 @@ test('scoped query on index page', function () {
     $this->actingAs($user);
 
     // Create posts
-    $userPosts = Post::factory()->count(3)->create(['user_id' => $user->id]);
-    $otherPosts = Post::factory()->count(2)->create();
+    $userPosts = collect(range(1, 3))->map(fn () => createPost(['user_id' => $user->id]));
+    $otherPosts = collect(range(1, 2))->map(fn () => createPost());
 
     // Make the request
     $response = $this->get(route('aura.post.index'));
@@ -454,8 +453,8 @@ test('user can only delete his own posts', function () {
     $user->update(['roles' => [$role->id]]);
     $this->actingAs($user);
 
-    $userPost = Post::factory()->create(['user_id' => $user->id]);
-    $otherPost = Post::factory()->create();
+    $userPost = createPost(['user_id' => $user->id]);
+    $otherPost = createPost();
 
     Aura::fake();
     Aura::setModel($userPost);

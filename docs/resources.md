@@ -174,6 +174,7 @@ class Product extends Resource
     // === DATA STORAGE ===
     public static $customTable = false;                  // Use custom table (not posts)
     public static bool $usesMeta = true;                 // Store fields in meta table
+    public static bool $sharedAcrossTeams = false;       // Include global rows in every team
     public static $taxonomy = false;                     // Is taxonomy/category resource
     protected static bool $title = false;                // Uses title field in posts table
     
@@ -949,6 +950,59 @@ Article::withoutGlobalScope(TeamScope::class)->get(); // All teams
 // Can restrict resources to owner based on configuration
 Article::withoutGlobalScope(ScopedScope::class)->get(); // All users
 ```
+
+#### Shared resource catalogs
+
+Resources are team-private by default. A catalog resource can explicitly opt in to sharing rows whose `team_id` is `null`:
+
+```php
+class Status extends Resource
+{
+    public static bool $sharedAcrossTeams = true;
+}
+```
+
+For an authenticated user with a current team, `TeamScope` then returns rows where `team_id` is either the current team ID or `null`. Team-specific and global rows are both returned; Aura does not generically shadow or deduplicate them. An authenticated user without a current team sees only global rows from opted-in resources and no rows from regular resources. `Role` and `Permission` opt in; every other resource remains isolated unless it declares the property.
+
+Global creation is a separate authorization concern. Call
+`SharedCatalog::createGlobal($attributes)` instead of mass assigning
+`team_id => null`. That method authorizes `createGlobal`, which allows only a
+Global Admin, only while teams are enabled, and only for an opted-in resource
+with creation enabled. Use `$resource->promoteToGlobal()` for an existing row.
+Global rows from every opted-in resource are mutable only by a Global Admin;
+team Super Admins retain read access but are denied update, delete, restore,
+and force-delete operations.
+
+For an ordinary authenticated create, omitted `team_id` and `user_id` values
+default to the authenticated user's team and ID, while explicit null values are
+rejected. The global-write contract is the narrow exception that preserves
+intentional nulls for both posts storage and custom-table storage. Trusted
+seeders and background catalog synchronization may use `createGlobalForSystem()` or
+`firstOrCreateGlobalForSystem()` / `updateOrCreateGlobalForSystem()`.
+Trusted infrastructure can create a team row with
+`Resource::createForTeamForSystem($teamId, $attributes)` or move an existing row
+with `$resource->moveToTeamForSystem($teamId, $attributes)`. For deliberate
+owner-only operations, use `createForOwnerForSystem($ownerId, $attributes)` or
+`$resource->assignOwnerForSystem($ownerId, $attributes)`.
+
+Ordinary saves enforce non-null ownership. `team_id` must match an active
+`TeamScope::forTeam()` context (which is authoritative even for Global Admins)
+or the authenticated actor's current team; `user_id` must match the actor.
+These checks also cover `fill()`, `update()`, unscoped builders, and direct mass
+assignment. The named system APIs supply the explicit trusted tenant and owner
+context required by seeders, commands, imports, and data repairs.
+Unauthenticated ordinary creation cannot silently create a global shared row.
+Ordinary Livewire forms intersect validated input with the actual path-specific
+`createFields()` or `editFields()` tree, honoring `on_forms`, `on_create`, and
+`on_edit`, then strip tenant, owner, identity, type, timestamp, and soft-delete
+columns before persistence.
+
+Unauthenticated and background `TeamScope` queries fail closed. Execute trusted
+tenant work inside `TeamScope::forTeam($teamId, fn () => ...)`, or use
+`TeamScope::withoutTenantScope(fn () => ...)` for a deliberate cross-tenant
+operation. The callback must execute the query before it returns. Explicit team
+contexts are nested and restored in `finally`; they take precedence over the
+Global Admin bypass and also drive Role Shadow resolution.
 
 **Removing Multiple Scopes**
 

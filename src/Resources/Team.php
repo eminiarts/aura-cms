@@ -10,13 +10,13 @@ use Aura\Base\Resource;
 use Aura\Base\Services\VersionedCache;
 use Aura\Base\Traits\HasTeamMemberships;
 use Illuminate\Database\Connection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -67,8 +67,9 @@ class Team extends Resource
 
     public static function clearOptionCacheForTeam(string|int $teamId, ?Connection $connection = null): void
     {
-        VersionedCache::bump(self::optionCacheNamespaceFor($teamId), $connection);
-        VersionedCache::bump(self::legacyOptionCacheNamespaceFor($teamId), $connection);
+        VersionedCache::bump(self::optionCacheNamespaceFor($teamId, $connection), $connection);
+        VersionedCache::bump(self::legacyOptionCacheNamespaceFor($teamId, $connection), $connection);
+        VersionedCache::bump(self::unscopedLegacyOptionCacheNamespaceFor($teamId), $connection);
     }
 
     public function customPermissions()
@@ -96,7 +97,7 @@ class Team extends Resource
         $connection = $this->optionConnection();
 
         $connection->transaction(function () use ($optionName): void {
-            $record = Option::withoutGlobalScope(TeamScope::class)
+            $record = $this->activeOptionQuery()
                 ->where('team_id', $this->id)
                 ->where('name', $optionName)
                 ->lockForUpdate()
@@ -230,7 +231,7 @@ class Team extends Resource
                 $optionName,
                 now()->addHour(),
                 fn (): array => [
-                    'values' => Option::withoutGlobalScope(TeamScope::class)
+                    'values' => $this->activeOptionQuery()
                         ->where('team_id', $this->id)
                         ->where('name', 'like', $wildcardPrefix.'%')
                         ->orderBy('id')
@@ -282,7 +283,7 @@ class Team extends Resource
             $optionName,
             now()->addHour(),
             function () use ($optionName): array {
-                $record = Option::withoutGlobalScope(TeamScope::class)
+                $record = $this->activeOptionQuery()
                     ->where('team_id', $this->id)
                     ->where('name', $optionName)
                     ->first(['value']);
@@ -323,8 +324,9 @@ class Team extends Resource
         $attributes = ['name' => $optionName, 'team_id' => $this->id];
         $connection = $this->optionConnection();
 
-        $record = $connection->transaction(function () use ($attributes, $value): Option {
-            $record = Option::withoutGlobalScope(TeamScope::class)
+        $record = $connection->transaction(function () use ($attributes, $connection, $value): Option {
+            $record = Option::on($this->getConnectionName())
+                ->withoutGlobalScope(TeamScope::class)
                 ->withTrashed()
                 ->where($attributes)
                 ->lockForUpdate()
@@ -333,21 +335,25 @@ class Team extends Resource
 
             if ($record !== null) {
                 $record->fill(['value' => $value]);
-            } else {
-                $record = Option::withoutGlobalScope(TeamScope::class)->newModelInstance([
-                    ...$attributes,
-                    'value' => $value,
-                ]);
             }
 
             try {
-                $this->persistOptionRecord($record);
+                if ($isCreating) {
+                    $record = Option::createForTeamForSystem(
+                        $this->getKey(),
+                        [...$attributes, 'user_id' => null, 'value' => $value],
+                        $connection,
+                    );
+                } else {
+                    $this->persistOptionRecord($record);
+                }
             } catch (UniqueConstraintViolationException $exception) {
                 if (! $isCreating) {
                     throw $exception;
                 }
 
-                $record = Option::withoutGlobalScope(TeamScope::class)
+                $record = Option::on($this->getConnectionName())
+                    ->withoutGlobalScope(TeamScope::class)
                     ->withTrashed()
                     ->where($attributes)
                     ->lockForUpdate()
@@ -385,9 +391,23 @@ class Team extends Resource
             ->withTimestamps();
     }
 
+    protected function activeOptionQuery(): Builder
+    {
+        $option = new Option;
+        $query = Option::on($this->getConnectionName())->withoutGlobalScopes();
+
+        if ($this->optionConnection()->getSchemaBuilder()->hasColumn($option->getTable(), $option->getDeletedAtColumn())) {
+            $query->whereNull($option->getQualifiedDeletedAtColumn());
+        }
+
+        return $query;
+    }
+
     protected function assertNotReservedPreferenceOwner(): void
     {
-        if (Option::isEveryoneTeamId($this->getKey())) {
+        $teamId = $this->getAttributes()[$this->getKeyName()] ?? $this->getKey();
+
+        if (Option::isEveryoneTeamId($teamId)) {
             throw new InvalidArgumentException('Team ID 0 is reserved for everyone preferences.');
         }
     }
@@ -402,6 +422,7 @@ class Team extends Resource
             $connection = $team->getConnection();
 
             $connection->table('user_role')
+                ->useWritePdo()
                 ->where('team_id', $team->id)
                 ->pluck('user_id')
                 ->unique()
@@ -419,8 +440,21 @@ class Team extends Resource
             unset($team->type);
             unset($team->team_id);
 
-            if (! $team->user_id && auth()->user()) {
-                $team->user_id = auth()->user()->id;
+            $authenticatedUser = auth()->user();
+
+            if ($authenticatedUser !== null && ! $authenticatedUser instanceof User) {
+                throw new \LogicException('Only authenticated Aura users may create or update teams.');
+            }
+
+            $authenticatedUserId = $authenticatedUser instanceof User
+                ? $authenticatedUser->getKey()
+                : null;
+
+            if (($team->user_id === null || $team->user_id === '')
+                && $authenticatedUserId !== null
+                && self::authenticatedUserUsesConnection($authenticatedUser, $team->getConnection())
+            ) {
+                $team->user_id = $authenticatedUserId;
             }
         });
 
@@ -429,12 +463,21 @@ class Team extends Resource
         static::deleting(fn (Team $team) => $team->assertNotReservedPreferenceOwner());
 
         static::created(function ($team) {
+            $connection = $team->getConnection();
+            $connectionName = $connection->getName();
+            $authenticatedUser = auth()->user();
+            $authenticatedUserMatchesConnection = self::authenticatedUserUsesConnection(
+                $authenticatedUser,
+                $connection,
+            );
 
-            if ($user = auth()->user()) {
+            $user = $authenticatedUserMatchesConnection ? $authenticatedUser : null;
+
+            if ($user) {
                 // Change the current team id of the user
                 // $user->switchTeam($team);
 
-                $user->current_team_id = $team->id;
+                $user->setAttribute('current_team_id', $team->id);
                 $user->save();
             }
 
@@ -443,62 +486,99 @@ class Team extends Resource
             // Role (team_id = null, super_admin), with the Membership recording
             // the team. The helper self-heals the Global Role when the catalog
             // was never seeded (bare `migrate`, or the test harness).
-            $globalAdmin = Role::firstOrCreateGlobalAdmin();
+            $globalAdmin = Role::firstOrCreateGlobalAdmin($connection);
 
             // Attach the current user to the team via the global admin role.
             if ($user) {
-                $team->users()->attach($user->id, ['role_id' => $globalAdmin->id]);
+                $team->users()->attach($user->getKey(), ['role_id' => $globalAdmin->id]);
+                User::clearTeamsCache($user->getKey(), $connection);
             }
 
+            // A Global Admin's switcher lists every team from one shared cache
+            // key — invalidate it so a newly created team appears immediately.
+            User::clearGlobalAdminTeamsCache($connection);
             // Create all permissions for the team
-            GenerateAllResourcePermissions::dispatch($team->id);
+            GenerateAllResourcePermissions::dispatch($team->id, $connectionName);
         });
 
         static::deleted(function ($team) {
             $connection = $team->getConnection();
+            $connectionName = $connection->getName();
+            $teamId = $team->getKey();
+            $authenticatedUser = User::authenticatedResource();
+
+            if ($authenticatedUser instanceof User
+                && User::connectionCacheIdentity($authenticatedUser->getConnection()) === User::connectionCacheIdentity($connection)) {
+                $authenticatedCurrentTeamId = $authenticatedUser->getAttribute('current_team_id');
+
+                VersionedCache::afterRollback(
+                    $connection,
+                    function () use ($authenticatedCurrentTeamId, $authenticatedUser): void {
+                        $authenticatedUser->forceFill(['current_team_id' => $authenticatedCurrentTeamId]);
+                        $authenticatedUser->unsetRelation('currentTeam');
+                        $authenticatedUser->unsetRelation('teams');
+                    },
+                );
+            }
+
             $affectedMemberIds = $connection->table('user_role')
-                ->where('team_id', $team->id)
+                ->useWritePdo()
+                ->where('team_id', $teamId)
                 ->pluck('user_id');
 
-            $optionNames = Option::withoutGlobalScopes()
-                ->where('team_id', $team->id)
-                ->pluck('name');
+            $optionTableExists = $connection->getSchemaBuilder()->hasTable((new Option)->getTable());
+            $optionNames = $optionTableExists
+                ? Option::on($connectionName)
+                    ->withoutGlobalScopes()
+                    ->where('team_id', $teamId)
+                    ->pluck('name')
+                : collect();
 
             $userClass = config('aura.resources.user', User::class);
             $userModel = new $userClass;
-            $optionUserIds = $userClass::withoutGlobalScopes()
+            $userModel->setConnection($connectionName);
+            $optionUserIds = $userModel->newQueryWithoutScopes()
                 ->pluck($userModel->getKeyName())
                 ->filter(fn (string|int $userId): bool => $optionNames->contains(
                     fn (string $name): bool => $userClass::optionNameBelongsToUser($name, $userId)
                 ));
 
             // Get all users who had the deleted team as their current team
-            $users = User::withoutGlobalScopes()
-                ->where('current_team_id', $team->id)
+            $users = User::on($connectionName)
+                ->withoutGlobalScopes()
+                ->without('meta')
+                ->useWritePdo()
+                ->where('current_team_id', $teamId)
                 ->get();
             $reassignedUserIds = $users->pluck('id');
 
             // Loop through the users and update their current_team_id
             foreach ($users as $user) {
                 $firstTeam = $user->teams()
-                    ->withoutGlobalScopes()
-                    ->where('teams.id', '!=', $team->id)
+                    ->withoutGlobalScope(TeamScope::class)
+                    ->without('meta')
+                    ->useWritePdo()
+                    ->where('teams.id', '!=', $teamId)
                     ->first();
-                $user->current_team_id = $firstTeam ? $firstTeam->id : null;
-                $user->save();
+                $currentTeamId = $firstTeam?->getKey();
 
-                User::clearCurrentTeamCache($user->id);
+                $user->forceFill(['current_team_id' => $currentTeamId])->saveQuietly();
+
+                User::clearCurrentTeamCache($user->getKey(), $connection);
             }
 
             // A team's Memberships and its own Team Roles (including Shadows) die
             // with the team; the shared Global Roles (team_id = null) are never
             // touched. Remove the pivot rows first, then the team-owned roles.
-            $connection->table('user_role')->where('team_id', $team->id)->delete();
+            $connection->table('user_role')->where('team_id', $teamId)->delete();
 
             // Bypass TeamScope: by this point the affected users' current team has
             // already been reassigned above, so a scoped query would filter to the
             // wrong team and delete nothing.
-            Role::withoutGlobalScopes()->where('team_id', $team->id)->delete();
+            Role::on($connectionName)
+                ->withoutGlobalScopes()
+                ->where('team_id', $teamId)
+                ->delete();
 
             // The role rows above were removed via a mass delete (no model
             // events), so bump the catalog version explicitly to invalidate every
@@ -509,12 +589,17 @@ class Team extends Resource
             $team->meta()->delete();
 
             // Delete all the team's invitations
-            $team->teamInvitations()->delete();
+            $team->teamInvitations()->withoutGlobalScope(TeamScope::class)->delete();
 
             // Delete every option physically owned by the team. Names can be
             // team.*, user.*, or application-defined, so team_id is the only
             // complete ownership boundary and the query must bypass TeamScope.
-            Option::withoutGlobalScopes()->where('team_id', $team->id)->forceDelete();
+            if ($optionTableExists) {
+                Option::on($connectionName)
+                    ->withoutGlobalScopes()
+                    ->where('team_id', $teamId)
+                    ->forceDelete();
+            }
 
             static::clearOptionCacheForTeam($team->id, $connection);
             User::clearOptionCacheForScope($team->id, $connection);
@@ -523,10 +608,10 @@ class Team extends Resource
                 ->merge($reassignedUserIds)
                 ->merge($optionUserIds)
                 ->unique()
-                ->each(fn ($userId) => User::clearLegacyOptionCacheForTeam($userId, $team->id, $connection));
+                ->each(fn ($userId) => User::clearLegacyOptionCacheForTeam($userId, $teamId, $connection));
 
-            $reassignedUserIds->each(function ($userId) {
-                User::clearCurrentTeamCache($userId);
+            $reassignedUserIds->each(function ($userId) use ($connection) {
+                User::clearCurrentTeamCache($userId, $connection);
             });
 
             $affectedMemberIds
@@ -547,8 +632,9 @@ class Team extends Resource
     {
         $connection ??= $this->optionConnection();
 
-        VersionedCache::bump($this->optionCacheNamespace(), $connection);
-        VersionedCache::bump($this->legacyOptionCacheNamespace(), $connection);
+        VersionedCache::bump($this->optionCacheNamespace($connection), $connection);
+        VersionedCache::bump($this->legacyOptionCacheNamespace($connection), $connection);
+        VersionedCache::bump(self::unscopedLegacyOptionCacheNamespaceFor($this->id), $connection);
     }
 
     protected function hasAuthorizedOptionContext(): bool
@@ -558,14 +644,16 @@ class Team extends Resource
         return $team?->is($this) ?? false;
     }
 
-    protected function legacyOptionCacheNamespace(): string
+    protected function legacyOptionCacheNamespace(?Connection $connection = null): string
     {
-        return self::legacyOptionCacheNamespaceFor($this->id);
+        return self::legacyOptionCacheNamespaceFor($this->id, $connection ?? $this->optionConnection());
     }
 
-    protected static function legacyOptionCacheNamespaceFor(string|int $teamId): string
-    {
-        return 'option.team.'.$teamId;
+    protected static function legacyOptionCacheNamespaceFor(
+        string|int $teamId,
+        ?Connection $connection = null,
+    ): string {
+        return 'option.team.'.User::connectionCacheIdentity($connection).'.'.$teamId;
     }
 
     /**
@@ -578,19 +666,25 @@ class Team extends Resource
         return TeamFactory::new();
     }
 
-    protected function optionCacheNamespace(): string
+    protected function optionCacheNamespace(?Connection $connection = null): string
     {
-        return self::optionCacheNamespaceFor($this->id);
+        return self::optionCacheNamespaceFor($this->id, $connection ?? $this->optionConnection());
     }
 
-    protected static function optionCacheNamespaceFor(string|int $teamId): string
-    {
-        return 'option.team.v2.'.VersionedCache::identity('option.team.scope', $teamId);
+    protected static function optionCacheNamespaceFor(
+        string|int $teamId,
+        ?Connection $connection = null,
+    ): string {
+        return 'option.team.v2.'.VersionedCache::identity(
+            'option.team.scope',
+            User::connectionCacheIdentity($connection),
+            $teamId,
+        );
     }
 
     protected function optionConnection(): Connection
     {
-        return (new Option)->getConnection();
+        return $this->getConnection();
     }
 
     protected function optionName(string $option): string
@@ -614,5 +708,17 @@ class Team extends Resource
         if ($succeeded !== true) {
             throw new RuntimeException('Option persistence was vetoed.');
         }
+    }
+
+    protected static function unscopedLegacyOptionCacheNamespaceFor(string|int $teamId): string
+    {
+        return 'option.team.'.$teamId;
+    }
+
+    private static function authenticatedUserUsesConnection(mixed $authenticatedUser, Connection $connection): bool
+    {
+        return $authenticatedUser instanceof User
+            && User::connectionCacheIdentity($authenticatedUser->getConnection())
+                === User::connectionCacheIdentity($connection);
     }
 }

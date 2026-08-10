@@ -133,8 +133,7 @@ it('does not serve an attachment owned by another team', function () {
     config(['aura.media.restrict_to_dimensions' => false]);
 
     $otherTeam = Team::factory()->createQuietly();
-    $attachment = Attachment::withoutGlobalScope(TeamScope::class)->create([
-        'team_id' => $otherTeam->id,
+    $attachment = Attachment::createForTeamForSystem($otherTeam->id, [
         'type' => 'Attachment',
         'name' => 'Other team image',
         'title' => 'Other team image',
@@ -157,8 +156,8 @@ it('isolates table reads and edit writes by team', function () {
         'type' => SecurityGapResource::$type,
         'title' => 'Current team record',
     ]);
-    $otherTeamPost = SecurityGapResource::withoutGlobalScope(TeamScope::class)->create([
-        'team_id' => Team::factory()->createQuietly()->id,
+    $otherTeam = Team::factory()->createQuietly();
+    $otherTeamPost = SecurityGapResource::createForTeamForSystem($otherTeam->id, [
         'type' => SecurityGapResource::$type,
         'title' => 'Other team record',
     ]);
@@ -181,8 +180,8 @@ it('isolates table reads and edit writes by team', function () {
 it('isolates global search results by team', function () {
     config(['aura.features.global_search' => true]);
 
-    SecurityGapResource::withoutGlobalScope(TeamScope::class)->create([
-        'team_id' => Team::factory()->createQuietly()->id,
+    $otherTeam = Team::factory()->createQuietly();
+    SecurityGapResource::createForTeamForSystem($otherTeam->id, [
         'type' => SecurityGapResource::$type,
         'title' => 'Other team global search needle',
     ]);
@@ -197,8 +196,8 @@ it('isolates global search results by team', function () {
 })->skip(fn () => ! config('aura.teams'), 'Cross-team search isolation requires teams enabled.');
 
 it('isolates field API results by team', function () {
-    SecurityGapResource::withoutGlobalScope(TeamScope::class)->create([
-        'team_id' => Team::factory()->createQuietly()->id,
+    $otherTeam = Team::factory()->createQuietly();
+    SecurityGapResource::createForTeamForSystem($otherTeam->id, [
         'type' => SecurityGapResource::$type,
         'title' => 'Other team field API needle',
     ]);

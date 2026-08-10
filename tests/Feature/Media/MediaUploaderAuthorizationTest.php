@@ -2,7 +2,6 @@
 
 use Aura\Base\Livewire\MediaUploader;
 use Aura\Base\Resources\Attachment;
-use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Fixtures\Media\Core20FailingAttachment;
 use Aura\Base\Tests\Fixtures\Media\Core20PostInsertFailingAttachment;
@@ -56,11 +55,17 @@ test('uploader removes stored bytes when attachment persistence fails', function
 });
 
 test('uploader rejects foreign preselected attachments', function () {
-    $foreign = Attachment::withoutGlobalScopes()->create([
+    $foreignTeam = foreignTeam();
+    $foreignAttributes = [
         'type' => Attachment::$type,
-        'team_id' => Team::factory()->createQuietly()->getKey(),
+        'team_id' => $foreignTeam->getKey(),
         'user_id' => $this->actor->getKey(),
-    ]);
+    ];
+
+    expect(fn () => Attachment::withoutGlobalScopes()->create($foreignAttributes))
+        ->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+    $foreign = Attachment::createForTeamForSystem($foreignTeam->getKey(), $foreignAttributes);
 
     expect(fn () => Livewire::test(MediaUploader::class, ['selected' => [(string) $foreign->getKey()]]))
         ->toThrow(Exception::class);

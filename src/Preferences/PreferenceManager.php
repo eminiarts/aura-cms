@@ -13,6 +13,7 @@ use DateTimeInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\SessionGuard;
 use Illuminate\Database\Connection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
@@ -263,7 +264,7 @@ final readonly class PreferenceManager
     private function deleteEveryoneEntry(string $storageKey): void
     {
         $option = new Option;
-        $query = Option::withoutGlobalScopes()
+        $query = $this->optionQuery()
             ->whereNull($option->getQualifiedDeletedAtColumn())
             ->where('name', $storageKey);
 
@@ -280,7 +281,7 @@ final readonly class PreferenceManager
 
     private function deleteTeamEntry(PreferenceContext $context, string $storageKey): void
     {
-        $record = Option::withoutGlobalScopes()
+        $record = $this->optionQuery()
             ->whereNull((new Option)->getQualifiedDeletedAtColumn())
             ->where('team_id', $context->team->getKey())
             ->where('name', 'team.'.$context->team->getKey().'.'.$storageKey)
@@ -294,7 +295,7 @@ final readonly class PreferenceManager
 
     private function deleteUserEntry(PreferenceContext $context, string $storageKey): void
     {
-        $query = Option::withoutGlobalScopes()
+        $query = $this->optionQuery()
             ->whereNull((new Option)->getQualifiedDeletedAtColumn());
 
         if (config('aura.teams')) {
@@ -398,7 +399,19 @@ final readonly class PreferenceManager
 
     private function optionConnection(): Connection
     {
+        $authenticatedUser = Auth::user();
+
+        if ($authenticatedUser instanceof User) {
+            return $authenticatedUser->getConnection();
+        }
+
         return (new Option)->getConnection();
+    }
+
+    /** @return Builder<Option> */
+    private function optionQuery(): Builder
+    {
+        return Option::on($this->optionConnection()->getName())->withoutGlobalScopes();
     }
 
     private function ownsPersistedTeam(User $actor, Team $team): bool
@@ -490,7 +503,7 @@ final readonly class PreferenceManager
             now()->addHour(),
             function () use ($storageKey): array {
                 $option = new Option;
-                $query = Option::withoutGlobalScopes()
+                $query = $this->optionQuery()
                     ->whereNull($option->getQualifiedDeletedAtColumn())
                     ->where('name', $storageKey);
 
@@ -637,21 +650,41 @@ final readonly class PreferenceManager
     {
         $connection = $this->optionConnection();
 
-        $connection->transaction(function () use ($storageKey, $value, $preserveFloat): void {
+        $connection->transaction(function () use ($connection, $storageKey, $value, $preserveFloat): void {
             $attributes = ['name' => $storageKey];
 
             if (config('aura.teams')) {
                 $attributes['team_id'] = Option::EVERYONE_TEAM_ID;
             }
 
-            $record = Option::withoutGlobalScopes()
+            $record = $this->optionQuery()
                 ->withTrashed()
                 ->where($attributes)
                 ->lockForUpdate()
                 ->first();
 
             if ($record === null) {
-                $record = Option::withoutGlobalScopes()->newModelInstance($attributes);
+                if (config('aura.teams')) {
+                    Option::createForTeamForSystem(
+                        Option::EVERYONE_TEAM_ID,
+                        [...$attributes, 'user_id' => null, 'value' => $value],
+                        $connection,
+                    );
+
+                    return;
+                }
+
+                $record = $this->optionQuery()->newModelInstance($attributes);
+
+                if ($preserveFloat) {
+                    $this->persistEncodedFloat($record, $value);
+                } else {
+                    $record->setAttribute('value', $value);
+                }
+
+                $this->requireSuccessfulOptionMutation($record->save());
+
+                return;
             }
 
             if ($preserveFloat) {
@@ -681,16 +714,26 @@ final readonly class PreferenceManager
     ): void {
         $connection = $this->optionConnection();
 
-        $connection->transaction(function () use ($context, $storageKey, $value, $preserveFloat): void {
+        $connection->transaction(function () use ($connection, $context, $storageKey, $value, $preserveFloat): void {
             $attributes = [
                 'name' => 'team.'.$context->team->getKey().'.'.$storageKey,
                 'team_id' => $context->team->getKey(),
             ];
-            $record = Option::withoutGlobalScopes()
+            $record = $this->optionQuery()
                 ->withTrashed()
                 ->where($attributes)
                 ->lockForUpdate()
-                ->first() ?? Option::withoutGlobalScopes()->newModelInstance($attributes);
+                ->first();
+
+            if ($record === null) {
+                Option::createForTeamForSystem(
+                    $context->team->getKey(),
+                    [...$attributes, 'user_id' => null, 'value' => $value],
+                    $connection,
+                );
+
+                return;
+            }
 
             if ($preserveFloat) {
                 $this->persistEncodedFloat($record, $value);
@@ -717,16 +760,17 @@ final readonly class PreferenceManager
         $connection = $this->optionConnection();
         $teamId = config('aura.teams') ? $context->team?->getKey() : null;
 
-        $connection->transaction(function () use ($context, $storageKey, $value, $preserveFloat, $teamId): void {
+        $connection->transaction(function () use ($connection, $context, $storageKey, $value, $preserveFloat, $teamId): void {
             $optionNames = $this->userOptionNames($context->user, $storageKey);
             $canonicalName = $optionNames[0];
-            $query = Option::withoutGlobalScopes();
+            $query = $this->optionQuery();
 
             if (config('aura.teams')) {
                 $query->where('team_id', $teamId);
             }
 
             $record = null;
+            $createdForTeam = false;
 
             foreach ($optionNames as $optionName) {
                 $record = (clone $query)
@@ -746,10 +790,15 @@ final readonly class PreferenceManager
                 $record->setAttribute('name', $canonicalName);
             } else {
                 $isCreatingOrRenaming = true;
-                $record = (clone $query)->newModelInstance(['name' => $canonicalName]);
-
                 if (config('aura.teams')) {
-                    $record->setAttribute('team_id', $teamId);
+                    $record = Option::createForTeamForSystem(
+                        $teamId,
+                        ['name' => $canonicalName, 'user_id' => null, 'value' => $value],
+                        $connection,
+                    );
+                    $createdForTeam = true;
+                } else {
+                    $record = (clone $query)->newModelInstance(['name' => $canonicalName]);
                 }
             }
 
@@ -764,7 +813,19 @@ final readonly class PreferenceManager
             }
 
             try {
-                if ($record->trashed()) {
+                if ($createdForTeam) {
+                    $updated = $connection->table($record->getTable())
+                        ->useWritePdo()
+                        ->where($record->getKeyName(), $record->getKey())
+                        ->where('team_id', $teamId)
+                        ->update(['owner_identity' => $record->getAttribute('owner_identity')]);
+
+                    if ($updated !== 1) {
+                        throw new RuntimeException('Preference owner identity persistence failed.');
+                    }
+
+                    $record->syncOriginalAttribute('owner_identity');
+                } elseif ($record->trashed()) {
                     $this->requireSuccessfulOptionMutation($record->restore());
                 } else {
                     $this->requireSuccessfulOptionMutation($record->save());

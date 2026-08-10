@@ -581,6 +581,8 @@ function createCore08ProviderRecordsTable(): void
 {
     Schema::create('core08_provider_records', function (Blueprint $table): void {
         $table->id();
+        $table->unsignedBigInteger('user_id')->nullable();
+        $table->unsignedBigInteger('team_id')->nullable();
         $table->string('title')->nullable();
         $table->string('old_secret')->nullable();
         $table->integer('old_count')->nullable();
@@ -601,6 +603,26 @@ function createCore08ProviderCatalogTable(): void
         $table->string('slug');
         $table->unsignedInteger('version');
     });
+}
+
+function createCore08OwnedBoundaryResource(array $attributes): Core08AttributeBoundaryResource
+{
+    $owner = auth()->user() ?? createSuperAdmin();
+    $attributes['user_id'] = $owner->getAuthIdentifier();
+
+    if (config('aura.teams')) {
+        return Core08AttributeBoundaryResource::createForTeamForSystem(
+            $owner->current_team_id,
+            $attributes,
+            $owner->getConnection(),
+        );
+    }
+
+    return Core08AttributeBoundaryResource::createForOwnerForSystem(
+        $owner->getAuthIdentifier(),
+        $attributes,
+        $owner->getConnection(),
+    );
 }
 
 afterEach(function () {
@@ -965,7 +987,12 @@ it('keeps inactive meta values hidden and does not persist queued A changes whil
         resources: [Core08AttributeBoundaryResource::class],
     );
 
-    $resource = Core08AttributeBoundaryResource::create(['title' => 'Meta resource']);
+    if (config('aura.teams')) {
+        expect(fn () => Core08AttributeBoundaryResource::create(['title' => 'Ownerless meta resource']))
+            ->toThrow(LogicException::class);
+    }
+
+    $resource = createCore08OwnedBoundaryResource(['title' => 'Meta resource']);
     $resource->meta()->create(['key' => 'old_secret', 'value' => 'persisted meta secret']);
     $resource->load('meta');
 
@@ -999,8 +1026,8 @@ it('physically quarantines inactive loaded relations and meta across lifecycle o
         resources: [Core08AttributeBoundaryResource::class],
     );
 
-    $related = Core08AttributeBoundaryResource::create(['title' => 'persisted relation']);
-    $resource = Core08AttributeBoundaryResource::create(['title' => 'relation owner']);
+    $related = createCore08OwnedBoundaryResource(['title' => 'persisted relation']);
+    $resource = createCore08OwnedBoundaryResource(['title' => 'relation owner']);
     $resource->meta()->create(['key' => 'old_secret', 'value' => 'persisted meta relation secret']);
     $resource->meta()->create(['key' => 'active_meta', 'value' => 'active meta value']);
     $resource->load('meta');
@@ -1188,6 +1215,15 @@ it('keeps new refresh delete and clone lifecycle operations isolated', function 
     expect($replica->exists)->toBeFalse()
         ->and($replica->old_secret)->toBeNull();
 
+    $ownerless = new Core08HydrationResource;
+    $ownerless->forceFill(['title' => 'Ownerless B']);
+
+    if (config('aura.teams')) {
+        expect(fn () => $ownerless->save())
+            ->toThrow(LogicException::class);
+    }
+
+    createSuperAdmin();
     $new = new Core08HydrationResource;
     $new->forceFill(['title' => 'Created in B', 'old_secret' => 'never persisted']);
 

@@ -8,8 +8,8 @@ use Aura\Base\Fields\Password;
 trait SaveFieldAttributes
 {
     /**
-     * Register the save pipeline as ONE listener per model event, with the
-     * step order hard-coded.
+     * Register post-save meta persistence. Resource invokes the pre-save
+     * field pipeline directly, with the step order hard-coded.
      *
      * The three steps (initial post columns → pack field attributes into the
      * `fields` array → persist `fields` as meta) used to be three separate
@@ -21,16 +21,10 @@ trait SaveFieldAttributes
      * meta consumer before the packer, and the literal `fields` array leaked
      * into the INSERT ("table posts has no column named fields", issue #37).
      *
-     * One listener, explicit order — immune to boot order.
+     * One explicit pipeline — immune to boot order.
      */
     protected static function bootSaveFieldAttributes()
     {
-        static::saving(function ($post) {
-            static::applyInitialPostFields($post);
-            static::packFieldAttributes($post);
-            static::persistMetaFieldsOnSaving($post);
-        });
-
         static::saved(function ($post) {
             static::persistMetaFieldsOnSaved($post);
         });
@@ -126,6 +120,25 @@ trait SaveFieldAttributes
             // Unset fields from the attributes
             unset($post->attributes[$slug]);
         });
+    }
+
+    protected function prepareFieldAttributesForPersistence(
+        bool $globalWrite = false,
+        bool $trustedOwnerIntent = false,
+        int|string|null $trustedOwnerId = null,
+        bool $trustedTeamIntent = false,
+        int|string|null $trustedTeamId = null,
+    ): void {
+        static::applyInitialPostFields(
+            $this,
+            $globalWrite,
+            $trustedOwnerIntent,
+            $trustedOwnerId,
+            $trustedTeamIntent,
+            $trustedTeamId,
+        );
+        static::packFieldAttributes($this);
+        static::persistMetaFieldsOnSaving($this);
     }
 
     /**

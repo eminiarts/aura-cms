@@ -64,6 +64,7 @@ use Aura\Base\Preferences\PreferenceManager;
 use Aura\Base\Preferences\PreferenceRegistry;
 use Aura\Base\Preferences\PreferenceScope;
 use Aura\Base\Preferences\PreferenceValueType;
+use Aura\Base\Providers\AuraEloquentUserProvider;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Services\TransactionRollbackCallbacks;
@@ -75,8 +76,10 @@ use Aura\Base\Widgets\SparklineBar;
 use Aura\Base\Widgets\ValueWidget;
 use Aura\Base\Widgets\Widgets;
 use Closure;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -96,6 +99,8 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function boot()
     {
+        $this->configureAuraAuthProviders();
+
         parent::boot();
 
         $this->app->booted(function (): void {
@@ -120,7 +125,15 @@ class AuraServiceProvider extends PackageServiceProvider
         // app providers boot after package providers, so a later Gate::define
         // wins. A required $user param means guests are denied automatically.
         Gate::define(User::GLOBAL_ADMIN_GATE, function ($user) {
-            return (bool) ($user->global_admin ?? false);
+            if (! $user instanceof User || $user->getAuthIdentifier() === null) {
+                return false;
+            }
+
+            return (bool) $user->getConnection()
+                ->table($user->getTable())
+                ->useWritePdo()
+                ->where($user->getAuthIdentifierName(), $user->getAuthIdentifier())
+                ->value('global_admin');
         });
 
         return $this;
@@ -301,9 +314,37 @@ class AuraServiceProvider extends PackageServiceProvider
         $aura = $this->app->make(Aura::class);
         $aura->registerFields($aura->getAppFields());
 
-        Queue::before(fn () => AuraFacade::flushState());
-        Queue::after(fn () => AuraFacade::flushState());
-        Queue::exceptionOccurred(fn () => AuraFacade::flushState());
+        /** @var array<int, Authenticatable|null> $syncAuthenticatedUsers */
+        $syncAuthenticatedUsers = [];
+        $resetWorkerState = function (): void {
+            Auth::forgetGuards();
+            AuraFacade::flushState();
+        };
+
+        Queue::before(function ($event) use (&$syncAuthenticatedUsers, $resetWorkerState): void {
+            if ($event->connectionName === 'sync') {
+                $syncAuthenticatedUsers[] = Auth::user();
+            }
+
+            $resetWorkerState();
+        });
+
+        $finishWorkerBoundary = function ($event) use (&$syncAuthenticatedUsers, $resetWorkerState): void {
+            $resetWorkerState();
+
+            if ($event->connectionName !== 'sync' || $syncAuthenticatedUsers === []) {
+                return;
+            }
+
+            $authenticatedUser = array_pop($syncAuthenticatedUsers);
+
+            if ($authenticatedUser) {
+                Auth::setUser($authenticatedUser);
+            }
+        };
+
+        Queue::after($finishWorkerBoundary);
+        Queue::exceptionOccurred($finishWorkerBoundary);
 
         // Laravel Octane keeps a single PHP process alive across many requests,
         // so Aura's process-level static state (field caches, resource registry,
@@ -317,10 +358,15 @@ class AuraServiceProvider extends PackageServiceProvider
 
             foreach ([
                 'Laravel\Octane\Events\RequestReceived',
+                'Laravel\Octane\Events\RequestHandled',
+                'Laravel\Octane\Events\RequestTerminated',
                 'Laravel\Octane\Events\TaskReceived',
+                'Laravel\Octane\Events\TaskTerminated',
                 'Laravel\Octane\Events\TickReceived',
+                'Laravel\Octane\Events\TickTerminated',
+                'Laravel\Octane\Events\WorkerErrorOccurred',
             ] as $octaneEvent) {
-                $events->listen($octaneEvent, fn () => AuraFacade::flushState());
+                $events->listen($octaneEvent, $resetWorkerState);
             }
         }
 
@@ -396,6 +442,11 @@ class AuraServiceProvider extends PackageServiceProvider
         parent::packageRegistered();
 
         $this->app->singleton(TransactionRollbackCallbacks::class);
+        $this->app->make('auth')->provider('aura-eloquent', function ($app, array $config) {
+            return new AuraEloquentUserProvider($app['hash'], $config['model']);
+        });
+
+        $this->configureAuraAuthProviders();
 
         $this->app->singleton('hook_manager', function ($app) {
             return new HookManager;
@@ -523,8 +574,6 @@ class AuraServiceProvider extends PackageServiceProvider
         $aura->registerWidgets($aura->getAppWidgets());
     }
 
-    public function registeringPackage() {}
-
     protected function getResources(): array
     {
         return config('aura.resources');
@@ -640,5 +689,20 @@ class AuraServiceProvider extends PackageServiceProvider
                 'arguments.slug' => ['required', 'string'],
             ],
         );
+    }
+
+    private function configureAuraAuthProviders(): void
+    {
+        foreach (config('auth.providers', []) as $name => $provider) {
+            $model = is_array($provider) ? ($provider['model'] ?? null) : null;
+
+            if (is_array($provider)
+                && ($provider['driver'] ?? null) === 'eloquent'
+                && is_string($model)
+                && is_a($model, User::class, true)
+            ) {
+                config()->set("auth.providers.{$name}.driver", 'aura-eloquent');
+            }
+        }
     }
 }

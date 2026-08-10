@@ -6,7 +6,6 @@ use Aura\Base\Livewire\Media\InvalidMediaOwnerContext;
 use Aura\Base\Livewire\Media\MediaAuthorization;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Resources\Attachment;
-use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Traits\InputFields;
@@ -103,12 +102,17 @@ test('owner authorization rejects model slug field type and unregistered resourc
 });
 
 test('owner authorization rejects foreign team records', function () {
-    $foreignTeam = Team::factory()->createQuietly();
-    $foreign = Post::withoutGlobalScopes()->create([
+    $foreignTeam = foreignTeam();
+    $foreignAttributes = [
         'type' => Post::$type,
         'team_id' => $foreignTeam->getKey(),
         'user_id' => $this->actor->getKey(),
-    ]);
+    ];
+
+    expect(fn () => Post::withoutGlobalScopes()->create($foreignAttributes))
+        ->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+    $foreign = Post::createForTeamForSystem($foreignTeam->getKey(), $foreignAttributes);
     $foreignToken = $this->tokens->issue('foreign-owner', Post::class, (string) $foreign->getKey(), 'update', 'image', Image::class, $this->actor);
 
     expect(fn () => $this->authorization->authorizeOwner($foreignToken, $this->actor, Post::class, 'image'))
@@ -147,11 +151,17 @@ test('attachment authorization preserves order and rejects missing and duplicate
 });
 
 test('attachment authorization rejects foreign team ids', function () {
-    $foreign = Attachment::withoutGlobalScopes()->create([
+    $foreignTeam = foreignTeam();
+    $foreignAttributes = [
         'type' => Attachment::$type,
-        'team_id' => Team::factory()->createQuietly()->getKey(),
+        'team_id' => $foreignTeam->getKey(),
         'user_id' => $this->actor->getKey(),
-    ]);
+    ];
+
+    expect(fn () => Attachment::withoutGlobalScopes()->create($foreignAttributes))
+        ->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+    $foreign = Attachment::createForTeamForSystem($foreignTeam->getKey(), $foreignAttributes);
 
     expect(fn () => $this->authorization->authorizeAttachments([(string) $foreign->getKey()], $this->actor))
         ->toThrow(InvalidMediaOwnerContext::class);

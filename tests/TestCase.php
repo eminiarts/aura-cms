@@ -4,6 +4,7 @@ namespace Aura\Base\Tests;
 
 use Aura\Base\AuraServiceProvider;
 use Aura\Base\Providers\AuthServiceProvider;
+use Aura\Base\Resources\User;
 use Aura\Base\Tests\Fixtures\FilterComponentServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Foundation\Testing\Concerns\InteractsWithViews;
@@ -138,6 +139,8 @@ class TestCase extends Orchestra
         if (! is_file($mediaSecurityDatabase)) {
             touch($mediaSecurityDatabase);
         }
+
+        $app['config']->set('auth.providers.users.model', User::class);
 
         // Prevent actual file upload handling
         $app['config']->set('livewire.temporary_file_upload.disk', 'local');

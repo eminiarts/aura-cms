@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\FieldValueStorage;
+use Illuminate\Database\Eloquent\Model;
+
 class Repeater extends Field
 {
     public $edit = 'aura::fields.repeater';
@@ -58,6 +61,23 @@ class Repeater extends Field
             ],
 
         ]);
+    }
+
+    public function normalizeForStorage(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueStorage $storage,
+    ): mixed {
+        $slug = $field['slug'] ?? null;
+
+        if ($storage === FieldValueStorage::Physical
+            && is_string($slug)
+            && $model?->hasCast($slug, ['array', 'json', 'object', 'collection'])) {
+            return $value;
+        }
+
+        return parent::normalizeForStorage($value, $field, $model, $storage);
     }
 
     public function set($post, $field, $value)

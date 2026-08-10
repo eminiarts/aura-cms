@@ -154,7 +154,8 @@ test('viewAny accepts a resource class string as its policy subject', function (
 
 test('resource class strings and instances retain the same permission semantics', function () {
     $user = createAdmin();
-    $user->roles()->first()->update([
+    $this->actingAs($user);
+    $user->roles()->firstOrFail()->update([
         'permissions' => [
             'viewAny-core05-policy-subject' => true,
             'create-core05-policy-subject' => false,

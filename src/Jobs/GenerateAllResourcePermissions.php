@@ -3,32 +3,61 @@
 namespace Aura\Base\Jobs;
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Permission;
 use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class GenerateAllResourcePermissions
 {
     use Dispatchable, InteractsWithQueue, SerializesModels;
 
-    private $teamId;
+    private string $connectionIdentity;
 
-    public function __construct(?int $teamId = null)
+    private string $connectionName;
+
+    private ?int $teamId;
+
+    public function __construct(?int $teamId = null, ?string $connectionName = null)
     {
-        $this->teamId = $teamId ?? auth()->user()?->current_team_id;
+        $authenticatedUser = auth()->user();
+        $connectionName ??= $authenticatedUser instanceof Model
+            ? $authenticatedUser->getConnectionName()
+            : null;
+        $connection = DB::connection($connectionName);
+
+        $this->connectionName = (string) $connection->getName();
+        $this->connectionIdentity = User::connectionCacheIdentity($connection);
+        $this->teamId = $teamId;
+
+        if ($this->teamId === null
+            && $authenticatedUser instanceof Model
+            && User::connectionCacheIdentity($authenticatedUser->getConnection())
+                === $this->connectionIdentity
+        ) {
+            $this->teamId = $authenticatedUser->getAttribute('current_team_id');
+        }
     }
 
-    public function handle()
+    public function handle(): void
     {
+        if (User::connectionCacheIdentity(DB::connection($this->connectionName)) !== $this->connectionIdentity) {
+            throw new RuntimeException('The database connection identity changed after this permission-generation job was dispatched.');
+        }
+
         $resources = collect(Aura::getResources())->filter(function ($resource) {
             try {
-                $resourceInstance = app($resource);
+                $resourceInstance = clone app($resource);
+                $resourceInstance->setConnection($this->connectionName);
 
                 return is_subclass_of($resourceInstance, Resource::class) &&
                        ! is_a($resourceInstance, Team::class) &&
@@ -42,14 +71,17 @@ class GenerateAllResourcePermissions
             }
         });
 
-        DB::transaction(function () use ($resources) {
+        DB::connection($this->connectionName)->transaction(function () use ($resources) {
             foreach ($resources as $resource) {
-                $this->generatePermissionsForResource(app($resource));
+                $resourceInstance = clone app($resource);
+                $resourceInstance->setConnection($this->connectionName);
+
+                $this->generatePermissionsForResource($resourceInstance);
             }
         });
     }
 
-    private function generatePermissionsForResource(Resource $resource)
+    private function generatePermissionsForResource(Resource $resource): void
     {
         $permissions = [
             'view' => "View {$resource->pluralName()}",
@@ -64,16 +96,32 @@ class GenerateAllResourcePermissions
 
         foreach ($permissions as $action => $name) {
             try {
-                Permission::withoutGlobalScopes()->updateOrCreate(
-                    [
-                        'slug' => "{$action}-{$resource::$slug}",
-                        'team_id' => $this->teamId,
-                    ],
-                    [
-                        'name' => $name,
-                        'group' => $resource->pluralName(),
-                    ]
-                );
+                $slug = "{$action}-{$resource::$slug}";
+                $values = [
+                    'name' => $name,
+                    'group' => $resource->pluralName(),
+                ];
+
+                if (! config('aura.teams')) {
+                    Permission::on($this->connectionName)
+                        ->withoutGlobalScopes()
+                        ->updateOrCreate(['slug' => $slug], $values);
+                } elseif ($this->teamId === null) {
+                    Permission::updateOrCreateGlobalForSystem(
+                        ['slug' => $slug],
+                        $values,
+                        DB::connection($this->connectionName),
+                    );
+                } else {
+                    TeamScope::forTeam(
+                        $this->teamId,
+                        fn () => Permission::on($this->connectionName)->updateOrCreate(
+                            ['slug' => $slug, 'team_id' => $this->teamId],
+                            $values
+                        ),
+                        DB::connection($this->connectionName),
+                    );
+                }
             } catch (QueryException $e) {
                 // Check if it's a duplicate entry error
                 Log::error($e->getMessage());

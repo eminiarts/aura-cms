@@ -432,12 +432,21 @@ test('legacy dispatch preserves parent and tenant scopes and applies custom capa
     ]);
 
     if (config('aura.teams')) {
-        LegacyParentScopedFilterCompatibilityResource::withoutGlobalScopes()->create([
+        $foreignTeam = foreignTeam();
+        $foreignAttributes = [
             'type' => LegacyParentScopedFilterCompatibilityResource::$type,
             'title' => '[P1] Other tenant outside parent',
-            'team_id' => $this->user->current_team_id + 1000,
+            'team_id' => $foreignTeam->getKey(),
             'priority' => 'urgent',
-        ]);
+        ];
+
+        expect(fn () => LegacyParentScopedFilterCompatibilityResource::withoutGlobalScopes()->create($foreignAttributes))
+            ->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+        LegacyParentScopedFilterCompatibilityResource::createForTeamForSystem(
+            $foreignTeam->getKey(),
+            $foreignAttributes,
+        );
     }
 
     $test = livewire(LegacyScopedApplyFilterBasedOnTypeTable::class, [

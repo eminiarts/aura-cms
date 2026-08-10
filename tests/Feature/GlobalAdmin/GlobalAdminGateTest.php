@@ -22,7 +22,10 @@ use function Pest\Livewire\livewire;
 function teamMember(Team $team): User
 {
     $role = Role::where('team_id', $team->id)->first()
-        ?? Role::factory()->create(['team_id' => $team->id]);
+        ?? Role::createForTeamForSystem(
+            $team->id,
+            Role::factory()->make()->getAttributes(),
+        );
 
     $target = User::factory()->create();
     $target->roles()->attach($role->id, ['team_id' => $team->id]);
@@ -263,8 +266,7 @@ describe('the flag cannot be self-granted (escalation guards)', function () {
         $team = Team::first() ?? Team::factory()->create();
         $role = globalAdminRole();
 
-        $invitation = TeamInvitation::create([
-            'team_id' => $team->id,
+        $invitation = TeamInvitation::createForTeamForSystem($team->id, [
             'email' => 'invited@example.com',
             'role' => $role->id,
         ]);
@@ -294,8 +296,7 @@ describe('the flag cannot be self-granted (escalation guards)', function () {
         // An existing account whose email matches the invitation.
         $existing = User::factory()->create(['email' => 'existing@example.com']);
 
-        $invitation = TeamInvitation::create([
-            'team_id' => $team->id,
+        $invitation = TeamInvitation::createForTeamForSystem($team->id, [
             'email' => 'existing@example.com',
             'role' => $role->id,
         ]);

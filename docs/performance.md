@@ -164,32 +164,29 @@ public function clearFieldsAttributeCache()
 
 ### Team Scope Caching
 
-The current team ID is cached indefinitely to avoid repeated database queries:
+`TeamScope` uses two cache layers for the authenticated user's current team:
 
-```php
-// In TeamScope.php - src/Models/Scopes/TeamScope.php
-private function getCurrentTeamId()
-{
-    if (!Auth::check()) {
-        return null;
-    }
+1. A process-local snapshot keyed by user ID keeps every scoped query in one request or job on the same tenant.
+2. The shared cache stores the database value for one hour in a connection-qualified random epoch namespace. A `false` sentinel represents a missing current team, so null values are cached as deliberately as team IDs.
 
-    $userId = Auth::id();
-    $cacheKey = User::currentTeamCacheKey($userId);
+`User::clearCurrentTeamCache($userId)` invalidates both layers. After commit it
+atomically rotates the shared epoch before retiring the prior value key. If the
+epoch marker is evicted, a fresh random epoch prevents an old surviving value
+from becoming current again. Expiring value keys bound storage even when an
+overlapping cold reader publishes into the retired namespace.
+A cold read that overlaps the update can finish only in its old, unreachable
+namespace, so it cannot permanently re-poison the current value in another
+worker. Aura calls invalidation for model-based current-team changes, and
+`Aura::flushState()` clears process-local snapshots after queue jobs and at each
+Octane request, task, and tick boundary. Query-builder or raw-SQL updates must
+call the invalidation method explicitly.
 
-    if (Cache::has($cacheKey)) {
-        return Cache::get($cacheKey);
-    }
-
-    $currentTeamId = DB::table('users')->where('id', $userId)->value('current_team_id');
-
-    if ($currentTeamId !== null) {
-        Cache::forever($cacheKey, $currentTeamId);
-    }
-
-    return $currentTeamId;
-}
-```
+TeamScope never publishes values read inside an open database transaction. It
+bypasses both cache layers for the transactional read, defers shared-cache
+invalidation until commit, and clears the process-local snapshot after either
+commit or rollback. A concurrent request therefore sees the last committed
+shared-cache value, while a rollback cannot poison a long-running worker with
+the abandoned team ID.
 
 ### User Data Caching
 

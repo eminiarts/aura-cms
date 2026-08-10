@@ -4,7 +4,9 @@ namespace Aura\Base\Livewire\Table;
 
 use Aura\Base\Contracts\TableResource;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
+use Aura\Base\Resources\User;
 use BackedEnum;
 use Closure;
 use DateTimeInterface;
@@ -158,25 +160,33 @@ final class TableMutationDispatcher
         ): array {
             $modelDescriptor->assertMatches($scope);
             $scopeSnapshot = null;
-            $records = $this->resolveExactSelection(
-                $scope,
-                $modelDescriptor,
-                $selected,
-                $selectAll,
-                $descriptor['trashed'],
+            $records = $this->withCurrentActorTeamContext(function () use (
+                &$scopeSnapshot,
+                $descriptor,
                 $markLockAcquired,
-                static function (array $snapshot) use (&$scopeSnapshot): void {
-                    $scopeSnapshot = $snapshot;
-                },
+                $modelDescriptor,
+                $scope,
+                $selectAll,
                 $selectAllExclusions,
-            );
+                $selected,
+            ): Collection {
+                $records = $this->resolveExactSelection(
+                    $scope,
+                    $modelDescriptor,
+                    $selected,
+                    $selectAll,
+                    $descriptor['trashed'],
+                    $markLockAcquired,
+                    static function (array $snapshot) use (&$scopeSnapshot): void {
+                        $scopeSnapshot = $snapshot;
+                    },
+                    $selectAllExclusions,
+                );
 
-            foreach ($records->chunk($this->recordChunkSize()) as $recordChunk) {
-                $recordChunk->each(function (Model $record) use ($descriptor, $modelDescriptor): void {
-                    $modelDescriptor->assertModelMatches($record);
-                    $this->authorize($record, $descriptor['ability']);
-                });
-            }
+                $this->authorizeBulkRecords($records, $modelDescriptor, $descriptor['ability']);
+
+                return $records;
+            });
 
             $ids = $records->map(fn (Model $record): mixed => $record->getKey())->all();
 
@@ -286,15 +296,29 @@ final class TableMutationDispatcher
             $selected,
         ): mixed {
             $modelDescriptor->assertMatches($scope);
-            $records = $this->resolveExactSelection(
-                $scope,
-                $modelDescriptor,
-                $selected,
-                $selectAll,
-                $descriptor['trashed'],
+            $records = $this->withCurrentActorTeamContext(function () use (
+                $descriptor,
                 $markLockAcquired,
-                excluded: $selectAllExclusions,
-            );
+                $modelDescriptor,
+                $scope,
+                $selectAll,
+                $selectAllExclusions,
+                $selected,
+            ): Collection {
+                $records = $this->resolveExactSelection(
+                    $scope,
+                    $modelDescriptor,
+                    $selected,
+                    $selectAll,
+                    $descriptor['trashed'],
+                    $markLockAcquired,
+                    excluded: $selectAllExclusions,
+                );
+
+                $this->authorizeBulkRecords($records, $modelDescriptor, $descriptor['ability']);
+
+                return $records;
+            });
             $receiver = $records->first();
 
             if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
@@ -302,13 +326,6 @@ final class TableMutationDispatcher
             }
 
             $this->mutationMethod($receiver, $action, $descriptor['mode']);
-
-            foreach ($records->chunk($this->recordChunkSize()) as $recordChunk) {
-                $recordChunk->each(function (Model $record) use ($descriptor, $modelDescriptor): void {
-                    $modelDescriptor->assertModelMatches($record);
-                    $this->authorize($record, $descriptor['ability']);
-                });
-            }
 
             $ids = $records->map(fn (Model $record): mixed => $record->getKey())->all();
 
@@ -1118,6 +1135,19 @@ final class TableMutationDispatcher
             $trashed,
             $expectedKeys,
         );
+    }
+
+    private function authorizeBulkRecords(
+        Collection $records,
+        TableMutationModelDescriptor $modelDescriptor,
+        string $ability,
+    ): void {
+        foreach ($records->chunk($this->recordChunkSize()) as $recordChunk) {
+            $recordChunk->each(function (Model $record) use ($ability, $modelDescriptor): void {
+                $modelDescriptor->assertModelMatches($record);
+                $this->authorize($record, $ability);
+            });
+        }
     }
 
     /**
@@ -2029,5 +2059,23 @@ final class TableMutationDispatcher
                 }
             }
         }
+    }
+
+    /**
+     * @template TValue
+     *
+     * @param  callable(): TValue  $callback
+     * @return TValue
+     */
+    private function withCurrentActorTeamContext(callable $callback): mixed
+    {
+        $actor = User::authenticatedResource();
+        $currentTeamId = $actor?->currentTeamIdForAuthorization();
+
+        if (! config('aura.teams') || ! $actor instanceof User || $currentTeamId === null) {
+            return $callback();
+        }
+
+        return TeamScope::forTeam($currentTeamId, $callback, $actor->getConnection());
     }
 }

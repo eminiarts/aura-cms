@@ -308,15 +308,15 @@ it('accepts an invitation carrying a shared Global Role', function () {
 
 it('refuses an invitation carrying a role owned by another team (cross-team injection)', function () {
     $team = $this->user->currentTeam;
-    $otherTeamRole = Role::create([
-        'team_id' => Team::factory()->create()->id,
+    $otherTeam = Team::factory()->create();
+    $otherTeamRole = Role::createForTeamForSystem($otherTeam->id, [
         'slug' => 'foreign', 'type' => 'Role', 'title' => 'Foreign', 'name' => 'Foreign',
         'super_admin' => false, 'permissions' => [],
     ]);
     $existingUser = User::factory()->create(['email' => 'foreign-role@example.com', 'current_team_id' => null]);
 
-    $invitation = TeamInvitation::create([
-        'team_id' => $team->id, 'email' => $existingUser->email, 'role' => $otherTeamRole->id,
+    $invitation = TeamInvitation::createForTeamForSystem($team->id, [
+        'email' => $existingUser->email, 'role' => $otherTeamRole->id,
     ]);
 
     // The role is not visible to the inviting team, so acceptance is refused and

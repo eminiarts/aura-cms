@@ -5,12 +5,12 @@ namespace Aura\Base\Policies;
 use App\Models\Post;
 use Aura\Base\Contracts\ScopesMediaVisibility;
 use Aura\Base\Resource;
-use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Auth\Access\Response;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class ResourcePolicy implements ScopesMediaVisibility
 {
@@ -23,6 +23,10 @@ class ResourcePolicy implements ScopesMediaVisibility
      */
     public function create($user, $resource)
     {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($resource::$createEnabled === false) {
             return false;
         }
@@ -39,6 +43,26 @@ class ResourcePolicy implements ScopesMediaVisibility
     }
 
     /**
+     * Determine whether the user can create a row shared with every team.
+     */
+    public function createGlobal($user, $resource): bool
+    {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
+        if (! config('aura.teams') || $resource::$createEnabled === false) {
+            return false;
+        }
+
+        if (! $resource::sharesRecordsAcrossTeams()) {
+            return false;
+        }
+
+        return $user->isAuraGlobalAdmin();
+    }
+
+    /**
      * Determine whether the user can delete the model.
      *
      * @param  Post  $resource
@@ -46,7 +70,11 @@ class ResourcePolicy implements ScopesMediaVisibility
      */
     public function delete($user, $resource)
     {
-        if ($this->deniesGlobalRoleWrite($user, $resource)) {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
+        if ($this->deniesGlobalSharedResourceWrite($user, $resource)) {
             return false;
         }
 
@@ -78,7 +106,11 @@ class ResourcePolicy implements ScopesMediaVisibility
      */
     public function forceDelete($user, $resource)
     {
-        if ($this->deniesGlobalRoleWrite($user, $resource)) {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
+        if ($this->deniesGlobalSharedResourceWrite($user, $resource)) {
             return false;
         }
 
@@ -101,7 +133,11 @@ class ResourcePolicy implements ScopesMediaVisibility
      */
     public function restore(User $user, $resource)
     {
-        if ($this->deniesGlobalRoleWrite($user, $resource)) {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
+        if ($this->deniesGlobalSharedResourceWrite($user, $resource)) {
             return false;
         }
 
@@ -118,6 +154,7 @@ class ResourcePolicy implements ScopesMediaVisibility
     public function scopeMediaVisibility(Builder $query, Authenticatable $actor, Resource $resource): Builder
     {
         if (! $actor instanceof User
+            || ! $this->usesSameConnection($actor, $resource)
             || config('aura.resource-view-enabled') === false
             || $resource::$viewEnabled === false) {
             return $query->whereRaw('1 = 0');
@@ -144,11 +181,15 @@ class ResourcePolicy implements ScopesMediaVisibility
      */
     public function update($user, $resource)
     {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($resource::$editEnabled === false) {
             return false;
         }
 
-        if ($this->deniesGlobalRoleWrite($user, $resource)) {
+        if ($this->deniesGlobalSharedResourceWrite($user, $resource)) {
             return false;
         }
 
@@ -180,6 +221,10 @@ class ResourcePolicy implements ScopesMediaVisibility
      */
     public function view($user, $resource)
     {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         // Check if the config resource view is enabled
         if (config('aura.resource-view-enabled') === false) {
             return false;
@@ -218,6 +263,10 @@ class ResourcePolicy implements ScopesMediaVisibility
      */
     public function viewAny($user, $resource)
     {
+        if (! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($resource::$indexViewEnabled === false) {
             return false;
         }
@@ -234,23 +283,20 @@ class ResourcePolicy implements ScopesMediaVisibility
     }
 
     /**
-     * Refuse a mutating write to a Global Role from a team context unless the
-     * actor is a Global Admin. A Global Role (team_id = null) belongs to the
-     * shared catalog: a team Super Admin — who otherwise clears every ability
-     * via hasBlanketAccess — must not edit or delete it, or one team could
-     * silently rewrite permissions for every other team. Checked BEFORE
-     * hasBlanketAccess so a team Super Admin's blanket power does not leak here;
-     * a Global Admin passes and is then cleared normally. A team may still
-     * Shadow the global role (create its own Team Role of the same slug) — that
-     * is a separate, allowed create. No-op in Teams-off mode (no catalog).
+     * Refuse a mutating write to any shared global row from a team context
+     * unless the actor is a Global Admin. Checked before blanket access so a
+     * team Super Admin cannot rewrite a catalog consumed by every other team.
      */
-    protected function deniesGlobalRoleWrite($user, $resource): bool
+    protected function deniesGlobalSharedResourceWrite($user, $resource): bool
     {
         if (! config('aura.teams')) {
             return false;
         }
 
-        if (! ($resource instanceof Role) || ! $resource->exists || $resource->getAttribute('team_id') !== null) {
+        if (! ($resource instanceof Resource)
+            || ! $resource::sharesRecordsAcrossTeams()
+            || ! $resource->exists
+            || $resource->getAttribute('team_id') !== null) {
             return false;
         }
 
@@ -265,5 +311,13 @@ class ResourcePolicy implements ScopesMediaVisibility
     protected function hasBlanketAccess($user): bool
     {
         return $user->isSuperAdmin() || $user->isAuraGlobalAdmin();
+    }
+
+    private function usesSameConnection(mixed $user, mixed $resource): bool
+    {
+        return $user instanceof User
+            && $resource instanceof Model
+            && User::connectionCacheIdentity($user->getConnection())
+                === User::connectionCacheIdentity($resource->getConnection());
     }
 }

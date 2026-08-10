@@ -32,24 +32,16 @@ beforeEach(function () {
 });
 
 /**
- * A Global Role (team_id = null) written quietly so an authenticated actor's
- * current team is never auto-applied by InitialPostFields. Bumps the catalog
- * version the same way the seeder/self-heal path does.
+ * A Global Role created through the trusted test-infrastructure contract.
  */
 function catalogGlobalRole(string $slug, array $attributes = []): Role
 {
-    $role = Role::withoutGlobalScopes()->newModelInstance(array_merge([
+    return Role::createGlobalForSystem(array_merge([
         'name' => ucfirst($slug),
         'slug' => $slug,
         'super_admin' => false,
         'permissions' => [],
-        'team_id' => null,
     ], $attributes));
-
-    $role->saveQuietly();
-    Role::bumpCatalogVersion();
-
-    return $role->refresh();
 }
 
 /**
@@ -57,12 +49,11 @@ function catalogGlobalRole(string $slug, array $attributes = []): Role
  */
 function catalogTeamRole(int $teamId, string $slug, array $attributes = []): Role
 {
-    return Role::withoutGlobalScopes()->create(array_merge([
+    return Role::createForTeamForSystem($teamId, array_merge([
         'name' => ucfirst($slug),
         'slug' => $slug,
         'super_admin' => false,
         'permissions' => [],
-        'team_id' => $teamId,
     ], $attributes));
 }
 
@@ -243,12 +234,26 @@ describe('the Global Admin manages the catalog through the Role form', function 
             ->set('form.fields.name', 'Sneaky')
             ->set('form.fields.slug', 'sneaky')
             ->set('form.fields.is_global', true)
-            ->call('save');
+            ->call('save')
+            ->assertForbidden();
 
         $role = Role::withoutGlobalScopes()->where('slug', 'sneaky')->first();
 
-        expect($role)->not->toBeNull()
-            ->and($role->team_id)->toBe($teamId); // team-scoped, no escalation
+        expect($role)->toBeNull();
+    });
+
+    it('requires the explicit promotion contract even for a Global Admin', function () {
+        $globalAdmin = promoteToGlobalAdmin(createSuperAdmin());
+        $this->actingAs($globalAdmin);
+
+        $role = catalogTeamRole($globalAdmin->current_team_id, 'promoted');
+        $role->setAttribute('team_id', null);
+
+        expect(fn () => $role->save())->toThrow(LogicException::class);
+
+        $role->refresh()->promoteToGlobal();
+
+        expect($role->refresh()->team_id)->toBeNull();
     });
 });
 

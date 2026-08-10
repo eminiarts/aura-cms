@@ -20,7 +20,7 @@ Teams in Aura CMS provide a powerful multi-tenancy solution that allows you to o
 
 Teams functionality in Aura CMS enables:
 
-- Multi-tenant architecture with complete resource isolation
+- Multi-tenant architecture with isolation by default and explicit shared catalogs
 - Automatic scoping of all resources to the current team
 - Team-specific settings and configurations via the Options system
 - User management within teams with role-based access
@@ -148,7 +148,7 @@ The invitation email is sent using the `Aura\Base\Mail\TeamInvitation` mailable,
 <a name="resource-isolation"></a>
 ## Resource Isolation
 
-All resources in Aura CMS are automatically scoped to the current team when teams are enabled. This ensures complete data isolation between teams.
+Resources in Aura CMS are scoped to the current team by default when teams are enabled. A resource must explicitly opt in before global catalog rows can be visible across teams.
 
 ### How It Works
 
@@ -159,6 +159,99 @@ Resources are automatically filtered by the `team_id` column, which is set when 
 $post = Post::create(['title' => 'My Post']);
 // $post->team_id is automatically set to auth()->user()->current_team_id
 ```
+
+Ordinary authenticated creates distinguish omission from explicit `null`.
+Omitted ownership receives actor defaults. Explicit `null` is preserved as
+caller intent and then rejected by the ordinary non-global write invariant:
+
+```php
+// Defaults team_id and user_id from the authenticated user.
+$omittedOwnership = Post::create(['title' => 'Team Post']);
+
+// Rejected: explicit null is never rewritten into an actor/team id.
+Post::create([
+    'title' => 'Team Post',
+    'team_id' => null,
+    'user_id' => null,
+]);
+
+// Gate-checked Global Admin path. Both nulls are intentional and preserved.
+$globalPost = SharedCatalog::createGlobal([
+    'title' => 'Global Entry',
+    'user_id' => null,
+]);
+```
+
+`createGlobal()` is limited to Global Admins and resources that opt in with
+`public static bool $sharedAcrossTeams = true`; the default is `false`.
+`promoteToGlobal()` applies the same `createGlobal` policy to an existing row.
+Seeders and trusted catalog jobs that have no authenticated actor use the
+deliberately named `createGlobalForSystem()` or
+`firstOrCreateGlobalForSystem()` / `updateOrCreateGlobalForSystem()` contracts.
+Trusted infrastructure that deliberately creates or moves a team-owned row
+uses `createForTeamForSystem($teamId, $attributes)` or
+`$resource->moveToTeamForSystem($teamId, $attributes)`. Owner-only maintenance
+uses `createForOwnerForSystem($ownerId, $attributes)` or
+`$resource->assignOwnerForSystem($ownerId, $attributes)`.
+
+Global-write authorization is call-local: no token, flag, or reusable capability
+is stored on the Resource or in static process state. After model, Builder, and
+Connection callbacks, Aura revalidates the exact Resource, table, connection,
+physical writer, team value, owner, and authenticated actor immediately before
+persistence. The write then follows Laravel's normal Connection, query grammar,
+binding, processor, transaction, and exception paths without redispatching model
+events. Outside a caller transaction, Aura scopes the statement in a transaction
+so Laravel cannot reconnect and retry it on a different physical writer.
+Event handlers, nested field saves, and re-entrant saves do not inherit the outer
+operation's authority. A callback that needs another global or tenant write must
+invoke an independently authorized named API for that operation.
+
+Eloquent model-event listeners remain trusted application code. Aura preserves
+their normal ordering and veto behavior, but it cannot sandbox a listener that
+directly commits, rolls back, or replaces a raw PDO transaction. Such a listener
+already holds the application's database credentials and can subvert any Laravel
+transaction, so it must follow the application's transaction boundary. Aura does
+fail closed before package-managed query or connection callbacks can control a
+caller's transaction, including callbacks registered immediately before the
+privileged statement. Transaction-start hooks are rejected because Aura must own
+that boundary to prevent reconnect and retry on another writer.
+
+This is a Resource API authorization boundary, not a sandbox for trusted
+application code. Code that directly uses PDO or SQL while holding the
+application's database credentials acts with those database credentials and is
+outside Aura's Resource tenancy checks. Enforce restrictions on such code with
+database users, grants, row-level security, or equivalent database controls.
+
+Tenant contexts and every call-local owner intent are connection-qualified. An
+authenticated actor on connection A cannot authorize a same-id read or write on connection B. For
+intentional cross-connection system work, pass the target `Connection` to the
+named static system API; `TeamScope::forTeam()` likewise accepts the connection
+as its third argument. Ordinary Livewire creates fail authorization when the
+resource and actor connections differ.
+
+An ordinary non-null `team_id` must match the active `TeamScope::forTeam()`
+context, when present, or the authenticated actor's current team. An ordinary
+non-null `user_id` must match the authenticated actor. This invariant runs on
+model saves as well as Aura forms, so `fill()`, `update()`, unscoped queries,
+and direct mass assignment cannot smuggle a foreign tenant or owner. Use the
+named system APIs for intentional seed, command, import, and repair work.
+An unauthenticated ordinary create that would otherwise produce a global shared
+row throws a `LogicException`. Aura's ordinary create/edit forms persist only
+the input slugs in that path's actual `createFields()` or `editFields()` tree,
+including `on_forms`, `on_create`, and `on_edit`; hidden fields and ownership,
+tenancy, or system columns are never accepted from the client.
+
+Invitation mail adds a signed connection name and connection fingerprint to
+both guest-registration and existing-user acceptance URLs. Only connections in
+`aura.auth.invitation_connections` (plus the configured Team and
+TeamInvitation resource connections) resolve. Older links remain valid only on
+`aura.auth.invitation_legacy_connection`, which defaults to the configured
+TeamInvitation resource connection; legacy resolution never probes multiple
+databases by colliding numeric IDs. Guest registration reloads and locks the
+team, invitation, invitation meta, and role on that connection's writer inside
+the same transaction as the existing-user check, user creation, and invitation
+consumption. A lagging replica therefore cannot revive a revoked invitation or
+hide an account that must use the existing-user acceptance path.
 
 ### Accessing Team Resources
 
@@ -183,9 +276,18 @@ The `TeamScope` (`Aura\Base\Models\Scopes\TeamScope`) is a global scope that is 
 ### How TeamScope Works
 
 1. **For regular resources**: Filters by `team_id = current_team_id`
-2. **For the User model**: Filters users who belong to the current team via the `user_role` pivot table
-3. **For the Team model**: No team filtering is applied (teams are not scoped to themselves)
-4. **When teams are disabled**: No filtering is applied
+2. **For opted-in shared resources**: Filters by `(team_id = current_team_id OR team_id IS NULL)`
+3. **For an authenticated user without a current team**: Returns only global rows for shared resources and no rows for regular resources
+4. **For the User model**: Filters users who belong to the current team via the `user_role` pivot table; a non-Global-Admin without a team sees only their own user row
+5. **For the Team model**: Authenticated queries are not scoped to one team; authorization and Membership relations constrain UI access
+6. **For guests and background workers**: Fails closed with no rows unless the query executes inside an explicit trusted tenant context or bypass
+7. **When teams are disabled**: No team filtering is applied
+
+An explicit `TeamScope::forTeam()` context is authoritative for every Resource,
+including `User`, `Team`, and `Role`, and takes precedence over a Global Admin's
+cross-team bypass. Contexts may be nested; the prior context is restored in
+`finally` after the callback returns or throws. Role Shadow resolution uses the
+same explicit context.
 
 ```php
 // TeamScope automatically adds this to queries:
@@ -194,19 +296,38 @@ $builder->where($model->getTable().'.team_id', $currentTeamId);
 
 ### Cache Mechanism
 
-The current team ID is cached per user to avoid repeated database queries:
+The current team ID is cached per user to avoid repeated database queries. Both an ID and the absence of an ID are cached for one hour in a connection-qualified random epoch, so users without a team do not trigger one lookup per scoped query. Epoch rotation makes prior values unreachable, while the value TTL bounds retired cache storage. Aura also keeps a request/job-local snapshot. Queue boundaries clear both Laravel's cached authentication guards and Aura state before and after every job (and after exceptions); synchronous dispatch restores the authenticated caller after the isolated job boundary.
+
+Inside a database transaction, TeamScope reads the connection directly and bypasses both cache layers, so nested transactions never publish uncommitted tenant state. A model change clears the process snapshot immediately and registers shared-cache invalidation with `afterCommit`. A rollback discards that callback, leaving the last committed shared value intact; the next process read resolves the rolled-back database value. This lifecycle works on supported Laravel 12 and 13 releases without depending on a rollback-only hook.
 
 ```php
-// Cache key format
-"user_{$userId}_current_team_id"
+// Cache key format (connection identity and random epoch included)
+"aura_current_team_{$connectionIdentity}_user_{$userId}_epoch_{$epoch}"
 ```
 
-> **Important**: When changing a user's `current_team_id`, you should clear this cache to ensure the TeamScope uses the updated value.
+> **Important**: Model-based team changes clear both cache layers automatically. Code that changes `current_team_id` through a query builder or raw SQL must call `User::clearCurrentTeamCache($userId)`; clearing only the persistent cache does not change the current request/job snapshot.
 
 <a name="bypassing-team-scope"></a>
 ## Bypassing Team Scope
 
 Sometimes you need to query resources across all teams, such as in admin tools or background jobs.
+
+Prefer the callback APIs for background work. The query must execute inside the
+callback; returning a lazy builder and executing it later is intentionally not a
+bypass. Both APIs restore scope state in `finally`, including after an `Error`.
+
+```php
+use Aura\Base\Models\Scopes\TeamScope;
+
+$teamPosts = TeamScope::forTeam(
+    $teamId,
+    fn () => Post::query()->get(),
+);
+
+$allPosts = TeamScope::withoutTenantScope(
+    fn () => Post::query()->get(),
+);
+```
 
 ### Using withoutGlobalScope
 
@@ -385,6 +506,12 @@ $resource->team; // BelongsTo - the team this resource belongs to
 
 // Team ID is automatically set on creation
 $resource->team_id; // The team ID
+
+// Default false; opt a catalog into current-team + global visibility
+public static bool $sharedAcrossTeams = false;
+
+// Inspect the effective resource contract
+$resource::sharesRecordsAcrossTeams();
 ```
 
 ## Testing with Teams

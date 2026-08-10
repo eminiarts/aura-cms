@@ -4,12 +4,14 @@ namespace Aura\Base\Resources;
 
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
 use Aura\Base\Models\Meta;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\TeamUser;
 use Aura\Base\Navigation\Navigation;
 use Aura\Base\Resource;
 use Aura\Base\Services\VersionedCache;
 use Aura\Base\Traits\HasTeamMemberships;
 use Illuminate\Database\Connection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Gate;
 
@@ -40,19 +42,9 @@ class Role extends Resource
 
     public static $customTable = true;
 
-    /**
-     * Transient "make this role global" intent captured from the guarded
-     * `is_global` form toggle. It is NOT a database column: the setIsGlobal
-     * mutator (setIsGlobalAttribute) diverts the submitted value here so it
-     * never reaches an INSERT,
-     * and the `saving` hook below translates it into the authoritative team_id
-     * write (team_id = null for a Global Role), gated on the actor being a
-     * Global Admin. `null` means the toggle was never submitted (leave team_id
-     * exactly as the normal pipeline set it).
-     */
-    public ?bool $globalIntent = null;
-
     public static $globalSearch = false;
+
+    public static bool $sharedAcrossTeams = true;
 
     public static ?string $slug = 'role';
 
@@ -74,7 +66,7 @@ class Role extends Resource
      * invalidates every user's cache lazily — instant shadow effect without
      * paying resolution queries on every permission check.
      */
-    protected static int $catalogVersion = 0;
+    protected static array $catalogVersions = [];
 
     protected static $dropdown = 'Users';
 
@@ -102,14 +94,15 @@ class Role extends Resource
      */
     public static function bumpCatalogVersion(?Connection $connection = null): void
     {
-        static::$catalogVersion++;
+        $connection = self::resolveCatalogConnection($connection);
+        $connectionIdentity = User::connectionCacheIdentity($connection);
 
-        if ($connection) {
-            VersionedCache::afterRollback($connection, static function (): void {
-                static::$catalogVersion++;
-            });
-            Navigation::clearCache($connection);
-        }
+        static::$catalogVersions[$connectionIdentity] = (static::$catalogVersions[$connectionIdentity] ?? 0) + 1;
+
+        VersionedCache::afterRollback($connection, static function () use ($connectionIdentity): void {
+            static::$catalogVersions[$connectionIdentity] = (static::$catalogVersions[$connectionIdentity] ?? 0) + 1;
+        });
+        Navigation::clearCache($connection);
     }
 
     /**
@@ -148,14 +141,16 @@ class Role extends Resource
      * memo (User::cachedRoles) so creating or deleting a catalog role or Shadow
      * invalidates every user's cache lazily.
      */
-    public static function catalogVersion(): int
+    public static function catalogVersion(?Connection $connection = null): int
     {
-        return static::$catalogVersion;
+        $connection = self::resolveCatalogConnection($connection);
+
+        return static::$catalogVersions[User::connectionCacheIdentity($connection)] ?? 0;
     }
 
     public function createMissingPermissions()
     {
-        GenerateAllResourcePermissions::dispatch();
+        GenerateAllResourcePermissions::dispatch(null, $this->getConnectionName());
     }
 
     /**
@@ -167,7 +162,23 @@ class Role extends Resource
      */
     public static function currentTeamIdForResolution(): ?int
     {
-        return optional(auth()->user())->current_team_id;
+        $authenticatedUser = auth()->user();
+        $connection = $authenticatedUser instanceof Model
+            ? $authenticatedUser->getConnection()
+            : app(static::class)->getConnection();
+        $contextTeamId = TeamScope::currentContextTeamId($connection);
+
+        if ($contextTeamId !== null) {
+            return (int) $contextTeamId;
+        }
+
+        if (! $authenticatedUser instanceof User) {
+            return null;
+        }
+
+        $currentTeamId = $authenticatedUser->currentTeamIdForAuthorization();
+
+        return $currentTeamId === null ? null : (int) $currentTeamId;
     }
 
     public function deleteSelected(): void
@@ -181,37 +192,24 @@ class Role extends Resource
      * `migrate`, or the test harness, which does not run aura:install), using the
      * shared catalogDefaults().
      *
-     * The row is written with saveQuietly() so the InitialPostFields saving hook
-     * — which auto-assigns the current team's id whenever team_id is unset — does
-     * not silently re-team the Global Role. In Teams-off mode the roles table has
-     * no team_id column, so the flat catalog row is used as-is. The catalog
-     * version is bumped explicitly since quiet writes fire no model events.
+     * Teams-on creation uses Resource's explicit trusted global-write contract,
+     * which preserves team_id = null without bypassing model events. In Teams-off
+     * mode the roles table has no team_id column, so the flat catalog row is used.
      */
-    public static function firstOrCreateCatalogRole(string $slug): self
+    public static function firstOrCreateCatalogRole(string $slug, ?Connection $connection = null): self
     {
-        $query = static::withoutGlobalScopes()->where('slug', $slug);
-
-        if (config('aura.teams')) {
-            $query->whereNull('team_id');
-        }
-
-        if ($role = $query->first()) {
-            return $role;
-        }
-
+        $connection = self::resolveCatalogConnection($connection);
         $attributes = static::catalogDefaults($slug);
 
         if (config('aura.teams')) {
-            // team_id is fillable, so passing it explicitly writes a Global Role.
-            $attributes['team_id'] = null;
+            unset($attributes['slug']);
+
+            return static::firstOrCreateGlobalForSystem(['slug' => $slug], $attributes, $connection);
         }
 
-        $role = static::withoutGlobalScopes()->newModelInstance($attributes);
-        $role->saveQuietly();
-
-        static::bumpCatalogVersion($role->getConnection());
-
-        return $role;
+        return static::on($connection->getName())
+            ->withoutGlobalScopes()
+            ->firstOrCreate(['slug' => $slug], $attributes);
     }
 
     /**
@@ -219,9 +217,9 @@ class Role extends Resource
      * the "attach-don't-mint" model: team creation and registration attach the
      * creator to this single role instead of minting a per-team admin row.
      */
-    public static function firstOrCreateGlobalAdmin(): self
+    public static function firstOrCreateGlobalAdmin(?Connection $connection = null): self
     {
-        return static::firstOrCreateCatalogRole('admin');
+        return static::firstOrCreateCatalogRole('admin', $connection);
     }
 
     public static function getFields()
@@ -297,9 +295,9 @@ class Role extends Resource
                 'on_view' => true,
                 // Client-advisory only: the toggle is shown to Global Admins so
                 // they can promote a role to the catalog. The authoritative
-                // guard lives server-side in the `saving` hook, which ignores
-                // the intent for any non-Global-Admin actor. Teams-off has no
-                // global/team distinction, so the toggle is hidden entirely.
+                // path calls createGlobal()/promoteToGlobal(), which authorize
+                // the createGlobal policy. Teams-off has no global/team
+                // distinction, so the toggle is hidden entirely.
                 'conditional_logic' => function ($model, $post) {
                     return config('aura.teams') && auth()->check() && Gate::allows('AuraGlobalAdmin');
                 },
@@ -395,11 +393,18 @@ class Role extends Resource
      * @param  string  $slug  The role slug that identifies the role within a team.
      * @param  int|null  $teamId  The team context to resolve within (null = global/Teams-off).
      */
-    public static function resolveForTeam(string $slug, ?int $teamId = null): ?self
-    {
+    public static function resolveForTeam(
+        string $slug,
+        ?int $teamId = null,
+        ?Connection $connection = null,
+    ): ?self {
+        $connection = self::resolveCatalogConnection($connection);
+
         // Bypass TeamScope (and any other global scopes) so both the current
         // team's rows and the global (team_id = null) rows are considered.
-        $base = static::withoutGlobalScopes();
+        $base = static::on($connection->getName())
+            ->withoutGlobalScopes()
+            ->useWritePdo();
 
         // Teams-off mode: the roles table has no team_id column, so there is a
         // single flat catalog. The global role simply is the role.
@@ -434,15 +439,25 @@ class Role extends Resource
 
         $table = $query->getModel()->getTable();
 
-        return $query->whereNot(function ($inner) use ($table, $teamId) {
-            $inner->whereNull($table.'.team_id')
-                ->whereExists(function ($sub) use ($table, $teamId) {
-                    $sub->selectRaw('1')
-                        ->from($table.' as shadow_roles')
-                        ->whereColumn('shadow_roles.slug', $table.'.slug')
-                        ->where('shadow_roles.team_id', $teamId);
-                });
-        });
+        // The explicit resolution context is authoritative. TeamScope cannot
+        // supply this shape for guests or for a null Global Catalog context.
+        $query->withoutGlobalScope(TeamScope::class);
+
+        if ($teamId === null) {
+            return $query->whereNull($table.'.team_id');
+        }
+
+        return $query
+            ->visibleToTeam($teamId)
+            ->whereNot(function ($inner) use ($table, $teamId) {
+                $inner->whereNull($table.'.team_id')
+                    ->whereExists(function ($sub) use ($table, $teamId) {
+                        $sub->selectRaw('1')
+                            ->from($table.' as shadow_roles')
+                            ->whereColumn('shadow_roles.slug', $table.'.slug')
+                            ->where('shadow_roles.team_id', $teamId);
+                    });
+            });
     }
 
     /**
@@ -461,16 +476,13 @@ class Role extends Resource
     }
 
     /**
-     * Capture the guarded `is_global` toggle without ever letting it reach the
-     * database as a column. The submitted value is diverted into the transient
-     * $globalIntent property; the `saving` hook applies it (team_id = null) only
-     * for a Global Admin actor. Non-global/absent submissions leave team_id as
-     * the normal pipeline set it, so the toggle can never self-grant catalog
-     * scope through mass assignment or form tampering.
+     * Swallow direct mass assignment of the virtual form field. The Livewire
+     * resource components remove it from validated attributes and route global
+     * creation/promotion through Resource's explicit, policy-checked methods.
      */
     public function setIsGlobalAttribute($value): void
     {
-        $this->globalIntent = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+        // Intentionally not persisted.
     }
 
     /**
@@ -488,7 +500,9 @@ class Role extends Resource
      */
     public static function shadowResolvedForCurrentTeam()
     {
-        return static::shadowResolved(static::currentTeamIdForResolution());
+        $connection = self::resolveCatalogConnection();
+
+        return static::on($connection->getName())->shadowResolved(static::currentTeamIdForResolution());
     }
 
     public function teams(): BelongsToMany
@@ -528,40 +542,6 @@ class Role extends Resource
     {
         parent::booted();
 
-        // Apply the guarded `is_global` toggle. Registered from booted() so it
-        // runs AFTER InitialPostFields' saving hook (which auto-teams a new row
-        // to the current team): only here can team_id be forced back to null for
-        // a Global Admin promoting a role to the catalog. The intent is honored
-        // for a Global Admin only; every other actor's toggle is silently
-        // refused, so a Global Role can never be minted through form tampering.
-        static::saving(function (self $role) {
-            if ($role->globalIntent === null || ! config('aura.teams')) {
-                return;
-            }
-
-            $actor = auth()->user();
-            $isGlobalAdmin = $actor && Gate::forUser($actor)->allows(User::GLOBAL_ADMIN_GATE);
-
-            if (! $isGlobalAdmin) {
-                // Silent refusal: a non-Global-Admin can never produce a Global
-                // Role. If nothing team-scoped it yet, pin it to the actor's
-                // current team so the escalation attempt yields a Team Role.
-                if ($role->getAttribute('team_id') === null) {
-                    $role->setAttribute('team_id', optional($actor)->current_team_id);
-                }
-
-                return;
-            }
-
-            if ($role->globalIntent === true) {
-                $role->setAttribute('team_id', null);
-            } elseif ($role->getAttribute('team_id') === null) {
-                // A Global Admin explicitly turning the toggle off demotes the
-                // role to a Team Role in their current team.
-                $role->setAttribute('team_id', optional($actor)->current_team_id);
-            }
-        });
-
         // Any catalog write (including creating or deleting a Shadow) bumps the
         // Role Catalog version so every user's resolved-roles memo recomputes on
         // its next permission check — instant shadow effect, no per-call queries.
@@ -571,5 +551,20 @@ class Role extends Resource
         static::deleted(function (self $role): void {
             static::bumpCatalogVersion($role->getConnection());
         });
+    }
+
+    private static function resolveCatalogConnection(?Connection $connection = null): Connection
+    {
+        if ($connection) {
+            return $connection;
+        }
+
+        $authenticatedUser = auth()->user();
+
+        if ($authenticatedUser instanceof Model) {
+            return $authenticatedUser->getConnection();
+        }
+
+        return app(static::class)->getConnection();
     }
 }

@@ -180,6 +180,7 @@ class Aura
         FieldCacheManager::flush(flushProviderResults: false);
         ScopedScope::flushState();
         TeamScope::flushState();
+        User::flushCurrentTeamCacheState();
         static::$userModel = User::class;
     }
 

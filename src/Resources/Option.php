@@ -102,7 +102,10 @@ class Option extends Resource
      */
     public function setValueAttribute(mixed $value): void
     {
-        $this->attributes['value'] = $this->castAttributeAsJson('value', $value);
+        $this->attributes['value'] = json_encode(
+            $value,
+            JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR,
+        );
     }
 
     /**

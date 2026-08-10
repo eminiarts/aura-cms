@@ -19,6 +19,22 @@ require_once __DIR__.'/Support/helpers.php';
 |
 */
 
+test('the browser role fixture preserves the public foreign-team write boundary', function () {
+    $admin = browserSuperAdmin();
+    $foreignTeam = browserQuietTeam('Foreign role boundary');
+    $this->actingAs($admin);
+
+    expect(fn () => Role::factory()->create([
+        'name' => 'Rejected foreign role',
+        'slug' => 'rejected-foreign-role',
+        'team_id' => $foreignTeam->id,
+    ]))->toThrow(LogicException::class, 'Use createForTeamForSystem()');
+
+    $role = browserTeamRole($foreignTeam->id, 'Authorized fixture role', 'authorized-fixture-role');
+
+    expect($role->team_id)->toBe($foreignTeam->id);
+});
+
 test('a Global Admin views both Memberships and changes, attaches, and detaches through the editor', function () {
     $teamA = browserQuietTeam('Team Alpha');
     $teamB = browserQuietTeam('Team Beta');

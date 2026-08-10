@@ -4,6 +4,9 @@ use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Permission;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
+use Aura\Base\Tests\Resources\Post;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 beforeEach(function () {
@@ -124,10 +127,43 @@ describe('configuration verification', function () {
 });
 
 describe('model behavior without teams', function () {
+    it('invalidates scalar user identifiers without treating zero as empty', function () {
+        $connection = DB::connection();
+
+        foreach ([0, '0', '00000000-0000-4000-8000-000000000013'] as $userId) {
+            $cacheKey = User::currentTeamCacheKey($userId, $connection);
+            Cache::forever($cacheKey, 'stale');
+
+            User::clearCurrentTeamCache($userId, $connection);
+
+            expect(Cache::has($cacheKey))->toBeFalse();
+        }
+
+        $emptyCacheKey = User::currentTeamCacheKey('', $connection);
+        Cache::forever($emptyCacheKey, 'sentinel');
+
+        User::clearCurrentTeamCache('', $connection);
+        User::clearCurrentTeamCache(null, $connection);
+
+        expect(Cache::get($emptyCacheKey))->toBe('sentinel');
+    });
+
     it('creates user without team association', function () {
         $user = User::factory()->create();
 
         expect($user->current_team_id)->toBeNull();
+    });
+
+    it('defaults an omitted owner but rejects an explicit null owner', function () {
+        $post = Post::create([
+            'title' => 'Owned without teams',
+        ]);
+
+        expect($post->user_id)->toBe($this->user->id)
+            ->and(fn () => Post::create([
+                'title' => 'Explicitly unowned without teams',
+                'user_id' => null,
+            ]))->toThrow(LogicException::class, 'non-null owner');
     });
 
     it('creates role without team_id', function () {

@@ -50,6 +50,11 @@ class BrowserTestCase extends TestCase
         $this->serveBuiltAssets();
     }
 
+    public function refreshDatabase(): void
+    {
+        $this->baseRefreshDatabase();
+    }
+
     protected function defineEnvironment($app)
     {
         parent::defineEnvironment($app);

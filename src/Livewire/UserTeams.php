@@ -5,8 +5,9 @@ namespace Aura\Base\Livewire;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Aura\Base\Traits\WithLivewireHelpers;
+use Illuminate\Database\Connection;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
 
 /**
@@ -85,7 +86,7 @@ class UserTeams extends Component
 
         // One role per team: the pivot's unique(team_id, user_id) constraint.
         // Surface it as a validation error instead of a DB exception.
-        if ($user->teams()->where('teams.id', $teamId)->exists()) {
+        if ($user->teams()->useWritePdo()->where('teams.id', $teamId)->exists()) {
             $this->addError('attachTeamId', __('The user is already a member of this team.'));
 
             return;
@@ -121,7 +122,7 @@ class UserTeams extends Component
 
         $user = $this->user();
 
-        abort_unless($user->teams()->where('teams.id', $teamId)->exists(), 404);
+        abort_unless($user->teams()->useWritePdo()->where('teams.id', $teamId)->exists(), 404);
 
         abort_if($roleId === null, 403);
 
@@ -155,7 +156,7 @@ class UserTeams extends Component
 
         $user = $this->user();
 
-        abort_unless($user->teams()->where('teams.id', $teamId)->exists(), 404);
+        abort_unless($user->teams()->useWritePdo()->where('teams.id', $teamId)->exists(), 404);
 
         // Guard removing a Super Admin Membership the same way granting one is.
         if ($current = $this->resolvedRoleForUser($this->userId, $teamId)) {
@@ -168,9 +169,9 @@ class UserTeams extends Component
         // fall back to a remaining Membership (or null), mirroring the Team
         // deletion hook. Query fresh after the detach.
         if ((int) $user->getAttribute('current_team_id') === $teamId) {
-            $firstTeam = $user->teams()->first();
+            $firstTeam = $user->teams()->useWritePdo()->first();
             $user->forceFill(['current_team_id' => $firstTeam ? $firstTeam->getKey() : null])->save();
-            User::clearCurrentTeamCache($user->getKey());
+            User::clearCurrentTeamCache($user->getKey(), $user->getConnection());
         }
 
         $this->afterMembershipChange($user);
@@ -205,7 +206,7 @@ class UserTeams extends Component
      */
     public function getMembershipsProperty(): array
     {
-        return $this->user()->teams()->get()->map(function ($team) {
+        return $this->user()->teams()->useWritePdo()->get()->map(function ($team) {
             $teamId = (int) $team->getKey();
             $resolved = $this->resolvedRoleForUser($this->userId, $teamId);
             $canManage = $this->canManageTeam($teamId);
@@ -235,9 +236,11 @@ class UserTeams extends Component
         }
 
         $user = $this->user();
-        $memberTeamIds = $user->teams()->pluck('teams.id')->map(fn ($id) => (int) $id)->all();
+        $memberTeamIds = $user->teams()->useWritePdo()->pluck('teams.id')->map(fn ($id) => (int) $id)->all();
 
-        $teams = app(config('aura.resources.team'))::withoutGlobalScopes()->get();
+        $team = app(config('aura.resources.team'));
+        $team->setConnection($this->connection()->getName());
+        $teams = $team->newQueryWithoutScopes()->useWritePdo()->get();
 
         return $teams
             ->reject(fn ($team) => in_array((int) $team->getKey(), $memberTeamIds, true))
@@ -267,15 +270,7 @@ class UserTeams extends Component
     {
         $actor = auth()->user();
 
-        if (! $actor) {
-            return null;
-        }
-
-        if ($actor instanceof User) {
-            return $actor;
-        }
-
-        return User::withoutGlobalScopes()->find($actor->getAuthIdentifier());
+        return $actor instanceof User ? $actor : null;
     }
 
     /**
@@ -284,6 +279,7 @@ class UserTeams extends Component
      */
     protected function afterMembershipChange(User $user): void
     {
+        Cache::forget(User::teamListCacheKey($user->getKey(), $user->getConnection()));
         $user->unsetRelation('teams');
         $user->unsetRelation('roles');
 
@@ -298,7 +294,9 @@ class UserTeams extends Component
      */
     protected function assignableRole(int $teamId, int $roleId): ?Role
     {
-        return Role::withoutGlobalScopes()
+        return Role::on($this->connection()->getName())
+            ->withoutGlobalScopes()
+            ->useWritePdo()
             ->shadowResolved($teamId)
             ->visibleToTeam($teamId)
             ->whereKey($roleId)
@@ -324,6 +322,15 @@ class UserTeams extends Component
         }
 
         return (bool) optional($this->resolvedRoleForUser($actor->getKey(), $teamId))->super_admin;
+    }
+
+    protected function connection(): Connection
+    {
+        $actor = $this->actor();
+
+        abort_unless($actor instanceof User, 403);
+
+        return $actor->getConnection();
     }
 
     /**
@@ -360,7 +367,9 @@ class UserTeams extends Component
      */
     protected function resolvedRoleForUser($userId, int $teamId): ?Role
     {
-        $pivot = DB::table('user_role')
+        $connection = $this->connection();
+        $pivot = $connection->table('user_role')
+            ->useWritePdo()
             ->where('user_id', $userId)
             ->where('team_id', $teamId)
             ->first();
@@ -369,13 +378,16 @@ class UserTeams extends Component
             return null;
         }
 
-        $role = Role::withoutGlobalScopes()->find($pivot->role_id);
+        $role = Role::on($connection->getName())
+            ->withoutGlobalScopes()
+            ->useWritePdo()
+            ->find($pivot->role_id);
 
         if (! $role) {
             return null;
         }
 
-        return Role::resolveForTeam($role->getAttribute('slug'), $teamId);
+        return Role::resolveForTeam($role->getAttribute('slug'), $teamId, $connection);
     }
 
     /**
@@ -386,7 +398,9 @@ class UserTeams extends Component
      */
     protected function rolesForTeam(int $teamId): array
     {
-        return Role::withoutGlobalScopes()
+        return Role::on($this->connection()->getName())
+            ->withoutGlobalScopes()
+            ->useWritePdo()
             ->shadowResolved($teamId)
             ->visibleToTeam($teamId)
             ->get()
@@ -403,7 +417,7 @@ class UserTeams extends Component
     {
         $selections = [];
 
-        foreach ($this->user()->teams()->get() as $team) {
+        foreach ($this->user()->teams()->useWritePdo()->get() as $team) {
             $teamId = (int) $team->getKey();
             $selections[$teamId] = $this->resolvedRoleForUser($this->userId, $teamId)?->getKey();
         }
@@ -414,6 +428,9 @@ class UserTeams extends Component
     /** The viewed user, loaded unscoped so cross-team management works. */
     protected function user(): User
     {
-        return User::withoutGlobalScopes()->findOrFail($this->userId);
+        return User::on($this->connection()->getName())
+            ->withoutGlobalScopes()
+            ->useWritePdo()
+            ->findOrFail($this->userId);
     }
 }
