@@ -8,6 +8,7 @@ use Aura\Base\Contracts\FieldValueContract;
 use Aura\Base\Contracts\FieldValueStorage;
 use Aura\Base\Schema\FieldColumn;
 use Aura\Base\Support\FieldDisplayValue;
+use Aura\Base\Support\FieldPresentationLabel;
 use Aura\Base\Traits\InputFields;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
@@ -396,20 +397,35 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
         FieldValueContext $context = FieldValueContext::Index,
     ): mixed {
         $usesLegacyDisplayValue = method_exists($this, 'displayValue');
-        $display = $usesLegacyDisplayValue
-            ? $this->invokeLegacyDisplayValue($value, $field, $model, $context)
-            : $this->display($field, $value, $model);
+        $displayMethod = new \ReflectionMethod($this, 'display');
+        $usesBaseDisplay = $displayMethod->getDeclaringClass()->getName() === self::class;
+
+        if ($usesLegacyDisplayValue) {
+            $display = $this->invokeLegacyDisplayValue($value, $field, $model, $context);
+        } elseif (! $usesBaseDisplay) {
+            // Existing display() extensions historically receive the raw or
+            // hydrated value. Keep that source and behavior contract intact.
+            $display = $this->display($field, $value, $model);
+        } else {
+            $label = $this->resolveAuraPresentationLabel($value, $field, $model, $context);
+            $usesDeclarativeLabels = array_key_exists('options', $field)
+                || array_key_exists('label_resolver', $field)
+                || $this->hasAccessibleOptionsProvider();
+            $display = $context === FieldValueContext::Index
+                || ! $usesDeclarativeLabels
+                || ! empty($field['display_view'])
+                ? $this->display($field, $label, $model)
+                : FieldDisplayValue::secure($label);
+        }
 
         if ($display instanceof Htmlable) {
             return $display;
         }
 
-        $displayMethod = new \ReflectionMethod($this, 'display');
-
         // The base implementation escapes all plain values and only emits
         // template markup as HtmlString. Custom overrides must explicitly
         // return Htmlable; their plain strings/arrays remain untrusted.
-        if (! $usesLegacyDisplayValue && $displayMethod->getDeclaringClass()->getName() === self::class) {
+        if (! $usesLegacyDisplayValue && $usesBaseDisplay) {
             return $display === null || $display === ''
                 ? $display
                 : new HtmlString((string) $display);
@@ -466,5 +482,39 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
         }
 
         return $method->invoke($this, $value);
+    }
+
+    private function hasAccessibleOptionsProvider(): bool
+    {
+        if (! method_exists($this, 'options')) {
+            return false;
+        }
+
+        return ! (new \ReflectionMethod($this, 'options'))->isPrivate();
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     */
+    private function resolveAuraPresentationLabel(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueContext $context,
+    ): mixed {
+        $options = $field['options'] ?? [];
+
+        if ($model !== null && $this->hasAccessibleOptionsProvider()) {
+            $options = (new \ReflectionMethod($this, 'options'))->invoke($this, $model, $field);
+        }
+
+        if (! is_array($options)) {
+            $options = [];
+        }
+
+        $labels = new FieldPresentationLabel;
+        $currentLabel = $labels->current($value, $options);
+
+        return $labels->resolve($value, $currentLabel, $field, $model, $context);
     }
 }
