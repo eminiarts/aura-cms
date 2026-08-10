@@ -266,7 +266,9 @@ $team->clearCachedOption('setting_name');
 
 Options are stored with the naming convention: `team.{team_id}.{option_name}`
 
-User-scoped options use a reserved v2 physical name with a canonical owner hash, while their public API remains `$user->getOption($name)` / `$user->updateOption($name, $value)`. This prevents dotted string user ids from colliding with dotted option names. Option identities are unique within each team and support soft delete/restore.
+User-scoped options are written under the canonical physical name `u{compact-owner-identity}{option}`, where the compact owner identity is 14 characters derived from the typed user id. The separate `owner_identity` column retains the full SHA-256 owner identity and is checked as the collision verifier before Aura reads, changes, or claims the row. This prevents dotted string user ids from colliding with dotted option names while the public API remains `$user->getOption($name)` / `$user->updateOption($name, $value)`.
+
+`aura-user-option-v2:{owner-hash}:{option}` and, for eligible integer-key users, `user.{id}.{option}` are readable migration aliases only, not write formats. Updating an aliased row migrates it to the compact canonical name. Option identities are unique within each team and support soft delete/restore.
 
 ### Team Preferences
 
