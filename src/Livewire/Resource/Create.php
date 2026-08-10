@@ -4,7 +4,7 @@ namespace Aura\Base\Livewire\Resource;
 
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Models\Post;
+use Aura\Base\Traits\HydratesResourceFormFields;
 use Aura\Base\Traits\InteractsWithFields;
 use Aura\Base\Traits\MediaFields;
 use Aura\Base\Traits\RepeaterFields;
@@ -15,6 +15,7 @@ use Livewire\WithFileUploads;
 class Create extends Component
 {
     use AuthorizesRequests;
+    use HydratesResourceFormFields;
     use InteractsWithFields;
     use MediaFields;
     use RepeaterFields;
@@ -114,31 +115,20 @@ class Create extends Component
             ];
         }
 
-        // Initialize the post fields with defaults
         $this->initializeFieldsWithDefaults();
 
         // Get all URL parameters
         $urlParameters = request()->query();
 
         // Process each URL parameter
-        foreach ($urlParameters as $key => $value) {
-            // Check if this parameter corresponds to a form field
-            if (array_key_exists($key, $this->form['fields'])) {
-                // Form values stay in their submitted representation. The
-                // field value contract normalizes them immediately before
-                // persistence, so decimal strings must not be cast to int here.
-                $this->form['fields'][$key] = $value;
-            }
-        }
+        // Form values stay in their submitted representation. The field value
+        // contract normalizes them immediately before persistence, so decimal
+        // strings must not be cast to int here.
+        $this->applyResourceFormFieldValues($urlParameters);
 
         // Process modal params (for modal usage) - similar to URL parameters
         if (isset($this->params) && is_array($this->params)) {
-            foreach ($this->params as $key => $value) {
-                // Check if this parameter corresponds to a form field
-                if (array_key_exists($key, $this->form['fields'])) {
-                    $this->form['fields'][$key] = $value;
-                }
-            }
+            $this->applyResourceFormFieldValues($this->params);
         }
     }
 
@@ -150,9 +140,13 @@ class Create extends Component
 
     public function rules()
     {
-        $rules = collect($this->model->validationRules())->mapWithKeys(function ($rule, $key) {
-            return ["form.fields.$key" => $rule];
-        })->toArray();
+        $visibleSlugs = $this->writableResourceFormFields(FieldValueContext::Create)->pluck('slug');
+
+        $rules = collect($this->model->validationRules())
+            ->filter(fn ($rule, $key) => $visibleSlugs->contains($key))
+            ->mapWithKeys(function ($rule, $key) {
+                return ["form.fields.$key" => $rule];
+            })->toArray();
 
         // Modify rules if the model implements it
         if (method_exists($this->model, 'modifyValidationRules')) {
@@ -165,6 +159,8 @@ class Create extends Component
     public function save()
     {
         $this->authorize('create', $this->model);
+        $this->authorizeRequestedGlobalFormIntent();
+        $this->sanitizeResourceFormFields(FieldValueContext::Create);
 
         $validated = $this->validate();
         $this->validateMediaFieldsBeforePersistence();
@@ -204,54 +200,8 @@ class Create extends Component
         $this->model = $model;
     }
 
-    protected function initializeFieldsWithDefaults()
+    protected function initializeFieldsWithDefaults(): void
     {
-        $fields = $this->model->fieldsCollection();
-
-        foreach ($fields as $field) {
-            $slug = $field['slug'] ?? null;
-
-            if (! $slug) {
-                continue;
-            }
-
-            // First, ensure all fields are initialized (even if to null)
-            // This allows params/query parameters to be applied to any field
-            $hasDefault = array_key_exists('default', $field);
-
-            if (! array_key_exists($slug, $this->form['fields'])) {
-                $this->form['fields'][$slug] = $this->model->hydrateFieldValueInContext(
-                    $slug,
-                    null,
-                    FieldValueContext::Create,
-                );
-            }
-
-            if ($field['type'] == "Aura\Base\Fields\Boolean" && ! $hasDefault) {
-                $this->form['fields'][$slug] = false;
-
-                continue;
-            }
-
-            // Initialize Tags field with empty array if no default is set
-            if ($field['type'] == "Aura\Base\Fields\Tags" && ! $hasDefault) {
-                $this->form['fields'][$slug] = [];
-
-                continue;
-            }
-
-            if ($hasDefault) {
-
-                if ($field['type'] == "Aura\Base\Fields\Checkbox" && isset($field['options']) && is_array($field['options']) && ! is_array($field['default'])) {
-                    $field['default'] = [$field['default']];
-                }
-
-                $this->form['fields'][$slug] = $this->model->hydrateFieldValueInContext(
-                    $slug,
-                    $field['default'],
-                    FieldValueContext::Create,
-                );
-            }
-        }
+        $this->hydrateResourceFormFields(FieldValueContext::Create);
     }
 }

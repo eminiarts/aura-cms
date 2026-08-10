@@ -4,9 +4,9 @@ namespace Aura\Base\Livewire\Resource;
 
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Models\Post;
 use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
 use Aura\Base\Traits\HasActions;
+use Aura\Base\Traits\HydratesResourceFormFields;
 use Aura\Base\Traits\InteractsWithFields;
 use Aura\Base\Traits\MediaFields;
 use Aura\Base\Traits\RepeaterFields;
@@ -24,6 +24,7 @@ class Edit extends Component
 {
     use AuthorizesRequests;
     use HasActions;
+    use HydratesResourceFormFields;
     use InteractsWithFields;
     use MediaFields;
     use RepeaterFields;
@@ -93,28 +94,7 @@ class Edit extends Component
 
     public function initializeModelFields()
     {
-        foreach ($this->model->inputFields() as $field) {
-            if (isset($this->form['fields']) && array_key_exists($field['slug'], $this->form['fields'])) {
-                $this->form['fields'][$field['slug']] = $this->model->resolveFieldValueInContext(
-                    $field['slug'],
-                    FieldValueContext::Edit,
-                );
-            }
-
-            // If the method exists in the field type, call it directly.
-            if (method_exists($field['field'], 'hydrate') && isset($this->form['fields'][$field['slug']])) {
-                // dd('hier');
-                $this->form['fields'][$field['slug']] = $field['field']->hydrate($this->form['fields'][$field['slug']], $field);
-            }
-
-            if ($field['field']->on_forms === false) {
-                unset($this->form['fields'][$field['slug']]);
-            }
-
-            if (optional($field)['on_forms'] === false) {
-                unset($this->form['fields'][$field['slug']]);
-            }
-        }
+        $this->hydrateResourceFormFields(FieldValueContext::Edit);
     }
 
     public function mount($id, $slug = null)
@@ -132,10 +112,7 @@ class Edit extends Component
         // Authorize
         $this->authorize('update', $this->model);
 
-        // Array instead of Eloquent Model
-        $this->form = $this->model->attributesToArray();
-
-        // foreach fields, call the hydration method on the field
+        $this->form = ['fields' => []];
         $this->initializeModelFields();
 
         // foreach fields, call the hydration method on the field
@@ -168,9 +145,13 @@ class Edit extends Component
 
     public function rules()
     {
-        $rules = collect($this->model->validationRules())->mapWithKeys(function ($rule, $key) {
-            return ["form.fields.$key" => $rule];
-        })->toArray();
+        $visibleSlugs = $this->writableResourceFormFields(FieldValueContext::Edit)->pluck('slug');
+
+        $rules = collect($this->model->validationRules())
+            ->filter(fn ($rule, $key) => $visibleSlugs->contains($key))
+            ->mapWithKeys(function ($rule, $key) {
+                return ["form.fields.$key" => $rule];
+            })->toArray();
 
         // Modify rules if the model implements it
         if (method_exists($this->model, 'modifyValidationRules')) {
@@ -183,6 +164,9 @@ class Edit extends Component
     #[On('saveModel')]
     public function save()
     {
+        $this->authorize('update', $this->model);
+        $this->authorizeRequestedGlobalFormIntent();
+        $this->sanitizeResourceFormFields(FieldValueContext::Edit);
         $validated = $this->validate();
         $this->validateMediaFieldsBeforePersistence();
 
@@ -211,7 +195,8 @@ class Edit extends Component
         }
 
         $this->model = $this->model->refresh();
-        $this->form = $this->model->attributesToArray();
+        $this->form = ['fields' => []];
+        $this->initializeModelFields();
 
         $this->dispatch('refreshComponent');
     }
