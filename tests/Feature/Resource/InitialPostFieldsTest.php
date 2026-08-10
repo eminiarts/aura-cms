@@ -1158,6 +1158,46 @@ it('rejects a writer swap during a privileged lookup before create', function (s
         ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
 })->with(['first-or-create', 'update-or-create']);
 
+it('rejects connection query infrastructure poisoning during a privileged lookup', function (string $api, string $mutation): void {
+    $connection = core13InstallConnectionProbe();
+    $armed = true;
+
+    $connection->beforeExecuting(function (string $query) use ($connection, $mutation, &$armed): void {
+        if (! $armed || ! str_starts_with(strtolower(ltrim($query)), 'select')) {
+            return;
+        }
+
+        $armed = false;
+
+        if ($mutation === 'grammar') {
+            $connection->setQueryGrammar(clone $connection->getQueryGrammar());
+        } else {
+            $connection->setPostProcessor(clone $connection->getPostProcessor());
+        }
+    });
+
+    $write = fn () => match ($api) {
+        'first-or-create' => PhysicalWriterGuardedGlobalResource::firstOrCreateGlobalForSystem(
+            ['name' => 'Lookup infrastructure candidate'],
+            [],
+            $connection,
+        ),
+        'update-or-create' => PhysicalWriterGuardedGlobalResource::updateOrCreateGlobalForSystem(
+            ['name' => 'Lookup infrastructure candidate'],
+            ['user_id' => null],
+            $connection,
+        ),
+    };
+
+    expect($write)->toThrow(LogicException::class, 'resource, tenancy, owner, or physical database writer');
+    expect($connection->table('explicit_null_shared_custom_resources')->count())->toBe(0);
+})->with([
+    ['first-or-create', 'grammar'],
+    ['first-or-create', 'processor'],
+    ['update-or-create', 'grammar'],
+    ['update-or-create', 'processor'],
+]);
+
 it('runs final authorization after builder callbacks register later connection callbacks', function (): void {
     $connection = DB::connection();
     $originalWriter = $connection->getPdo();

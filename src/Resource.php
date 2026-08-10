@@ -1010,6 +1010,8 @@ class Resource extends Model implements DefinesFields
                 || $query->getQuery()->connection !== $connection
                 || $query->getQuery()->grammar !== $queryGrammar
                 || $query->getQuery()->processor !== $queryProcessor
+                || $connection->getQueryGrammar() !== $queryGrammar
+                || $connection->getPostProcessor() !== $queryProcessor
                 || $query->getQuery()->from !== $table
                 || ($expectedWheres !== null && (
                     $query->getQuery()->wheres !== $expectedWheres
@@ -1209,6 +1211,8 @@ class Resource extends Model implements DefinesFields
             if ($queryBuilder->connection !== $connection
                 || $queryBuilder->grammar !== $grammar
                 || $queryBuilder->processor !== $processor
+                || $connection->getQueryGrammar() !== $grammar
+                || $connection->getPostProcessor() !== $processor
                 || $queryBuilder->from !== $table
                 || $queryBuilder->wheres !== $wheres
                 || $queryBuilder->getRawBindings()['where'] !== $whereBindings) {
@@ -1229,6 +1233,7 @@ class Resource extends Model implements DefinesFields
                 fn (): ?Model => $lookup->first(),
             );
         } finally {
+            $this->restoreConnectionQueryInfrastructure($connection, $grammar, $processor);
             $this->restorePhysicalWriter($connection, $writePdo, $transactionLevel);
         }
     }
@@ -1424,6 +1429,20 @@ class Resource extends Model implements DefinesFields
         return $value;
     }
 
+    private function restoreConnectionQueryInfrastructure(
+        Connection $connection,
+        Grammar $grammar,
+        Processor $processor,
+    ): void {
+        if ($connection->getQueryGrammar() !== $grammar) {
+            $connection->setQueryGrammar($grammar);
+        }
+
+        if ($connection->getPostProcessor() !== $processor) {
+            $connection->setPostProcessor($processor);
+        }
+    }
+
     private function restorePhysicalWriter(
         Connection $connection,
         PDO $writePdo,
@@ -1544,6 +1563,7 @@ class Resource extends Model implements DefinesFields
 
             return true;
         } finally {
+            $this->restoreConnectionQueryInfrastructure($connection, $queryGrammar, $queryProcessor);
             $this->restorePhysicalWriter($connection, $writePdo, $transactionLevel);
         }
     }
