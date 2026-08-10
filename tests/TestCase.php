@@ -90,6 +90,7 @@ class TestCase extends Orchestra
             'path' => $app->storagePath('framework/cache/data/media-security'),
             'lock_path' => $app->storagePath('framework/cache/data/media-security-locks'),
         ]);
+        $app['config']->set('cache.serializable_classes', false);
         $app['config']->set('aura.media.security.cache_store', 'aura-media-security');
     }
 

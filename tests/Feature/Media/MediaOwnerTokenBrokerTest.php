@@ -165,10 +165,11 @@ test('owner token issue rejects malformed context before creating a token', func
 ]);
 
 test('media token brokers reject process-local cache stores even when they expose locks', function () {
+    config()->set('cache.default', 'file');
     config()->set('aura.media.security.cache_store', 'array');
 
     expect(fn () => app(MediaOwnerTokenBroker::class))
-        ->toThrow(InvalidArgumentException::class, 'process-local stores are unsafe');
+        ->toThrow(InvalidArgumentException::class, 'process-local, custom, and proxied stores are rejected');
 });
 
 test('owner tokens resolve in a separate php worker through the configured shared store', function () {

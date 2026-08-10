@@ -3,7 +3,6 @@
 namespace Aura\Base\Livewire\Media;
 
 use Closure;
-use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
@@ -19,7 +18,7 @@ class MediaSelectionBroker
 
     private const ENVELOPE_VERSION = 1;
 
-    private readonly CacheRepository $cache;
+    private readonly MediaSecurityStore $cache;
 
     private readonly LockProvider $locks;
 

@@ -228,9 +228,11 @@ return [
 
         'generate_thumbnails' => true,
         'security' => [
-            // Null uses Laravel's default cache store. Every web/worker process
-            // must share a supported file, database, Redis, Memcached, or
-            // DynamoDB store with atomic locks; process-local stores are unsafe.
+            // Configure an explicitly named, dedicated file or database store
+            // with atomic locks. Also set Laravel's global
+            // cache.serializable_classes option to false. Null, the default
+            // store, Redis, DynamoDB, Memcached, failover, process-local, and
+            // custom or proxied stores fail closed.
             'cache_store' => null,
             'owner_token_ttl' => 900,
             'selection_ttl' => 15,

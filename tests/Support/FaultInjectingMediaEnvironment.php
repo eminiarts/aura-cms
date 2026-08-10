@@ -17,12 +17,12 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
 use RuntimeException;
 
-final class FaultInjectingMediaFileStore extends FileStore
+final class FaultInjectingMediaSecurityStore extends MediaSecurityStore
 {
     /** @var list<array{operation: string, key: string, throws: bool}> */
     private array $failures = [];
 
-    public function add($key, $value, $seconds): bool
+    public function add(string $key, mixed $value, int $seconds): bool
     {
         if ($this->fails('add', (string) $key)) {
             return false;
@@ -36,7 +36,7 @@ final class FaultInjectingMediaFileStore extends FileStore
         $this->failures[] = compact('operation', 'key', 'throws');
     }
 
-    public function forget($key): bool
+    public function forget(string $key): bool
     {
         if ($this->fails('forget', (string) $key)) {
             return false;
@@ -45,16 +45,16 @@ final class FaultInjectingMediaFileStore extends FileStore
         return parent::forget($key);
     }
 
-    public function get($key): mixed
+    public function get(string $key, mixed $default = null): mixed
     {
         if ($this->fails('get', (string) $key)) {
             return null;
         }
 
-        return parent::get($key);
+        return parent::get($key, $default);
     }
 
-    public function lock($name, $seconds = 0, $owner = null): mixed
+    public function lock($name, $seconds = 0, $owner = null)
     {
         if ($this->fails('lock', (string) $name)) {
             return false;
@@ -76,7 +76,7 @@ final class FaultInjectingMediaFileStore extends FileStore
         return $lock;
     }
 
-    public function put($key, $value, $seconds): bool
+    public function put(string $key, mixed $value, int $seconds): bool
     {
         if ($this->fails('put', (string) $key)) {
             return false;
@@ -158,7 +158,7 @@ final readonly class FixedMediaCacheFactory implements CacheFactory
 final readonly class FaultInjectingMediaEnvironment
 {
     public function __construct(
-        public FaultInjectingMediaFileStore $store,
+        public FaultInjectingMediaSecurityStore $store,
         public MediaOwnerTokenBroker $owners,
         public MediaSelectionBroker $selections,
         public MediaDetailsBroker $details,
@@ -167,13 +167,18 @@ final readonly class FaultInjectingMediaEnvironment
     public static function install(Application $app): self
     {
         $directory = $app->storagePath('framework/cache/data/media-faults-'.bin2hex(random_bytes(6)));
-        $store = (new FaultInjectingMediaFileStore(
+        $fileStore = (new FileStore(
             $app->make(Filesystem::class),
             $directory,
+            null,
+            false,
         ))->setLockDirectory($directory.'-locks');
-        $repository = new CacheRepository($store);
+        $repository = new CacheRepository($fileStore);
         $config = $app->make(ConfigRepository::class);
-        $security = new MediaSecurityStore(new FixedMediaCacheFactory($repository), $config);
+        $config->set('cache.serializable_classes', false);
+        $config->set('cache.stores.aura-media-security.path', $directory);
+        $config->set('cache.stores.aura-media-security.lock_path', $directory.'-locks');
+        $security = new FaultInjectingMediaSecurityStore(new FixedMediaCacheFactory($repository), $config);
         $owners = new MediaOwnerTokenBroker(
             $security,
             $config,
@@ -197,6 +202,6 @@ final readonly class FaultInjectingMediaEnvironment
         $app->instance(MediaSelectionBroker::class, $selections);
         $app->instance(MediaDetailsBroker::class, $details);
 
-        return new self($store, $owners, $selections, $details);
+        return new self($security, $owners, $selections, $details);
     }
 }

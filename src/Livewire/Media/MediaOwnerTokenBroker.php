@@ -7,7 +7,6 @@ use Aura\Base\Fields\File;
 use Aura\Base\Fields\Image;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
-use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
@@ -22,7 +21,7 @@ class MediaOwnerTokenBroker
 {
     private const CACHE_PREFIX = 'aura:media-owner:v1:';
 
-    private readonly CacheRepository $cache;
+    private readonly MediaSecurityStore $cache;
 
     private readonly LockProvider $locks;
 
