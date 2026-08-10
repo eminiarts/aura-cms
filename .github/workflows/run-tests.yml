@@ -151,6 +151,83 @@ jobs:
       - name: Run Livewire adapter and collision matrix
         run: php -d memory_limit=1G vendor/bin/pest --no-coverage tests/Feature/Livewire/Livewire43CollisionInspectorTest.php tests/Feature/Livewire/ComponentSlotProviderTest.php
 
+  database-guards:
+    name: Embedded guards / SQLite, MySQL, MariaDB, PostgreSQL
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: aura_core12_guard_test
+          MYSQL_ROOT_PASSWORD: test-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      mariadb:
+        image: mariadb:11.8
+        env:
+          MARIADB_DATABASE: aura_core12_guard_test
+          MARIADB_ROOT_PASSWORD: test-password
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: aura_core12_guard_test
+          POSTGRES_PASSWORD: test-password
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo_mysql, pdo_pgsql, pdo_sqlite, bcmath, intl, gd, exif, iconv, fileinfo
+          coverage: none
+
+      - name: Install dependencies
+        uses: ramsey/composer-install@v4
+
+      - name: Run database guard contract tests
+        env:
+          AURA_TEST_DATABASE_GUARDS: '1'
+          AURA_TEST_MYSQL_DATABASE: aura_core12_guard_test
+          AURA_TEST_MYSQL_HOST: 127.0.0.1
+          AURA_TEST_MYSQL_PASSWORD: test-password
+          AURA_TEST_MYSQL_PORT: '3306'
+          AURA_TEST_MYSQL_USERNAME: root
+          AURA_TEST_MARIADB_DATABASE: aura_core12_guard_test
+          AURA_TEST_MARIADB_HOST: 127.0.0.1
+          AURA_TEST_MARIADB_PASSWORD: test-password
+          AURA_TEST_MARIADB_PORT: '3307'
+          AURA_TEST_MARIADB_USERNAME: root
+          AURA_TEST_PGSQL_DATABASE: aura_core12_guard_test
+          AURA_TEST_PGSQL_HOST: 127.0.0.1
+          AURA_TEST_PGSQL_PASSWORD: test-password
+          AURA_TEST_PGSQL_PORT: '5432'
+          AURA_TEST_PGSQL_USERNAME: postgres
+        run: vendor/bin/pest --no-coverage --group=database-guards
+
   browser:
     name: Browser tests
     runs-on: ubuntu-latest

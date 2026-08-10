@@ -4,11 +4,16 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Text;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Aura\Base\Services\EmbeddedComponentContextStore;
+use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
+use Aura\Base\Services\EmbeddedResourceIncarnationStore;
 use Aura\Base\Widgets\ValueWidget;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Str;
 
 class FlushStateResource extends Resource
 {
@@ -73,6 +78,26 @@ it('flushes state before a queue job is processed', function () {
     Event::dispatch(new JobProcessing('sync', $job));
 
     expect(Aura::userModel())->toBe(User::class);
+});
+
+it('keeps embedded incarnation invalidation wired alongside worker-boundary flushing', function () {
+    $resource = createPost();
+    app(EmbeddedResourceIncarnationGuard::class)->install($resource);
+    $contexts = app(EmbeddedComponentContextStore::class);
+    $issuedIncarnation = $contexts->token($resource);
+    $persistedIncarnation = DB::table(EmbeddedResourceIncarnationStore::TABLE)->firstOrFail();
+    $replacementIncarnation = (string) Str::uuid();
+
+    DB::table(EmbeddedResourceIncarnationStore::TABLE)
+        ->where('id', $persistedIncarnation->id)
+        ->update([
+            'incarnation' => $replacementIncarnation,
+            'updated_at' => now(),
+        ]);
+
+    expect($contexts->token($resource))
+        ->toBe($replacementIncarnation)
+        ->not->toBe($issuedIncarnation);
 });
 
 it('restores boot registrations and removes transient registrations', function () {

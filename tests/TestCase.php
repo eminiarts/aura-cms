@@ -116,6 +116,12 @@ class TestCase extends Orchestra
                 $table->integer('expiration');
             });
         }
+
+        $embeddedIncarnationsMigration = require __DIR__.'/../database/migrations/create_embedded_resource_incarnations.php.stub';
+        $embeddedIncarnationsMigration->up();
+
+        $embeddedIncarnationsUpgrade = require __DIR__.'/../database/migrations/upgrade_embedded_resource_incarnations.php.stub';
+        $embeddedIncarnationsUpgrade->up();
     }
 
     protected function defineEnvironment($app)

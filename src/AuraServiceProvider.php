@@ -34,6 +34,7 @@ use Aura\Base\Livewire\ComponentSlots\LivewireCollisionInspectorFactory;
 use Aura\Base\Livewire\ComponentSlots\LivewireComponentSlotBridge;
 use Aura\Base\Livewire\CreateResource;
 use Aura\Base\Livewire\EditResourceField;
+use Aura\Base\Livewire\EmbeddedComponentAuthorizationHook;
 use Aura\Base\Livewire\InviteUser;
 use Aura\Base\Livewire\MediaFieldAuthorization;
 use Aura\Base\Livewire\MediaTable;
@@ -67,6 +68,10 @@ use Aura\Base\Preferences\PreferenceValueType;
 use Aura\Base\Providers\AuraEloquentUserProvider;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Services\EmbeddedComponentAuthorizer;
+use Aura\Base\Services\EmbeddedComponentContextStore;
+use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
+use Aura\Base\Services\EmbeddedResourceIncarnationStore;
 use Aura\Base\Services\TransactionRollbackCallbacks;
 use Aura\Base\Widgets\Bar;
 use Aura\Base\Widgets\Donut;
@@ -78,10 +83,12 @@ use Aura\Base\Widgets\Widgets;
 use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Octane\Events\RequestReceived;
@@ -252,7 +259,16 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasViews('aura')
             ->hasAssets()
             ->hasRoutes('web')
-            ->hasMigrations(['create_aura_tables', 'consolidate_per_team_admin_roles', 'add_global_admin_to_users', 'add_soft_deletes_to_options', 'enforce_unique_option_identity', 'add_owner_identity_to_options'])
+            ->hasMigrations([
+                'create_aura_tables',
+                'consolidate_per_team_admin_roles',
+                'add_global_admin_to_users',
+                'add_soft_deletes_to_options',
+                'enforce_unique_option_identity',
+                'add_owner_identity_to_options',
+                'create_embedded_resource_incarnations',
+                'upgrade_embedded_resource_incarnations',
+            ])
             ->runsMigrations()
             ->hasCommands([
                 InstallConfigCommand::class,
@@ -345,6 +361,16 @@ class AuraServiceProvider extends PackageServiceProvider
 
         Queue::after($finishWorkerBoundary);
         Queue::exceptionOccurred($finishWorkerBoundary);
+
+        Event::listen(QueryExecuted::class, function (QueryExecuted $event): void {
+            if (preg_match('/^\s*(select|pragma|show|describe|explain)\b/i', $event->sql) === 1
+                || ! $this->app->resolved(EmbeddedComponentContextStore::class)
+            ) {
+                return;
+            }
+
+            $this->app->make(EmbeddedComponentContextStore::class)->flushIncarnations();
+        });
 
         // Laravel Octane keeps a single PHP process alive across many requests,
         // so Aura's process-level static state (field caches, resource registry,
@@ -506,6 +532,19 @@ class AuraServiceProvider extends PackageServiceProvider
         });
         $this->app->singleton(PreferenceManager::class);
 
+        // Register before Livewire boots its built-in SupportEvents hook. This
+        // lets secure embedded components authorize `__dispatch` before an
+        // event listener can execute, including later calls in one batch.
+        $registerEmbeddedAuthorizationHook = static function ($livewire): void {
+            $livewire->componentHook(EmbeddedComponentAuthorizationHook::class);
+        };
+
+        if ($this->app->bound('livewire')) {
+            $registerEmbeddedAuthorizationHook($this->app->make('livewire'));
+        } else {
+            $this->app->afterResolving('livewire', $registerEmbeddedAuthorizationHook);
+        }
+
         // Bind the concrete Aura instance as a process-persistent singleton so
         // its resource/field registrations and captured baseline survive across
         // requests on a long-running worker (Octane). Octane clears facade and
@@ -536,6 +575,11 @@ class AuraServiceProvider extends PackageServiceProvider
             ),
         );
         $this->app->singleton(ComponentSlotRegistry::class);
+
+        $this->app->scoped(EmbeddedComponentAuthorizer::class);
+        $this->app->scoped(EmbeddedComponentContextStore::class);
+        $this->app->scoped(EmbeddedResourceIncarnationGuard::class);
+        $this->app->scoped(EmbeddedResourceIncarnationStore::class);
 
         $this->app->scoped('aura', function ($app): AuraFacade {
             return $app->make(AuraFacade::class);

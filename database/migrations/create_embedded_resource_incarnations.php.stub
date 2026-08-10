@@ -1,0 +1,340 @@
+<?php
+
+use Aura\Base\Services\EmbeddedResourceIncarnationSchema;
+use Aura\Base\Services\MigrationOwnershipLedger;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\QueryException;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    private const FORMAT_VERSION = 2;
+
+    private const GENERATION_BYTES = 16;
+
+    /** @var array<string, array{columns: list<string>, unique: bool}> */
+    private const INDEXES = [
+        'aura_embedded_incarnation_resource_unique' => [
+            'columns' => ['resource_type', 'resource_key_hash'],
+            'unique' => true,
+        ],
+        'aura_embedded_incarnation_guard_lookup' => [
+            'columns' => ['resource_type', 'resource_key_type', 'resource_key'],
+            'unique' => false,
+        ],
+        'aura_embedded_incarnation_guard_identity_unique' => [
+            'columns' => ['resource_type', 'resource_key_type', 'resource_key'],
+            'unique' => true,
+        ],
+    ];
+
+    private const RECONCILE_ATTEMPTS = 40;
+
+    private const RECONCILE_DELAY_MICROSECONDS = 50000;
+
+    private const TABLE = 'aura_embedded_resource_incarnations';
+
+    public function up(): void
+    {
+        app(EmbeddedResourceIncarnationSchema::class)->assertReliableConnectionCapability();
+
+        $ledger = app(MigrationOwnershipLedger::class);
+        $ownership = $ledger->readCreate();
+
+        if ($ownership === null) {
+            if (Schema::hasTable(self::TABLE)) {
+                return;
+            }
+
+            $ownsRegistry = $this->ensureRegistry($ledger);
+            $generation = bin2hex(random_bytes(self::GENERATION_BYTES));
+            $ledger->checkpoint('create.registry_ready');
+            $this->claimCreate($ownsRegistry, $generation);
+            $ownership = $ledger->readCreate();
+
+            if ($ownership === null) {
+                throw new RuntimeException('Unable to claim CORE-12 create migration ownership.');
+            }
+        }
+
+        $this->resume($ledger, $ownership);
+    }
+
+    /**
+     * Rollback is intentionally non-destructive because portable database proof
+     * cannot distinguish the original table from an exact host-owned copy.
+     */
+    public function down(): void
+    {
+    }
+
+    /**
+     * @param  array{state: string, created_table: true, owns_registry: bool, generation: string}  $ownership
+     */
+    private function resume(MigrationOwnershipLedger $ledger, array $ownership): void
+    {
+        if ($ownership['state'] === 'owned') {
+            $this->assertOwnedTableExists();
+
+            return;
+        }
+
+        if ($ownership['state'] !== 'creating') {
+            throw new RuntimeException(
+                "Aura migration ownership for [".MigrationOwnershipLedger::CREATE_KEY."] is interrupted in state [{$ownership['state']}].",
+            );
+        }
+
+        $ledger->checkpoint('create.ownership_started');
+
+        $this->reconcileArtifact(
+            fn (): bool => $this->hasOwnedBaseTable(),
+            fn () => $this->createTable(),
+            'base table',
+        );
+        $ledger->checkpoint('create.base_table_created');
+
+        foreach (array_keys(self::INDEXES) as $index) {
+            $this->reconcileArtifact(
+                fn (): bool => $this->hasNamedIndex($index),
+                fn () => $this->createIndex($index),
+                "index [{$index}]",
+            );
+            $ledger->checkpoint("create.index.{$index}");
+        }
+
+        $ledger->checkpoint('create.table_created');
+        $this->assertOwnedTableExists();
+        $this->transitionCreate($ownership, 'owned');
+        $ledger->checkpoint('create.ownership_committed');
+    }
+
+    private function claimCreate(bool $ownsRegistry, string $generation): void
+    {
+        DB::table(MigrationOwnershipLedger::TABLE)->insertOrIgnore([
+            'migration' => MigrationOwnershipLedger::CREATE_KEY,
+            'ownership' => $this->createRecord('creating', $ownsRegistry, $generation),
+        ]);
+    }
+
+    private function createRecord(string $state, bool $ownsRegistry, string $generation): string
+    {
+        return json_encode([
+            'version' => self::FORMAT_VERSION,
+            'migration' => MigrationOwnershipLedger::CREATE_KEY,
+            'state' => $state,
+            'payload' => [
+                'created_table' => true,
+                'owns_registry' => $ownsRegistry,
+                'generation' => $generation,
+            ],
+        ], JSON_THROW_ON_ERROR);
+    }
+
+    private function createTable(): void
+    {
+        Schema::create(self::TABLE, function (Blueprint $table): void {
+            $table->id();
+            $table->string('resource_type');
+            $table->char('resource_key_hash', 64);
+            $table->string('resource_key_type', 16);
+            $table->string('resource_key', 191);
+            $table->uuid('incarnation');
+            $table->unsignedBigInteger('version')->default(1);
+            $table->timestamps();
+        });
+    }
+
+    private function createIndex(string $name): void
+    {
+        $definition = self::INDEXES[$name];
+
+        Schema::table(self::TABLE, function (Blueprint $table) use ($definition, $name): void {
+            if ($definition['unique']) {
+                $table->unique($definition['columns'], $name);
+
+                return;
+            }
+
+            $table->index($definition['columns'], $name);
+        });
+    }
+
+    private function ensureRegistry(MigrationOwnershipLedger $ledger): bool
+    {
+        $createdRegistry = false;
+        $lastException = null;
+
+        for ($attempt = 1; $attempt <= self::RECONCILE_ATTEMPTS; $attempt++) {
+            try {
+                if ($ledger->registryExists()) {
+                    return $createdRegistry;
+                }
+
+                Schema::create(MigrationOwnershipLedger::TABLE, function (Blueprint $table): void {
+                    $table->string('migration')->primary();
+                    $table->longText('ownership');
+                });
+                $createdRegistry = true;
+
+                if ($ledger->registryExists()) {
+                    return true;
+                }
+            } catch (QueryException $exception) {
+                $lastException = $exception;
+
+                try {
+                    if ($ledger->registryExists()) {
+                        return $createdRegistry;
+                    }
+                } catch (QueryException $verificationException) {
+                    $lastException = $verificationException;
+                }
+            }
+
+            if ($attempt < self::RECONCILE_ATTEMPTS) {
+                usleep(self::RECONCILE_DELAY_MICROSECONDS);
+            }
+        }
+
+        if ($lastException instanceof QueryException) {
+            throw $lastException;
+        }
+
+        throw new RuntimeException('CORE-12 create migration could not reconcile the ownership registry.');
+    }
+
+    private function hasExactIndex(string $name): bool
+    {
+        $expected = self::INDEXES[$name];
+
+        return collect(Schema::getIndexes(self::TABLE))->contains(
+            static fn (array $index): bool => $index['name'] === $name
+                && $index['columns'] === $expected['columns']
+                && (bool) $index['unique'] === $expected['unique'],
+        );
+    }
+
+    private function hasNamedIndex(string $name): bool
+    {
+        $matching = collect(Schema::getIndexes(self::TABLE))->firstWhere('name', $name);
+
+        if ($matching === null) {
+            return false;
+        }
+
+        if (! $this->hasExactIndex($name)) {
+            throw new RuntimeException("The index [{$name}] has an unexpected definition.");
+        }
+
+        return true;
+    }
+
+    private function hasOwnedBaseTable(): bool
+    {
+        if (! Schema::hasTable(self::TABLE)) {
+            return false;
+        }
+
+        $schema = app(EmbeddedResourceIncarnationSchema::class);
+        $schema->assertColumns(EmbeddedResourceIncarnationSchema::REQUIRED_COLUMNS);
+        $schema->assertPrimaryKey();
+
+        return true;
+    }
+
+    /**
+     * @param  callable(): bool  $isComplete
+     * @param  callable(): void  $operation
+     */
+    private function reconcileArtifact(callable $isComplete, callable $operation, string $artifact): void
+    {
+        $lastException = null;
+
+        for ($attempt = 1; $attempt <= self::RECONCILE_ATTEMPTS; $attempt++) {
+            try {
+                if ($isComplete()) {
+                    return;
+                }
+
+                $operation();
+
+                if ($isComplete()) {
+                    return;
+                }
+            } catch (QueryException $exception) {
+                $lastException = $exception;
+
+                try {
+                    if ($isComplete()) {
+                        return;
+                    }
+                } catch (QueryException $verificationException) {
+                    $lastException = $verificationException;
+                }
+            }
+
+            if ($attempt < self::RECONCILE_ATTEMPTS) {
+                usleep(self::RECONCILE_DELAY_MICROSECONDS);
+            }
+        }
+
+        if ($lastException instanceof QueryException) {
+            throw $lastException;
+        }
+
+        throw new RuntimeException("CORE-12 create migration could not reconcile {$artifact}.");
+    }
+
+    private function assertOwnedTableExists(): void
+    {
+        $schema = app(EmbeddedResourceIncarnationSchema::class);
+        $schema->assertColumns(EmbeddedResourceIncarnationSchema::REQUIRED_COLUMNS);
+        $schema->assertPrimaryKey();
+
+        if (collect(array_keys(self::INDEXES))->contains(
+            fn (string $index): bool => ! $this->hasExactIndex($index),
+        )) {
+            $indexes = json_encode(Schema::getIndexes(self::TABLE), JSON_THROW_ON_ERROR);
+            $connection = Schema::getConnection()->getName();
+
+            throw new RuntimeException(
+                "The table claimed by CORE-12 create migration ownership is missing or has an unexpected schema on [{$connection}]. Indexes: {$indexes}",
+            );
+        }
+    }
+
+    /**
+     * @param  array{state: string, created_table: true, owns_registry: bool, generation: string}  $ownership
+     */
+    private function transitionCreate(array $ownership, string $state): void
+    {
+        $updated = DB::table(MigrationOwnershipLedger::TABLE)
+            ->where('migration', MigrationOwnershipLedger::CREATE_KEY)
+            ->where('ownership', $this->createRecord(
+                $ownership['state'],
+                $ownership['owns_registry'],
+                $ownership['generation'],
+            ))
+            ->update(['ownership' => $this->createRecord(
+                $state,
+                $ownership['owns_registry'],
+                $ownership['generation'],
+            )]);
+
+        if ($updated === 1) {
+            return;
+        }
+
+        $current = app(MigrationOwnershipLedger::class)->readCreate();
+
+        if ($current === null
+            || $current['state'] !== 'owned'
+            || $current['generation'] !== $ownership['generation']
+        ) {
+            throw new RuntimeException('CORE-12 create migration ownership changed concurrently.');
+        }
+    }
+};

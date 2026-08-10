@@ -17,6 +17,14 @@ trait AuraResourceTableConfig
         $field = $this->fieldBySlug($key);
         $isInputField = in_array($key, $this->inputFieldsSlugs(), true);
 
+        if (! $isInputField && $field) {
+            $fieldClass = $this->fieldClassBySlug($key);
+
+            if ($fieldClass && $fieldClass->rendersConfiguredFieldOnIndex($field)) {
+                return $fieldClass->display($field, null, $this);
+            }
+        }
+
         // Fast path: a plain input field without conditional logic resolves to
         // exactly the same value it would have inside the full `fields`
         // collection, so resolve just this one field instead of building every
