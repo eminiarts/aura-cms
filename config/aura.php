@@ -52,6 +52,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Schema Migration Locks
+    |--------------------------------------------------------------------------
+    |
+    | Bound how long schema updates wait for another process that is changing
+    | the same physical database table. PostgreSQL and MySQL locks coordinate
+    | through the database server. SQLite uses a host-local temporary flock;
+    | it does not coordinate shared SQLite/NFS files across multiple hosts.
+    | Polling applies to PostgreSQL/SQLite; MySQL delegates the configured
+    | timeout to GET_LOCK().
+    |
+    */
+
+    'schema' => [
+        'lock_timeout' => 30,
+        'lock_poll_interval_milliseconds' => 50,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Components
     |--------------------------------------------------------------------------
     |
@@ -217,6 +236,28 @@ return [
         // still need it can opt in per model via `$model->append('fields')`.
         'legacy_fields_append' => true,
 
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Field Value Defaults
+    |--------------------------------------------------------------------------
+    |
+    | Date-only values are never timezone shifted. Datetime values are stored
+    | in one timezone and rendered in the configured display timezone. Null
+    | timezone defaults follow the host application's timezone.
+    |
+    */
+
+    'fields' => [
+        'date' => [
+            'display_format' => 'd.m.Y',
+        ],
+        'datetime' => [
+            'display_format' => 'd.m.Y H:i',
+            'storage_timezone' => null,
+            'display_timezone' => null,
+        ],
     ],
 
     /*

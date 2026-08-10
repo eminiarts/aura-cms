@@ -8,6 +8,7 @@ Fields are the building blocks of resources in Aura CMS. While Aura provides a c
 - [Field Structure](#field-structure)
 - [Field Properties](#field-properties)
 - [Field Methods](#field-methods)
+- [Field Value Lifecycle](#field-value-lifecycle)
 - [Field Views](#field-views)
 - [Creating a Field as a Package](#creating-a-field-as-a-package)
 - [Examples](#examples)
@@ -211,6 +212,60 @@ public function display($field, $value, $model)
 }
 ```
 
+## Field Value Lifecycle
+
+Every class extending `Aura\Base\Fields\Field` supports one value contract across physical columns and Aura meta rows:
+
+1. `normalizeForStorage()` converts submitted or imported input immediately before persistence.
+2. `hydrateFromStorage()` converts a stored value to its application/form representation.
+3. `presentValue()` presents an already hydrated value for a declared context.
+
+The storage location and presentation context are explicit:
+
+```php
+use Aura\Base\Contracts\FieldValueContext;
+use Aura\Base\Contracts\FieldValueStorage;
+use Illuminate\Database\Eloquent\Model;
+
+public function normalizeForStorage(
+    mixed $value,
+    array $field,
+    ?Model $model,
+    FieldValueStorage $storage,
+): mixed {
+    return $value;
+}
+
+public function hydrateFromStorage(
+    mixed $value,
+    array $field,
+    ?Model $model,
+    FieldValueStorage $storage,
+    FieldValueContext $context = FieldValueContext::Model,
+): mixed {
+    return $value;
+}
+
+public function presentValue(
+    mixed $value,
+    array $field,
+    ?Model $model,
+    FieldValueContext $context = FieldValueContext::Index,
+): mixed {
+    return $value;
+}
+```
+
+`FieldValueStorage` is either `Physical` or `Meta`. `FieldValueContext` is `Create`, `Edit`, `Model`, `Index`, or `View`. Use the context when a form needs a different shape from a table or detail view.
+
+Resources keep the backward-compatible `display($slug)` index API. Use `$resource->displayInContext($slug, FieldValueContext::View)` when rendering another surface; existing Resource overrides of `display($slug)` continue to be honored.
+
+The same compatibility rule applies to `displayFieldValue($key, $value)`, `getMeta($key)`, and `resolveFieldValue($slug, $meta = null)`. Their original signatures remain unchanged. Framework code that needs a form/view context uses the corresponding `*InContext()` method.
+
+Existing custom fields remain compatible: the base class adapts `set()`, `get()`, and `display()` to the new methods. It also adapts the historically documented `displayValue($value, $model)` hook without declaring an incompatible parent signature. New fields should override `presentValue()` when presentation context matters. Preserve `null`, an empty string, `0`, and `false` as separate values unless the field explicitly defines another domain rule.
+
+For a physical attribute declared in the model's Eloquent casts, the Eloquent cast remains the storage normalizer. Aura does not run the field normalizer a second time over the cast's raw storage value; this preserves existing JSON/array casts and prevents double encoding.
+
 ### Filter Methods
 
 #### `filterOptions()`
@@ -294,6 +349,11 @@ The available factories are:
 - `relationship(...)` for Aura's `post_relations` pivot.
 - `custom(...)` for a package-owned Blade component and query handler.
 
+The built-in `Number` field uses a custom capability handler with the standard
+text input component. It validates the field's integer/decimal configuration
+before applying exact comparisons, so the table does not need field-class
+switches.
+
 Option capabilities accept both associative `value => label` maps and
 list-style rows such as `['key' => 'open', 'value' => 'Open']`. Aura converts
 them to canonical `value`, `wire_value`, and `label` rows. Empty or malformed
@@ -319,10 +379,10 @@ object values fail closed.
 
 Date and datetime controls submit timezone-free ISO values. Datetimes are local
 wall times in `config('app.timezone')`; nonexistent DST-gap times and ambiguous
-DST-fold times fail closed. Meta-backed fields retain the declared fixed-width
-`format`, including the built-in `d.m.Y` and `d.m.Y H:i` defaults, and Aura
-constructs a portable chronological expression for that text. Text storage
-formats must be fixed-width combinations of `Y`, `m`, `d`, `H`, `i`, and
+DST-fold times fail closed. Aura persists built-in meta-backed dates as `Y-m-d`
+and datetimes as `Y-m-d H:i:s`, then constructs a portable chronological
+expression for that fixed-width text. Custom temporal capabilities may declare
+another fixed-width storage format composed of `Y`, `m`, `d`, `H`, `i`, and
 optional `s`; an unsupported format fails closed.
 
 Native custom-table `date` columns compare canonical `Y-m-d` values directly.
@@ -334,10 +394,12 @@ MySQL's portable `1970-01-01 00:00:01 UTC` through
 `2038-01-19 03:14:07 UTC` range fail closed. Native empty operators use null
 semantics only.
 
-Filtering does not transform values during writes. Resources must already store
-values in the representation required by their native column and driver, using
-their existing model casts or `set()` hooks. Persistence normalization and data
-migration remain the separate CORE-10 responsibility.
+Filtering does not transform values during writes. Aura's field-value contract
+normalizes built-in Date, Datetime, and Number values before physical or meta
+persistence, while Eloquent casts and mutators still run once for physical
+attributes. Existing columns and invalid legacy rows are never rewritten
+implicitly; follow [Upgrading Aura CMS](../UPGRADING.md) for explicit data and
+schema migrations.
 
 JSON-backed multiple values can opt into exact, portable membership queries:
 

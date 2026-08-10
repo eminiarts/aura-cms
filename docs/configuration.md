@@ -10,6 +10,7 @@ Aura CMS provides a powerful configuration system that lets you customize every 
 - [Main Configuration (aura.php)](#main-configuration)
   - [Core Settings](#core-settings)
   - [Teams & Multi-tenancy](#teams-multi-tenancy)
+  - [Schema Migration Locks](#schema-migration-locks)
   - [Component Customization](#component-customization)
   - [Resource Management](#resource-management)
   - [Theme Configuration](#theme-configuration)
@@ -183,6 +184,22 @@ class Project extends Resource
     }
 }
 ```
+
+<a name="schema-migration-locks"></a>
+### Schema Migration Locks
+
+```php
+'schema' => [
+    'lock_timeout' => 30,
+    'lock_poll_interval_milliseconds' => 50,
+],
+```
+
+MySQL and PostgreSQL coordinate Aura schema updates through database-server advisory locks. Aura retains the exact write-side PDO session that acquired the lock until the protected callback finishes, so an application-level disconnect, purge, or reconnect cannot release it early. If the database server or network actually terminates that retained session, the server releases its advisory lock; treat the schema update as failed and retry it under deployment coordination.
+
+SQLite uses a lock file in the local system temporary directory, so its protection is host-local only. A SQLite database shared through NFS or another filesystem across multiple application hosts requires a single designated migration host or external deployment coordination.
+
+Existing SQLite files are identified by filesystem device and inode, which makes same-host symlink and hardlink aliases contend. When the database file is missing or deleted, Aura falls back to the canonical absolute path; it cannot recover the prior inode relationship of a missing link. Do not replace or unlink the database during a schema update.
 
 <a name="component-customization"></a>
 ### Component Customization

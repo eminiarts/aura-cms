@@ -44,12 +44,13 @@ describe('Datetime Field Configuration', function () {
 
         expect($field->edit)->toBe('aura::fields.datetime')
             ->and($field->view)->toBe('aura::fields.view-value')
+            ->and($field->index)->toBe('aura::fields.datetime-index')
             ->and($field->edit())->toBe('aura::fields.datetime')
             ->and($field->view())->toBe('aura::fields.view-value');
     });
 
-    test('uses timestamp column type', function () {
-        expect((new Datetime)->tableColumnType)->toBe('timestamp');
+    test('uses portable wall clock column type', function () {
+        expect((new Datetime)->tableColumnType)->toBe('dateTime');
     });
 
     test('has required configuration fields with defaults', function () {
@@ -82,10 +83,10 @@ describe('Datetime Field Value Handling', function () {
             ->and($field->get(null, null))->toBeNull();
     });
 
-    test('set method returns value unchanged', function () {
+    test('set method stores a canonical timestamp', function () {
         $field = new Datetime;
 
-        expect($field->set(null, [], '2021-01-01 12:30'))->toBe('2021-01-01 12:30')
+        expect($field->set(null, [], '2021-01-01 12:30'))->toBe('2021-01-01 12:30:00')
             ->and($field->set(null, [], null))->toBeNull();
     });
 
@@ -113,8 +114,8 @@ describe('Datetime Field in Livewire', function () {
             ->assertHasNoErrors(['form.fields.datetime']);
 
         $model = DatetimeFieldModel::orderBy('id', 'desc')->first();
-        expect($model->fields['datetime'])->toBe('2021-01-01 12:30')
-            ->and($model->datetime)->toBe('2021-01-01 12:30');
+        expect($model->fields['datetime'])->toBe('2021-01-01 12:30:00')
+            ->and($model->datetime)->toBe('2021-01-01 12:30:00');
     });
 
     test('saves null when datetime not provided', function () {

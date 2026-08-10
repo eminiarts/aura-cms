@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Fields;
 
+use Aura\Base\Contracts\FieldValueContext;
+use Aura\Base\Contracts\FieldValueStorage;
+use Aura\Base\Exceptions\InvalidFieldValue;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Number;
 use Aura\Base\Livewire\Resource\Create;
@@ -42,6 +45,9 @@ describe('Number Field Configuration', function () {
         $fields = collect($numberField->getFields());
 
         expect($fields->firstWhere('slug', 'placeholder'))->not->toBeNull()
+            ->and($fields->firstWhere('slug', 'number_type')['default'])->toBe('integer')
+            ->and($fields->firstWhere('slug', 'precision')['default'])->toBe(Number::DEFAULT_PRECISION)
+            ->and($fields->firstWhere('slug', 'scale')['default'])->toBe(Number::DEFAULT_SCALE)
             ->and($fields->firstWhere('slug', 'prefix'))->not->toBeNull()
             ->and($fields->firstWhere('slug', 'suffix'))->not->toBeNull()
             ->and($fields->firstWhere('slug', 'default'))->not->toBeNull();
@@ -151,8 +157,8 @@ describe('Number Field in Livewire', function () {
             ->assertHasNoErrors();
 
         $model = NumberFieldModel::orderBy('id', 'desc')->first();
-        expect($model->fields['number'])->toBe('42')
-            ->and($model->number)->toBe('42');
+        expect($model->fields['number'])->toBe(42)
+            ->and($model->number)->toBe(42);
     });
 
     test('saves zero value', function () {
@@ -162,7 +168,7 @@ describe('Number Field in Livewire', function () {
             ->assertHasNoErrors();
 
         $model = NumberFieldModel::orderBy('id', 'desc')->first();
-        expect($model->fields['number'])->toBe('0');
+        expect($model->fields['number'])->toBe(0);
     });
 
     test('saves negative number', function () {
@@ -172,7 +178,7 @@ describe('Number Field in Livewire', function () {
             ->assertHasNoErrors();
 
         $model = NumberFieldModel::orderBy('id', 'desc')->first();
-        expect($model->fields['number'])->toBe('-10');
+        expect($model->fields['number'])->toBe(-10);
     });
 
     test('saves decimal number', function () {
@@ -187,21 +193,84 @@ describe('Number Field in Livewire', function () {
 });
 
 describe('Number Field Value Handling', function () {
-    test('set method returns value unchanged', function () {
+    test('set method normalizes configured integer values without losing empty states', function () {
         $numberField = new Number;
 
-        expect($numberField->set(null, [], '42'))->toBe('42')
-            ->and($numberField->set(null, [], '0'))->toBe('0')
+        expect($numberField->set(null, [], '42'))->toBe(42)
+            ->and($numberField->set(null, [], '0'))->toBe(0)
             ->and($numberField->set(null, [], null))->toBeNull();
     });
 
-    test('value method casts to integer', function () {
+    test('value method preserves decimals instead of truncating them', function () {
         $numberField = new Number;
 
         expect($numberField->value('42'))->toBe(42)
-            ->and($numberField->value('3.14'))->toBe(3)
+            ->and($numberField->value('3.14'))->toBe('3.14')
             ->and($numberField->value('0'))->toBe(0)
             ->and($numberField->value('-10'))->toBe(-10);
+    });
+
+    test('configured decimals normalize precision without collapsing distinct empty states', function () {
+        $numberField = new Number;
+        $field = [
+            'number_type' => 'decimal',
+            'precision' => 8,
+            'scale' => 3,
+        ];
+
+        expect($numberField->set(null, $field, '12.3456'))->toBe('12.346')
+            ->and($numberField->set(null, $field, '-0.0049'))->toBe('-0.005')
+            ->and($numberField->set(null, $field, '0'))->toBe('0.000')
+            ->and($numberField->set(null, $field, ''))->toBe('')
+            ->and($numberField->set(null, $field, null))->toBeNull()
+            ->and($numberField->hydrateFromStorage('legacy', $field, null, FieldValueStorage::Meta, FieldValueContext::Model))->toBe('legacy');
+
+        expect(fn () => $numberField->set(null, $field, 'legacy'))
+            ->toThrow(InvalidFieldValue::class);
+    });
+
+    test('decimal precision allows scale to consume every digit', function () {
+        $numberField = new Number;
+        $field = [
+            'slug' => 'ratio',
+            'number_type' => 'decimal',
+            'precision' => 1,
+            'scale' => 1,
+        ];
+
+        expect($numberField->set(null, $field, '0.9'))->toBe('0.9')
+            ->and(fn () => $numberField->set(null, $field, '1.0'))->toThrow(InvalidFieldValue::class)
+            ->and(fn () => $numberField->set(null, $field, '0.99'))->toThrow(InvalidFieldValue::class);
+    });
+
+    test('number writes reject floats scientific notation overflow and invalid configuration', function () {
+        $numberField = new Number;
+        $field = [
+            'slug' => 'amount',
+            'number_type' => 'decimal',
+            'precision' => 5,
+            'scale' => 2,
+        ];
+
+        expect(fn () => $numberField->set(null, $field, 0.1))->toThrow(InvalidFieldValue::class)
+            ->and(fn () => $numberField->set(null, $field, '1e3'))->toThrow(InvalidFieldValue::class)
+            ->and(fn () => $numberField->value('1e3'))->toThrow(InvalidFieldValue::class)
+            ->and(fn () => $numberField->set(null, $field, '1000.00'))->toThrow(InvalidFieldValue::class)
+            ->and(fn () => $numberField->set(null, [...$field, 'precision' => 0], '1'))->toThrow(InvalidFieldValue::class)
+            ->and(fn () => $numberField->set(null, [...$field, 'scale' => 6], '1'))->toThrow(InvalidFieldValue::class);
+    });
+
+    test('large decimal normalization remains an exact string', function () {
+        $numberField = new Number;
+        $field = [
+            'slug' => 'amount',
+            'number_type' => 'decimal',
+            'precision' => 65,
+            'scale' => 30,
+        ];
+        $value = '12345678901234567890123456789012345.123456789012345678901234567890';
+
+        expect($numberField->set(null, $field, $value))->toBe($value);
     });
 
     test('filterOptions returns numeric filters', function () {

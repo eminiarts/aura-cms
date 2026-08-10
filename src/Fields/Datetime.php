@@ -2,19 +2,28 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\FieldValueContext;
+use Aura\Base\Contracts\FieldValueStorage;
 use Aura\Base\Contracts\ProvidesFilterCapability;
 use Aura\Base\Fields\Filters\FilterCapability;
 use Aura\Base\Resource;
+use Aura\Base\Support\TemporalValue;
+use Aura\Base\Support\UnparsedTemporalValue;
+use Illuminate\Database\Eloquent\Model;
 
 class Datetime extends Field implements ProvidesFilterCapability
 {
+    public const DEFAULT_DISPLAY_FORMAT = 'd.m.Y H:i';
+
     public $edit = 'aura::fields.datetime';
+
+    public $index = 'aura::fields.datetime-index';
 
     public $optionGroup = 'Input Fields';
 
     // public $view = 'components.fields.datetime';
 
-    public $tableColumnType = 'timestamp';
+    public $tableColumnType = 'dateTime';
 
     public $view = 'aura::fields.view-value';
 
@@ -55,7 +64,7 @@ class Datetime extends Field implements ProvidesFilterCapability
                 'validation' => '',
                 'slug' => 'format',
                 'default' => 'd.m.Y H:i',
-                'instructions' => 'The format of how the date gets stored in the DB. Default is d.m.Y H:i. See <a href="https://www.php.net/manual/en/function.date.php" target="_blank">PHP Date</a> for more information.',
+                'instructions' => 'The format accepted and emitted by create/edit controls. Values are persisted as Y-m-d H:i:s in the storage timezone. See <a href="https://www.php.net/manual/en/function.date.php" target="_blank">PHP Date</a> for more information.',
             ],
             [
                 'name' => 'Display Format',
@@ -63,8 +72,30 @@ class Datetime extends Field implements ProvidesFilterCapability
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'display_format',
-                'default' => 'd.m.Y H:i',
-                'instructions' => 'How the Date gets displayed. Default is d.m.Y H:i. See <a href="https://www.php.net/manual/en/function.date.php" target="_blank">PHP Date</a> for more information.',
+                'default' => config('aura.fields.datetime.display_format', self::DEFAULT_DISPLAY_FORMAT),
+                'instructions' => 'How the datetime is displayed on index and view surfaces. See <a href="https://www.php.net/manual/en/function.date.php" target="_blank">PHP Date</a> for more information.',
+            ],
+            [
+                'name' => 'Input Timezone',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => 'nullable|timezone:all',
+                'slug' => 'input_timezone',
+                'instructions' => 'Timezone used to interpret form values. Defaults to the display timezone.',
+            ],
+            [
+                'name' => 'Display Timezone',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => 'nullable|timezone:all',
+                'slug' => 'display_timezone',
+                'instructions' => 'Timezone used for edit, index, and view values. Defaults to the application timezone.',
+            ],
+            [
+                'name' => 'Storage Timezone',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => 'nullable|timezone:all',
+                'slug' => 'storage_timezone',
+                'default' => config('aura.fields.datetime.storage_timezone'),
+                'instructions' => 'Timezone used for persisted timestamp values. Defaults to the application timezone for backward compatibility. Because storage omits the UTC offset, instants in a storage-timezone DST overlap are rejected; use UTC or another fixed-offset timezone to accept every instant.',
             ],
             [
                 'label' => 'Enable Input',
@@ -125,13 +156,75 @@ class Datetime extends Field implements ProvidesFilterCapability
         ]);
     }
 
+    public function hydrateFromStorage(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueStorage $storage,
+        FieldValueContext $context = FieldValueContext::Model,
+    ): mixed {
+        $slug = $field['slug'] ?? null;
+
+        // Native Eloquent datetime casts interpret offset-less database values
+        // in app.timezone before Aura sees them. Physical Aura datetime fields
+        // instead declare their own storage timezone, so the raw column value is
+        // the authoritative wall clock for reconstructing the stored instant.
+        if ($storage === FieldValueStorage::Physical
+            && $model
+            && is_string($slug)
+            && ! $model->hasGetMutator($slug)
+            && ! $model->hasAttributeGetMutator($slug)
+            && $model->hasCast($slug, [
+                'date',
+                'datetime',
+                'immutable_date',
+                'immutable_datetime',
+                'custom_datetime',
+                'immutable_custom_datetime',
+            ])
+            && array_key_exists($slug, $model->getAttributes())) {
+            $value = $model->getAttributes()[$slug];
+        }
+
+        return TemporalValue::hydrateDatetime($value, $field, $context);
+    }
+
+    public function normalizeForStorage(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueStorage $storage,
+    ): mixed {
+        return TemporalValue::normalizeDatetime($value, $field, $model, $storage);
+    }
+
+    public function presentValue(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueContext $context = FieldValueContext::Index,
+    ): mixed {
+        $field['_aura_hydrated'] = ! $value instanceof UnparsedTemporalValue;
+
+        return parent::presentValue($value, $field, $model, $context);
+    }
+
     public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
     {
-        return FilterCapability::datetime($this->filterOptions(), $field['format'] ?? 'd.m.Y H:i');
+        return FilterCapability::datetime($this->filterOptions(), 'Y-m-d H:i:s');
     }
 
     public function set($post, $field, $value)
     {
-        return $value;
+        $definition = is_array($field) ? $field : [];
+
+        return TemporalValue::normalizeDatetime(
+            $value,
+            $definition,
+            $post instanceof Model ? $post : null,
+            $post instanceof Model && method_exists($post, 'isTableField') && $post->isTableField($definition['slug'] ?? '')
+                ? FieldValueStorage::Physical
+                : FieldValueStorage::Meta,
+        );
     }
 }

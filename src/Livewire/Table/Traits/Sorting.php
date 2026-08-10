@@ -2,7 +2,10 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Aura\Base\Fields\Number;
+use Aura\Base\Support\ExactDecimal;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -95,8 +98,28 @@ trait Sorting
                         ->where('meta.key', '=', "$field");
                 })
                     ->select($table.'.*')
-                    ->when($this->model->isNumberField($field), function ($query) use ($direction) {
-                        $query->orderByRaw('CAST(meta.value AS DECIMAL(10,2)) '.$direction);
+                    ->when($this->model->isNumberField($field), function ($query) use ($direction, $field) {
+                        $connection = DB::connection($this->model->getConnectionName());
+
+                        if (! ExactDecimal::supportsSql($connection)) {
+                            $query->orderByRaw('CAST(meta.value AS DECIMAL(65,30)) '.$direction);
+
+                            return;
+                        }
+
+                        $column = $query->getQuery()->getGrammar()->wrap('meta.value');
+                        $fieldDefinition = $this->model->fieldBySlug($field);
+                        $fieldClass = $this->model->fieldClassBySlug($field);
+
+                        ExactDecimal::applySorting(
+                            $query,
+                            $connection,
+                            $column,
+                            $direction,
+                            $fieldClass instanceof Number
+                                ? $fieldClass->exactQueryConfiguration(is_array($fieldDefinition) ? $fieldDefinition : [])
+                                : null,
+                        );
                     })
                     ->when(! $this->model->isNumberField($field), function ($query) use ($direction) {
                         $query->orderByRaw('CAST(meta.value AS CHAR) '.$direction);
@@ -105,7 +128,30 @@ trait Sorting
 
                 return $query;
             } else {
+                if ($this->model->isNumberField($field) && DB::connection($this->model->getConnectionName())->getDriverName() === 'sqlite') {
+                    $connection = DB::connection($this->model->getConnectionName());
+                    $column = $query->getQuery()->getGrammar()->wrap($field);
+                    $fieldDefinition = $this->model->fieldBySlug($field);
+                    $fieldClass = $this->model->fieldClassBySlug($field);
+                    ExactDecimal::applySorting(
+                        $query,
+                        $connection,
+                        $column,
+                        $direction,
+                        $fieldClass instanceof Number
+                            ? $fieldClass->exactQueryConfiguration(is_array($fieldDefinition) ? $fieldDefinition : [])
+                            : null,
+                    );
+                    $query->orderBy($qualifiedKeyName, 'desc');
+
+                    return $query;
+                }
+
                 $query->orderBy($field, $direction);
+
+                if ($this->model->isNumberField($field)) {
+                    $query->orderBy($qualifiedKeyName, 'desc');
+                }
 
                 return $query;
             }

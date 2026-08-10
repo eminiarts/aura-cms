@@ -5,7 +5,9 @@ namespace Aura\Base\Fields;
 use Aura\Base\Contracts\PreloadsTableDisplay;
 use Aura\Base\Models\Meta;
 use Aura\Base\Resource;
+use Aura\Base\Support\FieldDisplayValue;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\HtmlString;
 
 class BelongsTo extends Field implements PreloadsTableDisplay
 {
@@ -94,7 +96,9 @@ class BelongsTo extends Field implements PreloadsTableDisplay
     public function display($field, $value, $model)
     {
         if (optional($field)['display_view']) {
-            return view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render();
+            return FieldDisplayValue::sanitizedHtml(
+                view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render(),
+            );
         }
 
         if ($field['resource'] && $value) {
@@ -105,7 +109,10 @@ class BelongsTo extends Field implements PreloadsTableDisplay
 
             $related = $this->resolveDisplayModel($field, $value, $model);
 
-            return "<a class='font-semibold' href='".route('aura.'.$slug.'.edit', $value)."'>".optional($related)->title().'</a>';
+            $href = e(route('aura.'.$slug.'.edit', $value));
+            $title = e((string) optional($related)->title());
+
+            return new HtmlString("<a class='font-semibold' href='{$href}'>{$title}</a>");
         }
 
         return $value;

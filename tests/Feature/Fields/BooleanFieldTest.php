@@ -139,7 +139,7 @@ describe('Boolean Field Value Handling', function () {
             ->and($booleanField->get(null, 0))->toBeFalse()
             ->and($booleanField->get(null, '1'))->toBeTrue()
             ->and($booleanField->get(null, '0'))->toBeFalse()
-            ->and($booleanField->get(null, null))->toBeFalse();
+            ->and($booleanField->get(null, null))->toBeNull();
     });
 
     test('set method casts to boolean', function () {
@@ -159,7 +159,7 @@ describe('Boolean Field Value Handling', function () {
             ->and($booleanField->value(1))->toBeTrue()
             ->and($booleanField->value(0))->toBeFalse()
             ->and($booleanField->value('1'))->toBeTrue()
-            ->and($booleanField->value(''))->toBeFalse();
+            ->and($booleanField->value(''))->toBe('');
     });
 });
 
@@ -171,8 +171,8 @@ describe('Boolean Field Display', function () {
 
         $result = $booleanField->display($field, true, $model);
 
-        expect($result)->toContain('svg')
-            ->and($result)->toContain('M5 13l4 4L19 7');
+        expect((string) $result)->toContain('svg')
+            ->and((string) $result)->toContain('M5 13l4 4L19 7');
     });
 
     test('displays x icon for false value', function () {
@@ -182,8 +182,15 @@ describe('Boolean Field Display', function () {
 
         $result = $booleanField->display($field, false, $model);
 
-        expect($result)->toContain('svg')
-            ->and($result)->toContain('M6 18L18 6M6 6l12 12')
-            ->and($result)->toContain('text-gray-200');
+        expect((string) $result)->toContain('svg')
+            ->and((string) $result)->toContain('M6 18L18 6M6 6l12 12')
+            ->and((string) $result)->toContain('text-gray-200');
+    });
+
+    test('displays an invalid legacy value without treating it as true', function () {
+        $booleanField = new Boolean;
+
+        expect($booleanField->display(['slug' => 'boolean'], 'legacy', new BooleanFieldModel))
+            ->toBe('legacy');
     });
 });

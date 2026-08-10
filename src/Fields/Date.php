@@ -2,12 +2,18 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\FieldValueContext;
+use Aura\Base\Contracts\FieldValueStorage;
 use Aura\Base\Contracts\ProvidesFilterCapability;
 use Aura\Base\Fields\Filters\FilterCapability;
 use Aura\Base\Resource;
+use Aura\Base\Support\TemporalValue;
+use Illuminate\Database\Eloquent\Model;
 
 class Date extends Field implements ProvidesFilterCapability
 {
+    public const DEFAULT_DISPLAY_FORMAT = 'd.m.Y';
+
     public $edit = 'aura::fields.date';
 
     public $index = 'aura::fields.date-index';
@@ -55,7 +61,7 @@ class Date extends Field implements ProvidesFilterCapability
                 'validation' => '',
                 'slug' => 'format',
                 'default' => 'd.m.Y',
-                'instructions' => 'The format of how the date gets stored in the DB. Default is d.m.Y. See <a href="https://www.php.net/manual/en/function.date.php" target="_blank">PHP Date</a> for more information.',
+                'instructions' => 'The format accepted and emitted by create/edit controls. Values are persisted as Y-m-d. See <a href="https://www.php.net/manual/en/function.date.php" target="_blank">PHP Date</a> for more information.',
             ],
             [
                 'name' => 'Display Format',
@@ -63,8 +69,8 @@ class Date extends Field implements ProvidesFilterCapability
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'display_format',
-                'default' => 'd.m.Y',
-                'instructions' => 'How the Date gets displayed. Default is d.m.Y. See <a href="https://www.php.net/manual/en/function.date.php" target="_blank">PHP Date</a> for more information.',
+                'default' => config('aura.fields.date.display_format', self::DEFAULT_DISPLAY_FORMAT),
+                'instructions' => 'How the date is displayed on index and view surfaces. See <a href="https://www.php.net/manual/en/function.date.php" target="_blank">PHP Date</a> for more information.',
             ],
             [
                 'label' => 'Enable Input',
@@ -109,13 +115,43 @@ class Date extends Field implements ProvidesFilterCapability
         ]);
     }
 
+    public function hydrateFromStorage(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueStorage $storage,
+        FieldValueContext $context = FieldValueContext::Model,
+    ): mixed {
+        return TemporalValue::hydrateDate($value, $field, $context);
+    }
+
+    public function normalizeForStorage(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueStorage $storage,
+    ): mixed {
+        return TemporalValue::normalizeDate($value, $field);
+    }
+
+    public function presentValue(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueContext $context = FieldValueContext::Index,
+    ): mixed {
+        $field['_aura_hydrated'] = true;
+
+        return parent::presentValue($value, $field, $model, $context);
+    }
+
     public function provideAuraFilterCapability(Resource $model, array $field): FilterCapability
     {
-        return FilterCapability::date($this->filterOptions(), $field['format'] ?? 'd.m.Y');
+        return FilterCapability::date($this->filterOptions(), 'Y-m-d');
     }
 
     public function set($post, $field, $value)
     {
-        return $value;
+        return TemporalValue::normalizeDate($value, is_array($field) ? $field : []);
     }
 }

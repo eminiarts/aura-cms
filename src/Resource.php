@@ -3,6 +3,9 @@
 namespace Aura\Base;
 
 use Aura\Base\Contracts\DefinesFields;
+use Aura\Base\Contracts\FieldValueContext;
+use Aura\Base\Contracts\FieldValueContract;
+use Aura\Base\Contracts\FieldValueStorage;
 use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\TypeScope;
@@ -94,6 +97,12 @@ class Resource extends Model implements DefinesFields
 
     protected bool $fieldDefinitionStateReady = false;
 
+    /**
+     * Active hydration context for the backward-compatible getMeta() and
+     * resolveFieldValue() entry points.
+     */
+    protected FieldValueContext $fieldValueContext = FieldValueContext::Model;
+
     protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'team_id', 'created_at', 'updated_at', 'deleted_at'];
 
     protected $hidden = ['meta'];
@@ -117,9 +126,24 @@ class Resource extends Model implements DefinesFields
     /**
      * Per-instance cache of the normalized meta map (see getMeta()).
      *
-     * @var Collection|null
+     * @var array<string, Collection>
      */
-    protected $normalizedMetaCache;
+    protected array $normalizedMetaCache = [];
+
+    /**
+     * Physical fields currently passing through Aura's write adapter.
+     *
+     * @var array<string, true>
+     */
+    protected array $normalizingPhysicalFieldValues = [];
+
+    /**
+     * Physical values copied into the packed fields payload from Eloquent's
+     * raw attributes. These values have already completed the write pipeline.
+     *
+     * @var array<string, true>
+     */
+    protected array $packedPhysicalFieldValues = [];
 
     protected bool $readingAttributeState = false;
 
@@ -162,7 +186,7 @@ class Resource extends Model implements DefinesFields
 
     public function __construct(array $attributes = [])
     {
-        parent::__construct($attributes);
+        parent::__construct();
 
         $this->baseFillable = parent::getFillable();
         $this->fieldDefinitionStateReady = true;
@@ -180,6 +204,8 @@ class Resource extends Model implements DefinesFields
         if (! config('aura.features.legacy_fields_append', true)) {
             $this->appends = array_values(array_diff($this->appends, ['fields']));
         }
+
+        $this->fill($attributes);
     }
 
     public function __call($method, $parameters)
@@ -310,12 +336,26 @@ class Resource extends Model implements DefinesFields
     {
         $this->ensureFieldDefinitionState();
         $this->fieldsAttributeCache = null;
-        $this->normalizedMetaCache = null;
+        $this->normalizedMetaCache = [];
 
         if ($this->usesMeta()) {
             $this->load('meta'); // This will refresh only the 'meta' relationship
         }
 
+    }
+
+    public function clearPackedPhysicalFieldValues(): void
+    {
+        $this->packedPhysicalFieldValues = [];
+    }
+
+    public function consumePhysicalFieldPacked(string $slug): bool
+    {
+        $packed = isset($this->packedPhysicalFieldValues[$slug]);
+
+        unset($this->packedPhysicalFieldValues[$slug]);
+
+        return $packed;
     }
 
     public function decrementOrFail(string $column, float|int $amount = 1, array $extra = []): int|false
@@ -470,6 +510,7 @@ class Resource extends Model implements DefinesFields
     {
         $this->ensureFieldDefinitionState();
         $this->quarantineInactiveProviderFieldState();
+        $context = $this->fieldValueContext;
 
         if ($this->isInactiveProviderFieldSlug($key)) {
             return $key === null ? collect() : null;
@@ -485,16 +526,26 @@ class Resource extends Model implements DefinesFields
             // pluck/cast/map scan is otherwise repeated for every displayed
             // cell. The cache is invalidated whenever the meta relation is
             // replaced (setRelation/unsetRelation) or fields are cleared.
-            if ($this->normalizedMetaCache === null) {
+            if (! isset($this->normalizedMetaCache[$context->value])) {
                 $meta = $this->meta
                     ->pluck('value', 'key')
                     ->except($this->inactiveProviderFieldSlugs);
 
                 // Cast Attributes
-                $meta = $meta->map(function ($meta, $key) {
+                $meta = $meta->map(function ($meta, $key) use ($context) {
                     $field = $this->fieldBySlug($key);
 
                     $class = $this->fieldClassBySlug($key);
+
+                    if ($class instanceof FieldValueContract) {
+                        return $class->hydrateFromStorage(
+                            $meta,
+                            is_array($field) ? $field : [],
+                            $this,
+                            FieldValueStorage::Meta,
+                            $context,
+                        );
+                    }
 
                     if ($class && method_exists($class, 'get')) {
                         return $class->get($class, $meta, $field);
@@ -503,17 +554,29 @@ class Resource extends Model implements DefinesFields
                     return $meta;
                 });
 
-                $this->normalizedMetaCache = $meta;
+                $this->normalizedMetaCache[$context->value] = $meta;
             }
 
-            if ($key) {
-                return $this->normalizedMetaCache[$key] ?? null;
+            if ($key !== null) {
+                return $this->normalizedMetaCache[$context->value][$key] ?? null;
             }
 
-            return $this->normalizedMetaCache;
+            return $this->normalizedMetaCache[$context->value];
         }
 
         return collect();
+    }
+
+    public function getMetaInContext($key, FieldValueContext $context): mixed
+    {
+        $previousContext = $this->fieldValueContext;
+        $this->fieldValueContext = $context;
+
+        try {
+            return $this->getMeta($key);
+        } finally {
+            $this->fieldValueContext = $previousContext;
+        }
     }
 
     /**
@@ -634,6 +697,38 @@ class Resource extends Model implements DefinesFields
         return array_key_exists($slug, $this->tableDisplayCache);
     }
 
+    public function hydrateFieldValueInContext(
+        string $slug,
+        mixed $value,
+        FieldValueContext $context,
+    ): mixed {
+        if ($value === null) {
+            return null;
+        }
+
+        $field = $this->fieldBySlug($slug);
+        $fieldClass = $this->fieldClassBySlug($slug);
+        $storage = $this->isTableField($slug)
+            ? FieldValueStorage::Physical
+            : FieldValueStorage::Meta;
+
+        if ($fieldClass instanceof FieldValueContract) {
+            return $fieldClass->hydrateFromStorage(
+                $value,
+                is_array($field) ? $field : [],
+                $this,
+                $storage,
+                $context,
+            );
+        }
+
+        if ($fieldClass && method_exists($fieldClass, 'get')) {
+            return $fieldClass->get($fieldClass, $value, $field);
+        }
+
+        return $value;
+    }
+
     public function incrementOrFail(string $column, float|int $amount = 1, array $extra = []): int|false
     {
         return $this->getConnection()->transaction(
@@ -661,6 +756,11 @@ class Resource extends Model implements DefinesFields
         }
 
         return false;
+    }
+
+    public function markPhysicalFieldAsPacked(string $slug): void
+    {
+        $this->packedPhysicalFieldValues[$slug] = true;
     }
 
     /**
@@ -718,6 +818,7 @@ class Resource extends Model implements DefinesFields
      */
     public function resolveFieldValue(string $slug, $meta = null)
     {
+        $context = $this->fieldValueContext;
         $meta ??= $this->getMeta();
 
         $key = $slug;
@@ -730,26 +831,26 @@ class Resource extends Model implements DefinesFields
             return $class->get($class, $this->{$key}, $field);
         }
 
-        // Deliberately meta-BLIND probes: this method COMPUTES the value later
-        // surfaced (meta-aware) via __get/__isset, so it must ask only whether a
-        // *real* Eloquent attribute/relation exists for this slug. parent::__isset()
-        // is the native check (identical to the historical isset($this->{$key})
-        // before Resource declared its own __isset) — using the meta-aware isset()
-        // here would recurse into the fields build and defeat the display fast path.
-        if ($class && parent::__isset($key) && method_exists($class, 'get')) {
-            return $class->get($class, $this->{$key}, $field);
+        // Deliberately meta-blind probe: hasAttribute() identifies raw columns,
+        // accessors, and casts without interpreting a null result as absence.
+        // The value returned by Eloquent is authoritative even when it is null;
+        // falling back to a raw legacy sentinel would bypass its getter/cast.
+        if ($class instanceof FieldValueContract && $this->hasAttribute($key)) {
+            return $class->hydrateFromStorage(
+                parent::__get($key),
+                is_array($field) ? $field : [],
+                $this,
+                FieldValueStorage::Physical,
+                $context,
+            );
         }
 
-        if (parent::__isset($key)) {
-            return $this->{$key};
+        if ($class && $this->hasAttribute($key) && method_exists($class, 'get')) {
+            return $class->get($class, parent::__get($key), $field);
         }
 
-        if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
-            return $class->get($class, $this->attributes[$key], $field);
-        }
-
-        if (isset($this->attributes[$key])) {
-            return $this->attributes[$key];
+        if ($this->hasAttribute($key)) {
+            return parent::__get($key);
         }
 
         $method = 'get'.Str::studly($key).'Field';
@@ -758,15 +859,26 @@ class Resource extends Model implements DefinesFields
             return $this->{$method}($value);
         }
 
-        if ($class && parent::__isset($key) && method_exists($class, 'get')) {
-            return $class->get($class, $this->{$key} ?? null, $field);
-        }
-
         if (optional($field)['polymorphic_relation'] === false && optional($field)['multiple'] === false) {
             return isset($meta[$key]) ? [$meta[$key]] : [];
         }
 
         return $meta[$key] ?? $value;
+    }
+
+    public function resolveFieldValueInContext(
+        string $slug,
+        FieldValueContext $context,
+        $meta = null,
+    ): mixed {
+        $previousContext = $this->fieldValueContext;
+        $this->fieldValueContext = $context;
+
+        try {
+            return $this->resolveFieldValue($slug, $meta);
+        } finally {
+            $this->fieldValueContext = $previousContext;
+        }
     }
 
     /**
@@ -807,8 +919,48 @@ class Resource extends Model implements DefinesFields
         );
     }
 
+    /**
+     * Compose field normalization with Eloquent's native write pipeline.
+     *
+     * Aura receives submitted values first. Its normalized result then passes
+     * through the model mutator/cast exactly once before reaching the database.
+     * Meta-backed fields are normalized later by SaveMetaFields.
+     *
+     * @param  string  $key
+     * @return $this
+     */
     public function setAttribute($key, $value)
     {
+        if (is_string($key)
+            && ! isset($this->normalizingPhysicalFieldValues[$key])
+            && $this->isTableField($key)) {
+            $field = $this->fieldBySlug($key);
+            $fieldClass = $this->fieldClassBySlug($key);
+
+            if ($fieldClass) {
+                $this->normalizingPhysicalFieldValues[$key] = true;
+
+                try {
+                    if (isset($field['set']) && $field['set'] instanceof Closure) {
+                        $value = ($field['set'])($this, $field, $value);
+                    }
+
+                    if ($fieldClass instanceof FieldValueContract) {
+                        $value = $fieldClass->normalizeForStorage(
+                            $value,
+                            is_array($field) ? $field : [],
+                            $this,
+                            FieldValueStorage::Physical,
+                        );
+                    } elseif (method_exists($fieldClass, 'set')) {
+                        $value = $fieldClass->set($this, $field, $value);
+                    }
+                } finally {
+                    unset($this->normalizingPhysicalFieldValues[$key]);
+                }
+            }
+        }
+
         $model = parent::setAttribute($key, $value);
 
         if ($this->fieldDefinitionStateReady) {
@@ -821,6 +973,7 @@ class Resource extends Model implements DefinesFields
 
     public function setRawAttributes(array $attributes, $sync = false)
     {
+        $this->clearPackedPhysicalFieldValues();
         parent::setRawAttributes($attributes, false);
 
         if ($sync) {
@@ -838,7 +991,7 @@ class Resource extends Model implements DefinesFields
     public function setRelation($relation, $value)
     {
         if ($relation === 'meta') {
-            $this->normalizedMetaCache = null;
+            $this->normalizedMetaCache = [];
             $this->fieldsAttributeCache = null;
         }
 
@@ -937,7 +1090,7 @@ class Resource extends Model implements DefinesFields
     public function unsetRelation($relation)
     {
         if ($relation === 'meta') {
-            $this->normalizedMetaCache = null;
+            $this->normalizedMetaCache = [];
             $this->fieldsAttributeCache = null;
             unset($this->quarantinedProviderFieldState['metaRelation']);
         }
@@ -967,6 +1120,11 @@ class Resource extends Model implements DefinesFields
     public function user()
     {
         return $this->belongsTo(config('aura.resources.user'));
+    }
+
+    public function wasPhysicalFieldPacked(string $slug): bool
+    {
+        return isset($this->packedPhysicalFieldValues[$slug]);
     }
 
     public function widgets()
@@ -1007,7 +1165,7 @@ class Resource extends Model implements DefinesFields
     protected function clearDefinitionDerivedInstanceCaches(): void
     {
         $this->fieldsAttributeCache = null;
-        $this->normalizedMetaCache = null;
+        $this->normalizedMetaCache = [];
         $this->tableDisplayCache = [];
         $this->buildingFieldsAttribute = false;
     }
@@ -1090,7 +1248,10 @@ class Resource extends Model implements DefinesFields
 
             $this->clearDefinitionDerivedInstanceCaches();
 
-            $currentSlugs = $this->inputFieldsSlugs();
+            $currentSlugs = array_values(array_filter(
+                $this->inputFieldsSlugs(),
+                static fn (mixed $slug): bool => is_string($slug) && $slug !== '',
+            ));
             $this->managedProviderFieldSlugs = array_values(array_unique(array_merge(
                 $this->managedProviderFieldSlugs,
                 $resolution->managedFieldSlugs,
@@ -1390,7 +1551,7 @@ class Resource extends Model implements DefinesFields
         }
 
         $this->relations['meta'] = $filtered;
-        $this->normalizedMetaCache = null;
+        $this->normalizedMetaCache = [];
         $this->fieldsAttributeCache = null;
     }
 
@@ -1528,7 +1689,9 @@ class Resource extends Model implements DefinesFields
 
         // 2. Any non-null result from (1) wins as-is — including falsy
         //    0/''/false; only a genuinely absent (null) attribute falls
-        //    through to the relation/field resolution below.
+        //    through to the relation/field resolution below. Aura field
+        //    hydration is applied by resolveFieldValue(), leaving Eloquent's
+        //    direct attribute/accessor contract unchanged.
         if (! is_null($value)) {
             return $value;
         }
@@ -1614,7 +1777,7 @@ class Resource extends Model implements DefinesFields
 
         if (array_key_exists('metaRelation', $this->quarantinedProviderFieldState)) {
             $this->relations['meta'] = $this->quarantinedProviderFieldState['metaRelation'];
-            $this->normalizedMetaCache = null;
+            $this->normalizedMetaCache = [];
             $this->fieldsAttributeCache = null;
         }
 

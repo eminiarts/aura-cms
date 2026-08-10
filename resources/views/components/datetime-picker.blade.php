@@ -18,7 +18,6 @@
     'live' => false,
 ])
 
-
 <x-aura::fields.wrapper :field="$field">
     @if ($native)
         @if ($live)
@@ -37,32 +36,53 @@
             @vite(['resources/js/flatpickr.js'], 'vendor/aura/libs')
         @endassets
 
+        @php
+            $fieldSlug = $field['slug'];
+            $fieldValue = isset($this->form['fields']) && array_key_exists($fieldSlug, $this->form['fields'])
+                ? $this->form['fields'][$fieldSlug]
+                : null;
+            $hasDefaultDate = ! is_null($fieldValue)
+                && $fieldValue !== ''
+                && $fieldValue !== 0
+                && $fieldValue !== '0';
+            $pickerOptions = [
+                'inline' => false,
+                'defaultDate' => $hasDefaultDate ? $fieldValue : false,
+                'dateFormat' => $format,
+                'altInput' => true,
+                'altFormat' => $displayFormat,
+                'enableTime' => (bool) $enableTime,
+                'noCalendar' => (bool) $noCalendar,
+                'time_24hr' => (bool) $time24hr,
+                'allowInput' => (bool) $enableInput,
+                'locale' => [
+                    'firstDayOfWeek' => (int) $weekStartsOn,
+                ],
+                'disable' => [],
+            ];
 
-        <div x-data x-init="
-        window.flatpickr($refs.input, {
-            inline: false,
-            @if (isset($this->form['fields'][$field['slug']]) &&
-                    !is_null($this->form['fields'][$field['slug']]) &&
-                    $this->form['fields'][$field['slug']] !== '' &&
-                    $this->form['fields'][$field['slug']] !== 0 &&
-                    $this->form['fields'][$field['slug']] !== '0') defaultDate: '{{ $this->form['fields'][$field['slug']] }}',
-                    @else
-                    defaultDate: false, @endif
-            dateFormat: '{{ $format }}',
-            altInput: true,
-            altFormat: '{{ $displayFormat }}',
-            enableTime: {{ $enableTime ? 'true' : 'false' }},
-            noCalendar: {{ $noCalendar ? 'true' : 'false' }},
-            time_24hr: {{ $time24hr ? 'true' : 'false' }},
-            allowInput: {{ json_encode($enableInput) }},
-            @if ($minDate) minDate: '{{ today()->format($format) }}', @endif
-            @if ($maxDate) maxDate: '{{ now()->addDays($maxDate)->format($format) }}', @endif
-            @if ($minTime) minTime: '{{ $minTime }}', @endif
-            @if ($maxTime) maxTime: '{{ $maxTime }}', @endif 'locale': {
-                'firstDayOfWeek': {{ $weekStartsOn }} // start week on Monday
-            },
-            'disable': []
-        });" @change="$dispatch('input', { value: $event.target.value })" wire:ignore
+            if ($minDate) {
+                $pickerOptions['minDate'] = today()->format($format);
+            }
+
+            if ($maxDate) {
+                $pickerOptions['maxDate'] = now()->addDays($maxDate)->format($format);
+            }
+
+            if ($minTime) {
+                $pickerOptions['minTime'] = $minTime;
+            }
+
+            if ($maxTime) {
+                $pickerOptions['maxTime'] = $maxTime;
+            }
+        @endphp
+
+
+        <div x-data="auraDatetimePicker"
+            data-picker-options="{{ json_encode($pickerOptions, JSON_THROW_ON_ERROR) }}"
+            data-aura-datetime-picker="{{ $fieldSlug }}"
+            @change="changed" wire:ignore
             class="flex relative rounded-md shadow-sm">
             <span
                 class="pointer-events-none h-full absolute right-0 inline-flex items-center px-3 text-gray-700 dark:text-gray-400 sm:text-sm

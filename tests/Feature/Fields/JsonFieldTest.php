@@ -49,6 +49,6 @@ describe('Json Field Value Handling', function () {
     test('display JSON-encodes the value', function () {
         $field = new Json;
 
-        expect($field->display([], ['a' => 1], null))->toBe('{"a":1}');
+        expect((string) $field->display([], ['a' => 1], null))->toBe('{&quot;a&quot;:1}');
     });
 });

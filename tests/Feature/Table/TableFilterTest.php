@@ -4,6 +4,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Aura\Base\Tests\Resources\Tag;
+use Illuminate\Support\Facades\DB;
 
 use function Pest\Livewire\livewire;
 
@@ -71,6 +72,23 @@ class TableFilterModel extends Resource
                 'on_index' => true,
                 'on_forms' => true,
                 'on_view' => true,
+            ],
+            [
+                'name' => 'Configured decimal',
+                'slug' => 'configured_decimal',
+                'type' => 'Aura\\Base\\Fields\\Number',
+                'number_type' => 'decimal',
+                'precision' => 4,
+                'scale' => 2,
+                'on_index' => true,
+            ],
+            [
+                'name' => 'Configured integer',
+                'slug' => 'configured_integer',
+                'type' => 'Aura\\Base\\Fields\\Number',
+                'number_type' => 'integer',
+                'precision' => 3,
+                'on_index' => true,
             ],
         ];
     }
@@ -379,6 +397,169 @@ describe('is operator', function () {
 });
 
 describe('comparison operators', function () {
+    test('configured decimal filters compare the hydrated rounded values and exclude overflow rows', function () {
+        $rawValues = [
+            'canonical' => '1.23',
+            'rounded equivalent' => '1.234',
+            'rounded higher' => '1.235',
+            'overflow' => '100',
+        ];
+        $posts = collect($rawValues)->mapWithKeys(function (string $rawValue, string $title): array {
+            $post = TableFilterModel::create([
+                'title' => $title,
+                'content' => 'Configured decimal comparison',
+                'type' => 'Post',
+                'status' => 'publish',
+                'configured_decimal' => '0',
+            ]);
+            DB::table('meta')
+                ->where('metable_id', $post->id)
+                ->where('metable_type', $post->getMorphClass())
+                ->where('key', 'configured_decimal')
+                ->update(['value' => $rawValue]);
+
+            return [$title => $post];
+        });
+
+        expect($posts['rounded equivalent']->refresh()->configured_decimal)->toBe('1.23')
+            ->and($posts['rounded higher']->refresh()->configured_decimal)->toBe('1.24')
+            ->and($posts['overflow']->refresh()->configured_decimal)->toBe('100');
+
+        $component = livewire(Table::class, ['query' => null, 'model' => $posts->first()]);
+        $component->call('addFilterGroup');
+        $component->set('filters.custom.0.filters.0.name', 'configured_decimal');
+        $component->set('filters.custom.0.filters.0.operator', 'equals');
+        $component->set('filters.custom.0.filters.0.value', '1.23');
+        $component->assertViewHas('rows', function ($rows) use ($posts): bool {
+            expect(collect($rows->items())->pluck('id')->sort()->values()->all())->toBe([
+                $posts['canonical']->id,
+                $posts['rounded equivalent']->id,
+            ]);
+
+            return true;
+        });
+
+        $component->set('filters.custom.0.filters.0.operator', 'greater_than');
+        $component->set('filters.custom.0.filters.0.value', '1.23');
+        $component->assertViewHas('rows', function ($rows) use ($posts): bool {
+            expect(collect($rows->items())->pluck('id')->all())->toBe([
+                $posts['rounded higher']->id,
+            ]);
+
+            return true;
+        });
+    });
+
+    test('configured integer filters exclude fractional and precision overflow legacy rows', function () {
+        $rawValues = [
+            'two' => '2',
+            'padded two' => '+002',
+            'fraction' => '1.5',
+            'overflow' => '1000',
+        ];
+        $posts = collect($rawValues)->mapWithKeys(function (string $rawValue, string $title): array {
+            $post = TableFilterModel::create([
+                'title' => $title,
+                'content' => 'Configured integer comparison',
+                'type' => 'Post',
+                'status' => 'publish',
+                'configured_integer' => 0,
+            ]);
+            DB::table('meta')
+                ->where('metable_id', $post->id)
+                ->where('metable_type', $post->getMorphClass())
+                ->where('key', 'configured_integer')
+                ->update(['value' => $rawValue]);
+
+            return [$title => $post];
+        });
+
+        expect($posts['padded two']->refresh()->configured_integer)->toBe(2)
+            ->and($posts['fraction']->refresh()->configured_integer)->toBe('1.5')
+            ->and($posts['overflow']->refresh()->configured_integer)->toBe('1000');
+
+        $component = livewire(Table::class, ['query' => null, 'model' => $posts->first()]);
+        $component->call('addFilterGroup');
+        $component->set('filters.custom.0.filters.0.name', 'configured_integer');
+        $component->set('filters.custom.0.filters.0.operator', 'greater_than');
+        $component->set('filters.custom.0.filters.0.value', '1');
+        $component->assertViewHas('rows', fn ($rows): bool => collect($rows->items())->pluck('id')->sort()->values()->all() === collect([
+            $posts['two']->id,
+            $posts['padded two']->id,
+        ])->sort()->values()->all());
+    });
+
+    test('numeric filters accept zero for every comparison operator and exclude invalid legacy values', function (string $operator, int|string $value, array $expectedNumbers) {
+        $posts = collect([-1, 0, 1])->mapWithKeys(function (int $number): array {
+            $post = TableFilterModel::create([
+                'title' => "Number {$number}",
+                'content' => 'Numeric comparison',
+                'type' => 'Post',
+                'status' => 'publish',
+                'meta' => (string) $number,
+                'number' => $number,
+            ]);
+
+            return [$number => $post];
+        });
+        $invalid = TableFilterModel::create([
+            'title' => 'Invalid legacy number',
+            'content' => 'Numeric comparison',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'invalid',
+            'number' => 2,
+        ]);
+        DB::table('meta')
+            ->where('metable_id', $invalid->id)
+            ->where('metable_type', $invalid->getMorphClass())
+            ->where('key', 'number')
+            ->update(['value' => 'not-a-number']);
+
+        $component = livewire(Table::class, ['query' => null, 'model' => $posts->first()]);
+        $component->call('addFilterGroup');
+        $component->set('filters.custom.0.filters.0.name', 'number');
+        $component->set('filters.custom.0.filters.0.operator', $operator);
+        $component->set('filters.custom.0.filters.0.value', $value);
+
+        $component->assertViewHas('rows', function ($rows) use ($expectedNumbers, $posts): bool {
+            $expectedIds = collect($expectedNumbers)->map(fn (int $number) => $posts[$number]->id)->sort()->values()->all();
+            $actualIds = collect($rows->items())->pluck('id')->sort()->values()->all();
+
+            return $actualIds === $expectedIds;
+        });
+    })->with([
+        'equals integer zero' => ['equals', 0, [0]],
+        'not equals string zero' => ['not_equals', '0', [-1, 1]],
+        'greater than string zero' => ['greater_than', '0', [1]],
+        'less than integer zero' => ['less_than', 0, [-1]],
+        'greater than or equal string zero' => ['greater_than_or_equal', '0', [0, 1]],
+        'less than or equal integer zero' => ['less_than_or_equal', 0, [-1, 0]],
+    ]);
+
+    test('numeric filters reject genuinely empty and malformed values', function () {
+        $post = TableFilterModel::create([
+            'title' => 'Number zero',
+            'content' => 'Numeric validation',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'zero',
+            'number' => 0,
+        ]);
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
+        $component->call('addFilterGroup');
+        $component->set('filters.custom.0.filters.0.name', 'number');
+        $component->set('filters.custom.0.filters.0.operator', 'equals');
+
+        foreach ([null, '', '   '] as $empty) {
+            $component->set('filters.custom.0.filters.0.value', $empty)
+                ->assertViewHas('rows', fn ($rows): bool => count($rows->items()) === 1);
+        }
+
+        $component->set('filters.custom.0.filters.0.value', 'not-a-number')
+            ->assertViewHas('rows', fn ($rows): bool => count($rows->items()) === 0);
+    });
+
     test('filter by meta field with greater_than operator', function () {
         $post = TableFilterModel::create([
             'title' => 'Test Post',

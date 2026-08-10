@@ -3,6 +3,8 @@
 namespace Aura\Base\Traits;
 
 use Aura\Base\ConditionalLogic;
+use Aura\Base\Contracts\FieldPresentationContract;
+use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\FieldProviderRegistry;
 use Aura\Base\Pipeline\AddIdsToFields;
 use Aura\Base\Pipeline\ApplyParentConditionalLogic;
@@ -24,6 +26,8 @@ trait InputFields
     use InputFieldsTable;
     use InputFieldsValidation;
 
+    protected FieldValueContext $fieldPresentationContext = FieldValueContext::Index;
+
     public function createFields()
     {
         // Apply Conditional Logic of Parent Fields
@@ -41,6 +45,8 @@ trait InputFields
 
     public function displayFieldValue($key, $value = null)
     {
+        $context = $this->fieldPresentationContext;
+
         // Check Conditional Logic if the field should be displayed
         if (! $this->shouldDisplayField($this->fieldBySlug($key))) {
             return;
@@ -49,25 +55,57 @@ trait InputFields
         $studlyKey = str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $key)));
 
         // If there is a get{key}Field() method, use that
-        if ($value && method_exists($this, 'get'.ucfirst($studlyKey).'Field')) {
-            return $this->{'get'.ucfirst($key).'Field'}($value);
+        if ($value !== null && method_exists($this, 'get'.$studlyKey.'Field')) {
+            return $this->{'get'.$studlyKey.'Field'}($value);
         }
 
-        // Maybe delete this one?
-        if (optional($this->fieldBySlug($key))['display'] && $value) {
-            return $this->fieldBySlug($key)['display']($value, $this);
+        $field = $this->fieldBySlug($key);
+
+        if (optional($field)['display'] instanceof \Closure) {
+            return $field['display']($value, $this, $context);
         }
 
-        // Only if uses Meta
-        if (! $this->usesCustomTable() && $value === null && optional(optional($this)->meta)->$key) {
-            return optional($this->fieldClassBySlug($key))->display($this->fieldBySlug($key), optional($this->meta)->$key, $this);
+        $hasMetaHelpers = method_exists($this, 'isMetaField') && method_exists($this, 'getMetaInContext');
+
+        if ($value === null
+            && $hasMetaHelpers
+            && $this->isMetaField($key)) {
+            $value = $this->getMetaInContext($key, $context);
         }
 
-        if ($this->fieldClassBySlug($key)) {
-            return optional($this->fieldClassBySlug($key))->display($this->fieldBySlug($key), $value, $this);
+        // Backward-compatible fallback for classes using this trait without
+        // Resource's meta helpers. Resource instances take the normalized
+        // getMeta() path above, including falsy values.
+        if (! $hasMetaHelpers && ! $this->usesCustomTable() && $value === null && optional(optional($this)->meta)->$key !== null) {
+            $value = optional($this->meta)->$key;
+        }
+
+        $fieldClass = $this->fieldClassBySlug($key);
+
+        if ($fieldClass instanceof FieldPresentationContract) {
+            return $fieldClass->presentValue($value, is_array($field) ? $field : [], $this, $context);
+        }
+
+        if ($fieldClass) {
+            return optional($fieldClass)->display($field, $value, $this);
         }
 
         return $value;
+    }
+
+    public function displayFieldValueInContext(
+        $key,
+        $value,
+        FieldValueContext $context,
+    ): mixed {
+        $previousContext = $this->fieldPresentationContext;
+        $this->fieldPresentationContext = $context;
+
+        try {
+            return $this->displayFieldValue($key, $value);
+        } finally {
+            $this->fieldPresentationContext = $previousContext;
+        }
     }
 
     public function editFields()
@@ -98,7 +136,7 @@ trait InputFields
 
         foreach ($fieldFields as $key => $f) {
             // if no key value pair is set, get the default value from the field
-            if (! isset($field[$f['slug']]) && isset($f['default'])) {
+            if (! array_key_exists($f['slug'], $field) && array_key_exists('default', $f)) {
                 $field[$f['slug']] = $f['default'];
             }
         }

@@ -367,6 +367,7 @@ class ResourceEditor extends Component
         $this->model = Aura::findResourceBySlug($slug);
 
         $this->checkAuthorization();
+        $this->initializeResourceFieldsVersion();
 
         // Check if fields have closures
         if ($this->model->fieldsHaveClosures($this->model->getFields())) {

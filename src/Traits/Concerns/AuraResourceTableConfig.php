@@ -3,12 +3,17 @@
 namespace Aura\Base\Traits\Concerns;
 
 use Aura\Base\ConditionalLogic;
+use Aura\Base\Contracts\FieldValueContext;
+use Aura\Base\Support\FieldDisplayValue;
 use Illuminate\Support\Collection;
 
 trait AuraResourceTableConfig
 {
+    protected FieldValueContext $fieldDisplayContext = FieldValueContext::Index;
+
     public function display($key)
     {
+        $context = $this->fieldDisplayContext;
         $field = $this->fieldBySlug($key);
         $isInputField = in_array($key, $this->inputFieldsSlugs(), true);
 
@@ -17,7 +22,7 @@ trait AuraResourceTableConfig
         // collection, so resolve just this one field instead of building every
         // field value for every rendered cell.
         if ($isInputField && $this->canFastPathDisplay($key, $field)) {
-            return $this->formatDisplayValue($key, $this->resolveFieldValue($key));
+            return $this->formatDisplayValue($key, $this->resolveDisplayFieldValue($key, $context), $context);
         }
 
         // Keys that are not input fields (id, title, raw attributes) are never
@@ -41,10 +46,38 @@ trait AuraResourceTableConfig
         }
 
         if (array_key_exists($key, $fields)) {
-            return $this->formatDisplayValue($key, $fields[$key]);
+            return $this->formatDisplayValue(
+                $key,
+                $this->resolveDisplayFieldValue($key, $context),
+                $context,
+            );
         }
 
         return $this->displayRawAttribute($key);
+    }
+
+    /**
+     * Display a field in an explicit UI context without changing the legacy
+     * display($key) signature that host resources may override.
+     */
+    public function displayInContext($key, FieldValueContext $context): mixed
+    {
+        $previousContext = $this->fieldDisplayContext;
+        $this->fieldDisplayContext = $context;
+
+        try {
+            return $this->display($key);
+        } finally {
+            $this->fieldDisplayContext = $previousContext;
+        }
+    }
+
+    /**
+     * Render a field through the explicit export presentation contract.
+     */
+    public function exportFieldValue(string $key): mixed
+    {
+        return $this->displayInContext($key, FieldValueContext::Export);
     }
 
     public function getHeaders()
@@ -72,11 +105,7 @@ trait AuraResourceTableConfig
 
     public function isNumberField($key)
     {
-        if ($this->fieldBySlug($key)['type'] == 'Aura\\Base\\Fields\\Number') {
-            return true;
-        }
-
-        return false;
+        return data_get($this->fieldBySlug($key), 'type') === 'Aura\\Base\\Fields\\Number';
     }
 
     /**
@@ -124,38 +153,31 @@ trait AuraResourceTableConfig
 
         $value = $this->{$key};
 
-        // if $value is an array, implode it
-        if (is_array($value)) {
-            return implode(', ', $value);
-        }
-
-        // This branch bypasses the field's own display() (which escapes
-        // scalar values), so escape here too — the value is rendered raw
-        // via {!! !!} in the table/view blades.
-        return is_scalar($value) ? e($value) : $value;
+        // This branch bypasses the field contract and is rendered through a
+        // raw Blade slot, so recursively escape every non-Htmlable value.
+        return FieldDisplayValue::escape($value);
     }
 
     /**
      * Run a resolved field value through the field's display() and flatten any
      * array result the same way the table cell expects.
      */
-    protected function formatDisplayValue(string $key, $rawValue)
+    protected function formatDisplayValue(
+        string $key,
+        $rawValue,
+        FieldValueContext $context = FieldValueContext::Index,
+    ) {
+        $value = $this->displayFieldValueInContext($key, $rawValue, $context);
+
+        return FieldDisplayValue::secure($value);
+    }
+
+    protected function resolveDisplayFieldValue(string $key, FieldValueContext $context): mixed
     {
-        $value = $this->displayFieldValue($key, $rawValue);
-
-        // if $value is an array, implode it
-        if (is_array($value)) {
-            $formattedValues = array_map(function ($subArray) {
-                if (is_array($subArray)) {
-                    return '['.implode(', ', $subArray).']';
-                }
-
-                return $subArray;
-            }, $value);
-
-            return implode(', ', $formattedValues);
+        if (method_exists($this, 'resolveFieldValueInContext')) {
+            return $this->resolveFieldValueInContext($key, $context);
         }
 
-        return $value;
+        return $this->resolveFieldValue($key);
     }
 }

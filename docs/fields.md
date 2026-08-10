@@ -254,6 +254,9 @@ Numeric input with validation and formatting.
     'slug' => 'price',
     'type' => 'Aura\\Base\\Fields\\Number',
     'validation' => 'required|numeric|min:0|max:99999',
+    'number_type' => 'decimal',        // integer or decimal (default: integer)
+    'precision' => 12,                 // Total decimal digits
+    'scale' => 2,                      // Digits after the decimal point
     'placeholder' => '0.00',
     'default' => '',              // Default value on create
     'prefix' => '$',              // Display prefix
@@ -264,10 +267,16 @@ Numeric input with validation and formatting.
 **Features:**
 - Number validation
 - Prefix/suffix display
-- Casts to integer via `value()` method
+- Explicit integer or fixed-precision decimal normalization
+- Decimal strings are not truncated through an unconditional integer cast
+- Preserves null, empty string, zero, negative, and invalid legacy values distinctly
+- Filters and sorts text-backed meta values with the field's integer/decimal, precision, scale, and rounding rules on SQLite, MySQL, and PostgreSQL
+- Uses validated configured `DECIMAL(precision, scale)` / `NUMERIC(precision, scale)` expressions on MySQL/PostgreSQL and exact string keys for legacy unconfigured numbers, without float conversion
+- Treats equivalent plain-decimal spellings equally; scientific notation and malformed or over-65-digit legacy values are not numeric
+- Excludes invalid legacy values from numeric comparisons and places them last in both sort directions
 - Default value support
 
-**Database:** `integer` column type
+**Database:** `integer` by default, or portable `decimal(precision, scale)` when `number_type` is `decimal`. Decimal fields default to precision 19 and scale 2 when omitted. Changing a field definition does not safely convert an already-deployed integer column by itself; see [Upgrading Aura CMS](../UPGRADING.md#changing-an-existing-number-column-to-decimal).
 
 **Filter Options:**
 - equals / not_equals
@@ -379,7 +388,7 @@ Date picker with calendar interface.
     'slug' => 'published_date',
     'type' => 'Aura\\Base\\Fields\\Date',
     'validation' => 'required|date|after:today',
-    'format' => 'd.m.Y',              // Storage format (default: d.m.Y)
+    'format' => 'd.m.Y',              // Create/edit format (default: d.m.Y)
     'display_format' => 'd.m.Y',      // Display format (default: d.m.Y)
     'enable_input' => true,           // Allow manual input (default: true)
     'maxDate' => 30,                  // Days from today to max date (0-365)
@@ -389,7 +398,10 @@ Date picker with calendar interface.
 
 **Features:**
 - Calendar picker
-- Configurable storage and display formats (PHP date format)
+- Configurable create/edit and display formats (PHP date format)
+- Canonical `Y-m-d` persistence for physical and meta storage
+- Null-safe index/view rendering; an empty value never becomes today's date
+- Date-only values are never shifted across timezones
 - Max date constraint in days from today
 - Week start customization
 - Manual input option
@@ -412,8 +424,11 @@ Combined date and time picker.
     'slug' => 'event_start',
     'type' => 'Aura\\Base\\Fields\\Datetime',
     'validation' => 'required|date',
-    'format' => 'd.m.Y H:i',          // Storage format (default: d.m.Y H:i)
+    'format' => 'd.m.Y H:i',          // Create/edit format (default: d.m.Y H:i)
     'display_format' => 'd.m.Y H:i',  // Display format (default: d.m.Y H:i)
+    'input_timezone' => 'Europe/Zurich',
+    'display_timezone' => 'Europe/Zurich',
+    'storage_timezone' => 'UTC',        // Defaults to app.timezone when omitted
     'enable_input' => true,           // Allow manual input (default: true)
     'maxDate' => 30,                  // Days from today to max date
     'minTime' => '09:00',             // Minimum selectable time
@@ -425,10 +440,15 @@ Combined date and time picker.
 **Features:**
 - Combined date/time picker
 - Time constraints (minTime, maxTime)
-- Configurable storage and display formats
+- Configurable create/edit and display formats
+- Canonical `Y-m-d H:i:s` persistence in the configured storage timezone
+- Writes are rejected when that offset-less storage value would be ambiguous during a DST overlap; use `UTC` or another fixed-offset storage timezone to accept every instant
+- Timezone conversion for edit, index, and view contexts
+- Null-safe shared index/view formatting
+- Unparseable or ambiguous legacy storage values remain visible as their raw value instead of being assigned a guessed timezone offset
 - Week start customization
 
-**Database:** `timestamp` column type
+**Database:** Laravel `dateTime()` column (`DATETIME` on MySQL)
 
 **Filter Options:**
 - is / is_not
@@ -484,6 +504,7 @@ Toggle switch for true/false values.
 **Features:**
 - Toggle switch UI
 - Casts to boolean automatically via `get()` and `set()` methods
+- Keeps `false`, `null`, and an empty string distinct
 - Default value support
 - Livewire integration
 
@@ -1346,7 +1367,7 @@ Role assignment with team support.
 | Number | ✓ | integer | input | - | ✓ |
 | Email | ✓ | string | input | - | ✓ |
 | Date | ✓ | date | input | - | ✓ |
-| Datetime | ✓ | timestamp | input | - | ✓ |
+| Datetime | ✓ | datetime | input | - | ✓ |
 | Time | ✓ | string | input | - | - |
 | Boolean | ✓ | string | input | - | - |
 | Select | ✓ | string | input | - | ✓ |

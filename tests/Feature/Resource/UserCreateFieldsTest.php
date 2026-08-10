@@ -111,7 +111,7 @@ test('roles field displays role names in index', function () {
     // The display method should show role names, not IDs
     $displayed = $user->display('roles');
 
-    expect($displayed)->toContain('Admin');
+    expect((string) $displayed)->toContain('Admin');
 });
 
 test('user index headers include roles column', function () {

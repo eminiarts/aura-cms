@@ -558,8 +558,9 @@ Datetime filter input is an application-timezone wall time. DST gaps and folds
 fail closed. PostgreSQL and SQLite native timestamps compare that canonical wall
 time; MySQL/MariaDB `TIMESTAMP` compares Unix instants so results do not depend
 on the current database session timezone. MySQL values outside its portable
-1970–2038 `TIMESTAMP` range fail closed. The filter layer does not rewrite
-persisted values; write normalization and migration remain CORE-10 scope.
+1970–2038 `TIMESTAMP` range fail closed. Built-in Date and Datetime writes are
+normalized through Aura's field-value contract; filtering never rewrites stored
+rows, and existing schema/data migrations remain application-owned.
 
 **Available Filter Operators** (from `QueryFilters` trait):
 

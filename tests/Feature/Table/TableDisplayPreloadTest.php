@@ -397,7 +397,7 @@ test('meta cache is invalidated on refresh so display reflects fresh meta', func
     $post = PreloadMetaPost::create(['subtitle' => 'original']);
 
     // Prime the fields + normalized-meta cache.
-    expect($post->display('subtitle'))->toContain('original');
+    expect((string) $post->display('subtitle'))->toContain('original');
 
     // Mutate the meta row directly, bypassing the model.
     Meta::where('metable_id', $post->id)
@@ -407,7 +407,7 @@ test('meta cache is invalidated on refresh so display reflects fresh meta', func
 
     $post->refresh();
 
-    expect($post->display('subtitle'))->toContain('updated');
+    expect((string) $post->display('subtitle'))->toContain('updated');
 });
 
 test('meta cache is invalidated on load(meta) so display reflects fresh meta', function () {
@@ -416,7 +416,7 @@ test('meta cache is invalidated on load(meta) so display reflects fresh meta', f
 
     $post = PreloadMetaPost::create(['subtitle' => 'original']);
 
-    expect($post->display('subtitle'))->toContain('original');
+    expect((string) $post->display('subtitle'))->toContain('original');
 
     Meta::where('metable_id', $post->id)
         ->where('metable_type', PreloadMetaPost::class)
@@ -425,5 +425,5 @@ test('meta cache is invalidated on load(meta) so display reflects fresh meta', f
 
     $post->load('meta');
 
-    expect($post->display('subtitle'))->toContain('reloaded');
+    expect((string) $post->display('subtitle'))->toContain('reloaded');
 });
