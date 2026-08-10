@@ -39,6 +39,20 @@ class BelongsToRouteFallbackPost extends Post
     public static ?string $slug = 'fallback-post';
 }
 
+function createCore11PresentationPost(User $owner, string $title): Post
+{
+    $attributes = [
+        'title' => $title,
+        'user_id' => $owner->getKey(),
+    ];
+
+    if (config('aura.teams')) {
+        return Post::createForTeamForSystem($owner->current_team_id, $attributes);
+    }
+
+    return Post::createForOwnerForSystem($owner->getKey(), $attributes);
+}
+
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 
@@ -196,7 +210,7 @@ describe('BelongsTo Field Display', function () {
             'scope-post' => false,
         ]]);
         $this->actingAs($viewer->refresh());
-        $related = Post::factory()->create(['title' => 'Readable Post']);
+        $related = createCore11PresentationPost($viewer, 'Readable Post');
 
         $html = (new BelongsTo)->display(['resource' => Post::class], $related->id, $viewer);
 
@@ -213,7 +227,7 @@ describe('BelongsTo Field Display', function () {
             'scope-post' => false,
         ]]);
         $this->actingAs($editor->refresh());
-        $related = Post::factory()->create(['title' => 'Editable Post']);
+        $related = createCore11PresentationPost($editor, 'Editable Post');
 
         $html = (new BelongsTo)->display(['resource' => Post::class], $related->id, $editor);
 
@@ -230,7 +244,7 @@ describe('BelongsTo Field Display', function () {
             'scope-post' => false,
         ]]);
         $this->actingAs($viewer->refresh());
-        $related = Post::factory()->create(['title' => 'Unlinked Post']);
+        $related = createCore11PresentationPost($viewer, 'Unlinked Post');
         $resolverCalls = 0;
         $field = new BelongsTo;
         $definition = [
