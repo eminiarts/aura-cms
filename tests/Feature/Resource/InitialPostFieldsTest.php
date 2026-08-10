@@ -849,7 +849,7 @@ it('requires callbacks to use an independently named system contract for nested 
 ]);
 
 it('lets a connection callback use an independently named system contract', function (): void {
-    $connection = DB::connection();
+    $connection = core13InstallConnectionProbe();
     $armed = true;
     $nestedWriteCompleted = false;
 
@@ -872,7 +872,7 @@ it('lets a connection callback use an independently named system contract', func
 
     expect($nestedWriteCompleted)->toBeTrue()
         ->and($outer->name)->toBe('Connection callback outer write')
-        ->and(ExplicitNullSharedCustomResource::withoutGlobalScopes()
+        ->and($connection->table('explicit_null_shared_custom_resources')
             ->where('name', 'Connection callback named global write')
             ->exists())->toBeTrue();
 });
@@ -1000,7 +1000,7 @@ it('does not let a saving callback re-enter save with the outer global-write aut
 });
 
 it('does not expose Aura global-write authority to connection callbacks', function (): void {
-    $connection = DB::connection();
+    $connection = core13InstallConnectionProbe();
     $observedCapabilities = [];
 
     $connection->beforeExecuting(function () use (&$observedCapabilities): void {
@@ -1045,7 +1045,7 @@ it('fails closed when a connection callback swaps the writer immediately before 
         ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
 });
 
-it('restores nested transaction depth after rejecting a swapped writer', function (): void {
+it('preserves a caller transaction by rejecting a writer callback before it runs', function (): void {
     $connection = core13InstallConnectionProbe();
     $originalWriter = $connection->getPdo();
     $substitutedWriter = core13PhysicalWriter();
@@ -1054,20 +1054,19 @@ it('restores nested transaction depth after rejecting a swapped writer', functio
 
     $connection->transaction(function () use ($connection, $substitutedWriter, &$armed, $baselineTransactionLevel): void {
         $connection->table('explicit_null_shared_custom_resources')->insert(['name' => 'Outer row before rejection']);
+        $connection->beforeExecuting(function () use ($connection, $substitutedWriter, &$armed): void {
+            if ($armed) {
+                $armed = false;
+                $connection->setPdo($substitutedWriter);
+            }
+        });
 
-        expect(fn () => $connection->transaction(function () use ($connection, $substitutedWriter, &$armed): void {
-            $connection->table('explicit_null_shared_custom_resources')->insert(['name' => 'Inner row to roll back']);
-            $connection->beforeExecuting(function () use ($connection, $substitutedWriter, &$armed): void {
-                if ($armed) {
-                    $armed = false;
-                    $connection->setPdo($substitutedWriter);
-                }
-            });
+        expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+            'name' => 'Nested redirected write',
+        ], $connection))->toThrow(LogicException::class, 'physical database writer');
 
-            PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
-                'name' => 'Nested redirected write',
-            ], $connection);
-        }))->toThrow(LogicException::class, 'physical database writer');
+        expect($armed)->toBeTrue();
+        $armed = false;
 
         expect($connection->transactionLevel())->toBe($baselineTransactionLevel + 1);
         $connection->table('explicit_null_shared_custom_resources')->insert(['name' => 'Outer row after rejection']);
@@ -1149,12 +1148,21 @@ it('preserves caller transaction boundaries after rejecting callback transaction
         match ($attack) {
             'commit' => $connection->commit(),
             'rollback' => $connection->rollBack(),
+            'commit-all' => (function () use ($connection): void {
+                while ($connection->transactionLevel() > 0) {
+                    $connection->commit();
+                }
+            })(),
+            'rollback-all' => $connection->rollBack(0),
         };
     });
 
     expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
         'name' => 'Rejected transaction control',
     ], $connection))->toThrow(LogicException::class, 'transaction state');
+
+    expect($armed)->toBeTrue();
+    $armed = false;
 
     expect($connection->transactionLevel())->toBe($baselineTransactionLevel + $depth)
         ->and($connection->table('explicit_null_shared_custom_resources')->pluck('name')->all())
@@ -1174,6 +1182,12 @@ it('preserves caller transaction boundaries after rejecting callback transaction
     'rollback at caller depth one' => ['rollback', 1],
     'rollback at caller depth two' => ['rollback', 2],
     'rollback at caller depth three' => ['rollback', 3],
+    'commit through caller boundary at depth one' => ['commit-all', 1],
+    'commit through caller boundary at depth two' => ['commit-all', 2],
+    'commit through caller boundary at depth three' => ['commit-all', 3],
+    'rollback through caller boundary at depth one' => ['rollback-all', 1],
+    'rollback through caller boundary at depth two' => ['rollback-all', 2],
+    'rollback through caller boundary at depth three' => ['rollback-all', 3],
 ]);
 
 it('rejects a writer swap during a privileged lookup before create', function (string $api): void {

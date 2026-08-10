@@ -106,6 +106,9 @@ class Resource extends Model implements DefinesFields
 
     protected $with = [];
 
+    /** @var array<int, true> */
+    private static array $privilegedConnectionDispatchers = [];
+
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
@@ -285,6 +288,7 @@ class Resource extends Model implements DefinesFields
         }
 
         $resource = static::resourceModelOnConnection($connection);
+        $resource->assertCallerTransactionDoesNotExposeConnectionCallbacks($resource->getConnection());
 
         Gate::authorize('createGlobal', $resource);
 
@@ -757,6 +761,7 @@ class Resource extends Model implements DefinesFields
         static::ensureGlobalWriteIsSupported();
 
         $resource = static::resourceModelOnConnection($connection);
+        $resource->assertCallerTransactionDoesNotExposeConnectionCallbacks($resource->getConnection());
 
         return static::createGlobalResourceInstance(
             $attributes,
@@ -847,6 +852,7 @@ class Resource extends Model implements DefinesFields
         array $values,
         Resource $resource,
     ): static {
+        $resource->assertCallerTransactionDoesNotExposeConnectionCallbacks($resource->getConnection());
         $attributes['team_id'] = null;
         unset($values['team_id']);
 
@@ -935,6 +941,28 @@ class Resource extends Model implements DefinesFields
         }
 
         return $instance;
+    }
+
+    /** @param  list<callable>|null  $callbacks */
+    private function assertCallerTransactionDoesNotExposeConnectionCallbacks(
+        Connection $connection,
+        ?array $callbacks = null,
+    ): void {
+        if ($connection->transactionLevel() === 0) {
+            return;
+        }
+
+        if ($callbacks === null) {
+            $callbacksProperty = new \ReflectionProperty(Connection::class, 'beforeExecutingCallbacks');
+            /** @var list<callable> $callbacks */
+            $callbacks = $callbacksProperty->getValue($connection);
+        }
+
+        if ($this->hasUntrustedConnectionCallback($callbacks)) {
+            throw new \LogicException(
+                'A named write cannot expose its physical database writer or transaction state to connection callbacks inside a caller transaction.',
+            );
+        }
     }
 
     private function assertPrivilegedConnectionState(
@@ -1105,6 +1133,15 @@ class Resource extends Model implements DefinesFields
         callable $authorize,
         callable $persist,
     ): mixed {
+        $callbacksProperty = new \ReflectionProperty(Connection::class, 'beforeExecutingCallbacks');
+        /** @var list<callable> $callbacksBeforeTransaction */
+        $callbacksBeforeTransaction = $callbacksProperty->getValue($connection);
+
+        $this->assertCallerTransactionDoesNotExposeConnectionCallbacks(
+            $connection,
+            $callbacksBeforeTransaction,
+        );
+
         $operation = new class($authorize)
         {
             private bool $authorizing = false;
@@ -1126,8 +1163,12 @@ class Resource extends Model implements DefinesFields
                 }
             }
         };
-        $execute = function (int $expectedTransactionLevel) use ($connection, $operation, $persist): mixed {
-            $callbacksProperty = new \ReflectionProperty(Connection::class, 'beforeExecutingCallbacks');
+        $execute = function (int $expectedTransactionLevel) use (
+            $callbacksProperty,
+            $connection,
+            $operation,
+            $persist,
+        ): mixed {
             /** @var list<callable> $originalCallbacks */
             $originalCallbacks = $callbacksProperty->getValue($connection);
             $dispatcher = static function (string $query, array $bindings, Connection $executingConnection) use (
@@ -1141,6 +1182,7 @@ class Resource extends Model implements DefinesFields
 
                 $operation->authorize($expectedTransactionLevel, true);
             };
+            self::$privilegedConnectionDispatchers[spl_object_id($dispatcher)] = true;
             $callbacksProperty->setValue($connection, [$dispatcher]);
 
             try {
@@ -1161,6 +1203,7 @@ class Resource extends Model implements DefinesFields
                     $connection,
                     array_merge($originalCallbacks, $callbacksAddedDuringExecution),
                 );
+                unset(self::$privilegedConnectionDispatchers[spl_object_id($dispatcher)]);
             }
         };
 
@@ -1258,6 +1301,19 @@ class Resource extends Model implements DefinesFields
             $this->restoreConnectionQueryInfrastructure($connection, $grammar, $processor);
             $this->restorePhysicalWriter($connection, $writePdo, $transactionLevel);
         }
+    }
+
+    /** @param list<callable> $callbacks */
+    private function hasUntrustedConnectionCallback(array $callbacks): bool
+    {
+        foreach ($callbacks as $callback) {
+            if (! $callback instanceof \Closure
+                || ! isset(self::$privilegedConnectionDispatchers[spl_object_id($callback)])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function performGlobalInsert(
@@ -1543,6 +1599,7 @@ class Resource extends Model implements DefinesFields
         int|string|null $trustedTeamId = null,
         array $options = [],
     ): bool {
+        $this->assertCallerTransactionDoesNotExposeConnectionCallbacks($this->getConnection());
         $this->mergeAttributesFromCachedCasts();
 
         $connection = $this->getConnection();
