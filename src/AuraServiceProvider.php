@@ -94,6 +94,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Octane\Events\RequestReceived;
 use Livewire\Component;
+use Livewire\ComponentHookRegistry;
 use Livewire\Livewire;
 use Livewire\LivewireServiceProvider;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
@@ -538,15 +539,7 @@ class AuraServiceProvider extends PackageServiceProvider
         // Register before Livewire boots its built-in SupportEvents hook. This
         // lets secure embedded components authorize `__dispatch` before an
         // event listener can execute, including later calls in one batch.
-        $registerEmbeddedAuthorizationHook = static function ($livewire): void {
-            $livewire->componentHook(EmbeddedComponentAuthorizationHook::class);
-        };
-
-        if ($this->app->bound('livewire')) {
-            $registerEmbeddedAuthorizationHook($this->app->make('livewire'));
-        } else {
-            $this->app->afterResolving('livewire', $registerEmbeddedAuthorizationHook);
-        }
+        ComponentHookRegistry::register(EmbeddedComponentAuthorizationHook::class);
 
         // Bind the concrete Aura instance as a process-persistent singleton so
         // its resource/field registrations and captured baseline survive across
