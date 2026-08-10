@@ -5,6 +5,7 @@ namespace Aura\Base\Tests\Fixtures;
 use Aura\Base\Contracts\GlobalSearchAdapter;
 use Aura\Base\Exceptions\GlobalSearchExecutionFailed;
 use Aura\Base\GlobalSearch\GlobalSearchBudget;
+use Aura\Base\GlobalSearch\GlobalSearchGuardedEventDispatcher;
 use Aura\Base\Resource;
 use Illuminate\Database\Connectors\ConnectionFactory;
 use Illuminate\Database\DatabaseManager;
@@ -35,15 +36,56 @@ final class GlobalSearchProcessCapturedManagerConnectionChurnAdapter implements 
             return collect();
         }
 
-        if (str_contains($mode, 'dispatcher-rebind')) {
+        if (str_contains($mode, 'dispatcher-')) {
             $replacementDispatcher = new Dispatcher(app());
+            $applicationReplacementWasRejected = false;
+            $facadeReplacementWasRejected = false;
 
             try {
                 app()->instance('events', $replacementDispatcher);
             } catch (GlobalSearchExecutionFailed) {
+                $applicationReplacementWasRejected = true;
             }
 
-            Event::swap($replacementDispatcher);
+            try {
+                Event::swap($replacementDispatcher);
+            } catch (GlobalSearchExecutionFailed) {
+                $facadeReplacementWasRejected = true;
+            }
+
+            Event::forget(ConnectionEstablished::class);
+            $clearPathWasHandled = false;
+
+            if (str_contains($mode, 'offset-unset')) {
+                $application = app();
+                unset($application['events']);
+                $resolvedDispatcher = app('events');
+                $clearPathWasHandled = true;
+            } elseif (str_contains($mode, 'guarded-binding-forget')) {
+                $guardedDispatcherBinding = app()->getAlias('events');
+                app()->forgetInstance($guardedDispatcherBinding);
+
+                try {
+                    app('events');
+                } catch (GlobalSearchExecutionFailed) {
+                    $clearPathWasHandled = true;
+                }
+
+                $resolvedDispatcher = app('events');
+            } else {
+                app()->forgetInstance('events');
+                $resolvedDispatcher = app('events');
+                $clearPathWasHandled = true;
+            }
+
+            file_put_contents(
+                (string) getenv('AURA_GLOBAL_SEARCH_HOOK_MARKER'),
+                ($applicationReplacementWasRejected ? 'A' : 'a')
+                    .($facadeReplacementWasRejected ? 'F' : 'f')
+                    .($clearPathWasHandled ? 'C' : 'c')
+                    .($resolvedDispatcher instanceof GlobalSearchGuardedEventDispatcher ? 'G' : 'R'),
+                FILE_APPEND,
+            );
         }
 
         Event::forget(ConnectionEstablished::class);
@@ -59,7 +101,22 @@ final class GlobalSearchProcessCapturedManagerConnectionChurnAdapter implements 
         $database->purge('process_search');
 
         foreach (range(1, 10) as $iteration) {
-            $database->connection('process_search')->select('select 1');
+            try {
+                $database->connection('process_search')->select('select 1');
+            } catch (GlobalSearchExecutionFailed $exception) {
+                if (! str_contains($mode, 'dispatcher-')) {
+                    throw $exception;
+                }
+
+                file_put_contents(
+                    (string) getenv('AURA_GLOBAL_SEARCH_HOOK_MARKER'),
+                    'X',
+                    FILE_APPEND,
+                );
+
+                break;
+            }
+
             file_put_contents(
                 (string) getenv('AURA_GLOBAL_SEARCH_HOOK_MARKER'),
                 'q',

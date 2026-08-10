@@ -2056,6 +2056,10 @@ test('fresh workers reject event dispatcher rebinding before late extensions on 
         GlobalSearchProcessCapturedManagerConnectionChurnResource::class,
         GlobalSearchProcessResource::class,
     ]);
+    config([
+        'aura.global_search.per_resource_timeout_ms' => 1_500,
+        'aura.global_search.total_timeout_ms' => 8_000,
+    ]);
 
     try {
         $this->actingAs($harness['user']);
@@ -2065,8 +2069,11 @@ test('fresh workers reject event dispatcher rebinding before late extensions on 
             ->assertSee('Fresh Process Needle Current Team');
 
         $marker = (string) @file_get_contents($harness['marker']);
+        $completedProviderQueries = substr_count($marker, 'q');
 
-        expect(strlen($marker))->toBeLessThanOrEqual(7)
+        expect($marker)->toStartWith('AFCG')
+            ->and($completedProviderQueries)->toBe(6)
+            ->and($marker)->toEndWith('X')
             ->and($marker)->not->toContain('raw-dispatcher-observed');
     } finally {
         cleanupFreshProcessSearchHarness($harness);
@@ -2074,6 +2081,8 @@ test('fresh workers reject event dispatcher rebinding before late extensions on 
 })->with([
     'late connection-name extension' => 'query-churn-dispatcher-rebind-late-extension-name',
     'late driver extension' => 'query-churn-dispatcher-rebind-late-extension-driver',
+    'container offset unset' => 'query-churn-dispatcher-offset-unset-late-extension-name',
+    'guarded binding instance removal' => 'query-churn-dispatcher-guarded-binding-forget-late-extension-name',
     'provider-prebound rebinding callback' => 'query-churn-dispatcher-prebound-callback-late-extension-name',
 ]);
 
@@ -2094,6 +2103,64 @@ test('query guards preserve replacement dispatcher semantics while rejecting reb
         ->toBe(['preserved'])
         ->and($observedReplacements)
         ->each->toBeInstanceOf(GlobalSearchGuardedEventDispatcher::class);
+});
+
+test('query guards keep the guarded dispatcher authoritative across public clear paths', function () {
+    $queryGuard = new GlobalSearchQueryGuard(5);
+    $queryGuard->install();
+    $guardedDispatcher = app('events');
+
+    expect($guardedDispatcher)->toBeInstanceOf(GlobalSearchGuardedEventDispatcher::class);
+
+    Event::clearResolvedInstance('events');
+    expect(Event::getFacadeRoot())->toBe($guardedDispatcher);
+
+    Event::clearResolvedInstances();
+    expect(Event::getFacadeRoot())->toBe($guardedDispatcher);
+
+    app()->forgetInstance('events');
+    expect(app('events'))->toBe($guardedDispatcher);
+
+    $application = app();
+    unset($application['events']);
+    expect(app('events'))->toBe($guardedDispatcher);
+
+    $guardedDispatcherBinding = app()->getAlias('events');
+    app()->scoped($guardedDispatcherBinding, fn (): Dispatcher => new Dispatcher(app()));
+    app()->forgetScopedInstances();
+
+    expect(fn () => app('events'))
+        ->toThrow(GlobalSearchExecutionFailed::class)
+        ->and(app('events'))->toBe($guardedDispatcher);
+
+    app()->forgetInstance($guardedDispatcherBinding);
+
+    expect(fn () => app('events'))
+        ->toThrow(GlobalSearchExecutionFailed::class)
+        ->and(app('events'))->toBe($guardedDispatcher);
+
+    app()->instance('hostile.events', new Dispatcher(app()));
+    app()->alias('hostile.events', 'events');
+
+    expect(fn () => app('events'))
+        ->toThrow(GlobalSearchExecutionFailed::class)
+        ->and(app('events'))->toBe($guardedDispatcher)
+        ->and(Event::getFacadeRoot())->toBe($guardedDispatcher);
+
+    $instancesProperty = new ReflectionProperty(app(), 'instances');
+    $instances = $instancesProperty->getValue(app());
+
+    try {
+        app()->forgetInstances();
+
+        expect(fn () => app('events'))
+            ->toThrow(GlobalSearchExecutionFailed::class)
+            ->and(app('events'))->toBe($guardedDispatcher)
+            ->and(Event::getFacadeRoot())->toBe($guardedDispatcher);
+    } finally {
+        $instancesProperty->setValue(app(), $instances);
+        Event::clearResolvedInstance('events');
+    }
 });
 
 test('fresh workers reject forged stdout envelopes and abnormal termination', function (string $mode) {

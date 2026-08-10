@@ -28,7 +28,11 @@ final class GlobalSearchQueryGuard
 
     private ?GlobalSearchGuardedEventDispatcher $guardedEventDispatcher = null;
 
+    private ?string $guardedEventDispatcherBinding = null;
+
     private int $queryCount = 0;
+
+    private bool $rejectingPendingEventDispatcherReplacement = false;
 
     private bool $restoringEventDispatcher = false;
 
@@ -63,9 +67,10 @@ final class GlobalSearchQueryGuard
 
         $guardedDispatcher = new GlobalSearchGuardedEventDispatcher($dispatcher, $this);
         $this->guardedEventDispatcher = $guardedDispatcher;
-        app()->instance('events', $guardedDispatcher);
-        Event::swap($guardedDispatcher);
+        $this->guardedEventDispatcherBinding = self::class.'.events.'.spl_object_id($this);
+        $this->restoreEventDispatcherBinding(app());
         $this->prependEventDispatcherRebindingGuard(app());
+        $this->prependEventDispatcherResolvingGuard(app());
 
         /** @var DatabaseManager $database */
         $database = app('db');
@@ -81,6 +86,34 @@ final class GlobalSearchQueryGuard
         return $this->queryCount;
     }
 
+    private function eventDispatcherBindingIsGuarded(Container $application): bool
+    {
+        if (! is_string($this->guardedEventDispatcherBinding)
+            || ! $this->guardedEventDispatcher instanceof GlobalSearchGuardedEventDispatcher) {
+            return false;
+        }
+
+        try {
+            $eventDispatcherAlias = $application->getAlias('events');
+        } catch (Throwable) {
+            return false;
+        }
+
+        try {
+            $property = new ReflectionProperty(Container::class, 'instances');
+            $instances = $property->getValue($application);
+
+            return $eventDispatcherAlias === $this->guardedEventDispatcherBinding
+                && is_array($instances)
+                && ($instances[$this->guardedEventDispatcherBinding] ?? null) === $this->guardedEventDispatcher;
+        } catch (Throwable $exception) {
+            throw new GlobalSearchExecutionFailed(
+                'The global search event dispatcher could not be secured.',
+                previous: $exception,
+            );
+        }
+    }
+
     private function guardEventDispatcherRebinding(Container $application, mixed $replacement): void
     {
         if ($this->restoringEventDispatcher) {
@@ -88,7 +121,13 @@ final class GlobalSearchQueryGuard
         }
 
         if ($replacement === $this->guardedEventDispatcher) {
-            Event::swap($replacement);
+            $rejectReplacement = $this->rejectingPendingEventDispatcherReplacement;
+            $this->rejectingPendingEventDispatcherReplacement = false;
+            $this->restoreEventDispatcherBinding($application);
+
+            if ($rejectReplacement) {
+                throw new GlobalSearchExecutionFailed('The global search event dispatcher was replaced.');
+            }
 
             return;
         }
@@ -102,16 +141,22 @@ final class GlobalSearchQueryGuard
         }
 
         $this->guardedEventDispatcher = $guardedDispatcher;
-        $this->restoringEventDispatcher = true;
-
-        try {
-            $application->instance('events', $guardedDispatcher);
-            Event::swap($guardedDispatcher);
-        } finally {
-            $this->restoringEventDispatcher = false;
-        }
+        $this->restoreEventDispatcherBinding($application);
 
         throw new GlobalSearchExecutionFailed('The global search event dispatcher was replaced.');
+    }
+
+    private function guardEventDispatcherResolution(string $abstract, Container $application): void
+    {
+        if ($this->restoringEventDispatcher
+            || $this->eventDispatcherBindingIsGuarded($application)
+            || $this->securePendingEventDispatcherReplacement($abstract, $application)) {
+            return;
+        }
+
+        $this->restoreEventDispatcherBinding($application);
+
+        throw new GlobalSearchExecutionFailed('The global search event dispatcher binding was removed.');
     }
 
     private function prependEventDispatcherRebindingGuard(Container $application): void
@@ -134,14 +179,20 @@ final class GlobalSearchQueryGuard
             throw new GlobalSearchExecutionFailed('The global search event dispatcher could not be secured.');
         }
 
-        $abstract = $application->getAlias('events');
-        $existingCallbacks = $callbacks[$abstract] ?? [];
+        $abstracts = array_filter([
+            'events',
+            $this->guardedEventDispatcherBinding,
+        ], is_string(...));
 
-        if (! is_array($existingCallbacks)) {
-            throw new GlobalSearchExecutionFailed('The global search event dispatcher could not be secured.');
+        foreach ($abstracts as $abstract) {
+            $existingCallbacks = $callbacks[$abstract] ?? [];
+
+            if (! is_array($existingCallbacks)) {
+                throw new GlobalSearchExecutionFailed('The global search event dispatcher could not be secured.');
+            }
+
+            $callbacks[$abstract] = [$callback, ...$existingCallbacks];
         }
-
-        $callbacks[$abstract] = [$callback, ...$existingCallbacks];
 
         try {
             $property->setValue($application, $callbacks);
@@ -151,5 +202,101 @@ final class GlobalSearchQueryGuard
                 previous: $exception,
             );
         }
+    }
+
+    private function prependEventDispatcherResolvingGuard(Container $application): void
+    {
+        $callback = function (string $abstract, array $parameters, Container $application): void {
+            $this->guardEventDispatcherResolution($abstract, $application);
+        };
+
+        try {
+            $property = new ReflectionProperty(Container::class, 'globalBeforeResolvingCallbacks');
+            $callbacks = $property->getValue($application);
+        } catch (Throwable $exception) {
+            throw new GlobalSearchExecutionFailed(
+                'The global search event dispatcher could not be secured.',
+                previous: $exception,
+            );
+        }
+
+        if (! is_array($callbacks)) {
+            throw new GlobalSearchExecutionFailed('The global search event dispatcher could not be secured.');
+        }
+
+        try {
+            $property->setValue($application, [$callback, ...$callbacks]);
+        } catch (Throwable $exception) {
+            throw new GlobalSearchExecutionFailed(
+                'The global search event dispatcher could not be secured.',
+                previous: $exception,
+            );
+        }
+    }
+
+    private function restoreEventDispatcherBinding(Container $application): void
+    {
+        if (! is_string($this->guardedEventDispatcherBinding)
+            || ! $this->guardedEventDispatcher instanceof GlobalSearchGuardedEventDispatcher) {
+            throw new GlobalSearchExecutionFailed('Laravel has no supported global search event dispatcher.');
+        }
+
+        $this->restoringEventDispatcher = true;
+
+        try {
+            $application->instance('events', $this->guardedEventDispatcher);
+            $application->instance($this->guardedEventDispatcherBinding, $this->guardedEventDispatcher);
+            $application->forgetInstance('events');
+            $application->alias($this->guardedEventDispatcherBinding, 'events');
+            Event::clearResolvedInstance('events');
+        } finally {
+            $this->restoringEventDispatcher = false;
+        }
+    }
+
+    private function securePendingEventDispatcherReplacement(string $abstract, Container $application): bool
+    {
+        if ($abstract !== 'events'
+            || ! is_string($this->guardedEventDispatcherBinding)
+            || ! $this->guardedEventDispatcher instanceof GlobalSearchGuardedEventDispatcher) {
+            return false;
+        }
+
+        try {
+            $property = new ReflectionProperty(Container::class, 'instances');
+            $instances = $property->getValue($application);
+        } catch (Throwable $exception) {
+            throw new GlobalSearchExecutionFailed(
+                'The global search event dispatcher could not be secured.',
+                previous: $exception,
+            );
+        }
+
+        $replacement = is_array($instances) ? ($instances['events'] ?? null) : null;
+
+        if (! is_array($instances)
+            || ($instances[$this->guardedEventDispatcherBinding] ?? null) !== $this->guardedEventDispatcher
+            || ! $replacement instanceof Dispatcher) {
+            return false;
+        }
+
+        $guardedDispatcher = $replacement === $this->guardedEventDispatcher
+            ? $this->guardedEventDispatcher
+            : new GlobalSearchGuardedEventDispatcher($replacement, $this);
+        $this->guardedEventDispatcher = $guardedDispatcher;
+        $this->rejectingPendingEventDispatcherReplacement = true;
+        $instances['events'] = $guardedDispatcher;
+
+        try {
+            $property->setValue($application, $instances);
+            Event::clearResolvedInstance('events');
+        } catch (Throwable $exception) {
+            throw new GlobalSearchExecutionFailed(
+                'The global search event dispatcher could not be secured.',
+                previous: $exception,
+            );
+        }
+
+        return true;
     }
 }

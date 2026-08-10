@@ -136,6 +136,8 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
             'query-churn-late-extension-captured-manager',
             'query-churn-dispatcher-rebind-late-extension-name',
             'query-churn-dispatcher-rebind-late-extension-driver',
+            'query-churn-dispatcher-offset-unset-late-extension-name',
+            'query-churn-dispatcher-guarded-binding-forget-late-extension-name',
             'query-churn-dispatcher-prebound-callback-late-extension-name',
         ], true)) {
             GlobalSearchProcessCapturedManagerConnectionChurnResource::captureDatabase(app('db'));
@@ -232,7 +234,7 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
                 GlobalSearchProcessCapturedManagerConnectionChurnResource::class,
                 GlobalSearchProcessResource::class,
             ],
-            'query-churn-late-extension-captured-manager', 'query-churn-late-extension-current-manager', 'query-churn-dispatcher-rebind-late-extension-name', 'query-churn-dispatcher-rebind-late-extension-driver', 'query-churn-dispatcher-prebound-callback-late-extension-name' => [
+            'query-churn-late-extension-captured-manager', 'query-churn-late-extension-current-manager', 'query-churn-dispatcher-rebind-late-extension-name', 'query-churn-dispatcher-rebind-late-extension-driver', 'query-churn-dispatcher-offset-unset-late-extension-name', 'query-churn-dispatcher-guarded-binding-forget-late-extension-name', 'query-churn-dispatcher-prebound-callback-late-extension-name' => [
                 GlobalSearchProcessCapturedManagerConnectionChurnResource::class,
                 GlobalSearchProcessResource::class,
             ],
