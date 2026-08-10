@@ -15,6 +15,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
+use RuntimeException;
 
 final readonly class PreferenceManager
 {
@@ -180,7 +181,9 @@ final readonly class PreferenceManager
 
         if (config('aura.teams')
             && in_array($scope, [PreferenceScope::User, PreferenceScope::Team], true)
-            && ($persistedTeam === null || ! $this->matchesCanonicalTeam($context->team, $persistedTeam))) {
+            && ($persistedTeam === null
+                || Option::isEveryoneTeamId($persistedTeam->getKey())
+                || ! $this->matchesCanonicalTeam($context->team, $persistedTeam))) {
             throw new AuthorizationException('The explicit preference team target is not authentic.');
         }
 
@@ -315,11 +318,12 @@ final readonly class PreferenceManager
 
     private function matchesCanonicalTeam(?Team $candidate, Team $canonical): bool
     {
-        if ($candidate === null || $candidate::class !== $canonical::class) {
+        if ($candidate === null || $candidate::class !== $canonical::class
+            || (string) $candidate->getKey() !== (string) $canonical->getKey()) {
             return false;
         }
 
-        foreach ([$candidate->getKeyName(), 'user_id', 'name', 'created_at', 'updated_at'] as $attribute) {
+        foreach (['user_id', 'name', 'created_at', 'updated_at'] as $attribute) {
             if ($candidate->getAttribute($attribute) != $canonical->getAttribute($attribute)) {
                 return false;
             }
@@ -456,6 +460,13 @@ final readonly class PreferenceManager
         };
     }
 
+    private function requireSuccessfulOptionMutation(?bool $succeeded): void
+    {
+        if ($succeeded !== true) {
+            throw new RuntimeException('Preference option persistence was vetoed.');
+        }
+    }
+
     private function sameKey(User $first, User $second): bool
     {
         return (string) $first->getKey() === (string) $second->getKey();
@@ -586,7 +597,7 @@ final readonly class PreferenceManager
                 $record->setAttribute($record->getDeletedAtColumn(), null);
             }
 
-            $record->save();
+            $this->requireSuccessfulOptionMutation($record->save());
         });
 
         Aura::clearGlobalOptionCache($connection);
@@ -620,9 +631,9 @@ final readonly class PreferenceManager
             $this->persistEncodedFloat($record, $value);
 
             if ($record->trashed()) {
-                $record->restore();
+                $this->requireSuccessfulOptionMutation($record->restore());
             } else {
-                $record->save();
+                $this->requireSuccessfulOptionMutation($record->save());
             }
         });
 
@@ -688,9 +699,9 @@ final readonly class PreferenceManager
 
             try {
                 if ($record->trashed()) {
-                    $record->restore();
+                    $this->requireSuccessfulOptionMutation($record->restore());
                 } else {
-                    $record->save();
+                    $this->requireSuccessfulOptionMutation($record->save());
                 }
             } catch (UniqueConstraintViolationException $exception) {
                 if (! $isCreatingOrRenaming) {
@@ -715,9 +726,9 @@ final readonly class PreferenceManager
                 $this->persistEncodedFloat($record, $value);
 
                 if ($record->trashed()) {
-                    $record->restore();
+                    $this->requireSuccessfulOptionMutation($record->restore());
                 } else {
-                    $record->save();
+                    $this->requireSuccessfulOptionMutation($record->save());
                 }
             }
 
@@ -728,7 +739,9 @@ final readonly class PreferenceManager
                 ->lockForUpdate()
                 ->get()
                 ->each(function (Option $alias) use ($context, $optionNames): void {
-                    $this->verifiedUserOption($alias, $context->user, $optionNames)->forceDelete();
+                    $this->requireSuccessfulOptionMutation(
+                        $this->verifiedUserOption($alias, $context->user, $optionNames)->forceDelete(),
+                    );
                 });
         });
 

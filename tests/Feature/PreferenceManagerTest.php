@@ -54,6 +54,11 @@ class EmailPreferenceUser extends User
     }
 }
 
+class StringKeyPreferenceTeam extends Team
+{
+    protected $keyType = 'string';
+}
+
 test('resource and owner precedence is deterministic', function () {
     $user = preferenceGlobalAdmin();
     $team = $user->currentTeam;
@@ -531,11 +536,29 @@ test('reserved everyone identity fails closed in team scope and invalidates only
     expect(Option::query()->count())->toBe(0);
 
     $reservedTeam = Team::withoutGlobalScopes()->findOrFail(Option::EVERYONE_TEAM_ID);
+    config()->set('aura.resources.team', StringKeyPreferenceTeam::class);
+    $zeroPaddedTarget = (new StringKeyPreferenceTeam)->newFromBuilder(array_replace(
+        $reservedTeam->getAttributes(),
+        ['id' => '00'],
+    ));
+    registerPreference(new PreferenceDefinition(
+        key: 'test.reserved-float',
+        type: PreferenceValueType::Float,
+        default: 2.5,
+        scopes: [PreferenceScope::Team],
+    ));
 
     expect(fn () => $reservedTeam->forceFill(['name' => 'Forged update'])->save())
         ->toThrow(InvalidArgumentException::class, 'reserved')
         ->and(fn () => $reservedTeam->delete())
-        ->toThrow(InvalidArgumentException::class, 'reserved');
+        ->toThrow(InvalidArgumentException::class, 'reserved')
+        ->and(fn () => $preferences->set(
+            'test.reserved-float',
+            1.0,
+            PreferenceScope::Team,
+            preferenceContext($admin, $zeroPaddedTarget),
+            $admin,
+        ))->toThrow(AuthorizationException::class);
 
     $everyone = Option::withoutGlobalScopes()
         ->where('team_id', Option::EVERYONE_TEAM_ID)
@@ -721,6 +744,157 @@ test('a float observer veto rolls back storage and cache without a hidden rewrit
     'team scope' => PreferenceScope::Team,
     'everyone scope' => PreferenceScope::Everyone,
 ]);
+
+test('a false float observer veto aborts without alias cleanup or cache invalidation', function (PreferenceScope $scope) {
+    registerPreference(new PreferenceDefinition(
+        key: 'test.float-false-veto',
+        type: PreferenceValueType::Float,
+        default: 2.5,
+        scopes: PreferenceScope::cases(),
+    ));
+    $user = preferenceGlobalAdmin();
+    $context = preferenceContext($user, $user->currentTeam, null);
+    $preferences = preferenceManager();
+
+    $preferences->set('test.float-false-veto', 1.0, $scope, $context, $user);
+    expect($preferences->get('test.float-false-veto', $context))->toBe(1.0);
+
+    $storedOption = Option::withoutGlobalScopes()->sole();
+    $storedName = (string) $storedOption->getRawOriginal('name');
+    $aliasName = null;
+
+    if ($scope === PreferenceScope::User) {
+        $storageKey = substr($storedName, strlen(User::optionNamePrefixFor($user->getKey())));
+        $aliasName = 'user.'.$user->getKey().'.'.$storageKey;
+        $aliasAttributes = $storedOption->getAttributes();
+        unset($aliasAttributes[$storedOption->getKeyName()]);
+        $aliasAttributes['name'] = $aliasName;
+        DB::table($storedOption->getTable())->insert($aliasAttributes);
+    }
+
+    Option::updating(function (Option $option): bool {
+        return ! str_contains((string) $option->getAttribute('name'), 'preference.v1.');
+    });
+
+    try {
+        expect(fn () => $preferences->set(
+            'test.float-false-veto',
+            2.0,
+            $scope,
+            $context,
+            $user,
+        ))->toThrow(RuntimeException::class, 'vetoed')
+            ->and(Option::withoutGlobalScopes()
+                ->where('name', $storedName)
+                ->sole()
+                ->getRawOriginal('value'))->toBe('1.0')
+            ->and($preferences->get('test.float-false-veto', $context))->toBe(1.0);
+
+        if ($aliasName !== null) {
+            expect(Option::withoutGlobalScopes()->where('name', $aliasName)->exists())->toBeTrue();
+        }
+    } finally {
+        Option::flushEventListeners();
+        Option::clearBootedModels();
+    }
+})->with([
+    'user scope' => PreferenceScope::User,
+    'team scope' => PreferenceScope::Team,
+    'everyone scope' => PreferenceScope::Everyone,
+]);
+
+test('a false restore veto leaves a float option deleted', function (PreferenceScope $scope) {
+    registerPreference(new PreferenceDefinition(
+        key: 'test.float-restore-veto',
+        type: PreferenceValueType::Float,
+        default: 2.5,
+        scopes: PreferenceScope::cases(),
+    ));
+    $user = preferenceGlobalAdmin();
+    $context = preferenceContext($user, $user->currentTeam, null);
+    $preferences = preferenceManager();
+
+    $preferences->set('test.float-restore-veto', 1.0, $scope, $context, $user);
+    $storedOption = Option::withoutGlobalScopes()->sole();
+    $storedOption->deleteQuietly();
+    Cache::flush();
+
+    Option::restoring(function (Option $option): bool {
+        return ! str_contains((string) $option->getAttribute('name'), 'preference.v1.');
+    });
+
+    try {
+        expect(fn () => $preferences->set(
+            'test.float-restore-veto',
+            2.0,
+            $scope,
+            $context,
+            $user,
+        ))->toThrow(RuntimeException::class, 'vetoed')
+            ->and(Option::withoutGlobalScopes()
+                ->withTrashed()
+                ->sole()
+                ->trashed())->toBeTrue()
+            ->and(Option::withoutGlobalScopes()
+                ->withTrashed()
+                ->sole()
+                ->getRawOriginal('value'))->toBe('1.0')
+            ->and($preferences->get('test.float-restore-veto', $context))->toBe(2.5);
+    } finally {
+        Option::flushEventListeners();
+        Option::clearBootedModels();
+    }
+})->with([
+    'user scope' => PreferenceScope::User,
+    'team scope' => PreferenceScope::Team,
+]);
+
+test('a false alias deletion veto rolls back the float update and preserves the alias', function () {
+    registerPreference(new PreferenceDefinition(
+        key: 'test.float-delete-veto',
+        type: PreferenceValueType::Float,
+        default: 2.5,
+        scopes: [PreferenceScope::User],
+    ));
+    $user = preferenceGlobalAdmin();
+    $context = preferenceContext($user, $user->currentTeam, null);
+    $preferences = preferenceManager();
+
+    $preferences->set('test.float-delete-veto', 1.0, PreferenceScope::User, $context, $user);
+    expect($preferences->get('test.float-delete-veto', $context))->toBe(1.0);
+
+    $canonical = Option::withoutGlobalScopes()->sole();
+    $canonicalName = (string) $canonical->getRawOriginal('name');
+    $storageKey = substr($canonicalName, strlen(User::optionNamePrefixFor($user->getKey())));
+    $aliasName = 'user.'.$user->getKey().'.'.$storageKey;
+    $aliasAttributes = $canonical->getAttributes();
+    unset($aliasAttributes[$canonical->getKeyName()]);
+    $aliasAttributes['name'] = $aliasName;
+    DB::table($canonical->getTable())->insert($aliasAttributes);
+
+    Option::deleting(function (Option $option) use ($aliasName): bool {
+        return $option->getRawOriginal('name') !== $aliasName;
+    });
+
+    try {
+        expect(fn () => $preferences->set(
+            'test.float-delete-veto',
+            2.0,
+            PreferenceScope::User,
+            $context,
+            $user,
+        ))->toThrow(RuntimeException::class, 'vetoed')
+            ->and(Option::withoutGlobalScopes()
+                ->where('name', $canonicalName)
+                ->sole()
+                ->getRawOriginal('value'))->toBe('1.0')
+            ->and(Option::withoutGlobalScopes()->where('name', $aliasName)->exists())->toBeTrue()
+            ->and($preferences->get('test.float-delete-veto', $context))->toBe(1.0);
+    } finally {
+        Option::flushEventListeners();
+        Option::clearBootedModels();
+    }
+});
 
 test('float declarations reject integers non-finite values and other invalid types', function (mixed $value) {
     registerPreference(new PreferenceDefinition(
