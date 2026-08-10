@@ -2,9 +2,12 @@
 
 namespace Aura\Base\RecordLayout;
 
+use Aura\Base\Livewire\ComponentSlots\LivewireCollisionInspector;
+use Aura\Base\Preferences\PreferenceRegistry;
+use Aura\Base\Preferences\PreferenceScope;
+use Aura\Base\Preferences\PreferenceValueType;
 use Aura\Base\Resource;
 use InvalidArgumentException;
-use Livewire\Exceptions\ComponentNotFoundException;
 use Livewire\Livewire;
 
 final class RecordLayoutRegistry
@@ -23,7 +26,11 @@ final class RecordLayoutRegistry
     /** @var array<string, RegisteredRecordLayoutPanel> */
     private array $panels = [];
 
-    public function __construct(private readonly RecordLayoutPanelValidator $validator) {}
+    public function __construct(
+        private readonly LivewireCollisionInspector $collisionInspector,
+        private readonly PreferenceRegistry $preferences,
+        private readonly RecordLayoutPanelValidator $validator,
+    ) {}
 
     /** @param  list<class-string>  $resources */
     public function captureBaselineState(array $resources = []): void
@@ -35,6 +42,8 @@ final class RecordLayoutRegistry
         if (count($this->panels) > self::MAX_PANELS) {
             throw new InvalidArgumentException('The record layout panel registry limit was exceeded.');
         }
+
+        $this->validatePreferences();
 
         $this->baselinePanels = $this->panels;
         $this->finalized = true;
@@ -81,6 +90,26 @@ final class RecordLayoutRegistry
             throw new InvalidArgumentException("Record layout source [{$source}] must be a lowercase Composer package name.");
         }
 
+        $this->mergePanels($source, $panels);
+    }
+
+    private function matchesResource(RecordLayoutPanel $panel, Resource $resource): bool
+    {
+        foreach ($panel->resources as $candidate) {
+            if ($candidate === '*'
+                || $candidate === $resource::class
+                || $candidate === $resource->getSlug()
+                || $candidate === $resource->getType()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @param  list<RecordLayoutPanel>  $panels */
+    private function mergePanels(string $source, array $panels): void
+    {
         $pending = $this->panels;
 
         foreach ($panels as $panel) {
@@ -114,20 +143,6 @@ final class RecordLayoutRegistry
         $this->panels = $pending;
     }
 
-    private function matchesResource(RecordLayoutPanel $panel, Resource $resource): bool
-    {
-        foreach ($panel->resources as $candidate) {
-            if ($candidate === '*'
-                || $candidate === $resource::class
-                || $candidate === $resource->getSlug()
-                || $candidate === $resource->getType()) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     /** @param  class-string  $resource */
     private function registerResourcePanels(string $resource): void
     {
@@ -137,12 +152,14 @@ final class RecordLayoutRegistry
 
         $source = 'resource/record-layout-'.substr(hash('sha256', $resource), 0, 16);
 
+        $panels = [];
+
         foreach ($resource::recordLayoutPanels() as $panel) {
             if (! $panel instanceof RecordLayoutPanel) {
                 throw new InvalidArgumentException("Resource [{$resource}] must return immutable record layout panels.");
             }
 
-            $scopedPanel = new RecordLayoutPanel(
+            $panels[] = new RecordLayoutPanel(
                 key: $panel->key,
                 region: $panel->region,
                 component: $panel->component,
@@ -153,27 +170,45 @@ final class RecordLayoutRegistry
                 preferenceKey: $panel->preferenceKey,
                 eagerLoad: $panel->eagerLoad,
             );
-            $registered = new RegisteredRecordLayoutPanel($source, $scopedPanel);
-            $this->validator->validate($source, $scopedPanel);
-            $this->registerTransport($registered);
-            $this->panels[$registered->identity()] = $registered;
         }
+
+        $this->mergePanels($source, $panels);
     }
 
     private function registerTransport(RegisteredRecordLayoutPanel $registered): void
     {
-        try {
-            $existing = app('livewire.factory')->resolveComponentClass($registered->transport());
-        } catch (ComponentNotFoundException) {
-            Livewire::component($registered->transport(), $registered->panel->component);
+        $this->collisionInspector->assertReservable(
+            $registered->transport(),
+            $registered->panel->component,
+            static fn (?string $name): ?string => null,
+        );
+        Livewire::component($registered->transport(), $registered->panel->component);
+    }
 
-            return;
-        }
+    private function validatePreferences(): void
+    {
+        foreach ($this->panels as $registered) {
+            $key = $registered->panel->preferenceKey;
 
-        if ($existing !== $registered->panel->component) {
-            throw new InvalidRecordLayoutPanel(
-                "Record layout panel [{$registered->identity()}] transport [{$registered->transport()}] is already claimed."
-            );
+            if ($key === null) {
+                continue;
+            }
+
+            try {
+                $definition = $this->preferences->get($key);
+            } catch (InvalidArgumentException) {
+                throw new InvalidRecordLayoutPanel(
+                    "Record layout panel [{$registered->identity()}] preference [{$key}] is not registered."
+                );
+            }
+
+            if ($definition->type !== PreferenceValueType::Boolean
+                || (! $definition->supports(PreferenceScope::User)
+                    && ! $definition->supports(PreferenceScope::Team))) {
+                throw new InvalidRecordLayoutPanel(
+                    "Record layout panel [{$registered->identity()}] preference [{$key}] must be a user or team boolean."
+                );
+            }
         }
     }
 }

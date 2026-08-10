@@ -5,7 +5,10 @@ namespace Aura\Base\RecordLayout;
 use Aura\Base\Resource;
 use Livewire\Component;
 use ReflectionClass;
+use ReflectionIntersectionType;
 use ReflectionNamedType;
+use ReflectionType;
+use ReflectionUnionType;
 
 final class RecordLayoutPanelValidator
 {
@@ -29,8 +32,19 @@ final class RecordLayoutPanelValidator
 
         $mount = $reflection->hasMethod('mount') ? $reflection->getMethod('mount') : null;
 
+        if ($mount !== null && (! $mount->isPublic() || $mount->isStatic())) {
+            $this->fail($source, $panel, 'a public, non-static mount method');
+        }
+
         foreach (['model', 'inModal'] as $input) {
             if ($reflection->hasProperty($input) && $reflection->getProperty($input)->isPublic()) {
+                $property = $reflection->getProperty($input);
+
+                if ($property->isStatic() || $property->isReadOnly()
+                    || ! $this->acceptsInput($property->getType(), $input)) {
+                    $this->fail($source, $panel, "a writable [{$input}] property with a compatible type");
+                }
+
                 continue;
             }
 
@@ -41,16 +55,8 @@ final class RecordLayoutPanelValidator
                 $this->fail($source, $panel, "a public [{$input}] property or mount parameter");
             }
 
-            $type = $parameter->getType();
-
-            if ($type instanceof ReflectionNamedType && ! $type->isBuiltin()
-                && $input === 'model' && ! is_a(Resource::class, $type->getName(), true)) {
-                $this->fail($source, $panel, 'a model input accepting Aura resources');
-            }
-
-            if ($type instanceof ReflectionNamedType && $type->isBuiltin()
-                && $input === 'inModal' && ! in_array($type->getName(), ['bool', 'mixed'], true)) {
-                $this->fail($source, $panel, 'a boolean inModal input');
+            if (! $this->acceptsInput($parameter->getType(), $input)) {
+                $this->fail($source, $panel, "a compatible [{$input}] mount input");
             }
         }
 
@@ -60,6 +66,37 @@ final class RecordLayoutPanelValidator
                 $this->fail($source, $panel, "no unsupported required mount input [{$parameter->getName()}]");
             }
         }
+    }
+
+    private function acceptsInput(?ReflectionType $type, string $input): bool
+    {
+        if ($type === null) {
+            return true;
+        }
+
+        if ($type instanceof ReflectionUnionType) {
+            foreach ($type->getTypes() as $unionType) {
+                if ($this->acceptsInput($unionType, $input)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if ($type instanceof ReflectionIntersectionType || ! $type instanceof ReflectionNamedType) {
+            return false;
+        }
+
+        if ($input === 'inModal') {
+            return $type->isBuiltin() && in_array($type->getName(), ['bool', 'mixed'], true);
+        }
+
+        if ($type->isBuiltin()) {
+            return in_array($type->getName(), ['mixed', 'object'], true);
+        }
+
+        return is_a(Resource::class, $type->getName(), true);
     }
 
     private function fail(string $source, RecordLayoutPanel $panel, string $requirement): never

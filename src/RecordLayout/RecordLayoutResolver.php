@@ -76,11 +76,14 @@ final readonly class RecordLayoutResolver
 
         try {
             $context ??= $this->preferenceContext($resource, $user);
-            $value = $resolved[$panel->preferenceKey]
-                ??= $this->preferences->get($panel->preferenceKey, $context);
+            if (! array_key_exists($panel->preferenceKey, $resolved)) {
+                $resolved[$panel->preferenceKey] = $this->preferences->get($panel->preferenceKey, $context);
+            }
 
-            return $value === true;
+            return $resolved[$panel->preferenceKey] === true;
         } catch (Throwable) {
+            $resolved[$panel->preferenceKey] = false;
+
             return false;
         }
     }
