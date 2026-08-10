@@ -1,8 +1,10 @@
 <?php
 
 use Aura\Base\BaseResource;
+use Aura\Base\Contracts\ContextualFieldProvider;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Facades\DynamicFunctions;
+use Aura\Base\FieldProviderContext;
 use Aura\Base\Fields\File as FileField;
 use Aura\Base\Fields\HasMany;
 use Aura\Base\Fields\Image;
@@ -45,6 +47,45 @@ class Core05LockObservingSQLiteGrammar extends SQLiteGrammar
     protected function compileLock(QueryBuilder $query, $value)
     {
         return $value ? '/* core05-lock-for-update */' : '';
+    }
+}
+
+class Core05ContextualSortFieldState
+{
+    public static bool $available = true;
+}
+
+class Core05ContextualSortFieldProvider implements ContextualFieldProvider
+{
+    public function cacheContext(string $resourceClass): array
+    {
+        return ['available' => Core05ContextualSortFieldState::$available];
+    }
+
+    public function cacheVersion(FieldProviderContext $context): string|int
+    {
+        return 1;
+    }
+
+    public function fields(FieldProviderContext $context): array
+    {
+        if (! $context->value('available')) {
+            return [];
+        }
+
+        return [[
+            'name' => 'Contextual amount',
+            'slug' => 'content',
+            'type' => 'Aura\\Base\\Fields\\Number',
+            'number_type' => 'decimal',
+            'precision' => 20,
+            'scale' => 4,
+        ]];
+    }
+
+    public function managedFieldSlugs(string $resourceClass): array
+    {
+        return ['content'];
     }
 }
 
@@ -116,6 +157,11 @@ class Core05MutationResource extends Resource
             'ability' => 'update',
             'method' => 'collection',
         ],
+        'captureCollectionOrder' => [
+            'label' => 'Capture collection order',
+            'ability' => 'update',
+            'method' => 'collection',
+        ],
         'markBulkReviewed' => [
             'label' => 'Mark reviewed',
             'ability' => 'update',
@@ -163,6 +209,11 @@ class Core05MutationResource extends Resource
 
         $this->content = json_encode($snapshot, JSON_THROW_ON_ERROR);
         $this->save();
+    }
+
+    public function captureCollectionOrder(array $ids): void
+    {
+        static::$capturedCollectionIdChunks[] = $ids;
     }
 
     public function customWithoutAbility(): void
@@ -852,6 +903,7 @@ class Core05NoKanbanFieldResource extends Resource
 }
 
 beforeEach(function () {
+    Core05ContextualSortFieldState::$available = true;
     Core05AuthorizedBulkModal::$mounts = 0;
     Core05AuthoritativeCallbackPolicy::$attempts = 0;
     Core05AuthoritativeCallbackPolicy::$snapshots = [];
@@ -1774,6 +1826,97 @@ test('bulk mutations fail closed before an explicit or select-all selection exce
 })->with([
     'explicit selection' => false,
     'select all' => true,
+]);
+
+test('bulk mutations accept a currently available provider sort with exact decimal and primary-key ordering', function (
+    bool $selectAll,
+) {
+    $this->actingAs(createSuperAdmin());
+    $firstEquivalent = Core05MutationResource::create([
+        'title' => 'First equivalent contextual amount',
+        'content' => '2',
+        'status' => 'draft',
+    ]);
+    $secondEquivalent = Core05MutationResource::create([
+        'title' => 'Second equivalent contextual amount',
+        'content' => '2.00',
+        'status' => 'draft',
+    ]);
+    $higher = Core05MutationResource::create([
+        'title' => 'Higher contextual amount',
+        'content' => '10',
+        'status' => 'draft',
+    ]);
+    Aura::registerFieldProvider(
+        Core05ContextualSortFieldProvider::class,
+        resources: [Core05MutationResource::class],
+    );
+
+    $component = livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('sorts', ['content' => 'asc']);
+
+    if ($selectAll) {
+        $component->set('selectAll', true);
+    } else {
+        $component->set('selected', [
+            $firstEquivalent->getKey(),
+            $secondEquivalent->getKey(),
+            $higher->getKey(),
+        ]);
+    }
+
+    $component
+        ->call('bulkCollectionAction', 'captureCollectionOrder')
+        ->assertHasNoErrors();
+
+    expect(Core05MutationResource::$capturedCollectionIdChunks)->toBe([[
+        $secondEquivalent->getKey(),
+        $firstEquivalent->getKey(),
+        $higher->getKey(),
+    ]]);
+})->with([
+    'explicit provider-sorted selection' => false,
+    'select-all provider-sorted selection' => true,
+]);
+
+test('bulk mutations reject a provider sort withdrawn after selection without writing', function (bool $selectAll) {
+    $this->actingAs(createSuperAdmin());
+    $resources = collect(range(1, 3))->map(fn (int $amount) => Core05MutationResource::create([
+        'title' => 'Withdrawn contextual amount '.$amount,
+        'content' => (string) $amount,
+        'status' => 'draft',
+    ]));
+    Aura::registerFieldProvider(
+        Core05ContextualSortFieldProvider::class,
+        resources: [Core05MutationResource::class],
+    );
+
+    $component = livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('sorts', ['content' => 'asc']);
+
+    if ($selectAll) {
+        $component->set('selectAll', true);
+    } else {
+        $component->set('selected', $resources->pluck('id')->all());
+    }
+
+    Core05ContextualSortFieldState::$available = false;
+
+    $component
+        ->call('bulkCollectionAction', 'captureCollectionOrder')
+        ->assertStatus(422);
+
+    $storedContent = DB::table('posts')
+        ->whereIn('id', $resources->pluck('id'))
+        ->orderBy('id')
+        ->pluck('content')
+        ->all();
+
+    expect(Core05MutationResource::$capturedCollectionIdChunks)->toBe([])
+        ->and($storedContent)->toBe(['1', '2', '3']);
+})->with([
+    'explicit selection after provider withdrawal' => false,
+    'select all after provider withdrawal' => true,
 ]);
 
 test('large client selections fail before creating an oversized parameter list', function () {

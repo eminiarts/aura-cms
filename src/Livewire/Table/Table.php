@@ -810,16 +810,13 @@ class Table extends Component
             abort(422, 'The table mutation sorting is invalid.');
         }
 
-        $allowedFields = collect($this->mutationModel()->getFields())
-            ->pluck('slug')
-            ->filter(static fn (mixed $slug): bool => is_string($slug))
-            ->push($this->mutationModel()->getKeyName())
-            ->unique();
+        $model = $this->mutationModel();
+        $keyName = $model->getKeyName();
 
         foreach ($this->sorts as $field => $direction) {
             if (
                 ! is_string($field)
-                || ! $allowedFields->containsStrict($field)
+                || ($field !== $keyName && ! is_array($model->fieldBySlug($field)))
                 || ! is_string($direction)
                 || ! in_array(strtolower($direction), ['asc', 'desc'], true)
             ) {
