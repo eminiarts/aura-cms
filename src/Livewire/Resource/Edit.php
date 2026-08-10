@@ -145,9 +145,13 @@ class Edit extends Component
 
     public function rules()
     {
-        $rules = collect($this->model->validationRules())->mapWithKeys(function ($rule, $key) {
-            return ["form.fields.$key" => $rule];
-        })->toArray();
+        $visibleSlugs = $this->writableResourceFormFields(FieldValueContext::Edit)->pluck('slug');
+
+        $rules = collect($this->model->validationRules())
+            ->filter(fn ($rule, $key) => $visibleSlugs->contains($key))
+            ->mapWithKeys(function ($rule, $key) {
+                return ["form.fields.$key" => $rule];
+            })->toArray();
 
         // Modify rules if the model implements it
         if (method_exists($this->model, 'modifyValidationRules')) {
@@ -160,6 +164,8 @@ class Edit extends Component
     #[On('saveModel')]
     public function save()
     {
+        $this->authorize('update', $this->model);
+        $this->sanitizeResourceFormFields(FieldValueContext::Edit);
         $this->validate();
 
         // unset this post fields group

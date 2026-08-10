@@ -140,9 +140,13 @@ class Create extends Component
 
     public function rules()
     {
-        $rules = collect($this->model->validationRules())->mapWithKeys(function ($rule, $key) {
-            return ["form.fields.$key" => $rule];
-        })->toArray();
+        $visibleSlugs = $this->writableResourceFormFields(FieldValueContext::Create)->pluck('slug');
+
+        $rules = collect($this->model->validationRules())
+            ->filter(fn ($rule, $key) => $visibleSlugs->contains($key))
+            ->mapWithKeys(function ($rule, $key) {
+                return ["form.fields.$key" => $rule];
+            })->toArray();
 
         // Modify rules if the model implements it
         if (method_exists($this->model, 'modifyValidationRules')) {
@@ -154,6 +158,8 @@ class Create extends Component
 
     public function save()
     {
+        $this->authorize('create', $this->model);
+        $this->sanitizeResourceFormFields(FieldValueContext::Create);
         $this->validate();
 
         $attributes = collect($this->form['fields'])
