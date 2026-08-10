@@ -12,6 +12,7 @@ use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
 use Aura\Base\Tests\Fixtures\ComponentSlots\BrowserGlobalSearch;
 use Aura\Base\Tests\Fixtures\ComponentSlots\BrowserMediaManager;
 use Aura\Base\Tests\Resources\GalleryPage;
+use Aura\Base\Tests\Resources\KanbanBoard;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
@@ -47,9 +48,11 @@ class BrowserTestCase extends TestCase
         Aura::registerResources([
             Resources\EmbeddedComponentPage::class,
             GalleryPage::class,
+            KanbanBoard::class,
         ]);
         Aura::registerRoutes('embedded-component-page');
         Aura::registerRoutes('gallery-page');
+        Aura::registerRoutes('kanban-board');
         Aura::captureBaselineState();
         $this->registerComponentSlotAliasesRoute();
 

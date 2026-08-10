@@ -1,22 +1,4 @@
-<div id="kanban-settings-button" class="relative close-on-select-false" x-data="{
-    init() {
-        const sortable = new window.Sortable(document.querySelector('[drag-root=\'reorderKanbanStatuses\']'), {
-                draggable: '.sortable',
-                handle: '.drag-handle',
-                animation: 150,
-            
-            });
-    
-            sortable.on('sortable:stop', () => {
-                setTimeout(() => {
-                    @this.reorderKanbanStatuses(
-                        Array.from(document.querySelectorAll('.sortable'))
-                        .map(el => el.id)
-                    )
-                }, 0)
-            })
-    }
-}">
+<div id="kanban-settings-button" class="relative close-on-select-false">
     <x-aura::dropdown align="right" width="60" :closeOnSelect="false">
         <x-slot name="trigger">
             <x-aura::button.border>
@@ -31,10 +13,10 @@
 
         <x-slot name="content">
             <div class="w-60">
-                <div class="p-2 kanban-wrapper" drag-root="reorderKanbanStatuses" role="none">
+                <div class="p-2 kanban-wrapper" role="none" wire:sort="reorderKanbanStatuses">
                     @foreach($this->kanbanStatuses as $key => $status)
                         <label class="flex gap-2 items-center px-2 py-1.5 rounded-md transition-colors duration-150 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5 sortable"
-                            for="status_{{$key}}" id="{{ $key }}">
+                            for="status_{{$key}}" id="{{ $key }}" wire:key="kanban-setting-{{ $model->getType() }}-{{ $key }}" wire:sort:item="{{ $key }}">
 
                             <x-aura::input.checkbox wire:model.live="kanbanStatuses.{{ $key }}.visible" value="true" id="status_{{$key}}" />
 
@@ -43,7 +25,7 @@
                                 {{ __($status['value']) }}
                             </span>
 
-                            <div class="cursor-move drag-handle move-kanban-status">
+                            <div class="cursor-move drag-handle move-kanban-status" wire:sort:handle>
                                 <svg class="w-4 h-4 text-gray-400 dark:text-gray-500" viewBox="0 0 24 24" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
                                     <path d="M3 8.5H21M3 15.5H21" stroke="currentColor" stroke-width="2"

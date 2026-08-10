@@ -126,7 +126,7 @@
 
             sortable.on('sortable:stop', () => {
                 setTimeout(() => {
-                    @this.reorder(
+                    $wire.reorder(
                         Array.from(document.querySelectorAll('.sortable'))
                         .map(el => el.id)
                     )

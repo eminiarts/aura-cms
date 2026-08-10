@@ -26,10 +26,7 @@ class Index extends Component
 
         $this->resource = Aura::findResourceBySlug($this->slug);
 
-        // if this post is null redirect to dashboard
-        if (is_null($this->resource)) {
-            return redirect()->route('aura.dashboard');
-        }
+        abort_if(is_null($this->resource), 404);
 
         if (! $this->resource::$indexViewEnabled) {
             return redirect()->route('aura.dashboard');

@@ -1,4 +1,4 @@
-@if ($model->tableGridView() || $model->tableKanbanView())
+@if (($this->settings['views']['grid'] ?? false) || ($this->settings['views']['kanban'] ?? false))
     @php
         $switchBase = 'inline-flex relative items-center p-1.5 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
         $switchActive = 'bg-white text-gray-900 shadow-xs ring-1 ring-gray-950/[0.07] dark:bg-gray-700 dark:text-white dark:ring-white/10';
@@ -12,7 +12,7 @@
                 <x-aura::icon icon="list" size="sm" />
             </button>
 
-            @if ($model->tableGridView())
+            @if ($this->settings['views']['grid'] ?? false)
                 <button wire:click="switchView('grid')" type="button"
                     class="{{ $switchBase }} {{ ($currentView ?? null) == 'grid' ? $switchActive : $switchIdle }}">
                     <span class="sr-only">Grid View</span>
@@ -20,7 +20,7 @@
                 </button>
             @endif
 
-            @if ($model->tableKanbanView())
+            @if ($this->settings['views']['kanban'] ?? false)
                 <button wire:click="switchView('kanban')" type="button"
                     class="{{ $switchBase }} {{ ($currentView ?? null) == 'kanban' ? $switchActive : $switchIdle }}">
                     <span class="sr-only">Kanban View</span>

@@ -347,6 +347,19 @@ class Table extends Component
         }
     }
 
+    public function moveKanbanCard(
+        mixed $cardId,
+        mixed $position,
+        mixed $newStatus,
+        TableMutationDispatcher $mutations,
+    ): void {
+        Validator::make(['position' => $position], [
+            'position' => ['required', 'integer', 'min:0'],
+        ])->validate();
+
+        $this->updateCardStatus($cardId, $newStatus, $mutations);
+    }
+
     public function openBulkActionModal(
         mixed $action,
         TableMutationDispatcher $mutations,
@@ -396,6 +409,7 @@ class Table extends Component
     public function render()
     {
         return view($this->model->tableComponentView(), [
+            'kanban' => $this->resolvedKanbanConfiguration(),
             'parent' => $this->parent,
             'rows' => $this->rows,
             'rowIds' => $this->rowIds,
@@ -462,6 +476,10 @@ class Table extends Component
         $query = $this->applySearch($query);
 
         $query = $this->applySorting($query);
+
+        if ($this->currentView === 'kanban') {
+            $query = $this->applyKanbanOrdering($query);
+        }
 
         return $query;
     }
@@ -531,12 +549,13 @@ class Table extends Component
             ],
         ])->validate();
         $trustedModel = new TableMutationModelDescriptor($this->mutationModel());
+        $groupField = $this->resolvedKanbanConfiguration()['group_field'];
 
         $mutations->dispatchFieldUpdate(
             clone $this->mutationQuery(forKanban: true),
             $trustedModel,
             $data['cardId'],
-            'status',
+            $groupField,
             $data['kanbanStatus'],
         );
         $this->notify('Card status updated successfully');
