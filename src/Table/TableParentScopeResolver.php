@@ -3,7 +3,9 @@
 namespace Aura\Base\Table;
 
 use Aura\Base\Contracts\DeclaresTableParentScopes;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
+use Aura\Base\Resources\User;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
@@ -36,14 +38,35 @@ final class TableParentScopeResolver
             return $query;
         }
 
-        $parentClass = $descriptor->parentResource;
-        $parent = $parentClass::query()->findOrFail($state['id']);
         $actor ??= auth()->user();
 
         if ($actor === null) {
             $query->whereRaw('1 = 0');
 
             return $query;
+        }
+
+        $parentClass = $descriptor->parentResource;
+        $resolveParent = fn (): Resource => $parentClass::query()->findOrFail($state['id']);
+
+        if (config('aura.teams')) {
+            if (! $actor instanceof User) {
+                $query->whereRaw('1 = 0');
+
+                return $query;
+            }
+
+            $teamId = $actor->currentTeamIdForAuthorization();
+
+            if ($teamId === null) {
+                $query->whereRaw('1 = 0');
+
+                return $query;
+            }
+
+            $parent = TeamScope::forTeam($teamId, $resolveParent, $actor->getConnection());
+        } else {
+            $parent = $resolveParent();
         }
 
         Gate::forUser($actor)->authorize($descriptor->ability, $parent);

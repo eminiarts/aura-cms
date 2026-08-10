@@ -25,6 +25,13 @@ beforeEach(function () {
 
 class Core22QueryResource extends Resource implements DeclaresTableParentScopes
 {
+    public array $bulkActions = [
+        'markCore22Reviewed' => [
+            'label' => 'Mark reviewed',
+            'ability' => 'update',
+        ],
+    ];
+
     public static ?string $slug = 'core-22-query-resource';
 
     public static string $type = 'Core22QueryResource';
@@ -34,10 +41,15 @@ class Core22QueryResource extends Resource implements DeclaresTableParentScopes
     public static function getFields(): array
     {
         return [
-            ['name' => 'Title', 'slug' => 'title', 'type' => 'Aura\\Base\\Fields\\Text'],
-            ['name' => 'Summary', 'slug' => 'summary', 'type' => 'Aura\\Base\\Fields\\Text'],
+            ['name' => 'Title', 'slug' => 'title', 'type' => 'Aura\\Base\\Fields\\Text', 'searchable' => true],
+            ['name' => 'Summary', 'slug' => 'summary', 'type' => 'Aura\\Base\\Fields\\Text', 'searchable' => true],
             ['name' => 'Score', 'slug' => 'score', 'type' => 'Aura\\Base\\Fields\\Number'],
         ];
+    }
+
+    public function markCore22Reviewed(): void
+    {
+        $this->update(['content' => 'reviewed']);
     }
 
     public function tableParentScopes(): array
@@ -199,11 +211,30 @@ test('trusted server-owned computed capabilities apply callbacks and unknown key
         'v' => 1,
         'sorts' => [['key' => 'score desc; drop table posts', 'direction' => 'asc']],
     ]);
+    $emptyForgedFilter = TableQueryState::fromArray([
+        'v' => 1,
+        'filters' => [['filters' => [[
+            'name' => 'forged',
+            'operator' => 'forged',
+            'value' => null,
+        ]]]],
+    ]);
+    $sensitiveSorts = collect(['team_id', 'user_id', 'deleted_at'])->map(
+        fn (string $key): TableQueryState => TableQueryState::fromArray([
+            'v' => 1,
+            'sorts' => [['key' => $key, 'direction' => 'asc']],
+        ]),
+    );
 
     expect($applier->apply(Core22QueryResource::query(), new Core22QueryResource, $trusted)->pluck('id')->all())
         ->toBe([$high->getKey()])
         ->and($applier->apply(Core22QueryResource::query(), new Core22QueryResource, $forged)->pluck('id')->all())
         ->toBe([])
+        ->and($applier->accepts(new Core22QueryResource, $emptyForgedFilter))->toBeFalse()
+        ->and($applier->apply(Core22QueryResource::query(), new Core22QueryResource, $emptyForgedFilter)->pluck('id')->all())
+        ->toBe([])
+        ->and($sensitiveSorts->every(fn (TableQueryState $state): bool => ! $applier->accepts(new Core22QueryResource, $state)))
+        ->toBeTrue()
         ->and(Core22QueryResource::find($low->getKey()))->not->toBeNull();
 });
 
@@ -239,6 +270,73 @@ test('serialized state scopes select all to the same effective query', function 
 
     expect($rowIds)->toBe([$matching->getKey()])
         ->and($selectedIds)->toBe($rowIds);
+});
+
+test('bulk mutations reject an empty forged serialized filter', function () {
+    $record = Core22QueryResource::create([
+        'title' => 'Protected',
+        'type' => Core22QueryResource::$type,
+        'status' => 'publish',
+        'content' => 'unchanged',
+    ]);
+    $state = TableQueryState::fromArray([
+        'v' => 1,
+        'filters' => [['filters' => [[
+            'name' => 'forged',
+            'operator' => 'forged',
+            'value' => null,
+        ]]]],
+    ]);
+
+    livewire(Table::class, [
+        'model' => new Core22QueryResource,
+        'query' => null,
+        'tableState' => $state->toQueryString(),
+    ])->set('selectAll', true)
+        ->call('bulkAction', 'markCore22Reviewed')
+        ->assertStatus(422);
+
+    expect($record->fresh()->content)->toBe('unchanged');
+});
+
+test('saved filters persist and restore canonical search and sort state', function () {
+    $matching = Core22QueryResource::create([
+        'title' => 'Needle A',
+        'type' => Core22QueryResource::$type,
+        'status' => 'publish',
+    ]);
+    Core22QueryResource::create([
+        'title' => 'Excluded',
+        'type' => Core22QueryResource::$type,
+        'status' => 'publish',
+    ]);
+    $state = TableQueryState::fromArray([
+        'v' => 1,
+        'search' => 'Needle',
+        'sorts' => [['key' => 'title', 'direction' => 'asc']],
+    ]);
+    $component = livewire(Table::class, [
+        'model' => new Core22QueryResource,
+        'query' => null,
+        'tableState' => $state->toQueryString(),
+    ])->set('filter.name', 'Full State')
+        ->call('saveFilter')
+        ->assertHasNoErrors();
+
+    expect($component->userFilters['full-state']['query_state'])->toBe($state->toArray());
+
+    livewire(Table::class, [
+        'model' => new Core22QueryResource,
+        'query' => null,
+        'selectedFilter' => 'full-state',
+    ])->assertSet('tableState', $state->toQueryString())
+        ->assertSet('search', 'Needle')
+        ->assertSet('sorts', ['title' => 'asc'])
+        ->assertViewHas('rows', function ($rows) use ($matching): bool {
+            expect($rows->pluck('id')->all())->toBe([$matching->getKey()]);
+
+            return true;
+        });
 });
 
 test('unknown and cross-team parent scopes fail closed', function () {
@@ -286,13 +384,76 @@ test('parent resolution authorizes the declared parent', function () {
         'parent' => ['scope' => 'parent', 'id' => $parent->getKey()],
     ]);
     $limitedUser = createAdmin();
-    $this->actingAs($limitedUser);
 
     expect(fn () => (new TableQueryStateApplier)->apply(
         Core22QueryResource::query(),
         new Core22QueryResource,
         $state,
+        $limitedUser,
     ))->toThrow(AuthorizationException::class);
+});
+
+test('explicit actors resolve parents inside their own team context', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Explicit actor tenant resolution only applies when teams are enabled.');
+    }
+
+    $otherTeam = foreignTeam();
+    $foreignParent = Core22QueryResource::createForTeamForSystem($otherTeam->getKey(), [
+        'title' => 'Explicit actor parent',
+        'type' => Core22QueryResource::$type,
+        'status' => 'publish',
+    ]);
+    $state = TableQueryState::fromArray([
+        'v' => 1,
+        'parent' => ['scope' => 'parent', 'id' => $foreignParent->getKey()],
+    ]);
+    $foreignActor = soleMemberOf($otherTeam);
+
+    expect(fn () => (new TableQueryStateApplier)->apply(
+        Core22QueryResource::query(),
+        new Core22QueryResource,
+        $state,
+        $foreignActor,
+    ))->toThrow(AuthorizationException::class);
+});
+
+test('a required parent scope cannot be removed through serialized state', function () {
+    $requiredParent = Core22QueryResource::create([
+        'title' => 'Required parent',
+        'type' => Core22QueryResource::$type,
+        'status' => 'publish',
+    ]);
+    $otherParent = Core22QueryResource::create([
+        'title' => 'Other parent',
+        'type' => Core22QueryResource::$type,
+        'status' => 'publish',
+    ]);
+    $matching = Core22QueryResource::create([
+        'title' => 'Required child',
+        'type' => Core22QueryResource::$type,
+        'status' => 'publish',
+        'parent_id' => $requiredParent->getKey(),
+    ]);
+    Core22QueryResource::create([
+        'title' => 'Other child',
+        'type' => Core22QueryResource::$type,
+        'status' => 'publish',
+        'parent_id' => $otherParent->getKey(),
+    ]);
+    $state = TableQueryState::fromArray([
+        'v' => 1,
+        'parent' => ['scope' => 'parent', 'id' => $requiredParent->getKey()],
+    ]);
+    $component = livewire(Table::class, [
+        'model' => new Core22QueryResource,
+        'query' => null,
+        'requiredParentScope' => ['scope' => 'parent', 'id' => $requiredParent->getKey()],
+        'tableState' => $state->toQueryString(),
+    ])->call('clearParentScope');
+
+    expect(TableQueryState::fromQueryString($component->tableState)->parent)->toBeNull();
+    $component->assertViewHas('rows', fn ($rows): bool => $rows->pluck('id')->all() === [$matching->getKey()]);
 });
 
 test('filter group mutations are composable without saved-filter modal state', function () {

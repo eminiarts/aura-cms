@@ -3,6 +3,7 @@
 namespace Aura\Base\Table;
 
 use Aura\Base\Contracts\TableColumnCapabilityResolver;
+use Aura\Base\FieldProviderRegistry;
 use Aura\Base\Fields\Field;
 use Aura\Base\Fields\Filters\FieldFilterCapabilityResolver;
 use Aura\Base\Resource;
@@ -11,13 +12,41 @@ use Illuminate\Support\Facades\Schema;
 
 final class ResourceTableColumnCapabilityResolver implements TableColumnCapabilityResolver
 {
+    /** @var list<string> */
+    private const SAFE_PHYSICAL_COLUMNS = [
+        'id',
+        'title',
+        'content',
+        'status',
+        'type',
+        'slug',
+        'created_at',
+        'updated_at',
+    ];
+
     public function resolve(Resource $resource, string $key): ?TableColumnCapability
     {
         $field = $resource->fieldBySlug($key);
         $fieldInstance = $resource->fieldClassBySlug($key);
 
         if (! is_array($field) || ! $fieldInstance instanceof Field) {
-            if (($key !== $resource->getKeyName() && ! in_array($key, $resource->getFillable(), true))
+            $fieldResolution = app(FieldProviderRegistry::class)->resolve(
+                $resource::class,
+                fn (): array => $resource::getFields(),
+            );
+            $activeFieldSlugs = array_column($fieldResolution->fields, 'slug');
+
+            if (in_array($key, $fieldResolution->managedFieldSlugs, true)
+                && ! in_array($key, $activeFieldSlugs, true)) {
+                return null;
+            }
+
+            $declaredColumns = array_unique([
+                ...collect($resource->getColumns())->keys()->all(),
+                ...self::SAFE_PHYSICAL_COLUMNS,
+            ]);
+
+            if (($key !== $resource->getKeyName() && ! in_array($key, $declaredColumns, true))
                 || ! Schema::connection($resource->getConnectionName())->hasColumn($resource->getTable(), $key)) {
                 return null;
             }

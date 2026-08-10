@@ -5,6 +5,7 @@ namespace Aura\Base\Table;
 use Aura\Base\Contracts\TableColumnCapabilityResolver;
 use Aura\Base\Fields\Filters\FilterCapability;
 use Aura\Base\Resource;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -23,11 +24,6 @@ final class TableQueryStateApplier
 
         foreach ($state->filters as $group) {
             foreach ($group['filters'] as $filter) {
-                if (! in_array($filter['operator'], ['is_empty', 'is_not_empty', 'date_is_empty', 'date_is_not_empty'], true)
-                    && ! FilterCapability::hasValue($filter['value'] ?? null)) {
-                    continue;
-                }
-
                 $capability = $this->resolveCapability($resource, $filter['name']);
 
                 if ($capability === null || ! $capability->acceptsFilter($filter)) {
@@ -47,10 +43,18 @@ final class TableQueryStateApplier
         return true;
     }
 
-    public function apply(Builder $query, Resource $resource, TableQueryState $state): Builder
-    {
+    public function apply(
+        Builder $query,
+        Resource $resource,
+        TableQueryState $state,
+        ?Authenticatable $actor = null,
+    ): Builder {
         if ($state->parent !== null) {
-            $query = $this->parentScopes->apply($query, $resource, $state->parent);
+            $query = $this->parentScopes->apply($query, $resource, $state->parent, $actor);
+        }
+
+        if (! $this->acceptsForRead($resource, $state)) {
+            return $query->whereRaw('1 = 0');
         }
 
         $this->applyFilters($query, $resource, $state->filters);
@@ -58,6 +62,30 @@ final class TableQueryStateApplier
         $this->applySorting($query, $resource, $state->sorts);
 
         return $query;
+    }
+
+    private function acceptsForRead(Resource $resource, TableQueryState $state): bool
+    {
+        foreach ($state->filters as $group) {
+            foreach ($group['filters'] as $filter) {
+                $capability = $this->resolveCapability($resource, $filter['name']);
+
+                if ($capability === null || ! $capability->recognizesOperator($filter['operator'])) {
+                    return false;
+                }
+
+                if (! in_array($filter['operator'], ['is_empty', 'is_not_empty', 'date_is_empty', 'date_is_not_empty'], true)
+                    && ! FilterCapability::hasValue($filter['value'] ?? null)) {
+                    continue;
+                }
+
+                if (! $capability->acceptsFilter($filter)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -139,16 +167,22 @@ final class TableQueryStateApplier
     private function applySingleGroup(Builder $query, Resource $resource, array $group): void
     {
         foreach ($group['filters'] as $index => $filter) {
+            $capability = $this->resolveCapability($resource, $filter['name']);
+
+            if ($capability === null || ! $capability->recognizesOperator($filter['operator'])) {
+                $query->whereRaw('1 = 0');
+
+                continue;
+            }
+
             if (! in_array($filter['operator'], ['is_empty', 'is_not_empty', 'date_is_empty', 'date_is_not_empty'], true)
                 && ! FilterCapability::hasValue($filter['value'] ?? null)) {
                 continue;
             }
 
             $method = $index > 0 && $filter['main_operator'] === 'or' ? 'orWhere' : 'where';
-            $query->{$method}(function (Builder $query) use ($resource, $filter): void {
-                $capability = $this->resolveCapability($resource, $filter['name']);
-
-                if ($capability === null || ! $capability->applyFilter($query, $resource, $filter)) {
+            $query->{$method}(function (Builder $query) use ($resource, $filter, $capability): void {
+                if (! $capability->applyFilter($query, $resource, $filter)) {
                     $query->whereRaw('1 = 0');
                 }
             });

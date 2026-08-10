@@ -5,6 +5,7 @@ namespace Aura\Base\Livewire\Table\Traits;
 use Aura\Base\Fields\Field;
 use Aura\Base\Fields\Filters\FieldFilterCapabilityResolver;
 use Aura\Base\Table\FilterGroupStateMutator;
+use Aura\Base\Table\TableQueryState;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 
@@ -153,6 +154,24 @@ trait Filters
         });
     }
 
+    /**
+     * @param  array<string, mixed>  $filterData
+     */
+    public function loadSavedFilterState(array $filterData): void
+    {
+        if (is_array($filterData['query_state'] ?? null)) {
+            $this->tableState = TableQueryState::fromArray($filterData['query_state'])->toQueryString();
+            $this->hydrateSerializedTableState();
+
+            return;
+        }
+
+        $this->filters = [
+            'custom' => array_values($filterData['custom'] ?? []),
+        ];
+        $this->syncSerializedTableState();
+    }
+
     // /**
     //  * Get the fields for filter .
     //  *
@@ -226,7 +245,15 @@ trait Filters
             'filter.icon' => '',
         ]);
 
-        $newFilter = array_merge($this->filters, $this->filter);
+        $state = TableQueryState::fromLegacy(
+            $this->filters,
+            $this->search,
+            $this->sorts,
+            $this->tableState === '' ? null : $this->currentTableQueryState()->parent,
+        );
+        $newFilter = array_merge($this->filters, $this->filter, [
+            'query_state' => $state->toArray(),
+        ]);
         $slug = Str::slug($this->filter['name']);
 
         // If the slug is empty (e.g., for numbers or special characters), generate a unique identifier
@@ -343,14 +370,8 @@ trait Filters
         if ($filter) {
             // Get the filter data
             $filterData = $this->userFilters[$filter];
-
-            // Force a new array assignment to trigger reactivity
-            $this->filters = [
-                'custom' => array_values($filterData['custom'] ?? []),
-            ];
+            $this->loadSavedFilterState($filterData);
         }
-
-        $this->syncSerializedTableState();
 
         // Force a rerender of the component
         $this->dispatch('refresh');

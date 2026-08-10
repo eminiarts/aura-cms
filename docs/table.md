@@ -1883,7 +1883,7 @@ The canonical schema is:
 Use `toQueryString()` and `fromQueryString()` for the canonical URL-safe round trip. Unsupported versions, extra keys, malformed groups, unknown columns, and undeclared parent scopes fail closed. `withoutParentScope()` produces state for the same query with its optional parent removed.
 
 ```php
-$state = TableQueryState::fromQueryString($request->string('table'));
+$state = TableQueryState::fromQueryString((string) $request->string('table'));
 
 $query = (new TableQueryStateApplier)->apply(
     Contact::query(),
@@ -1912,6 +1912,17 @@ public function tableParentScopes(): array
 ```
 
 The serialized parent payload contains only the declared scope key and parent identifier. Arbitrary column/value pairs are not accepted. Missing, cross-team, unauthorized, or tampered parents never broaden the child query.
+
+For an optional drill-down, keep `parent` only in `TableQueryState`; `withoutParentScope()` removes it. For a nested route where the parent is an authorization boundary, mount the same declaration as locked `requiredParentScope`. That server-owned scope is reapplied even if a client omits or clears the optional query-string parent:
+
+```blade
+<livewire:aura::table
+    :model="App\Aura\Resources\Contact::class"
+    :required-parent-scope="['scope' => 'account', 'id' => $account->getKey()]"
+/>
+```
+
+Background jobs and exporters can pass an explicit actor as the fourth argument to `TableQueryStateApplier::apply()`. Parent resolution never requires ambient authentication when an actor is supplied.
 
 ## Summary
 

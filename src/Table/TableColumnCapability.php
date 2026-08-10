@@ -91,4 +91,9 @@ final readonly class TableColumnCapability
     ): self {
         return new self($key, array_values(array_unique($operators)), $validateFilter, $applyFilter, $applySort);
     }
+
+    public function recognizesOperator(string $operator): bool
+    {
+        return in_array($operator, $this->operators, true);
+    }
 }

@@ -115,6 +115,10 @@ class Table extends Component
      */
     public array $quickFilters = [];
 
+    /** @var array{scope: string, id: int|string}|null */
+    #[Locked]
+    public ?array $requiredParentScope = null;
+
     public $resource;
 
     /**
@@ -360,7 +364,7 @@ class Table extends Component
 
         if ($this->selectedFilter) {
             if (array_key_exists($this->selectedFilter, $this->userFilters)) {
-                $this->filters = $this->userFilters[$this->selectedFilter];
+                $this->loadSavedFilterState($this->userFilters[$this->selectedFilter]);
             }
         }
 
@@ -578,14 +582,23 @@ class Table extends Component
             return;
         }
 
-        $parent = $this->tableState === '' ? null : $this->currentTableQueryState()->parent;
-        $this->tableState = TableQueryState::fromLegacy(
-            is_array($this->filters) ? $this->filters : ['custom' => []],
-            $this->search,
-            is_array($this->sorts) ? $this->sorts : [],
-            $parent,
-        )->toQueryString();
-        $this->invalidTableState = false;
+        try {
+            if (! is_array($this->filters) || ! is_array($this->sorts)) {
+                throw new InvalidArgumentException('Invalid table query-state properties.');
+            }
+
+            $parent = $this->tableState === '' ? null : $this->currentTableQueryState()->parent;
+            $this->tableState = TableQueryState::fromLegacy(
+                $this->filters,
+                $this->search,
+                $this->sorts,
+                $parent,
+            )->toQueryString();
+            $this->invalidTableState = false;
+        } catch (InvalidArgumentException) {
+            $this->tableState = '';
+            $this->invalidTableState = false;
+        }
     }
 
     public function updateCardStatus(mixed $cardId, mixed $newStatus, TableMutationDispatcher $mutations): void
@@ -680,6 +693,7 @@ class Table extends Component
     public function updatedSorts(): void
     {
         $this->resetSelectionForScopeChange();
+        $this->syncSerializedTableState();
     }
 
     public function updatedTableState(): void
@@ -697,7 +711,7 @@ class Table extends Component
         $query = $this->mutationQuery();
 
         if ($this->invalidTableState) {
-            return $query->whereRaw('1 = 0');
+            abort(422, 'The table mutation query state is invalid.');
         }
 
         if ($this->tableState !== '') {
@@ -846,6 +860,14 @@ class Table extends Component
             }
         }
 
+        if ($this->requiredParentScope !== null) {
+            $requiredState = TableQueryState::fromArray([
+                'v' => TableQueryState::VERSION,
+                'parent' => $this->requiredParentScope,
+            ]);
+            $query = $this->tableQueryStateApplier()->apply($query, $this->model(), $requiredState);
+        }
+
         // Kanban Query
         if ($this->currentView == 'kanban') {
             $this->prepareKanban();
@@ -969,7 +991,23 @@ class Table extends Component
 
     private function usesLegacyTableQueryHooks(): bool
     {
-        foreach (['applyFilterBasedOnType', 'applyRelationFieldFilter', 'applyMetaFieldFilter', 'applyTableFieldFilter', 'applySorting', 'applySearch'] as $method) {
+        if (! $this->model() instanceof Resource) {
+            return true;
+        }
+
+        foreach ([
+            'applyFilterBasedOnType',
+            'applyIsEmptyMetaFilter',
+            'applyIsNotEmptyMetaFilter',
+            'applyMetaFieldFilter',
+            'applyOperatorCondition',
+            'applyRelationFieldFilter',
+            'applyStandardMetaFilter',
+            'applyTableFieldFilter',
+            'applySorting',
+            'applySearch',
+            'isRelationBackedFilter',
+        ] as $method) {
             if ((new \ReflectionMethod($this, $method))->getDeclaringClass()->getName() !== self::class) {
                 return true;
             }
