@@ -1048,6 +1048,7 @@ class Resource extends Model implements DefinesFields
      */
     private function executeWithFinalConnectionAuthorization(
         Connection $connection,
+        PDO $writePdo,
         callable $authorize,
         callable $persist,
     ): mixed {
@@ -1072,38 +1073,58 @@ class Resource extends Model implements DefinesFields
                 }
             }
         };
-        $callbacksProperty = new \ReflectionProperty(Connection::class, 'beforeExecutingCallbacks');
-        /** @var list<callable> $originalCallbacks */
-        $originalCallbacks = $callbacksProperty->getValue($connection);
-        $dispatcher = static function (string $query, array $bindings, Connection $executingConnection) use (
-            $operation,
-            $originalCallbacks,
-        ): void {
-            foreach ($originalCallbacks as $callback) {
-                $callback($query, $bindings, $executingConnection);
-            }
+        $execute = function () use ($connection, $operation, $persist): mixed {
+            $callbacksProperty = new \ReflectionProperty(Connection::class, 'beforeExecutingCallbacks');
+            /** @var list<callable> $originalCallbacks */
+            $originalCallbacks = $callbacksProperty->getValue($connection);
+            $dispatcher = static function (string $query, array $bindings, Connection $executingConnection) use (
+                $operation,
+                $originalCallbacks,
+            ): void {
+                foreach ($originalCallbacks as $callback) {
+                    $callback($query, $bindings, $executingConnection);
+                }
 
-            $operation->authorize();
+                $operation->authorize();
+            };
+            $callbacksProperty->setValue($connection, [$dispatcher]);
+
+            try {
+                $operation->authorize();
+
+                return $persist();
+            } finally {
+                /** @var list<callable> $currentCallbacks */
+                $currentCallbacks = $callbacksProperty->getValue($connection);
+                $callbacksAddedDuringExecution = array_values(array_filter(
+                    $currentCallbacks,
+                    static fn (callable $callback): bool => $callback !== $dispatcher,
+                ));
+                $callbacksProperty->setValue(
+                    $connection,
+                    array_merge($originalCallbacks, $callbacksAddedDuringExecution),
+                );
+            }
         };
-        $callbacksProperty->setValue($connection, [$dispatcher]);
+
+        if ($connection->transactionLevel() > 0) {
+            return $execute();
+        }
+
+        $operation->authorize();
 
         try {
-            $operation->authorize();
+            return $connection->transaction(function () use ($connection, $writePdo, $execute): mixed {
+                if ($connection->getRawPdo() !== $writePdo) {
+                    throw new \LogicException('A named write cannot change its physical database writer.');
+                }
 
-            return $connection->transactionLevel() > 0
-                ? $persist()
-                : $connection->transaction($persist, 1);
+                return $execute();
+            }, 1);
         } finally {
-            /** @var list<callable> $currentCallbacks */
-            $currentCallbacks = $callbacksProperty->getValue($connection);
-            $callbacksAddedDuringExecution = array_values(array_filter(
-                $currentCallbacks,
-                static fn (callable $callback): bool => $callback !== $dispatcher,
-            ));
-            $callbacksProperty->setValue(
-                $connection,
-                array_merge($originalCallbacks, $callbacksAddedDuringExecution),
-            );
+            if ($connection->getRawPdo() !== $writePdo) {
+                $connection->setPdo($writePdo);
+            }
         }
     }
 
@@ -1147,6 +1168,7 @@ class Resource extends Model implements DefinesFields
                 $this->getKeyName(),
                 $this->executeWithFinalConnectionAuthorization(
                     $connection,
+                    $writePdo,
                     $authorize,
                     fn (): mixed => $query->insertGetId($attributes, $this->getKeyName()),
                 ),
@@ -1155,6 +1177,7 @@ class Resource extends Model implements DefinesFields
             $query->getQuery()->applyBeforeQueryCallbacks();
             $this->executeWithFinalConnectionAuthorization(
                 $connection,
+                $writePdo,
                 $authorize,
                 fn (): bool => $query->insert($attributes),
             );
@@ -1204,6 +1227,7 @@ class Resource extends Model implements DefinesFields
             $query->getQuery()->applyBeforeQueryCallbacks();
             $this->executeWithFinalConnectionAuthorization(
                 $connection,
+                $writePdo,
                 $authorize,
                 fn (): int => $this->setKeysForSaveQuery($query)->update($dirty),
             );

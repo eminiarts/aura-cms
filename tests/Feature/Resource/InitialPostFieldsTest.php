@@ -1014,6 +1014,24 @@ it('runs final authorization after builder callbacks register later connection c
         ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
 });
 
+it('runs final authorization after transaction callbacks register later connection callbacks', function (): void {
+    $connection = core13InstallConnectionProbe();
+    $originalWriter = $connection->getPdo();
+    $substitutedWriter = core13PhysicalWriter();
+    $connection->beforeStartingTransaction(function (Connection $startingConnection) use ($substitutedWriter): void {
+        $startingConnection->beforeExecuting(function () use ($startingConnection, $substitutedWriter): void {
+            $startingConnection->setPdo($substitutedWriter);
+        });
+    });
+
+    expect(fn () => ExplicitNullSharedCustomResource::createGlobalForSystem([
+        'name' => 'Transaction callback redirected write',
+    ], $connection))->toThrow(LogicException::class, 'physical database writer');
+
+    expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
+        ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
+});
+
 it('does not leave connection authorization callbacks behind in long workers', function (): void {
     $connection = DB::connection();
     $initialCallbackCount = core13BeforeExecutingCallbackCount($connection);
