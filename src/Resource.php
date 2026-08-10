@@ -941,9 +941,12 @@ class Resource extends Model implements DefinesFields
         Connection $connection,
         PDO $writePdo,
         int $transactionLevel,
+        bool $allowNestedTransaction = false,
     ): void {
         $writerChanged = $connection->getRawPdo() !== $writePdo;
-        $transactionChanged = $connection->transactionLevel() !== $transactionLevel
+        $transactionChanged = ($allowNestedTransaction
+            ? $connection->transactionLevel() < $transactionLevel
+            : $connection->transactionLevel() !== $transactionLevel)
             || ($transactionLevel > 0) !== $writePdo->inTransaction();
 
         if (! $writerChanged && ! $transactionChanged) {
@@ -980,6 +983,7 @@ class Resource extends Model implements DefinesFields
         int $transactionLevel,
         ?array $expectedWheres = null,
         array $expectedWhereBindings = [],
+        bool $allowNestedTransaction = false,
     ): bool {
         if ($globalWrite) {
             static::ensureGlobalWriteIsSupported();
@@ -1000,8 +1004,14 @@ class Resource extends Model implements DefinesFields
             $transactionLevel,
             $expectedWheres,
             $expectedWhereBindings,
+            $allowNestedTransaction,
         ): void {
-            $this->assertPrivilegedConnectionState($connection, $writePdo, $transactionLevel);
+            $this->assertPrivilegedConnectionState(
+                $connection,
+                $writePdo,
+                $transactionLevel,
+                $allowNestedTransaction,
+            );
 
             if ($this->getConnection() !== $connection
                 || $this->getTable() !== $table
@@ -1084,7 +1094,7 @@ class Resource extends Model implements DefinesFields
      *
      * @template TValue
      *
-     * @param  callable(int): bool  $authorize
+     * @param  callable(int, bool): bool  $authorize
      * @param  callable(): TValue  $persist
      * @return TValue
      */
@@ -1101,7 +1111,7 @@ class Resource extends Model implements DefinesFields
 
             public function __construct(private readonly mixed $authorize) {}
 
-            public function authorize(int $transactionLevel): void
+            public function authorize(int $transactionLevel, bool $allowNestedTransaction = false): void
             {
                 if ($this->authorizing) {
                     return;
@@ -1110,16 +1120,13 @@ class Resource extends Model implements DefinesFields
                 $this->authorizing = true;
 
                 try {
-                    ($this->authorize)($transactionLevel);
+                    ($this->authorize)($transactionLevel, $allowNestedTransaction);
                 } finally {
                     $this->authorizing = false;
                 }
             }
         };
-        $execute = function () use ($connection, $writePdo, $transactionLevel, $operation, $persist): mixed {
-            $expectedTransactionLevel = $connection->getRawPdo() === $writePdo
-                ? $connection->transactionLevel()
-                : $transactionLevel;
+        $execute = function (int $expectedTransactionLevel) use ($connection, $operation, $persist): mixed {
             $callbacksProperty = new \ReflectionProperty(Connection::class, 'beforeExecutingCallbacks');
             /** @var list<callable> $originalCallbacks */
             $originalCallbacks = $callbacksProperty->getValue($connection);
@@ -1132,14 +1139,17 @@ class Resource extends Model implements DefinesFields
                     $callback($query, $bindings, $executingConnection);
                 }
 
-                $operation->authorize($expectedTransactionLevel);
+                $operation->authorize($expectedTransactionLevel, true);
             };
             $callbacksProperty->setValue($connection, [$dispatcher]);
 
             try {
                 $operation->authorize($expectedTransactionLevel);
 
-                return $persist();
+                $result = $persist();
+                $operation->authorize($expectedTransactionLevel);
+
+                return $result;
             } finally {
                 /** @var list<callable> $currentCallbacks */
                 $currentCallbacks = $callbacksProperty->getValue($connection);
@@ -1154,24 +1164,31 @@ class Resource extends Model implements DefinesFields
             }
         };
 
-        if ($connection->transactionLevel() > 0) {
-            return $execute();
-        }
-
         $operation->authorize($transactionLevel);
 
         try {
-            return $connection->transaction(function () use ($connection, $writePdo, $execute): mixed {
-                if ($connection->getRawPdo() !== $writePdo) {
-                    throw new \LogicException('A named write cannot change its physical database writer.');
-                }
+            return $connection->transaction(function () use (
+                $connection,
+                $writePdo,
+                $transactionLevel,
+                $execute,
+            ): mixed {
+                $expectedTransactionLevel = $transactionLevel + 1;
 
-                return $execute();
+                try {
+                    if ($connection->getRawPdo() !== $writePdo) {
+                        throw new \LogicException('A named write cannot change its physical database writer.');
+                    }
+
+                    return $execute($expectedTransactionLevel);
+                } catch (\Throwable $exception) {
+                    $this->restorePhysicalWriter($connection, $writePdo, $expectedTransactionLevel);
+
+                    throw $exception;
+                }
             }, 1);
         } finally {
-            if ($connection->getRawPdo() !== $writePdo) {
-                $connection->setPdo($writePdo);
-            }
+            $this->restorePhysicalWriter($connection, $writePdo, $transactionLevel);
         }
     }
 
@@ -1195,7 +1212,7 @@ class Resource extends Model implements DefinesFields
         $table = $queryBuilder->from;
         $wheres = $queryBuilder->wheres;
         $whereBindings = $queryBuilder->getRawBindings()['where'];
-        $authorize = function (int $expectedTransactionLevel) use (
+        $authorize = function (int $expectedTransactionLevel, bool $allowNestedTransaction = false) use (
             $connection,
             $writePdo,
             $lookup,
@@ -1205,7 +1222,12 @@ class Resource extends Model implements DefinesFields
             $wheres,
             $whereBindings,
         ): bool {
-            $this->assertPrivilegedConnectionState($connection, $writePdo, $expectedTransactionLevel);
+            $this->assertPrivilegedConnectionState(
+                $connection,
+                $writePdo,
+                $expectedTransactionLevel,
+                $allowNestedTransaction,
+            );
             $queryBuilder = $lookup->getQuery();
 
             if ($queryBuilder->connection !== $connection
@@ -1265,7 +1287,7 @@ class Resource extends Model implements DefinesFields
         }
 
         $attributes = $this->getAttributesForInsert();
-        $authorize = fn (int $expectedTransactionLevel): bool => $this->authorizePrivilegedPersistence(
+        $authorize = fn (int $expectedTransactionLevel, bool $allowNestedTransaction = false): bool => $this->authorizePrivilegedPersistence(
             $connection,
             $query,
             $queryGrammar,
@@ -1281,6 +1303,7 @@ class Resource extends Model implements DefinesFields
             null,
             false,
             $expectedTransactionLevel,
+            allowNestedTransaction: $allowNestedTransaction,
         );
 
         if ($this->getIncrementing()) {
@@ -1343,7 +1366,7 @@ class Resource extends Model implements DefinesFields
         $saveQuery = $this->setKeysForSaveQuery($query);
         $expectedWheres = $saveQuery->getQuery()->wheres;
         $expectedWhereBindings = $saveQuery->getQuery()->getRawBindings()['where'];
-        $authorize = fn (int $expectedTransactionLevel): bool => $this->authorizePrivilegedPersistence(
+        $authorize = fn (int $expectedTransactionLevel, bool $allowNestedTransaction = false): bool => $this->authorizePrivilegedPersistence(
             $connection,
             $query,
             $queryGrammar,
@@ -1361,6 +1384,7 @@ class Resource extends Model implements DefinesFields
             $expectedTransactionLevel,
             $expectedWheres,
             $expectedWhereBindings,
+            $allowNestedTransaction,
         );
 
         if ($dirty !== []) {
@@ -1448,15 +1472,47 @@ class Resource extends Model implements DefinesFields
         PDO $writePdo,
         int $transactionLevel,
     ): void {
+        $currentTransactionLevel = $connection->transactionLevel();
+
         if ($connection->getRawPdo() !== $writePdo) {
             $connection->setPdo($writePdo);
         }
 
-        if ($connection->transactionLevel() !== 0
-            || ($transactionLevel > 0) !== $writePdo->inTransaction()) {
-            return;
+        if ($connection->transactionLevel() === 0
+            && $currentTransactionLevel !== 0
+            && $writePdo->inTransaction()) {
+            $this->restoreTransactionBookkeepingAfterPdoReset($connection, $currentTransactionLevel);
+        } elseif ($connection->transactionLevel() === 0
+            && $transactionLevel > 0
+            && $writePdo->inTransaction()) {
+            $this->restoreTransactionBookkeepingAfterPdoReset($connection, $transactionLevel);
         }
 
+        if ($connection->transactionLevel() > $transactionLevel) {
+            $connection->rollBack($transactionLevel);
+        }
+
+        while ($connection->transactionLevel() < $transactionLevel) {
+            $connection->beginTransaction();
+        }
+
+        if ($connection->transactionLevel() !== $transactionLevel
+            || ($transactionLevel > 0) !== $writePdo->inTransaction()) {
+            throw new \LogicException('A named write could not restore its physical database writer or transaction state.');
+        }
+    }
+
+    /**
+     * Connection::setPdo() resets Laravel's transaction counter even when the
+     * supplied PDO still owns the caller's live transaction and savepoints.
+     * Restore only that lost bookkeeping after the captured PDO proves the
+     * physical boundary is still active. Actual commit/rollback restoration is
+     * performed through Laravel's public transaction APIs above.
+     */
+    private function restoreTransactionBookkeepingAfterPdoReset(
+        Connection $connection,
+        int $transactionLevel,
+    ): void {
         $transactionsProperty = new \ReflectionProperty(Connection::class, 'transactions');
         $transactionsProperty->setValue($connection, $transactionLevel);
     }

@@ -1124,6 +1124,56 @@ it('rejects same-writer transaction state changes before persistence', function 
     'rollback at depth two' => ['rollback', 2],
     'same PDO reset at depth one' => ['same-pdo', 1],
     'same PDO reset at depth two' => ['same-pdo', 2],
+    'same PDO reset at depth three' => ['same-pdo', 3],
+]);
+
+it('preserves caller transaction boundaries after rejecting callback transaction control', function (string $attack, int $depth): void {
+    $connection = core13InstallConnectionProbe();
+    $baselineTransactionLevel = $connection->transactionLevel();
+    $armed = true;
+
+    for ($level = 0; $level < $depth; $level++) {
+        $connection->beginTransaction();
+    }
+
+    $connection->table('explicit_null_shared_custom_resources')->insert([
+        'name' => 'Caller row before rejection',
+    ]);
+    $connection->beforeExecuting(function () use ($attack, $connection, &$armed): void {
+        if (! $armed) {
+            return;
+        }
+
+        $armed = false;
+
+        match ($attack) {
+            'commit' => $connection->commit(),
+            'rollback' => $connection->rollBack(),
+        };
+    });
+
+    expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Rejected transaction control',
+    ], $connection))->toThrow(LogicException::class, 'transaction state');
+
+    expect($connection->transactionLevel())->toBe($baselineTransactionLevel + $depth)
+        ->and($connection->table('explicit_null_shared_custom_resources')->pluck('name')->all())
+        ->toBe(['Caller row before rejection']);
+
+    $connection->table('explicit_null_shared_custom_resources')->insert([
+        'name' => 'Caller row after rejection',
+    ]);
+    $connection->rollBack($baselineTransactionLevel);
+
+    expect($connection->transactionLevel())->toBe($baselineTransactionLevel)
+        ->and($connection->table('explicit_null_shared_custom_resources')->count())->toBe(0);
+})->with([
+    'commit at caller depth one' => ['commit', 1],
+    'commit at caller depth two' => ['commit', 2],
+    'commit at caller depth three' => ['commit', 3],
+    'rollback at caller depth one' => ['rollback', 1],
+    'rollback at caller depth two' => ['rollback', 2],
+    'rollback at caller depth three' => ['rollback', 3],
 ]);
 
 it('rejects a writer swap during a privileged lookup before create', function (string $api): void {
