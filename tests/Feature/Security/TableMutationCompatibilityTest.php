@@ -143,6 +143,19 @@ class Core05BaseTableResource extends BaseResource
         return $query->where('title', '!=', 'Excluded base row');
     }
 
+    public function kanbanSettings(): array
+    {
+        return [
+            'enabled' => true,
+            'group_field' => 'status',
+            'columns' => ['draft', 'reviewed'],
+            'card_title' => 'title',
+            'card_subtitle' => null,
+            'order_by' => null,
+            'show_empty_columns' => true,
+        ];
+    }
+
     public function markReviewed(): void
     {
         $this->content = 'reviewed-by-action';
