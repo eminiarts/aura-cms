@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Models\Scopes;
 
+use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -42,13 +43,19 @@ class TeamScope implements Scope
 
         try {
             $currentTeamId = $this->getCurrentTeamId();
-            $userId = Auth::id();
+
+            if (Option::isEveryoneTeamId($currentTeamId)) {
+                $builder->whereRaw('1 = 0');
+                self::$applying = false;
+
+                return;
+            }
 
             // Handle User model specially
             if ($model->getTable() === 'users') {
 
                 // Only apply team scoping if teams are enabled
-                if (config('aura.teams') && $currentTeamId) {
+                if (config('aura.teams') && $currentTeamId !== null && $currentTeamId !== '') {
                     // A Global Admin transcends the tenant boundary: their user
                     // queries are never restricted to current-team members. The
                     // bypass is gated strictly on the authenticated user being a
@@ -74,7 +81,7 @@ class TeamScope implements Scope
             // --- Rest of your scope (for other models) ---
 
             // For team-enabled filtering
-            if (! $currentTeamId) {
+            if ($currentTeamId === null || $currentTeamId === '') {
                 self::$applying = false;
 
                 return;

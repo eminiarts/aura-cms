@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rules\Password;
+use InvalidArgumentException;
 use Lab404\Impersonate\Models\Impersonate;
 use Lab404\Impersonate\Services\ImpersonateManager;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -372,6 +373,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         $this->forgetOptionCache($option, $connection);
     }
 
+    public function deleteOptionForTeam(string $option, string|int|null $teamId): void
+    {
+        $this->optionUserForTeam($teamId)->deleteOption($option);
+    }
+
     public function getAvatarUrlAttribute()
     {
         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
@@ -613,40 +619,20 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             return ['found' => false, 'value' => null];
         }
 
-        $payload = VersionedCache::remember(
-            $this->optionCacheNamespace(),
-            $this->optionCacheVariant($option),
-            now()->addHour(),
-            function () use ($option): array {
-                return $this->optionConnection()->transaction(function () use ($option): array {
-                    $record = null;
+        return $this->resolveOptionEntry($option);
+    }
 
-                    foreach ($this->optionNames($option) as $name) {
-                        $record = $this->optionQuery()
-                            ->where('name', $name)
-                            ->lockForUpdate()
-                            ->first();
-
-                        if ($record !== null) {
-                            $record = $this->verifiedOptionRecord($record);
-
-                            break;
-                        }
-                    }
-
-                    return [
-                        'found' => $record !== null,
-                        'value' => $record?->getAttributeValue('value'),
-                    ];
-                });
-            },
-            $this->optionConnection(),
-        );
-
-        return [
-            'found' => $payload['found'],
-            'value' => $payload['value'],
-        ];
+    /**
+     * Read an option for an explicit team context without consulting auth().
+     *
+     * This is a low-level storage adapter. Callers remain responsible for
+     * authorizing access to the requested preference context.
+     *
+     * @return array{found: bool, value: mixed}
+     */
+    public function getOptionEntryForTeam(string $option, string|int|null $teamId): array
+    {
+        return $this->optionUserForTeam($teamId)->resolveOptionEntry($option);
     }
 
     public function getOptionSidebar()
@@ -968,6 +954,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             return false;
         }
 
+        if ($team === null || Option::isEveryoneTeamId($team->getKey())) {
+            return false;
+        }
+
         // Visitation: a Global Admin may enter any team without holding a
         // Membership (no user_role row is created — switchTeam only moves the
         // current-team pointer). Their in-team power comes from the policy gate
@@ -1010,6 +1000,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         $this->forgetOptionCache($option, $record->getConnection());
     }
 
+    public function updateOptionForTeam(string $option, mixed $value, string|int|null $teamId): void
+    {
+        $this->optionUserForTeam($teamId)->updateOption($option, $value);
+    }
+
     public function widgets()
     {
         return collect($this->getWidgets())->map(function ($item) {
@@ -1027,6 +1022,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     protected static function booted()
     {
         parent::booted();
+
+        static::saving(function (User $user): void {
+            if (config('aura.teams') && Option::isEveryoneTeamId($user->getAttribute('current_team_id'))) {
+                throw new InvalidArgumentException('Team ID 0 is reserved for everyone preferences.');
+            }
+        });
 
         static::saved(function ($user) {
             if ($user->wasChanged('current_team_id')) {
@@ -1189,6 +1190,15 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             ->where('team_id', $this->getAttribute('current_team_id'));
     }
 
+    protected function optionUserForTeam(string|int|null $teamId): static
+    {
+        $user = clone $this;
+        $user->setAttribute('current_team_id', config('aura.teams') ? $teamId : null);
+        $user->unsetRelation('currentTeam');
+
+        return $user;
+    }
+
     protected function optionValueOrDefault(string $option, mixed $default): mixed
     {
         $entry = $this->getOptionEntry($option);
@@ -1333,6 +1343,47 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         });
 
         return $teamPrototype->newCollection($teams->all());
+    }
+
+    /**
+     * @return array{found: bool, value: mixed}
+     */
+    protected function resolveOptionEntry(string $option): array
+    {
+        $payload = VersionedCache::remember(
+            $this->optionCacheNamespace(),
+            $this->optionCacheVariant($option),
+            now()->addHour(),
+            function () use ($option): array {
+                return $this->optionConnection()->transaction(function () use ($option): array {
+                    $record = null;
+
+                    foreach ($this->optionNames($option) as $name) {
+                        $record = $this->optionQuery()
+                            ->where('name', $name)
+                            ->lockForUpdate()
+                            ->first();
+
+                        if ($record !== null) {
+                            $record = $this->verifiedOptionRecord($record);
+
+                            break;
+                        }
+                    }
+
+                    return [
+                        'found' => $record !== null,
+                        'value' => $record?->getAttributeValue('value'),
+                    ];
+                });
+            },
+            $this->optionConnection(),
+        );
+
+        return [
+            'found' => $payload['found'],
+            'value' => $payload['value'],
+        ];
     }
 
     /**
