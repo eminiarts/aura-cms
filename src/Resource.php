@@ -954,8 +954,12 @@ class Resource extends Model implements DefinesFields
 
         if ($callbacks === null) {
             $callbacksProperty = new \ReflectionProperty(Connection::class, 'beforeExecutingCallbacks');
+            $beforeStartingTransactionProperty = new \ReflectionProperty(Connection::class, 'beforeStartingTransaction');
             /** @var list<callable> $callbacks */
-            $callbacks = $callbacksProperty->getValue($connection);
+            $callbacks = array_merge(
+                $callbacksProperty->getValue($connection),
+                $beforeStartingTransactionProperty->getValue($connection),
+            );
         }
 
         if ($this->hasUntrustedConnectionCallback($callbacks)) {
@@ -1164,6 +1168,7 @@ class Resource extends Model implements DefinesFields
             }
         };
         $execute = function (int $expectedTransactionLevel) use (
+            $callbacksBeforeTransaction,
             $callbacksProperty,
             $connection,
             $operation,
@@ -1171,6 +1176,14 @@ class Resource extends Model implements DefinesFields
         ): mixed {
             /** @var list<callable> $originalCallbacks */
             $originalCallbacks = $callbacksProperty->getValue($connection);
+            $callbacksAddedWhileStartingTransaction = array_values(array_filter(
+                $originalCallbacks,
+                static fn (callable $callback): bool => ! in_array($callback, $callbacksBeforeTransaction, true),
+            ));
+            $this->assertCallerTransactionDoesNotExposeConnectionCallbacks(
+                $connection,
+                $callbacksAddedWhileStartingTransaction,
+            );
             $dispatcher = static function (string $query, array $bindings, Connection $executingConnection) use (
                 $operation,
                 $originalCallbacks,

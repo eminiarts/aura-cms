@@ -1190,6 +1190,62 @@ it('preserves caller transaction boundaries after rejecting callback transaction
     'rollback through caller boundary at depth three' => ['rollback-all', 3],
 ]);
 
+it('preserves caller transaction boundaries before transaction-start callbacks run', function (string $attack, int $depth): void {
+    $connection = core13InstallConnectionProbe();
+    $baselineTransactionLevel = $connection->transactionLevel();
+    $armed = true;
+
+    for ($level = 0; $level < $depth; $level++) {
+        $connection->beginTransaction();
+    }
+
+    $connection->table('explicit_null_shared_custom_resources')->insert([
+        'name' => 'Caller row before transaction-start rejection',
+    ]);
+    $connection->beforeStartingTransaction(function () use ($attack, $connection, &$armed): void {
+        if (! $armed) {
+            return;
+        }
+
+        $armed = false;
+
+        if ($attack === 'commit-all') {
+            while ($connection->transactionLevel() > 0) {
+                $connection->commit();
+            }
+
+            return;
+        }
+
+        $connection->rollBack(0);
+    });
+
+    expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Rejected transaction-start control',
+    ], $connection))->toThrow(LogicException::class, 'transaction state');
+
+    expect($armed)->toBeTrue();
+
+    expect($connection->transactionLevel())->toBe($baselineTransactionLevel + $depth)
+        ->and($connection->table('explicit_null_shared_custom_resources')->pluck('name')->all())
+        ->toBe(['Caller row before transaction-start rejection']);
+
+    $connection->table('explicit_null_shared_custom_resources')->insert([
+        'name' => 'Caller row after transaction-start rejection',
+    ]);
+    $connection->rollBack($baselineTransactionLevel);
+
+    expect($connection->transactionLevel())->toBe($baselineTransactionLevel)
+        ->and($connection->table('explicit_null_shared_custom_resources')->count())->toBe(0);
+})->with([
+    'commit through caller boundary at depth one' => ['commit-all', 1],
+    'commit through caller boundary at depth two' => ['commit-all', 2],
+    'commit through caller boundary at depth three' => ['commit-all', 3],
+    'rollback through caller boundary at depth one' => ['rollback-all', 1],
+    'rollback through caller boundary at depth two' => ['rollback-all', 2],
+    'rollback through caller boundary at depth three' => ['rollback-all', 3],
+]);
+
 it('rejects a writer swap during a privileged lookup before create', function (string $api): void {
     $connection = core13InstallConnectionProbe();
     $originalWriter = $connection->getPdo();
@@ -1379,8 +1435,10 @@ it('runs final authorization after transaction callbacks register later connecti
     $connection = core13InstallConnectionProbe();
     $originalWriter = $connection->getPdo();
     $substitutedWriter = core13PhysicalWriter();
-    $connection->beforeStartingTransaction(function (Connection $startingConnection) use ($substitutedWriter): void {
-        $startingConnection->beforeExecuting(function () use ($startingConnection, $substitutedWriter): void {
+    $callbackRan = false;
+    $connection->beforeStartingTransaction(function (Connection $startingConnection) use (&$callbackRan, $substitutedWriter): void {
+        $startingConnection->beforeExecuting(function () use (&$callbackRan, $startingConnection, $substitutedWriter): void {
+            $callbackRan = true;
             $startingConnection->setPdo($substitutedWriter);
         });
     });
@@ -1389,7 +1447,8 @@ it('runs final authorization after transaction callbacks register later connecti
         'name' => 'Transaction callback redirected write',
     ], $connection))->toThrow(LogicException::class, 'physical database writer');
 
-    expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
+    expect($callbackRan)->toBeFalse()
+        ->and(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
         ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
 });
 
