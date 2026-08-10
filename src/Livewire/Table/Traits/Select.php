@@ -54,8 +54,16 @@ trait Select
      */
     public function getSelectedRowsQueryProperty()
     {
-        return (clone $this->query())
-            ->unless($this->selectAll, fn ($query) => $query->whereKey($this->selected));
+        $query = clone $this->rowsQuery;
+
+        if (! $this->selectAll) {
+            return $query->whereKey($this->selected);
+        }
+
+        return $query->when(
+            $this->selectAllExclusions !== [],
+            fn (Builder $query): Builder => $query->whereKeyNot($this->selectAllExclusions),
+        );
     }
 
     public function resetSelectionForScopeChange(): void

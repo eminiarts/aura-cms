@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Aura\Base\Livewire\Table\SignedBulkDownloadRequest;
 use Aura\Base\Livewire\Table\TableMutationDispatcher;
 use Aura\Base\Livewire\Table\TableMutationModelDescriptor;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -16,8 +17,11 @@ trait BulkActions
     /**
      * Handle bulk action on the selected rows.
      */
-    public function bulkAction(string $action, TableMutationDispatcher $mutations): void
-    {
+    public function bulkAction(
+        string $action,
+        TableMutationDispatcher $mutations,
+        array $parameters = [],
+    ): void {
         $model = $this->mutationModel();
         $trustedModel = new TableMutationModelDescriptor($model);
         $declaredActions = (array) $model->getBulkActions();
@@ -31,6 +35,7 @@ trait BulkActions
             (bool) $this->selectAll,
             'record',
             $this->selectAllExclusions,
+            $parameters,
         );
 
         $this->resetSelectionForScopeChange();
@@ -38,11 +43,33 @@ trait BulkActions
         $this->notify('Success: '.$action);
     }
 
-    public function bulkCollectionAction(string $action, TableMutationDispatcher $mutations): ?StreamedResponse
-    {
+    public function bulkCollectionAction(
+        string $action,
+        TableMutationDispatcher $mutations,
+        SignedBulkDownloadRequest $downloads,
+        array $parameters = [],
+    ): mixed {
         $model = $this->mutationModel();
         $trustedModel = new TableMutationModelDescriptor($model);
         $declaredActions = (array) $model->getBulkActions();
+
+        if (is_array($declaredActions[$action] ?? null) && array_key_exists('download', $declaredActions[$action])) {
+            $context = $mutations->prepareBulkDownload(
+                clone $this->bulkMutationQuery(),
+                $trustedModel,
+                $action,
+                $declaredActions,
+                $this->selected,
+                (bool) $this->selectAll,
+                $this->selectAllExclusions,
+                $parameters,
+            );
+            $url = $downloads->issue($context);
+
+            $this->completeBulkAction($action);
+
+            return redirect()->to($url);
+        }
 
         $response = $mutations->dispatchBulk(
             clone $this->bulkMutationQuery(),
@@ -53,17 +80,16 @@ trait BulkActions
             (bool) $this->selectAll,
             'collection',
             $this->selectAllExclusions,
+            $parameters,
         );
 
         if ($response instanceof StreamedResponse) {
+            $this->completeBulkAction($action);
+
             return $response;
         }
 
-        $this->resetSelectionForScopeChange();
-
-        $this->notify('Success: '.$action);
-
-        $this->dispatch('refreshTable');
+        $this->completeBulkAction($action);
 
         return null;
     }
@@ -76,5 +102,12 @@ trait BulkActions
     public function getBulkActionsProperty()
     {
         return $this->model->getBulkActions();
+    }
+
+    private function completeBulkAction(string $action): void
+    {
+        $this->resetSelectionForScopeChange();
+        $this->notify('Success: '.$action);
+        $this->dispatch('refreshTable');
     }
 }
