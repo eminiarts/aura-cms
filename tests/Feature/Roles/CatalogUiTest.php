@@ -212,6 +212,7 @@ describe('the Global Admin manages the catalog through the Role form', function 
         $this->actingAs($ga);
 
         livewire(Create::class, ['slug' => 'role'])
+            ->assertSet('form.fields.permissions', [])
             ->set('form.fields.name', 'Harmless Name')
             ->set('form.fields.slug', 'forged_security_identity')
             ->call('save')

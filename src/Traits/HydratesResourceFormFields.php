@@ -4,10 +4,12 @@ namespace Aura\Base\Traits;
 
 use Aura\Base\ConditionalLogic;
 use Aura\Base\Contracts\FieldValueContext;
+use Aura\Base\Fields\AdvancedSelect;
 use Aura\Base\Fields\Boolean;
 use Aura\Base\Fields\Checkbox;
 use Aura\Base\Fields\File;
 use Aura\Base\Fields\Image;
+use Aura\Base\Fields\Permissions;
 use Aura\Base\Fields\Slug;
 use Aura\Base\Fields\Tags;
 use Illuminate\Support\Arr;
@@ -135,7 +137,9 @@ trait HydratesResourceFormFields
             return [true, false];
         }
 
-        if ($field['field'] instanceof Tags) {
+        if ($field['field'] instanceof Tags
+            || $field['field'] instanceof AdvancedSelect
+            || $field['field'] instanceof Permissions) {
             return [true, []];
         }
 
