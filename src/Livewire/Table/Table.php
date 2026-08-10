@@ -18,6 +18,7 @@ use Aura\Base\Livewire\Table\Traits\Select;
 use Aura\Base\Livewire\Table\Traits\Settings;
 use Aura\Base\Livewire\Table\Traits\Sorting;
 use Aura\Base\Livewire\Table\Traits\SwitchView;
+use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Aura\Base\Routing\ResourceViewRoute;
 use Aura\Base\Table\TableQueryState;
