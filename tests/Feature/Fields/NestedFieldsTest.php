@@ -184,3 +184,35 @@ test('get model with nested fields doesnt show unnested attribute', function () 
     expect($fields)->not->toHaveKey('settings.option_2');
     expect($fields)->not->toHaveKey('settings.option_3');
 });
+
+test('raw fields payload packs declared dotted children only under a declared parent', function () {
+    $model = NestedFieldsModel::create([
+        'fields' => [
+            'settings.option_1' => '1',
+            'settings.option_2' => '2',
+        ],
+    ]);
+    $orphan = NestedFields2Model::create([
+        'fields' => ['settings.option_1' => 'forged orphan'],
+    ]);
+
+    expect($model->settings)->toBe([
+        'option_1' => '1',
+        'option_2' => '2',
+    ])->and($orphan->settings)->toBeNull();
+
+    $this->assertDatabaseHas('meta', [
+        'key' => 'settings',
+        'metable_id' => $model->id,
+        'metable_type' => NestedFieldsModel::class,
+    ]);
+    $this->assertDatabaseMissing('meta', [
+        'key' => 'settings.option_1',
+        'metable_id' => $model->id,
+        'metable_type' => NestedFieldsModel::class,
+    ]);
+    $this->assertDatabaseMissing('meta', [
+        'metable_id' => $orphan->id,
+        'metable_type' => NestedFields2Model::class,
+    ]);
+});

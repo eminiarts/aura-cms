@@ -559,8 +559,15 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
                 continue;
             }
 
-            $fieldPayload[$key] = $value;
             unset($attributes[$key]);
+
+            if (str_contains($key, '.')) {
+                $fieldPayload = $this->withDeclaredNestedFieldValue($fieldPayload, $key, $value);
+
+                continue;
+            }
+
+            $fieldPayload[$key] = $value;
         }
 
         unset($attributes['fields']);
@@ -2140,28 +2147,37 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
     {
         $declaredSlugs = array_fill_keys($this->inputFieldsSlugs(), true);
         $protectedColumns = $this->configuredOwnershipColumns();
+        $declaredPayload = [];
 
-        return collect($payload)
-            ->filter(function (mixed $value, mixed $key) use ($declaredSlugs, $protectedColumns): bool {
-                if (! is_string($key)) {
-                    return false;
+        foreach ($payload as $key => $value) {
+            if (! is_string($key)) {
+                continue;
+            }
+
+            if (str_contains($key, '.')) {
+                $declaredPayload = $this->withDeclaredNestedFieldValue($declaredPayload, $key, $value);
+
+                continue;
+            }
+
+            if (in_array($key, $protectedColumns, true)) {
+                continue;
+            }
+
+            if (! isset($declaredSlugs[$key])) {
+                if (method_exists($this, 'set'.Str::studly($key).'Field')) {
+                    $declaredPayload[$key] = $value;
                 }
 
-                if (in_array($key, $protectedColumns, true)) {
-                    return false;
-                }
+                continue;
+            }
 
-                if (! isset($declaredSlugs[$key])) {
-                    return method_exists($this, 'set'.Str::studly($key).'Field');
-                }
+            if (! $this->isTableField($key) || $this->isFillable($key)) {
+                $declaredPayload[$key] = $value;
+            }
+        }
 
-                if (! $this->isTableField($key)) {
-                    return true;
-                }
-
-                return $this->isFillable($key);
-            })
-            ->all();
+        return $declaredPayload;
     }
 
     private function discardQuarantinedAttributeStateForRefresh(): void
@@ -3183,6 +3199,30 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         } else {
             unset($this->quarantinedProviderFieldState['nestedTemplates']['original']);
         }
+    }
+
+    /**
+     * Preserve Aura's legacy dotted-field contract: a declared child is packed
+     * beneath a declared, writable parent. Orphan dotted fields are ignored
+     * instead of becoming literal meta keys.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function withDeclaredNestedFieldValue(array $payload, string $slug, mixed $value): array
+    {
+        $declaredSlugs = array_fill_keys($this->inputFieldsSlugs(), true);
+        $root = Str::before($slug, '.');
+
+        if (! isset($declaredSlugs[$slug], $declaredSlugs[$root])
+            || in_array($root, $this->configuredOwnershipColumns(), true)
+            || ($this->isTableField($root) && ! $this->isFillable($root))) {
+            return $payload;
+        }
+
+        Arr::set($payload, $slug, $value);
+
+        return $payload;
     }
 
     /**
