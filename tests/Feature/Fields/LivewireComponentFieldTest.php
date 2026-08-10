@@ -39,8 +39,6 @@ use ReflectionClass;
 use ReflectionMethod;
 use stdClass;
 
-use function Pest\Livewire\livewire;
-
 class Core12EmbeddedComponent extends Component implements EmbeddedLivewireComponent
 {
     use AuthorizesEmbeddedComponent;
@@ -1311,7 +1309,7 @@ describe('resource surfaces', function () {
         DB::enableQueryLog();
         DB::flushQueryLog();
 
-        livewire(Table::class, [
+        Livewire::test(Table::class, [
             'query' => null,
             'model' => new Core12EmbeddedResource,
         ])->assertSee('Mapped index');
