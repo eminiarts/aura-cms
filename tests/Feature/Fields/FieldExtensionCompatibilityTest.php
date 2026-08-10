@@ -106,3 +106,38 @@ PHP,
     expect($process->isSuccessful())->toBeTrue($process->getErrorOutput().$process->getOutput())
         ->and($process->getOutput())->toBe('loaded');
 });
+
+test('legacy presentation helper names remain outside the Aura field inheritance contract', function () {
+    $process = declareLegacyFieldExtensions([
+        <<<'PHP'
+class LegacyRawValueFieldExtension extends \Aura\Base\Fields\Field
+{
+    public function rawValue($value, $configuration)
+    {
+        return [$value, $configuration];
+    }
+}
+PHP,
+        <<<'PHP'
+class LegacyResolveLabelFieldExtension extends \Aura\Base\Fields\Select
+{
+    protected function resolveLabel()
+    {
+        return 'legacy';
+    }
+}
+PHP,
+        <<<'PHP'
+class LegacyRelationshipLabelFieldExtension extends \Aura\Base\Fields\BelongsTo
+{
+    public static function label($record)
+    {
+        return $record;
+    }
+}
+PHP,
+    ]);
+
+    expect($process->isSuccessful())->toBeTrue($process->getErrorOutput().$process->getOutput())
+        ->and($process->getOutput())->toBe('loaded');
+});
