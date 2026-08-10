@@ -2495,7 +2495,7 @@ final class TableMutationDispatcher
         }
 
         if ($type instanceof ReflectionNamedType) {
-            return $type->isBuiltin() && in_array($type->getName(), ['array', 'iterable', 'mixed'], true);
+            return $type->isBuiltin() && in_array($type->getName(), ['array', 'iterable'], true);
         }
 
         if ($type instanceof ReflectionUnionType) {

@@ -73,6 +73,15 @@ class Core06BulkResource extends Resource
             'label' => 'Invalid typed download',
             'method' => 'collection',
         ],
+        'mixedDownload' => [
+            'ability' => 'view',
+            'download' => [
+                'content_type' => 'text/plain',
+                'filename' => 'mixed.txt',
+            ],
+            'label' => 'Mixed download',
+            'method' => 'collection',
+        ],
         'invalidParameterMapDownload' => [
             'ability' => 'view',
             'download' => [
@@ -164,6 +173,11 @@ class Core06BulkResource extends Resource
     public function invalidTypedDownload(string $ids): string
     {
         return $ids;
+    }
+
+    public function mixedDownload(mixed $ids): string
+    {
+        return is_array($ids) ? implode(',', $ids) : '';
     }
 
     public function smallDownload(array $ids): StreamedResponse
@@ -395,6 +409,7 @@ test('bulk downloads reject invalid handler signatures before issuing a URL', fu
     'wrong arity' => ['invalidDownload', []],
     'scalar ids' => ['invalidTypedDownload', []],
     'scalar parameter map' => ['invalidParameterMapDownload', ['prefix' => 'test']],
+    'mixed ids' => ['mixedDownload', []],
     'untyped ids' => ['untypedDownload', []],
 ]);
 
