@@ -15,6 +15,7 @@ use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Routing\ResourceViewRoute;
 use Aura\Base\Services\VersionedCache;
 use Aura\Base\Traits\DefaultFields;
 use Closure;
@@ -535,7 +536,12 @@ class Aura
                 Route::get("/{$slug}", $resource ? $resource::indexComponent() : Index::class)->name("{$slug}.index");
                 Route::get("/{$slug}/create", $resource ? $resource::createComponent() : Create::class)->name("{$slug}.create");
                 Route::get("/{$slug}/{id}/edit", $resource ? $resource::editComponent() : Edit::class)->name("{$slug}.edit");
-                Route::get("/{$slug}/{id}", $resource ? $resource::viewComponent() : View::class)->name("{$slug}.view");
+                $viewComponent = $resource ? $resource::viewComponent() : View::class;
+                $viewParameter = $resource ? ResourceViewRoute::parameter($resource, $viewComponent) : 'id';
+
+                Route::get("/{$slug}/{{$viewParameter}}", $viewComponent)
+                    ->middleware($resource ? ResourceViewRoute::middleware($resource, $viewComponent) : [])
+                    ->name("{$slug}.view");
             });
     }
 

@@ -74,7 +74,7 @@ trait AuraResourceUrls
     {
         return [
             'route' => 'aura.'.$this->getSlug().'.view',
-            'parameters' => ['id' => $this->getKey()],
+            'parameters' => $this->recordRouteParameters('aura.'.$this->getSlug().'.view'),
         ];
     }
 
@@ -110,7 +110,7 @@ trait AuraResourceUrls
             return;
         }
 
-        return route($name, ['id' => $this->id]);
+        return route($name, $this->recordRouteParameters($name));
     }
 
     protected function resolveRouteTarget(RouteTarget|string $target): ?string
@@ -127,5 +127,15 @@ trait AuraResourceUrls
         } catch (UrlGenerationException) {
             return null;
         }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function recordRouteParameters(string $name): array
+    {
+        $parameter = Route::getRoutes()->getByName($name)?->parameterNames()[0] ?? 'id';
+
+        return [$parameter => $this->getKey()];
     }
 }

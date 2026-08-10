@@ -10,6 +10,13 @@ use Aura\Base\Resource;
  */
 class GalleryPage extends Resource
 {
+    public array $actions = [
+        'markReviewed' => [
+            'label' => 'Mark reviewed',
+            'ability' => 'update',
+        ],
+    ];
+
     public static ?string $slug = 'gallery-page';
 
     public static string $type = 'GalleryPage';
@@ -39,5 +46,10 @@ class GalleryPage extends Resource
                 'use_media_manager' => true,
             ],
         ];
+    }
+
+    public function markReviewed(): void
+    {
+        $this->forceFill(['content' => 'reviewed'])->save();
     }
 }

@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Record actions now dispatch from the same effective `getActions()` declaration rendered by the UI, reject forged or stale action keys, and reuse the scoped CORE-05 authorization contract. Custom resource view components with a typed model `mount()` parameter now receive implicit route-model binding while existing route names and URL paths remain stable.
 - Hardened embedded-resource migration ownership for concurrent installs with atomic claims, compare-and-swap transitions, exact portable column/primary-key/index validation, and retryable interrupted states. Upgrades preserve every existing incarnation row, isolate old rows behind a non-runtime `legacy` key type, and retain indistinguishable historical marker tuples instead of risking host-data deletion.
 - Preserved compatibility with custom fields that override `getFields()` or `rendersOnIndex()` without a return type while normalizing the index adapter result to `bool`.
 - Made embedded-resource incarnation rollbacks permanently non-destructive so copied ownership proof cannot authorize deletion of a host-recreated table or schema artifacts.

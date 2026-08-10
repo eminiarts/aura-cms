@@ -9,6 +9,7 @@ use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\PluginsPage;
 use Aura\Base\Livewire\ResourceEditor;
 use Aura\Base\Livewire\Styleguide;
+use Aura\Base\Routing\ResourceViewRoute;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(config('aura-settings.middleware.aura-guest'))->group(function () {
@@ -70,7 +71,12 @@ Route::domain(config('aura.domain'))
                 Route::get("/{$slug}", $resource::indexComponent())->name("{$slug}.index");
                 Route::get("/{$slug}/create", $resource::createComponent())->name("{$slug}.create");
                 Route::get("/{$slug}/{id}/edit", $resource::editComponent())->name("{$slug}.edit");
-                Route::get("/{$slug}/{id}", $resource::viewComponent())->name("{$slug}.view");
+                $viewComponent = $resource::viewComponent();
+                $viewParameter = ResourceViewRoute::parameter($resource, $viewComponent);
+
+                Route::get("/{$slug}/{{$viewParameter}}", $viewComponent)
+                    ->middleware(ResourceViewRoute::middleware($resource, $viewComponent))
+                    ->name("{$slug}.view");
             }
 
             Route::get('/attachment', AttachmentIndex::class)->name('attachment.index');

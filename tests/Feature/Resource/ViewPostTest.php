@@ -139,13 +139,12 @@ test('post with special characters in title can be viewed', function () {
         ->assertOk();
 });
 
-test('viewing non-existent post returns error', function () {
+test('viewing non-existent post returns not found', function () {
     // Try to view a post that does not exist
-    // The system returns 403 because authorization check fails when model is null
     $nonExistentId = 99999;
 
     $this->get(route('aura.post.view', [$nonExistentId]))
-        ->assertForbidden();
+        ->assertNotFound();
 });
 
 test('post view displays content correctly', function () {

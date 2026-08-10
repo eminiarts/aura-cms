@@ -6,6 +6,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Traits\HasActions;
 use Aura\Base\Traits\InteractsWithFields;
 use Aura\Base\Traits\RepeaterFields;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -47,7 +48,11 @@ class View extends Component
             $this->slug = explode('.', $routeName)[1] ?? null;
         }
 
-        $this->model = Aura::findResourceBySlug($this->slug)->find($id);
+        $resource = Aura::findResourceBySlug($this->slug);
+
+        abort_if(! $resource instanceof Model, 404);
+
+        $this->model = $resource->newQuery()->findOrFail($id);
 
         // Authorize
         $this->authorize('view', $this->model);

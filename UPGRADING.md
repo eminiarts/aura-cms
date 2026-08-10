@@ -13,6 +13,8 @@ The main breaking changes are:
 - Teams-disabled installations are supported, but custom resources and application migrations must not assume team columns exist.
 - Laravel Octane is supported. When `laravel/octane` is installed, Aura resets its process-level static state on every `RequestReceived`/`TaskReceived`/`TickReceived` event; queue callbacks clear the same state after jobs. Custom long-running loops that resolve Aura resources outside the normal request lifecycle may call `Aura::flushState()` at their own boundary. See the [Laravel Octane](docs/performance.md#laravel-octane) section of the performance guide.
 
+Custom `viewComponent()` classes may type-hint their resource in `mount()`, for example `mount(Workflow $workflow)`. Aura uses that parameter name for implicit route-model binding while preserving the existing URI and route name. Generate URLs positionally (`route('aura.workflow.view', [$workflow])`) because the route placeholder is no longer always named `id`. Components extending Aura's default View keep the legacy `$id` mount contract.
+
 For an existing 0.x application:
 
 1. Keep the application pinned to `eminiarts/aura-cms:^0.2` while preparing the migration.
