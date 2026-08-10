@@ -1,16 +1,18 @@
 @php
-    $settings = app('aura')::getOption('settings') ?? [];
-    $appSettings = app('aura')::options() ?? [];
-
-    $settings = empty($settings) ? config('aura.theme') : $settings;
-    $appSettings = empty($appSettings) ? config('aura.theme') : $appSettings;
+    $storedSettings = isset($settings) && is_array($settings)
+        ? $settings
+        : (app('aura')::getOption('settings') ?? []);
+    $settings = \Aura\Base\ThemeTokens::resolve($storedSettings);
+    $fontStylesheet = \Aura\Base\ThemeTokens::fontStylesheet($settings);
 @endphp
 
 <style>[x-cloak] {
     display: none !important;
 }</style>
 
-<link rel="stylesheet" href="/vendor/aura/public/inter.css">
+@if ($fontStylesheet)
+    <link rel="stylesheet" href="{{ asset($fontStylesheet) }}" data-aura-font>
+@endif
 
 {{-- @vite(['resources/css/app.css'], 'vendor/aura') --}}
 

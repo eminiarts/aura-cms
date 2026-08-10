@@ -1432,7 +1432,7 @@ async function checkNegativeBoundaries({ directory: tailwind4Directory, sourceCa
         "@import 'tailwindcss/base';",
         "@import 'tailwindcss/components';",
         "@import 'tailwindcss/utilities';",
-        '@apply p-5 bg-white rounded-xl shadow-sm ring-1 ring-gray-950/10;',
+        '@apply p-5 rounded-xl shadow-sm bg-aura-panel ring-1 ring-aura-border;',
     ]) {
         assert.ok(auraCss.includes(directive), `Aura app.css no longer contains the traced v3 extract: ${directive}`);
         assert.ok(legacyExtract.includes(directive), `Negative fixture is missing the traced v3 extract: ${directive}`);

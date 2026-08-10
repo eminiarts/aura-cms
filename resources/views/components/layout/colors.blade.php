@@ -1,7 +1,13 @@
 @php
     use Aura\Base\TransformColor;
 
-    // Assuming $settings is already defined
+    $settings = \Aura\Base\ThemeTokens::resolve(
+        isset($settings) && is_array($settings) ? $settings : [],
+    );
+    $fontFamily = \Aura\Base\ThemeTokens::fontFamily($settings);
+    $lightColors = \Aura\Base\ThemeTokens::colors($settings, 'light');
+    $darkColors = \Aura\Base\ThemeTokens::colors($settings, 'dark');
+
     $colorShades = ['25', '50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'];
     $grayShades = ['25', '50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'];
 
@@ -1052,6 +1058,12 @@
 
 <style>
     :root {
+        --aura-font-sans: {!! $fontFamily !!};
+
+        @foreach ($lightColors as $key => $value)
+            --aura-color-{{ $key }}: {{ $value }};
+        @endforeach
+
         @foreach ($colors as $key => $value)
             --{{ $key }}: {{ $value }};
         @endforeach
@@ -1064,6 +1076,12 @@
     :root {
         @foreach ($grayColors as $key => $value)
             --{{ $key }}: {{ $value }};
+        @endforeach
+    }
+
+    .dark {
+        @foreach ($darkColors as $key => $value)
+            --aura-color-{{ $key }}: {{ $value }};
         @endforeach
     }
 </style>

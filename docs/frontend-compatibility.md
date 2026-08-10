@@ -173,7 +173,7 @@ npm run build
 npm run test:frontend-compatibility
 ```
 
-Results on the audit snapshot:
+Current reproducible results (including CORE-24):
 
 - `npm ci`: pass; 190 packages installed.
 - Main build: pass twice from the current locks; each run used Vite `8.1.5`,
@@ -184,11 +184,11 @@ Results on the audit snapshot:
   an unstaged or staged rebuild cannot validate itself merely by making
   `git diff` empty.
 - The manifest is 331 bytes (SHA-256
-  `349e95bb3c759a9d1ffce652ef8397d12f354655692c5c9ff0f8333e3134a699`)
-  and references `assets/app-BzQlU9Hi.css` and
+  `81b0acf8adceed01a3bfc3531ef793c1f32a1f398a7630d4553347c348b230ce`)
+  and references `assets/app-CKyC0Fy1.css` and
   `assets/app-ccnW50-_.js`.
-- The reproduced CSS is 213,714 bytes (SHA-256
-  `ac245d6802619eaa6bc8549be8dcc0164909224663931e9dde4c3f2bc4913e08`);
+- The reproduced CSS is 218,229 bytes (SHA-256
+  `5d214cdfc9f2e554987f444ecbba647620ab6fcf44f6e60d202e8c522a051dea`);
   the reproduced JavaScript is 267,729 bytes (SHA-256
   `9fdf0e55d0f5a74ddb65467a2686701e989bba921de45dfdc339c77f13647253`).
 - Composer dependencies are a build precondition: Aura's Tailwind content
@@ -209,17 +209,17 @@ Results on the audit snapshot:
 npm run test:frontend-compatibility
 ```
 
-The runner snapshots five full, representative Aura sources declared in
-`source-files.json`: the application shell, primary and light buttons, list
-table, and PHP status field. It verifies their expected literal classes before
-copying them. Both compiler lanes scan that same source snapshot plus the
-gate-only semantic probe. The audited source snapshot contains five files and
-uses the fixed, machine-readable expectation in `source-baseline.json`.
-Audited source SHA-256: `d23bf2e9e451c188f90fcb82bcb6d7d1c95f033674f723cbc3165965f93b7b28`.
-The CORE-09 integration re-authenticated this snapshot after the selected
-`src/Fields/Status.php` source gained its filter-capability contract; the
-selected paths, expected literal classes, and compiler-output baselines did not
-change.
+The runner snapshots seven full, representative Aura sources declared in
+`source-files.json`: the application shell, primary and light buttons, form
+input, list table, value widget, and PHP status field. It verifies their
+expected literal classes before copying them. Both compiler lanes scan that
+same source snapshot plus the gate-only semantic probe. The audited source
+snapshot contains seven files and uses the fixed, machine-readable expectation
+in `source-baseline.json`.
+Audited source SHA-256: `80632f869f35d7a18308915994e036bd6ddeab386515ee645f0dfe0cdb4c9f0b`.
+This combined snapshot authenticates CORE-09's filter-capability contract in
+the selected `src/Fields/Status.php` source together with CORE-24's expanded
+theme surfaces and literal-class expectations.
 
 The `aura-source-records-v2-length-prefixed` canonicalization starts with a
 domain identifier and record count. Each manifest-ordered record contains the
@@ -309,13 +309,13 @@ source map. Both the worktree and stage-zero Git index must match that external
 manifest exactly. An intentional production rebuild therefore requires an
 explicitly reviewed baseline update as well as the rebuilt assets.
 
-Results on the audit snapshot:
+Current reproducible results (including CORE-24):
 
-- Tailwind `3.4.19`: pass, 486 parsed assertions, 17,433 output bytes,
-  SHA-256 `04ad45cb8cf839010413da6049443347669ab1782aeb83c91ed5aae2b3b221cd`.
-- Tailwind `4.3.3` through Vite `8.2.1`: pass, 460 parsed assertions,
-  20,497 output bytes, SHA-256
-  `b5c57e47318b92d36d276c48b394fbdbb3aa5c83a21fd73d3dc9d2c529a39dfc`.
+- Tailwind `3.4.19`: pass, 551 parsed assertions, 19,651 output bytes,
+  SHA-256 `74a17638884f659441bff193b7d5edd06f8eb504217c40d312bfbd89d87cb318`.
+- Tailwind `4.3.3` through Vite `8.2.1`: pass, 534 parsed assertions,
+  23,503 output bytes, SHA-256
+  `ed063b7f48b89de1589e9f81afc2f0d2f63ed1a19a137ea6227793eea843ca3b`.
 
 The v4 lane copies only the committed isolated fixture and shared contract into
 the temporary workspace, runs `npm ci` against its lockfile, and builds its

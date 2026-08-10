@@ -3,5 +3,5 @@
     "algorithm": "sha256",
     "canonicalization": "aura-source-records-v2-length-prefixed",
     "sourceBytes": "exact",
-    "expectedDigest": "d23bf2e9e451c188f90fcb82bcb6d7d1c95f033674f723cbc3165965f93b7b28"
+    "expectedDigest": "80632f869f35d7a18308915994e036bd6ddeab386515ee645f0dfe0cdb4c9f0b"
 }

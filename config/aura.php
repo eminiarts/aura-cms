@@ -103,6 +103,53 @@ return [
         'gray-color-palette' => 'slate',
         'darkmode-type' => 'auto',
 
+        /*
+        | The system stack is the default and makes no network requests. To use
+        | a custom font, publish/serve its CSS in the host application and set
+        | stylesheet to a local public path such as "fonts/brand.css".
+        */
+        'font' => [
+            'family' => [
+                'ui-sans-serif',
+                'system-ui',
+                'sans-serif',
+                'Apple Color Emoji',
+                'Segoe UI Emoji',
+                'Segoe UI Symbol',
+                'Noto Color Emoji',
+            ],
+            'stylesheet' => false,
+        ],
+
+        /*
+        | Semantic colors are RGB channel strings so Tailwind opacity modifiers
+        | keep working. CSS custom-property references are also supported.
+        */
+        'colors' => [
+            'light' => [
+                'primary' => 'var(--primary-600)',
+                'background' => '255 255 255',
+                'panel' => '250 250 250',
+                'border' => '228 228 231',
+                'text' => '24 24 27',
+                'muted' => '82 82 91',
+                'success' => '22 163 74',
+                'warning' => '217 119 6',
+                'danger' => '220 38 38',
+            ],
+            'dark' => [
+                'primary' => 'var(--primary-600)',
+                'background' => '9 9 11',
+                'panel' => '24 24 27',
+                'border' => '63 63 70',
+                'text' => '244 244 245',
+                'muted' => '161 161 170',
+                'success' => '22 163 74',
+                'warning' => '217 119 6',
+                'danger' => '220 38 38',
+            ],
+        ],
+
         'sidebar-size' => 'standard',
         'sidebar-type' => 'dark',
         'sidebar-darkmode-type' => 'dark',

@@ -101,6 +101,7 @@
                                 <button
                                     @click="toggleSidebar()"
                                     type="button"
+                                    aria-label="{{ __('Collapse sidebar') }}"
                                     class="inline-flex relative justify-center items-center w-6 h-6 text-sm font-semibold rounded-lg shadow-none select-none focus:outline-none focus:ring-2 aura-sidebar-toggle"
                                 >
                                     <div>
@@ -114,6 +115,7 @@
                                     <button
                                         @click="toggleSidebar()"
                                         type="button"
+                                        aria-label="{{ __('Expand sidebar') }}"
                                         class="inline-flex relative justify-center items-center w-6 h-6 text-sm font-semibold rounded-lg shadow-none select-none focus:outline-none focus:ring-2 aura-sidebar-toggle"
                                     >
                                         <div>

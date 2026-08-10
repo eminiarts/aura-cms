@@ -16,6 +16,12 @@ class InstallConfigCommand extends Command
 
     public function handle(): int
     {
+        if (! $this->input->isInteractive()) {
+            $this->info('Aura configuration was not changed in non-interactive mode.');
+
+            return self::SUCCESS;
+        }
+
         // 1. Do you want to use teams?
         $useTeams = confirm('Do you want to use teams?');
 
@@ -56,8 +62,11 @@ class InstallConfigCommand extends Command
             $theme = $config['theme'];
 
             foreach ($theme as $option => $currentValue) {
-
                 if (in_array($option, ['login-bg', 'login-bg-darkmode', 'app-favicon', 'app-favicon-darkmode', 'sidebar-darkmode-type'])) {
+                    continue;
+                }
+
+                if (is_array($currentValue)) {
                     continue;
                 }
 
@@ -112,17 +121,7 @@ class InstallConfigCommand extends Command
             $config['theme'] = $theme;
         }
 
-        // Now, write back the config file
-        $arrayExport = var_export($config, true);
-
-        // Remove numeric array keys
-        $arrayExport = preg_replace('/[0-9]+ => /', '', $arrayExport);
-
-        $code = '<?php'.PHP_EOL.PHP_EOL.'return '.str_replace(
-            ['array (', ')', "[\n    ]"],
-            ['[', ']', '[]'],
-            $arrayExport
-        ).';'.PHP_EOL;
+        $code = '<?php'.PHP_EOL.PHP_EOL.'return '.var_export($config, true).';'.PHP_EOL;
 
         file_put_contents($configPath, $code);
 
@@ -135,9 +134,9 @@ class InstallConfigCommand extends Command
         return self::SUCCESS;
     }
 
-    private function setEnvValue($key, $value)
+    private function setEnvValue(string $key, string $value): void
     {
-        $envPath = base_path('.env');
+        $envPath = $this->laravel->environmentFilePath();
 
         if (file_exists($envPath)) {
             // Read the .env file
