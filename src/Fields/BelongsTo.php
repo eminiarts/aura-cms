@@ -2,12 +2,21 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Contracts\PreloadsTableDisplay;
 use Aura\Base\Models\Meta;
+use Aura\Base\Policies\ResourcePolicy;
 use Aura\Base\Resource;
 use Aura\Base\Support\FieldDisplayValue;
+use Aura\Base\Support\FieldPresentationLabel;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Routing\Exceptions\UrlGenerationException;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 class BelongsTo extends Field implements PreloadsTableDisplay
 {
@@ -22,6 +31,10 @@ class BelongsTo extends Field implements PreloadsTableDisplay
     public string $type = 'input';
 
     public $view = 'aura::fields.view-value';
+
+    private ?FieldValueContext $inheritedDisplayContext = null;
+
+    private bool $presentingInheritedDisplay = false;
 
     // public function get($class, $model, $field)
     // {
@@ -95,27 +108,12 @@ class BelongsTo extends Field implements PreloadsTableDisplay
 
     public function display($field, $value, $model)
     {
-        if (optional($field)['display_view']) {
-            return FieldDisplayValue::sanitizedHtml(
-                view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render(),
-            );
-        }
-
-        if ($field['resource'] && $value) {
-
-            $resourceClass = $field['resource'];
-
-            $slug = $resourceClass::getSlug();
-
-            $related = $this->resolveDisplayModel($field, $value, $model);
-
-            $href = e(route('aura.'.$slug.'.edit', $value));
-            $title = e((string) optional($related)->title());
-
-            return new HtmlString("<a class='font-semibold' href='{$href}'>{$title}</a>");
-        }
-
-        return $value;
+        return $this->presentValue(
+            $value,
+            is_array($field) ? $field : [],
+            $model instanceof Model ? $model : null,
+            $this->inheritedDisplayContext ?? FieldValueContext::Index,
+        );
     }
 
     // public function get($field, $value)
@@ -145,7 +143,77 @@ class BelongsTo extends Field implements PreloadsTableDisplay
         ]);
     }
 
-    public function preloadTableDisplay(Collection $rows, array $field): void
+    /**
+     * Resolve an authorized destination for the related record.
+     *
+     * @param  array<string, mixed>  $field
+     */
+    public function linkDestination(
+        Model $related,
+        array $field,
+        ?Model $model = null,
+        FieldValueContext $context = FieldValueContext::Index,
+        mixed $value = null,
+    ): ?string {
+        $canView = $this->canAccessDestination('view', $related);
+        $canUpdate = $this->canAccessDestination('update', $related);
+
+        if (! $canView && ! $canUpdate) {
+            return null;
+        }
+
+        $resolver = $field['link_resolver'] ?? null;
+
+        if (is_callable($resolver)) {
+            $destination = $resolver($related, $field, $model, $context, $value);
+
+            if (! is_string($destination) || $destination === '') {
+                return null;
+            }
+
+            if ($this->isSafeLinkDestination($destination)) {
+                return $destination;
+            }
+        }
+
+        $slug = method_exists($related, 'getSlug') ? $related->getSlug() : null;
+
+        if (! is_string($slug) || $slug === '') {
+            return null;
+        }
+
+        foreach (['view', 'edit'] as $ability) {
+            $policyAbility = $ability === 'edit' ? 'update' : $ability;
+
+            if (($policyAbility === 'view' && ! $canView) || ($policyAbility === 'update' && ! $canUpdate)) {
+                continue;
+            }
+
+            $routeName = 'aura.'.$slug.'.'.$ability;
+
+            if (! Route::has($routeName)) {
+                continue;
+            }
+
+            try {
+                $destination = route($routeName, ['id' => $related->getKey()]);
+
+                return $this->isSafeLinkDestination($destination) ? $destination : null;
+            } catch (UrlGenerationException) {
+                continue;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Prime relation presentation for any collection-based surface.
+     *
+     * @param  iterable<int, mixed>  $rows
+     * @param  array<string, mixed>  $field
+     */
+    public function preloadPresentation(iterable $rows, array $field): void
     {
         // display_view and field-level display closures take precedence over
         // the class display() and never issue the batched lookup, so skip.
@@ -193,6 +261,67 @@ class BelongsTo extends Field implements PreloadsTableDisplay
 
             $row->setTableDisplayValue($slug, $model);
         }
+    }
+
+    public function preloadTableDisplay(Collection $rows, array $field): void
+    {
+        $this->preloadPresentation($rows, $field);
+    }
+
+    public function presentValue(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        FieldValueContext $context = FieldValueContext::Index,
+    ): mixed {
+        $displayMethod = new \ReflectionMethod($this, 'display');
+
+        if (! $this->presentingInheritedDisplay && $displayMethod->getDeclaringClass()->getName() !== self::class) {
+            $previousContext = $this->inheritedDisplayContext;
+            $this->inheritedDisplayContext = $context;
+            $this->presentingInheritedDisplay = true;
+
+            try {
+                $display = $this->display($field, $value, $model);
+            } finally {
+                $this->presentingInheritedDisplay = false;
+                $this->inheritedDisplayContext = $previousContext;
+            }
+
+            return FieldDisplayValue::secure($display);
+        }
+
+        if (optional($field)['display_view']) {
+            return FieldDisplayValue::sanitizedHtml(
+                view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render(),
+            );
+        }
+
+        if (empty($field['resource']) || $value === null || $value === '') {
+            return $value;
+        }
+
+        $related = $this->resolveDisplayModel($field, $value, $model);
+        $authorizedRelated = $related instanceof Model
+            && ($this->canAccessDestination('view', $related) || $this->canAccessDestination('update', $related))
+                ? $related
+                : null;
+        $label = $this->resolveRelationLabel($value, $field, $model, $authorizedRelated, $context);
+
+        if ($context === FieldValueContext::Export || ! $authorizedRelated instanceof Model) {
+            return FieldDisplayValue::secure($label);
+        }
+
+        $destination = $this->linkDestination($authorizedRelated, $field, $model, $context, $value);
+
+        if ($destination === null) {
+            return FieldDisplayValue::secure($label);
+        }
+
+        $href = e($destination);
+        $title = e((string) $label);
+
+        return new HtmlString("<a class='font-semibold' href='{$href}'>{$title}</a>");
     }
 
     public function queryFor($model)
@@ -265,6 +394,92 @@ class BelongsTo extends Field implements PreloadsTableDisplay
         return collect($results)->unique('id')->values()->toArray();
     }
 
+    protected function canAccessDestination(string $ability, Model $related): bool
+    {
+        if (Gate::allows($ability, $related)) {
+            return true;
+        }
+
+        $user = auth()->user();
+
+        if ($user === null || ! $related instanceof Resource) {
+            return false;
+        }
+
+        $policy = Gate::getPolicyFor($related);
+
+        if ($policy !== null) {
+            return false;
+        }
+
+        $policy = app(ResourcePolicy::class);
+
+        return method_exists($policy, $ability) && (bool) $policy->{$ability}($user, $related);
+    }
+
+    protected function isSafeLinkDestination(string $destination): bool
+    {
+        if (
+            $destination === ''
+            || trim($destination) !== $destination
+            || preg_match('//u', $destination) !== 1
+            || preg_match('/[\x00-\x20\x7F\p{Z}]/u', $destination) === 1
+            || Str::startsWith($destination, '//')
+            || Str::contains($destination, '\\')
+            || html_entity_decode($destination, ENT_QUOTES | ENT_HTML5, 'UTF-8') !== $destination
+        ) {
+            return false;
+        }
+
+        if (preg_match('/^([a-z][a-z0-9+.-]*):/i', $destination, $matches) !== 1) {
+            return true;
+        }
+
+        if (! in_array(Str::lower($matches[1]), ['http', 'https'], true)) {
+            return false;
+        }
+
+        $components = parse_url($destination);
+
+        if (
+            ! is_array($components)
+            || ! is_string($components['host'] ?? null)
+            || $components['host'] === ''
+        ) {
+            return false;
+        }
+
+        $application = parse_url(URL::to('/'));
+
+        return is_array($application)
+            && Str::lower((string) ($components['host'] ?? '')) === Str::lower((string) ($application['host'] ?? ''))
+            && ($components['port'] ?? null) === ($application['port'] ?? null);
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     */
+    protected function loadedRelationName(array $field, mixed $model): ?string
+    {
+        if (! $model instanceof Model) {
+            return null;
+        }
+
+        $candidates = [
+            $field['presentation_relation'] ?? null,
+            is_string($field['relation'] ?? null) ? $field['relation'] : null,
+            isset($field['slug']) ? Str::beforeLast((string) $field['slug'], '_id') : null,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (is_string($candidate) && $candidate !== '' && $model->relationLoaded($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
     protected function resolveDisplayModel($field, $value, $model)
     {
         $slug = $field['slug'] ?? null;
@@ -276,12 +491,69 @@ class BelongsTo extends Field implements PreloadsTableDisplay
             return $model->getTableDisplayValue($slug);
         }
 
-        return $field['resource']::find($value);
+        $relationName = $this->loadedRelationName($field, $model);
+
+        if ($relationName !== null) {
+            $related = $model->getRelation($relationName);
+
+            if ($related instanceof Model && (string) $related->getKey() === (string) $value) {
+                return $related;
+            }
+
+            return;
+        }
+
+        $resource = $field['resource'] ?? null;
+
+        if (! is_string($resource) || ! is_subclass_of($resource, Model::class)) {
+            return;
+        }
+
+        return $resource::query()->whereKey($value)->first();
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     */
+    protected function resolveRelationLabel(
+        mixed $value,
+        array $field,
+        ?Model $model,
+        mixed $related,
+        FieldValueContext $context,
+    ): mixed {
+        $currentLabel = $value;
+
+        if ($related instanceof Model) {
+            $title = method_exists($related, 'title')
+                ? $related->title()
+                : $related->getAttribute('title');
+
+            if ($title !== null && $title !== '') {
+                $currentLabel = $title;
+            }
+        }
+
+        return (new FieldPresentationLabel)->resolve(
+            $value,
+            $currentLabel,
+            $field,
+            $model,
+            $context,
+            [$related],
+        );
     }
 
     protected function tableDisplayForeignId(Resource $row, string $slug)
     {
-        $value = $row->fields[$slug] ?? null;
+        if (array_key_exists($slug, $row->getAttributes())) {
+            $value = $row->getAttribute($slug);
+        } else {
+            $fields = $row->fields;
+            $value = $fields instanceof \Illuminate\Support\Collection
+                ? $fields->get($slug)
+                : (is_array($fields) ? ($fields[$slug] ?? null) : null);
+        }
 
         if (is_array($value)) {
             $value = $value[0] ?? null;
