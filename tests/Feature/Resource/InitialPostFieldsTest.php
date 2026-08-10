@@ -1126,6 +1126,38 @@ it('rejects same-writer transaction state changes before persistence', function 
     'same PDO reset at depth two' => ['same-pdo', 2],
 ]);
 
+it('rejects a writer swap during a privileged lookup before create', function (string $api): void {
+    $connection = core13InstallConnectionProbe();
+    $originalWriter = $connection->getPdo();
+    $substitutedWriter = core13PhysicalWriter();
+    $armed = true;
+
+    $connection->beforeExecuting(function (string $query) use ($connection, $substitutedWriter, &$armed): void {
+        if ($armed && str_starts_with(strtolower(ltrim($query)), 'select')) {
+            $armed = false;
+            $connection->setPdo($substitutedWriter);
+        }
+    });
+
+    $write = fn () => match ($api) {
+        'first-or-create' => PhysicalWriterGuardedGlobalResource::firstOrCreateGlobalForSystem(
+            ['name' => 'Lookup writer candidate'],
+            [],
+            $connection,
+        ),
+        'update-or-create' => PhysicalWriterGuardedGlobalResource::updateOrCreateGlobalForSystem(
+            ['name' => 'Lookup writer candidate'],
+            ['user_id' => null],
+            $connection,
+        ),
+    };
+
+    expect($write)->toThrow(LogicException::class, 'physical database writer');
+
+    expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
+        ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
+})->with(['first-or-create', 'update-or-create']);
+
 it('runs final authorization after builder callbacks register later connection callbacks', function (): void {
     $connection = DB::connection();
     $originalWriter = $connection->getPdo();

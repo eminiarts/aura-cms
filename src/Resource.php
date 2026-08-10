@@ -851,7 +851,7 @@ class Resource extends Model implements DefinesFields
         unset($values['team_id']);
 
         $query = $resource->newQueryWithoutScopes()->useWritePdo();
-        $existing = (clone $query)->where($attributes)->first();
+        $existing = $resource->firstGlobalRecordOnCapturedWriter($query, $attributes);
 
         if ($existing !== null) {
             return static::ensureStaticResource($existing);
@@ -868,7 +868,7 @@ class Resource extends Model implements DefinesFields
                 ? $resource->getConnection()->transaction($create)
                 : $create();
         } catch (UniqueConstraintViolationException $exception) {
-            $existing = (clone $query)->where($attributes)->first();
+            $existing = $resource->firstGlobalRecordOnCapturedWriter($query, $attributes);
 
             return $existing !== null
                 ? static::ensureStaticResource($existing)
@@ -937,6 +937,24 @@ class Resource extends Model implements DefinesFields
         return $instance;
     }
 
+    private function assertPrivilegedConnectionState(
+        Connection $connection,
+        PDO $writePdo,
+        int $transactionLevel,
+    ): void {
+        $writerChanged = $connection->getRawPdo() !== $writePdo;
+        $transactionChanged = $connection->transactionLevel() !== $transactionLevel
+            || ($transactionLevel > 0) !== $writePdo->inTransaction();
+
+        if (! $writerChanged && ! $transactionChanged) {
+            return;
+        }
+
+        $this->restorePhysicalWriter($connection, $writePdo, $transactionLevel);
+
+        throw new \LogicException('A named write cannot change its physical database writer or transaction state.');
+    }
+
     private function authorizeOrdinaryPersistence(): bool
     {
         static::authorizeInitialPostFieldPersistence($this);
@@ -983,15 +1001,7 @@ class Resource extends Model implements DefinesFields
             $expectedWheres,
             $expectedWhereBindings,
         ): void {
-            $writerChanged = $connection->getRawPdo() !== $writePdo;
-            $transactionChanged = $connection->transactionLevel() !== $transactionLevel
-                || ($transactionLevel > 0) !== $writePdo->inTransaction();
-
-            if ($writerChanged || $transactionChanged) {
-                $this->restorePhysicalWriter($connection, $writePdo, $transactionLevel);
-
-                throw new \LogicException('A named write cannot change its physical database writer or transaction state.');
-            }
+            $this->assertPrivilegedConnectionState($connection, $writePdo, $transactionLevel);
 
             if ($this->getConnection() !== $connection
                 || $this->getTable() !== $table
@@ -1160,6 +1170,66 @@ class Resource extends Model implements DefinesFields
             if ($connection->getRawPdo() !== $writePdo) {
                 $connection->setPdo($writePdo);
             }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function firstGlobalRecordOnCapturedWriter(Builder $query, array $attributes): ?Model
+    {
+        $connection = $this->getConnection();
+        $writePdo = $connection->getPdo();
+
+        if (! $writePdo instanceof PDO) {
+            throw new \LogicException('A named write requires an active physical database writer.');
+        }
+
+        $transactionLevel = $connection->transactionLevel();
+        $lookup = (clone $query)->where($attributes);
+        $queryBuilder = $lookup->getQuery();
+        $grammar = $queryBuilder->getGrammar();
+        $processor = $queryBuilder->getProcessor();
+        $table = $queryBuilder->from;
+        $wheres = $queryBuilder->wheres;
+        $whereBindings = $queryBuilder->getRawBindings()['where'];
+        $authorize = function (int $expectedTransactionLevel) use (
+            $connection,
+            $writePdo,
+            $lookup,
+            $grammar,
+            $processor,
+            $table,
+            $wheres,
+            $whereBindings,
+        ): bool {
+            $this->assertPrivilegedConnectionState($connection, $writePdo, $expectedTransactionLevel);
+            $queryBuilder = $lookup->getQuery();
+
+            if ($queryBuilder->connection !== $connection
+                || $queryBuilder->grammar !== $grammar
+                || $queryBuilder->processor !== $processor
+                || $queryBuilder->from !== $table
+                || $queryBuilder->wheres !== $wheres
+                || $queryBuilder->getRawBindings()['where'] !== $whereBindings) {
+                throw new \LogicException('A named write cannot change its resource, tenancy, owner, or physical database writer.');
+            }
+
+            return true;
+        };
+
+        $queryBuilder->applyBeforeQueryCallbacks();
+
+        try {
+            return $this->executeWithFinalConnectionAuthorization(
+                $connection,
+                $writePdo,
+                $transactionLevel,
+                $authorize,
+                fn (): ?Model => $lookup->first(),
+            );
+        } finally {
+            $this->restorePhysicalWriter($connection, $writePdo, $transactionLevel);
         }
     }
 
