@@ -410,7 +410,7 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
             $label = $this->resolveAuraPresentationLabel($value, $field, $model, $context);
             $usesDeclarativeLabels = array_key_exists('options', $field)
                 || array_key_exists('label_resolver', $field)
-                || method_exists($this, 'options');
+                || $this->hasAccessibleOptionsProvider();
             $display = $context === FieldValueContext::Index
                 || ! $usesDeclarativeLabels
                 || ! empty($field['display_view'])
@@ -484,6 +484,15 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
         return $method->invoke($this, $value);
     }
 
+    private function hasAccessibleOptionsProvider(): bool
+    {
+        if (! method_exists($this, 'options')) {
+            return false;
+        }
+
+        return ! (new \ReflectionMethod($this, 'options'))->isPrivate();
+    }
+
     /**
      * @param  array<string, mixed>  $field
      */
@@ -495,8 +504,8 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
     ): mixed {
         $options = $field['options'] ?? [];
 
-        if ($model !== null && method_exists($this, 'options')) {
-            $options = $this->options($model, $field);
+        if ($model !== null && $this->hasAccessibleOptionsProvider()) {
+            $options = (new \ReflectionMethod($this, 'options'))->invoke($this, $model, $field);
         }
 
         if (! is_array($options)) {

@@ -116,6 +116,25 @@ test('status index presentation supports dynamic options without a static option
         ->and((string) $record->exportFieldValue('status'))->toBe('Dynamic open');
 });
 
+test('private extension options helpers are not treated as dynamic option providers', function () {
+    $field = new class extends Field
+    {
+        private function options(): array
+        {
+            return ['raw' => 'Private helper'];
+        }
+    };
+
+    $result = $field->presentValue(
+        'raw',
+        [],
+        new DynamicStatusPresentationRecord,
+        FieldValueContext::View,
+    );
+
+    expect((string) $result)->toBe('raw');
+});
+
 test('unknown option codes remain visible across resource presentation surfaces', function () {
     $record = new PresentationLabelRecord;
     $record->setAttribute('state', 'unknown');

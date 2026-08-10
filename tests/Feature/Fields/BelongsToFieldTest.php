@@ -87,7 +87,7 @@ describe('BelongsTo Field Display', function () {
             ->and($field->receivedValue)->toBe('raw');
     });
 
-    test('legacy subclasses can delegate display to the native relationship presenter', function () {
+    test('legacy subclasses preserve context when delegating display to the native relationship presenter', function () {
         $related = Post::factory()->create(['title' => 'Delegated Post']);
         $field = new class extends BelongsTo
         {
@@ -97,13 +97,28 @@ describe('BelongsTo Field Display', function () {
             }
         };
 
-        $result = $field->presentValue(
+        $index = $field->presentValue(
             $related->id,
             ['resource' => Post::class],
             $this->user,
         );
+        $view = $field->presentValue(
+            $related->id,
+            ['resource' => Post::class],
+            $this->user,
+            FieldValueContext::View,
+        );
+        $export = $field->presentValue(
+            $related->id,
+            ['resource' => Post::class],
+            $this->user,
+            FieldValueContext::Export,
+        );
 
-        expect((string) $result)->toContain('Delegated Post');
+        expect((string) $index)->toContain('<a')
+            ->and((string) $view)->toContain('<a')
+            ->and((string) $export)->toContain('Delegated Post')
+            ->and((string) $export)->not->toContain('<a');
     });
 
     test('prefers the authorized related resource view page', function () {
@@ -368,7 +383,7 @@ describe('BelongsTo Field Display', function () {
 
         foreach ($rows as $index => $row) {
             expect((string) $field->presentValue($related[$index]->id, $definition, $row))
-                ->toContain($related[$index]->title());
+                ->toContain(e($related[$index]->title()));
         }
 
         expect($relatedQueries)->toHaveCount(1)
