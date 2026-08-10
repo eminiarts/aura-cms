@@ -1,16 +1,70 @@
 <?php
 
+use Aura\Base\Contracts\ScopesMediaVisibility;
 use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\AttachmentDetails;
 use Aura\Base\Livewire\Media\MediaDetailsBroker;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
+use Aura\Base\Policies\ResourcePolicy;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Role;
 use Aura\Base\Tests\Resources\Post;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
 
 use function Pest\Livewire\livewire;
 
+class Core20DetailsScopedAttachmentPolicy implements ScopesMediaVisibility
+{
+    public static ?int $visibleId = null;
+
+    public function delete(): bool
+    {
+        return true;
+    }
+
+    public function scopeMediaVisibility(Builder $query, Authenticatable $actor, Resource $resource): Builder
+    {
+        return self::$visibleId === null
+            ? $query
+            : $query->whereKey(self::$visibleId);
+    }
+
+    public function update(): bool
+    {
+        return true;
+    }
+
+    public function view(): bool
+    {
+        return true;
+    }
+
+    public function viewAny(): bool
+    {
+        return true;
+    }
+}
+
+class Core20DetailsUnscopedAttachmentPolicy
+{
+    public function view(): bool
+    {
+        return true;
+    }
+
+    public function viewAny(): bool
+    {
+        return true;
+    }
+}
+
 beforeEach(function () {
+    Core20DetailsScopedAttachmentPolicy::$visibleId = null;
+    Gate::policy(Attachment::class, Core20DetailsScopedAttachmentPolicy::class);
     $this->actingAs($this->user = createSuperAdmin());
     app('aura')::registerResources([Post::class]);
     config()->set('aura.resources.core20-details-owner', Post::class);
@@ -142,12 +196,71 @@ test('the attachment id cannot bypass the view policy', function () {
     $role->update(['permissions' => $permissions]);
 
     $this->actingAs($user->refresh());
+    Gate::policy(Attachment::class, ResourcePolicy::class);
 
     $attachment = detailsAttachment('private.jpg');
 
     livewire(AttachmentDetails::class)
         ->call('open', $attachment->id)
         ->assertForbidden();
+});
+
+test('the attachment id cannot bypass the sql visibility scope when view is allowed', function () {
+    $visible = detailsAttachment('visible.jpg');
+    $hidden = detailsAttachment('hidden.jpg');
+    Core20DetailsScopedAttachmentPolicy::$visibleId = $visible->getKey();
+
+    livewire(AttachmentDetails::class)
+        ->call('open', $hidden->getKey())
+        ->assertForbidden();
+});
+
+test('a client supplied mount id cannot bypass the sql visibility scope', function () {
+    $visible = detailsAttachment('mount-visible.jpg');
+    $hidden = detailsAttachment('mount-hidden.jpg');
+    Core20DetailsScopedAttachmentPolicy::$visibleId = $visible->getKey();
+
+    livewire(AttachmentDetails::class, ['attachmentId' => $hidden->getKey()])
+        ->assertForbidden();
+});
+
+test('attachment details fail closed when the attachment policy has no sql visibility contract', function () {
+    Gate::policy(Attachment::class, Core20DetailsUnscopedAttachmentPolicy::class);
+    $attachment = detailsAttachment('unscoped.jpg');
+
+    livewire(AttachmentDetails::class)
+        ->call('open', $attachment->getKey())
+        ->assertForbidden();
+});
+
+test('a hydrated details panel rechecks sql visibility before another action', function () {
+    $attachment = detailsAttachment('hydrated.jpg');
+    $replacement = detailsAttachment('replacement.jpg');
+    Core20DetailsScopedAttachmentPolicy::$visibleId = $attachment->getKey();
+    $details = livewire(AttachmentDetails::class)
+        ->call('open', $attachment->getKey())
+        ->assertSet('attachmentId', $attachment->getKey());
+
+    Core20DetailsScopedAttachmentPolicy::$visibleId = $replacement->getKey();
+
+    $details->call('next')->assertForbidden();
+});
+
+test('a hydrated details panel rechecks sql visibility after a team switch', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('This test exercises team switching.');
+    }
+
+    $attachment = detailsAttachment('old-team.jpg');
+    $details = livewire(AttachmentDetails::class)
+        ->call('open', $attachment->getKey())
+        ->assertSet('attachmentId', $attachment->getKey());
+    $otherTeam = foreignTeam();
+    $this->user->forceFill(['current_team_id' => $otherTeam->getKey()])->save();
+    Cache::forget("user_{$this->user->getKey()}_current_team_id");
+    $this->actingAs($this->user->refresh());
+
+    $details->call('next')->assertForbidden();
 });
 
 test('editing the title persists to the attachment name', function () {

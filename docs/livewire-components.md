@@ -511,6 +511,14 @@ Selection is a correlated server protocol, not a slug-only event:
    form, keeps the modal open, and exposes a retryable error. The global modal
    host also refuses dismissal while a request is `pending` or `processing`.
 
+Every authoritative read validates the record as one complete state-machine
+tuple. Claim/error/claimed/completed timestamps must match the pending,
+processing, succeeded, failed, or expired state and the issued/deadline window.
+The request token must simultaneously be the sole owner-index token and the
+manager-scope pointer. Malformed records or detached/duplicate fences fail
+closed, so a hydrated manager cannot close or synthesize timeout from cache
+corruption.
+
 Do not dispatch the former slug-only `updateField`/`media-manager-selected`
 sequence and do not close immediately after requesting selection. Replays,
 duplicate acknowledgements, competing requests for one owner, late work, and a
@@ -572,6 +580,8 @@ explicit attachment IDs. Aura also checks `viewAny` and per-record `view`. If th
 policy lacks the SQL scope, or if any requested ID is missing or outside the
 scope, the entire explicit selection is rejected; Aura never falls back to an
 unscoped per-model lookup. The scope is reapplied after actor or team changes.
+`AttachmentDetails` follows the same SQL-scope-before-`view` sequence for mount,
+open/navigation, render, and every hydrated request.
 
 Picker details do not trust browser-supplied row, selection, attachment, owner,
 component, or field data. `MediaDetailsBroker` issues a short-lived opaque

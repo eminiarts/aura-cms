@@ -3,6 +3,7 @@
 use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\Media\InvalidMediaSelectionRequest;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
+use Aura\Base\Livewire\Media\MediaSecurityStore;
 use Aura\Base\Livewire\Media\MediaSelectionBroker;
 use Aura\Base\Livewire\Media\MediaSelectionMutation;
 use Aura\Base\Livewire\Media\MediaSelectionRejected;
@@ -27,6 +28,21 @@ beforeEach(function () {
         actor: $this->actor,
     );
 });
+
+function core20SelectionRecordKey(string $requestToken): string
+{
+    return 'aura:media-selection:v1:request:'.hash('sha256', $requestToken);
+}
+
+function core20SelectionOwnerIndexKey(string $ownerToken): string
+{
+    return 'aura:media-selection:v1:owner:'.hash('sha256', $ownerToken);
+}
+
+function core20SelectionScopeKey(string $ownerToken, string $managerComponentId): string
+{
+    return 'aura:media-selection:v1:scope:'.hash('sha256', $ownerToken).':'.hash('sha256', $managerComponentId);
+}
 
 test('selection requests bind both components actor team slug and normalized value digests', function () {
     $request = $this->selections->begin(
@@ -53,8 +69,79 @@ test('selection requests bind both components actor team slug and normalized val
         ->and($record->slug)->toBe('image')
         ->and($record->valueDigest)->toBe(hash('sha256', '["4","7"]'))
         ->and($record->state)->toBe('pending')
-        ->and($record->errorCode)->toBeNull();
+        ->and($record->errorCode)->toBeNull()
+        ->and($record->claimId)->toBeNull()
+        ->and($record->claimedAt)->toBeNull()
+        ->and($record->completedAt)->toBeNull();
 });
+
+test('manager reads reject a forged succeeded record that retains a live claim', function () {
+    $request = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
+    $key = core20SelectionRecordKey($request->token);
+    $record = app(MediaSecurityStore::class)->cache->get($key);
+    $record['state'] = 'succeeded';
+    $record['claim_id'] = str_repeat('a', 64);
+    app(MediaSecurityStore::class)->cache->put($key, $record, 60);
+
+    expect(fn () => $this->selections->forManager(
+        $request->token,
+        $this->ownerToken,
+        'manager',
+        $this->actor,
+    ))->toThrow(InvalidMediaSelectionRequest::class);
+});
+
+test('manager reads reject records detached from their owner index and manager scope fences', function (string $key) {
+    $request = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
+    app(MediaSecurityStore::class)->cache->put($key === 'owner'
+        ? core20SelectionOwnerIndexKey($this->ownerToken)
+        : core20SelectionScopeKey($this->ownerToken, 'manager'), [], 60);
+
+    expect(fn () => $this->selections->forManager(
+        $request->token,
+        $this->ownerToken,
+        'manager',
+        $this->actor,
+    ))->toThrow(InvalidMediaSelectionRequest::class);
+})->with(['owner', 'scope']);
+
+test('manager reads reject malformed state error claim and timestamp tuples', function (string $forgery) {
+    $request = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
+    $key = core20SelectionRecordKey($request->token);
+    $record = app(MediaSecurityStore::class)->cache->get($key);
+    $forged = match ($forgery) {
+        'unknown' => array_replace($record, ['state' => 'complete']),
+        'early-expiry' => array_replace($record, [
+            'state' => 'expired',
+            'error_code' => 'selection_timeout',
+            'completed_at' => $record['issued_at'],
+        ]),
+        'timeout-failure' => array_replace($record, [
+            'state' => 'failed',
+            'error_code' => 'selection_timeout',
+            'claimed_at' => $record['issued_at'],
+            'completed_at' => $record['issued_at'],
+        ]),
+        'reversed-time' => array_replace($record, [
+            'state' => 'succeeded',
+            'claimed_at' => $record['issued_at'] + 1,
+            'completed_at' => $record['issued_at'],
+        ]),
+    };
+    app(MediaSecurityStore::class)->cache->put($key, $forged, 60);
+
+    expect(fn () => $this->selections->forManager(
+        $request->token,
+        $this->ownerToken,
+        'manager',
+        $this->actor,
+    ))->toThrow(InvalidMediaSelectionRequest::class);
+})->with([
+    'unknown state' => 'unknown',
+    'expired before deadline' => 'early-expiry',
+    'failed with timeout error' => 'timeout-failure',
+    'success completed before claim' => 'reversed-time',
+]);
 
 test('owner processing is atomic successful and idempotent', function () {
     $request = $this->selections->begin($this->ownerToken, 'manager', ['9'], $this->actor);
@@ -105,6 +192,10 @@ test('owner processing is atomic successful and idempotent', function () {
         ->and($effects)->toBe(1)
         ->and($first->state)->toBe('succeeded')
         ->and($first->errorCode)->toBeNull()
+        ->and($first->claimId)->toBeNull()
+        ->and($first->claimedAt)->toBeInt()
+        ->and($first->completedAt)->toBeGreaterThanOrEqual($first->claimedAt)
+        ->and($first->completedAt)->toBeLessThan($first->deadline)
         ->and($duplicate->state)->toBe('succeeded');
 });
 
@@ -204,6 +295,8 @@ test('processing failures settle generically and a retry receives a new token', 
 
     expect($failed->state)->toBe('failed')
         ->and($failed->errorCode)->toBe('selection_rejected')
+        ->and($failed->claimedAt)->toBeInt()
+        ->and($failed->completedAt)->toBeGreaterThanOrEqual($failed->claimedAt)
         ->and($retry->token)->not->toBe($request->token);
 });
 

@@ -103,6 +103,8 @@ class MediaSelectionBroker
                 state: 'pending',
                 errorCode: null,
                 claimId: null,
+                claimedAt: null,
+                completedAt: null,
             );
 
             $indexKey = $this->ownerIndexKey($ownerToken);
@@ -230,20 +232,17 @@ class MediaSelectionBroker
         $indexKey = $this->ownerIndexKey($ownerToken);
 
         return $this->withNamedLock($indexKey.':lock', 5, function () use ($indexKey, $ownerToken, $owner): bool {
-            $tokens = $this->cache->get($indexKey, []);
-
-            if (! is_array($tokens)) {
+            try {
+                $tokens = $this->ownerRequestTokens($indexKey);
+            } catch (Throwable) {
                 return true;
             }
 
             foreach ($tokens as $requestToken) {
-                if (! is_string($requestToken)) {
-                    return true;
-                }
-
                 try {
                     $record = $this->read($requestToken);
-                } catch (InvalidMediaSelectionRequest) {
+                    $this->assertRequestFences($requestToken, $record);
+                } catch (Throwable) {
                     return true;
                 }
 
@@ -423,6 +422,7 @@ class MediaSelectionBroker
     ): void {
         foreach ($tokens as $requestToken) {
             $record = $this->read($requestToken);
+            $this->assertRequestFences($requestToken, $record);
 
             if (! hash_equals($record->ownerTokenDigest, $this->owners->digest($ownerToken))
                 || ! hash_equals($record->actorId, $owner->actorId)
@@ -433,6 +433,30 @@ class MediaSelectionBroker
             if (in_array($record->state, ['pending', 'processing'], true)) {
                 throw new InvalidMediaSelectionRequest('A media selection request is already active for this owner.');
             }
+        }
+    }
+
+    private function assertRequestFences(string $requestToken, MediaSelectionRecord $record): void
+    {
+        try {
+            $ownerTokens = $this->ownerRequestTokens(
+                self::CACHE_PREFIX.'owner:'.$record->ownerTokenDigest,
+            );
+            $scopeToken = $this->cache->get(
+                self::CACHE_PREFIX.'scope:'.$record->ownerTokenDigest.':'.$this->digest($record->managerComponentId),
+            );
+        } catch (Throwable $exception) {
+            if ($exception instanceof InvalidMediaSelectionRequest) {
+                throw $exception;
+            }
+
+            throw new InvalidMediaSelectionRequest('The media selection request fences are unavailable.', previous: $exception);
+        }
+
+        if ($ownerTokens !== [$requestToken]
+            || ! is_string($scopeToken)
+            || ! hash_equals($scopeToken, $requestToken)) {
+            throw new InvalidMediaSelectionRequest('The media selection request fences are invalid.');
         }
     }
 
@@ -516,12 +540,16 @@ class MediaSelectionBroker
         }
 
         foreach ($tokens as $token) {
-            if (! is_string($token)) {
+            if (! is_string($token) || preg_match('/^[A-Za-z0-9_-]{43}$/D', $token) !== 1) {
                 throw new InvalidMediaSelectionRequest('The media selection owner index is invalid.');
             }
         }
 
-        return array_values(array_unique($tokens));
+        if (count($tokens) > 1 || count($tokens) !== count(array_unique($tokens, SORT_STRING))) {
+            throw new InvalidMediaSelectionRequest('The media selection owner index is invalid.');
+        }
+
+        return $tokens;
     }
 
     /**
@@ -666,14 +694,14 @@ class MediaSelectionBroker
                 }
             }
 
-            if ($mutationErrorCode !== null || $authorizationErrorCode !== null) {
-                $this->rollbackMutation($application);
-                $rolledBack = true;
-                $settled = $record->withState('failed', $mutationErrorCode ?? $authorizationErrorCode);
-            } elseif (now()->getTimestamp() >= $record->deadline) {
+            if (now()->getTimestamp() >= $record->deadline) {
                 $this->rollbackMutation($application);
                 $rolledBack = true;
                 $settled = $record->withState('expired', 'selection_timeout');
+            } elseif ($mutationErrorCode !== null || $authorizationErrorCode !== null) {
+                $this->rollbackMutation($application);
+                $rolledBack = true;
+                $settled = $record->withState('failed', $mutationErrorCode ?? $authorizationErrorCode);
             } else {
                 $settled = $record->withState('succeeded');
             }
@@ -920,6 +948,8 @@ class MediaSelectionBroker
             throw new InvalidMediaSelectionRequest('The media selection request context does not match.');
         }
 
+        $this->assertRequestFences($requestToken, $record);
+
         return $record;
     }
 
@@ -945,6 +975,8 @@ class MediaSelectionBroker
             || ! hash_equals($record->valueDigest, $this->valueDigest($this->normalizeValue($value)))) {
             throw new InvalidMediaSelectionRequest('The media selection request context does not match.');
         }
+
+        $this->assertRequestFences($requestToken, $record);
 
         return $record;
     }

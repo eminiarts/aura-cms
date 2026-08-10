@@ -481,6 +481,16 @@ the modal open, and allow retry. A global close is also rejected while any
 request for that owner is `pending` or `processing`, including during a
 timeout/apply race.
 
+Before a record can authorize a manager result or unlock the modal, Aura
+validates its complete state tuple and cache fences. Pending records have no
+claim, error, or completion times; processing records have one live claim and a
+claim time; terminal records clear the claim and carry a compatible error and
+completion time. Success and ordinary failure must complete before the deadline;
+expiry uses only `selection_timeout` and completes at or after the deadline. The
+opaque token, owner-wide index, and manager-scope pointer must also identify the
+same record. Unknown states, malformed timestamps/errors, duplicate indexes, and
+detached records fail closed rather than manufacturing success or timeout.
+
 The former slug-only `updateField` and immediate `closeModal` sequence is not a
 supported picker integration.
 
@@ -509,7 +519,9 @@ Aura applies that same SQL builder scope to pagination and every explicit ID
 lookup, then enforces `viewAny` and per-record `view`. If the policy does not
 implement the interface, or one ID is missing/denied, the full explicit
 selection is rejected. There is no per-model unscoped fallback. Actor and team
-changes cause a fresh scope evaluation.
+changes cause a fresh scope evaluation. The Attachment Details panel uses this
+same path for client-supplied mount IDs, open/navigation loads, renders, and each
+hydration request; it never falls back to an unscoped model lookup.
 
 ### Picker Details Snapshots
 

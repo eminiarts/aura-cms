@@ -3,6 +3,7 @@
 use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\ComponentSlots\ComponentSlotRegistry;
 use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
+use Aura\Base\Livewire\Media\MediaSecurityStore;
 use Aura\Base\Livewire\Media\MediaSelectionBroker;
 use Aura\Base\Livewire\Media\MediaSelectionMutation;
 use Aura\Base\Livewire\Media\MediaSelectionRejected;
@@ -39,6 +40,16 @@ beforeEach(function () {
         ],
     ];
 });
+
+function core20ManagerSelectionRecordKey(string $requestToken): string
+{
+    return 'aura:media-selection:v1:request:'.hash('sha256', $requestToken);
+}
+
+function core20ManagerSelectionScopeKey(string $ownerToken, string $managerComponentId): string
+{
+    return 'aura:media-selection:v1:scope:'.hash('sha256', $ownerToken).':'.hash('sha256', $managerComponentId);
+}
 
 test('manager request remains open and exposes a correlated pending effect', function () {
     $requestToken = null;
@@ -122,6 +133,56 @@ test('forged success cannot close while the broker remains pending', function ()
     )
         ->assertSet('pending', true)
         ->assertNotDispatched('closeModal');
+});
+
+test('a hydrated manager cannot close from a cache forged success with a live claim', function () {
+    $requestToken = null;
+    $manager = Livewire::test(MediaManager::class, $this->arguments)
+        ->call('requestMediaSelection', [(string) $this->attachment->getKey()])
+        ->assertDispatched('aura-media-selection-requested', function (string $event, array $payload) use (&$requestToken): bool {
+            $requestToken = $payload['requestToken'];
+
+            return true;
+        });
+    $key = core20ManagerSelectionRecordKey($requestToken);
+    $record = app(MediaSecurityStore::class)->cache->get($key);
+    $record['state'] = 'succeeded';
+    $record['claim_id'] = str_repeat('a', 64);
+    app(MediaSecurityStore::class)->cache->put($key, $record, 60);
+
+    $manager->call(
+        'acknowledgeMediaSelection',
+        $this->ownerToken,
+        $requestToken,
+        'succeeded',
+        null,
+    )
+        ->assertSet('pending', true)
+        ->assertNotDispatched('closeModal');
+});
+
+test('a hydrated manager cannot manufacture timeout from malformed cached timestamps', function () {
+    $requestToken = null;
+    $manager = Livewire::test(MediaManager::class, $this->arguments)
+        ->call('requestMediaSelection', [(string) $this->attachment->getKey()])
+        ->assertDispatched('aura-media-selection-requested', function (string $event, array $payload) use (&$requestToken): bool {
+            $requestToken = $payload['requestToken'];
+
+            return true;
+        });
+    $key = core20ManagerSelectionRecordKey($requestToken);
+    $record = app(MediaSecurityStore::class)->cache->get($key);
+    $record['deadline'] = $record['issued_at'];
+    app(MediaSecurityStore::class)->cache->put($key, $record, 60);
+
+    Carbon::setTestNow(now()->addSeconds(16));
+
+    $manager->call('expireMediaSelection', $requestToken)
+        ->assertSet('pending', true)
+        ->assertSet('selectionError', null)
+        ->assertNotDispatched('closeModal');
+
+    Carbon::setTestNow();
 });
 
 test('authoritative failure stays open and permits retry with a new request token', function () {
@@ -271,6 +332,43 @@ test('global modal close events cannot bypass a pending media dismissal lock', f
     $modals->closeModal('picker');
 
     expect($modals->modals)->not->toHaveKey('picker');
+});
+
+test('global modal close fails closed when a terminal record is detached from its scope fence', function () {
+    $request = app(MediaSelectionBroker::class)->begin(
+        $this->ownerToken,
+        'manager-component',
+        [(string) $this->attachment->getKey()],
+        $this->actor,
+    );
+    app(MediaSelectionBroker::class)->processForOwner(
+        $request->token,
+        $this->ownerToken,
+        'owner-component',
+        'image',
+        [(string) $this->attachment->getKey()],
+        $this->actor,
+        fn (): MediaSelectionMutation => new MediaSelectionMutation(
+            apply: static function (): void {},
+            rollback: static function (): void {},
+        ),
+    );
+    app(MediaSecurityStore::class)->cache->put(
+        core20ManagerSelectionScopeKey($this->ownerToken, 'manager-component'),
+        str_repeat('a', 43),
+        60,
+    );
+    $modals = new Modals;
+    $modals->modals = [
+        'picker' => [
+            'name' => ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID,
+            'arguments' => ['ownerToken' => $this->ownerToken],
+        ],
+    ];
+
+    $modals->closeModal('picker');
+
+    expect($modals->modals)->toHaveKey('picker');
 });
 
 test('deadline crossing cannot close the modal until timeout settlement is durable', function () {

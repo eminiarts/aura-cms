@@ -87,6 +87,7 @@ class AttachmentDetails extends Component
     public function hydrate(): void
     {
         $this->authorizePickerContext();
+        $this->authorizeCurrentAttachment();
     }
 
     public function mount(
@@ -94,6 +95,7 @@ class AttachmentDetails extends Component
         ?string $ownerToken = null,
         ?string $correlationComponentId = null,
         ?string $fieldSlug = null,
+        ?int $attachmentId = null,
     ): void {
         $this->surface = $surface;
         $this->ownerToken = $ownerToken;
@@ -102,6 +104,10 @@ class AttachmentDetails extends Component
         $this->ownerTokenDigest = is_string($ownerToken)
             ? app(MediaOwnerTokenBroker::class)->digest($ownerToken)
             : null;
+
+        if ($attachmentId !== null) {
+            $this->show($attachmentId);
+        }
     }
 
     public function next(): void
@@ -195,13 +201,7 @@ class AttachmentDetails extends Component
             return null;
         }
 
-        $attachment = app(config('aura.resources.attachment'))::find($this->attachmentId);
-
-        if ($attachment) {
-            Gate::authorize('view', $attachment);
-        }
-
-        return $attachment;
+        return $this->authorizedAttachment($this->attachmentId);
     }
 
     protected function persist(array $attributes): void
@@ -220,21 +220,13 @@ class AttachmentDetails extends Component
 
     protected function show(int $id): void
     {
-        $attachment = app(config('aura.resources.attachment'))::find($id);
-
-        if (! $attachment) {
-            $this->close();
-
-            return;
-        }
-
-        Gate::authorize('view', $attachment);
+        $attachment = $this->authorizedAttachment($id);
 
         $this->attachmentId = $attachment->id;
         // Note: `?? ''` would silently yield '' here — Resource meta attributes
         // resolve through __get but do not implement __isset.
-        $this->title = (string) $attachment->name;
-        $this->altText = (string) $attachment->alt_text;
+        $this->title = (string) $attachment->__get('name');
+        $this->altText = (string) $attachment->__get('alt_text');
 
         $this->resetErrorBag();
     }
@@ -263,6 +255,30 @@ class AttachmentDetails extends Component
         }
 
         return $actor;
+    }
+
+    private function authorizeCurrentAttachment(): void
+    {
+        if ($this->attachmentId !== null) {
+            $this->authorizedAttachment($this->attachmentId);
+        }
+    }
+
+    private function authorizedAttachment(int $id): Resource
+    {
+        try {
+            $attachment = app(MediaAuthorization::class)
+                ->authorizeAttachments([$id], $this->actor())
+                ->first();
+        } catch (InvalidMediaOwnerContext) {
+            abort(403);
+        }
+
+        if (! $attachment instanceof Resource) {
+            abort(403);
+        }
+
+        return $attachment;
     }
 
     private function authorizePickerContext(): void

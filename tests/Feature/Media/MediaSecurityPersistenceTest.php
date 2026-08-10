@@ -313,12 +313,12 @@ test('selection recovery rejects an active scope missing its owner wide fence', 
         ['9'],
         $this->actor,
     ))->toThrow(InvalidMediaSelectionRequest::class)
-        ->and($this->media->selections->forManager(
+        ->and(fn () => $this->media->selections->forManager(
             $request->token,
             $ownerToken,
             'fault-manager',
             $this->actor,
-        )->state)->toBe('pending');
+        ))->toThrow(InvalidMediaSelectionRequest::class);
 });
 
 test('failed timeout lock release restores the active fence for retry', function (bool $throws) {
