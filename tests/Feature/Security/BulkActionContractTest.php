@@ -1,10 +1,14 @@
 <?php
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Facades\DynamicFunctions;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
+use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -20,8 +24,17 @@ class Core06BulkResource extends Resource
             'parameters' => [
                 'owner_id' => [
                     'label' => 'Owner',
+                    'options' => [
+                        7 => 'Owner seven',
+                        42 => 'Owner forty-two',
+                    ],
                     'rules' => ['required', 'integer', 'min:1'],
                     'type' => 'integer',
+                ],
+                'tags' => [
+                    'label' => 'Tags',
+                    'rules' => ['nullable'],
+                    'type' => 'array',
                 ],
             ],
         ],
@@ -40,6 +53,15 @@ class Core06BulkResource extends Resource
                     'type' => 'string',
                 ],
             ],
+        ],
+        'invalidDownload' => [
+            'ability' => 'view',
+            'download' => [
+                'content_type' => 'text/plain',
+                'filename' => 'invalid.txt',
+            ],
+            'label' => 'Invalid download',
+            'method' => 'collection',
         ],
         'smallDownload' => [
             'ability' => 'view',
@@ -84,10 +106,20 @@ class Core06BulkResource extends Resource
         ];
     }
 
+    public function indexQuery(Builder $query, ?Table $table = null): Builder
+    {
+        return $table?->parent ? $query->whereKey($table->parent->getKey()) : $query;
+    }
+
+    public function invalidDownload(): string
+    {
+        return 'must not run';
+    }
+
     public function smallDownload(array $ids): StreamedResponse
     {
         return response()->streamDownload(
-            static fn () => print implode(',', $ids),
+            static fn () => print implode("\n", $ids)."\n",
             'small.txt',
         );
     }
@@ -148,6 +180,34 @@ test('download actions redirect Livewire to a signed HTTP stream and clear selec
         ->toBe([20, 20, 20, 14]);
 });
 
+test('large download scopes de-duplicate in SQL before bounded streaming', function () {
+    config()->set('aura.security.bulk_downloads.cache_store', 'file');
+    config()->set('aura.security.bulk_downloads.chunk_size', 25);
+    $resources = collect(range(1, 60))->map(fn (int $number) => Core06BulkResource::create([
+        'title' => 'Duplicate export '.$number,
+    ]));
+    $queryHash = DynamicFunctions::add(function (): Builder {
+        $duplicates = DB::query()
+            ->selectRaw('1 as duplicate_marker')
+            ->unionAll(DB::query()->selectRaw('2 as duplicate_marker'));
+
+        return Core06BulkResource::query()->crossJoinSub($duplicates, 'core06_download_duplicates');
+    });
+    $component = livewire(Table::class, ['query' => $queryHash, 'model' => new Core06BulkResource])
+        ->call('selectAllRows')
+        ->call('bulkCollectionAction', 'downloadCsv', ['prefix' => 'deduplicated'])
+        ->assertRedirect();
+
+    $lines = collect(explode("\n", trim(
+        $this->get($component->effects['redirect'])->assertSuccessful()->streamedContent()
+    )));
+
+    expect($lines)->toHaveCount($resources->count())
+        ->and($lines->unique())->toHaveCount($resources->count())
+        ->and(collect(Core06BulkResource::$downloadChunks)->map(fn (array $chunk): int => count($chunk))->all())
+        ->toBe([25, 25, 10]);
+});
+
 test('bulk download URLs reject tampering and expiration', function () {
     config()->set('aura.security.bulk_downloads.cache_store', 'file');
     $resource = Core06BulkResource::create(['title' => 'Export match']);
@@ -195,6 +255,17 @@ test('bulk downloads reject forged parameters, empty scopes, and denied rows bef
     expect(Core06BulkResource::$downloadChunks)->toBe([]);
 });
 
+test('bulk downloads reject an invalid handler signature before issuing a URL', function () {
+    config()->set('aura.security.bulk_downloads.cache_store', 'file');
+    $resource = Core06BulkResource::create(['title' => 'Invalid handler']);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core06BulkResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('bulkCollectionAction', 'invalidDownload')
+        ->assertStatus(422)
+        ->assertNoRedirect();
+});
+
 test('a different user cannot consume a bulk download URL owned by its issuer', function () {
     config()->set('aura.security.bulk_downloads.cache_store', 'file');
     $owner = auth()->user();
@@ -213,13 +284,50 @@ test('a different user cannot consume a bulk download URL owned by its issuer', 
     $this->get($url)->assertUnprocessable();
 });
 
+test('a bulk download URL remains bound to the issuing team', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team binding is only applicable when teams are enabled.');
+    }
+
+    config()->set('aura.security.bulk_downloads.cache_store', 'file');
+    $owner = auth()->user();
+    $issuingTeamId = $owner->current_team_id;
+    $resource = Core06BulkResource::create(['title' => 'Team-bound export']);
+    $component = livewire(Table::class, ['query' => null, 'model' => new Core06BulkResource])
+        ->set('selected', [$resource->getKey()])
+        ->call('bulkCollectionAction', 'downloadCsv', ['prefix' => 'team'])
+        ->assertRedirect();
+    $url = $component->effects['redirect'];
+    $otherTeam = Team::factory()->create();
+
+    $owner->forceFill(['current_team_id' => $otherTeam->getKey()])->save();
+    $this->get($url)->assertUnprocessable();
+
+    $owner->forceFill(['current_team_id' => $issuingTeamId])->save();
+    $this->get($url)->assertSuccessful()->streamedContent();
+});
+
 test('small Livewire downloads clear selection before returning the buffered response', function () {
     $resource = Core06BulkResource::create(['title' => 'Small export']);
 
     livewire(Table::class, ['query' => null, 'model' => new Core06BulkResource])
         ->set('selected', [$resource->getKey()])
         ->call('bulkCollectionAction', 'smallDownload')
-        ->assertFileDownloaded('small.txt', (string) $resource->getKey())
+        ->assertFileDownloaded('small.txt', $resource->getKey()."\n")
+        ->assertSet('selected', [])
+        ->assertSet('selectAll', false);
+});
+
+test('small Livewire downloads concatenate every bounded handler chunk', function () {
+    config()->set('aura.security.table_mutations.chunk_size', 100);
+    $resources = collect(range(1, 125))->map(fn (int $number) => Core06BulkResource::create([
+        'title' => 'Small export '.$number,
+    ]));
+
+    livewire(Table::class, ['query' => null, 'model' => new Core06BulkResource])
+        ->set('selected', $resources->pluck('id')->all())
+        ->call('bulkCollectionAction', 'smallDownload')
+        ->assertFileDownloaded('small.txt', $resources->pluck('id')->reverse()->implode("\n")."\n")
         ->assertSet('selected', [])
         ->assertSet('selectAll', false);
 });
@@ -229,7 +337,7 @@ test('declared bulk parameters are validated, typed, and passed to a record acti
 
     livewire(Table::class, ['query' => null, 'model' => new Core06BulkResource])
         ->set('selected', [$resource->getKey()])
-        ->call('bulkAction', 'assignOwner', ['owner_id' => '42'])
+        ->call('bulkAction', 'assignOwner', ['owner_id' => '42', 'tags' => ['priority']])
         ->assertHasNoErrors();
 
     expect($resource->fresh()->content)->toBe('int:42');
@@ -241,7 +349,10 @@ test('the bulk action menu renders declared parameter inputs without public comp
     livewire(Table::class, ['query' => null, 'model' => new Core06BulkResource])
         ->assertSee('Assign owner')
         ->assertSeeHtml('x-model="parameters.owner_id"')
-        ->assertSeeHtml('type="number"');
+        ->assertSeeHtml('value="42"')
+        ->assertDontSeeHtml('value="Owner forty-two"')
+        ->assertSeeHtml('x-model="arrayInputs.tags"')
+        ->assertSeeHtml('<textarea');
 });
 
 test('the selected rows query is the exact filtered and searched display query', function () {
@@ -253,6 +364,27 @@ test('the selected rows query is the exact filtered and searched display query',
 
     expect($component->instance()->getSelectedRowsQueryProperty()->pluck('id')->all())
         ->toBe([$matching->getKey()]);
+});
+
+test('select all stays inside the exact parent scope', function () {
+    config()->set('aura.security.bulk_downloads.cache_store', 'file');
+    $parent = Core06BulkResource::create(['title' => 'Parent scope']);
+    $outside = Core06BulkResource::create(['title' => 'Outside parent scope']);
+    $component = livewire(Table::class, [
+        'model' => new Core06BulkResource,
+        'parent' => $parent,
+        'query' => null,
+    ])
+        ->call('selectAllRows')
+        ->call('bulkCollectionAction', 'downloadCsv', ['prefix' => 'parent'])
+        ->assertRedirect();
+
+    $content = $this->get($component->effects['redirect'])
+        ->assertSuccessful()
+        ->streamedContent();
+
+    expect($content)->toContain('parent,'.$parent->getKey())
+        ->not->toContain('parent,'.$outside->getKey());
 });
 
 test('bulk actions reject forged and invalid parameters before invoking a handler', function (array $parameters) {
@@ -269,6 +401,7 @@ test('bulk actions reject forged and invalid parameters before invoking a handle
     expect($resource->fresh()->content)->toBe('unchanged');
 })->with([
     'undeclared key' => [['owner_id' => 42, 'is_admin' => true]],
+    'value outside declared options' => [['owner_id' => 8]],
     'wrong type' => [['owner_id' => 'not-an-integer']],
     'missing required value' => [[]],
 ]);

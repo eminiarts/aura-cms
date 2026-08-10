@@ -38,10 +38,25 @@
                             $method = is_array($data) && ($data['method'] ?? null) === 'collection'
                                 ? 'bulkCollectionAction'
                                 : 'bulkAction';
+                            $initialParameters = [];
+                            $arrayInputs = [];
+
+                            foreach ($parameters as $parameter => $declaration) {
+                                if (($declaration['type'] ?? null) === 'boolean') {
+                                    $initialParameters[$parameter] = false;
+                                } elseif (($declaration['type'] ?? null) === 'array') {
+                                    $initialParameters[$parameter] = [];
+
+                                    if (! isset($declaration['options'])) {
+                                        $arrayInputs[$parameter] = '';
+                                    }
+                                }
+                            }
                         @endphp
 
                         @if($parameters)
-                            <div class="px-3 py-2 space-y-2" x-data="{ parameters: {} }">
+                            <div class="px-3 py-2 space-y-2"
+                                x-data="{ parameters: @js($initialParameters), arrayInputs: @js($arrayInputs) }">
                                 <p class="text-sm font-medium text-gray-700 dark:text-gray-200">
                                     {{ $data['label'] }}
                                 </p>
@@ -55,14 +70,21 @@
                                                 class="rounded border-gray-300 text-primary-600 focus:ring-primary-500">
                                         @elseif(isset($declaration['options']) && is_array($declaration['options']))
                                             <select x-model="parameters.{{ $parameter }}"
+                                                @if(($declaration['type'] ?? null) === 'array') multiple @endif
                                                 class="block w-full rounded-md border-0 py-1.5 text-sm ring-1 ring-gray-950/10 focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:ring-white/10">
-                                                <option value="">{{ __('Select an option') }}</option>
+                                                @if(($declaration['type'] ?? null) !== 'array')
+                                                    <option value="">{{ __('Select an option') }}</option>
+                                                @endif
                                                 @foreach($declaration['options'] as $value => $label)
-                                                    <option value="{{ is_int($value) ? $label : $value }}">
+                                                    <option value="{{ $value }}">
                                                         {{ $label }}
                                                     </option>
                                                 @endforeach
                                             </select>
+                                        @elseif(($declaration['type'] ?? null) === 'array')
+                                            <textarea x-model="arrayInputs.{{ $parameter }}" rows="3"
+                                                placeholder="{{ __('One value per line or comma-separated') }}"
+                                                class="block w-full rounded-md border-0 py-1.5 text-sm ring-1 ring-gray-950/10 focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:ring-white/10"></textarea>
                                         @else
                                             <input
                                                 type="{{ in_array($declaration['type'] ?? null, ['integer', 'float'], true) ? 'number' : 'text' }}"
@@ -74,7 +96,12 @@
                                 @endforeach
 
                                 <button type="button"
-                                    x-on:click="$wire.{{ $method }}(@js($action), parameters)"
+                                    x-on:click="
+                                        @foreach($arrayInputs as $parameter => $value)
+                                            parameters.{{ $parameter }} = arrayInputs.{{ $parameter }}.split(/[\n,]+/).map(value => value.trim()).filter(Boolean);
+                                        @endforeach
+                                        $wire.{{ $method }}(@js($action), parameters)
+                                    "
                                     class="inline-flex items-center px-2.5 py-1.5 text-sm font-medium text-white rounded-md bg-primary-600 hover:bg-primary-500">
                                     {{ __('Apply') }}
                                 </button>

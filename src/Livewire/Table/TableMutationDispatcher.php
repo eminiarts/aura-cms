@@ -326,15 +326,15 @@ final class TableMutationDispatcher
             $ids = $records->map(fn (Model $record): mixed => $record->getKey())->all();
 
             if ($descriptor['mode'] === self::BULK_MODE_COLLECTION) {
-                $result = null;
+                $results = [];
 
                 foreach (array_chunk($ids, $this->recordChunkSize()) as $idChunk) {
-                    $result = $hasParameters
+                    $results[] = $hasParameters
                         ? $receiver->{$action}($idChunk, $validatedParameters)
                         : $receiver->{$action}($idChunk);
                 }
 
-                return $result;
+                return $this->combineCollectionResults($results);
             }
 
             $result = null;
@@ -458,11 +458,27 @@ final class TableMutationDispatcher
             $selectAllExclusions,
         );
 
-        $this->iterateDownloadSelection(
+        $firstId = $this->iterateDownloadSelection(
             $selection,
             $modelDescriptor,
             $descriptor['ability'],
             static function (array $ids): void {},
+        );
+        $receiver = $this->authorizedDownloadRecords(
+            [$firstId],
+            $modelDescriptor,
+            $descriptor['ability'],
+        )->first();
+
+        if (! $receiver instanceof Model || ! $receiver instanceof TableResource) {
+            abort(422, 'Bulk downloads require an Aura table resource.');
+        }
+
+        $this->mutationMethod(
+            $receiver,
+            $action,
+            self::BULK_MODE_COLLECTION,
+            array_key_exists('parameters', $definition),
         );
 
         return [
@@ -1438,6 +1454,48 @@ final class TableMutationDispatcher
             ->values();
     }
 
+    /**
+     * @param  list<mixed>  $results
+     */
+    private function combineCollectionResults(array $results): mixed
+    {
+        $streamedResponses = array_values(array_filter(
+            $results,
+            static fn (mixed $result): bool => $result instanceof StreamedResponse,
+        ));
+
+        if ($streamedResponses === []) {
+            return $results === [] ? null : $results[array_key_last($results)];
+        }
+
+        if (count($streamedResponses) !== count($results)) {
+            abort(422, 'Bulk collection handlers must return a streamed response for every chunk.');
+        }
+
+        /** @var StreamedResponse $firstResponse */
+        $firstResponse = $streamedResponses[0];
+
+        foreach ($streamedResponses as $response) {
+            if (
+                $response->getStatusCode() !== $firstResponse->getStatusCode()
+                || $response->headers->get('Content-Disposition') !== $firstResponse->headers->get('Content-Disposition')
+                || $response->headers->get('Content-Type') !== $firstResponse->headers->get('Content-Type')
+            ) {
+                abort(422, 'Bulk collection download chunks must use consistent response metadata.');
+            }
+        }
+
+        return new StreamedResponse(
+            static function () use ($streamedResponses): void {
+                foreach ($streamedResponses as $response) {
+                    $response->sendContent();
+                }
+            },
+            $firstResponse->getStatusCode(),
+            $firstResponse->headers->all(),
+        );
+    }
+
     private function containsCallbackSqlExpression(mixed $value): bool
     {
         if ($value instanceof ExpressionContract) {
@@ -1596,8 +1654,13 @@ final class TableMutationDispatcher
         $query = $effectiveQuery->getQuery();
         $this->applyVerifiedBeforeQueryCallbacks($query);
         $modelDescriptor->assertMatches($effectiveQuery);
+        $this->normalizeMutationConstraintList($query->getBindings(), $query);
+        $query = $model->newQuery()
+            ->getQuery()
+            ->fromSub($query, '__aura_download_scope')
+            ->select($keyAlias)
+            ->distinct();
         $bindings = $query->getConnection()->prepareBindings($query->getBindings());
-        $this->normalizeMutationConstraintList($bindings, $query);
 
         return [
             'bindings' => array_values($bindings),
@@ -1690,7 +1753,8 @@ final class TableMutationDispatcher
             abort(422, 'The stored bulk download selection is invalid.');
         }
 
-        $seen = [];
+        $matchedExpectedKeys = [];
+        $matchedExcludedKeys = [];
         $chunk = [];
         $firstId = null;
         $candidateCount = 0;
@@ -1713,14 +1777,14 @@ final class TableMutationDispatcher
                 abort(422, 'The bulk download query returned an invalid record.');
             }
 
-            if (array_key_exists($identity, $seen)) {
+            if (array_key_exists($identity, $excludedKeys)) {
+                $matchedExcludedKeys[$identity] = true;
+
                 continue;
             }
 
-            $seen[$identity] = $id;
-
-            if (array_key_exists($identity, $excludedKeys)) {
-                continue;
+            if ($expectedKeys !== null) {
+                $matchedExpectedKeys[$identity] = true;
             }
 
             $candidateCount++;
@@ -1746,13 +1810,13 @@ final class TableMutationDispatcher
             $consume($chunk);
         }
 
-        if (array_diff_key($excludedKeys, $seen) !== []) {
+        if (array_diff_key($excludedKeys, $matchedExcludedKeys) !== []) {
             throw ValidationException::withMessages([
                 'selected' => 'The select-all exclusions are invalid.',
             ]);
         }
 
-        if ($expectedKeys !== null && array_diff_key($expectedKeys, $seen) !== []) {
+        if ($expectedKeys !== null && array_diff_key($expectedKeys, $matchedExpectedKeys) !== []) {
             throw ValidationException::withMessages([
                 'selected' => 'The selected records are no longer valid.',
             ]);

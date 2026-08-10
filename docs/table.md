@@ -911,7 +911,9 @@ Bulk parameters are passed directly with the action request; Aura does not keep 
 Livewire component state. Every parameter must be declared by slug with a `label`, one supported
 `type` (`string`, `integer`, `float`, `boolean`, or `array`), and a Laravel `rules` array. An
 optional `options` array renders a select. Undeclared values are rejected, validation runs before
-authorization or handlers, and scalar values are cast to the declared type.
+authorization or handlers, option values must match the declared array keys, and scalar values are
+cast to the declared type. Array parameters render a multi-select when `options` are declared; without
+options, the built-in form accepts comma- or newline-separated values.
 
 Collection actions marked with `download` do not send their content through Livewire. The
 Livewire action validates and authorizes the exact current selection, clears the selection UI, and
@@ -923,7 +925,10 @@ single application host.
 
 Small collection handlers may still return a `StreamedResponse` directly. Livewire supports that
 response but buffers the entire download before sending it to the browser; Aura now clears the
-selection before returning it. Prefer the declared signed-download shape for large exports.
+selection before returning it. When the bounded selection spans multiple handler chunks, Aura
+concatenates streamed-response bodies with consistent filename, status, and content type. Each
+handler chunk remains responsible for emitting its own record or line delimiter. Prefer the declared
+signed-download shape for large exports.
 
 **Bulk Action Methods in Table Component:**
 

@@ -75,10 +75,47 @@ final class BulkActionParameters
         $validated = Validator::make($parameters, $rules)->validate();
 
         foreach ($validated as $name => $value) {
+            $this->assertAllowedOption($name, $declarations[$name], $value);
             $validated[$name] = $this->cast($declarations[$name]['type'], $value);
         }
 
         return $validated;
+    }
+
+    /**
+     * @param  array{label: string, options?: array<mixed>, rules: array<int, mixed>, type: string}  $declaration
+     */
+    private function assertAllowedOption(string $name, array $declaration, mixed $value): void
+    {
+        if (! array_key_exists('options', $declaration)) {
+            return;
+        }
+
+        $allowed = array_map(
+            static fn (int|string $option): string => (string) $option,
+            array_keys($declaration['options']),
+        );
+        $values = $declaration['type'] === 'array' ? $value : [$value];
+
+        if (! is_array($values)) {
+            throw ValidationException::withMessages([
+                $name => 'The selected bulk action option is invalid.',
+            ]);
+        }
+
+        foreach ($values as $selected) {
+            if (! is_int($selected) && ! is_string($selected)) {
+                throw ValidationException::withMessages([
+                    $name => 'The selected bulk action option is invalid.',
+                ]);
+            }
+
+            if (! in_array((string) $selected, $allowed, true)) {
+                throw ValidationException::withMessages([
+                    $name => 'The selected bulk action option is invalid.',
+                ]);
+            }
+        }
     }
 
     private function cast(string $type, mixed $value): mixed
