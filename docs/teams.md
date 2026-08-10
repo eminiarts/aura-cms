@@ -195,9 +195,9 @@ uses `createForOwnerForSystem($ownerId, $attributes)` or
 `$resource->assignOwnerForSystem($ownerId, $attributes)`.
 
 Global-write authorization is call-local: no token, flag, or reusable capability
-is stored on the Resource or in static process state. After model callbacks,
-Aura revalidates the exact Resource, table, connection, physical writer, global
-team value, owner, and authenticated actor immediately before persistence. The
+is stored on the Resource or in static process state. After model and Connection
+callbacks, Aura revalidates the exact Resource, table, connection, physical
+writer, team value, owner, and authenticated actor immediately before persistence. The
 write then follows Laravel's normal Connection, query grammar, binding,
 processor, transaction, and exception paths without redispatching model events.
 Event handlers, nested field saves, and re-entrant saves do not inherit the outer
@@ -210,8 +210,8 @@ application's database credentials acts with those database credentials and is
 outside Aura's Resource tenancy checks. Enforce restrictions on such code with
 database users, grants, row-level security, or equivalent database controls.
 
-Tenant and owner contexts are connection-qualified. An authenticated actor on
-connection A cannot authorize a same-id read or write on connection B. For
+Tenant contexts and every call-local owner intent are connection-qualified. An
+authenticated actor on connection A cannot authorize a same-id read or write on connection B. For
 intentional cross-connection system work, pass the target `Connection` to the
 named static system API; `TeamScope::forTeam()` likewise accepts the connection
 as its third argument. Ordinary Livewire creates fail authorization when the

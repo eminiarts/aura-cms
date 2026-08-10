@@ -16,8 +16,14 @@ trait InitialPostFields
      * Deliberately not a trait boot method — see SaveFieldAttributes for why
      * the three save steps must not be separate model-event listeners.
      */
-    protected static function applyInitialPostFields($post, bool $globalWrite = false): void
-    {
+    protected static function applyInitialPostFields(
+        $post,
+        bool $globalWrite = false,
+        bool $trustedOwnerIntent = false,
+        int|string|null $trustedOwnerId = null,
+        bool $trustedTeamIntent = false,
+        int|string|null $trustedTeamId = null,
+    ): void {
         if (! $post->title && $post::usesTitle()) {
             $post->title = '';
         }
@@ -29,8 +35,8 @@ trait InitialPostFields
         $attributes = $post->getAttributes();
         $user = auth()->user();
         $connection = $post->getConnection();
-        $hasTeamContext = TeamScope::hasContextForConnection($connection);
-        $hasOwnerContext = $post::hasTrustedOwnerContextForConnection($connection);
+        $hasTeamContext = $trustedTeamIntent || TeamScope::hasContextForConnection($connection);
+        $hasOwnerContext = $trustedOwnerIntent;
         $actorUsesConnection = $user instanceof User
             && User::connectionCacheIdentity($user->getConnection())
                 === User::connectionCacheIdentity($connection);
@@ -75,7 +81,14 @@ trait InitialPostFields
             $post->team_id = $actorTeamId;
         }
 
-        static::authorizeInitialPostFieldPersistence($post, $globalWrite);
+        static::authorizeInitialPostFieldPersistence(
+            $post,
+            $globalWrite,
+            $trustedOwnerIntent,
+            $trustedOwnerId,
+            $trustedTeamIntent,
+            $trustedTeamId,
+        );
 
         if (! $post->type && ! $post::usesCustomTable()) {
             $post->type = $post::$type;
@@ -86,8 +99,14 @@ trait InitialPostFields
         }
     }
 
-    protected static function authorizeInitialPostFieldPersistence($post, bool $globalWrite = false): void
-    {
+    protected static function authorizeInitialPostFieldPersistence(
+        $post,
+        bool $globalWrite = false,
+        bool $trustedOwnerIntent = false,
+        int|string|null $trustedOwnerId = null,
+        bool $trustedTeamIntent = false,
+        int|string|null $trustedTeamId = null,
+    ): void {
         if ($post instanceof User || $post instanceof Team) {
             return;
         }
@@ -95,8 +114,8 @@ trait InitialPostFields
         $attributes = $post->getAttributes();
         $user = auth()->user();
         $connection = $post->getConnection();
-        $hasTeamContext = TeamScope::hasContextForConnection($connection);
-        $hasOwnerContext = $post::hasTrustedOwnerContextForConnection($connection);
+        $hasTeamContext = $trustedTeamIntent || TeamScope::hasContextForConnection($connection);
+        $hasOwnerContext = $trustedOwnerIntent;
         $actorUsesConnection = $user instanceof User
             && User::connectionCacheIdentity($user->getConnection())
                 === User::connectionCacheIdentity($connection);
@@ -132,9 +151,14 @@ trait InitialPostFields
         if ($hasTenantAttribute
             && (! $post->exists || $post->isDirty('team_id'))
             && $attributes['team_id'] !== null) {
+            if ($trustedTeamIntent && (string) $trustedTeamId !== (string) $attributes['team_id']) {
+                throw new \LogicException('The resource team no longer matches the named system operation.');
+            }
+
             $authorizedTeamId = TeamScope::currentContextTeamId($connection) ?? $actorTeamId;
 
-            if ($authorizedTeamId === null || (string) $authorizedTeamId !== (string) $attributes['team_id']) {
+            if (! $trustedTeamIntent
+                && ($authorizedTeamId === null || (string) $authorizedTeamId !== (string) $attributes['team_id'])) {
                 throw new \LogicException('Use createForTeamForSystem() or moveToTeamForSystem() for a foreign team assignment.');
             }
         }
@@ -142,8 +166,17 @@ trait InitialPostFields
         if ($hasOwnerAttribute
             && $attributes['user_id'] !== null
             && (! $post->exists || $post->isDirty('user_id'))
+            && $trustedOwnerIntent
+            && (string) $trustedOwnerId !== (string) $attributes['user_id']) {
+            throw new \LogicException('The resource owner no longer matches the named system operation.');
+        }
+
+        if ($hasOwnerAttribute
+            && $attributes['user_id'] !== null
+            && (! $post->exists || $post->isDirty('user_id'))
+            && ! $trustedOwnerIntent
             && ! $post::isOwnerWriteAuthorized($attributes['user_id'], $connection)) {
-            throw new \LogicException('A resource owner must match the authenticated actor or an explicit trusted owner context.');
+            throw new \LogicException('A resource owner must match the authenticated actor or an explicit named system operation.');
         }
     }
 }

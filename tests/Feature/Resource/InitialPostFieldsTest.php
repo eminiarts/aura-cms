@@ -16,6 +16,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\SQLiteConnection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class ExplicitNullSharedPost extends Resource
 {
@@ -404,10 +405,12 @@ function core13InstallConnectionProbe(): Core13ConnectionProbe
     return $connection;
 }
 
-it('keeps no reflectable static global write intent or capability state', function (): void {
+it('keeps no reflectable static write intent or capability state', function (): void {
     $properties = collect((new ReflectionClass(Resource::class))->getProperties(ReflectionProperty::IS_STATIC))
         ->map(fn (ReflectionProperty $property): string => $property->getName())
-        ->filter(fn (string $property): bool => str_contains(strtolower($property), 'globalwrite'))
+        ->filter(function (string $property): bool {
+            return Str::contains(strtolower($property), ['writeintent', 'capability', 'trustedowner']);
+        })
         ->values()
         ->all();
 
@@ -919,6 +922,70 @@ it('does not expose Aura global-write authority to connection callbacks', functi
     expect($global->name)->toBe('Connection callback authority probe')
         ->and($observedCapabilities)->not->toBeEmpty()
         ->and(array_unique($observedCapabilities))->toBe([false]);
+});
+
+it('fails closed when a connection callback swaps the writer immediately before persistence', function (): void {
+    $connection = DB::connection();
+    $originalWriter = $connection->getPdo();
+    $substitutedWriter = core13PhysicalWriter();
+    $armed = true;
+
+    $connection->beforeExecuting(function () use (&$armed, $connection, $substitutedWriter): void {
+        if ($armed) {
+            $armed = false;
+            $connection->setPdo($substitutedWriter);
+        }
+    });
+
+    try {
+        expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+            'name' => 'Connection callback redirected write',
+        ], $connection))->toThrow(LogicException::class, 'physical database writer');
+    } finally {
+        $connection->setPdo($originalWriter);
+    }
+
+    expect(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
+        ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
+});
+
+it('does not leak a trusted owner intent into a nested ordinary callback write', function (): void {
+    $existingId = DB::table('explicit_null_shared_custom_resources')->insertGetId([
+        'name' => 'Nested owner target',
+        'team_id' => 1,
+        'user_id' => null,
+    ]);
+    $nestedWriteRejected = false;
+    $armed = true;
+
+    PhysicalWriterGuardedGlobalResource::$savingAttack = function () use (
+        &$armed,
+        &$nestedWriteRejected,
+        $existingId,
+    ): void {
+        if (! $armed) {
+            return;
+        }
+
+        $armed = false;
+        $nested = PhysicalWriterGuardedGlobalResource::withoutGlobalScopes()->findOrFail($existingId);
+        $nested->forceFill(['user_id' => 999999]);
+
+        try {
+            $nested->save();
+        } catch (LogicException $exception) {
+            $nestedWriteRejected = str_contains($exception->getMessage(), 'owner');
+        }
+    };
+
+    $outer = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Outer trusted owner write',
+        'user_id' => 999999,
+    ]);
+
+    expect($nestedWriteRejected)->toBeTrue()
+        ->and($outer->user_id)->toBe(999999)
+        ->and(DB::table('explicit_null_shared_custom_resources')->where('id', $existingId)->value('user_id'))->toBeNull();
 });
 
 it('fails closed before the outer global insert when a saving listener swaps the physical writer', function () {

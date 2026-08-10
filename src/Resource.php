@@ -104,9 +104,6 @@ class Resource extends Model implements DefinesFields
 
     protected $with = [];
 
-    /** @var list<array{connection: string, owner_id: int|string|null}> */
-    private static array $trustedOwnerContexts = [];
-
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
@@ -192,11 +189,11 @@ class Resource extends Model implements DefinesFields
     public function assignOwnerForSystem(int|string $ownerId, array $attributes = []): bool
     {
         $attributes['user_id'] = $ownerId;
+        $this->fill($attributes);
 
-        return static::withinTrustedOwnerFromAttributes(
-            $attributes,
-            fn (): bool => $this->update($attributes),
-            $this->getConnection(),
+        return $this->saveSystemResource(
+            trustedOwnerIntent: true,
+            trustedOwnerId: $ownerId,
         );
     }
 
@@ -240,14 +237,10 @@ class Resource extends Model implements DefinesFields
     ): static {
         $attributes['user_id'] = $ownerId;
         $resource = static::resourceModelOnConnection($connection);
+        $instance = static::ensureStaticResource($resource->newInstance($attributes));
+        $instance->saveSystemResource(trustedOwnerIntent: true, trustedOwnerId: $ownerId);
 
-        return static::withinTrustedOwnerFromAttributes(
-            $attributes,
-            fn (): static => static::ensureStaticResource(
-                $resource->newQueryWithoutScopes()->create($attributes),
-            ),
-            $resource->getConnection(),
-        );
+        return $instance;
     }
 
     /**
@@ -264,18 +257,16 @@ class Resource extends Model implements DefinesFields
 
         $attributes['team_id'] = $teamId;
         $resource = static::resourceModelOnConnection($connection);
-
-        return static::withinTrustedOwnerFromAttributes(
-            $attributes,
-            fn (): static => TeamScope::forTeam(
-                $teamId,
-                fn (): static => static::ensureStaticResource(
-                    $resource->newQueryWithoutScopes()->create($attributes),
-                ),
-                $resource->getConnection(),
-            ),
-            $resource->getConnection(),
+        $instance = static::ensureStaticResource($resource->newInstance($attributes));
+        $hasOwnerIntent = array_key_exists('user_id', $attributes);
+        $instance->saveSystemResource(
+            trustedOwnerIntent: $hasOwnerIntent,
+            trustedOwnerId: $attributes['user_id'] ?? null,
+            trustedTeamIntent: true,
+            trustedTeamId: $teamId,
         );
+
+        return $instance;
     }
 
     /**
@@ -319,10 +310,10 @@ class Resource extends Model implements DefinesFields
         static::ensureGlobalWriteIsSupported();
         $resource = static::resourceModelOnConnection($connection);
 
-        return static::withinTrustedOwnerFromAttributes(
+        return static::createGlobalRecord(
             $attributes,
-            fn (): static => static::createGlobalRecord($attributes, $resource->getConnection()),
             $resource->getConnection(),
+            trustedOwnerIntent: array_key_exists('user_id', $attributes),
         );
     }
 
@@ -341,11 +332,7 @@ class Resource extends Model implements DefinesFields
 
         $resource = static::resourceModelOnConnection($connection);
 
-        return static::withinTrustedOwnerFromAttributes(
-            array_merge($attributes, $values),
-            fn (): static => static::firstOrCreateGlobalRecord($attributes, $values, $resource),
-            $resource->getConnection(),
-        );
+        return static::firstOrCreateGlobalRecord($attributes, $values, $resource);
     }
 
     public function getBulkActions()
@@ -546,15 +533,14 @@ class Resource extends Model implements DefinesFields
     {
         static::ensureTeamWriteIsSupported();
 
-        return static::withinTrustedOwnerFromAttributes(
-            $attributes,
-            fn (): bool => TeamScope::forTeam($teamId, function () use ($attributes, $teamId): bool {
-                $this->fill($attributes);
-                $this->setAttribute('team_id', $teamId);
+        $this->fill($attributes);
+        $this->setAttribute('team_id', $teamId);
 
-                return $this->save();
-            }, $this->getConnection()),
-            $this->getConnection(),
+        return $this->saveSystemResource(
+            trustedOwnerIntent: array_key_exists('user_id', $attributes),
+            trustedOwnerId: $attributes['user_id'] ?? null,
+            trustedTeamIntent: true,
+            trustedTeamId: $teamId,
         );
     }
 
@@ -709,11 +695,7 @@ class Resource extends Model implements DefinesFields
 
         $resource = static::resourceModelOnConnection($connection);
 
-        return static::withinTrustedOwnerFromAttributes(
-            array_merge($attributes, $values),
-            fn (): static => static::updateOrCreateGlobalRecord($attributes, $values, $resource),
-            $resource->getConnection(),
-        );
+        return static::updateOrCreateGlobalRecord($attributes, $values, $resource);
     }
 
     /**
@@ -768,12 +750,18 @@ class Resource extends Model implements DefinesFields
         array $attributes,
         ?Connection $connection = null,
         ?User $authenticatedUser = null,
+        bool $trustedOwnerIntent = false,
     ): static {
         static::ensureGlobalWriteIsSupported();
 
         $resource = static::resourceModelOnConnection($connection);
 
-        return static::createGlobalResourceInstance($attributes, $resource, $authenticatedUser);
+        return static::createGlobalResourceInstance(
+            $attributes,
+            $resource,
+            $authenticatedUser,
+            $trustedOwnerIntent,
+        );
     }
 
     /**
@@ -783,12 +771,13 @@ class Resource extends Model implements DefinesFields
         array $attributes,
         Resource $resource,
         ?User $authenticatedUser = null,
+        bool $trustedOwnerIntent = false,
     ): static {
         $attributes['team_id'] = null;
         $instance = static::ensureStaticResource($resource->newInstance($attributes));
 
-        return tap($instance, function (Resource $instance) use ($authenticatedUser): void {
-            $instance->saveGlobalResource($authenticatedUser);
+        return tap($instance, function (Resource $instance) use ($authenticatedUser, $trustedOwnerIntent): void {
+            $instance->saveGlobalResource($authenticatedUser, trustedOwnerIntent: $trustedOwnerIntent);
         });
     }
 
@@ -869,6 +858,7 @@ class Resource extends Model implements DefinesFields
         $create = fn (): static => static::createGlobalResourceInstance(
             array_merge($attributes, $values),
             $resource,
+            trustedOwnerIntent: array_key_exists('user_id', array_merge($attributes, $values)),
         );
 
         try {
@@ -884,29 +874,10 @@ class Resource extends Model implements DefinesFields
         }
     }
 
-    protected static function hasTrustedOwnerContextForConnection(Connection $connection): bool
-    {
-        if (self::$trustedOwnerContexts === []) {
-            return false;
-        }
-
-        $context = self::$trustedOwnerContexts[array_key_last(self::$trustedOwnerContexts)];
-
-        return $context['connection'] === User::connectionCacheIdentity($connection);
-    }
-
     protected static function isOwnerWriteAuthorized(
         int|string $ownerId,
         Connection $connection,
     ): bool {
-        if (self::$trustedOwnerContexts !== []) {
-            $context = self::$trustedOwnerContexts[array_key_last(self::$trustedOwnerContexts)];
-
-            return $context['connection'] === User::connectionCacheIdentity($connection)
-                && $context['owner_id'] !== null
-                && (string) $context['owner_id'] === (string) $ownerId;
-        }
-
         $actor = auth()->user();
 
         return $actor instanceof User
@@ -955,58 +926,48 @@ class Resource extends Model implements DefinesFields
 
         if (! $instance->wasRecentlyCreated) {
             $instance->fill($values);
-            $instance->saveGlobalResource();
+            $merged = array_merge($attributes, $values);
+            $instance->saveGlobalResource(
+                trustedOwnerIntent: array_key_exists('user_id', $merged),
+            );
         }
 
         return $instance;
     }
 
-    /**
-     * @template TValue
-     *
-     * @param  array<string, mixed>  $attributes
-     * @param  callable(): TValue  $callback
-     * @return TValue
-     */
-    final protected static function withinTrustedOwnerFromAttributes(
-        array $attributes,
-        callable $callback,
-        ?Connection $connection = null,
-    ): mixed {
-        if (! array_key_exists('user_id', $attributes)) {
-            return $callback();
-        }
+    private function authorizeOrdinaryPersistence(): bool
+    {
+        static::authorizeInitialPostFieldPersistence($this);
 
-        $connection ??= static::resourceModelOnConnection()->getConnection();
-        self::$trustedOwnerContexts[] = [
-            'connection' => User::connectionCacheIdentity($connection),
-            'owner_id' => $attributes['user_id'],
-        ];
-
-        try {
-            return $callback();
-        } finally {
-            array_pop(self::$trustedOwnerContexts);
-        }
+        return true;
     }
 
-    private function authorizeGlobalPersistence(
+    private function authorizePrivilegedPersistence(
         Connection $connection,
         PDO $writePdo,
         string $table,
+        int|string|null $teamId,
         mixed $ownerId,
         ?User $authenticatedUser,
         bool $authorizeUpdate,
+        bool $globalWrite,
     ): bool {
-        static::ensureGlobalWriteIsSupported();
-
-        if ($this->getConnection() !== $connection
-            || $connection->getRawPdo() !== $writePdo
-            || $this->getTable() !== $table
-            || $this->getAttribute('team_id') !== null
-            || $this->getAttribute('user_id') !== $ownerId) {
-            throw new \LogicException('A global write cannot change its resource, tenancy, owner, or physical database writer.');
+        if ($globalWrite) {
+            static::ensureGlobalWriteIsSupported();
         }
+
+        $assertIntent = function () use ($connection, $writePdo, $table, $teamId, $ownerId): void {
+            if ($this->getConnection() !== $connection
+                || $connection->getRawPdo() !== $writePdo
+                || $this->getTable() !== $table
+                || ($this->getAttribute('team_id') === null) !== ($teamId === null)
+                || (string) $this->getAttribute('team_id') !== (string) $teamId
+                || $this->getAttribute('user_id') !== $ownerId) {
+                throw new \LogicException('A named write cannot change its resource, tenancy, owner, or physical database writer.');
+            }
+        };
+
+        $assertIntent();
 
         if ($authenticatedUser === null) {
             return true;
@@ -1020,22 +981,19 @@ class Resource extends Model implements DefinesFields
             throw new \LogicException('A global write cannot change its authenticated actor or database connection.');
         }
 
-        Gate::forUser($authenticatedUser)->authorize('createGlobal', $this);
+        if ($globalWrite) {
+            Gate::forUser($authenticatedUser)->authorize('createGlobal', $this);
+        }
 
         if ($authorizeUpdate) {
             Gate::forUser($authenticatedUser)->authorize('update', $this);
         }
 
-        if ($ownerId !== null && (string) $ownerId !== (string) $authenticatedUser->getKey()) {
+        if ($globalWrite && $ownerId !== null && (string) $ownerId !== (string) $authenticatedUser->getKey()) {
             throw new \LogicException('A global resource owner must match the authenticated actor.');
         }
 
-        return true;
-    }
-
-    private function authorizeOrdinaryPersistence(): bool
-    {
-        static::authorizeInitialPostFieldPersistence($this);
+        $assertIntent();
 
         return true;
     }
@@ -1061,6 +1019,57 @@ class Resource extends Model implements DefinesFields
         }
     }
 
+    /**
+     * Run through Laravel's normal Connection path while placing the final
+     * authorization after every previously registered connection callback.
+     * The stored hook retains only a weak reference, so it has no reusable
+     * authority after this call returns or throws.
+     *
+     * @template TValue
+     *
+     * @param  callable(): bool  $authorize
+     * @param  callable(): TValue  $persist
+     * @return TValue
+     */
+    private function executeWithFinalConnectionAuthorization(
+        Connection $connection,
+        callable $authorize,
+        callable $persist,
+    ): mixed {
+        $operation = new class($authorize)
+        {
+            private bool $authorizing = false;
+
+            public function __construct(private readonly mixed $authorize) {}
+
+            public function authorize(): void
+            {
+                if ($this->authorizing) {
+                    return;
+                }
+
+                $this->authorizing = true;
+
+                try {
+                    ($this->authorize)();
+                } finally {
+                    $this->authorizing = false;
+                }
+            }
+        };
+        $operationReference = \WeakReference::create($operation);
+
+        $connection->beforeExecuting(static function () use ($operationReference): void {
+            $operationReference->get()?->authorize();
+        });
+
+        try {
+            return $persist();
+        } finally {
+            unset($operation);
+        }
+    }
+
     private function performGlobalInsert(
         Builder $query,
         Connection $connection,
@@ -1068,6 +1077,8 @@ class Resource extends Model implements DefinesFields
         string $table,
         mixed $ownerId,
         ?User $authenticatedUser,
+        int|string|null $teamId = null,
+        bool $globalWrite = true,
     ): bool {
         if ($this->usesUniqueIds()) {
             $this->setUniqueIds();
@@ -1082,24 +1093,32 @@ class Resource extends Model implements DefinesFields
         }
 
         $attributes = $this->getAttributesForInsert();
-        $authorize = fn (): bool => $this->authorizeGlobalPersistence(
+        $authorize = fn (): bool => $this->authorizePrivilegedPersistence(
             $connection,
             $writePdo,
             $table,
+            $teamId,
             $ownerId,
             $authenticatedUser,
             false,
+            $globalWrite,
         );
 
         if ($this->getIncrementing()) {
-            $query->getQuery()->beforeQuery($authorize);
             $this->setAttribute(
                 $this->getKeyName(),
-                $query->insertGetId($attributes, $this->getKeyName()),
+                $this->executeWithFinalConnectionAuthorization(
+                    $connection,
+                    $authorize,
+                    fn (): mixed => $query->insertGetId($attributes, $this->getKeyName()),
+                ),
             );
         } elseif ($attributes !== []) {
-            $query->getQuery()->beforeQuery($authorize);
-            $query->insert($attributes);
+            $this->executeWithFinalConnectionAuthorization(
+                $connection,
+                $authorize,
+                fn (): bool => $query->insert($attributes),
+            );
         } else {
             $authorize();
         }
@@ -1118,7 +1137,9 @@ class Resource extends Model implements DefinesFields
         string $table,
         mixed $ownerId,
         ?User $authenticatedUser,
+        int|string|null $teamId,
         bool $authorizeUpdate,
+        bool $globalWrite,
     ): bool {
         if (parent::fireModelEvent('updating') === false) {
             return false;
@@ -1129,18 +1150,23 @@ class Resource extends Model implements DefinesFields
         }
 
         $dirty = $this->getDirtyForUpdate();
-        $authorize = fn (): bool => $this->authorizeGlobalPersistence(
+        $authorize = fn (): bool => $this->authorizePrivilegedPersistence(
             $connection,
             $writePdo,
             $table,
+            $teamId,
             $ownerId,
             $authenticatedUser,
             $authorizeUpdate,
+            $globalWrite,
         );
 
         if ($dirty !== []) {
-            $query->getQuery()->beforeQuery($authorize);
-            $this->setKeysForSaveQuery($query)->update($dirty);
+            $this->executeWithFinalConnectionAuthorization(
+                $connection,
+                $authorize,
+                fn (): int => $this->setKeysForSaveQuery($query)->update($dirty),
+            );
             $this->syncChanges();
             parent::fireModelEvent('updated', false);
         } else {
@@ -1201,6 +1227,27 @@ class Resource extends Model implements DefinesFields
     private function saveGlobalResource(
         ?User $authenticatedUser = null,
         bool $authorizeUpdate = false,
+        bool $trustedOwnerIntent = false,
+        array $options = [],
+    ): bool {
+        return $this->savePrivilegedResource(
+            globalWrite: true,
+            authenticatedUser: $authenticatedUser,
+            authorizeUpdate: $authorizeUpdate,
+            trustedOwnerIntent: $trustedOwnerIntent,
+            trustedOwnerId: $this->getAttribute('user_id'),
+            options: $options,
+        );
+    }
+
+    private function savePrivilegedResource(
+        bool $globalWrite,
+        ?User $authenticatedUser = null,
+        bool $authorizeUpdate = false,
+        bool $trustedOwnerIntent = false,
+        int|string|null $trustedOwnerId = null,
+        bool $trustedTeamIntent = false,
+        int|string|null $trustedTeamId = null,
         array $options = [],
     ): bool {
         $this->mergeAttributesFromCachedCasts();
@@ -1210,11 +1257,18 @@ class Resource extends Model implements DefinesFields
         $writePdo = $connection->getPdo();
 
         if (! $writePdo instanceof PDO) {
-            throw new \LogicException('A global write requires an active physical database writer.');
+            throw new \LogicException('A named write requires an active physical database writer.');
         }
 
         $table = $this->getTable();
-        $this->prepareFieldAttributesForPersistence(globalWrite: true);
+        $this->prepareFieldAttributesForPersistence(
+            globalWrite: $globalWrite,
+            trustedOwnerIntent: $trustedOwnerIntent,
+            trustedOwnerId: $trustedOwnerId,
+            trustedTeamIntent: $trustedTeamIntent,
+            trustedTeamId: $trustedTeamId,
+        );
+        $teamId = $this->getAttribute('team_id');
         $ownerId = $this->getAttribute('user_id');
 
         if (parent::fireModelEvent('saving') === false) {
@@ -1229,7 +1283,9 @@ class Resource extends Model implements DefinesFields
                 $table,
                 $ownerId,
                 $authenticatedUser,
+                $teamId,
                 $authorizeUpdate,
+                $globalWrite,
             )
             : $this->performGlobalInsert(
                 $query,
@@ -1238,6 +1294,8 @@ class Resource extends Model implements DefinesFields
                 $table,
                 $ownerId,
                 $authenticatedUser,
+                $teamId,
+                $globalWrite,
             );
 
         if (! $saved) {
@@ -1247,5 +1305,22 @@ class Resource extends Model implements DefinesFields
         $this->finishSave($options);
 
         return true;
+    }
+
+    private function saveSystemResource(
+        bool $trustedOwnerIntent = false,
+        int|string|null $trustedOwnerId = null,
+        bool $trustedTeamIntent = false,
+        int|string|null $trustedTeamId = null,
+        array $options = [],
+    ): bool {
+        return $this->savePrivilegedResource(
+            globalWrite: false,
+            trustedOwnerIntent: $trustedOwnerIntent,
+            trustedOwnerId: $trustedOwnerId,
+            trustedTeamIntent: $trustedTeamIntent,
+            trustedTeamId: $trustedTeamId,
+            options: $options,
+        );
     }
 }

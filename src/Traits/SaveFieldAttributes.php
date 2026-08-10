@@ -118,9 +118,21 @@ trait SaveFieldAttributes
         });
     }
 
-    protected function prepareFieldAttributesForPersistence(bool $globalWrite = false): void
-    {
-        static::applyInitialPostFields($this, $globalWrite);
+    protected function prepareFieldAttributesForPersistence(
+        bool $globalWrite = false,
+        bool $trustedOwnerIntent = false,
+        int|string|null $trustedOwnerId = null,
+        bool $trustedTeamIntent = false,
+        int|string|null $trustedTeamId = null,
+    ): void {
+        static::applyInitialPostFields(
+            $this,
+            $globalWrite,
+            $trustedOwnerIntent,
+            $trustedOwnerId,
+            $trustedTeamIntent,
+            $trustedTeamId,
+        );
         static::packFieldAttributes($this);
         static::persistMetaFieldsOnSaving($this);
     }
