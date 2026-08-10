@@ -13,6 +13,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Grammars\MariaDbGrammar;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Fluent;
+use Illuminate\Support\Str;
 
 class Core12ExternalGuardResource extends BaseResource
 {
@@ -611,11 +612,7 @@ test('portable migration ownership stays outside runtime rows and validates orde
             'resource_key_hash' => hash('sha256', $generation),
             'resource_key_type' => 'internal',
             'resource_key' => $generation,
-            'incarnation' => substr($generation, 0, 8)
-                .'-'.substr($generation, 8, 4)
-                .'-'.substr($generation, 12, 4)
-                .'-'.substr($generation, 16, 4)
-                .'-'.substr($generation, 20, 12),
+            'incarnation' => (string) Str::uuid(),
             'version' => 1,
             $markerColumn => $generation,
             'created_at' => now(),
