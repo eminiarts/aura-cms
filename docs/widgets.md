@@ -350,7 +350,8 @@ component. `order` defaults to `0`, and `columns` accepts `1` through `12` while
 width on mobile. `visible => false` suppresses a definition. Duplicate IDs, invalid components,
 unsafe arguments, and malformed definitions are ignored without breaking the dashboard. A
 self-contained Livewire component may also be registered by class name for backwards
-compatibility.
+compatibility. Its generated ID combines the class basename with a stable hash of the fully
+qualified class name, so matching basenames from different packages do not collide.
 
 The `dashboard.widgets.order` and `dashboard.widgets.hidden` preferences accept lists of widget
 IDs at user, team, or everyone scope. Normal preference precedence applies: user, then team, then

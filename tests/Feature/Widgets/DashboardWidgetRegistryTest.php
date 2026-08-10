@@ -5,6 +5,8 @@ use Aura\Base\Preferences\PreferenceContext;
 use Aura\Base\Preferences\PreferenceManager;
 use Aura\Base\Preferences\PreferenceScope;
 use Aura\Base\Tests\Fixtures\Widgets\DashboardProbeWidget;
+use Aura\Base\Tests\Fixtures\Widgets\VendorA\Stats as VendorAStats;
+use Aura\Base\Tests\Fixtures\Widgets\VendorB\Stats as VendorBStats;
 use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Widgets\DashboardWidgetRegistry;
 use Illuminate\Support\Facades\Gate;
@@ -47,6 +49,19 @@ test('registered widgets are normalized authorized and ordered while invalid def
 
     expect(array_column($widgets, 'id'))->toBe(['first', 'later'])
         ->and($widgets[0]['class'])->toBe('col-span-12 sm:col-span-6 lg:col-span-4');
+});
+
+test('class-only widgets with matching basenames receive distinct stable identifiers', function () {
+    Aura::registerWidgets([VendorAStats::class, VendorBStats::class]);
+
+    $firstPass = app(DashboardWidgetRegistry::class)->forUser($this->user);
+    $secondPass = app(DashboardWidgetRegistry::class)->forUser($this->user);
+
+    expect($firstPass)->toHaveCount(2)
+        ->and(array_column($firstPass, 'id'))->toBe(array_column($secondPass, 'id'))
+        ->and(array_unique(array_column($firstPass, 'id')))->toHaveCount(2)
+        ->and($firstPass[0]['id'])->toStartWith('stats-')
+        ->and($firstPass[1]['id'])->toStartWith('stats-');
 });
 
 test('resource widgets are authorized and receive precomputed component arguments', function () {

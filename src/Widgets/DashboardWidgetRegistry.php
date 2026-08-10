@@ -121,6 +121,13 @@ final readonly class DashboardWidgetRegistry
         };
     }
 
+    private function compatibilityId(string $component): string
+    {
+        $qualifiedName = strtolower(ltrim($component, '\\'));
+
+        return Str::kebab(class_basename($component)).'-'.substr(hash('sha256', $qualifiedName), 0, 12);
+    }
+
     /**
      * @return array<string, mixed>|null
      */
@@ -128,7 +135,7 @@ final readonly class DashboardWidgetRegistry
     {
         $registered = is_string($registered) ? [
             'component' => $registered,
-            'id' => Str::kebab(class_basename($registered)),
+            'id' => $this->compatibilityId($registered),
         ] : $registered;
 
         if (! is_array($registered)) {
