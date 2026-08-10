@@ -23,17 +23,20 @@ trait BulkActions
         $declaredActions = (array) $model->getBulkActions();
 
         $mutations->dispatchBulk(
-            clone $this->mutationQuery(),
+            clone $this->bulkMutationQuery(),
             $trustedModel,
             $action,
             $declaredActions,
             $this->selected,
             (bool) $this->selectAll,
             'record',
+            $this->selectAllExclusions,
         );
 
         // Clear the selected array
         $this->selected = [];
+        $this->selectAll = false;
+        $this->selectAllExclusions = [];
 
         $this->notify('Success: '.$action);
     }
@@ -45,13 +48,14 @@ trait BulkActions
         $declaredActions = (array) $model->getBulkActions();
 
         $response = $mutations->dispatchBulk(
-            clone $this->mutationQuery(),
+            clone $this->bulkMutationQuery(),
             $trustedModel,
             $action,
             $declaredActions,
             $this->selected,
             (bool) $this->selectAll,
             'collection',
+            $this->selectAllExclusions,
         );
 
         if ($response instanceof StreamedResponse) {
@@ -60,6 +64,8 @@ trait BulkActions
 
         // reset selected rows
         $this->selected = [];
+        $this->selectAll = false;
+        $this->selectAllExclusions = [];
 
         $this->notify('Success: '.$action);
 

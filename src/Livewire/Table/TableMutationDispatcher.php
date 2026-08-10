@@ -125,6 +125,7 @@ final class TableMutationDispatcher
         array $declaredActions,
         mixed $selected,
         bool $selectAll,
+        mixed $selectAllExclusions = [],
     ): array {
         if (! array_key_exists($action, $declaredActions)) {
             abort(403, 'This bulk action is not allowed.');
@@ -152,6 +153,7 @@ final class TableMutationDispatcher
             $modelDescriptor,
             $scope,
             $selectAll,
+            $selectAllExclusions,
             $selected,
         ): array {
             $modelDescriptor->assertMatches($scope);
@@ -166,6 +168,7 @@ final class TableMutationDispatcher
                 static function (array $snapshot) use (&$scopeSnapshot): void {
                     $scopeSnapshot = $snapshot;
                 },
+                $selectAllExclusions,
             );
 
             $records->each(function (Model $record) use ($descriptor, $modelDescriptor): void {
@@ -259,6 +262,7 @@ final class TableMutationDispatcher
         mixed $selected,
         bool $selectAll,
         string $expectedMode,
+        mixed $selectAllExclusions = [],
     ): mixed {
         $descriptor = $this->descriptor($action, $declaredActions, bulk: true);
 
@@ -276,6 +280,7 @@ final class TableMutationDispatcher
             $modelDescriptor,
             $scope,
             $selectAll,
+            $selectAllExclusions,
             $selected,
         ): mixed {
             $modelDescriptor->assertMatches($scope);
@@ -286,6 +291,7 @@ final class TableMutationDispatcher
                 $selectAll,
                 $descriptor['trashed'],
                 $markLockAcquired,
+                excluded: $selectAllExclusions,
             );
             $receiver = $records->first();
 
@@ -1307,6 +1313,42 @@ final class TableMutationDispatcher
         return $method;
     }
 
+    /**
+     * @return array<string, int|string>
+     */
+    private function normalizeExclusionKeys(
+        mixed $excluded,
+        TableMutationModelDescriptor $modelDescriptor,
+    ): array {
+        if (! is_array($excluded) || count($excluded) > $this->maximumRecordCount()) {
+            throw ValidationException::withMessages([
+                'selected' => 'The select-all exclusions are invalid.',
+            ]);
+        }
+
+        $keys = [];
+
+        foreach ($excluded as $id) {
+            if ((! is_int($id) && ! is_string($id)) || (string) $id === '') {
+                throw ValidationException::withMessages([
+                    'selected' => 'The select-all exclusions are invalid.',
+                ]);
+            }
+
+            $identity = $modelDescriptor->canonicalIdentity($id);
+
+            if (array_key_exists($identity, $keys)) {
+                throw ValidationException::withMessages([
+                    'selected' => 'The select-all exclusions are invalid.',
+                ]);
+            }
+
+            $keys[$identity] = $id;
+        }
+
+        return $keys;
+    }
+
     private function normalizeMutationConstraint(mixed $value, QueryBuilder $query): mixed
     {
         if ($value instanceof JoinClause) {
@@ -1441,8 +1483,28 @@ final class TableMutationDispatcher
         ?string $trashed,
         ?Closure $markLockAcquired = null,
         ?Closure $captureScope = null,
+        mixed $excluded = [],
     ): Collection {
         if ($selectAll) {
+            $excludedKeys = $this->normalizeExclusionKeys($excluded, $modelDescriptor);
+
+            if ($excludedKeys !== []) {
+                $excludedRecords = $this->authoritativeRecords(
+                    (clone $scope)->whereKey(array_values($excludedKeys)),
+                    $modelDescriptor,
+                    $excludedKeys,
+                    $trashed,
+                );
+
+                if (count($this->canonicalIdentities($excludedRecords, $modelDescriptor)) !== count($excludedKeys)) {
+                    throw ValidationException::withMessages([
+                        'selected' => 'The select-all exclusions are invalid.',
+                    ]);
+                }
+
+                $scope = (clone $scope)->whereKeyNot(array_values($excludedKeys));
+            }
+
             $records = $this->authoritativeRecords(
                 $scope,
                 $modelDescriptor,
@@ -1460,6 +1522,12 @@ final class TableMutationDispatcher
             }
 
             return $records;
+        }
+
+        if ($excluded !== [] && $excluded !== null) {
+            throw ValidationException::withMessages([
+                'selected' => 'The select-all exclusions are invalid.',
+            ]);
         }
 
         if (! is_array($selected)) {

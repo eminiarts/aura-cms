@@ -17,6 +17,13 @@ trait Select
     public $selectAll = false;
 
     /**
+     * Rows explicitly removed from the current select-all scope.
+     *
+     * @var array<int, int|string>
+     */
+    public array $selectAllExclusions = [];
+
+    /**
      * Array of selected row IDs
      *
      * @var array
@@ -61,6 +68,7 @@ trait Select
     public function selectAll()
     {
         $this->selectAll = true;
+        $this->selectAllExclusions = [];
     }
 
     /**
@@ -83,6 +91,13 @@ trait Select
         $this->selectPage = false;
     }
 
+    public function updatedSelectAll(bool $value): void
+    {
+        if (! $value) {
+            $this->selectAllExclusions = [];
+        }
+    }
+
     /**
      * Handles updates to selected rows
      *
@@ -91,6 +106,7 @@ trait Select
     public function updatedSelected()
     {
         $this->selectAll = false;
+        $this->selectAllExclusions = [];
         $this->selectPage = false;
     }
 

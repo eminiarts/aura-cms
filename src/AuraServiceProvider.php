@@ -22,8 +22,6 @@ use Aura\Base\Commands\TransformTableToResource;
 use Aura\Base\Commands\UpdateSchemaFromMigration;
 use Aura\Base\Database\Seeders\RoleCatalogSeeder;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Fields\File as FileField;
-use Aura\Base\Fields\Image;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\AttachmentDetails;
 use Aura\Base\Livewire\BookmarkPage;
@@ -540,21 +538,11 @@ class AuraServiceProvider extends PackageServiceProvider
                 'arguments.slug' => ['required', 'string'],
             ],
             static function (array $arguments): void {
-                $resource = Aura::findResourceBySlug($arguments['resource']);
-                $field = $resource?->fieldBySlug($arguments['slug']);
-                $fieldType = is_array($field) ? ($field['type'] ?? null) : null;
-
-                if (
-                    ! $resource instanceof Resource
-                    || $resource->getSlug() !== $arguments['resource']
-                    || ! is_string($fieldType)
-                    || (! is_a($fieldType, Image::class, true) && ! is_a($fieldType, FileField::class, true))
-                ) {
-                    abort(422, 'The media manager resource field is invalid.');
-                }
-
-                Gate::authorize('viewAny', $resource);
-                Gate::authorize('viewAny', config('aura.resources.attachment'));
+                $manager = app(MediaManager::class);
+                $manager->resource = $arguments['resource'];
+                $manager->fieldSlug = $arguments['slug'];
+                $manager->selected = $arguments['selected'];
+                $manager->authorizeRequest();
             },
         );
     }

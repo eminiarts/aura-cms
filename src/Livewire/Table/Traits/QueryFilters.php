@@ -364,6 +364,57 @@ trait QueryFilters
         return $query;
     }
 
+    protected function assertValidMutationFilters(): void
+    {
+        if (! is_array($this->filters) || ! is_array($this->filters['custom'] ?? null)) {
+            abort(422, 'The table mutation filters are invalid.');
+        }
+
+        foreach ($this->filters['custom'] as $group) {
+            if (
+                ! is_array($group)
+                || ! is_array($group['filters'] ?? null)
+                || ! in_array($group['operator'] ?? 'and', ['and', 'or'], true)
+            ) {
+                abort(422, 'The table mutation filters are invalid.');
+            }
+
+            foreach ($group['filters'] as $filter) {
+                if (! is_array($filter)) {
+                    abort(422, 'The table mutation filters are invalid.');
+                }
+
+                $name = $filter['name'] ?? null;
+                $operator = $filter['operator'] ?? null;
+                $definition = is_string($name) ? $this->fieldsForFilter()->get($name) : null;
+
+                if (
+                    ! is_array($definition)
+                    || ! is_string($operator)
+                    || ! array_key_exists($operator, $definition['filterOptions'])
+                    || ! in_array($filter['main_operator'] ?? 'and', ['and', 'or'], true)
+                ) {
+                    abort(422, 'The table mutation filters are invalid.');
+                }
+
+                if (! $this->isValidFilter($filter)) {
+                    continue;
+                }
+
+                if (! $this->hasValidMutationFilterValue($filter)) {
+                    abort(422, 'The table mutation filters are invalid.');
+                }
+
+                $resourceType = data_get($filter, 'options.resource_type');
+                $declaredResourceType = data_get($this->model->fieldBySlug($name), 'resource');
+
+                if ($resourceType !== null && $resourceType !== $declaredResourceType) {
+                    abort(422, 'The table mutation filters are invalid.');
+                }
+            }
+        }
+    }
+
     protected function isRelationBackedFilter(array $filter): bool
     {
         $fieldClass = $this->model->fieldClassBySlug($filter['name']);
@@ -383,5 +434,22 @@ trait QueryFilters
     {
         return ! empty($filter['name']) &&
                (! empty($filter['value']) || in_array($filter['operator'], ['is_empty', 'is_not_empty']));
+    }
+
+    private function hasValidMutationFilterValue(array $filter): bool
+    {
+        if (in_array($filter['operator'], ['is_empty', 'is_not_empty'], true)) {
+            return true;
+        }
+
+        if (! array_key_exists('value', $filter)) {
+            return false;
+        }
+
+        $values = is_array($filter['value']) ? $filter['value'] : [$filter['value']];
+
+        return $values !== [] && collect($values)->every(
+            static fn (mixed $value): bool => is_string($value) || is_int($value) || is_float($value) || is_bool($value)
+        );
     }
 }

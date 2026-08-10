@@ -360,12 +360,13 @@ class Table extends Component
         ])->validate();
         $model = $this->mutationModel();
         $resolved = $mutations->authorizeBulkModal(
-            clone $this->mutationQuery(),
+            clone $this->bulkMutationQuery(),
             new TableMutationModelDescriptor($model),
             $validated['action'],
             (array) $model->getBulkActions(),
             $this->selected,
             (bool) $this->selectAll,
+            $this->selectAllExclusions,
         );
         $request = $modalRequests->issue($resolved['request']);
 
@@ -576,6 +577,26 @@ class Table extends Component
         } else {
             $this->dispatch('selectedRows', $this->selected);
         }
+    }
+
+    /**
+     * Exact effective display scope for bulk selection mutations.
+     */
+    protected function bulkMutationQuery()
+    {
+        $query = $this->mutationQuery();
+
+        $this->assertValidMutationFilters();
+
+        if ($this->filters['custom'] !== []) {
+            $query = $this->applyCustomFilter($query);
+        }
+
+        if ($this->search !== null && ! is_string($this->search)) {
+            abort(422, 'The table mutation search is invalid.');
+        }
+
+        return $this->applySearch($query);
     }
 
     /**

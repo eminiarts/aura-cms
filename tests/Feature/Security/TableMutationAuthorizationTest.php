@@ -5,12 +5,14 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Facades\DynamicFunctions;
 use Aura\Base\Fields\HasMany;
 use Aura\Base\Fields\Image;
+use Aura\Base\Livewire\MediaManager;
 use Aura\Base\Livewire\Modals;
 use Aura\Base\Livewire\SignedModalRequest;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Livewire\Table\TableMutationDispatcher;
 use Aura\Base\Livewire\Table\TableMutationModelDescriptor;
 use Aura\Base\Resource;
+use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Container\BindingResolutionException;
@@ -181,6 +183,7 @@ class Core05MutationResource extends Resource
                 'name' => 'Title',
                 'slug' => 'title',
                 'type' => 'Aura\\Base\\Fields\\Text',
+                'searchable' => true,
             ],
             [
                 'name' => 'Status',
@@ -425,6 +428,14 @@ class Core05DangerousContainerBinding
 class Core05DenyMediaPolicy
 {
     public function viewAny(User $user, Core05MediaResource $resource): bool
+    {
+        return false;
+    }
+}
+
+class Core05DenyAttachmentPolicy
+{
+    public function viewAny(User $user): bool
     {
         return false;
     }
@@ -1323,6 +1334,78 @@ test('media manager authorizes the registered resource before mounting', functio
         ->assertForbidden();
 });
 
+test('media manager enforces its resource and field boundary when mounted directly', function () {
+    $this->actingAs(createSuperAdmin());
+    Aura::setModel(new Core05MediaResource);
+
+    livewire(MediaManager::class, [
+        'resource' => Core05MutationResource::$slug,
+        'slug' => 'status',
+        'selected' => [],
+        'modalAttributes' => [],
+    ])->assertStatus(422);
+
+    Gate::policy(Core05MediaResource::class, Core05DenyMediaPolicy::class);
+
+    livewire(MediaManager::class, [
+        'resource' => Core05MediaResource::$slug,
+        'slug' => 'hero_image',
+        'selected' => [],
+        'modalAttributes' => [],
+    ])->assertForbidden();
+});
+
+test('media manager reauthorizes hydrated actions against current policy state', function () {
+    $this->actingAs(createSuperAdmin());
+    Aura::setModel(new Core05MediaResource);
+    $component = livewire(MediaManager::class, [
+        'resource' => Core05MediaResource::$slug,
+        'slug' => 'hero_image',
+        'selected' => [],
+        'modalAttributes' => [],
+    ])->assertOk();
+
+    Gate::policy(Core05MediaResource::class, Core05DenyMediaPolicy::class);
+
+    $component->call('select', [])->assertForbidden();
+});
+
+test('media manager enforces the attachment policy at its component boundary', function () {
+    $this->actingAs(createSuperAdmin());
+    Aura::setModel(new Core05MediaResource);
+    Gate::policy(Attachment::class, Core05DenyAttachmentPolicy::class);
+
+    livewire(MediaManager::class, [
+        'resource' => Core05MediaResource::$slug,
+        'slug' => 'hero_image',
+        'selected' => [],
+        'modalAttributes' => [],
+    ])->assertForbidden();
+});
+
+test('media manager rejects selected records outside the current team scope', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('This test exercises team-only behavior.');
+    }
+
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    Aura::setModel(new Core05MediaResource);
+    $attachment = Attachment::create([
+        'title' => 'Foreign attachment',
+    ]);
+    DB::table('posts')->where('id', $attachment->getKey())->update([
+        'team_id' => ((int) $actor->current_team_id) + 999,
+    ]);
+
+    livewire(MediaManager::class, [
+        'resource' => Core05MediaResource::$slug,
+        'slug' => 'hero_image',
+        'selected' => [$attachment->getKey()],
+        'modalAttributes' => [],
+    ])->assertStatus(422);
+});
+
 test('bulk mutations fail closed before an explicit or select-all selection exceeds the configured bound', function (
     bool $selectAll,
 ) {
@@ -1360,6 +1443,157 @@ test('large client selections fail before creating an oversized parameter list',
         ->assertHasErrors(['selected']);
 
     expect(Core05MutationResource::$updateInvocations)->toBe(0);
+});
+
+test('select all bulk mutations use the exact searched display scope', function () {
+    $this->actingAs(createSuperAdmin());
+    $matching = Core05MutationResource::create([
+        'title' => 'Needle target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $outside = Core05MutationResource::create([
+        'title' => 'Outside target',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('search', 'Needle')
+        ->set('selectAll', true)
+        ->call('bulkAction', 'markBulkReviewed')
+        ->assertHasNoErrors();
+
+    expect($matching->fresh()->content)->toBe('reviewed-by-bulk-action')
+        ->and($outside->fresh()->content)->toBe('unchanged');
+});
+
+test('select all bulk mutations honor filters and validated exclusions', function () {
+    $this->actingAs(createSuperAdmin());
+    $included = Core05MutationResource::create([
+        'title' => 'Included draft',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $excluded = Core05MutationResource::create([
+        'title' => 'Excluded draft',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $filteredOut = Core05MutationResource::create([
+        'title' => 'Reviewed row',
+        'content' => 'unchanged',
+        'status' => 'reviewed',
+    ]);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('filters.custom', [[
+            'filters' => [[
+                'name' => 'status',
+                'operator' => 'is',
+                'value' => 'draft',
+                'main_operator' => 'and',
+            ]],
+        ]])
+        ->set('selectAll', true)
+        ->set('selectAllExclusions', [$excluded->getKey()])
+        ->call('bulkAction', 'markBulkReviewed')
+        ->assertHasNoErrors();
+
+    expect($included->fresh()->content)->toBe('reviewed-by-bulk-action')
+        ->and($excluded->fresh()->content)->toBe('unchanged')
+        ->and($filteredOut->fresh()->content)->toBe('unchanged');
+});
+
+test('select all bulk mutations reject forged exclusions outside the effective scope', function () {
+    $this->actingAs(createSuperAdmin());
+    $visible = Core05MutationResource::create([
+        'title' => 'Visible draft',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $outside = Core05MutationResource::create([
+        'title' => 'Filtered out',
+        'content' => 'unchanged',
+        'status' => 'reviewed',
+    ]);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('filters.custom', [[
+            'filters' => [[
+                'name' => 'status',
+                'operator' => 'is',
+                'value' => 'draft',
+                'main_operator' => 'and',
+            ]],
+        ]])
+        ->set('selectAll', true)
+        ->set('selectAllExclusions', [$outside->getKey()])
+        ->call('bulkAction', 'markBulkReviewed')
+        ->assertHasErrors(['selected']);
+
+    expect($visible->fresh()->content)->toBe('unchanged')
+        ->and($outside->fresh()->content)->toBe('unchanged');
+});
+
+test('select all bulk mutations fail closed for an undeclared filter operator', function () {
+    $this->actingAs(createSuperAdmin());
+    $resource = Core05MutationResource::create([
+        'title' => 'Protected row',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+
+    livewire(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('filters.custom', [[
+            'filters' => [[
+                'name' => 'status',
+                'operator' => 'forged_operator',
+                'value' => 'draft',
+            ]],
+        ]])
+        ->set('selectAll', true)
+        ->call('bulkAction', 'markBulkReviewed')
+        ->assertStatus(422);
+
+    expect($resource->fresh()->content)->toBe('unchanged');
+});
+
+test('select all bulk mutations honor a saved filter loaded from query string state', function () {
+    $actor = createSuperAdmin();
+    $this->actingAs($actor);
+    $actor->updateOption('Core05Mutation.filters.only-draft', [
+        'custom' => [[
+            'filters' => [[
+                'name' => 'status',
+                'operator' => 'is',
+                'value' => 'draft',
+            ]],
+        ]],
+        'name' => 'Only draft',
+        'public' => false,
+        'global' => false,
+        'slug' => 'only-draft',
+    ]);
+    $included = Core05MutationResource::create([
+        'title' => 'Draft row',
+        'content' => 'unchanged',
+        'status' => 'draft',
+    ]);
+    $outside = Core05MutationResource::create([
+        'title' => 'Reviewed row',
+        'content' => 'unchanged',
+        'status' => 'reviewed',
+    ]);
+
+    Livewire::withQueryParams(['selectedFilter' => 'only-draft'])
+        ->test(Table::class, ['query' => null, 'model' => new Core05MutationResource])
+        ->set('selectAll', true)
+        ->call('bulkAction', 'markBulkReviewed')
+        ->assertHasNoErrors();
+
+    expect($included->fresh()->content)->toBe('reviewed-by-bulk-action')
+        ->and($outside->fresh()->content)->toBe('unchanged');
 });
 
 /**
