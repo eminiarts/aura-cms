@@ -948,18 +948,26 @@ class Resource extends Model implements DefinesFields
         Connection $connection,
         ?array $callbacks = null,
     ): void {
-        if ($connection->transactionLevel() === 0) {
-            return;
-        }
-
         if ($callbacks === null) {
-            $callbacksProperty = new \ReflectionProperty(Connection::class, 'beforeExecutingCallbacks');
             $beforeStartingTransactionProperty = new \ReflectionProperty(Connection::class, 'beforeStartingTransaction');
+            /** @var list<callable> $beforeStartingTransactionCallbacks */
+            $beforeStartingTransactionCallbacks = $beforeStartingTransactionProperty->getValue($connection);
+
+            if ($this->hasUntrustedConnectionCallback($beforeStartingTransactionCallbacks)) {
+                throw new \LogicException(
+                    'A named write cannot expose its physical database writer or transaction state to connection callbacks inside a caller transaction.',
+                );
+            }
+
+            if ($connection->transactionLevel() === 0) {
+                return;
+            }
+
+            $callbacksProperty = new \ReflectionProperty(Connection::class, 'beforeExecutingCallbacks');
             /** @var list<callable> $callbacks */
-            $callbacks = array_merge(
-                $callbacksProperty->getValue($connection),
-                $beforeStartingTransactionProperty->getValue($connection),
-            );
+            $callbacks = $callbacksProperty->getValue($connection);
+        } elseif ($connection->transactionLevel() === 0) {
+            return;
         }
 
         if ($this->hasUntrustedConnectionCallback($callbacks)) {

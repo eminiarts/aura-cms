@@ -1431,7 +1431,7 @@ it('rejects a model callback that changes the privileged update key', function (
         ->toBe('Key collateral row');
 });
 
-it('runs final authorization after transaction callbacks register later connection callbacks', function (): void {
+it('rejects transaction-start callbacks before they register later connection callbacks', function (): void {
     $connection = core13InstallConnectionProbe();
     $originalWriter = $connection->getPdo();
     $substitutedWriter = core13PhysicalWriter();
@@ -1450,6 +1450,36 @@ it('runs final authorization after transaction callbacks register later connecti
     expect($callbackRan)->toBeFalse()
         ->and(core13PhysicalWriterRowCount($originalWriter))->toBe(0)
         ->and(core13PhysicalWriterRowCount($substitutedWriter))->toBe(0);
+});
+
+it('rejects transaction-start callbacks before they can open an untracked physical transaction', function (): void {
+    $connection = core13InstallConnectionProbe();
+    $writer = $connection->getPdo();
+    $callbacksProperty = new ReflectionProperty(Connection::class, 'beforeStartingTransaction');
+    $originalCallbacks = $callbacksProperty->getValue($connection);
+    $armed = true;
+
+    $connection->beforeStartingTransaction(function () use (&$armed, $writer): void {
+        $armed = false;
+        $writer->beginTransaction();
+    });
+
+    expect(fn () => ExplicitNullSharedCustomResource::createGlobalForSystem([
+        'name' => 'Rejected untracked transaction',
+    ], $connection))->toThrow(LogicException::class, 'transaction state');
+
+    expect($armed)->toBeTrue()
+        ->and($connection->transactionLevel())->toBe(0)
+        ->and($writer->inTransaction())->toBeFalse()
+        ->and(core13PhysicalWriterRowCount($writer))->toBe(0);
+
+    $callbacksProperty->setValue($connection, $originalCallbacks);
+    $unrelated = ExplicitNullSharedCustomResource::createGlobalForSystem([
+        'name' => 'Unrelated write after rejection',
+    ], $connection);
+
+    expect($unrelated->exists)->toBeTrue()
+        ->and(core13PhysicalWriterRowCount($writer))->toBe(1);
 });
 
 it('does not leave connection authorization callbacks behind in long workers', function (): void {
