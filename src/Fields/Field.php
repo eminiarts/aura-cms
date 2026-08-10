@@ -418,6 +418,23 @@ abstract class Field implements FieldPresentationContract, FieldValueContract, W
         return FieldDisplayValue::secure($display);
     }
 
+    /**
+     * Field-aware adapter that preserves the historical zero-argument
+     * rendersOnIndex() extension point for third-party field subclasses.
+     *
+     * @param  array<string, mixed>  $field
+     */
+    public function rendersConfiguredFieldOnIndex(array $field): bool
+    {
+        return (bool) $this->rendersOnIndex();
+    }
+
+    /** @return bool */
+    public function rendersOnIndex()
+    {
+        return $this->index !== null;
+    }
+
     public function toLivewire()
     {
         return [

@@ -4,7 +4,7 @@
     $definition = app(\Aura\Base\Services\EmbeddedComponentResolver::class)->resolve(
         field: $field,
         resource: $this->model ?? null,
-        surface: \Aura\Base\Services\EmbeddedComponentSurface::Edit,
+        surface: \Aura\Base\Services\EmbeddedComponentSurface::View,
     );
 @endphp
 

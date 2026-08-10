@@ -2,17 +2,20 @@
 
 namespace Aura\Base;
 
+use Aura\Base\Contracts\ProvidesEmbeddedAuthorizationAttributes;
 use Aura\Base\Contracts\TableResource;
 use Aura\Base\Traits\AuraModelConfig;
 use Aura\Base\Traits\InputFields;
 use Aura\Base\Traits\InteractsWithTable;
+use Aura\Base\Traits\ProvidesEmbeddedAuthorizationAttributes as ProvidesEmbeddedAuthorizationAttributesTrait;
 use Illuminate\Database\Eloquent\Model;
 
-class BaseResource extends Model implements TableResource
+class BaseResource extends Model implements ProvidesEmbeddedAuthorizationAttributes, TableResource
 {
     use AuraModelConfig;
     use InputFields;
     use InteractsWithTable;
+    use ProvidesEmbeddedAuthorizationAttributesTrait;
 
     public array $metaFields = [];
 }
