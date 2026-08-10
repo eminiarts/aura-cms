@@ -236,36 +236,85 @@ final readonly class PreferenceManager
             $storageKeys[] = $this->expandLegacyKey($legacyKey, $context);
         }
 
-        foreach (array_unique($storageKeys) as $storageKey) {
-            match ($scope) {
-                PreferenceScope::User => $context->user->deleteOptionForTeam(
-                    $storageKey,
-                    config('aura.teams') ? $context->team?->getKey() : null,
-                ),
-                PreferenceScope::Team => $context->team->deleteOption($storageKey),
-                PreferenceScope::Everyone => $this->deleteEveryoneEntry($storageKey),
-            };
-        }
+        $connection = $this->optionConnection();
+        $storageKeys = array_values(array_unique($storageKeys));
+
+        $connection->transaction(function () use ($context, $scope, $storageKeys): void {
+            foreach ($storageKeys as $storageKey) {
+                match ($scope) {
+                    PreferenceScope::User => $this->deleteUserEntry($context, $storageKey),
+                    PreferenceScope::Team => $this->deleteTeamEntry($context, $storageKey),
+                    PreferenceScope::Everyone => $this->deleteEveryoneEntry($storageKey),
+                };
+            }
+        });
+
+        match ($scope) {
+            PreferenceScope::User => User::clearOptionCacheForTeam(
+                $context->user->getKey(),
+                config('aura.teams') ? $context->team?->getKey() : 'global',
+                $connection,
+            ),
+            PreferenceScope::Team => Team::clearOptionCacheForTeam($context->team->getKey(), $connection),
+            PreferenceScope::Everyone => Aura::clearGlobalOptionCache($connection),
+        };
     }
 
     private function deleteEveryoneEntry(string $storageKey): void
     {
-        $connection = $this->optionConnection();
+        $option = new Option;
+        $query = Option::withoutGlobalScopes()
+            ->whereNull($option->getQualifiedDeletedAtColumn())
+            ->where('name', $storageKey);
 
-        $connection->transaction(function () use ($storageKey): void {
-            $option = new Option;
-            $query = Option::withoutGlobalScopes()
-                ->whereNull($option->getQualifiedDeletedAtColumn())
-                ->where('name', $storageKey);
+        if (config('aura.teams')) {
+            $query->where('team_id', Option::EVERYONE_TEAM_ID);
+        }
 
-            if (config('aura.teams')) {
-                $query->where('team_id', Option::EVERYONE_TEAM_ID);
-            }
+        $record = $query->lockForUpdate()->first();
 
-            $query->lockForUpdate()->first()?->deleteQuietly();
-        });
+        if ($record !== null) {
+            $this->requireSuccessfulOptionMutation($record->delete());
+        }
+    }
 
-        Aura::clearGlobalOptionCache($connection);
+    private function deleteTeamEntry(PreferenceContext $context, string $storageKey): void
+    {
+        $record = Option::withoutGlobalScopes()
+            ->whereNull((new Option)->getQualifiedDeletedAtColumn())
+            ->where('team_id', $context->team->getKey())
+            ->where('name', 'team.'.$context->team->getKey().'.'.$storageKey)
+            ->lockForUpdate()
+            ->first();
+
+        if ($record !== null) {
+            $this->requireSuccessfulOptionMutation($record->delete());
+        }
+    }
+
+    private function deleteUserEntry(PreferenceContext $context, string $storageKey): void
+    {
+        $query = Option::withoutGlobalScopes()
+            ->whereNull((new Option)->getQualifiedDeletedAtColumn());
+
+        if (config('aura.teams')) {
+            $query->where('team_id', $context->team?->getKey());
+        }
+
+        $optionNames = $this->userOptionNames($context->user, $storageKey);
+        $records = $query
+            ->whereIn('name', $optionNames)
+            ->lockForUpdate()
+            ->get()
+            ->map(fn (Option $record): Option => $this->verifiedUserOption(
+                $record,
+                $context->user,
+                $optionNames,
+            ));
+
+        foreach ($records as $record) {
+            $this->requireSuccessfulOptionMutation($record->delete());
+        }
     }
 
     private function expandLegacyKey(string $key, PreferenceContext $context): string
@@ -354,7 +403,7 @@ final readonly class PreferenceManager
 
     private function ownsPersistedTeam(User $actor, Team $team): bool
     {
-        $ownerId = $team->getAttribute($actor->getForeignKey());
+        $ownerId = $team->getAttribute('user_id');
 
         return $ownerId !== null
             && $ownerId !== ''
@@ -530,7 +579,13 @@ final readonly class PreferenceManager
 
     private function userPrototype(): ?User
     {
-        $userClass = config('aura.resources.user', User::class);
+        $guardName = Auth::getDefaultDriver();
+        $providerName = is_string($guardName) ? config("auth.guards.{$guardName}.provider") : null;
+        $userClass = is_string($providerName) ? config("auth.providers.{$providerName}.model") : null;
+
+        if (! is_string($userClass) || ! is_a($userClass, User::class, true)) {
+            $userClass = config('aura.resources.user', User::class);
+        }
 
         if (! is_string($userClass) || ! is_a($userClass, User::class, true)) {
             return null;
@@ -609,10 +664,10 @@ final readonly class PreferenceManager
             }
 
             if ($record->trashed()) {
-                $record->setAttribute($record->getDeletedAtColumn(), null);
+                $this->requireSuccessfulOptionMutation($record->restore());
+            } else {
+                $this->requireSuccessfulOptionMutation($record->save());
             }
-
-            $this->requireSuccessfulOptionMutation($record->save());
         });
 
         Aura::clearGlobalOptionCache($connection);
@@ -627,12 +682,6 @@ final readonly class PreferenceManager
         $connection = $this->optionConnection();
 
         $connection->transaction(function () use ($context, $storageKey, $value, $preserveFloat): void {
-            if (! $preserveFloat) {
-                $context->team->updateOption($storageKey, $value);
-
-                return;
-            }
-
             $attributes = [
                 'name' => 'team.'.$context->team->getKey().'.'.$storageKey,
                 'team_id' => $context->team->getKey(),
@@ -643,7 +692,11 @@ final readonly class PreferenceManager
                 ->lockForUpdate()
                 ->first() ?? Option::withoutGlobalScopes()->newModelInstance($attributes);
 
-            $this->persistEncodedFloat($record, $value);
+            if ($preserveFloat) {
+                $this->persistEncodedFloat($record, $value);
+            } else {
+                $record->setAttribute('value', $value);
+            }
 
             if ($record->trashed()) {
                 $this->requireSuccessfulOptionMutation($record->restore());
@@ -665,12 +718,6 @@ final readonly class PreferenceManager
         $teamId = config('aura.teams') ? $context->team?->getKey() : null;
 
         $connection->transaction(function () use ($context, $storageKey, $value, $preserveFloat, $teamId): void {
-            if (! $preserveFloat) {
-                $context->user->updateOptionForTeam($storageKey, $value, $teamId);
-
-                return;
-            }
-
             $optionNames = $this->userOptionNames($context->user, $storageKey);
             $canonicalName = $optionNames[0];
             $query = Option::withoutGlobalScopes();
@@ -710,7 +757,11 @@ final readonly class PreferenceManager
                 'owner_identity',
                 VersionedCache::identity('option.user.owner', $context->user->getKey()),
             );
-            $this->persistEncodedFloat($record, $value);
+            if ($preserveFloat) {
+                $this->persistEncodedFloat($record, $value);
+            } else {
+                $record->setAttribute('value', $value);
+            }
 
             try {
                 if ($record->trashed()) {
@@ -738,7 +789,11 @@ final readonly class PreferenceManager
                     'owner_identity',
                     VersionedCache::identity('option.user.owner', $context->user->getKey()),
                 );
-                $this->persistEncodedFloat($record, $value);
+                if ($preserveFloat) {
+                    $this->persistEncodedFloat($record, $value);
+                } else {
+                    $record->setAttribute('value', $value);
+                }
 
                 if ($record->trashed()) {
                     $this->requireSuccessfulOptionMutation($record->restore());

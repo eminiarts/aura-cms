@@ -37,6 +37,7 @@ use Lab404\Impersonate\Models\Impersonate;
 use Lab404\Impersonate\Services\ImpersonateManager;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
+use RuntimeException;
 
 class User extends Resource implements AuthenticatableContract, AuthorizableContract, CanResetPasswordContract
 {
@@ -366,7 +367,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             $records = $records->map(fn (Option $record): Option => $this->verifiedOptionRecord($record));
 
             foreach ($records as $record) {
-                $record->delete();
+                $this->requireSuccessfulOptionMutation($record->delete());
             }
         });
 
@@ -1249,9 +1250,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
         try {
             if ($record->trashed()) {
-                $record->restore();
+                $this->requireSuccessfulOptionMutation($record->restore());
             } else {
-                $record->save();
+                $this->requireSuccessfulOptionMutation($record->save());
             }
         } catch (UniqueConstraintViolationException $exception) {
             if (! $isCreatingOrRenaming) {
@@ -1273,9 +1274,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             $record->setAttribute('owner_identity', $this->optionOwnerIdentity());
 
             if ($record->trashed()) {
-                $record->restore();
+                $this->requireSuccessfulOptionMutation($record->restore());
             } else {
-                $record->save();
+                $this->requireSuccessfulOptionMutation($record->save());
             }
         }
 
@@ -1289,7 +1290,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         $aliases = $aliases->map(fn (Option $alias): Option => $this->verifiedOptionRecord($alias));
 
         foreach ($aliases as $alias) {
-            $alias->forceDelete();
+            $this->requireSuccessfulOptionMutation($alias->forceDelete());
         }
 
         return $record;
@@ -1343,6 +1344,13 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         });
 
         return $teamPrototype->newCollection($teams->all());
+    }
+
+    protected function requireSuccessfulOptionMutation(?bool $succeeded): void
+    {
+        if ($succeeded !== true) {
+            throw new RuntimeException('Option persistence was vetoed.');
+        }
     }
 
     /**

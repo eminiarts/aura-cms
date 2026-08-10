@@ -15,8 +15,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
+use RuntimeException;
 
 class Team extends Resource
 {
@@ -91,13 +93,21 @@ class Team extends Resource
     {
         $this->assertNotReservedPreferenceOwner();
         $optionName = $this->optionName($option);
+        $connection = $this->optionConnection();
 
-        Option::withoutGlobalScope(TeamScope::class)
-            ->where('team_id', $this->id)
-            ->where('name', $optionName)
-            ->delete();
+        $connection->transaction(function () use ($optionName): void {
+            $record = Option::withoutGlobalScope(TeamScope::class)
+                ->where('team_id', $this->id)
+                ->where('name', $optionName)
+                ->lockForUpdate()
+                ->first();
 
-        $this->forgetOptionCache($option);
+            if ($record !== null) {
+                $this->requireSuccessfulOptionMutation($record->delete());
+            }
+        });
+
+        $this->forgetOptionCache($option, $connection);
     }
 
     public static function getFields()
@@ -311,25 +321,48 @@ class Team extends Resource
         $this->assertNotReservedPreferenceOwner();
         $optionName = $this->optionName($option);
         $attributes = ['name' => $optionName, 'team_id' => $this->id];
-        $record = Option::withoutGlobalScope(TeamScope::class)
-            ->withTrashed()
-            ->where($attributes)
-            ->first();
+        $connection = $this->optionConnection();
 
-        if ($record) {
-            $record->fill(['value' => $value]);
+        $record = $connection->transaction(function () use ($attributes, $value): Option {
+            $record = Option::withoutGlobalScope(TeamScope::class)
+                ->withTrashed()
+                ->where($attributes)
+                ->lockForUpdate()
+                ->first();
+            $isCreating = $record === null;
 
-            if ($record->trashed()) {
-                $record->restore();
+            if ($record !== null) {
+                $record->fill(['value' => $value]);
             } else {
-                $record->save();
+                $record = Option::withoutGlobalScope(TeamScope::class)->newModelInstance([
+                    ...$attributes,
+                    'value' => $value,
+                ]);
             }
-        } else {
-            $record = Option::withoutGlobalScope(TeamScope::class)->updateOrCreate(
-                $attributes,
-                ['value' => $value],
-            );
-        }
+
+            try {
+                $this->persistOptionRecord($record);
+            } catch (UniqueConstraintViolationException $exception) {
+                if (! $isCreating) {
+                    throw $exception;
+                }
+
+                $record = Option::withoutGlobalScope(TeamScope::class)
+                    ->withTrashed()
+                    ->where($attributes)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $record instanceof Option) {
+                    throw $exception;
+                }
+
+                $record->fill(['value' => $value]);
+                $this->persistOptionRecord($record);
+            }
+
+            return $record;
+        });
 
         $this->forgetOptionCache($option, $record->getConnection());
     }
@@ -563,5 +596,23 @@ class Team extends Resource
     protected function optionName(string $option): string
     {
         return 'team.'.$this->id.'.'.$option;
+    }
+
+    protected function persistOptionRecord(Option $record): void
+    {
+        if ($record->trashed()) {
+            $this->requireSuccessfulOptionMutation($record->restore());
+
+            return;
+        }
+
+        $this->requireSuccessfulOptionMutation($record->save());
+    }
+
+    protected function requireSuccessfulOptionMutation(?bool $succeeded): void
+    {
+        if ($succeeded !== true) {
+            throw new RuntimeException('Option persistence was vetoed.');
+        }
     }
 }

@@ -418,6 +418,7 @@ test('authenticated writes authorize the canonical user instead of mutable actor
 test('non-primary authentication identifiers canonicalize every write scope', function () {
     $baseUser = preferenceGlobalAdmin();
     config()->set('aura.resources.user', EmailPreferenceUser::class);
+    config()->set('auth.providers.users.model', EmailPreferenceUser::class);
     $user = EmailPreferenceUser::withoutGlobalScopes()->findOrFail($baseUser->getKey());
     Auth::login($user);
     $context = preferenceContext($user, $user->currentTeam);
@@ -440,6 +441,33 @@ test('non-primary authentication identifiers canonicalize every write scope', fu
         PreferenceScope::Everyone,
         $context,
         $forgedActor,
+    ))->toThrow(AuthorizationException::class);
+});
+
+test('a configured custom auth provider authorizes its non-global canonical team owner', function () {
+    $baseUser = preferenceGlobalAdmin();
+    $baseUser->forceFill(['global_admin' => false])->saveQuietly();
+    config()->set('aura.resources.user', EmailPreferenceUser::class);
+    config()->set('auth.providers.users.model', EmailPreferenceUser::class);
+    $user = EmailPreferenceUser::withoutGlobalScopes()->findOrFail($baseUser->getKey());
+    $team = $user->currentTeam;
+    Auth::login($user);
+    $context = preferenceContext($user, $team);
+
+    preferenceManager()->set('table.view', 'kanban', PreferenceScope::Team, $context, $user);
+
+    expect(preferenceManager()->get('table.view', $context))->toBe('kanban')
+        ->and($team->getAttribute('user_id'))->toBe($user->getKey());
+
+    $wrongModelActor = User::withoutGlobalScopes()->findOrFail($user->getKey());
+    Auth::login($wrongModelActor);
+
+    expect(fn () => preferenceManager()->set(
+        'table.view',
+        'list',
+        PreferenceScope::Team,
+        preferenceContext($wrongModelActor, $team),
+        $wrongModelActor,
     ))->toThrow(AuthorizationException::class);
 });
 
@@ -901,6 +929,158 @@ test('a false alias deletion veto rolls back the float update and preserves the 
                 ->getRawOriginal('value'))->toBe('1.0')
             ->and(Option::withoutGlobalScopes()->where('name', $aliasName)->exists())->toBeTrue()
             ->and($preferences->get('test.float-delete-veto', $context))->toBe(1.0);
+    } finally {
+        Option::flushEventListeners();
+        Option::clearBootedModels();
+    }
+});
+
+test('a false non-float save veto rolls back storage and preserves the warmed value', function (PreferenceScope $scope) {
+    registerPreference(new PreferenceDefinition(
+        key: 'test.string-save-veto',
+        type: PreferenceValueType::String,
+        default: 'default',
+        scopes: PreferenceScope::cases(),
+    ));
+    $user = preferenceGlobalAdmin();
+    $context = preferenceContext($user, $user->currentTeam, null);
+    $preferences = preferenceManager();
+    $preferences->set('test.string-save-veto', 'before', $scope, $context, $user);
+    $storedValue = Option::withoutGlobalScopes()->sole()->getRawOriginal('value');
+
+    expect($preferences->get('test.string-save-veto', $context))->toBe('before');
+
+    Option::updating(function (Option $option): bool {
+        return ! str_contains((string) $option->getAttribute('name'), 'preference.v1.');
+    });
+
+    try {
+        expect(fn () => $preferences->set(
+            'test.string-save-veto',
+            'after',
+            $scope,
+            $context,
+            $user,
+        ))->toThrow(RuntimeException::class, 'vetoed')
+            ->and(Option::withoutGlobalScopes()->sole()->getRawOriginal('value'))->toBe($storedValue)
+            ->and($preferences->get('test.string-save-veto', $context))->toBe('before');
+    } finally {
+        Option::flushEventListeners();
+        Option::clearBootedModels();
+    }
+})->with([
+    'user scope' => PreferenceScope::User,
+    'team scope' => PreferenceScope::Team,
+    'everyone scope' => PreferenceScope::Everyone,
+]);
+
+test('a false non-float restore veto leaves the stored option deleted', function (PreferenceScope $scope) {
+    registerPreference(new PreferenceDefinition(
+        key: 'test.string-restore-veto',
+        type: PreferenceValueType::String,
+        default: 'default',
+        scopes: PreferenceScope::cases(),
+    ));
+    $user = preferenceGlobalAdmin();
+    $context = preferenceContext($user, $user->currentTeam, null);
+    $preferences = preferenceManager();
+    $preferences->set('test.string-restore-veto', 'before', $scope, $context, $user);
+    Option::withoutGlobalScopes()->sole()->deleteQuietly();
+    Cache::flush();
+
+    Option::restoring(function (Option $option): bool {
+        return ! str_contains((string) $option->getAttribute('name'), 'preference.v1.');
+    });
+
+    try {
+        expect(fn () => $preferences->set(
+            'test.string-restore-veto',
+            'after',
+            $scope,
+            $context,
+            $user,
+        ))->toThrow(RuntimeException::class, 'vetoed')
+            ->and(Option::withoutGlobalScopes()->withTrashed()->sole()->trashed())->toBeTrue()
+            ->and($preferences->get('test.string-restore-veto', $context))->toBe('default');
+    } finally {
+        Option::flushEventListeners();
+        Option::clearBootedModels();
+    }
+})->with([
+    'user scope' => PreferenceScope::User,
+    'team scope' => PreferenceScope::Team,
+    'everyone scope' => PreferenceScope::Everyone,
+]);
+
+test('a false reset deletion veto preserves non-float storage and cache', function (PreferenceScope $scope) {
+    registerPreference(new PreferenceDefinition(
+        key: 'test.string-reset-veto',
+        type: PreferenceValueType::String,
+        default: 'default',
+        scopes: PreferenceScope::cases(),
+    ));
+    $user = preferenceGlobalAdmin();
+    $context = preferenceContext($user, $user->currentTeam, null);
+    $preferences = preferenceManager();
+    $preferences->set('test.string-reset-veto', 'stored', $scope, $context, $user);
+
+    expect($preferences->get('test.string-reset-veto', $context))->toBe('stored');
+
+    Option::deleting(function (Option $option): bool {
+        return ! str_contains((string) $option->getAttribute('name'), 'preference.v1.');
+    });
+
+    try {
+        expect(fn () => $preferences->reset(
+            'test.string-reset-veto',
+            $scope,
+            $context,
+            $user,
+        ))->toThrow(RuntimeException::class, 'vetoed')
+            ->and(Option::withoutGlobalScopes()->count())->toBe(1)
+            ->and($preferences->get('test.string-reset-veto', $context))->toBe('stored');
+    } finally {
+        Option::flushEventListeners();
+        Option::clearBootedModels();
+    }
+})->with([
+    'user scope' => PreferenceScope::User,
+    'team scope' => PreferenceScope::Team,
+    'everyone scope' => PreferenceScope::Everyone,
+]);
+
+test('a false alias force-delete veto rolls back a non-float user update', function () {
+    registerPreference(new PreferenceDefinition(
+        key: 'test.string-alias-veto',
+        type: PreferenceValueType::String,
+        default: 'default',
+        scopes: [PreferenceScope::User],
+    ));
+    $user = preferenceGlobalAdmin();
+    $context = preferenceContext($user, $user->currentTeam, null);
+    $preferences = preferenceManager();
+    $preferences->set('test.string-alias-veto', 'before', PreferenceScope::User, $context, $user);
+    $canonical = Option::withoutGlobalScopes()->sole();
+    $canonicalName = (string) $canonical->getRawOriginal('name');
+    $storageKey = substr($canonicalName, strlen(User::optionNamePrefixFor($user->getKey())));
+    $aliasName = 'user.'.$user->getKey().'.'.$storageKey;
+    $aliasAttributes = $canonical->getAttributes();
+    unset($aliasAttributes[$canonical->getKeyName()]);
+    $aliasAttributes['name'] = $aliasName;
+    DB::table($canonical->getTable())->insert($aliasAttributes);
+
+    Option::deleting(fn (Option $option): bool => $option->getRawOriginal('name') !== $aliasName);
+
+    try {
+        expect(fn () => $preferences->set(
+            'test.string-alias-veto',
+            'after',
+            PreferenceScope::User,
+            $context,
+            $user,
+        ))->toThrow(RuntimeException::class, 'vetoed')
+            ->and(Option::withoutGlobalScopes()->where('name', $aliasName)->exists())->toBeTrue()
+            ->and($preferences->get('test.string-alias-veto', $context))->toBe('before');
     } finally {
         Option::flushEventListeners();
         Option::clearBootedModels();
