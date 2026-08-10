@@ -21,10 +21,10 @@ trait Kanban
         $this->reorderKanbanStatuses($newOrder);
     }
 
-    public function reorderKanbanStatuses($statuses): void
+    public function reorderKanbanStatuses(mixed $statuses, mixed $position = null): void
     {
         $declared = $this->declaredKanbanStatuses();
-        $requested = is_array($statuses) ? $statuses : [];
+        $requested = $this->requestedKanbanStatusOrder($statuses, $position, $declared);
         $orderedKeys = collect($requested)
             ->filter(fn (mixed $key): bool => is_string($key) || is_int($key))
             ->map(fn (string|int $key): string => (string) $key)
@@ -118,6 +118,36 @@ trait Kanban
         if (method_exists($this->model, 'kanbanPagination')) {
             $this->perPage = $this->model->kanbanPagination();
         }
+    }
+
+    /**
+     * @param  array<string, array{value: string, color: string|null, visible: bool}>  $declared
+     * @return array<int, string|int>
+     */
+    protected function requestedKanbanStatusOrder(mixed $statuses, mixed $position, array $declared): array
+    {
+        if (is_array($statuses)) {
+            return $statuses;
+        }
+
+        if (
+            (! is_string($statuses) && ! is_int($statuses))
+            || ! is_int($position)
+            || $position < 0
+            || ! array_key_exists((string) $statuses, $declared)
+        ) {
+            abort(422, 'The Kanban column order is invalid.');
+        }
+
+        $status = (string) $statuses;
+        $ordered = collect(array_keys($this->sanitizeKanbanStatuses($this->kanbanStatuses)))
+            ->reject(fn (string $key): bool => $key === $status)
+            ->values()
+            ->all();
+
+        array_splice($ordered, min($position, count($ordered)), 0, [$status]);
+
+        return $ordered;
     }
 
     /**

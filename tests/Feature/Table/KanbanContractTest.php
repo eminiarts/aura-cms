@@ -248,7 +248,7 @@ test('saved Kanban preferences can only reorder and hide declared columns', func
         'reviewed' => ['visible' => true],
     ]);
 
-    livewire(Table::class, [
+    $component = livewire(Table::class, [
         'model' => $resource,
         'settings' => ['default_view' => 'kanban'],
     ])->assertSet('kanbanStatuses', [
@@ -256,6 +256,16 @@ test('saved Kanban preferences can only reorder and hide declared columns', func
         'reviewed' => ['value' => 'Reviewed', 'color' => 'green', 'visible' => true],
         'published' => ['value' => 'Published', 'color' => 'blue', 'visible' => true],
     ]);
+
+    $component
+        ->call('reorderKanbanStatuses', 'published', 0)
+        ->assertSet('kanbanStatuses', [
+            'published' => ['value' => 'Published', 'color' => 'blue', 'visible' => true],
+            'draft' => ['value' => 'Draft', 'color' => 'gray', 'visible' => false],
+            'reviewed' => ['value' => 'Reviewed', 'color' => 'green', 'visible' => true],
+        ])
+        ->call('reorderKanbanStatuses', 'forged', 0)
+        ->assertStatus(422);
 });
 
 test('empty column visibility and malformed contracts fail safely', function () {
