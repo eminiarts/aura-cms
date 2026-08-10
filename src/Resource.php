@@ -22,15 +22,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Support\Arr;
+use Illuminate\Events\NullDispatcher;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use PDO;
-use PDOStatement;
-use UnitEnum;
-
-use function Illuminate\Support\enum_value;
 
 /**
  * Dynamic property access on a Resource resolves in a fixed precedence order,
@@ -107,17 +103,6 @@ class Resource extends Model implements DefinesFields
     protected array $tableDisplayCache = [];
 
     protected $with = [];
-
-    /**
-     * Exact model instances prepared by a named global-write contract.
-     *
-     * This is validation intent, not an exportable database capability. The
-     * captured PDO is used only by the package-owned statement after all model,
-     * query-builder, and connection callbacks have returned.
-     *
-     * @var \WeakMap<self, array{class: class-string<self>, connection: Connection, writePdo: PDO, phase: 'pending'|'saving'|'persisted'}>|null
-     */
-    private static ?\WeakMap $globalWriteIntents = null;
 
     /** @var list<array{connection: string, owner_id: int|string|null}> */
     private static array $trustedOwnerContexts = [];
@@ -310,7 +295,15 @@ class Resource extends Model implements DefinesFields
 
         Gate::authorize('createGlobal', $resource);
 
-        return static::createGlobalRecord($attributes, $resource->getConnection());
+        if (! $authenticatedUser instanceof User) {
+            throw new \LogicException('Only authenticated Aura users may authorize global resources.');
+        }
+
+        return static::createGlobalRecord(
+            $attributes,
+            $resource->getConnection(),
+            $authenticatedUser,
+        );
     }
 
     /**
@@ -593,7 +586,13 @@ class Resource extends Model implements DefinesFields
         $this->fill($attributes);
         $this->setAttribute('team_id', null);
 
-        return static::withinGlobalWrite($this, fn (): bool => $this->save());
+        $authenticatedUser = auth()->user();
+
+        if (! $authenticatedUser instanceof User) {
+            throw new \LogicException('Only authenticated Aura users may authorize global resources.');
+        }
+
+        return $this->saveGlobalResource($authenticatedUser, authorizeUpdate: true);
     }
 
     /**
@@ -667,39 +666,6 @@ class Resource extends Model implements DefinesFields
     {
         return $this->hasMany(self::class, 'parent_id')
             ->where('post_type', 'revision');
-    }
-
-    /**
-     * Save a model while preventing a callback from reusing a pending global
-     * write intent on the same instance. Post-persistence callbacks retain
-     * Laravel's normal ability to save the model again as an ordinary update.
-     *
-     * @param  array<string, mixed>  $options
-     */
-    public function save(array $options = [])
-    {
-        $intent = self::$globalWriteIntents[$this] ?? null;
-
-        if ($intent === null || $intent['phase'] === 'persisted') {
-            return parent::save($options);
-        }
-
-        if ($intent['phase'] === 'saving') {
-            throw new \LogicException('A global Resource save cannot be re-entered from a callback.');
-        }
-
-        $intent['phase'] = 'saving';
-        self::$globalWriteIntents[$this] = $intent;
-
-        $saved = parent::save($options);
-
-        if ($saved && isset(self::$globalWriteIntents[$this])) {
-            $intent = self::$globalWriteIntents[$this];
-            $intent['phase'] = 'persisted';
-            self::$globalWriteIntents[$this] = $intent;
-        }
-
-        return $saved;
     }
 
     public function setRelation($relation, $value)
@@ -801,26 +767,28 @@ class Resource extends Model implements DefinesFields
     protected static function createGlobalRecord(
         array $attributes,
         ?Connection $connection = null,
+        ?User $authenticatedUser = null,
     ): static {
         static::ensureGlobalWriteIsSupported();
 
         $resource = static::resourceModelOnConnection($connection);
 
-        return static::createGlobalResourceInstance($attributes, $resource);
+        return static::createGlobalResourceInstance($attributes, $resource, $authenticatedUser);
     }
 
     /**
      * @param  array<string, mixed>  $attributes
      */
-    protected static function createGlobalResourceInstance(array $attributes, Resource $resource): static
-    {
+    protected static function createGlobalResourceInstance(
+        array $attributes,
+        Resource $resource,
+        ?User $authenticatedUser = null,
+    ): static {
         $attributes['team_id'] = null;
         $instance = static::ensureStaticResource($resource->newInstance($attributes));
 
-        return static::withinGlobalWrite($instance, function () use ($instance): static {
-            $instance->save();
-
-            return $instance;
+        return tap($instance, function (Resource $instance) use ($authenticatedUser): void {
+            $instance->saveGlobalResource($authenticatedUser);
         });
     }
 
@@ -857,6 +825,10 @@ class Resource extends Model implements DefinesFields
     protected function fireModelEvent($event, $halt = true)
     {
         if ($event !== 'deleting' && $event !== 'forceDeleting') {
+            if ($event === 'saving' && ! static::getEventDispatcher() instanceof NullDispatcher) {
+                $this->prepareFieldAttributesForPersistence();
+            }
+
             return parent::fireModelEvent($event, $halt);
         }
 
@@ -942,83 +914,18 @@ class Resource extends Model implements DefinesFields
             && (string) $actor->getKey() === (string) $ownerId;
     }
 
-    /**
-     * Perform a global insert only after Laravel's creating callback has
-     * completed. The captured writer is never placed in callback-visible
-     * state.
-     */
     protected function performInsert(Builder $query)
     {
-        if (! $this->hasPendingGlobalWriteIntent()) {
-            return parent::performInsert($query);
-        }
+        $query->getQuery()->beforeQuery(fn (): bool => $this->authorizeOrdinaryPersistence());
 
-        if ($this->usesUniqueIds()) {
-            $this->setUniqueIds();
-        }
-
-        if ($this->fireModelEvent('creating') === false) {
-            return false;
-        }
-
-        if ($this->usesTimestamps()) {
-            $this->updateTimestamps();
-        }
-
-        $attributes = $this->getAttributesForInsert();
-
-        if ($this->getIncrementing()) {
-            $id = $this->executeGlobalInsert($query, $attributes, $this->getKeyName());
-            $this->completeGlobalWritePersistence();
-            $this->setAttribute($this->getKeyName(), $id);
-        } else {
-            if (empty($attributes)) {
-                $this->completeGlobalWritePersistence();
-
-                return true;
-            }
-
-            $this->executeGlobalInsert($query, $attributes);
-            $this->completeGlobalWritePersistence();
-        }
-
-        $this->exists = true;
-        $this->wasRecentlyCreated = true;
-        $this->fireModelEvent('created', false);
-
-        return true;
+        return parent::performInsert($query);
     }
 
-    /**
-     * Perform a global update only after Laravel's updating callback has
-     * completed. Ordinary Resource saves keep Laravel's native implementation.
-     */
     protected function performUpdate(Builder $query)
     {
-        if (! $this->hasPendingGlobalWriteIntent()) {
-            return parent::performUpdate($query);
-        }
+        $query->getQuery()->beforeQuery(fn (): bool => $this->authorizeOrdinaryPersistence());
 
-        if ($this->fireModelEvent('updating') === false) {
-            return false;
-        }
-
-        if ($this->usesTimestamps()) {
-            $this->updateTimestamps();
-        }
-
-        $dirty = $this->getDirtyForUpdate();
-
-        if (count($dirty) > 0) {
-            $this->executeGlobalUpdate($this->setKeysForSaveQuery($query), $dirty);
-            $this->completeGlobalWritePersistence();
-            $this->syncChanges();
-            $this->fireModelEvent('updated', false);
-        } else {
-            $this->completeGlobalWritePersistence();
-        }
-
-        return true;
+        return parent::performUpdate($query);
     }
 
     protected static function resourceModelOnConnection(?Connection $connection = null): static
@@ -1048,45 +955,10 @@ class Resource extends Model implements DefinesFields
 
         if (! $instance->wasRecentlyCreated) {
             $instance->fill($values);
-            static::withinGlobalWrite($instance, fn (): bool => $instance->save());
+            $instance->saveGlobalResource();
         }
 
         return $instance;
-    }
-
-    /**
-     * @template TValue
-     *
-     * @param  callable(): TValue  $callback
-     * @return TValue
-     */
-    protected static function withinGlobalWrite(Resource $resource, callable $callback): mixed
-    {
-        self::$globalWriteIntents ??= new \WeakMap;
-
-        if (count(self::$globalWriteIntents) > 0) {
-            throw new \LogicException('A nested global Resource write cannot be started from a callback.');
-        }
-
-        $connection = $resource->getConnection();
-        $writePdo = $connection->getPdo();
-
-        if (! $writePdo instanceof PDO) {
-            throw new \LogicException('A global write requires an active physical database writer.');
-        }
-
-        self::$globalWriteIntents[$resource] = [
-            'class' => $resource::class,
-            'connection' => $connection,
-            'writePdo' => $writePdo,
-            'phase' => 'pending',
-        ];
-
-        try {
-            return $callback();
-        } finally {
-            unset(self::$globalWriteIntents[$resource]);
-        }
     }
 
     /**
@@ -1118,24 +990,54 @@ class Resource extends Model implements DefinesFields
         }
     }
 
-    private function assertGlobalWriteIntentMatchesPhysicalWriter(): void
-    {
-        $intent = self::$globalWriteIntents[$this] ?? null;
+    private function authorizeGlobalPersistence(
+        Connection $connection,
+        PDO $writePdo,
+        string $table,
+        mixed $ownerId,
+        ?User $authenticatedUser,
+        bool $authorizeUpdate,
+    ): bool {
+        static::ensureGlobalWriteIsSupported();
 
-        if ($intent === null || ! self::globalWriteIntentMatches($this, $intent)) {
-            throw new \LogicException('A global write cannot change resource or physical database writer.');
+        if ($this->getConnection() !== $connection
+            || $connection->getRawPdo() !== $writePdo
+            || $this->getTable() !== $table
+            || $this->getAttribute('team_id') !== null
+            || $this->getAttribute('user_id') !== $ownerId) {
+            throw new \LogicException('A global write cannot change its resource, tenancy, owner, or physical database writer.');
         }
+
+        if ($authenticatedUser === null) {
+            return true;
+        }
+
+        $currentUser = auth()->user();
+
+        if ($currentUser !== $authenticatedUser
+            || User::connectionCacheIdentity($authenticatedUser->getConnection())
+                !== User::connectionCacheIdentity($connection)) {
+            throw new \LogicException('A global write cannot change its authenticated actor or database connection.');
+        }
+
+        Gate::forUser($authenticatedUser)->authorize('createGlobal', $this);
+
+        if ($authorizeUpdate) {
+            Gate::forUser($authenticatedUser)->authorize('update', $this);
+        }
+
+        if ($ownerId !== null && (string) $ownerId !== (string) $authenticatedUser->getKey()) {
+            throw new \LogicException('A global resource owner must match the authenticated actor.');
+        }
+
+        return true;
     }
 
-    private function completeGlobalWritePersistence(): void
+    private function authorizeOrdinaryPersistence(): bool
     {
-        if (! isset(self::$globalWriteIntents[$this])) {
-            return;
-        }
+        static::authorizeInitialPostFieldPersistence($this);
 
-        $intent = self::$globalWriteIntents[$this];
-        $intent['phase'] = 'persisted';
-        self::$globalWriteIntents[$this] = $intent;
+        return true;
     }
 
     private function ensureDeleteUsesAuthenticatedConnection(): void
@@ -1159,228 +1061,93 @@ class Resource extends Model implements DefinesFields
         }
     }
 
-    /**
-     * Execute one package-owned persistence statement on the physical writer
-     * captured before model callbacks. Connection callbacks run first, while no
-     * Aura global-write authority is exposed, and the writer identity is then
-     * revalidated immediately before PDO execution.
-     *
-     * @param  list<mixed>  $bindings
-     */
-    private function executeAgainstCapturedGlobalWriter(
-        Connection $connection,
-        string $sql,
-        array $bindings,
-        string $operation,
-        ?string $sequence = null,
-    ): mixed {
-        $this->invokeBeforeExecutingCallbacks($connection, $sql, $bindings);
-        $this->assertGlobalWriteIntentMatchesPhysicalWriter();
-
-        $intent = self::$globalWriteIntents[$this];
-        $writePdo = $intent['writePdo'];
-        $preparedBindings = $connection->prepareBindings($bindings);
-        $startedAt = microtime(true);
-
-        $callback = function (string $_sql, array $_bindings) use (
-            $connection,
-            $operation,
-            $preparedBindings,
-            $sequence,
-            $sql,
-            $writePdo,
-        ): mixed {
-            if ($connection->pretending()) {
-                return $operation === 'update' ? 0 : true;
-            }
-
-            $statement = $writePdo->prepare($sql);
-
-            if (! $statement instanceof PDOStatement) {
-                throw new \RuntimeException('Unable to prepare the global Resource persistence statement.');
-            }
-
-            $connection->bindValues($statement, $preparedBindings);
-            $executed = $statement->execute();
-
-            if ($operation === 'update') {
-                return $statement->rowCount();
-            }
-
-            if ($operation === 'insert') {
-                return $executed;
-            }
-
-            if ($connection->getDriverName() === 'pgsql') {
-                return $statement->fetchColumn();
-            }
-
-            if ($connection->getDriverName() === 'sqlsrv'
-                && $connection->getConfig('odbc') === true) {
-                $identity = $writePdo->query(
-                    'SELECT CAST(COALESCE(SCOPE_IDENTITY(), @@IDENTITY) AS int) AS insertid',
-                );
-
-                return $identity instanceof PDOStatement
-                    ? $identity->fetchColumn()
-                    : throw new \RuntimeException('Unable to retrieve the inserted Resource ID.');
-            }
-
-            return $writePdo->lastInsertId($sequence);
-        };
-
-        $result = $this->invokeRunQueryCallback($connection, $sql, $bindings, $callback);
-        $this->completeGlobalWritePersistence();
-        $connection->recordsHaveBeenModified(
-            $operation === 'update' ? $result > 0 : (bool) $result,
-        );
-        $connection->logQuery(
-            $sql,
-            $bindings,
-            round((microtime(true) - $startedAt) * 1000, 2),
-        );
-
-        return is_numeric($result) ? (int) $result : $result;
-    }
-
-    /**
-     * @param  array<string, mixed>  $attributes
-     */
-    private function executeGlobalInsert(
+    private function performGlobalInsert(
         Builder $query,
-        array $attributes,
-        ?string $sequence = null,
-    ): mixed {
-        $baseQuery = $query->toBase();
-        $baseQuery->applyBeforeQueryCallbacks();
-        $grammar = $baseQuery->getGrammar();
-        $sql = $sequence === null
-            ? $grammar->compileInsert($baseQuery, $attributes)
-            : $grammar->compileInsertGetId($baseQuery, $attributes, $sequence);
-        $bindings = $baseQuery->cleanBindings(Arr::flatten([$attributes], 1));
-
-        return $this->executeAgainstCapturedGlobalWriter(
-            $baseQuery->getConnection(),
-            $sql,
-            $bindings,
-            $sequence === null ? 'insert' : 'insert-id',
-            $sequence,
-        );
-    }
-
-    /**
-     * @param  array<string, mixed>  $values
-     */
-    private function executeGlobalUpdate(Builder $query, array $values): int
-    {
-        $values = $this->prepareGlobalUpdateValues($query, $values);
-        $baseQuery = $query->toBase();
-        $baseQuery->applyBeforeQueryCallbacks();
-        $values = collect($values)->map(
-            static fn (mixed $value): mixed => $value instanceof UnitEnum
-                ? enum_value($value)
-                : $value,
-        )->all();
-        $grammar = $baseQuery->getGrammar();
-        $sql = $grammar->compileUpdate($baseQuery, $values);
-        $bindings = $baseQuery->cleanBindings(
-            $grammar->prepareBindingsForUpdate($baseQuery->bindings, $values),
-        );
-
-        return $this->executeAgainstCapturedGlobalWriter(
-            $baseQuery->getConnection(),
-            $sql,
-            $bindings,
-            'update',
-        );
-    }
-
-    /**
-     * @param  array{class: class-string<self>, connection: Connection, writePdo: PDO, phase: 'pending'|'saving'|'persisted'}  $intent
-     */
-    private static function globalWriteIntentMatches(Resource $resource, array $intent): bool
-    {
-        $connection = $resource->getConnection();
-
-        return $intent['class'] === $resource::class
-            && $intent['connection'] === $connection
-            && $intent['writePdo'] === $connection->getRawPdo();
-    }
-
-    private static function hasGlobalWriteValidationIntent(Resource $resource): bool
-    {
-        $intent = self::$globalWriteIntents[$resource] ?? null;
-
-        return $intent !== null
-            && $intent['phase'] === 'saving'
-            && self::globalWriteIntentMatches($resource, $intent);
-    }
-
-    private function hasPendingGlobalWriteIntent(): bool
-    {
-        $intent = self::$globalWriteIntents[$this] ?? null;
-
-        return $intent !== null && $intent['phase'] === 'saving';
-    }
-
-    /**
-     * @param  list<mixed>  $bindings
-     */
-    private function invokeBeforeExecutingCallbacks(
         Connection $connection,
-        string $sql,
-        array $bindings,
-    ): void {
-        $property = new \ReflectionProperty(Connection::class, 'beforeExecutingCallbacks');
-        $callbacks = $property->getValue($connection);
-
-        foreach ($callbacks as $callback) {
-            $callback($sql, $bindings, $connection);
+        PDO $writePdo,
+        string $table,
+        mixed $ownerId,
+        ?User $authenticatedUser,
+    ): bool {
+        if ($this->usesUniqueIds()) {
+            $this->setUniqueIds();
         }
+
+        if (parent::fireModelEvent('creating') === false) {
+            return false;
+        }
+
+        if ($this->usesTimestamps()) {
+            $this->updateTimestamps();
+        }
+
+        $attributes = $this->getAttributesForInsert();
+        $authorize = fn (): bool => $this->authorizeGlobalPersistence(
+            $connection,
+            $writePdo,
+            $table,
+            $ownerId,
+            $authenticatedUser,
+            false,
+        );
+
+        if ($this->getIncrementing()) {
+            $query->getQuery()->beforeQuery($authorize);
+            $this->setAttribute(
+                $this->getKeyName(),
+                $query->insertGetId($attributes, $this->getKeyName()),
+            );
+        } elseif ($attributes !== []) {
+            $query->getQuery()->beforeQuery($authorize);
+            $query->insert($attributes);
+        } else {
+            $authorize();
+        }
+
+        $this->exists = true;
+        $this->wasRecentlyCreated = true;
+        parent::fireModelEvent('created', false);
+
+        return true;
     }
 
-    /**
-     * Preserve Laravel's driver-specific QueryException conversion without
-     * routing the statement back through callback-visible Connection::run().
-     *
-     * @param  list<mixed>  $bindings
-     */
-    private function invokeRunQueryCallback(
+    private function performGlobalUpdate(
+        Builder $query,
         Connection $connection,
-        string $sql,
-        array $bindings,
-        \Closure $callback,
-    ): mixed {
-        $method = new \ReflectionMethod(Connection::class, 'runQueryCallback');
-
-        return $method->invoke($connection, $sql, $bindings, $callback);
-    }
-
-    /**
-     * Match Eloquent\Builder::update() timestamp qualification without running
-     * the statement through callback-visible Connection::run().
-     *
-     * @param  array<string, mixed>  $values
-     * @return array<string, mixed>
-     */
-    private function prepareGlobalUpdateValues(Builder $query, array $values): array
-    {
-        if (! $this->usesTimestamps() || is_null($this->getUpdatedAtColumn())) {
-            return $values;
+        PDO $writePdo,
+        string $table,
+        mixed $ownerId,
+        ?User $authenticatedUser,
+        bool $authorizeUpdate,
+    ): bool {
+        if (parent::fireModelEvent('updating') === false) {
+            return false;
         }
 
-        $column = $this->getUpdatedAtColumn();
-
-        if (! array_key_exists($column, $values)) {
-            $values[$column] = $this->freshTimestampString();
+        if ($this->usesTimestamps()) {
+            $this->updateTimestamps();
         }
 
-        $segments = preg_split('/\s+as\s+/i', $query->getQuery()->from);
-        $qualifiedColumn = array_last($segments).'.'.$column;
-        $values[$qualifiedColumn] = Arr::get($values, $qualifiedColumn, $values[$column]);
-        unset($values[$column]);
+        $dirty = $this->getDirtyForUpdate();
+        $authorize = fn (): bool => $this->authorizeGlobalPersistence(
+            $connection,
+            $writePdo,
+            $table,
+            $ownerId,
+            $authenticatedUser,
+            $authorizeUpdate,
+        );
 
-        return $values;
+        if ($dirty !== []) {
+            $query->getQuery()->beforeQuery($authorize);
+            $this->setKeysForSaveQuery($query)->update($dirty);
+            $this->syncChanges();
+            parent::fireModelEvent('updated', false);
+        } else {
+            $authorize();
+        }
+
+        return true;
     }
 
     /**
@@ -1429,5 +1196,56 @@ class Resource extends Model implements DefinesFields
 
         // 5. Nothing matched: return the (null) $value.
         return $value;
+    }
+
+    private function saveGlobalResource(
+        ?User $authenticatedUser = null,
+        bool $authorizeUpdate = false,
+        array $options = [],
+    ): bool {
+        $this->mergeAttributesFromCachedCasts();
+
+        $connection = $this->getConnection();
+        $query = $this->newModelQuery();
+        $writePdo = $connection->getPdo();
+
+        if (! $writePdo instanceof PDO) {
+            throw new \LogicException('A global write requires an active physical database writer.');
+        }
+
+        $table = $this->getTable();
+        $this->prepareFieldAttributesForPersistence(globalWrite: true);
+        $ownerId = $this->getAttribute('user_id');
+
+        if (parent::fireModelEvent('saving') === false) {
+            return false;
+        }
+
+        $saved = $this->exists
+            ? $this->performGlobalUpdate(
+                $query,
+                $connection,
+                $writePdo,
+                $table,
+                $ownerId,
+                $authenticatedUser,
+                $authorizeUpdate,
+            )
+            : $this->performGlobalInsert(
+                $query,
+                $connection,
+                $writePdo,
+                $table,
+                $ownerId,
+                $authenticatedUser,
+            );
+
+        if (! $saved) {
+            return false;
+        }
+
+        $this->finishSave($options);
+
+        return true;
     }
 }

@@ -194,14 +194,15 @@ uses `createForTeamForSystem($teamId, $attributes)` or
 uses `createForOwnerForSystem($ownerId, $attributes)` or
 `$resource->assignOwnerForSystem($ownerId, $attributes)`.
 
-Global-write authorization is bound to the exact Resource instance and physical
-writer selected by the named API. Aura runs model, query-builder, and connection
-callbacks without that authority, then uses the captured writer only for the
-package-owned insert or update statement. Event handlers, nested field saves,
-and re-entrant saves therefore do not inherit the outer operation's authority.
-A callback also cannot start a second named global Resource write while the
-outer operation is active. Nested tenant writes still require their own explicit
-tenant system contract.
+Global-write authorization is call-local: no token, flag, or reusable capability
+is stored on the Resource or in static process state. After model callbacks,
+Aura revalidates the exact Resource, table, connection, physical writer, global
+team value, owner, and authenticated actor immediately before persistence. The
+write then follows Laravel's normal Connection, query grammar, binding,
+processor, transaction, and exception paths without redispatching model events.
+Event handlers, nested field saves, and re-entrant saves do not inherit the outer
+operation's authority. A callback that needs another global or tenant write must
+invoke an independently authorized named API for that operation.
 
 This is a Resource API authorization boundary, not a sandbox for trusted
 application code. Code that directly uses PDO or SQL while holding the

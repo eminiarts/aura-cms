@@ -6,9 +6,14 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Database\Query\Grammars\SQLiteGrammar;
+use Illuminate\Database\Query\Processors\SQLiteProcessor;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\SQLiteConnection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -162,6 +167,96 @@ class MutatingGlobalResource extends ExplicitNullSharedCustomResource
     }
 }
 
+class Core13ConnectionProbe extends SQLiteConnection
+{
+    public bool $failInsert = false;
+
+    public bool $failUpdate = false;
+
+    public int $insertCalls = 0;
+
+    public int $prepareBindingsCalls = 0;
+
+    public int $updateCalls = 0;
+
+    public function insert($query, $bindings = []): bool
+    {
+        $this->insertCalls++;
+
+        if ($this->failInsert) {
+            throw new RuntimeException('custom connection insert failure');
+        }
+
+        return parent::insert($query, $bindings);
+    }
+
+    public function prepareBindings(array $bindings)
+    {
+        $this->prepareBindingsCalls++;
+
+        return parent::prepareBindings($bindings);
+    }
+
+    public function update($query, $bindings = []): int
+    {
+        $this->updateCalls++;
+
+        if ($this->failUpdate) {
+            throw new RuntimeException('custom connection update failure');
+        }
+
+        return parent::update($query, $bindings);
+    }
+}
+
+class Core13ProcessorProbe extends SQLiteProcessor
+{
+    public ?int $forcedId = null;
+
+    public int $insertGetIdCalls = 0;
+
+    public function processInsertGetId(QueryBuilder $query, $sql, $values, $sequence = null)
+    {
+        $this->insertGetIdCalls++;
+
+        $id = parent::processInsertGetId($query, $sql, $values, $sequence);
+
+        return $this->forcedId ?? $id;
+    }
+}
+
+class Core13GrammarProbe extends SQLiteGrammar
+{
+    public int $insertCompilations = 0;
+
+    public int $updateCompilations = 0;
+
+    public function compileInsert(QueryBuilder $query, array $values)
+    {
+        $this->insertCompilations++;
+
+        return parent::compileInsert($query, $values);
+    }
+
+    public function compileUpdate(QueryBuilder $query, array $values)
+    {
+        $this->updateCompilations++;
+
+        return parent::compileUpdate($query, $values);
+    }
+}
+
+class Core13NonIncrementingGlobalResource extends ExplicitNullSharedCustomResource
+{
+    public $incrementing = false;
+
+    protected $fillable = ['id', 'name', 'team_id', 'user_id'];
+
+    protected $keyType = 'string';
+
+    protected $table = 'core13_nonincrementing_resources';
+}
+
 class NestedNonSharedTag extends Resource
 {
     public static string $type = 'NestedNonSharedTag';
@@ -236,6 +331,7 @@ afterEach(function () {
     PhysicalWriterGuardedGlobalResource::$creatingAttack = null;
     MutatingGlobalResource::$mutatorInputs = [];
     Schema::dropIfExists('explicit_null_shared_custom_resources');
+    DB::purge('core13_probe');
     DB::purge('nested_global_write');
     DB::purge('global_write_reconnect');
 });
@@ -264,6 +360,197 @@ function core13PhysicalWriterRowCount(PDO $writer): int
         ->query('SELECT COUNT(*) FROM explicit_null_shared_custom_resources')
         ->fetchColumn();
 }
+
+function core13InstallConnectionProbe(): Core13ConnectionProbe
+{
+    $connection = new Core13ConnectionProbe(
+        new PDO('sqlite::memory:'),
+        ':memory:',
+        '',
+        ['driver' => 'sqlite', 'database' => ':memory:', 'name' => 'core13_probe'],
+    );
+    $connection->setEventDispatcher(app('events'));
+    $connection->setPostProcessor(new Core13ProcessorProbe);
+    $connection->setQueryGrammar(new Core13GrammarProbe($connection));
+    app('db')->extend('core13_probe', fn (): Connection => $connection);
+    config()->set('database.connections.core13_probe', [
+        'driver' => 'core13_probe',
+        'database' => ':memory:',
+    ]);
+    DB::purge('core13_probe');
+    $resolved = DB::connection('core13_probe');
+    $resolved->statement(<<<'SQL'
+        CREATE TABLE explicit_null_shared_custom_resources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR NOT NULL,
+            team_id INTEGER NULL,
+            user_id INTEGER NULL,
+            parent_id INTEGER NULL,
+            created_at DATETIME NULL,
+            updated_at DATETIME NULL
+        )
+        SQL);
+    $resolved->statement(<<<'SQL'
+        CREATE TABLE core13_nonincrementing_resources (
+            id VARCHAR PRIMARY KEY,
+            name VARCHAR NOT NULL,
+            team_id INTEGER NULL,
+            user_id INTEGER NULL,
+            created_at DATETIME NULL,
+            updated_at DATETIME NULL
+        )
+        SQL);
+
+    return $connection;
+}
+
+it('keeps no reflectable static global write intent or capability state', function (): void {
+    $properties = collect((new ReflectionClass(Resource::class))->getProperties(ReflectionProperty::IS_STATIC))
+        ->map(fn (ReflectionProperty $property): string => $property->getName())
+        ->filter(fn (string $property): bool => str_contains(strtolower($property), 'globalwrite'))
+        ->values()
+        ->all();
+
+    expect($properties)->toBe([]);
+});
+
+it('cannot copy outer model or static properties into a nested ordinary global write', function (): void {
+    $nestedWriteRejected = false;
+    $armed = true;
+
+    PhysicalWriterGuardedGlobalResource::$savingAttack = function (PhysicalWriterGuardedGlobalResource $outer) use (&$armed, &$nestedWriteRejected): void {
+        if (! $armed) {
+            return;
+        }
+
+        $armed = false;
+        $nested = new PhysicalWriterGuardedGlobalResource([
+            'name' => 'Copied property nested candidate',
+            'team_id' => null,
+        ]);
+
+        foreach ((new ReflectionObject($outer))->getProperties() as $property) {
+            if ($property->isStatic() || $property->isReadOnly()) {
+                continue;
+            }
+
+            $property->setAccessible(true);
+
+            if ($property->isInitialized($outer)) {
+                $property->setValue($nested, $property->getValue($outer));
+            }
+        }
+
+        try {
+            $nested->forceFill([
+                'name' => 'Copied property nested candidate',
+                'team_id' => null,
+            ])->save();
+        } catch (LogicException $exception) {
+            $nestedWriteRejected = str_contains($exception->getMessage(), 'createGlobal');
+        }
+    };
+
+    $outer = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Property-copy outer write',
+    ]);
+
+    expect($nestedWriteRejected)->toBeTrue()
+        ->and($outer->name)->toBe('Property-copy outer write')
+        ->and(PhysicalWriterGuardedGlobalResource::withoutGlobalScopes()
+            ->where('name', 'Copied property nested candidate')
+            ->doesntExist())->toBeTrue();
+});
+
+it('uses configured connection and processor persistence semantics for global writes', function (): void {
+    $connection = core13InstallConnectionProbe();
+    $processor = $connection->getPostProcessor();
+    $grammar = $connection->getQueryGrammar();
+
+    expect($processor)->toBeInstanceOf(Core13ProcessorProbe::class)
+        ->and($grammar)->toBeInstanceOf(Core13GrammarProbe::class);
+
+    $global = ExplicitNullSharedCustomResource::createGlobalForSystem([
+        'name' => 'Connection insert probe',
+    ], $connection);
+    $updated = ExplicitNullSharedCustomResource::updateOrCreateGlobalForSystem(
+        ['id' => $global->id],
+        ['name' => 'Connection update probe'],
+        $connection,
+    );
+
+    expect($global->id)->toBe(1)
+        ->and($updated->name)->toBe('Connection update probe')
+        ->and($connection->insertCalls)->toBe(1)
+        ->and($connection->updateCalls)->toBe(1)
+        ->and($connection->prepareBindingsCalls)->toBeGreaterThanOrEqual(2)
+        ->and($processor->insertGetIdCalls)->toBe(1)
+        ->and($grammar->insertCompilations)->toBe(1)
+        ->and($grammar->updateCompilations)->toBe(1);
+});
+
+it('preserves processor ids and nonincrementing string ids', function (): void {
+    $connection = core13InstallConnectionProbe();
+    $processor = $connection->getPostProcessor();
+
+    expect($processor)->toBeInstanceOf(Core13ProcessorProbe::class);
+
+    $processor->forcedId = 731;
+    $incrementing = ExplicitNullSharedCustomResource::createGlobalForSystem([
+        'name' => 'Forced processor id',
+    ], $connection);
+    $nonIncrementing = Core13NonIncrementingGlobalResource::createGlobalForSystem([
+        'id' => '01CORE13NONINCREMENTING',
+        'name' => 'String id global row',
+    ], $connection);
+
+    expect($incrementing->id)->toBe(731)
+        ->and($nonIncrementing->id)->toBe('01CORE13NONINCREMENTING')
+        ->and($connection->table('explicit_null_shared_custom_resources')->where('id', 1)->exists())->toBeTrue()
+        ->and($connection->table('core13_nonincrementing_resources')->where('id', '01CORE13NONINCREMENTING')->exists())->toBeTrue()
+        ->and($connection->insertCalls)->toBe(2)
+        ->and($processor->insertGetIdCalls)->toBe(1);
+});
+
+it('preserves custom connection failures and transaction rollback', function (): void {
+    $connection = core13InstallConnectionProbe();
+    $connection->failInsert = true;
+
+    expect(fn () => ExplicitNullSharedCustomResource::createGlobalForSystem([
+        'name' => 'Rejected custom insert',
+    ], $connection))->toThrow(RuntimeException::class, 'custom connection insert failure');
+
+    expect($connection->table('explicit_null_shared_custom_resources')->count())->toBe(0);
+
+    $connection->failInsert = false;
+    $global = ExplicitNullSharedCustomResource::createGlobalForSystem([
+        'name' => 'Before rejected update',
+    ], $connection);
+    $connection->failUpdate = true;
+
+    expect(fn () => ExplicitNullSharedCustomResource::updateOrCreateGlobalForSystem(
+        ['id' => $global->id],
+        ['name' => 'Rejected custom update'],
+        $connection,
+    ))->toThrow(RuntimeException::class, 'custom connection update failure');
+
+    expect($connection->table('explicit_null_shared_custom_resources')->value('name'))
+        ->toBe('Before rejected update');
+
+    $connection->failUpdate = false;
+    $connection->beginTransaction();
+
+    try {
+        ExplicitNullSharedCustomResource::createGlobalForSystem([
+            'name' => 'Rolled back custom insert',
+        ], $connection);
+        expect($connection->table('explicit_null_shared_custom_resources')->count())->toBe(2);
+    } finally {
+        $connection->rollBack();
+    }
+
+    expect($connection->table('explicit_null_shared_custom_resources')->count())->toBe(1);
+});
 
 it('rejects explicitly null team and creator values in ordinary creates', function () {
     $actor = createSuperAdmin();
@@ -382,9 +669,46 @@ it('does not expose Aura global-write authority to model callbacks', function ()
         ]);
 });
 
-it('does not let callbacks start nested global writes through database access channels', function (string $channel): void {
+it('revalidates exact global tenancy and owner intent after creating callbacks', function (string $mutation): void {
+    PhysicalWriterGuardedGlobalResource::$creatingAttack = function (PhysicalWriterGuardedGlobalResource $resource) use ($mutation): void {
+        $resource->setAttribute($mutation, 999999);
+    };
+
+    expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
+        'name' => 'Mutated global intent',
+        'user_id' => null,
+    ]))->toThrow(LogicException::class, 'tenancy, owner');
+
+    expect(PhysicalWriterGuardedGlobalResource::withoutGlobalScopes()
+        ->where('name', 'Mutated global intent')
+        ->doesntExist())->toBeTrue();
+})->with(['team_id', 'user_id']);
+
+it('revalidates the exact authenticated actor after callbacks', function (): void {
+    $authorizedActor = createGlobalAdmin(['current_team_id' => null]);
+    $replacementActor = createGlobalAdmin(['current_team_id' => null]);
+    $this->actingAs($authorizedActor);
+
+    PhysicalWriterGuardedGlobalResource::$creatingAttack = function () use ($replacementActor): void {
+        auth()->setUser($replacementActor);
+    };
+
+    try {
+        expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobal([
+            'name' => 'Actor replacement candidate',
+        ]))->toThrow(LogicException::class, 'authenticated actor');
+    } finally {
+        auth()->setUser($authorizedActor);
+    }
+
+    expect(PhysicalWriterGuardedGlobalResource::withoutGlobalScopes()
+        ->where('name', 'Actor replacement candidate')
+        ->doesntExist())->toBeTrue();
+});
+
+it('requires callbacks to use an independently named system contract for nested global writes', function (string $channel): void {
     $capturedManager = app('db');
-    $nestedWriteRejected = false;
+    $nestedWriteCompleted = false;
 
     expect($capturedManager)->toBeInstanceOf(DatabaseManager::class)
         ->and(DB::getFacadeRoot())->toBe($capturedManager)
@@ -394,7 +718,7 @@ it('does not let callbacks start nested global writes through database access ch
     PhysicalWriterGuardedGlobalResource::$savingAttack = function () use (
         $capturedManager,
         $channel,
-        &$nestedWriteRejected,
+        &$nestedWriteCompleted,
     ): void {
         $connection = match ($channel) {
             'captured-manager' => $capturedManager->connection(),
@@ -404,24 +728,21 @@ it('does not let callbacks start nested global writes through database access ch
             'eloquent-resolver' => Model::getConnectionResolver()->connection(),
         };
 
-        try {
-            ExplicitNullSharedCustomResource::createGlobalForSystem([
-                'name' => 'Nested global capability leak',
-            ], $connection);
-        } catch (LogicException $exception) {
-            $nestedWriteRejected = str_contains($exception->getMessage(), 'nested global Resource write');
-        }
+        $nested = ExplicitNullSharedCustomResource::createGlobalForSystem([
+            'name' => 'Independently authorized nested global write',
+        ], $connection);
+        $nestedWriteCompleted = $nested->exists;
     };
 
     $outer = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
         'name' => 'Outer global resource',
     ]);
 
-    expect($nestedWriteRejected)->toBeTrue()
+    expect($nestedWriteCompleted)->toBeTrue()
         ->and($outer->name)->toBe('Outer global resource')
         ->and(ExplicitNullSharedCustomResource::withoutGlobalScopes()
-            ->where('name', 'Nested global capability leak')
-            ->doesntExist())->toBeTrue();
+            ->where('name', 'Independently authorized nested global write')
+            ->exists())->toBeTrue();
 })->with([
     'captured-manager',
     'container-alias',
@@ -430,36 +751,33 @@ it('does not let callbacks start nested global writes through database access ch
     'eloquent-resolver',
 ]);
 
-it('does not let a connection callback start a nested global Resource write', function (): void {
+it('lets a connection callback use an independently named system contract', function (): void {
     $connection = DB::connection();
     $armed = true;
-    $nestedWriteRejected = false;
+    $nestedWriteCompleted = false;
 
-    $connection->beforeExecuting(function () use (&$armed, &$nestedWriteRejected, $connection): void {
+    $connection->beforeExecuting(function () use (&$armed, &$nestedWriteCompleted, $connection): void {
         if (! $armed) {
             return;
         }
 
         $armed = false;
 
-        try {
-            ExplicitNullSharedCustomResource::createGlobalForSystem([
-                'name' => 'Connection callback nested global write',
-            ], $connection);
-        } catch (LogicException $exception) {
-            $nestedWriteRejected = str_contains($exception->getMessage(), 'nested global Resource write');
-        }
+        $nested = ExplicitNullSharedCustomResource::createGlobalForSystem([
+            'name' => 'Connection callback named global write',
+        ], $connection);
+        $nestedWriteCompleted = $nested->exists;
     });
 
     $outer = PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
         'name' => 'Connection callback outer write',
     ], $connection);
 
-    expect($nestedWriteRejected)->toBeTrue()
+    expect($nestedWriteCompleted)->toBeTrue()
         ->and($outer->name)->toBe('Connection callback outer write')
         ->and(ExplicitNullSharedCustomResource::withoutGlobalScopes()
-            ->where('name', 'Connection callback nested global write')
-            ->doesntExist())->toBeTrue();
+            ->where('name', 'Connection callback named global write')
+            ->exists())->toBeTrue();
 });
 
 it('preserves Laravel event order and cancellation around a global insert', function (): void {
@@ -578,7 +896,7 @@ it('does not let a saving callback re-enter save with the outer global-write aut
 
     expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
         'name' => 'Reentrant authority probe',
-    ]))->toThrow(LogicException::class, 'cannot be re-entered');
+    ]))->toThrow(LogicException::class, 'createGlobal');
 
     expect($reentered)->toBeTrue()
         ->and(PhysicalWriterGuardedGlobalResource::withoutGlobalScopes()->count())->toBe(0);
@@ -692,7 +1010,7 @@ it('fails closed when a saving listener swaps the writer and re-enters save on t
     try {
         expect(fn () => PhysicalWriterGuardedGlobalResource::createGlobalForSystem([
             'name' => 'Reentrant redirected write',
-        ]))->toThrow(LogicException::class, 'cannot be re-entered');
+        ]))->toThrow(LogicException::class, 'createGlobal');
     } finally {
         PhysicalWriterGuardedGlobalResource::$savingAttack = null;
         $connection->setPdo($originalWriter);
