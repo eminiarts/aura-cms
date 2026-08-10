@@ -51,7 +51,13 @@ final class GlobalSearchSupervisorFixtureCommand extends Command
         }
 
         try {
-            (new FreshProcessGlobalSearchExecutor($artisanPath, $environment, $workingDirectory))->run([
+            (new FreshProcessGlobalSearchExecutor(
+                artisanPath: $artisanPath,
+                environment: $environment,
+                workingDirectory: $workingDirectory,
+                autoloadPath: dirname(__DIR__, 2).'/vendor/autoload.php',
+                bootstrapPath: __DIR__.'/GlobalSearchWorkerBootstrap.php',
+            ))->run([
                 'operation' => 'discover',
                 'context' => $context,
                 'query_limit' => 50,

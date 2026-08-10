@@ -91,6 +91,8 @@ SH;
         private readonly ?string $workingDirectory = null,
         private readonly ?string $phpBinary = null,
         private readonly ?array $descriptorDirectories = null,
+        private readonly ?string $autoloadPath = null,
+        private readonly ?string $bootstrapPath = null,
     ) {}
 
     public function isAvailable(): bool
@@ -101,6 +103,8 @@ SH;
             && is_string($this->resolvedShellPath())
             && is_string($this->resolvedPhpBinary())
             && is_string($this->resolvedArtisanPath())
+            && is_string($this->resolvedAutoloadPath())
+            && is_string($this->resolvedBootstrapPath())
             && is_string($this->resolvedSupervisorPath())
             && is_string($this->resolvedDescriptorDirectory())
             && is_string($this->workerDisabledFunctions());
@@ -113,6 +117,8 @@ SH;
     public function run(array $request, int $timeoutMilliseconds, int $maximumPayloadBytes): array
     {
         $artisanPath = $this->resolvedArtisanPath();
+        $autoloadPath = $this->resolvedAutoloadPath();
+        $bootstrapPath = $this->resolvedBootstrapPath();
         $phpBinary = $this->resolvedPhpBinary();
         $shellPath = $this->resolvedShellPath();
         $supervisorPath = $this->resolvedSupervisorPath();
@@ -125,6 +131,8 @@ SH;
             || $shellPath === null
             || $phpBinary === null
             || $artisanPath === null
+            || $autoloadPath === null
+            || $bootstrapPath === null
             || $supervisorPath === null
             || $descriptorDirectory === null
             || $disabledFunctions === null) {
@@ -155,7 +163,11 @@ SH;
                 $disabledFunctions,
             ),
             $this->resolvedWorkingDirectory(),
-            $this->environment === [] ? null : $this->environment,
+            [
+                ...$this->environment,
+                FreshProcessGlobalSearchSupervisor::WORKER_AUTOLOAD_PATH_ENVIRONMENT_KEY => $autoloadPath,
+                FreshProcessGlobalSearchSupervisor::WORKER_BOOTSTRAP_PATH_ENVIRONMENT_KEY => $bootstrapPath,
+            ],
             $input,
             max(0.001, ($timeoutMilliseconds + 250) / 1_000),
         );
@@ -222,16 +234,26 @@ SH;
 
         $output = $process->getOutput();
         $markerPosition = strpos($output, RunGlobalSearchWorker::RESPONSE_MARKER);
+        $bootstrapCompletionMarkerPosition = strpos(
+            $output,
+            FreshProcessGlobalSearchSupervisor::TRUSTED_BOOTSTRAP_COMPLETION_MARKER,
+        );
         $attestationMarkerPosition = strpos(
             $output,
             FreshProcessGlobalSearchSupervisor::SUPERVISOR_ATTESTATION_MARKER,
         );
 
         if ($markerPosition === false
+            || $bootstrapCompletionMarkerPosition === false
             || $attestationMarkerPosition === false
             || substr_count($output, RunGlobalSearchWorker::RESPONSE_MARKER) !== 1
+            || substr_count(
+                $output,
+                FreshProcessGlobalSearchSupervisor::TRUSTED_BOOTSTRAP_COMPLETION_MARKER,
+            ) !== 1
             || substr_count($output, FreshProcessGlobalSearchSupervisor::SUPERVISOR_ATTESTATION_MARKER) !== 1
-            || $attestationMarkerPosition <= $markerPosition
+            || $bootstrapCompletionMarkerPosition <= $markerPosition
+            || $attestationMarkerPosition <= $bootstrapCompletionMarkerPosition
             || str_contains(substr($output, 0, $markerPosition), "\x1eAURA_GLOBAL_SEARCH_")) {
             throw new GlobalSearchExecutionFailed('The global search worker returned no response envelope.');
         }
@@ -239,9 +261,17 @@ SH;
         $encodedEnvelope = trim(substr(
             $output,
             $markerPosition + strlen(RunGlobalSearchWorker::RESPONSE_MARKER),
-            $attestationMarkerPosition
+            $bootstrapCompletionMarkerPosition
                 - $markerPosition
                 - strlen(RunGlobalSearchWorker::RESPONSE_MARKER),
+        ));
+        $bootstrapCompletionProof = trim(substr(
+            $output,
+            $bootstrapCompletionMarkerPosition
+                + strlen(FreshProcessGlobalSearchSupervisor::TRUSTED_BOOTSTRAP_COMPLETION_MARKER),
+            $attestationMarkerPosition
+                - $bootstrapCompletionMarkerPosition
+                - strlen(FreshProcessGlobalSearchSupervisor::TRUSTED_BOOTSTRAP_COMPLETION_MARKER),
         ));
         $encodedAttestation = trim(substr(
             $output,
@@ -261,11 +291,27 @@ SH;
 
         if (! is_array($envelope)
             || ! is_array($attestation)
-            || array_keys($attestation) !== ['worker_pid', 'contained', 'completion_exit_code']
+            || array_keys($attestation) !== [
+                'worker_pid',
+                'contained',
+                'completion_exit_code',
+                'completion_capability',
+            ]
             || ! is_int($attestation['worker_pid'] ?? null)
             || $attestation['worker_pid'] < 2
             || ($attestation['contained'] ?? null) !== true
             || ($attestation['completion_exit_code'] ?? null) !== $exitCode
+            || ! is_string($attestation['completion_capability'] ?? null)
+            || preg_match('/^[a-f0-9]{64}$/D', $attestation['completion_capability']) !== 1
+            || preg_match('/^[a-f0-9]{64}$/D', $bootstrapCompletionProof) !== 1
+            || ! hash_equals(
+                hash_hmac(
+                    'sha256',
+                    $attestation['worker_pid'].':'.$exitCode,
+                    $attestation['completion_capability'],
+                ),
+                $bootstrapCompletionProof,
+            )
             || array_keys($envelope) !== ['successful', 'result']
             || ($envelope['successful'] ?? null) !== true
             || ! is_array($envelope['result'] ?? null)
@@ -425,6 +471,26 @@ SH;
             : null;
     }
 
+    private function resolvedAutoloadPath(): ?string
+    {
+        $artisanPath = $this->resolvedArtisanPath();
+        $configured = $this->autoloadPath
+            ?? config('aura.global_search.worker_autoload')
+            ?? (is_string($artisanPath) ? dirname($artisanPath).'/vendor/autoload.php' : null);
+
+        return $this->resolvedReadableFile($configured);
+    }
+
+    private function resolvedBootstrapPath(): ?string
+    {
+        $artisanPath = $this->resolvedArtisanPath();
+        $configured = $this->bootstrapPath
+            ?? config('aura.global_search.worker_bootstrap')
+            ?? (is_string($artisanPath) ? dirname($artisanPath).'/bootstrap/app.php' : null);
+
+        return $this->resolvedReadableFile($configured);
+    }
+
     private function resolvedDescriptorDirectory(): ?string
     {
         $directories = $this->descriptorDirectories ?? self::DEFAULT_DESCRIPTOR_DIRECTORIES;
@@ -463,6 +529,19 @@ SH;
         $resolved = realpath($candidate);
 
         return is_string($resolved) && is_file($resolved) && is_executable($resolved)
+            ? $resolved
+            : null;
+    }
+
+    private function resolvedReadableFile(mixed $configured): ?string
+    {
+        if (! is_string($configured) || $configured === '' || strlen($configured) > 4_096) {
+            return null;
+        }
+
+        $resolved = realpath($configured);
+
+        return is_string($resolved) && is_file($resolved) && is_readable($resolved)
             ? $resolved
             : null;
     }

@@ -3,10 +3,12 @@
 namespace Aura\Base\GlobalSearch;
 
 use Aura\Base\Exceptions\GlobalSearchExecutionFailed;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use WeakMap;
 
 /**
@@ -46,6 +48,16 @@ final class GlobalSearchQueryGuard
 
     public function install(): void
     {
+        $dispatcher = app('events');
+
+        if (! $dispatcher instanceof Dispatcher) {
+            throw new GlobalSearchExecutionFailed('Laravel has no supported global search event dispatcher.');
+        }
+
+        $guardedDispatcher = new GlobalSearchGuardedEventDispatcher($dispatcher, $this);
+        app()->instance('events', $guardedDispatcher);
+        Event::swap($guardedDispatcher);
+
         /** @var DatabaseManager $database */
         $database = app('db');
         $guardedDatabase = new GlobalSearchGuardedDatabaseManager($database, $this);

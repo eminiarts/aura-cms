@@ -2,6 +2,8 @@
 
 namespace Aura\Base\GlobalSearch;
 
+use Illuminate\Foundation\Application;
+use Symfony\Component\Console\Input\ArgvInput;
 use Throwable;
 
 final class FreshProcessGlobalSearchSupervisor
@@ -9,6 +11,12 @@ final class FreshProcessGlobalSearchSupervisor
     public const CONFIGURATION_EXIT_CODE = 78;
 
     public const SUPERVISOR_ATTESTATION_MARKER = "\x1eAURA_GLOBAL_SEARCH_ATTESTATION\x1f";
+
+    public const TRUSTED_BOOTSTRAP_COMPLETION_MARKER = "\x1eAURA_GLOBAL_SEARCH_BOOTSTRAP_COMPLETION\x1f";
+
+    public const WORKER_AUTOLOAD_PATH_ENVIRONMENT_KEY = 'AURA_GLOBAL_SEARCH_WORKER_AUTOLOAD';
+
+    public const WORKER_BOOTSTRAP_PATH_ENVIRONMENT_KEY = 'AURA_GLOBAL_SEARCH_WORKER_BOOTSTRAP';
 
     public const WORKER_COMPLETED_EXIT_CODE = 64;
 
@@ -21,9 +29,12 @@ final class FreshProcessGlobalSearchSupervisor
     private const REQUIRED_FUNCTIONS = [
         'fclose',
         'feof',
+        'file_get_contents',
         'fread',
+        'fopen',
         'fwrite',
         'getenv',
+        'hash_hmac',
         'ini_get',
         'pcntl_async_signals',
         'pcntl_exec',
@@ -42,16 +53,12 @@ final class FreshProcessGlobalSearchSupervisor
         'random_bytes',
         'stream_set_blocking',
         'stream_socket_pair',
+        'sys_get_temp_dir',
+        'umask',
+        'unlink',
     ];
 
-    private static bool $applicationWorkerCompleted = false;
-
-    private static bool $applicationWorkerSentinelRegistered = false;
-
-    public static function markApplicationWorkerCompleted(): void
-    {
-        self::$applicationWorkerCompleted = true;
-    }
+    private const WORKER_COMPLETION_CAPABILITY_PATH_ENVIRONMENT_KEY = 'AURA_GLOBAL_SEARCH_COMPLETION_CAPABILITY';
 
     /** @param array<int, string> $arguments */
     public static function run(array $arguments): int
@@ -161,6 +168,21 @@ final class FreshProcessGlobalSearchSupervisor
 
         self::closeChannel($supervisorWatcherChannel[1]);
         self::closeChannel($watcherWorkerChannel[1]);
+        $completionCapability = self::createCompletionCapability();
+
+        if ($completionCapability === null) {
+            self::closeChannel($supervisorWatcherChannel[0]);
+            self::closeChannel($watcherWorkerChannel[0]);
+            self::killAndReap($watcherProcessId);
+            self::restoreSignalMask($previousSignalMask);
+
+            return 126;
+        }
+
+        [$completionCapabilityPath, $completionCapabilityToken] = $completionCapability;
+        register_shutdown_function(static function () use ($completionCapabilityPath): void {
+            @unlink($completionCapabilityPath);
+        });
         $workerProcessId = pcntl_fork();
 
         if ($workerProcessId === -1) {
@@ -184,6 +206,7 @@ final class FreshProcessGlobalSearchSupervisor
                 $phpBinary,
                 $artisanPath,
                 $disabledFunctions,
+                $completionCapabilityPath,
                 $previousSignalMask,
             );
         }
@@ -232,6 +255,7 @@ final class FreshProcessGlobalSearchSupervisor
             $watcherProcessId,
             $workerProcessId,
             $terminationSignal,
+            $completionCapabilityToken,
         );
     }
 
@@ -269,16 +293,48 @@ final class FreshProcessGlobalSearchSupervisor
             return self::CONFIGURATION_EXIT_CODE;
         }
 
-        self::registerApplicationWorkerSentinel();
-
         $_SERVER['argv'] = [$artisanPath, 'aura:global-search-worker', '--no-interaction'];
         $_SERVER['argc'] = count($_SERVER['argv']);
         $GLOBALS['argv'] = $_SERVER['argv'];
         $GLOBALS['argc'] = $_SERVER['argc'];
 
-        require $artisanPath;
+        $autoloadPath = getenv(self::WORKER_AUTOLOAD_PATH_ENVIRONMENT_KEY);
+        $bootstrapPath = getenv(self::WORKER_BOOTSTRAP_PATH_ENVIRONMENT_KEY);
+        $completionCapabilityPath = getenv(self::WORKER_COMPLETION_CAPABILITY_PATH_ENVIRONMENT_KEY);
 
-        return 127;
+        if (! is_string($autoloadPath)
+            || ! is_string($bootstrapPath)
+            || ! is_string($completionCapabilityPath)) {
+            require $artisanPath;
+
+            return 127;
+        }
+
+        if (! self::validBootstrapPath($autoloadPath)
+            || ! self::validBootstrapPath($bootstrapPath)
+            || ! self::validBootstrapPath($completionCapabilityPath)) {
+            return self::CONFIGURATION_EXIT_CODE;
+        }
+
+        $completionCapabilityToken = self::consumeCompletionCapability($completionCapabilityPath);
+
+        if ($completionCapabilityToken === null) {
+            return self::CONFIGURATION_EXIT_CODE;
+        }
+
+        $completed = false;
+        self::registerApplicationWorkerSentinel($completed);
+
+        $status = self::handleApplicationCommand($autoloadPath, $bootstrapPath);
+
+        if ($status !== self::WORKER_COMPLETED_EXIT_CODE
+            || ! self::writeTrustedBootstrapCompletion($completionCapabilityToken, $status)) {
+            return self::WORKER_EARLY_TERMINATION_EXIT_CODE;
+        }
+
+        $completed = true;
+
+        return $status;
     }
 
     /** @return array{0: resource, 1: resource}|null */
@@ -316,6 +372,56 @@ final class FreshProcessGlobalSearchSupervisor
         }
     }
 
+    private static function consumeCompletionCapability(string $path): ?string
+    {
+        $token = @file_get_contents($path, false, null, 0, 65);
+        @unlink($path);
+
+        return is_string($token) && preg_match('/^[a-f0-9]{64}$/D', $token) === 1
+            ? $token
+            : null;
+    }
+
+    /** @return array{0: string, 1: string}|null */
+    private static function createCompletionCapability(): ?array
+    {
+        try {
+            $token = bin2hex(random_bytes(32));
+            $path = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR)
+                .DIRECTORY_SEPARATOR
+                .'aura-global-search-completion-'.bin2hex(random_bytes(24));
+        } catch (Throwable) {
+            return null;
+        }
+
+        if (strlen($path) > 4_096 || ! str_starts_with($path, DIRECTORY_SEPARATOR)) {
+            return null;
+        }
+
+        $previousMask = umask(0177);
+
+        try {
+            $handle = @fopen($path, 'x+b');
+        } finally {
+            umask($previousMask);
+        }
+
+        if (! is_resource($handle)) {
+            return null;
+        }
+
+        $written = @fwrite($handle, $token);
+        @fclose($handle);
+
+        if ($written !== strlen($token)) {
+            @unlink($path);
+
+            return null;
+        }
+
+        return [$path, $token];
+    }
+
     private static function exitCode(int $status): int
     {
         if (pcntl_wifexited($status)) {
@@ -327,6 +433,19 @@ final class FreshProcessGlobalSearchSupervisor
         }
 
         return 126;
+    }
+
+    private static function handleApplicationCommand(string $autoloadPath, string $bootstrapPath): int
+    {
+        require_once $autoloadPath;
+
+        $application = require $bootstrapPath;
+
+        if (! $application instanceof Application) {
+            return self::WORKER_EARLY_TERMINATION_EXIT_CODE;
+        }
+
+        return $application->handleCommand(new ArgvInput);
     }
 
     /**
@@ -442,17 +561,10 @@ final class FreshProcessGlobalSearchSupervisor
         }
     }
 
-    private static function registerApplicationWorkerSentinel(): void
+    private static function registerApplicationWorkerSentinel(bool &$completed): void
     {
-        self::$applicationWorkerCompleted = false;
-
-        if (self::$applicationWorkerSentinelRegistered) {
-            return;
-        }
-
-        self::$applicationWorkerSentinelRegistered = true;
-        register_shutdown_function(static function (): void {
-            if (self::$applicationWorkerCompleted) {
+        register_shutdown_function(static function () use (&$completed): void {
+            if ($completed) {
                 return;
             }
 
@@ -497,6 +609,7 @@ final class FreshProcessGlobalSearchSupervisor
         string $phpBinary,
         string $artisanPath,
         string $disabledFunctions,
+        string $completionCapabilityPath,
         array $previousSignalMask,
     ): int {
         $workerProcessId = getmypid();
@@ -539,7 +652,10 @@ final class FreshProcessGlobalSearchSupervisor
             return 127;
         }
 
-        $workerEnvironment = self::workerEnvironment($disabledFunctions);
+        $workerEnvironment = self::workerEnvironment(
+            $disabledFunctions,
+            $completionCapabilityPath,
+        );
         $supervisorPath = realpath(__FILE__);
 
         if ($workerEnvironment === null || ! is_string($supervisorPath)) {
@@ -571,6 +687,7 @@ final class FreshProcessGlobalSearchSupervisor
         int $watcherProcessId,
         int $workerProcessId,
         ?int &$terminationSignal,
+        string $completionCapabilityToken,
     ): int {
         while (true) {
             $workerStatus = 0;
@@ -597,6 +714,7 @@ final class FreshProcessGlobalSearchSupervisor
                         $workerProcessId,
                         $workerExitCode,
                         $deadlineNanoseconds,
+                        $completionCapabilityToken,
                     )) {
                     return 126;
                 }
@@ -642,6 +760,15 @@ final class FreshProcessGlobalSearchSupervisor
 
             usleep(10_000);
         }
+    }
+
+    private static function validBootstrapPath(string $path): bool
+    {
+        return $path !== ''
+            && strlen($path) <= 4_096
+            && str_starts_with($path, DIRECTORY_SEPARATOR)
+            && is_file($path)
+            && is_readable($path);
     }
 
     private static function watch(
@@ -771,8 +898,10 @@ final class FreshProcessGlobalSearchSupervisor
     }
 
     /** @return array<string, string>|null */
-    private static function workerEnvironment(string $requiredDisabledFunctions): ?array
-    {
+    private static function workerEnvironment(
+        string $requiredDisabledFunctions,
+        string $completionCapabilityPath,
+    ): ?array {
         $required = self::normalizedFunctionList($requiredDisabledFunctions);
         $inherited = self::normalizedFunctionList((string) ini_get('disable_functions'));
         $environment = getenv();
@@ -793,6 +922,7 @@ final class FreshProcessGlobalSearchSupervisor
         }
 
         $environment['AURA_GLOBAL_SEARCH_DISABLED_FUNCTIONS'] = implode(',', $disabledFunctions);
+        $environment[self::WORKER_COMPLETION_CAPABILITY_PATH_ENVIRONMENT_KEY] = $completionCapabilityPath;
         $environment['PHP_INI_SCAN_DIR'] = $scanDirectories === ''
             ? dirname($workerIniPath)
             : $scanDirectories.PATH_SEPARATOR.dirname($workerIniPath);
@@ -859,12 +989,14 @@ final class FreshProcessGlobalSearchSupervisor
         int $workerProcessId,
         int $workerExitCode,
         int $deadlineNanoseconds,
+        string $completionCapabilityToken,
     ): bool {
         try {
             $payload = self::SUPERVISOR_ATTESTATION_MARKER.json_encode([
                 'worker_pid' => $workerProcessId,
                 'contained' => true,
                 'completion_exit_code' => $workerExitCode,
+                'completion_capability' => $completionCapabilityToken,
             ], JSON_THROW_ON_ERROR);
         } catch (Throwable) {
             return false;
@@ -888,5 +1020,19 @@ final class FreshProcessGlobalSearchSupervisor
         }
 
         return $offset === $payloadLength;
+    }
+
+    private static function writeTrustedBootstrapCompletion(string $token, int $status): bool
+    {
+        $workerProcessId = getmypid();
+
+        if (! is_int($workerProcessId) || $workerProcessId < 2) {
+            return false;
+        }
+
+        $proof = hash_hmac('sha256', "{$workerProcessId}:{$status}", $token);
+        $payload = self::TRUSTED_BOOTSTRAP_COMPLETION_MARKER.$proof;
+
+        return @fwrite(STDOUT, $payload) === strlen($payload);
     }
 }

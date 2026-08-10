@@ -64,8 +64,6 @@ final class RunGlobalSearchWorker extends Command
             return self::EARLY_TERMINATION_EXIT_CODE;
         }
 
-        FreshProcessGlobalSearchSupervisor::markApplicationWorkerCompleted();
-
         return self::COMPLETED_EXIT_CODE;
     }
 

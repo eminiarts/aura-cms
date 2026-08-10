@@ -5,6 +5,7 @@ namespace Aura\Base\Tests\Fixtures;
 use Aura\Base\Contracts\GlobalSearchAdapter;
 use Aura\Base\GlobalSearch\GlobalSearchBudget;
 use Aura\Base\Resource;
+use Illuminate\Database\Connectors\ConnectionFactory;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Events\ConnectionEstablished;
@@ -23,13 +24,25 @@ final class GlobalSearchProcessCapturedManagerConnectionChurnAdapter implements 
         int $candidateLimit,
         GlobalSearchBudget $budget,
     ): Collection {
-        $database = self::$capturedDatabase;
+        $mode = (string) getenv('AURA_GLOBAL_SEARCH_FIXTURE_MODE');
+        $database = $mode === 'query-churn-late-extension-current-manager'
+            ? app('db')
+            : self::$capturedDatabase;
 
         if (! $database instanceof DatabaseManager) {
             return collect();
         }
 
         Event::forget(ConnectionEstablished::class);
+
+        if (str_contains($mode, 'late-extension')) {
+            $database->extend(
+                'process_search',
+                fn (array $configuration, string $connectionName) => (new ConnectionFactory(app()))
+                    ->make($configuration, $connectionName),
+            );
+        }
+
         $database->purge('process_search');
 
         foreach (range(1, 10) as $iteration) {

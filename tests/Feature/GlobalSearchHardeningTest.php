@@ -863,6 +863,8 @@ SQL);
             'DB_DATABASE' => $databasePath,
         ],
         dirname(__DIR__, 2),
+        autoloadPath: realpath(dirname(__DIR__, 2).'/vendor/autoload.php') ?: null,
+        bootstrapPath: realpath(dirname(__DIR__).'/Fixtures/GlobalSearchWorkerBootstrap.php') ?: null,
     ));
 
     Aura::fake();
@@ -1012,6 +1014,8 @@ function configureCollidingFreshProcessSearchHarness(): array
             'DB_DATABASE_TENANT_B' => $tenantBPath,
         ],
         dirname(__DIR__, 2),
+        autoloadPath: realpath(dirname(__DIR__, 2).'/vendor/autoload.php') ?: null,
+        bootstrapPath: realpath(dirname(__DIR__).'/Fixtures/GlobalSearchWorkerBootstrap.php') ?: null,
     ));
 
     Aura::fake();
@@ -2023,6 +2027,28 @@ test('fresh workers meter a manager captured during provider boot after listener
     }
 });
 
+test('fresh workers meter late connection extensions after listeners are removed', function (string $mode) {
+    $harness = configureFreshProcessSearchHarness($mode, [
+        GlobalSearchProcessCapturedManagerConnectionChurnResource::class,
+        GlobalSearchProcessResource::class,
+    ]);
+
+    try {
+        $this->actingAs($harness['user']);
+
+        Livewire::test(GlobalSearch::class)
+            ->set('search', 'Fresh Process Needle')
+            ->assertSee('Fresh Process Needle Current Team');
+
+        expect(strlen((string) @file_get_contents($harness['marker'])))->toBeLessThanOrEqual(7);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+})->with([
+    'current guarded manager' => 'query-churn-late-extension-current-manager',
+    'provider-captured original manager' => 'query-churn-late-extension-captured-manager',
+]);
+
 test('fresh workers reject forged stdout envelopes and abnormal termination', function (string $mode) {
     $harness = configureFreshProcessSearchHarness($mode, [GlobalSearchProcessOutputAttackResource::class]);
     $executor = app(FreshProcessGlobalSearchExecutor::class);
@@ -2068,6 +2094,60 @@ test('fresh workers reject a provider bootstrap shutdown callback forging comple
             'global_limit' => 15,
             'execution_timeout_ms' => 1_500,
         ], 1_500, 1_048_576))->toThrow(GlobalSearchExecutionFailed::class);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh workers reject provider access to public completion authority', function () {
+    expect(is_callable([
+        FreshProcessGlobalSearchSupervisor::class,
+        'markApplicationWorkerCompleted',
+    ]))->toBeFalse();
+
+    $harness = configureFreshProcessSearchHarness(
+        'provider-public-completion-forge',
+        [GlobalSearchProcessOutputAttackResource::class],
+    );
+    $executor = app(FreshProcessGlobalSearchExecutor::class);
+
+    try {
+        expect(fn () => $executor->run([
+            'operation' => 'search',
+            'context' => signedFreshProcessContext($harness['user']),
+            'query_limit' => 20,
+            'resource' => GlobalSearchProcessOutputAttackResource::class,
+            'resource_order' => 0,
+            'search_term' => 'Fresh Process Needle',
+            'global_limit' => 15,
+            'execution_timeout_ms' => 1_500,
+        ], 1_500, 1_048_576))->toThrow(GlobalSearchExecutionFailed::class);
+    } finally {
+        cleanupFreshProcessSearchHarness($harness);
+    }
+});
+
+test('fresh workers keep completion capability outside application bootstrap scope', function () {
+    $harness = configureFreshProcessSearchHarness(
+        'bootstrap-capability-scope',
+        [GlobalSearchProcessResource::class],
+    );
+    $executor = app(FreshProcessGlobalSearchExecutor::class);
+
+    try {
+        $result = $executor->run([
+            'operation' => 'search',
+            'context' => signedFreshProcessContext($harness['user']),
+            'query_limit' => 20,
+            'resource' => GlobalSearchProcessResource::class,
+            'resource_order' => 0,
+            'search_term' => 'Fresh Process Needle',
+            'global_limit' => 15,
+            'execution_timeout_ms' => 1_500,
+        ], 1_500, 1_048_576);
+
+        expect($result['results'][0]['title'] ?? null)->toBe('Fresh Process Needle Current Team')
+            ->and((string) file_get_contents($harness['marker']))->toBe('hidden');
     } finally {
         cleanupFreshProcessSearchHarness($harness);
     }
@@ -2168,6 +2248,8 @@ test('fresh execution fails closed before launch without an enumerable descripto
         ],
         workingDirectory: dirname(__DIR__, 2),
         descriptorDirectories: [$descriptorDirectory],
+        autoloadPath: realpath(dirname(__DIR__, 2).'/vendor/autoload.php') ?: null,
+        bootstrapPath: realpath(dirname(__DIR__).'/Fixtures/GlobalSearchWorkerBootstrap.php') ?: null,
     );
 
     try {

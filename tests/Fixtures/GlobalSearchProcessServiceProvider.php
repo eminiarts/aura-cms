@@ -4,6 +4,7 @@ namespace Aura\Base\Tests\Fixtures;
 
 use Aura\Base\Commands\RunGlobalSearchWorker;
 use Aura\Base\Facades\Aura;
+use Aura\Base\GlobalSearch\FreshProcessGlobalSearchSupervisor;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -94,7 +95,35 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
             });
         }
 
-        if ($fixtureMode === 'query-churn-captured-manager') {
+        if ($fixtureMode === 'provider-public-completion-forge') {
+            if (is_callable([
+                FreshProcessGlobalSearchSupervisor::class,
+                'markApplicationWorkerCompleted',
+            ])) {
+                FreshProcessGlobalSearchSupervisor::markApplicationWorkerCompleted();
+            }
+
+            fwrite(STDOUT, RunGlobalSearchWorker::RESPONSE_MARKER.json_encode([
+                'successful' => true,
+                'result' => [
+                    'results' => [[
+                        'id' => 2,
+                        'type' => 'ForgedResult',
+                        'title' => 'Public completion authority bypass',
+                        'icon' => '<svg viewBox="0 0 10 10"><path d="M0 0h10v10z"/></svg>',
+                        'url' => '/admin/process-search-output-attack/2',
+                        'rank' => 999,
+                    ]],
+                    'query_count' => 1,
+                ],
+            ], JSON_THROW_ON_ERROR));
+            exit(RunGlobalSearchWorker::COMPLETED_EXIT_CODE);
+        }
+
+        if (in_array($fixtureMode, [
+            'query-churn-captured-manager',
+            'query-churn-late-extension-captured-manager',
+        ], true)) {
             GlobalSearchProcessCapturedManagerConnectionChurnResource::captureDatabase(app('db'));
         }
 
@@ -155,7 +184,11 @@ final class GlobalSearchProcessServiceProvider extends ServiceProvider
                 GlobalSearchProcessCapturedManagerConnectionChurnResource::class,
                 GlobalSearchProcessResource::class,
             ],
-            'forged-exit', 'forged-die', 'forged-completed-code', 'provider-forged-completed-code', 'forged-fatal', 'forged-multiple', 'forged-partial', 'stderr-noise' => [
+            'query-churn-late-extension-captured-manager', 'query-churn-late-extension-current-manager' => [
+                GlobalSearchProcessCapturedManagerConnectionChurnResource::class,
+                GlobalSearchProcessResource::class,
+            ],
+            'forged-exit', 'forged-die', 'forged-completed-code', 'provider-forged-completed-code', 'provider-public-completion-forge', 'forged-fatal', 'forged-multiple', 'forged-partial', 'stderr-noise' => [
                 GlobalSearchProcessOutputAttackResource::class,
             ],
             'raw-pdo' => [

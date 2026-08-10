@@ -189,6 +189,8 @@ return [
         'execution_backend' => 'process',
         'worker_php' => null,
         'worker_artisan' => null,
+        'worker_autoload' => null,
+        'worker_bootstrap' => null,
         'worker_connections' => ['@default'],
         'minimum_query_length' => 2,
         'maximum_query_length' => 64,
