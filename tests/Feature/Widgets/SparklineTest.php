@@ -4,6 +4,7 @@ use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Widgets\Sparkline;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -13,6 +14,7 @@ uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
+    Cache::clear();
     $this->actingAs($this->user = createSuperAdmin());
 
     // Create 3 posts before each test
@@ -302,4 +304,31 @@ it('renders sparkline correctly', function () {
         ->assertSet('loaded', false)
         ->set('loaded', true)
         ->assertSee('Test Name');
+});
+
+test('sparkline values use the shared cache lifecycle and explicit invalidation', function () {
+    $parameters = [
+        'widget' => ['id' => 'sparkline-cache', 'method' => 'count', 'name' => 'Cached sparkline'],
+        'model' => new Post,
+        'start' => Carbon::now()->subDays(30),
+        'end' => Carbon::now()->endOfDay(),
+    ];
+    $first = Livewire::test(Sparkline::class, $parameters);
+    $cachedTotal = array_sum($first->instance()->getValuesProperty()['current']);
+
+    $hit = Livewire::test(Sparkline::class, $parameters)
+        ->assertSet('isCached', true)
+        ->assertSet('loaded', true);
+
+    Post::create([
+        'title' => 'Created after cache fill',
+        'number' => 80,
+        'created_at' => Carbon::now()->subMinutes(5),
+    ]);
+
+    expect(array_sum($hit->instance()->getValuesProperty()['current']))->toBe($cachedTotal);
+
+    $hit->call('clearCache');
+
+    expect(array_sum($hit->instance()->getValuesProperty()['current']))->toBe($cachedTotal + 1);
 });

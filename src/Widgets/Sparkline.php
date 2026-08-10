@@ -71,17 +71,17 @@ class Sparkline extends Widget
 
     public function getValuesProperty()
     {
-        $currentStart = $this->getCarbonDate($this->start)->addDay();
+        $currentStart = $this->getCarbonDate($this->start)->copy()->addDay();
         $currentEnd = $this->getCarbonDate($this->end);
         $diff = round($currentStart->diffInDays($currentEnd));
 
         $previousStart = $currentStart->copy()->subDays($diff + 1);
         $previousEnd = $currentStart->copy()->subDay();
 
-        return [
+        return cache()->remember($this->getCacheKeyProperty(), $this->getCacheDurationProperty(), fn (): array => [
             'current' => $this->getValue($currentStart, $currentEnd)->toArray(),
             'previous' => $this->getValue($previousStart, $previousEnd)->toArray(),
-        ];
+        ]);
     }
 
     public function mount()
@@ -101,5 +101,11 @@ class Sparkline extends Widget
     {
         $this->start = $start;
         $this->end = $end;
+        $this->refreshWidgetCacheState();
+    }
+
+    protected function widgetCacheContextDimensions(): array
+    {
+        return ['resource', 'team', 'user'];
     }
 }

@@ -24,4 +24,10 @@
         <x-aura::dashboard.media :media="$recentMedia" cols="full" />
     @endif
 
+    @foreach ($dashboardWidgets as $dashboardWidget)
+        <div class="{{ $dashboardWidget['class'] }}" wire:key="dashboard-widget-{{ $dashboardWidget['id'] }}">
+            @livewire($dashboardWidget['component'], $dashboardWidget['arguments'], key('dashboard-widget-'.$dashboardWidget['id']))
+        </div>
+    @endforeach
+
 </div>

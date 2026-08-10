@@ -400,7 +400,7 @@ class Aura
 
     public function getWidgets(): array
     {
-        return array_unique($this->widgets);
+        return $this->widgets;
     }
 
     public function injectView(string $name): Htmlable

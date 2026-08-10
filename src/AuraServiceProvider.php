@@ -534,6 +534,22 @@ class AuraServiceProvider extends PackageServiceProvider
                     default: false,
                     scopes: [PreferenceScope::User],
                     legacyKeys: ['sidebarToggled'],
+                ))
+                ->register(new PreferenceDefinition(
+                    key: 'dashboard.widgets.hidden',
+                    type: PreferenceValueType::Array,
+                    default: [],
+                    scopes: [PreferenceScope::User, PreferenceScope::Team, PreferenceScope::Everyone],
+                    itemType: PreferenceValueType::String,
+                    list: true,
+                ))
+                ->register(new PreferenceDefinition(
+                    key: 'dashboard.widgets.order',
+                    type: PreferenceValueType::Array,
+                    default: [],
+                    scopes: [PreferenceScope::User, PreferenceScope::Team, PreferenceScope::Everyone],
+                    itemType: PreferenceValueType::String,
+                    list: true,
                 ));
         });
         $this->app->singleton(PreferenceManager::class);

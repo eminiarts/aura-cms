@@ -86,7 +86,7 @@ class ValueWidget extends Widget
 
     public function mount()
     {
-        if ($this->widget['method']) {
+        if (optional($this->widget)['method']) {
             $this->method = $this->widget['method'];
         }
     }
@@ -101,5 +101,11 @@ class ValueWidget extends Widget
     {
         $this->start = $start;
         $this->end = $end;
+        $this->refreshWidgetCacheState();
+    }
+
+    protected function widgetCacheContextDimensions(): array
+    {
+        return ['resource', 'team', 'user'];
     }
 }

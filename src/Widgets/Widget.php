@@ -2,13 +2,13 @@
 
 namespace Aura\Base\Widgets;
 
-use Aura\Base\Resources\User;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class Widget extends Component
 {
+    use InteractsWithWidgetCache;
+
     /**
      * The end date/time for the widget data.
      *
@@ -48,7 +48,14 @@ class Widget extends Component
      *
      * @var array
      */
+    #[Locked]
     public $widget;
+
+    public function clearCache(): void
+    {
+        cache()->forget($this->getCacheKeyProperty());
+        $this->isCached = false;
+    }
 
     public function format($value)
     {
@@ -63,33 +70,23 @@ class Widget extends Component
 
     public function getCacheDurationProperty()
     {
-        return $this->widget['cache']['duration'] ?? 60;
+        $cache = $this->widget['cache'] ?? [];
+
+        if (is_numeric($cache)) {
+            return (int) $cache;
+        }
+
+        return is_array($cache) ? ($cache['duration'] ?? 60) : 60;
     }
 
     public function getCacheKeyProperty()
     {
-        /** @var User $user */
-        $user = Auth::user();
-        $teamId = $user->current_team_id ?? 0;
-
-        // Scope by model type as well — different resources may reuse the same widget slug.
-        $modelType = $this->model ? $this->model->getType() : '';
-
-        return md5($teamId.$modelType.$this->widget['slug'].$this->start.$this->end);
+        return 'aura.widget.v1.'.$this->widgetCacheFingerprint();
     }
 
     public function loadWidget()
     {
         $this->loaded = true;
-    }
-
-    public function mount()
-    {
-        // Check if the widget is cached
-        if (cache()->has($this->getCacheKeyProperty())) {
-            $this->isCached = true;
-            $this->loaded = true;
-        }
     }
 
     /**
@@ -108,5 +105,15 @@ class Widget extends Component
 
         return in_array($column, $this->model->getBaseFillable(), true)
             || in_array($column, $this->model->inputFieldsSlugs(), true);
+    }
+
+    /**
+     * Declare only the actor/resource dimensions that can change this widget's result.
+     *
+     * @return list<'resource'|'team'|'user'>
+     */
+    protected function widgetCacheContextDimensions(): array
+    {
+        return [];
     }
 }

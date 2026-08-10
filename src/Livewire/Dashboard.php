@@ -5,6 +5,7 @@ namespace Aura\Base\Livewire;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Aura\Base\Widgets\DashboardWidgetRegistry;
 use Illuminate\Routing\Exceptions\UrlGenerationException;
 use Illuminate\Support\Facades\Route;
 use Livewire\Component;
@@ -14,9 +15,13 @@ class Dashboard extends Component
     public function render()
     {
         $resources = $this->accessibleAppResources();
+        $user = auth()->user();
 
         return view('aura::livewire.dashboard', [
             'currentTeamEditUrl' => $this->currentTeamEditUrl(),
+            'dashboardWidgets' => $user instanceof User
+                ? app(DashboardWidgetRegistry::class)->forUser($user)
+                : [],
             'stats' => $this->stats($resources),
             'recentItems' => $this->recentItems($resources),
             'recentMedia' => $this->recentMedia(),

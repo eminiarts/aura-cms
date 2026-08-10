@@ -104,5 +104,11 @@ class Pie extends Widget
     {
         $this->start = $start;
         $this->end = $end;
+        $this->refreshWidgetCacheState();
+    }
+
+    protected function widgetCacheContextDimensions(): array
+    {
+        return ['resource', 'team', 'user'];
     }
 }

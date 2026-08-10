@@ -322,6 +322,41 @@ All sparkline widgets automatically:
 
 ## Dashboard System
 
+The generic Aura dashboard renders the built-in overview first, then the valid widgets registered
+with `Aura::registerWidgets()`. Registration is declarative; closures and object arguments are not
+accepted, and database work belongs in the Livewire component rather than Blade.
+
+```php
+use App\Aura\Resources\Order;
+use App\Livewire\Dashboard\RevenueWidget;
+use Aura\Base\Facades\Aura;
+
+Aura::registerWidgets([
+    [
+        'id' => 'revenue',
+        'component' => RevenueWidget::class,
+        'resource' => Order::class,
+        'arguments' => ['currency' => 'CHF'],
+        'order' => 20,
+        'columns' => 6,
+        // Optional. Resource widgets otherwise default to viewAny authorization.
+        'authorization' => ['ability' => 'viewReports', 'subject' => Order::class],
+    ],
+]);
+```
+
+`id` is the stable dashboard slot and Livewire key. `component` must be an instantiable Livewire
+component. `order` defaults to `0`, and `columns` accepts `1` through `12` while remaining full
+width on mobile. `visible => false` suppresses a definition. Duplicate IDs, invalid components,
+unsafe arguments, and malformed definitions are ignored without breaking the dashboard. A
+self-contained Livewire component may also be registered by class name for backwards
+compatibility.
+
+The `dashboard.widgets.order` and `dashboard.widgets.hidden` preferences accept lists of widget
+IDs at user, team, or everyone scope. Normal preference precedence applies: user, then team, then
+everyone. The dashboard resolves authorization and preferences before it passes normalized
+component slots to Blade.
+
 ### Default Dashboard
 
 The dashboard component provides a customizable landing page:
@@ -869,36 +904,32 @@ public function getValue($start, $end)
 ```php
 class CustomWidget extends Widget
 {
-    public function getCacheKeyProperty()
+    protected function widgetCacheContextDimensions(): array
     {
-        // Include additional parameters in cache key
-        return parent::getCacheKeyProperty() . '-' . $this->extraParam;
+        // Declare only dimensions that can change this widget's result.
+        return ['resource', 'team', 'user'];
     }
-    
-    public function getCacheDurationProperty()
-    {
-        // Dynamic cache duration
-        if ($this->isHistoricalData()) {
-            return 60 * 24; // 24 hours for historical data
-        }
-        
-        return 5; // 5 minutes for real-time data
-    }
-    
+
     public function getValue($start, $end)
     {
-        return Cache::tags(['widgets', $this->widget['slug']])
-            ->remember($this->cacheKey, $this->cacheDuration, function () {
-                return $this->calculateExpensiveMetric();
-            });
-    }
-    
-    public function clearCache()
-    {
-        Cache::tags(['widgets', $this->widget['slug']])->flush();
+        return cache()->remember(
+            $this->cacheKey,
+            $this->cacheDuration,
+            fn () => $this->calculateExpensiveMetric(),
+        );
     }
 }
 ```
+
+Use an explicit `id` in widget configuration. Legacy `slug` remains supported, and the component
+class is a deterministic fallback when both are absent. Aura hashes the identifier with canonical
+configuration and date values. User, team, and resource values are included only when the widget
+class declares them with `widgetCacheContextDimensions()`; never read actor-dependent data while
+omitting its dimension. Built-in query widgets declare all three dimensions.
+
+The Livewire trait lifecycle initializes cache state even when a child widget has its own
+`mount()`. Call `$this->clearCache()` to invalidate the current widget/config/context/date variant;
+it does not flush unrelated widget entries.
 
 ### Performance Optimization
 
