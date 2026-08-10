@@ -4,6 +4,7 @@ namespace Aura\Base;
 
 use Aura\Base\Contracts\FieldProvider;
 use Aura\Base\Fields\Field as AuraField;
+use Aura\Base\Livewire\ComponentSlots\ComponentSlotRegistry;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Livewire\Resource\Index;
@@ -29,6 +30,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use LogicException;
 use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\Finder\SplFileInfo;
@@ -64,6 +66,8 @@ class Aura
     protected array $resources = [];
 
     protected array $widgets = [];
+
+    public function __construct(private readonly ?ComponentSlotRegistry $componentSlots = null) {}
 
     /**
      * Determine if Aura's published assets are up-to-date.
@@ -457,6 +461,18 @@ class Aura
     {
         app(FieldProviderRegistry::class)->refreshVersions();
         FieldCacheManager::flush(flushProviderResults: false);
+    }
+
+    /**
+     * @param  array<string, mixed>  $slots
+     */
+    public function registerComponentSlots(string $source, array $slots): void
+    {
+        if ($this->componentSlots === null) {
+            throw new LogicException('Component slots require Aura to be resolved through the application container.');
+        }
+
+        $this->componentSlots->register($source, $slots);
     }
 
     /**

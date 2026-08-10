@@ -2,8 +2,13 @@
 
 namespace Aura\Base\Livewire;
 
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
+use Aura\Base\Livewire\Media\InvalidMediaSelectionRequest;
+use Aura\Base\Livewire\Media\MediaAuthorization;
+use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
+use Aura\Base\Livewire\Media\MediaSelectionBroker;
+use Aura\Base\Livewire\Media\MediaSelectionRecord;
+use Aura\Base\Resource;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -12,56 +17,172 @@ use Livewire\Component;
 class MediaManager extends Component
 {
     #[Locked]
-    public $field;
+    public array $field = [];
 
     #[Locked]
-    public $fieldSlug;
+    public string $fieldSlug = '';
 
-    public $initialSelectionDone = false;
+    public bool $initialSelectionDone = false;
+
+    /** @var array{persistent: bool, modalClasses: string, slideOver: bool} */
+    #[Locked]
+    public array $modalAttributes = [
+        'persistent' => false,
+        'modalClasses' => 'max-w-7xl',
+        'slideOver' => false,
+    ];
 
     #[Locked]
-    public $modalAttributes;
+    public string $model = '';
 
     #[Locked]
-    public string $model;
+    public string $ownerToken = '';
 
     #[Locked]
-    public string $resource;
+    public string $ownerTokenDigest = '';
 
-    public $rowIds = [];
+    #[Locked]
+    public bool $pending = false;
 
-    public $selected = [];
+    #[Locked]
+    public ?string $pendingRequestDigest = null;
 
-    /**
-     * Re-resolve every trusted declaration and policy decision at the component
-     * boundary. The returned IDs are guaranteed to exist in the attachment
-     * model's current global/team scope.
-     *
-     * @return list<string>
-     */
-    public function authorizeRequest(mixed $selected = null): array
-    {
-        $selection = $selected ?? $this->selected;
+    #[Locked]
+    public ?int $pendingSince = null;
 
-        if (! is_array($selection)) {
-            abort(422, 'The selected media are invalid.');
+    #[Locked]
+    public string $resource = '';
+
+    public array $rowIds = [];
+
+    public ?array $selected = null;
+
+    public ?string $selectionError = null;
+
+    #[Locked]
+    public ?string $settledRequestDigest = null;
+
+    #[Locked]
+    public string $slug = '';
+
+    #[On('aura-media-selection-acknowledged')]
+    public function acknowledgeMediaSelection(
+        string $ownerToken,
+        string $requestToken,
+        string $outcome,
+        ?string $errorCode = null,
+    ): void {
+        if (! $this->matchesPendingTokens($ownerToken, $requestToken)) {
+            return;
         }
 
-        $authorized = app(MediaFieldAuthorization::class)->authorizeField(
-            $this->resource,
-            $this->fieldSlug,
-            $selection,
-        );
-        $this->field = $authorized['field'];
-        $this->model = $authorized['resource']::class;
-        $this->resource = $authorized['resource_slug'];
+        $actor = $this->authorizeContext();
 
-        return $authorized['selected'];
+        try {
+            $record = app(MediaSelectionBroker::class)->forManager(
+                $requestToken,
+                $ownerToken,
+                $this->getId(),
+                $actor,
+            );
+        } catch (InvalidMediaSelectionRequest) {
+            return;
+        }
+
+        if ($record->state === 'succeeded') {
+            if ($outcome !== 'succeeded' || $errorCode !== null || $record->errorCode !== null) {
+                return;
+            }
+
+            $this->settleSuccessfulRequest($record);
+
+            return;
+        }
+
+        if (! in_array($record->state, ['failed', 'expired'], true)
+            || $outcome !== 'failed'
+            || $errorCode !== $record->errorCode) {
+            return;
+        }
+
+        $this->settleFailedRequest($record);
+    }
+
+    public function expireMediaSelection(string $requestToken): void
+    {
+        if (! $this->pending || ! is_string($this->pendingRequestDigest)
+            || ! hash_equals($this->pendingRequestDigest, hash('sha256', $requestToken))) {
+            return;
+        }
+
+        $actor = $this->authorizeContext();
+
+        try {
+            $record = app(MediaSelectionBroker::class)->expireForManager(
+                $requestToken,
+                $this->ownerToken,
+                $this->getId(),
+                $actor,
+            );
+        } catch (InvalidMediaSelectionRequest) {
+            return;
+        }
+
+        if ($record->state === 'succeeded') {
+            $this->settleSuccessfulRequest($record);
+        } elseif (in_array($record->state, ['failed', 'expired'], true)) {
+            $this->settleFailedRequest($record);
+        }
     }
 
     public function hydrate(): void
     {
-        $this->authorizeRequest();
+        $this->authorizeContext();
+    }
+
+    #[On('media-uploaded')]
+    public function mediaUploaded(mixed $ids = [], mixed $ownerToken = null): void
+    {
+        $actor = $this->authorizeContext();
+
+        if (! is_array($ids)
+            || ! is_string($ownerToken)
+            || ! hash_equals($this->ownerTokenDigest, app(MediaOwnerTokenBroker::class)->digest($ownerToken))) {
+            return;
+        }
+
+        $authorization = app(MediaAuthorization::class);
+        $owner = $authorization->authorizeOwner(
+            $this->ownerToken,
+            $actor,
+            $this->model,
+            $this->slug,
+        );
+        $uploaded = $authorization->authorizeAttachments($ids, $actor)
+            ->map(fn (Resource $attachment): string => (string) $attachment->getKey());
+
+        if ($uploaded->isEmpty()) {
+            return;
+        }
+
+        $maximumFiles = (int) ($owner->field['max_files'] ?? 0);
+
+        if ($maximumFiles === 1) {
+            $selection = $uploaded->slice(-1)->values();
+        } else {
+            $selection = collect($this->selected ?? [])
+                ->map(fn ($id): string => (string) $id)
+                ->merge($uploaded)
+                ->unique()
+                ->values();
+
+            if ($maximumFiles > 0) {
+                $selection = $selection->take($maximumFiles);
+            }
+        }
+
+        $this->selected = $selection->all();
+        $this->dispatch('selectedRows', $this->selected);
     }
 
     public static function modalClasses(): string
@@ -70,53 +191,123 @@ class MediaManager extends Component
     }
 
     public function mount(
-        string $slug,
-        array $selected,
-        array $modalAttributes,
-        ?string $resource = null,
         ?string $model = null,
+        string $slug = '',
+        ?array $selected = null,
+        string $ownerToken = '',
+        array $modalAttributes = [],
+        ?string $resource = null,
     ): void {
-        $this->resource = app(MediaFieldAuthorization::class)->normalizeResourceReference($resource, $model);
-        $this->selected = $selected;
+        $actor = $this->actor();
+
+        if ($ownerToken === '') {
+            $resourceSlug = app(MediaFieldAuthorization::class)->normalizeResourceReference($resource, $model);
+            $legacy = app(MediaFieldAuthorization::class)->authorizeField($resourceSlug, $slug, $selected ?? []);
+            $model = $legacy['resource']::class;
+            $resource = $legacy['resource_slug'];
+            $ownerToken = app(MediaOwnerTokenBroker::class)->issue(
+                ownerComponentId: $this->getId(),
+                modelClass: $model,
+                modelKey: null,
+                action: 'create',
+                slug: $slug,
+                fieldType: $legacy['field']['type'],
+                actor: $actor,
+                ownerComponentClass: self::class,
+            );
+        }
+
+        if (! is_string($model) || $model === '') {
+            abort(422, 'The media manager resource is invalid.');
+        }
+
+        $this->model = $model;
+        $this->slug = $slug;
         $this->fieldSlug = $slug;
+        $this->ownerToken = $ownerToken;
         $this->modalAttributes = $modalAttributes;
-        $this->authorizeRequest();
-        $this->rowIds = $this->attachmentQuery()->pluck('id')->all();
+        $owner = app(MediaAuthorization::class)->authorizeOwner($ownerToken, $actor, $model, $slug);
+        $this->resource = $resource ?? $owner->resource->getSlug();
+        app(MediaAuthorization::class)->authorizeOwnerSelection($ownerToken, $selected ?? [], $actor, $model, $slug);
+        $this->field = $owner->field;
+        $this->ownerTokenDigest = app(MediaOwnerTokenBroker::class)->digest($ownerToken);
+        $this->selected = app(MediaAuthorization::class)
+            ->authorizeAttachments($selected ?? [], $actor)
+            ->map(fn (Resource $attachment): string => (string) $attachment->getKey())
+            ->all();
     }
 
     public function render(): View
     {
-        $this->authorizeRequest();
+        $this->authorizeContext();
 
-        return view('aura::livewire.media-manager', [
-            'rows' => $this->attachmentQuery()->paginate(25),
-        ]);
+        return view('aura::livewire.media-manager');
     }
 
-    public function select(mixed $selectedValues = null): void
+    public function requestMediaSelection(array $value): void
     {
-        $selected = $this->authorizeRequest($selectedValues ?? $this->selected);
+        if ($this->pending) {
+            return;
+        }
 
-        // Dispatch the updateField event globally to ALL Livewire components
-        // Use named parameter 'data' to match the listener's signature: updateField($data)
-        $this->dispatch('updateField', data: [
-            'slug' => $this->fieldSlug,
-            'value' => $selected,
-        ]);
+        $actor = $this->authorizeContext();
+        app(MediaAuthorization::class)->authorizeOwnerSelection(
+            $this->ownerToken,
+            $value,
+            $actor,
+            $this->model,
+            $this->slug,
+        );
+        $selected = app(MediaAuthorization::class)->authorizeAttachments($value, $actor)
+            ->map(fn (Resource $attachment): string => (string) $attachment->getKey())
+            ->all();
+        $request = app(MediaSelectionBroker::class)->begin(
+            ownerToken: $this->ownerToken,
+            managerComponentId: $this->getId(),
+            value: $selected,
+            actor: $actor,
+        );
 
-        // NOTE: Do NOT dispatch closeModal here!
-        // The modal must be closed from Alpine AFTER this Livewire call completes
-        // Otherwise the component is destroyed while events are still being processed
+        $this->selected = $selected;
+        $this->pending = true;
+        $this->pendingRequestDigest = $request->digest;
+        $this->pendingSince = $request->record->issuedAt;
+        $this->selectionError = null;
+        $this->settledRequestDigest = null;
+
+        $this->dispatch(
+            'aura-media-selection-requested',
+            ownerToken: $this->ownerToken,
+            requestToken: $request->token,
+            slug: $this->slug,
+            value: $selected,
+        );
+        $this->dispatch(
+            'aura-media-selection-timer-started',
+            requestToken: $request->token,
+            timeoutMilliseconds: max(1000, ($request->record->deadline - now()->getTimestamp()) * 1000),
+        );
+    }
+
+    /** @deprecated Use requestMediaSelection(). */
+    public function select($selectedValues = null): void
+    {
+        $this->requestMediaSelection(is_array($selectedValues) ? $selectedValues : ($this->selected ?? []));
     }
 
     #[On('selectedRows')]
     public function selectAttachment(mixed $ids): void
     {
-        $selected = $this->authorizeRequest($ids);
-
-        // Only sync initial selection, not ongoing changes to prevent circular updates
-        if (! $this->initialSelectionDone) {
-            $this->selected = $selected;
+        if (! $this->initialSelectionDone && is_array($ids)) {
+            $actor = $this->authorizeContext();
+            app(MediaAuthorization::class)->authorizeOwnerSelection(
+                $this->ownerToken,
+                $ids,
+                $actor,
+                $this->model,
+                $this->slug,
+            );
+            $this->selected = collect($ids)->map(fn ($id): string => (string) $id)->values()->toArray();
             $this->initialSelectionDone = true;
         }
     }
@@ -124,40 +315,69 @@ class MediaManager extends Component
     #[On('tableMounted')]
     public function tableMounted(): void
     {
-        $this->authorizeRequest();
-
-        // Sync initial selection to the table when it mounts
         if ($this->selected && ! $this->initialSelectionDone) {
-            $this->dispatch('selectedRows', collect($this->selected)->map(fn ($id) => (string) $id)->values()->toArray());
+            $this->dispatch('selectedRows', collect($this->selected)->map(fn ($id): string => (string) $id)->values()->toArray());
             $this->initialSelectionDone = true;
         }
     }
 
-    // Removed updated() method to prevent circular updates
-    // The entangle directive handles syncing automatically
-
-    #[On('updateField')]
-    public function updateField(mixed $data): void
+    private function actor(): Authenticatable
     {
-        if (! is_array($data) || ! is_string($data['slug'] ?? null) || ! array_key_exists('value', $data)) {
-            abort(422, 'The selected media are invalid.');
+        $actor = auth()->user();
+
+        if (! $actor instanceof Authenticatable) {
+            abort(403);
         }
 
-        // Only update if this is our field
-        if (hash_equals($this->fieldSlug, $data['slug'])) {
-            $this->selected = $this->authorizeRequest($data['value']);
-            // Don't dispatch selectedRows here to prevent circular updates
-        } else {
-            $this->authorizeRequest();
-        }
+        return $actor;
     }
 
-    private function attachmentQuery(): Builder
+    private function authorizeContext(): Authenticatable
     {
-        $attachment = app(config('aura.resources.attachment'));
+        $actor = $this->actor();
+        app(MediaAuthorization::class)->authorizeOwner(
+            $this->ownerToken,
+            $actor,
+            $this->model,
+            $this->slug,
+        );
+        app(MediaAuthorization::class)->authorizeAttachments([], $actor);
 
-        abort_unless($attachment instanceof Model, 422, 'The media resource is invalid.');
+        if (! hash_equals($this->ownerTokenDigest, app(MediaOwnerTokenBroker::class)->digest($this->ownerToken))) {
+            abort(403);
+        }
 
-        return $attachment->newQuery();
+        return $actor;
+    }
+
+    private function matchesPendingTokens(string $ownerToken, string $requestToken): bool
+    {
+        return $this->pending
+            && is_string($this->pendingRequestDigest)
+            && hash_equals($this->ownerTokenDigest, app(MediaOwnerTokenBroker::class)->digest($ownerToken))
+            && hash_equals($this->pendingRequestDigest, hash('sha256', $requestToken));
+    }
+
+    private function settleFailedRequest(MediaSelectionRecord $record): void
+    {
+        $this->pending = false;
+        $this->pendingRequestDigest = null;
+        $this->pendingSince = null;
+        $this->selectionError = $record->errorCode ?? 'selection_rejected';
+        $this->settledRequestDigest = $record->requestDigest;
+    }
+
+    private function settleSuccessfulRequest(MediaSelectionRecord $record): void
+    {
+        if ($this->settledRequestDigest !== null && hash_equals($this->settledRequestDigest, $record->requestDigest)) {
+            return;
+        }
+
+        $this->pending = false;
+        $this->pendingRequestDigest = null;
+        $this->pendingSince = null;
+        $this->selectionError = null;
+        $this->settledRequestDigest = $record->requestDigest;
+        $this->dispatch('closeModal');
     }
 }

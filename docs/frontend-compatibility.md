@@ -216,7 +216,7 @@ expected literal classes before copying them. Both compiler lanes scan that
 same source snapshot plus the gate-only semantic probe. The audited source
 snapshot contains seven files and uses the fixed, machine-readable expectation
 in `source-baseline.json`.
-Audited source SHA-256: `80632f869f35d7a18308915994e036bd6ddeab386515ee645f0dfe0cdb4c9f0b`.
+Audited source SHA-256: `198a890c29e52345863e99b3e78f1a2b0c2a5bdfc63ce8e7d2fd7e2719052d74`.
 This combined snapshot authenticates CORE-09's filter-capability contract in
 the selected `src/Fields/Status.php` source together with CORE-24's expanded
 theme surfaces and literal-class expectations.

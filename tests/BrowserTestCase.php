@@ -4,9 +4,16 @@ namespace Aura\Base\Tests;
 
 use Aura\Base\ConditionalLogic;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Fields\Image;
+use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Aura\Base\Tests\Fixtures\ComponentSlots\BrowserGlobalSearch;
+use Aura\Base\Tests\Fixtures\ComponentSlots\BrowserMediaManager;
+use Aura\Base\Tests\Resources\GalleryPage;
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Route;
 
 class BrowserTestCase extends TestCase
 {
@@ -35,9 +42,10 @@ class BrowserTestCase extends TestCase
         // Re-capture the baseline afterwards: Queue::after triggers
         // Aura::flushState(), which would otherwise drop the registration
         // as soon as any sync job (e.g. thumbnail generation) runs.
-        Aura::registerResources([Resources\GalleryPage::class]);
+        Aura::registerResources([GalleryPage::class]);
         Aura::registerRoutes('gallery-page');
         Aura::captureBaselineState();
+        $this->registerComponentSlotAliasesRoute();
 
         $this->serveBuiltAssets();
     }
@@ -66,6 +74,69 @@ class BrowserTestCase extends TestCase
             'root' => storage_path('framework/testing/disks/tmp-for-tests'),
         ]);
 
+        if (filter_var(env('AURA_BROWSER_SLOT_REPLACEMENTS', false), FILTER_VALIDATE_BOOL)) {
+            $app['config']->set('aura.component-slots.global-search', BrowserGlobalSearch::class);
+            $app['config']->set('aura.component-slots.media-manager', BrowserMediaManager::class);
+        }
+
+        if (is_numeric(env('AURA_BROWSER_SELECTION_TTL'))) {
+            $app['config']->set('aura.media.security.selection_ttl', (int) env('AURA_BROWSER_SELECTION_TTL'));
+        }
+    }
+
+    private function registerComponentSlotAliasesRoute(): void
+    {
+        Route::get('/__aura-component-slot-aliases', function () {
+            $actor = auth()->user();
+
+            abort_unless($actor instanceof User, 403);
+
+            $arguments = function (string $ownerComponentId) use ($actor): array {
+                $ownerToken = app(MediaOwnerTokenBroker::class)->issue(
+                    ownerComponentId: $ownerComponentId,
+                    modelClass: GalleryPage::class,
+                    modelKey: null,
+                    action: 'create',
+                    slug: 'gallery',
+                    fieldType: Image::class,
+                    actor: $actor,
+                );
+
+                return [
+                    'model' => GalleryPage::class,
+                    'slug' => 'gallery',
+                    'selected' => [],
+                    'ownerToken' => $ownerToken,
+                    'modalAttributes' => [
+                        'persistent' => false,
+                        'modalClasses' => 'max-w-7xl',
+                        'slideOver' => false,
+                    ],
+                ];
+            };
+
+            return Blade::render(<<<'BLADE'
+                <x-aura::layout.app>
+                    <div data-component-slot-aliases>
+                        <section data-slot-alias="global-colon">
+                            @livewire('aura::global-search', [], key('global-colon'))
+                        </section>
+                        <section data-slot-alias="global-dot">
+                            @livewire('aura.base.livewire.global-search', [], key('global-dot'))
+                        </section>
+                        <section data-slot-alias="media-colon">
+                            @livewire('aura::media-manager', $mediaColonArguments, key('media-colon'))
+                        </section>
+                        <section data-slot-alias="media-dot">
+                            @livewire('aura.base.livewire.media-manager', $mediaDotArguments, key('media-dot'))
+                        </section>
+                    </div>
+                </x-aura::layout.app>
+                BLADE, [
+                'mediaColonArguments' => $arguments('browser-media-colon-owner'),
+                'mediaDotArguments' => $arguments('browser-media-dot-owner'),
+            ], deleteCachedView: true);
+        });
     }
 
     /**

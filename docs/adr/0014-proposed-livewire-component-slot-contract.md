@@ -272,10 +272,15 @@ three-request protocol and forbids closing from the first request:
 The broker record binds the request token digest, owner token digest, manager and
 owner Livewire component IDs, actor/team, slug, normalized value digest, issued
 time, deadline, and state (`pending`, `processing`, `succeeded`, `failed`, or
-`expired`). It lives in server-backed shared storage with atomic transitions and
-a short TTL so separate PHP workers observe the same state. Knowing either token
-cannot manufacture success because only the owner-side mutation may transition a
-request to `succeeded`.
+`expired`). Claim, claim time, completion time, and error code form a strict
+state tuple: pending is unclaimed, processing has one live claim, successful and
+ordinary failed requests complete before the deadline, and only expired records
+use `selection_timeout` at or after the deadline. Every authoritative read also
+requires the opaque token, sole owner-wide index entry, and manager-scope pointer
+to agree. It lives in server-backed shared storage with atomic transitions and a
+short TTL so separate PHP workers observe the same state. Invalid tuples or
+detached fences fail closed. Knowing either token cannot manufacture success
+because only the owner-side mutation may transition a request to `succeeded`.
 
 While pending, the Aura-owned client timer invokes
 `expireMediaSelection(string $requestToken): void` in a separate manager request.

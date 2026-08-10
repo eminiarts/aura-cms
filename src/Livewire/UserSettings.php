@@ -6,7 +6,6 @@ use Aura\Base\Resources\Option;
 use Aura\Base\Traits\InputFields;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Livewire\Attributes\On;
 use Livewire\Component;
 
 class UserSettings extends Component
@@ -104,8 +103,7 @@ class UserSettings extends Component
 
     }
 
-    #[On('updateField')]
-    public function updateField($data)
+    protected function updateField($data)
     {
         $this->form['fields'][$data['slug']] = $data['value'];
 

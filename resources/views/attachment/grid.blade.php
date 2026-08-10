@@ -36,7 +36,7 @@
                         {{-- Details trigger in the picker, where the card click selects --}}
                         <button
                             type="button"
-                            x-on:click.stop.prevent="Livewire.dispatch('open-attachment-details', { id: {{ $row->id }}, ids: rows.map(Number) })"
+                            wire:click.stop.prevent="openAttachmentDetails('{{ $row->id }}')"
                             data-attachment-info="{{ $row->id }}"
                             aria-label="{{ __('Show details') }}"
                             class="flex absolute right-3 bottom-3 justify-center items-center w-7 h-7 text-gray-600 rounded-full shadow-sm opacity-0 transition bg-white/90 hover:bg-white hover:text-gray-900 group-hover:opacity-100 focus-visible:opacity-100 dark:bg-gray-900/80 dark:text-gray-300 dark:hover:text-white"

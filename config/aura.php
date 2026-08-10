@@ -85,6 +85,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Component Slots
+    |--------------------------------------------------------------------------
+    |
+    | A non-null class is an explicit host choice. Leave a slot null to allow
+    | one plugin candidate to win, with Aura's component as the fallback.
+    |
+    */
+
+    'component-slots' => [
+        'global-search' => null,
+        'media-manager' => null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Components
     |--------------------------------------------------------------------------
     |
@@ -97,9 +112,9 @@ return [
         'profile' => Profile::class,
         'settings' => Settings::class,
 
-        // The media-manager modal component. Plugins (e.g. the Media Library)
-        // may override this with a drop-in replacement by publishing/setting
-        // `aura.components.media-manager` to their own Livewire component.
+        // Deprecated host compatibility key. New applications should configure
+        // `aura.component-slots.media-manager`; plugins must declare candidates
+        // through Aura::registerComponentSlots() instead of changing config.
         'media-manager' => MediaManager::class,
     ],
 
@@ -314,6 +329,27 @@ return [
         'max_file_size' => 10000,
 
         'generate_thumbnails' => true,
+        'security' => [
+            // Configure an explicitly named, non-default Laravel database store
+            // with dedicated, distinct cache and lock tables. It must not alias
+            // the default cache's physical tables, including database children
+            // of a default failover store, custom defaults that resolve to a database,
+            // and aliases created by connection prefixes or alternate paths to the
+            // same database. Use unqualified lowercase base-table identifiers;
+            // Aura binds operations to the validated schema-qualified tables.
+            // Aura maintains reserved persistent identity rows and validates them
+            // under the same transaction as each operation so same-name replacement
+            // fails closed without privileged database metadata access.
+            // All views, temporary tables, and synonyms fail closed.
+            // Also set Laravel's global cache.serializable_classes option
+            // to false. File, Redis, DynamoDB,
+            // Memcached, failover, process-local, custom, and proxied stores fail
+            // closed. Multi-node deployments need one shared network database.
+            'cache_store' => null,
+            'owner_token_ttl' => 900,
+            'selection_ttl' => 15,
+            'selection_retention' => 60,
+        ],
         'dimensions' => [
             [
                 'name' => 'xs',

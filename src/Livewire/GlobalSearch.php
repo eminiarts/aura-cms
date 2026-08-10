@@ -4,54 +4,56 @@ namespace Aura\Base\Livewire;
 
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class GlobalSearch extends Component
 {
-    public $bookmarks;
+    public array $bookmarks = [];
 
     public $search = '';
 
-    public function getSearchResultsProperty()
+    public function getSearchResultsProperty(): array|Collection
     {
-        // if no $this->search return
-        if (! $this->search || $this->search === '') {
+        $actor = $this->authorizeUse();
+
+        if (! is_string($this->search) || $this->search === '') {
             return [];
         }
 
-        // Get all accessible resources
-        $resources = app('aura')::getResources();
-
-        // Initialize search results array
-
-        // filter out flows and flow_logs from resources
-        $resources = array_filter($resources, function ($resource) {
-            if ($resource === null) {
+        $actorGate = Gate::forUser($actor);
+        $resources = array_filter(app('aura')::getResources(), function ($resource) use ($actorGate): bool {
+            if (! is_string($resource) || ! class_exists($resource) || ! is_subclass_of($resource, Resource::class)) {
                 return false;
             }
 
-            if ($resource::getGlobalSearch() === false) {
+            $model = app($resource);
+
+            if (! $model instanceof Resource || $resource::getGlobalSearch() === false
+                || ! $actorGate->allows('viewAny', $model)) {
                 return false;
             }
 
-            // Skip any resource the current user is not allowed to view.
-            if (! Gate::allows('viewAny', app($resource))) {
-                return false;
-            }
-
-            return $resource::getSlug() !== 'resource' && $resource::getSlug() !== 'flow' && $resource::getSlug() !== 'flowlog' && $resource::getSlug() !== 'operation' && $resource::getSlug() !== 'flowoperation' && $resource::getSlug() !== 'operationlog' && $resource::getSlug() !== 'option' && $resource::getSlug() !== 'team' && $resource::getSlug() !== 'user' && $resource::getSlug() !== 'product';
+            return ! in_array($resource::getSlug(), [
+                'resource',
+                'flow',
+                'flowlog',
+                'operation',
+                'flowoperation',
+                'operationlog',
+                'option',
+                'team',
+                'user',
+                'product',
+            ], true);
         });
 
-        $searchResults = collect([]);
+        $searchResults = collect();
 
-        // Search in each resource model
         foreach ($resources as $resource) {
-            // if no resource then continue
-            if (! $resource) {
-                continue;
-            }
-
             $model = app($resource);
             $searchableFields = $model->getSearchableFields()->pluck('slug');
 
@@ -61,13 +63,13 @@ class GlobalSearch extends Component
 
             $results = $resource::query()
                 ->select($model->getTable().'.*')
-                ->where(function ($query) use ($model, $searchableFields) {
+                ->where(function (Builder $query) use ($model, $searchableFields): void {
                     foreach ($searchableFields as $field) {
                         if ($model->isMetaField($field)) {
                             $metaTable = $model->getMetaTable();
                             $metaForeignKey = $model->getMetaForeignKey();
 
-                            $query->orWhereExists(function ($subquery) use ($field, $metaForeignKey, $metaTable, $model) {
+                            $query->orWhereExists(function ($subquery) use ($field, $metaForeignKey, $metaTable, $model): void {
                                 $subquery->selectRaw('1')
                                     ->from($metaTable)
                                     ->whereColumn($model->getQualifiedKeyName(), $metaTable.'.'.$metaForeignKey)
@@ -80,63 +82,71 @@ class GlobalSearch extends Component
                         }
                     }
                 })
-                ->get();
+                ->get()
+                ->filter(fn (Resource $record): bool => $actorGate->allows('view', $record));
 
             $searchResults->push(...$results);
         }
 
-        // Search in User model, but only if the current user may view users.
-        if (Gate::allows('viewAny', app(User::class))) {
-            $userResults = User::where('name', 'like', '%'.$this->search.'%')
-                ->orWhere('email', 'like', '%'.$this->search.'%')
-                ->get();
+        $userPrototype = app(User::class);
+
+        if ($actorGate->allows('viewAny', $userPrototype)) {
+            $userResults = User::query()
+                ->where(function (Builder $query): void {
+                    $query->where('name', 'like', '%'.$this->search.'%')
+                        ->orWhere('email', 'like', '%'.$this->search.'%');
+                })
+                ->get()
+                ->filter(fn (User $user): bool => $actorGate->allows('view', $user));
             $searchResults->push(...$userResults);
         }
 
-        $searchResults = $searchResults->flatten()->map(function ($item) {
-            if ($item instanceof User) {
-                $item['view_url'] = route('aura.user.view', ['id' => $item->id]);
-            } elseif ($item instanceof Resource) {
-                $item['type'] = $item->getType();
-                $item['view_url'] = route('aura.'.$item->getSlug().'.view', ['id' => $item->getKey()]);
-            } else {
-                $item['view_url'] = route('aura.user.view', ['id' => $item->id]);
-            }
+        return $searchResults
+            ->take(15)
+            ->map(function (Resource $item): Resource {
+                if ($item instanceof User) {
+                    $item['view_url'] = route('aura.user.view', ['id' => $item->getKey()]);
+                } else {
+                    $item['type'] = $item->getType();
+                    $item['view_url'] = route('aura.'.$item->getSlug().'.view', ['id' => $item->getKey()]);
+                }
 
-            return $item;
-        });
-
-        // limit to 15
-        $searchResults = $searchResults->take(15);
-
-        // group by type
-        $searchResults = $searchResults->groupBy('type');
-
-        return $searchResults;
+                return $item;
+            })
+            ->groupBy('type');
     }
 
-    public function mount()
+    public function hydrate(): void
     {
-        // if global search is disabled, abort with 403
+        $this->authorizeUse();
+    }
+
+    public function mount(): void
+    {
+        $actor = $this->authorizeUse();
+        $this->bookmarks = $actor->getOptionBookmarks();
+    }
+
+    public function render(): View
+    {
+        $actor = $this->authorizeUse();
+        $this->bookmarks = $actor->getOptionBookmarks();
+
+        return view('aura::livewire.global-search');
+    }
+
+    private function authorizeUse(): User
+    {
         if (! config('aura.features.global_search')) {
             abort(403, 'Global search is disabled');
         }
 
-        if (auth()->check()) {
-            $this->bookmarks = auth()->user()->getOptionBookmarks();
-        } else {
-            $this->bookmarks = [];
-        }
-    }
+        $actor = auth()->user();
 
-    public function render()
-    {
-        if (auth()->check()) {
-            $this->bookmarks = auth()->user()->getOptionBookmarks();
-        } else {
-            $this->bookmarks = [];
+        if (! $actor instanceof User) {
+            abort(403);
         }
 
-        return view('aura::livewire.global-search');
+        return $actor;
     }
 }

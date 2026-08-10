@@ -2,14 +2,20 @@
 
 namespace Aura\Base\Livewire;
 
+use Aura\Base\Livewire\Media\MediaAuthorization;
+use Aura\Base\Livewire\Media\MediaOwnerTokenBroker;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Throwable;
 
 class MediaUploader extends Component
 {
@@ -25,6 +31,9 @@ class MediaUploader extends Component
 
     #[Locked]
     public $button = false;
+
+    #[Locked]
+    public ?string $detailsComponentId = null;
 
     #[Locked]
     public $disabled = false;
@@ -47,8 +56,15 @@ class MediaUploader extends Component
     public $namespace = Attachment::class;
 
     #[Locked]
+    public string $ownerToken = '';
+
+    #[Locked]
+    public string $ownerTokenDigest = '';
+
+    #[Locked]
     public ?string $resource = null;
 
+    #[Locked]
     public $selected;
 
     #[Locked]
@@ -63,20 +79,42 @@ class MediaUploader extends Component
         'ids' => [],
     ];
 
+    #[Locked]
+    public bool $usesLegacyAuthorization = false;
+
     public function hydrate(): void
     {
-        $this->authorizeRequest();
+        $this->authorizeContext();
     }
 
-    public function mount(): void
+    public function mount(?string $ownerToken = null): void
     {
+        $actor = $this->actor();
         $this->initializeAuthoritativeContext();
-        $this->authorizeRequest();
+        $ownerModel = $this->for;
+        $this->namespace = config('aura.resources.attachment', Attachment::class);
+        $this->model = app($this->namespace);
+        $broker = app(MediaOwnerTokenBroker::class);
+        $this->usesLegacyAuthorization = ! is_string($ownerToken) || $ownerToken === '';
+
+        if ($this->resource !== null || $this->fieldSlug !== null) {
+            $this->authorizeRequest();
+        }
+
+        if (! $this->usesLegacyAuthorization) {
+            $this->for = $ownerModel;
+        }
+
+        $this->ownerToken = $this->usesLegacyAuthorization
+            ? $broker->issueLibrary($this->getId(), $actor)
+            : $ownerToken;
+        $this->ownerTokenDigest = $broker->digest($this->ownerToken);
+        $this->authorizeContext();
     }
 
     public function render(): View
     {
-        $this->authorizeRequest();
+        $this->authorizeContext();
 
         return view('aura::livewire.media-uploader', [
             'uploadPolicy' => $this->uploadPolicy(),
@@ -86,21 +124,28 @@ class MediaUploader extends Component
     #[On('selectedMediaUpdated')]
     public function selectedMediaUpdated(array $data): void
     {
-        $this->authorizeRequest();
-
         if (! is_string($data['slug'] ?? null) || ! is_array($data['value'] ?? null)) {
             abort(422, 'The selected media are invalid.');
         }
 
         if ($this->fieldSlug !== null && hash_equals($this->fieldSlug, $data['slug'])) {
-            $this->selected = $data['value'];
+            $actor = $this->authorizeContext();
+            $this->selected = app(MediaAuthorization::class)
+                ->authorizeAttachments(is_array($data['value'] ?? null) ? $data['value'] : [], $actor)
+                ->map(fn (Resource $attachment): string => (string) $attachment->getKey())
+                ->all();
             $this->authorizeRequest();
         }
     }
 
     public function updatedMedia(): void
     {
-        $this->authorizeRequest(authorizeCreate: true);
+        $actor = $this->authorizeContext();
+        $attachmentPrototype = app(MediaAuthorization::class)->authorizeAttachmentCreate($actor);
+
+        if ($this->resource !== null || $this->fieldSlug !== null) {
+            $this->authorizeRequest(authorizeCreate: true);
+        }
         $this->resetValidation();
         $this->uploadResult = [
             'successful' => false,
@@ -111,6 +156,7 @@ class MediaUploader extends Component
         try {
             $this->validate([
                 'media' => [
+                    'required',
                     'array',
                     'max:'.self::MAX_FILES,
                 ],
@@ -153,44 +199,47 @@ class MediaUploader extends Component
                 continue;
             }
 
-            $url = $media->store(
-                config('aura.media.path', 'media'),
-                config('aura.media.disk', 'public'),
-            );
+            $disk = config('aura.media.disk', 'public');
+            $url = null;
 
-            $payload = [
-                'url' => $url,
-                'name' => $media->getClientOriginalName(),
-                'title' => $media->getClientOriginalName(),
-                'size' => $media->getSize(),
-                'mime_type' => $media->getMimeType(),
-            ];
+            try {
+                $url = $media->store(
+                    config('aura.media.path', 'media'),
+                    $disk,
+                );
 
-            if (str_starts_with((string) $media->getMimeType(), 'image/')
-                && ($dimensions = @getimagesize($media->getRealPath()))) {
-                $payload['width'] = $dimensions[0];
-                $payload['height'] = $dimensions[1];
+                $payload = [
+                    'url' => $url,
+                    'name' => $media->getClientOriginalName(),
+                    'title' => $media->getClientOriginalName(),
+                    'size' => $media->getSize(),
+                    'mime_type' => $media->getMimeType(),
+                ];
+
+                if (str_starts_with((string) $media->getMimeType(), 'image/')
+                    && ($dimensions = @getimagesize($media->getRealPath()))) {
+                    $payload['width'] = $dimensions[0];
+                    $payload['height'] = $dimensions[1];
+                }
+
+                $attachmentClass = $attachmentPrototype::class;
+                $attachments[] = $attachmentPrototype->getConnection()->transaction(
+                    fn (): Resource => $attachmentClass::create($payload),
+                );
+            } catch (Throwable) {
+                if (is_string($url) && $url !== '') {
+                    Storage::disk($disk)->delete($url);
+                }
+
+                $this->addError("media.{$key}", __('Upload failed. Please try again.'));
+                $this->uploadResult['message'] = __('Upload failed. Please try again.');
+                unset($this->media[$key]);
+
+                continue;
             }
-
-            $attachments[] = $attachment->newQuery()->create($payload);
 
             // Unset the processed file
             unset($this->media[$key]);
-        }
-
-        // Only the inline field uploader commits the field value directly. In the
-        // picker ($table) an upload merely joins the selection — the value is
-        // committed when the user confirms with Select. Dispatching updateField
-        // here would re-render the form under the open picker and tear it down.
-        if ($this->field && ! $this->table) {
-            // Emit update Field - use named parameter 'data' to match listener signature
-            $this->dispatch('updateField', data: [
-                'slug' => $this->field['slug'],
-                // merge the new attachments with the old ones
-                'value' => optional($this)->selected ? array_merge($this->selected, collect($attachments)->pluck('id')->toArray()) : collect($attachments)->pluck('id')->toArray(),
-            ]);
-
-            $this->selected = optional($this)->selected ? array_merge($this->selected, collect($attachments)->pluck('id')->toArray()) : collect($attachments)->pluck('id')->toArray();
         }
 
         // Notify consumers (grid highlight, picker auto-select) about the freshly
@@ -203,7 +252,7 @@ class MediaUploader extends Component
                 'message' => '',
                 'ids' => $ids,
             ];
-            $this->dispatch('media-uploaded', ids: $ids);
+            $this->dispatch('media-uploaded', ids: $ids, ownerToken: $this->ownerToken);
         }
 
         $this->dispatch('refreshTable');
@@ -221,9 +270,51 @@ class MediaUploader extends Component
         ];
     }
 
+    private function actor(): Authenticatable
+    {
+        $actor = auth()->user();
+
+        if (! $actor instanceof Authenticatable) {
+            abort(403);
+        }
+
+        return $actor;
+    }
+
+    private function authorizeContext(): Authenticatable
+    {
+        $actor = $this->actor();
+
+        if (! hash_equals($this->ownerTokenDigest, app(MediaOwnerTokenBroker::class)->digest($this->ownerToken))) {
+            abort(403);
+        }
+
+        $owner = app(MediaAuthorization::class)->authorizeOwner($this->ownerToken, $actor);
+
+        if (! $this->usesLegacyAuthorization
+            && $this->field
+            && ($this->field['slug'] ?? null) !== $owner->context->slug) {
+            abort(403);
+        }
+
+        if (! $this->usesLegacyAuthorization
+            && is_string($this->for)
+            && $this->for !== ''
+            && $this->for !== $owner->context->modelClass) {
+            abort(403);
+        }
+
+        if (is_array($this->selected)) {
+            app(MediaAuthorization::class)->authorizeAttachments($this->selected, $actor);
+        }
+
+        return $actor;
+    }
+
     private function authorizeRequest(bool $authorizeCreate = false): void
     {
         $authorization = app(MediaFieldAuthorization::class);
+        $ownerModel = $this->for;
 
         if ($this->resource === null && $this->fieldSlug === null) {
             if ($this->field !== null || $this->for !== null) {
@@ -252,7 +343,7 @@ class MediaUploader extends Component
         $this->selected = $authorized['selected'];
         $this->model = $authorized['attachment'];
         $this->namespace = $authorized['attachment']::class;
-        $this->for = $authorized['resource_slug'];
+        $this->for = $this->usesLegacyAuthorization ? $authorized['resource_slug'] : $ownerModel;
 
         if (($this->field['disabled'] ?? false) && $authorizeCreate) {
             abort(403, 'Uploads are disabled for this field.');

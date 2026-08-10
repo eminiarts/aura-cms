@@ -6,13 +6,13 @@
         $selected = null;
     }
 
+    $selectionIsRenderable = $this->canRenderMediaSelection($selected);
     $files = null;
 @endphp
 
 @php
-    if($selected) {
-        $attachmentClass = config('aura.resources.attachment', \Aura\Base\Resources\Attachment::class);
-        $files = $attachmentClass::find($selected)?->sortBy(function($item) use ($selected) {
+    if($selected && $selectionIsRenderable) {
+        $files = $this->authorizedMediaForField($selected)->sortBy(function($item) use ($selected) {
             return array_search($item->id, $selected);
         });
     }
@@ -93,6 +93,7 @@
         @endphp
 
         @can('viewAny', config('aura.resources.attachment'))
+            @if($selectionIsRenderable)
             <livewire:aura::media-uploader
                 :table="false"
                 :field="$field"
@@ -101,8 +102,10 @@
                 :selected="$selected"
                 :button="true"
                 :model="app('Aura\Base\Resources\Attachment')"
-                :for="$this->model->getSlug()"
+                :for="get_class($this->model)"
+                :owner-token="$this->mediaOwnerToken($field['slug'])"
             />
+            @endif
         @endcan
     </x-aura::fields.wrapper>
 </div>

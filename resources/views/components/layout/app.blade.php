@@ -71,7 +71,7 @@
     @yield('sidebar')
 
     @if(config('aura.features.global_search'))
-        <livewire:aura::global-search/>
+        @livewire(\Aura\Base\Livewire\ComponentSlots\ComponentSlotRegistry::GLOBAL_SEARCH_TRANSPORT_ID)
     @endif
 </div>
 

@@ -3,13 +3,16 @@
 namespace Aura\Base\Policies;
 
 use App\Models\Post;
+use Aura\Base\Contracts\ScopesMediaVisibility;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Builder;
 
-class ResourcePolicy
+class ResourcePolicy implements ScopesMediaVisibility
 {
     use HandlesAuthorization;
 
@@ -110,6 +113,27 @@ class ResourcePolicy
         }
 
         return false;
+    }
+
+    public function scopeMediaVisibility(Builder $query, Authenticatable $actor, Resource $resource): Builder
+    {
+        if (! $actor instanceof User
+            || config('aura.resource-view-enabled') === false
+            || $resource::$viewEnabled === false) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($this->hasBlanketAccess($actor)) {
+            return $query;
+        }
+
+        if ($actor->hasPermissionTo('scope', $resource) && $actor->hasPermissionTo('view', $resource)) {
+            return $query->where($resource->qualifyColumn('user_id'), $actor->getAuthIdentifier());
+        }
+
+        return $actor->hasPermissionTo('view', $resource)
+            ? $query
+            : $query->whereRaw('1 = 0');
     }
 
     /**

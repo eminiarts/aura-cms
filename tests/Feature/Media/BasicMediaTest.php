@@ -1,6 +1,7 @@
 <?php
 
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
+use Aura\Base\Livewire\MediaTable;
 use Aura\Base\Livewire\MediaUploader;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resources\Attachment;
@@ -28,7 +29,7 @@ test('media page can be rendered with all required components', function () {
         ->assertOk()
         ->assertSeeLivewire(AttachmentIndex::class)
         ->assertSeeLivewire(MediaUploader::class)
-        ->assertSeeLivewire(Table::class);
+        ->assertSeeLivewire(MediaTable::class);
 });
 
 test('media index page is accessible without attachments', function () {

@@ -183,13 +183,13 @@ test('can be disabled via config', function () {
 
     $this->get(route('aura.dashboard'))
         ->assertOk()
-        ->assertSee('global-search');
+        ->assertSee('data-aura-global-search', false);
 
     config(['aura.features.global_search' => false]);
 
     $this->get(route('aura.dashboard'))
         ->assertOk()
-        ->assertDontSee('global-search');
+        ->assertDontSee('data-aura-global-search', false);
 
     Livewire::test(GlobalSearch::class)
         ->assertStatus(403);

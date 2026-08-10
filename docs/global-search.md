@@ -209,13 +209,47 @@ class CustomGlobalSearch extends GlobalSearch
 }
 ```
 
-Then register your custom component in a service provider:
+Applications select the replacement through the stable host slot in
+`config/aura.php`:
 
 ```php
-use Livewire\Livewire;
-
-Livewire::component('aura::global-search', CustomGlobalSearch::class);
+'component-slots' => [
+    'global-search' => App\Livewire\CustomGlobalSearch::class,
+    'media-manager' => null,
+],
 ```
+
+An enabled plugin declares its candidate from a non-deferred service provider's
+`boot()` method. The source must be that plugin's lowercase Composer package
+name:
+
+```php
+use Aura\Base\Facades\Aura;
+
+Aura::registerComponentSlots('vendor/package', [
+    'global-search' => Vendor\Package\Livewire\CustomGlobalSearch::class,
+]);
+```
+
+`global-search` is one of Aura's two supported slots; `media-manager` is the
+other. Resolution is deterministic: a non-null host value wins, otherwise one
+distinct plugin class wins, otherwise Aura's default is used. Repeating the same
+class is allowed, but multiple distinct plugin classes fail application boot and
+must be resolved by an explicit host choice. Invalid declarations fail even when
+another layer would win.
+
+The compatibility aliases `aura::global-search` and
+`aura.base.livewire.global-search` both resolve to the selected winner. They are
+mounting aliases, not registration hooks. Do not call `Livewire::component()` for
+either alias or Aura's private `aura-slot-*` transport identifier; a claim or
+collision on a protected identifier fails boot.
+
+A global-search candidate must be an instantiable `Livewire\Component` class. It
+receives no required scalar mount data. Extra required mount inputs are allowed
+only when they are class or interface dependencies that Laravel's container can
+resolve; other extra inputs must be optional or variadic. The replacement owns
+the leaf UI only: it must preserve Aura's authenticated layout behavior and
+resource, record, current-team, and destination authorization.
 
 ### Custom Result Display
 

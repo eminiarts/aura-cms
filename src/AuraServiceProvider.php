@@ -21,17 +21,22 @@ use Aura\Base\Commands\TransferFromPostsToCustomTable;
 use Aura\Base\Commands\TransformTableToResource;
 use Aura\Base\Commands\UpdateSchemaFromMigration;
 use Aura\Base\Database\Seeders\RoleCatalogSeeder;
-use Aura\Base\Facades\Aura;
+use Aura\Base\Facades\Aura as AuraFacade;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\AttachmentDetails;
 use Aura\Base\Livewire\BookmarkPage;
 use Aura\Base\Livewire\ChooseTemplate;
+use Aura\Base\Livewire\ComponentSlots\ComponentSlotCandidateValidator;
+use Aura\Base\Livewire\ComponentSlots\ComponentSlotRegistry;
+use Aura\Base\Livewire\ComponentSlots\DefaultLivewireComponentSlotBridge;
+use Aura\Base\Livewire\ComponentSlots\LivewireCollisionInspector;
+use Aura\Base\Livewire\ComponentSlots\LivewireCollisionInspectorFactory;
+use Aura\Base\Livewire\ComponentSlots\LivewireComponentSlotBridge;
 use Aura\Base\Livewire\CreateResource;
 use Aura\Base\Livewire\EditResourceField;
-use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\InviteUser;
 use Aura\Base\Livewire\MediaFieldAuthorization;
-use Aura\Base\Livewire\MediaManager;
+use Aura\Base\Livewire\MediaTable;
 use Aura\Base\Livewire\MediaUploader;
 use Aura\Base\Livewire\ModalActionRegistry;
 use Aura\Base\Livewire\Modals;
@@ -94,7 +99,8 @@ class AuraServiceProvider extends PackageServiceProvider
         parent::boot();
 
         $this->app->booted(function (): void {
-            Aura::captureBaselineState();
+            $this->app->make(ComponentSlotRegistry::class)->finalize();
+            AuraFacade::captureBaselineState();
         });
     }
 
@@ -145,6 +151,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
             // Table component
             'aura::table' => Table::class,
+            'aura::media-table' => MediaTable::class,
             'aura.base.livewire.table.table' => Table::class,
 
             // Attachment component
@@ -154,12 +161,10 @@ class AuraServiceProvider extends PackageServiceProvider
 
             // Top-level Livewire components
             'aura::navigation' => Navigation::class,
-            'aura::global-search' => GlobalSearch::class,
             'aura::bookmark-page' => BookmarkPage::class,
             'aura::notifications' => Notifications::class,
             'aura::edit-resource-field' => EditResourceField::class,
             'edit-field' => EditResourceField::class,
-            'aura::media-manager' => config('aura.components.media-manager', MediaManager::class),
             'aura::media-uploader' => MediaUploader::class,
             'aura::attachment-details' => AttachmentDetails::class,
             'aura::create-resource' => CreateResource::class,
@@ -176,11 +181,9 @@ class AuraServiceProvider extends PackageServiceProvider
             // Top-level components (dot-notation for full-page)
             'aura.base.livewire.dashboard' => config('aura.components.dashboard'),
             'aura.base.livewire.navigation' => Navigation::class,
-            'aura.base.livewire.global-search' => GlobalSearch::class,
             'aura.base.livewire.bookmark-page' => BookmarkPage::class,
             'aura.base.livewire.notifications' => Notifications::class,
             'aura.base.livewire.edit-resource-field' => EditResourceField::class,
-            'aura.base.livewire.media-manager' => config('aura.components.media-manager', MediaManager::class),
             'aura.base.livewire.media-uploader' => MediaUploader::class,
             'aura.base.livewire.create-resource' => CreateResource::class,
             'aura.base.livewire.resource-editor' => ResourceEditor::class,
@@ -218,10 +221,7 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura.base.widgets.bar' => Bar::class,
         ];
 
-        // Register component resolver for Livewire 4.x compatibility
-        Livewire::resolveMissingComponent(function ($name) use ($componentMap) {
-            return $componentMap[$name] ?? null;
-        });
+        $this->app->make(ComponentSlotRegistry::class)->install($componentMap);
 
         return $this;
     }
@@ -298,11 +298,12 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function packageBooted()
     {
-        app('aura')::registerFields(app('aura')::getAppFields());
+        $aura = $this->app->make(Aura::class);
+        $aura->registerFields($aura->getAppFields());
 
-        Queue::before(fn () => Aura::flushState());
-        Queue::after(fn () => Aura::flushState());
-        Queue::exceptionOccurred(fn () => Aura::flushState());
+        Queue::before(fn () => AuraFacade::flushState());
+        Queue::after(fn () => AuraFacade::flushState());
+        Queue::exceptionOccurred(fn () => AuraFacade::flushState());
 
         // Laravel Octane keeps a single PHP process alive across many requests,
         // so Aura's process-level static state (field caches, resource registry,
@@ -319,7 +320,7 @@ class AuraServiceProvider extends PackageServiceProvider
                 'Laravel\Octane\Events\TaskReceived',
                 'Laravel\Octane\Events\TickReceived',
             ] as $octaneEvent) {
-                $events->listen($octaneEvent, fn () => Aura::flushState());
+                $events->listen($octaneEvent, fn () => AuraFacade::flushState());
             }
         }
 
@@ -360,7 +361,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
         // CheckCondition Blade Directive
         Blade::if('checkCondition', function ($model, $field, $post = null) {
-            return \Aura\Base\Aura::checkCondition($model, $field, $post);
+            return Aura::checkCondition($model, $field, $post);
         });
 
         Blade::if('superadmin', function () {
@@ -461,13 +462,36 @@ class AuraServiceProvider extends PackageServiceProvider
         // the facade would re-resolve a fresh, empty Aura and lose every
         // registration after the first request. Per-request mutable state is
         // reset back to the boot baseline via Aura::flushState() instead.
-        $this->app->singleton(\Aura\Base\Aura::class);
+        $this->app->singleton(Aura::class);
 
-        $this->app->scoped('aura', function (): Aura {
-            return app(Aura::class);
+        $this->app->singleton(ComponentSlotCandidateValidator::class);
+        $this->app->singleton(
+            LivewireCollisionInspectorFactory::class,
+            fn ($app): LivewireCollisionInspectorFactory => new LivewireCollisionInspectorFactory(
+                $app->make('livewire.finder'),
+                $app->make('livewire.factory'),
+            ),
+        );
+        $this->app->singleton(
+            LivewireCollisionInspector::class,
+            fn ($app): LivewireCollisionInspector => $app->make(LivewireCollisionInspectorFactory::class)->make(),
+        );
+        $this->app->singleton(
+            LivewireComponentSlotBridge::class,
+            fn ($app): LivewireComponentSlotBridge => new DefaultLivewireComponentSlotBridge(
+                $app->make(LivewireCollisionInspector::class),
+                $app->make('livewire.finder'),
+                $app->make('livewire.factory'),
+            ),
+        );
+        $this->app->singleton(ComponentSlotRegistry::class);
+
+        $this->app->scoped('aura', function ($app): AuraFacade {
+            return $app->make(AuraFacade::class);
         });
 
-        app('aura')::registerResources([
+        $aura = $this->app->make(Aura::class);
+        $aura->registerResources([
             config('aura.resources.attachment'),
             config('aura.resources.option'),
             config('aura.resources.permission'),
@@ -476,7 +500,7 @@ class AuraServiceProvider extends PackageServiceProvider
         ]);
 
         if (config('aura.teams')) {
-            app('aura')::registerResources([
+            $aura->registerResources([
                 config('aura.resources.team'),
                 config('aura.resources.team-invitation'),
             ]);
@@ -492,11 +516,11 @@ class AuraServiceProvider extends PackageServiceProvider
             ->filter()
             ->toArray();
 
-        app('aura')::registerFields($fields);
+        $aura->registerFields($fields);
 
         // Register App Resources
-        app('aura')::registerResources(app('aura')::getAppResources());
-        app('aura')::registerWidgets(app('aura')::getAppWidgets());
+        $aura->registerResources($aura->getAppResources());
+        $aura->registerWidgets($aura->getAppWidgets());
     }
 
     public function registeringPackage() {}
@@ -516,7 +540,7 @@ class AuraServiceProvider extends PackageServiceProvider
         };
         $resourceFor = static function (array $arguments): Resource {
             $type = $arguments['type'] ?? null;
-            $resource = is_string($type) ? Aura::findResourceBySlug($type) : null;
+            $resource = is_string($type) ? AuraFacade::findResourceBySlug($type) : null;
 
             if (! $resource instanceof Resource) {
                 abort(404);
@@ -594,12 +618,27 @@ class AuraServiceProvider extends PackageServiceProvider
                     $arguments['resource'] ?? null,
                     $arguments['model'] ?? null,
                 );
-                $manager = app(MediaManager::class);
-                $manager->resource = $resource;
-                $manager->fieldSlug = $arguments['slug'];
-                $manager->selected = $arguments['selected'];
-                $manager->authorizeRequest();
+                app(MediaFieldAuthorization::class)->authorizeField(
+                    $resource,
+                    $arguments['slug'],
+                    $arguments['selected'],
+                );
             },
+        );
+
+        $actions->register(
+            ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID,
+            ComponentSlotRegistry::MEDIA_MANAGER_TRANSPORT_ID,
+            [
+                'arguments.model' => ['required', 'string'],
+                'arguments.modalAttributes.persistent' => ['sometimes', 'boolean'],
+                'arguments.modalAttributes.modalClasses' => ['sometimes', 'string', 'max:255'],
+                'arguments.modalAttributes.slideOver' => ['sometimes', 'boolean'],
+                'arguments.ownerToken' => ['required', 'string'],
+                'arguments.selected' => ['present', 'array'],
+                'arguments.selected.*' => [$resourceIdentifier],
+                'arguments.slug' => ['required', 'string'],
+            ],
         );
     }
 }

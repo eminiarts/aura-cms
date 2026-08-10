@@ -13,15 +13,19 @@ beforeEach(function () {
 });
 
 test('uploading files dispatches media-uploaded with the created ids', function () {
-    livewire(MediaUploader::class)
+    $uploader = livewire(MediaUploader::class);
+    $ownerToken = $uploader->get('ownerToken');
+
+    $uploader
         ->set('media', [
             UploadedFile::fake()->image('one.jpg'),
             UploadedFile::fake()->image('two.png'),
         ])
         ->assertHasNoErrors()
-        ->assertDispatched('media-uploaded', function (string $event, array $params) {
+        ->assertDispatched('media-uploaded', function (string $event, array $params) use ($ownerToken) {
             return $event === 'media-uploaded'
-                && $params['ids'] === Attachment::pluck('id')->all();
+                && $params['ids'] === Attachment::pluck('id')->all()
+                && $params['ownerToken'] === $ownerToken;
         });
 
     expect(Attachment::count())->toBe(2);
