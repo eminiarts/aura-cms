@@ -499,7 +499,7 @@ class Table extends Component
     {
         $query = $this->query();
 
-        if ($this->invalidTableState) {
+        if ($this->invalidTableState || ($this->tableState !== '' && $this->usesLegacyTableQueryHooks())) {
             return $query->whereRaw('1 = 0');
         }
 
@@ -711,7 +711,7 @@ class Table extends Component
     {
         $query = $this->mutationQuery();
 
-        if ($this->invalidTableState) {
+        if ($this->invalidTableState || ($this->tableState !== '' && $this->usesLegacyTableQueryHooks())) {
             abort(422, 'The table mutation query state is invalid.');
         }
 
@@ -964,6 +964,12 @@ class Table extends Component
 
     private function hydrateSerializedTableState(): void
     {
+        if ($this->usesLegacyTableQueryHooks()) {
+            $this->invalidTableState = true;
+
+            return;
+        }
+
         try {
             $state = $this->currentTableQueryState();
         } catch (InvalidArgumentException) {

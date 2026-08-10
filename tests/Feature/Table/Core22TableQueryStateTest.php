@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\BaseResource;
 use Aura\Base\Contracts\DeclaresTableParentScopes;
 use Aura\Base\Contracts\TableColumnCapabilityResolver;
 use Aura\Base\Facades\Aura;
@@ -64,6 +65,41 @@ class Core22QueryResource extends Resource implements DeclaresTableParentScopes
     }
 }
 
+class Core22LegacyBaseResource extends BaseResource
+{
+    public array $bulkActions = [
+        'markReviewed' => [
+            'label' => 'Mark reviewed',
+            'ability' => 'update',
+        ],
+    ];
+
+    public static ?string $slug = 'core-22-legacy-base-resource';
+
+    public static string $type = 'Core22LegacyBaseResource';
+
+    protected $fillable = ['title', 'content', 'status', 'type'];
+
+    protected $table = 'posts';
+
+    public static function getFields(): array
+    {
+        return [
+            ['name' => 'Title', 'slug' => 'title', 'type' => 'Aura\\Base\\Fields\\Text'],
+        ];
+    }
+
+    public function markReviewed(): void
+    {
+        $this->update(['content' => 'reviewed']);
+    }
+
+    public function resolveFieldValue(string $slug, mixed $meta = null): mixed
+    {
+        return $this->getAttribute($slug);
+    }
+}
+
 test('query state has a canonical versioned query string round trip and removable parent state', function () {
     $state = TableQueryState::fromArray([
         'v' => 1,
@@ -96,6 +132,37 @@ test('query state rejects unsupported versions and unknown serialized keys', fun
     'unknown key' => [['v' => 1, 'column' => 'team_id']],
     'arbitrary parent column' => [['v' => 1, 'parent' => ['scope' => 'parent', 'id' => 1, 'column' => 'team_id']]],
 ]);
+
+test('legacy base resources fail closed for externally supplied canonical state', function () {
+    Core22LegacyBaseResource::create([
+        'title' => 'Legacy record',
+        'content' => 'unchanged',
+        'status' => 'publish',
+        'type' => Core22LegacyBaseResource::$type,
+    ]);
+    $state = TableQueryState::fromArray([
+        'v' => 1,
+        'search' => 'Legacy',
+    ]);
+    $savedFilterComponent = livewire(Table::class, [
+        'model' => new Core22LegacyBaseResource,
+        'query' => null,
+    ])->set('filter.name', 'Legacy filter')
+        ->call('saveFilter')
+        ->assertHasNoErrors();
+
+    expect($savedFilterComponent->userFilters['legacy-filter'])->not->toHaveKey('query_state');
+
+    $component = livewire(Table::class, [
+        'model' => new Core22LegacyBaseResource,
+        'query' => null,
+        'tableState' => $state->toQueryString(),
+    ])->assertViewHas('rows', fn ($rows): bool => $rows->isEmpty());
+
+    $component->set('selectAll', true)
+        ->call('bulkAction', 'markReviewed')
+        ->assertStatus(422);
+});
 
 test('direct query applier preserves physical meta search sort and table parity', function () {
     $parent = Core22QueryResource::create([

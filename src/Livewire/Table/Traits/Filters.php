@@ -159,7 +159,7 @@ trait Filters
      */
     public function loadSavedFilterState(array $filterData): void
     {
-        if (is_array($filterData['query_state'] ?? null)) {
+        if (! $this->usesLegacyTableQueryHooks() && is_array($filterData['query_state'] ?? null)) {
             $this->tableState = TableQueryState::fromArray($filterData['query_state'])->toQueryString();
             $this->hydrateSerializedTableState();
 
@@ -245,15 +245,17 @@ trait Filters
             'filter.icon' => '',
         ]);
 
-        $state = TableQueryState::fromLegacy(
-            $this->filters,
-            $this->search,
-            $this->sorts,
-            $this->tableState === '' ? null : $this->currentTableQueryState()->parent,
-        );
-        $newFilter = array_merge($this->filters, $this->filter, [
-            'query_state' => $state->toArray(),
-        ]);
+        $newFilter = array_merge($this->filters, $this->filter);
+
+        if (! $this->usesLegacyTableQueryHooks()) {
+            $state = TableQueryState::fromLegacy(
+                $this->filters,
+                $this->search,
+                $this->sorts,
+                $this->tableState === '' ? null : $this->currentTableQueryState()->parent,
+            );
+            $newFilter['query_state'] = $state->toArray();
+        }
         $slug = Str::slug($this->filter['name']);
 
         // If the slug is empty (e.g., for numbers or special characters), generate a unique identifier
