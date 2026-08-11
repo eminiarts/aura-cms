@@ -191,9 +191,14 @@ final class ResourceAggregateEngine implements AggregateEngine
                 DateBucket::Quarter => $cursor->addQuarter(),
                 DateBucket::Year => $cursor->addYear(),
             };
-            $boundaries[] = [$cursor->format(match ($bucket) {
-                DateBucket::Day => 'Y-m-d', DateBucket::Week => 'o-\\WW', DateBucket::Month => 'Y-m', DateBucket::Quarter => 'Y-\\QQ', DateBucket::Year => 'Y',
-            }), $cursor->utc()->toDateTimeString(), $next->utc()->toDateTimeString()];
+            $key = match ($bucket) {
+                DateBucket::Day => $cursor->format('Y-m-d'),
+                DateBucket::Week => $cursor->format('o-\\WW'),
+                DateBucket::Month => $cursor->format('Y-m'),
+                DateBucket::Quarter => $cursor->format('Y').'-Q'.$cursor->quarter,
+                DateBucket::Year => $cursor->format('Y'),
+            };
+            $boundaries[] = [$key, $cursor->utc()->toDateTimeString(), $next->utc()->toDateTimeString()];
 
             if (count($boundaries) > self::MAX_BUCKETS) {
                 throw new InvalidArgumentException('Reporting bucket requests are limited to 400 points.');

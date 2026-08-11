@@ -8,6 +8,7 @@ use Aura\Base\Fields\Select;
 use Aura\Base\Fields\Text;
 use Aura\Base\Reporting\AggregateDefinition;
 use Aura\Base\Reporting\AggregateOperation;
+use Aura\Base\Reporting\DateBucket;
 use Aura\Base\Reporting\DateRange;
 use Aura\Base\Reporting\ResourceAggregateEngine;
 use Aura\Base\Resource;
@@ -152,4 +153,73 @@ test('only explicitly allowlisted reporting query scopes can run', function (): 
             AggregateOperation::Count,
             queryScope: 'indexQuery',
         )))->toThrow(InvalidArgumentException::class, 'explicitly allowlisted');
+});
+
+test('rounds exact averages half away from zero and returns null for all-null values', function (): void {
+    Core29AggregateResource::withoutGlobalScopes()->create(['amount' => '0.000001', 'stage' => 'open', 'visible' => true]);
+    Core29AggregateResource::withoutGlobalScopes()->create(['amount' => '0.000002', 'stage' => 'open', 'visible' => true]);
+    $engine = new ResourceAggregateEngine;
+
+    expect($engine->run(new AggregateDefinition(Core29AggregateResource::class, AggregateOperation::Average, 'amount'))->value)
+        ->toBe('0.000002');
+
+    DB::table('core29_aggregate_resources')->delete();
+    Core29AggregateResource::withoutGlobalScopes()->create(['amount' => '-0.000001', 'stage' => 'open', 'visible' => true]);
+    Core29AggregateResource::withoutGlobalScopes()->create(['amount' => '-0.000002', 'stage' => 'open', 'visible' => true]);
+
+    expect($engine->run(new AggregateDefinition(Core29AggregateResource::class, AggregateOperation::Average, 'amount'))->value)
+        ->toBe('-0.000002');
+
+    DB::table('core29_aggregate_resources')->delete();
+    Core29AggregateResource::withoutGlobalScopes()->create(['amount' => null, 'stage' => 'open', 'visible' => true]);
+
+    expect($engine->run(new AggregateDefinition(Core29AggregateResource::class, AggregateOperation::Sum, 'amount'))->value)->toBeNull();
+});
+
+test('uses portable local calendar keys for every bucket and both Zurich DST transitions', function (): void {
+    $attributes = ['visible' => true, 'user_id' => $this->user->id, 'team_id' => $this->user->current_team_id];
+    DB::table('core29_aggregate_resources')->insert([
+        [...$attributes, 'amount' => '1.000000', 'stage' => 'open', 'created_at' => '2024-02-29 12:00:00', 'updated_at' => '2024-02-29 12:00:00'],
+        [...$attributes, 'amount' => '1.000000', 'stage' => 'open', 'created_at' => '2024-03-31 00:30:00', 'updated_at' => '2024-03-31 00:30:00'],
+        [...$attributes, 'amount' => '1.000000', 'stage' => 'open', 'created_at' => '2024-03-31 01:30:00', 'updated_at' => '2024-03-31 01:30:00'],
+        [...$attributes, 'amount' => '1.000000', 'stage' => 'open', 'created_at' => '2024-10-27 00:30:00', 'updated_at' => '2024-10-27 00:30:00'],
+        [...$attributes, 'amount' => '1.000000', 'stage' => 'open', 'created_at' => '2024-10-27 01:30:00', 'updated_at' => '2024-10-27 01:30:00'],
+    ]);
+    $engine = new ResourceAggregateEngine;
+    $bucket = static function (DateBucket $bucket, string $start, string $end) use ($engine): array {
+        $result = $engine->run(new AggregateDefinition(
+            Core29AggregateResource::class,
+            AggregateOperation::Count,
+            range: new DateRange(new DateTimeImmutable($start, new DateTimeZone('Europe/Zurich')), new DateTimeImmutable($end, new DateTimeZone('Europe/Zurich'))),
+            bucket: $bucket,
+            timezone: 'Europe/Zurich',
+        ));
+
+        return array_column($result->points, 'value', 'key');
+    };
+
+    expect($bucket(DateBucket::Day, '2024-03-30', '2024-04-02'))->toBe(['2024-03-31' => 2])
+        ->and($bucket(DateBucket::Day, '2024-10-26', '2024-10-29'))->toBe(['2024-10-27' => 2])
+        ->and($bucket(DateBucket::Week, '2024-03-25', '2024-04-01'))->toBe(['2024-W13' => 2])
+        ->and($bucket(DateBucket::Month, '2024-02-01', '2024-04-01'))->toBe(['2024-02' => 1, '2024-03' => 2])
+        ->and($bucket(DateBucket::Quarter, '2024-01-01', '2025-01-01'))->toBe(['2024-Q1' => 3, '2024-Q4' => 2])
+        ->and($bucket(DateBucket::Year, '2024-01-01', '2025-01-01'))->toBe(['2024' => 5]);
+});
+
+test('rejects invalid timezones and more than four hundred bucket points', function (): void {
+    $engine = new ResourceAggregateEngine;
+
+    expect(fn () => $engine->run(new AggregateDefinition(
+        Core29AggregateResource::class,
+        AggregateOperation::Count,
+        range: new DateRange(new DateTimeImmutable('2024-01-01'), new DateTimeImmutable('2024-01-02')),
+        bucket: DateBucket::Day,
+        timezone: 'Invalid/Timezone',
+    )))->toThrow(InvalidArgumentException::class, 'valid IANA timezone')
+        ->and(fn () => $engine->run(new AggregateDefinition(
+            Core29AggregateResource::class,
+            AggregateOperation::Count,
+            range: new DateRange(new DateTimeImmutable('2024-01-01'), new DateTimeImmutable('2025-03-01')),
+            bucket: DateBucket::Day,
+        )))->toThrow(InvalidArgumentException::class, 'limited to 400 points');
 });
