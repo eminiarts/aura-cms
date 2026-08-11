@@ -542,7 +542,7 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
             }
 
             return $deleted;
-        });
+        }, requiresSavepoint: true);
 
         if ($deleted !== true) {
             $this->discardResourceLifecycleState();
@@ -3215,10 +3215,13 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
      * @param  Closure(): TResult  $callback
      * @return TResult
      */
-    private function runResourceLifecycleTransaction(Closure $callback): mixed
+    private function runResourceLifecycleTransaction(Closure $callback, bool $requiresSavepoint = false): mixed
     {
         try {
-            $result = $this->getConnection()->transaction($callback);
+            $connection = $this->getConnection();
+            $result = $connection->transactionLevel() > 0 && ! $requiresSavepoint
+                ? $callback()
+                : $connection->transaction($callback);
 
             if ($result === false) {
                 $this->discardResourceLifecycleState();

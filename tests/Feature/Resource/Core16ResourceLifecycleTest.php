@@ -710,6 +710,30 @@ test('after commit listeners are suppressed by rollback and fail after durable c
     unlink($databasePath);
 });
 
+test('caller transactions retain ownership without an Aura savepoint', function (): void {
+    $connection = DB::connection();
+    $baselineTransactionLevel = $connection->transactionLevel();
+    $observedTransactionLevel = null;
+    Core16LifecycleDocument::creating(function (Core16LifecycleDocument $resource) use (&$observedTransactionLevel): void {
+        $observedTransactionLevel = $resource->getConnection()->transactionLevel();
+    });
+
+    $connection->beginTransaction();
+
+    try {
+        $callerTransactionLevel = $connection->transactionLevel();
+        $document = Core16LifecycleDocument::create(['name' => 'Caller transaction']);
+
+        expect($callerTransactionLevel)->toBe($baselineTransactionLevel + 1)
+            ->and($observedTransactionLevel)->toBe($callerTransactionLevel)
+            ->and($document->exists)->toBeTrue();
+    } finally {
+        $connection->rollBack();
+    }
+
+    expect(Core16LifecycleDocument::withoutGlobalScopes()->where('name', 'Caller transaction')->exists())->toBeFalse();
+});
+
 test('restore and force delete lifecycle verification reads from the writer', function (): void {
     $writerPath = tempnam(sys_get_temp_dir(), 'aura-core16-writer-');
     $readerPath = tempnam(sys_get_temp_dir(), 'aura-core16-reader-');
