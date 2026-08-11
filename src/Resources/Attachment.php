@@ -8,6 +8,7 @@ use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -36,6 +37,7 @@ class Attachment extends Resource
             'confirm-content' => 'Are you sure you want to delete this post?',
             'confirm-button' => 'Delete',
             'confirm-button-class' => 'ml-3 bg-red-600 hover:bg-red-700',
+            'ability' => 'delete',
         ],
     ];
 
@@ -43,6 +45,7 @@ class Attachment extends Resource
         'deleteSelected' => [
             'label' => 'Delete',
             'method' => 'collection',
+            'ability' => 'delete',
         ],
     ];
 
@@ -70,6 +73,8 @@ class Attachment extends Resource
 
     public function deleteAttachment()
     {
+        Gate::authorize('delete', $this);
+
         parent::delete();
 
         return redirect()->route('aura.attachment.index');
@@ -77,8 +82,12 @@ class Attachment extends Resource
 
     public function deleteSelected($ids)
     {
-        self::whereIn('id', $ids)->delete();
+        $ids = array_values(array_filter((array) $ids, fn ($id) => $id !== null && $id !== ''));
 
+        foreach (self::query()->whereKey($ids)->get() as $attachment) {
+            Gate::authorize('delete', $attachment);
+            $attachment->delete();
+        }
     }
 
     public function filePath($size = null)
