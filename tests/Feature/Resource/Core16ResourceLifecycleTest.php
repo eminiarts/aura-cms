@@ -364,6 +364,11 @@ test('dispatcher state is bound to one resource operation and connection', funct
     expect(fn (): mixed => $dispatcher->dispatchDeleted($first, $state))
         ->toThrow(LogicException::class, 'hard-delete resource lifecycle operation has not completed');
 
+    $first->exists = false;
+    expect(fn (): mixed => $dispatcher->dispatchDeleted($first, $state))
+        ->toThrow(LogicException::class, 'hard-delete resource lifecycle operation has not completed');
+    $first->exists = true;
+
     $saveState = $dispatcher->beginSave($first);
     expect(fn (): mixed => $dispatcher->dispatchForceDeleted($first, $saveState))
         ->toThrow(LogicException::class, 'cannot be used for');
@@ -373,21 +378,52 @@ test('dispatcher state is bound to one resource operation and connection', funct
     expect(fn (): mixed => $dispatcher->dispatchSaved($first, $prematureSaveState))
         ->toThrow(LogicException::class, 'update operation has not completed');
 
+    $first->refresh();
+    $cleanSaveState = $dispatcher->beginSave($first);
+    expect(fn (): mixed => $dispatcher->dispatchSaved($first, $cleanSaveState))
+        ->toThrow(LogicException::class, 'update operation has not completed');
+
+    $first->updated_at = $first->updated_at?->addSecond();
+    $timestampSaveState = $dispatcher->beginSave($first);
+    expect(fn (): mixed => $dispatcher->dispatchSaved($first, $timestampSaveState))
+        ->toThrow(LogicException::class, 'update operation has not completed');
+
+    $first->refresh();
+    $first->setAttribute('fields', ['notes' => 'Pending note']);
+    $pendingMetaState = $dispatcher->beginSave($first);
+    expect(fn (): mixed => $dispatcher->dispatchSaved($first, $pendingMetaState))
+        ->toThrow(LogicException::class, 'update operation has not completed');
+
     $soft = Core16SoftLifecycleDocument::create(['name' => 'Restore operation']);
+    $prematureSoftDeleteState = $dispatcher->beginDelete($soft);
+    $soft->deleted_at = now();
+    expect(fn (): mixed => $dispatcher->dispatchDeleted($soft, $prematureSoftDeleteState))
+        ->toThrow(LogicException::class, 'soft-delete resource lifecycle operation has not completed');
+
+    $soft->refresh();
     $soft->deleteQuietly();
     $restoreState = $dispatcher->beginRestore($soft);
     expect(fn (): mixed => $dispatcher->dispatchSaved($soft, $restoreState))
         ->toThrow(LogicException::class, 'cannot be used for');
 
+    $soft->deleted_at = null;
+    expect(fn (): mixed => $dispatcher->dispatchRestored($soft, $restoreState))
+        ->toThrow(LogicException::class, 'restore resource lifecycle operation has not completed');
+
+    $first->refresh();
     $first->name = 'Explicit seam update';
     $explicitSaveState = $dispatcher->beginSave($first);
-    $first->saveQuietly();
+    $clonedSaveState = clone $explicitSaveState;
+    expect(fn (): string => serialize($explicitSaveState))
+        ->toThrow(LogicException::class, 'cannot be serialized');
+
+    (new ReflectionProperty(Resource::class, 'resourceLifecycleState'))->setValue($first, $explicitSaveState);
     Event::fake([ResourceUpdated::class]);
-    $dispatcher->dispatchSaved($first, $explicitSaveState);
+    $first->save();
     Event::assertDispatchedTimes(ResourceUpdated::class, 1);
 
-    expect(fn (): mixed => $dispatcher->dispatchSaved($first, $explicitSaveState))
-        ->toThrow(LogicException::class, 'already been dispatched');
+    expect(fn (): mixed => $dispatcher->dispatchSaved($first, $clonedSaveState))
+        ->toThrow(LogicException::class, 'no longer active');
 });
 
 test('deletion events use persisted ownership context and resolved connection identity', function (): void {

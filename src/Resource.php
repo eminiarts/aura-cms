@@ -204,6 +204,8 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
      */
     private array $quarantinedProviderFieldState = [];
 
+    private int $resourceLifecycleSequence = 0;
+
     private ?ResourceLifecycleState $resourceLifecycleState = null;
 
     public function __construct(array $attributes = [])
@@ -1264,6 +1266,11 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         }
     }
 
+    final public function resourceLifecycleSequence(): int
+    {
+        return $this->resourceLifecycleSequence;
+    }
+
     /**
      * @return HasMany
      */
@@ -1588,6 +1595,8 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         });
 
         static::saved(function (Resource $resource): void {
+            $resource->resourceLifecycleSequence++;
+
             if ($resource->resourceLifecycleState === null) {
                 return;
             }
@@ -1596,8 +1605,9 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
                 return;
             }
 
-            app(ResourceLifecycleDispatcher::class)->dispatchSaved($resource, $resource->resourceLifecycleState);
+            $state = $resource->resourceLifecycleState;
             $resource->resourceLifecycleState = null;
+            app(ResourceLifecycleDispatcher::class)->dispatchSaved($resource, $state);
         });
 
         static::deleting(function (Resource $resource): void {
@@ -1605,6 +1615,8 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         });
 
         static::deleted(function (Resource $resource): void {
+            $resource->resourceLifecycleSequence++;
+
             if ($resource->resourceLifecycleState === null) {
                 return;
             }

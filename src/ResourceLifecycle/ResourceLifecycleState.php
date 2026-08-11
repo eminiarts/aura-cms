@@ -4,9 +4,13 @@ namespace Aura\Base\ResourceLifecycle;
 
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use LogicException;
+use stdClass;
 
 final readonly class ResourceLifecycleState
 {
+    private object $claimToken;
+
     /**
      * @param  array<string, bool|float|int|string|null>  $oldPhysical
      * @param  array<string, bool|float|int|string|null>  $oldMeta
@@ -14,6 +18,7 @@ final readonly class ResourceLifecycleState
     private function __construct(
         public ResourceLifecycleOperation $operation,
         public string $operationId,
+        public int $resourceLifecycleSequence,
         public int $resourceObjectId,
         public string $resourceClass,
         public string $resourceMorphType,
@@ -33,7 +38,21 @@ final readonly class ResourceLifecycleState
         public bool $hardDelete,
         public array $oldPhysical,
         public array $oldMeta,
-    ) {}
+    ) {
+        $this->claimToken = new stdClass;
+    }
+
+    /** @return never */
+    public function __serialize(): array
+    {
+        throw new LogicException('Resource lifecycle state cannot be serialized.');
+    }
+
+    /** @param  array<string, mixed>  $data */
+    public function __unserialize(array $data): void
+    {
+        throw new LogicException('Resource lifecycle state cannot be unserialized.');
+    }
 
     public static function capture(
         Resource $resource,
@@ -49,6 +68,7 @@ final readonly class ResourceLifecycleState
         return new self(
             operation: $operation,
             operationId: $operationId,
+            resourceLifecycleSequence: $resource->resourceLifecycleSequence(),
             resourceObjectId: spl_object_id($resource),
             resourceClass: $resource::class,
             resourceMorphType: $resource->getMorphClass(),
@@ -70,5 +90,10 @@ final readonly class ResourceLifecycleState
             oldPhysical: $oldPhysical,
             oldMeta: $resource->exists ? $snapshot->currentMeta($resource) : [],
         );
+    }
+
+    public function claimToken(): object
+    {
+        return $this->claimToken;
     }
 }
