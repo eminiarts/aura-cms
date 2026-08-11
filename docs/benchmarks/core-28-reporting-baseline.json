@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "recorded_on": "2026-08-11",
+  "php_version": "8.4.7",
+  "dataset": {
+    "seed": 28082026,
+    "team_one_share": 0.5,
+    "valid_numeric_share": 0.8,
+    "noise_meta_fields_per_row": 11,
+    "iterations": 10,
+    "workload_order": ["aggregate", "numeric_range", "grouped_sum", "monthly_buckets"],
+    "metric": "p95_ms"
+  },
+  "query_count_per_workload": 1,
+  "engines": {
+    "sqlite": {
+      "version": "3.53.1",
+      "rows_10000": {
+        "physical": [12.5, 4.284, 3.523, 6.634],
+        "meta": [13.982, 8.163, 7.178, 8.68],
+        "projection": [3.284, 0.085, 3.109, 7.708]
+      },
+      "rows_100000": {
+        "physical": [89.871, 44.818, 42.347, 115.717],
+        "meta": [152.002, 91.682, 88.025, 120.239],
+        "projection": [42.64, 0.096, 38.741, 107.325]
+      },
+      "explain_100000": {
+        "physical": "fact scan",
+        "meta": "team index plus meta type-key-id index lookup",
+        "projection": "team index plus projection identity index lookup"
+      }
+    },
+    "mysql": {
+      "version": "8.4.11",
+      "rows_10000": {
+        "physical": [16.446, 7.612, 11.905, 7.205],
+        "meta": [25.983, 18.013, 22.619, 18.56],
+        "projection": [15.082, 2.815, 15.016, 16.198]
+      },
+      "rows_100000": {
+        "physical": [132.604, 60.251, 66.861, 52.98],
+        "meta": [425.597, 316.472, 1407.227, 171.304],
+        "projection": [135.822, 3.259, 145.265, 169.567]
+      },
+      "explain_100000": {
+        "physical": "ref team index, estimated 49959 rows",
+        "meta": "nested loop, eq_ref meta identity, estimated cost 45322.67",
+        "projection": "nested loop, eq_ref projection identity, estimated cost 22567.21"
+      }
+    },
+    "mariadb": {
+      "version": "11.8.8-MariaDB-ubu2404",
+      "rows_10000": {
+        "physical": [15.117, 5.678, 9.347, 7.081],
+        "meta": [25.592, 13.647, 18.285, 6.547],
+        "projection": [9.447, 1.983, 11.738, 6.877]
+      },
+      "rows_100000": {
+        "physical": [132.302, 41.027, 73.156, 47.08],
+        "meta": [742.089, 555.142, 3165.048, 47.792],
+        "projection": [95.309, 1.939, 111.638, 51.033]
+      },
+      "explain_100000": {
+        "physical": "fact scan, estimated 99918 rows",
+        "meta": "nested loop, eq_ref meta identity, estimated cost 273.2790502",
+        "projection": "nested loop, eq_ref projection identity, estimated cost 200.9314022"
+      }
+    },
+    "pgsql": {
+      "version": "16.14 (Debian 16.14-1.pgdg13+1)",
+      "rows_10000": {
+        "physical": [32.743, 10.659, 10.501, 6.414],
+        "meta": [30.377, 13.721, 14.608, 5.495],
+        "projection": [5.237, 2.506, 5.867, 6.02]
+      },
+      "rows_100000": {
+        "physical": [256.543, 75.963, 90.734, 23.314],
+        "meta": [287.913, 113.65, 124.902, 23.646],
+        "projection": [33.14, 3.17, 39.532, 23.903]
+      },
+      "explain_100000": {
+        "physical": "aggregate over sequential fact scan, estimated cost 3874.96",
+        "meta": "hash join with bitmap meta index scan, estimated cost 23193.33",
+        "projection": "hash join with sequential projection scan, estimated cost 5779.42"
+      }
+    }
+  }
+}
