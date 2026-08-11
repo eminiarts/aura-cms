@@ -42,7 +42,7 @@ class Core16LifecycleDocument extends Resource
     }
 }
 
-final class Core16SoftLifecycleDocument extends Core16LifecycleDocument
+class Core16SoftLifecycleDocument extends Core16LifecycleDocument
 {
     use SoftDeletes;
 
@@ -54,6 +54,16 @@ final class Core16TeamLifecycleDocument extends Core16LifecycleDocument
     public static string $scopeMode = self::SCOPE_TEAM;
 
     public static string $type = 'Core16TeamLifecycleDocument';
+}
+
+final class Core16RestoreVetoLifecycleDocument extends Core16SoftLifecycleDocument
+{
+    public static string $type = 'Core16RestoreVetoLifecycleDocument';
+}
+
+final class Core16RestoreExceptionLifecycleDocument extends Core16SoftLifecycleDocument
+{
+    public static string $type = 'Core16RestoreExceptionLifecycleDocument';
 }
 
 final class Core16SharedLifecycleDocument extends Core16LifecycleDocument
@@ -326,6 +336,31 @@ test('native deleting veto prevents cleanup and lifecycle dispatch', function ()
     $document->name = 'Saved after veto';
     expect($document->save())->toBeTrue();
     Event::assertDispatchedTimes(ResourceUpdated::class, 1);
+});
+
+test('restore vetoes and listener exceptions discard pending lifecycle state', function (): void {
+    Event::fake([ResourceUpdated::class]);
+
+    $vetoed = Core16RestoreVetoLifecycleDocument::create(['name' => 'Veto restore']);
+    $vetoed->delete();
+    Core16RestoreVetoLifecycleDocument::restoring(fn (): false => false);
+
+    expect($vetoed->restore())->toBeFalse();
+    $vetoed->name = 'Updated after veto';
+    expect($vetoed->save())->toBeTrue();
+
+    $exception = Core16RestoreExceptionLifecycleDocument::create(['name' => 'Exception restore']);
+    $exception->delete();
+    Core16RestoreExceptionLifecycleDocument::restoring(function (): never {
+        throw new RuntimeException('restoring listener failed');
+    });
+
+    expect(fn (): bool => $exception->restore())
+        ->toThrow(RuntimeException::class, 'restoring listener failed');
+    $exception->name = 'Updated after exception';
+    expect($exception->save())->toBeTrue();
+
+    Event::assertDispatchedTimes(ResourceUpdated::class, 2);
 });
 
 test('quiet hard deletes suppress lifecycle events but still clean exact dependents', function (): void {

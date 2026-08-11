@@ -545,7 +545,7 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         });
 
         if ($deleted !== true) {
-            $this->resourceLifecycleState = null;
+            $this->discardResourceLifecycleState();
         }
 
         return $deleted;
@@ -1780,7 +1780,21 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
                 $this->prepareFieldAttributesForPersistence();
             }
 
-            return parent::fireModelEvent($event, $halt);
+            try {
+                $result = parent::fireModelEvent($event, $halt);
+            } catch (\Throwable $exception) {
+                if ($event === 'restoring') {
+                    $this->discardResourceLifecycleState();
+                }
+
+                throw $exception;
+            }
+
+            if ($event === 'restoring' && $result === false) {
+                $this->discardResourceLifecycleState();
+            }
+
+            return $result;
         }
 
         $connectionIdentity = User::connectionCacheIdentity($this->getConnection());
@@ -2304,6 +2318,17 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
                 $this->quarantinedProviderFieldState['nestedTemplates'][$stateName],
             );
         }
+    }
+
+    private function discardResourceLifecycleState(): void
+    {
+        if ($this->resourceLifecycleState === null) {
+            return;
+        }
+
+        $state = $this->resourceLifecycleState;
+        $this->resourceLifecycleState = null;
+        app(ResourceLifecycleDispatcher::class)->discard($this, $state);
     }
 
     private function ensureDeleteUsesAuthenticatedConnection(): void
@@ -3181,12 +3206,12 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
             $result = $this->getConnection()->transaction($callback);
 
             if ($result === false) {
-                $this->resourceLifecycleState = null;
+                $this->discardResourceLifecycleState();
             }
 
             return $result;
         } catch (\Throwable $exception) {
-            $this->resourceLifecycleState = null;
+            $this->discardResourceLifecycleState();
 
             throw $exception;
         }

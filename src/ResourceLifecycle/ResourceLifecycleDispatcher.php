@@ -44,6 +44,15 @@ final class ResourceLifecycleDispatcher
         );
     }
 
+    public function discard(Resource $resource, ResourceLifecycleState $state): void
+    {
+        self::$activeStates ??= new \WeakMap;
+
+        if ((self::$activeStates[$resource] ?? null) === $state->claimToken()) {
+            unset(self::$activeStates[$resource]);
+        }
+    }
+
     public function dispatchDeleted(Resource $resource, ResourceLifecycleState $state): void
     {
         $this->assertState($resource, $state, ResourceLifecycleOperation::Delete);
