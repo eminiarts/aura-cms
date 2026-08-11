@@ -190,7 +190,11 @@ final class ResourceLifecycleDispatcher
 
     private function assertSaveCompleted(Resource $resource, ResourceLifecycleState $state): void
     {
-        if (! $resource->exists || $this->snapshot->persistedPhysical($resource) === null) {
+        $persistedPhysical = $state->operation === ResourceLifecycleOperation::Create
+            ? $this->snapshot->persistedPhysicalAfterCreate($resource)
+            : $this->snapshot->persistedPhysical($resource);
+
+        if (! $resource->exists || $persistedPhysical === null) {
             throw new LogicException(sprintf(
                 'The resource lifecycle %s operation has not completed.',
                 $state->operation->value,

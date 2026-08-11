@@ -77,9 +77,56 @@ final class ResourceLifecycleSnapshot
         return $row === null ? null : $this->scalarAttributes((array) $row);
     }
 
+    /**
+     * Resolve an incrementing create when the configured processor returns an
+     * authoritative key that differs from the physical driver's generated key.
+     *
+     * @return array<string, bool|float|int|string|null>|null
+     */
+    public function persistedPhysicalAfterCreate(Resource $resource): ?array
+    {
+        $persistedPhysical = $this->persistedPhysical($resource);
+
+        if ($persistedPhysical !== null || ! $resource->getIncrementing()) {
+            return $persistedPhysical;
+        }
+
+        $physicalInsertId = $resource->resourceLifecyclePhysicalInsertId();
+
+        if ($physicalInsertId === null) {
+            return null;
+        }
+
+        $query = $resource->getConnection()
+            ->table($resource->getTable())
+            ->useWritePdo()
+            ->where($resource->getKeyName(), $physicalInsertId);
+
+        foreach ($this->createMatchAttributes($resource) as $column => $value) {
+            $query->where($column, $value);
+        }
+
+        $row = $query->first();
+
+        return $row === null ? null : $this->scalarAttributes((array) $row);
+    }
+
     public function scalarValue(mixed $value): bool|float|int|string|null
     {
         return $this->scalar($value);
+    }
+
+    /** @return array<string, bool|float|int|string|null> */
+    private function createMatchAttributes(Resource $resource): array
+    {
+        $attributes = $this->currentPhysical($resource);
+        unset(
+            $attributes[$resource->getKeyName()],
+            $attributes[$resource->getCreatedAtColumn()],
+            $attributes[$resource->getUpdatedAtColumn()],
+        );
+
+        return $attributes;
     }
 
     private function scalar(mixed $value): bool|float|int|string|null

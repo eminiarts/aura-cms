@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Events\ResourceCreated;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
@@ -16,6 +17,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\SQLiteConnection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -301,9 +303,15 @@ class Core13ProcessorProbe extends SQLiteProcessor
 
     public int $insertGetIdCalls = 0;
 
+    public bool $skipInsert = false;
+
     public function processInsertGetId(QueryBuilder $query, $sql, $values, $sequence = null)
     {
         $this->insertGetIdCalls++;
+
+        if ($this->skipInsert) {
+            return $this->forcedId;
+        }
 
         $id = parent::processInsertGetId($query, $sql, $values, $sequence);
 
@@ -589,6 +597,7 @@ it('uses configured connection and processor persistence semantics for global wr
 it('preserves processor ids and nonincrementing string ids', function (): void {
     $connection = core13InstallConnectionProbe();
     $processor = $connection->getPostProcessor();
+    Event::fake([ResourceCreated::class]);
 
     expect($processor)->toBeInstanceOf(Core13ProcessorProbe::class);
 
@@ -607,6 +616,58 @@ it('preserves processor ids and nonincrementing string ids', function (): void {
         ->and($connection->table('core13_nonincrementing_resources')->where('id', '01CORE13NONINCREMENTING')->exists())->toBeTrue()
         ->and($connection->insertCalls)->toBe(2)
         ->and($processor->insertGetIdCalls)->toBe(1);
+
+    Event::assertDispatched(ResourceCreated::class, fn (ResourceCreated $event): bool => $event->resourceId === 731);
+    Event::assertDispatchedTimes(ResourceCreated::class, 2);
+});
+
+it('rejects processor ids when no new physical row was inserted', function (): void {
+    $connection = core13InstallConnectionProbe();
+    $processor = $connection->getPostProcessor();
+
+    expect($processor)->toBeInstanceOf(Core13ProcessorProbe::class);
+
+    $connection->table('explicit_null_shared_custom_resources')->insert([
+        'name' => 'Existing duplicate',
+        'team_id' => null,
+        'user_id' => null,
+    ]);
+    $processor->forcedId = 731;
+    $processor->skipInsert = true;
+    Event::fake([ResourceCreated::class]);
+
+    expect(fn () => ExplicitNullSharedCustomResource::createGlobalForSystem([
+        'name' => 'Existing duplicate',
+    ], $connection))->toThrow(LogicException::class, 'create operation has not completed')
+        ->and($connection->table('explicit_null_shared_custom_resources')->count())->toBe(1);
+
+    Event::assertNotDispatched(ResourceCreated::class);
+});
+
+it('does not reuse a stale physical insert id on a cloned resource', function (): void {
+    $connection = core13InstallConnectionProbe();
+    $processor = $connection->getPostProcessor();
+
+    expect($processor)->toBeInstanceOf(Core13ProcessorProbe::class);
+
+    $processor->forcedId = 731;
+    $created = ExplicitNullSharedCustomResource::createGlobalForSystem([
+        'name' => 'Cloned insert candidate',
+    ], $connection);
+    $clone = clone $created;
+    $clone->exists = false;
+    $clone->wasRecentlyCreated = false;
+    $clone->setAttribute('id', null);
+    $processor->skipInsert = true;
+    Event::fake([ResourceCreated::class]);
+
+    $saveGlobalResource = new ReflectionMethod(Resource::class, 'saveGlobalResource');
+
+    expect(fn () => $saveGlobalResource->invoke($clone))
+        ->toThrow(LogicException::class, 'create operation has not completed')
+        ->and($connection->table('explicit_null_shared_custom_resources')->count())->toBe(1);
+
+    Event::assertNotDispatched(ResourceCreated::class);
 });
 
 it('preserves custom connection failures and transaction rollback', function (): void {

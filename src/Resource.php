@@ -204,6 +204,8 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
      */
     private array $quarantinedProviderFieldState = [];
 
+    private int|string|null $resourceLifecyclePhysicalInsertId = null;
+
     private int $resourceLifecycleSequence = 0;
 
     private ?ResourceLifecycleState $resourceLifecycleState = null;
@@ -1281,6 +1283,11 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         } finally {
             $this->fieldValueContext = $previousContext;
         }
+    }
+
+    final public function resourceLifecyclePhysicalInsertId(): int|string|null
+    {
+        return $this->resourceLifecyclePhysicalInsertId;
     }
 
     final public function resourceLifecycleSequence(): int
@@ -2735,6 +2742,8 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
 
         if ($this->getIncrementing()) {
             $query->getQuery()->applyBeforeQueryCallbacks();
+            $this->resourceLifecyclePhysicalInsertId = null;
+            $lastInsertIdBeforePersistence = $this->physicalLastInsertId($writePdo);
             $this->setAttribute(
                 $this->getKeyName(),
                 $this->executeWithFinalConnectionAuthorization(
@@ -2745,6 +2754,11 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
                     fn (): mixed => $query->insertGetId($attributes, $this->getKeyName()),
                 ),
             );
+            $lastInsertIdAfterPersistence = $this->physicalLastInsertId($writePdo);
+
+            if ($lastInsertIdAfterPersistence !== $lastInsertIdBeforePersistence) {
+                $this->resourceLifecyclePhysicalInsertId = $lastInsertIdAfterPersistence;
+            }
         } elseif ($attributes !== []) {
             $query->getQuery()->applyBeforeQueryCallbacks();
             $this->executeWithFinalConnectionAuthorization(
@@ -2849,6 +2863,17 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
             $this->restoreFieldContainerState($fieldContainerState);
             $this->quarantineInactiveProviderFieldState();
         }
+    }
+
+    private function physicalLastInsertId(PDO $writePdo): ?string
+    {
+        try {
+            $lastInsertId = $writePdo->lastInsertId();
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $lastInsertId === false ? null : $lastInsertId;
     }
 
     private function providerMetaEntrySlug(mixed $entry): ?string

@@ -66,7 +66,7 @@ class Profile extends Component
         session()->invalidate();
         session()->regenerateToken();
 
-        Auth::logout();
+        Auth::logoutCurrentDevice();
 
         return Redirect::to('/');
     }

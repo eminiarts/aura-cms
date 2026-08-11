@@ -1,8 +1,10 @@
 <?php
 
+use Aura\Base\Events\ResourceUpdated;
 use Aura\Base\Livewire\Profile;
 use Aura\Base\Livewire\TwoFactorAuthenticationForm;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
@@ -92,6 +94,7 @@ describe('Password Updates', function () {
 describe('Account Deletion', function () {
     it('deletes the user account with correct password', function () {
         $user = $this->user;
+        Event::fake([ResourceUpdated::class]);
 
         $this->get(route('aura.profile'))->assertSeeLivewire(Profile::class);
 
@@ -102,6 +105,7 @@ describe('Account Deletion', function () {
 
         expect(auth()->user())->toBeNull();
         expect(User::find($user->id))->toBeNull();
+        Event::assertNotDispatched(ResourceUpdated::class);
     });
 
     it('fails to delete account with incorrect password', function () {
