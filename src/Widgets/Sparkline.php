@@ -2,6 +2,14 @@
 
 namespace Aura\Base\Widgets;
 
+use Aura\Base\Aura;
+use Aura\Base\Fields\Number;
+use Aura\Base\Reporting\AggregateDefinition;
+use Aura\Base\Reporting\AggregateEngine;
+use Aura\Base\Reporting\AggregateOperation;
+use Aura\Base\Reporting\DateBucket;
+use Aura\Base\Reporting\DateRange;
+use Aura\Base\Resource;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Locked;
@@ -27,12 +35,111 @@ class Sparkline extends Widget
     public function getValue($start, $end)
     {
         $column = optional($this->widget)['column'];
-        $createdAtColumn = $this->model->getTable().'.created_at';
 
         // Never let an unknown/tampered column reach the meta-join / raw-SQL path.
         if ($column && ! $this->isSafeColumn($column)) {
             $column = null;
         }
+
+        if ($this->canUseAggregateEngine($column)) {
+            $operation = $this->aggregateOperation();
+            $result = app(AggregateEngine::class)->run(new AggregateDefinition(
+                resource: $this->model::class,
+                operation: $operation,
+                metric: $operation === AggregateOperation::Count ? null : $column,
+                range: new DateRange($start, $end),
+                bucket: DateBucket::Day,
+                timezone: is_string($this->widget['timezone'] ?? null) ? $this->widget['timezone'] : config('app.timezone', 'UTC'),
+                queryScope: is_string($this->widget['queryScope'] ?? null) ? $this->widget['queryScope'] : null,
+            ));
+            $postsByDate = collect($result->points)
+                ->mapWithKeys(fn ($point): array => [$point->key => $this->scalarFromAggregate($point->value) ?? 0])
+                ->all();
+
+            $dateRange = [];
+            for ($date = Carbon::parse($start); $date->lte($end); $date->addDay()) {
+                $dateRange[$date->format('Y-m-d')] = 0;
+            }
+
+            return collect($dateRange)->merge($postsByDate);
+        }
+
+        return $this->legacyValue($start, $end, $column);
+    }
+
+    public function getValuesProperty()
+    {
+        $currentStart = $this->getCarbonDate($this->start ?? now()->subDays(30)->startOfDay())->copy()->addDay();
+        $currentEnd = $this->getCarbonDate($this->end ?? now()->endOfDay());
+        $diff = round($currentStart->diffInDays($currentEnd));
+
+        $previousStart = $currentStart->copy()->subDays($diff + 1);
+        $previousEnd = $currentStart->copy()->subDay();
+
+        // Keep uncached evaluation for sparkline tests and dashboards that
+        // omit widget slugs; ValueWidget may still use the cache key path.
+        return [
+            'current' => $this->getValue($currentStart, $currentEnd)->toArray(),
+            'previous' => $this->getValue($previousStart, $previousEnd)->toArray(),
+        ];
+    }
+
+    public function mount()
+    {
+        if (optional($this->widget)['method']) {
+            $this->method = $this->widget['method'];
+        }
+    }
+
+    public function render()
+    {
+        return view('aura::components.widgets.sparkline-area');
+    }
+
+    #[On('dateFilterUpdated')]
+    public function updateDateRange($start, $end)
+    {
+        $this->start = $start;
+        $this->end = $end;
+    }
+
+    protected function aggregateOperation(): AggregateOperation
+    {
+        // Sparkline historically used method for chart style (area/bar), not
+        // aggregate verb. Only honor explicit numeric verbs; default to count.
+        return match ($this->method) {
+            'avg' => AggregateOperation::Average,
+            'sum' => AggregateOperation::Sum,
+            'min' => AggregateOperation::Minimum,
+            'max' => AggregateOperation::Maximum,
+            default => AggregateOperation::Count,
+        };
+    }
+
+    protected function canUseAggregateEngine(?string $column): bool
+    {
+        if (! $this->model instanceof Resource) {
+            return false;
+        }
+
+        if (! in_array($this->model::class, app(Aura::class)->getResources(), true)) {
+            return false;
+        }
+
+        $operation = $this->aggregateOperation();
+
+        if ($operation === AggregateOperation::Count) {
+            return true;
+        }
+
+        return $column !== null
+            && $this->model->isTableField($column)
+            && $this->model->fieldClassBySlug($column) instanceof Number;
+    }
+
+    protected function legacyValue($start, $end, ?string $column)
+    {
+        $createdAtColumn = $this->model->getTable().'.created_at';
         $method = $this->method;
 
         $query = $this->model->query()
@@ -69,37 +176,16 @@ class Sparkline extends Widget
         return collect($dateRange)->merge($postsByDate);
     }
 
-    public function getValuesProperty()
+    protected function scalarFromAggregate(int|string|null $value): int|float|null
     {
-        $currentStart = $this->getCarbonDate($this->start)->addDay();
-        $currentEnd = $this->getCarbonDate($this->end);
-        $diff = round($currentStart->diffInDays($currentEnd));
-
-        $previousStart = $currentStart->copy()->subDays($diff + 1);
-        $previousEnd = $currentStart->copy()->subDay();
-
-        return [
-            'current' => $this->getValue($currentStart, $currentEnd)->toArray(),
-            'previous' => $this->getValue($previousStart, $previousEnd)->toArray(),
-        ];
-    }
-
-    public function mount()
-    {
-        if (optional($this->widget)['method']) {
-            $this->method = $this->widget['method'];
+        if ($value === null || is_int($value)) {
+            return $value;
         }
-    }
 
-    public function render()
-    {
-        return view('aura::components.widgets.sparkline-area');
-    }
+        if (preg_match('/^-?\d+\.0+$/', $value) === 1) {
+            return (int) $value;
+        }
 
-    #[On('dateFilterUpdated')]
-    public function updateDateRange($start, $end)
-    {
-        $this->start = $start;
-        $this->end = $end;
+        return (float) $value;
     }
 }

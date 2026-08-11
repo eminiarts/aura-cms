@@ -21,6 +21,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -346,6 +347,7 @@ class Table extends Component
     public function render()
     {
         return view($this->model->tableComponentView(), [
+            'kanban' => $this->resolvedKanbanConfiguration(),
             'parent' => $this->parent,
             'rows' => $this->rows,
             'rowIds' => $this->rowIds,
@@ -465,14 +467,34 @@ class Table extends Component
 
     public function updateCardStatus($cardId, $newStatus)
     {
-        $card = $this->model->find($cardId);
-        if ($card) {
-            $card->status = $newStatus;
-            $card->save();
-            $this->notify('Card status updated successfully');
-        } else {
-            $this->notify('Card not found', 'error');
+        $kanbanConfiguration = $this->resolvedKanbanConfiguration();
+
+        if (! $kanbanConfiguration['enabled']) {
+            abort(422, 'Kanban mutations require an enabled configuration.');
         }
+
+        if (! is_string($newStatus) && ! is_int($newStatus)) {
+            abort(422, 'The Kanban destination is not declared.');
+        }
+
+        if (! array_key_exists((string) $newStatus, $kanbanConfiguration['columns'])) {
+            abort(422, 'The Kanban destination is not declared.');
+        }
+
+        $card = $this->model->newQuery()->find($cardId);
+
+        if (! $card) {
+            $this->notify('Card not found', 'error');
+
+            return;
+        }
+
+        Gate::authorize('update', $card);
+
+        $groupField = $kanbanConfiguration['group_field'];
+        $card->{$groupField} = $newStatus;
+        $card->save();
+        $this->notify('Card status updated successfully');
     }
 
     /**
