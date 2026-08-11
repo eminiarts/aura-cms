@@ -5,8 +5,12 @@ use Aura\Base\Jobs\GenerateResourcePermissions;
 use Aura\Base\Models\SavedView;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Permission;
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
 use Aura\Base\SavedViews\SavedViewVisibility;
 use Aura\Base\Services\SavedViewManager;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Schema;
 
@@ -45,6 +49,22 @@ function managerSavedViewState(): array
         'view_mode' => 'list',
         'grouping' => null,
     ];
+}
+
+/** @param array<string, bool> $permissions */
+function savedViewManagerActor(Team $team, array $permissions): User
+{
+    $role = Role::createForTeamForSystem($team->getKey(), [
+        'name' => 'Saved view '.bin2hex(random_bytes(6)),
+        'slug' => 'saved-view-'.bin2hex(random_bytes(6)),
+        'description' => 'Saved view authorization test role.',
+        'super_admin' => false,
+        'permissions' => $permissions,
+    ]);
+    $actor = User::factory()->create(['current_team_id' => $team->getKey()]);
+    $actor->roles()->attach($role->getKey(), ['team_id' => $team->getKey()]);
+
+    return $actor->fresh();
 }
 
 test('manager creates resolves renames duplicates and deletes private views', function () {
@@ -177,4 +197,98 @@ test('teams-off mode stores private and instance-shared views without a team ide
     expect($private->team_id)->toBeNull()
         ->and($shared->team_id)->toBeNull()
         ->and($this->manager->list($this->resource, $this->user, null))->toHaveCount(2);
+});
+
+test('same-team resource viewers may manage only their own private saved views', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team-specific saved-view authorization requires Aura Teams.');
+    }
+
+    $team = $this->user->currentTeam;
+    $owner = savedViewManagerActor($team, ['viewAny-saved-view-manager' => true]);
+    $peer = savedViewManagerActor($team, ['viewAny-saved-view-manager' => true]);
+    $private = $this->manager->createPrivate($this->resource, $owner, $team, 'Owner private', managerSavedViewState());
+    $shared = $this->manager->createShared($this->resource, $this->user, $team, 'Team shared', managerSavedViewState());
+
+    $ownPrivate = $this->manager->createPrivate($this->resource, $peer, $team, 'Peer private', managerSavedViewState());
+    $this->manager->rename($ownPrivate, $this->resource, $peer, $team, 'Peer renamed');
+    auth()->login($peer);
+    $this->manager->setDefault($ownPrivate, $this->resource, $peer, $team);
+
+    expect($this->manager->list($this->resource, $peer, $team)->pluck('id')->all())
+        ->toContain($shared->getKey(), $ownPrivate->getKey())
+        ->not->toContain($private->getKey())
+        ->and(fn () => $this->manager->createShared($this->resource, $peer, $team, 'Forbidden shared', managerSavedViewState()))
+        ->toThrow(AuthorizationException::class)
+        ->and(fn () => $this->manager->rename($shared, $this->resource, $peer, $team, 'Forbidden rename'))
+        ->toThrow(AuthorizationException::class)
+        ->and(fn () => $this->manager->updateState($shared, $this->resource, $peer, $team, managerSavedViewState()))
+        ->toThrow(AuthorizationException::class)
+        ->and(fn () => $this->manager->duplicate($shared, $this->resource, $peer, $team, 'Forbidden duplicate'))
+        ->toThrow(AuthorizationException::class)
+        ->and(fn () => $this->manager->setDefault($shared, $this->resource, $peer, $team))
+        ->toThrow(AuthorizationException::class)
+        ->and(fn () => $this->manager->delete($shared, $this->resource, $peer, $team))
+        ->toThrow(AuthorizationException::class)
+        ->and(fn () => $this->manager->rename($private, $this->resource, $peer, $team, 'Foreign private'))
+        ->toThrow(ModelNotFoundException::class)
+        ->and($this->manager->resolveDefault($this->resource, $peer, $team)?->is($ownPrivate))
+        ->toBeTrue();
+});
+
+test('the saved-view management permission manages team-shared views but not peers private views', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team-specific saved-view authorization requires Aura Teams.');
+    }
+
+    $team = $this->user->currentTeam;
+    $owner = savedViewManagerActor($team, ['viewAny-saved-view-manager' => true]);
+    $manager = savedViewManagerActor($team, [
+        'viewAny-saved-view-manager' => true,
+        'manage-aura-saved-views' => true,
+    ]);
+    $private = $this->manager->createPrivate($this->resource, $owner, $team, 'Owner private', managerSavedViewState());
+    $shared = $this->manager->createShared($this->resource, $this->user, $team, 'Team shared', managerSavedViewState());
+
+    $renamed = $this->manager->rename($shared, $this->resource, $manager, $team, 'Managed shared');
+    $duplicate = $this->manager->duplicate($renamed, $this->resource, $manager, $team, 'Managed copy');
+    auth()->login($manager);
+    $this->manager->setDefault($renamed, $this->resource, $manager, $team);
+    $this->manager->updateState($renamed, $this->resource, $manager, $team, managerSavedViewState());
+    $this->manager->delete($duplicate, $this->resource, $manager, $team);
+
+    expect($renamed->name)->toBe('Managed shared')
+        ->and($this->manager->resolveDefault($this->resource, $manager, $team)?->is($renamed))
+        ->toBeTrue()
+        ->and(SavedView::query()->whereKey($duplicate->getKey())->exists())
+        ->toBeFalse()
+        ->and(fn () => $this->manager->rename($private, $this->resource, $manager, $team, 'Forbidden private'))
+        ->toThrow(ModelNotFoundException::class)
+        ->and(fn () => $this->manager->setDefault($private, $this->resource, $manager, $team))
+        ->toThrow(ModelNotFoundException::class);
+});
+
+test('current-team Super Admins and scoped Global Admins manage shared views while other teams remain isolated', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team-specific saved-view authorization requires Aura Teams.');
+    }
+
+    $team = $this->user->currentTeam;
+    $shared = $this->manager->createShared($this->resource, $this->user, $team, 'Team shared', managerSavedViewState());
+    $this->manager->rename($shared, $this->resource, $this->user, $team, 'Super managed');
+    $this->manager->setDefault($shared, $this->resource, $this->user, $team);
+
+    $globalAdmin = createGlobalAdmin();
+    $globalAdmin->switchTeam($team);
+    $globalAdmin = $globalAdmin->fresh();
+    $this->manager->updateState($shared, $this->resource, $globalAdmin, $team, managerSavedViewState());
+
+    $otherTeam = foreignTeam();
+    $otherTeamViewer = savedViewManagerActor($otherTeam, ['viewAny-saved-view-manager' => true]);
+
+    expect($this->user->isSuperAdmin())->toBeTrue()
+        ->and($this->manager->resolveDefault($this->resource, $globalAdmin, $team)?->is($shared))
+        ->toBeTrue()
+        ->and(fn () => $this->manager->resolve($shared->getKey(), $this->resource, $otherTeamViewer, $otherTeam))
+        ->toThrow(ModelNotFoundException::class);
 });

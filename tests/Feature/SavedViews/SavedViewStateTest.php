@@ -87,3 +87,23 @@ test('saved view state rejects removed columns and future versions', function (a
     }],
     'future version' => [fn (): array => array_replace(validSavedViewState(), ['v' => 99])],
 ]);
+
+test('saved view state rejects values that cannot be represented safely as JSON', function (mixed $value) {
+    $state = validSavedViewState();
+    $state['query']['filters'] = [[
+        'operator' => 'and',
+        'filters' => [[
+            'name' => 'title',
+            'operator' => 'is',
+            'value' => $value,
+            'main_operator' => 'and',
+        ]],
+    ]];
+
+    expect(fn () => SavedViewState::fromArray($state, new SavedViewStateResource))
+        ->toThrow(InvalidArgumentException::class);
+})->with([
+    'object' => [fn (): object => new stdClass],
+    'infinite float' => [INF],
+    'invalid utf-8' => ["\xB1\x31"],
+]);

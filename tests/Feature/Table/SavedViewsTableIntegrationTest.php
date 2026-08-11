@@ -1,10 +1,12 @@
 <?php
 
+use Aura\Base\BaseResource;
 use Aura\Base\Contracts\DeclaresTableParentScopes;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Models\SavedView;
 use Aura\Base\Resource;
+use Aura\Base\Services\SavedViewManager;
 use Aura\Base\Table\TableParentScope;
 
 use function Pest\Livewire\livewire;
@@ -34,6 +36,22 @@ class SavedViewsTableResource extends Resource implements DeclaresTableParentSco
     {
         return [
             TableParentScope::foreignKey('parent', self::class, 'parent_id'),
+        ];
+    }
+}
+
+class SavedViewsLegacyTableResource extends BaseResource
+{
+    public static ?string $slug = 'saved-views-legacy-table';
+
+    public static string $type = 'SavedViewsLegacyTable';
+
+    protected $table = 'posts';
+
+    public static function getFields(): array
+    {
+        return [
+            ['name' => 'Title', 'slug' => 'title', 'type' => 'Aura\\Base\\Fields\\Text'],
         ];
     }
 }
@@ -116,4 +134,80 @@ test('table rejects a saved view from another required parent', function () {
         'requiredParentScope' => ['scope' => 'parent', 'id' => $parent->getKey()],
         'savedViewId' => $savedView->getKey(),
     ])->assertStatus(422);
+});
+
+test('stale defaults are unavailable without breaking table mount or the view list', function () {
+    $manager = app(SavedViewManager::class);
+    $view = $manager->createPrivate(
+        new SavedViewsTableResource,
+        $this->user,
+        $this->user->currentTeam,
+        'Stale default',
+        [
+            'v' => 1,
+            'query' => ['v' => 1, 'filters' => [], 'search' => null, 'sorts' => []],
+            'columns' => [],
+            'view_mode' => 'list',
+            'grouping' => null,
+        ],
+    );
+    $manager->setDefault($view, new SavedViewsTableResource, $this->user, $this->user->currentTeam);
+    $view->forceFill([
+        'schema_version' => 99,
+        'state' => [...$view->state, 'v' => 99],
+    ])->saveOrFail();
+
+    livewire(Table::class, [
+        'model' => new SavedViewsTableResource,
+        'query' => null,
+    ])->assertSet('savedViewId', null)
+        ->assertDontSee('Stale default');
+
+    livewire(Table::class, [
+        'model' => new SavedViewsTableResource,
+        'query' => null,
+        'savedViewId' => $view->getKey(),
+    ])->assertStatus(422);
+});
+
+test('private and shared defaults remain isolated to their exact parent scope', function () {
+    $manager = app(SavedViewManager::class);
+    $resource = new SavedViewsTableResource;
+    $parentA = ['scope' => 'parent', 'id' => 101];
+    $parentB = ['scope' => 'parent', 'id' => 202];
+    $state = fn (array $parent): array => [
+        'v' => 1,
+        'query' => ['v' => 1, 'filters' => [], 'search' => null, 'sorts' => [], 'parent' => $parent],
+        'columns' => [],
+        'view_mode' => 'list',
+        'grouping' => null,
+    ];
+
+    $privateA = $manager->createPrivate($resource, $this->user, $this->user->currentTeam, 'Private A', $state($parentA));
+    $privateB = $manager->createPrivate($resource, $this->user, $this->user->currentTeam, 'Private B', $state($parentB));
+    $manager->setDefault($privateA, $resource, $this->user, $this->user->currentTeam, $parentA);
+    $manager->setDefault($privateB, $resource, $this->user, $this->user->currentTeam, $parentB);
+
+    expect($manager->resolveDefault($resource, $this->user, $this->user->currentTeam, $parentA)?->is($privateA))->toBeTrue()
+        ->and($manager->resolveDefault($resource, $this->user, $this->user->currentTeam, $parentB)?->is($privateB))->toBeTrue()
+        ->and($manager->resolveDefault($resource, $this->user, $this->user->currentTeam))->toBeNull();
+
+    $manager->delete($privateA, $resource, $this->user, $this->user->currentTeam);
+    $manager->delete($privateB, $resource, $this->user, $this->user->currentTeam);
+    $sharedA = $manager->createShared($resource, $this->user, $this->user->currentTeam, 'Shared A', $state($parentA));
+    $sharedB = $manager->createShared($resource, $this->user, $this->user->currentTeam, 'Shared B', $state($parentB));
+    $manager->setDefault($sharedA, $resource, $this->user, $this->user->currentTeam, $parentA);
+    $manager->setDefault($sharedB, $resource, $this->user, $this->user->currentTeam, $parentB);
+
+    expect($manager->resolveDefault($resource, $this->user, $this->user->currentTeam, $parentA)?->is($sharedA))->toBeTrue()
+        ->and($manager->resolveDefault($resource, $this->user, $this->user->currentTeam, $parentB)?->is($sharedB))->toBeTrue();
+});
+
+test('saved-view actions fail closed for legacy base resources', function () {
+    livewire(Table::class, [
+        'model' => new SavedViewsLegacyTableResource,
+        'query' => null,
+    ])->set('savedViewName', 'Forged legacy view')
+        ->call('saveCurrentView')
+        ->assertStatus(404);
 });

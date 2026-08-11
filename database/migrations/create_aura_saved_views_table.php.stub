@@ -25,11 +25,23 @@ return new class extends Migration
             return;
         }
 
-        $ownership = json_decode($record->ownership, true, flags: JSON_THROW_ON_ERROR);
+        $ownership = $this->decodeOwnership($record->ownership);
 
-        if (($ownership['state'] ?? null) === 'owned' && ($ownership['created_table'] ?? false) === true) {
-            Schema::dropIfExists(self::TABLE);
+        if ($ownership['state'] === 'creating') {
+            if (Schema::hasTable(self::TABLE)) {
+                throw new RuntimeException('Aura saved-views creation is incomplete. Run the migration again before rolling it back.');
+            }
+
+            DB::table(self::OWNERSHIP_TABLE)->where('migration', self::OWNERSHIP_KEY)->delete();
+
+            return;
         }
+
+        if (! $this->hasExpectedTableStructure()) {
+            throw new RuntimeException('The owned Aura saved-views table is missing or invalid.');
+        }
+
+        Schema::drop(self::TABLE);
 
         DB::table(self::OWNERSHIP_TABLE)->where('migration', self::OWNERSHIP_KEY)->delete();
     }
@@ -51,26 +63,26 @@ return new class extends Migration
                 'migration' => self::OWNERSHIP_KEY,
                 'ownership' => json_encode([
                     'state' => 'creating',
-                    'created_table' => true,
+                    'created_table' => false,
                 ], JSON_THROW_ON_ERROR),
             ]);
         } else {
-            $ownership = json_decode($record->ownership, true, flags: JSON_THROW_ON_ERROR);
+            $ownership = $this->decodeOwnership($record->ownership);
 
-            if (($ownership['state'] ?? null) === 'owned') {
-                if (! Schema::hasTable(self::TABLE)) {
-                    throw new RuntimeException('The owned Aura saved-views table is missing.');
+            if ($ownership['state'] === 'owned') {
+                if (! $this->hasExpectedTableStructure()) {
+                    throw new RuntimeException('The owned Aura saved-views table is missing or invalid.');
                 }
 
                 return;
             }
-
-            if (($ownership['state'] ?? null) !== 'creating' || ($ownership['created_table'] ?? false) !== true) {
-                throw new RuntimeException('The Aura saved-views migration ownership state is invalid.');
-            }
         }
 
-        if (! Schema::hasTable(self::TABLE)) {
+        if (Schema::hasTable(self::TABLE)) {
+            if (! $this->hasExpectedTableStructure()) {
+                throw new RuntimeException('The incomplete Aura saved-views table has an invalid structure.');
+            }
+        } else {
             Schema::create(self::TABLE, function (Blueprint $table): void {
                 $table->id();
                 $table->string('resource_type', 191);
@@ -101,6 +113,44 @@ return new class extends Migration
                 'state' => 'owned',
                 'created_table' => true,
             ], JSON_THROW_ON_ERROR),
+        ]);
+    }
+
+    /**
+     * @return array{state: 'creating'|'owned', created_table: bool}
+     */
+    private function decodeOwnership(string $value): array
+    {
+        $ownership = json_decode($value, true, flags: JSON_THROW_ON_ERROR);
+
+        if (! is_array($ownership)
+            || ! isset($ownership['state'])
+            || ! is_string($ownership['state'])
+            || ! array_key_exists('created_table', $ownership)
+            || ! is_bool($ownership['created_table'])
+            || ! in_array($ownership['state'], ['creating', 'owned'], true)
+            || ($ownership['state'] === 'owned' && $ownership['created_table'] !== true)) {
+            throw new RuntimeException('The Aura saved-views migration ownership state is invalid.');
+        }
+
+        return $ownership;
+    }
+
+    private function hasExpectedTableStructure(): bool
+    {
+        return Schema::hasColumns(self::TABLE, [
+            'id',
+            'resource_type',
+            'owner_id',
+            'team_id',
+            'context_key',
+            'visibility',
+            'name',
+            'schema_version',
+            'state',
+            'default_key',
+            'created_at',
+            'updated_at',
         ]);
     }
 };

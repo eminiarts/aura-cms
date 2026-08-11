@@ -13,6 +13,7 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\SavedViews\SavedViewState;
 use Aura\Base\SavedViews\SavedViewVisibility;
+use Aura\Base\Table\TableQueryState;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Collection;
@@ -67,14 +68,21 @@ final readonly class SavedViewManager
     {
         $savedView = $this->resolve($savedView->getKey(), $resource, $actor, $team);
         $this->authorize($this->policy->delete($actor, $savedView, $resource, $team));
+        $parentScope = null;
 
-        $this->connection($resource)->transaction(function () use ($actor, $resource, $savedView, $team): void {
+        try {
+            $parentScope = $this->validatedState($savedView, $resource, $actor, $team)->query->parent;
+        } catch (InvalidArgumentException) {
+            // Invalid views remain deletable even though they cannot be applied.
+        }
+
+        $this->connection($resource)->transaction(function () use ($actor, $parentScope, $resource, $savedView, $team): void {
             if ($savedView->visibility === SavedViewVisibility::Private
-                && $this->preferences->get(self::DEFAULT_PREFERENCE, $this->preferenceContext($resource, $actor, $team)) === $savedView->getKey()) {
+                && $this->preferences->get(self::DEFAULT_PREFERENCE, $this->preferenceContext($resource, $actor, $team, $parentScope)) === $savedView->getKey()) {
                 $this->preferences->reset(
                     self::DEFAULT_PREFERENCE,
                     PreferenceScope::User,
-                    $this->preferenceContext($resource, $actor, $team),
+                    $this->preferenceContext($resource, $actor, $team, $parentScope),
                     $actor,
                 );
             }
@@ -98,8 +106,11 @@ final readonly class SavedViewManager
             : $this->createPrivate($resource, $actor, $team, $name, $savedView->state);
     }
 
-    /** @return Collection<int, SavedView> */
-    public function list(Resource $resource, User $actor, ?Team $team): Collection
+    /**
+     * @param  array{scope: string, id: int|string}|null  $requiredParentScope
+     * @return Collection<int, SavedView>
+     */
+    public function list(Resource $resource, User $actor, ?Team $team, ?array $requiredParentScope = null): Collection
     {
         $this->assertAvailable($resource);
         $this->authorize($this->policy->createPrivate($actor, $resource, $team));
@@ -118,9 +129,17 @@ final readonly class SavedViewManager
             ->orderBy('id')
             ->get();
 
-        return $views->filter(
-            fn (SavedView $view): bool => $this->policy->view($actor, $view, $resource, $team)
-        )->values();
+        return $views->filter(function (SavedView $view) use ($actor, $requiredParentScope, $resource, $team): bool {
+            if (! $this->policy->view($actor, $view, $resource, $team)) {
+                return false;
+            }
+
+            try {
+                return $this->validatedState($view, $resource, $actor, $team)->query->parent === $requiredParentScope;
+            } catch (InvalidArgumentException|ModelNotFoundException) {
+                return false;
+            }
+        })->values();
     }
 
     public function rename(
@@ -149,7 +168,8 @@ final readonly class SavedViewManager
         return $savedView;
     }
 
-    public function resolveDefault(Resource $resource, User $actor, ?Team $team): ?SavedView
+    /** @param array{scope: string, id: int|string}|null $requiredParentScope */
+    public function resolveDefault(Resource $resource, User $actor, ?Team $team, ?array $requiredParentScope = null): ?SavedView
     {
         if (! $this->available($resource)) {
             return null;
@@ -157,52 +177,74 @@ final readonly class SavedViewManager
 
         $preferred = $this->preferences->get(
             self::DEFAULT_PREFERENCE,
-            $this->preferenceContext($resource, $actor, $team),
+            $this->preferenceContext($resource, $actor, $team, $requiredParentScope),
         );
 
         if (is_int($preferred)) {
             try {
-                return $this->resolve($preferred, $resource, $actor, $team);
-            } catch (ModelNotFoundException) {
+                $savedView = $this->resolve($preferred, $resource, $actor, $team);
+
+                return $this->validatedState($savedView, $resource, $actor, $team)->query->parent === $requiredParentScope
+                    ? $savedView
+                    : null;
+            } catch (InvalidArgumentException|ModelNotFoundException) {
                 // A stale preference never broadens the table query.
             }
         }
 
         $shared = $this->query($resource)
-            ->where('default_key', $this->defaultKey($resource, $team))
+            ->where('default_key', $this->defaultKey($resource, $team, $requiredParentScope))
             ->first();
 
-        return $shared instanceof SavedView && $this->policy->view($actor, $shared, $resource, $team)
-            ? $shared
-            : null;
+        if (! $shared instanceof SavedView || ! $this->policy->view($actor, $shared, $resource, $team)) {
+            return null;
+        }
+
+        try {
+            return $this->validatedState($shared, $resource, $actor, $team)->query->parent === $requiredParentScope
+                ? $shared
+                : null;
+        } catch (InvalidArgumentException|ModelNotFoundException) {
+            return null;
+        }
     }
 
-    public function setDefault(SavedView $savedView, Resource $resource, User $actor, ?Team $team): void
-    {
+    /** @param array{scope: string, id: int|string}|null $requiredParentScope */
+    public function setDefault(
+        SavedView $savedView,
+        Resource $resource,
+        User $actor,
+        ?Team $team,
+        ?array $requiredParentScope = null,
+    ): void {
         $savedView = $this->resolve($savedView->getKey(), $resource, $actor, $team);
         $this->authorize($this->policy->setDefault($actor, $savedView, $resource, $team));
+        $savedParentScope = $this->validatedState($savedView, $resource, $actor, $team)->query->parent;
+
+        if ($savedParentScope !== $requiredParentScope) {
+            throw new InvalidArgumentException('The saved view belongs to a different required parent scope.');
+        }
 
         if ($savedView->visibility === SavedViewVisibility::Private) {
             $this->preferences->set(
                 self::DEFAULT_PREFERENCE,
                 (int) $savedView->getKey(),
                 PreferenceScope::User,
-                $this->preferenceContext($resource, $actor, $team),
+                $this->preferenceContext($resource, $actor, $team, $requiredParentScope),
                 $actor,
             );
 
             return;
         }
 
-        $this->connection($resource)->transaction(function () use ($resource, $savedView, $team): void {
+        $this->connection($resource)->transaction(function () use ($requiredParentScope, $resource, $savedView, $team): void {
+            $defaultKey = $this->defaultKey($resource, $team, $requiredParentScope);
             $this->query($resource)
-                ->where('context_key', $this->contextKey($resource, $team))
-                ->where('resource_type', $resource::class)
-                ->where('visibility', SavedViewVisibility::Team->value)
+                ->where('default_key', $defaultKey)
                 ->lockForUpdate()
                 ->update(['default_key' => null]);
 
-            $savedView->forceFill(['default_key' => $this->defaultKey($resource, $team)])->saveOrFail();
+            $savedView->forceFill(['default_key' => $defaultKey])->saveOrFail();
         });
     }
 
@@ -300,12 +342,14 @@ final readonly class SavedViewManager
         return $savedView;
     }
 
-    private function defaultKey(Resource $resource, ?Team $team): string
+    /** @param array{scope: string, id: int|string}|null $requiredParentScope */
+    private function defaultKey(Resource $resource, ?Team $team, ?array $requiredParentScope): string
     {
         return hash('sha256', implode("\0", [
             'aura-saved-view-default-v1',
             $this->contextKey($resource, $team),
             $resource::class,
+            $this->parentContextKey($requiredParentScope),
         ]));
     }
 
@@ -320,9 +364,34 @@ final readonly class SavedViewManager
         return $name;
     }
 
-    private function preferenceContext(Resource $resource, User $actor, ?Team $team): PreferenceContext
+    /** @param array{scope: string, id: int|string}|null $requiredParentScope */
+    private function parentContextKey(?array $requiredParentScope): string
     {
-        return new PreferenceContext('aura.table', $actor, $team, $resource::class);
+        if ($requiredParentScope === null) {
+            return 'parentless';
+        }
+
+        $parent = TableQueryState::fromArray([
+            'v' => TableQueryState::VERSION,
+            'parent' => $requiredParentScope,
+        ])->parent;
+
+        return hash('sha256', json_encode($parent, JSON_THROW_ON_ERROR));
+    }
+
+    /** @param array{scope: string, id: int|string}|null $requiredParentScope */
+    private function preferenceContext(
+        Resource $resource,
+        User $actor,
+        ?Team $team,
+        ?array $requiredParentScope = null,
+    ): PreferenceContext {
+        return new PreferenceContext(
+            'aura.table',
+            $actor,
+            $team,
+            $resource::class.'#saved-view-parent:'.$this->parentContextKey($requiredParentScope),
+        );
     }
 
     private function query(Resource $resource)

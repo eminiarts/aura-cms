@@ -1964,7 +1964,7 @@ Aura stores private and explicitly authorized Team-shared views in `aura_saved_v
 }
 ```
 
-Applying a view validates its query through `TableQueryStateApplier`, its computed keys through the CORE-21 column registry, and its parent scope against the current Resource. Removed fields, operators, computed columns, parents, or Kanban groups make the view unavailable rather than broadening its query. Private defaults use the scoped `table.saved_view.default` preference; Team-shared defaults remain explicit, authorized saved-view rows.
+Applying a view validates its query through `TableQueryStateApplier`, its computed keys through the CORE-21 column registry, and its parent scope against the current Resource. Removed fields, operators, computed columns, parents, or Kanban groups make the view unavailable rather than broadening its query; stale views are omitted from the normal picker and an explicitly requested stale view returns a controlled validation response. Private and Team-shared defaults are isolated to the exact required-parent scope, so a default for one nested index is never applied to another parent or a parentless index. Private defaults use the scoped `table.saved_view.default` preference; Team-shared defaults remain explicit, authorized saved-view rows.
 
 Applications may resolve and manage views outside Livewire through `Aura\Base\Services\SavedViewManager`. Always supply the actor, Resource, and Team explicitly; the manager derives storage ownership and never accepts those identities from browser state.
 

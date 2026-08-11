@@ -28,6 +28,7 @@ final readonly class SavedViewState implements JsonSerializable
     /** @param array<string, mixed> $state */
     public static function fromArray(array $state, Resource $resource): self
     {
+        self::assertJsonCompatible($state);
         $state = self::upgrade($state);
 
         if (array_diff(array_keys($state), ['v', 'query', 'columns', 'view_mode', 'grouping']) !== []) {
@@ -68,6 +69,43 @@ final readonly class SavedViewState implements JsonSerializable
             'view_mode' => $this->viewMode,
             'grouping' => $this->grouping,
         ];
+    }
+
+    private static function assertJsonCompatible(mixed $value): void
+    {
+        if ($value === null || is_bool($value) || is_int($value)) {
+            return;
+        }
+
+        if (is_float($value)) {
+            if (is_finite($value)) {
+                return;
+            }
+
+            throw new InvalidArgumentException('Saved-view state must contain finite JSON numbers.');
+        }
+
+        if (is_string($value)) {
+            if (preg_match('//u', $value) === 1) {
+                return;
+            }
+
+            throw new InvalidArgumentException('Saved-view state must contain valid UTF-8 strings.');
+        }
+
+        if (is_array($value)) {
+            foreach ($value as $key => $item) {
+                if (is_string($key) && preg_match('//u', $key) !== 1) {
+                    throw new InvalidArgumentException('Saved-view state must contain valid UTF-8 keys.');
+                }
+
+                self::assertJsonCompatible($item);
+            }
+
+            return;
+        }
+
+        throw new InvalidArgumentException('Saved-view state must contain only JSON-compatible values.');
     }
 
     /** @return list<string> */

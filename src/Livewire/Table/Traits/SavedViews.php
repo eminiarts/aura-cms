@@ -13,6 +13,7 @@ use Aura\Base\Table\TableQueryState;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use InvalidArgumentException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 
@@ -27,14 +28,21 @@ trait SavedViews
 
     public function applySavedView(int|string $id, SavedViewManager $manager): void
     {
-        $savedView = $manager->resolve($id, $this->model(), $this->savedViewUser(), $this->savedViewTeam());
-        $this->applyValidatedSavedView($savedView, $manager);
+        $resource = $this->savedViewResource();
+        $savedView = $manager->resolve($id, $resource, $this->savedViewUser(), $this->savedViewTeam());
+
+        try {
+            $this->applyValidatedSavedView($savedView, $manager);
+        } catch (InvalidArgumentException) {
+            abort(422, 'The saved view is no longer compatible with this resource.');
+        }
     }
 
     public function deleteSavedView(SavedViewManager $manager): void
     {
+        $resource = $this->savedViewResource();
         $savedView = $this->selectedSavedView($manager);
-        $manager->delete($savedView, $this->model(), $this->savedViewUser(), $this->savedViewTeam());
+        $manager->delete($savedView, $resource, $this->savedViewUser(), $this->savedViewTeam());
         $this->savedViewId = null;
         $this->savedViewName = '';
         unset($this->savedViews);
@@ -42,12 +50,13 @@ trait SavedViews
 
     public function duplicateSavedView(SavedViewManager $manager): void
     {
+        $resource = $this->savedViewResource();
         $name = Validator::make(['name' => $this->savedViewName], [
             'name' => ['required', 'string', 'max:120'],
         ])->validate()['name'];
         $duplicate = $manager->duplicate(
             $this->selectedSavedView($manager),
-            $this->model(),
+            $resource,
             $this->savedViewUser(),
             $this->savedViewTeam(),
             $name,
@@ -69,21 +78,31 @@ trait SavedViews
             return;
         }
 
-        $default = $manager->resolveDefault($this->model(), $this->savedViewUser(), $this->savedViewTeam());
+        $default = $manager->resolveDefault(
+            $this->model(),
+            $this->savedViewUser(),
+            $this->savedViewTeam(),
+            $this->requiredParentScope,
+        );
 
         if ($default instanceof SavedView) {
-            $this->applyValidatedSavedView($default, $manager);
+            try {
+                $this->applyValidatedSavedView($default, $manager);
+            } catch (InvalidArgumentException) {
+                // A schema change between resolution and application leaves the default unavailable.
+            }
         }
     }
 
     public function renameSavedView(SavedViewManager $manager): void
     {
+        $resource = $this->savedViewResource();
         $name = Validator::make(['name' => $this->savedViewName], [
             'name' => ['required', 'string', 'max:120'],
         ])->validate()['name'];
         $savedView = $manager->rename(
             $this->selectedSavedView($manager),
-            $this->model(),
+            $resource,
             $this->savedViewUser(),
             $this->savedViewTeam(),
             $name,
@@ -94,13 +113,14 @@ trait SavedViews
 
     public function saveCurrentView(SavedViewManager $manager): void
     {
+        $resource = $this->savedViewResource();
         $name = Validator::make(['name' => $this->savedViewName], [
             'name' => ['required', 'string', 'max:120'],
         ])->validate()['name'];
         $state = $this->currentSavedViewState();
         $savedView = $this->savedViewShared
-            ? $manager->createShared($this->model(), $this->savedViewUser(), $this->savedViewTeam(), $name, $state)
-            : $manager->createPrivate($this->model(), $this->savedViewUser(), $this->savedViewTeam(), $name, $state);
+            ? $manager->createShared($resource, $this->savedViewUser(), $this->savedViewTeam(), $name, $state)
+            : $manager->createPrivate($resource, $this->savedViewUser(), $this->savedViewTeam(), $name, $state);
 
         $this->savedViewId = $savedView->getKey();
         $this->savedViewName = $savedView->name;
@@ -113,7 +133,7 @@ trait SavedViews
         $manager = app(SavedViewManager::class);
 
         return $this->model() instanceof Resource && $manager->available($this->model())
-            ? $manager->list($this->model(), $this->savedViewUser(), $this->savedViewTeam())
+            ? $manager->list($this->model(), $this->savedViewUser(), $this->savedViewTeam(), $this->requiredParentScope)
             : new Collection;
     }
 
@@ -126,22 +146,23 @@ trait SavedViews
 
     public function setSavedViewDefault(SavedViewManager $manager): void
     {
+        $resource = $this->savedViewResource();
         $manager->setDefault(
             $this->selectedSavedView($manager),
-            $this->model(),
+            $resource,
             $this->savedViewUser(),
             $this->savedViewTeam(),
+            $this->requiredParentScope,
         );
     }
 
     private function applyValidatedSavedView(SavedView $savedView, SavedViewManager $manager): void
     {
-        $state = $manager->validatedState($savedView, $this->model(), $this->savedViewUser(), $this->savedViewTeam());
-        $headers = array_keys($this->model()->getTableHeaders()->all());
+        $resource = $this->savedViewResource();
+        $state = $manager->validatedState($savedView, $resource, $this->savedViewUser(), $this->savedViewTeam());
+        $headers = array_keys($resource->getTableHeaders()->all());
 
-        if ($this->requiredParentScope !== null
-            && $state->query->parent !== null
-            && $state->query->parent !== $this->requiredParentScope) {
+        if ($state->query->parent !== $this->requiredParentScope) {
             abort(422, 'The saved view belongs to a different required parent scope.');
         }
 
@@ -172,6 +193,7 @@ trait SavedViews
     /** @return array<string, mixed> */
     private function currentSavedViewState(): array
     {
+        $resource = $this->savedViewResource();
         $query = $this->tableState !== ''
             ? TableQueryState::fromQueryString($this->tableState)
             : TableQueryState::fromLegacy($this->filters, $this->search, $this->sorts, $this->requiredParentScope);
@@ -208,7 +230,16 @@ trait SavedViews
             'columns' => $columns,
             'view_mode' => $this->currentView,
             'grouping' => $grouping,
-        ], $this->model())->toArray();
+        ], $resource)->toArray();
+    }
+
+    private function savedViewResource(): Resource
+    {
+        $resource = $this->model();
+
+        abort_unless($resource instanceof Resource, 404);
+
+        return $resource;
     }
 
     private function savedViewTeam(): ?Team
@@ -237,7 +268,7 @@ trait SavedViews
 
         return $manager->resolve(
             $this->savedViewId,
-            $this->model(),
+            $this->savedViewResource(),
             $this->savedViewUser(),
             $this->savedViewTeam(),
         );
