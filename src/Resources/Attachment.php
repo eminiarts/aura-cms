@@ -520,7 +520,11 @@ class Attachment extends Resource
     public static function uploadMonths(): array
     {
         $query = static::query();
-        Gate::authorize('viewAny', $query->getModel());
+
+        if (Gate::denies('viewAny', $query->getModel())) {
+            return [];
+        }
+
         $oldest = (clone $query)->whereNotNull('created_at')->orderBy('created_at')->value('created_at');
         $latest = (clone $query)->whereNotNull('created_at')->orderByDesc('created_at')->value('created_at');
 

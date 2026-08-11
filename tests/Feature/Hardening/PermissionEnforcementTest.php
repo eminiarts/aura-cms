@@ -2,6 +2,7 @@
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
@@ -65,6 +66,8 @@ it('blocks a page on the next request once its permission is removed from the ro
     hardeningAttachRole($this->user, $role);
 
     $slug = (new Post)->getSlug();
+
+    expect(Attachment::uploadMonths())->toBe([]);
 
     // Baseline: the create page is reachable.
     $this->actingAs($this->user)->get(route('aura.'.$slug.'.create'))->assertSuccessful();
