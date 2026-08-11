@@ -3,6 +3,7 @@
 namespace Aura\Base\Livewire\Table\Traits;
 
 use Aura\Base\Models\SavedView;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\SavedViews\SavedViewState;
@@ -58,7 +59,7 @@ trait SavedViews
 
     public function initializeSavedViews(SavedViewManager $manager): void
     {
-        if (! $manager->available($this->model())) {
+        if (! $this->model() instanceof Resource || ! $manager->available($this->model())) {
             return;
         }
 
@@ -111,7 +112,7 @@ trait SavedViews
     {
         $manager = app(SavedViewManager::class);
 
-        return $manager->available($this->model())
+        return $this->model() instanceof Resource && $manager->available($this->model())
             ? $manager->list($this->model(), $this->savedViewUser(), $this->savedViewTeam())
             : new Collection;
     }
@@ -119,7 +120,8 @@ trait SavedViews
     #[Computed]
     public function savedViewsAvailable(): bool
     {
-        return app(SavedViewManager::class)->available($this->model());
+        return $this->model() instanceof Resource
+            && app(SavedViewManager::class)->available($this->model());
     }
 
     public function setSavedViewDefault(SavedViewManager $manager): void
