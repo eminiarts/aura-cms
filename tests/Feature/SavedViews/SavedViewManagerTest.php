@@ -113,6 +113,10 @@ test('foreign view identifiers fail without leaking their visibility', function 
 });
 
 test('shared views remain isolated to their explicit team', function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team isolation requires Aura Teams.');
+    }
+
     $view = $this->manager->createShared(
         $this->resource,
         $this->user,
@@ -131,14 +135,17 @@ test('permission synchronization provisions the saved-view management permission
     (new GenerateResourcePermissions(SavedViewManagerResource::class))->handle();
     (new GenerateResourcePermissions(SavedViewManagerResource::class))->handle();
 
-    expect(Permission::withoutGlobalScopes()
-        ->where('slug', 'manage-aura-saved-views')
-        ->whereNull('team_id')
-        ->count())->toBe(1)
-        ->and(Permission::withoutGlobalScopes()
+    $permissions = Permission::withoutGlobalScopes()->where('slug', 'manage-aura-saved-views');
+
+    expect(config('aura.teams') ? (clone $permissions)->whereNull('team_id')->count() : $permissions->count())
+        ->toBe(1);
+
+    if (config('aura.teams')) {
+        expect(Permission::withoutGlobalScopes()
             ->where('slug', 'manage-aura-saved-views')
             ->where('team_id', $this->user->currentTeam->getKey())
             ->count())->toBe(1);
+    }
 });
 
 test('disabled saved views do not require their table', function () {
