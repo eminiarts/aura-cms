@@ -131,10 +131,12 @@ final class PortableReportingProbe
         }
 
         [$query] = $this->queryForPath($path);
+        $rangeStart = Carbon::parse($start, $timezone);
+        $rangeEnd = Carbon::parse($end, $timezone);
         [$expression, $bindings] = $this->bucketExpression(
             'f.occurred_at',
-            Carbon::parse($start, $timezone),
-            Carbon::parse($end, $timezone),
+            $rangeStart,
+            $rangeEnd,
             $timezone,
             $bucket,
         );
@@ -142,6 +144,8 @@ final class PortableReportingProbe
         return $query
             ->where('f.team_id', $teamId)
             ->whereNotNull('f.occurred_at')
+            ->where('f.occurred_at', '>=', $rangeStart->copy()->utc())
+            ->where('f.occurred_at', '<', $rangeEnd->copy()->utc())
             ->selectRaw("{$expression} as bucket_key", $bindings)
             ->selectRaw('COUNT(*) as aggregate')
             ->groupBy('bucket_key')

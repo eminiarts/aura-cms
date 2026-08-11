@@ -111,6 +111,20 @@ test('timezone buckets reject invalid zones and unbounded point counts', functio
     });
 })->group('reporting-research');
 
+test('timezone bucket ranges remain exactly half open inside a calendar bucket', function (): void {
+    withCore28ReportingProbe(function (PortableReportingProbe $probe): void {
+        foreach (['physical', 'meta', 'projection'] as $path) {
+            expect($probe->bucketCounts(
+                $path,
+                'UTC',
+                'day',
+                '2024-03-31 00:30:00',
+                '2024-03-31 01:30:00',
+            ))->toBe(['2024-03-31' => 1], $path);
+        }
+    });
+})->group('reporting-research');
+
 test('each plain reporting workload executes one statement', function (): void {
     withCore28ReportingProbe(function (PortableReportingProbe $probe): void {
         foreach (['physical', 'meta', 'projection'] as $path) {
