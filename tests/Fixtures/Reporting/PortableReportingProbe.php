@@ -144,7 +144,7 @@ final class PortableReportingProbe
             ->whereNotNull('f.occurred_at')
             ->selectRaw("{$expression} as bucket_key", $bindings)
             ->selectRaw('COUNT(*) as aggregate')
-            ->groupByRaw($expression, $bindings)
+            ->groupBy('bucket_key')
             ->orderBy('bucket_key')
             ->pluck('aggregate', 'bucket_key')
             ->filter(fn (mixed $value, mixed $key): bool => $key !== null && $key !== '')
@@ -180,7 +180,7 @@ final class PortableReportingProbe
             $table->unsignedBigInteger('metable_id');
             $table->string('key');
             $table->longText('value')->nullable();
-            $table->unique(['metable_type', 'metable_id', 'key']);
+            $table->unique(['metable_type', 'metable_id', 'key'], 'core28_meta_identity');
             $table->index(['metable_type', 'key', 'metable_id']);
         });
 
@@ -190,7 +190,7 @@ final class PortableReportingProbe
             $table->unsignedBigInteger('resource_id');
             $table->string('field_key');
             $table->bigInteger('value_scaled')->nullable();
-            $table->unique(['resource_type', 'resource_id', 'field_key']);
+            $table->unique(['resource_type', 'resource_id', 'field_key'], 'core28_projection_identity');
             $table->index(['resource_type', 'field_key', 'value_scaled', 'resource_id'], 'core28_projection_numeric');
         });
     }
