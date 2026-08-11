@@ -169,6 +169,10 @@
                     @if ($this->settings['settings'] || $this->settings['filters'])
                         <div class="flex space-x-2">
 
+                            @if ($this->savedViewsAvailable)
+                                @include('aura::components.table.saved-views')
+                            @endif
+
                             @include('aura::components.table.switch-view')
 
                             @if ($this->settings['settings'])

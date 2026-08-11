@@ -100,5 +100,18 @@ class GenerateResourcePermissions implements ShouldQueue
                     ->firstOrCreate($attributes, $values);
             }
         }
+
+        if (config('aura.features.saved_views', false)) {
+            $attributes = ['slug' => 'manage-aura-saved-views'];
+            $values = ['name' => 'Manage Aura Saved Views', 'group' => 'Aura'];
+
+            if (config('aura.teams')) {
+                Permission::updateOrCreateGlobalForSystem($attributes, $values, $connection);
+            } else {
+                Permission::on($this->connectionName)
+                    ->withoutGlobalScopes()
+                    ->firstOrCreate($attributes, $values);
+            }
+        }
     }
 }

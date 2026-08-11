@@ -73,6 +73,18 @@ php artisan serve
 # Visit http://localhost:8000/admin
 ```
 
+### Optional saved table views
+
+Saved views are an opt-in Aura Base feature. Existing applications must publish and run the current Aura migrations before enabling it:
+
+```bash
+php artisan vendor:publish --tag=aura-migrations
+php artisan migrate
+php artisan aura:create-resource-permissions
+```
+
+Then set `AURA_SAVED_VIEWS=true`. Disabling the flag hides the controls and stops saved-view reads and writes without deleting `aura_saved_views` rows. Aura never removes the table merely because the feature is disabled or the package is updated.
+
 <a name="detailed-installation-steps"></a>
 ## Detailed Installation Steps
 

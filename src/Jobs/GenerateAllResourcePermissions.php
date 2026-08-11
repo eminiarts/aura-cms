@@ -78,6 +78,8 @@ class GenerateAllResourcePermissions
 
                 $this->generatePermissionsForResource($resourceInstance);
             }
+
+            $this->generateSavedViewPermission();
         });
     }
 
@@ -127,5 +129,45 @@ class GenerateAllResourcePermissions
                 Log::error($e->getMessage());
             }
         }
+    }
+
+    private function generateSavedViewPermission(): void
+    {
+        if (! config('aura.features.saved_views', false)) {
+            return;
+        }
+
+        $attributes = ['slug' => 'manage-aura-saved-views'];
+        $values = [
+            'name' => 'Manage Aura Saved Views',
+            'group' => 'Aura',
+        ];
+
+        if (! config('aura.teams')) {
+            Permission::on($this->connectionName)
+                ->withoutGlobalScopes()
+                ->updateOrCreate($attributes, $values);
+
+            return;
+        }
+
+        if ($this->teamId === null) {
+            Permission::updateOrCreateGlobalForSystem(
+                $attributes,
+                $values,
+                DB::connection($this->connectionName),
+            );
+
+            return;
+        }
+
+        TeamScope::forTeam(
+            $this->teamId,
+            fn () => Permission::on($this->connectionName)->updateOrCreate(
+                [...$attributes, 'team_id' => $this->teamId],
+                $values,
+            ),
+            DB::connection($this->connectionName),
+        );
     }
 }

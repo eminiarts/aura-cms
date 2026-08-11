@@ -1948,6 +1948,26 @@ ray([
 
 ## Reusable Query State
 
+## Saved views
+
+Set `AURA_SAVED_VIEWS=true` after publishing and running Aura's saved-view migration to enable reusable table views. The feature is disabled by default, performs no saved-view reads while disabled, and remains harmless when the migration has not been installed.
+
+Aura stores private and explicitly authorized Team-shared views in `aura_saved_views`. Each row contains the registered Resource FQCN, server-derived owner and Team context, a schema version, and JSON-only state. Persisted state contains the canonical `TableQueryState`, visible physical or computed column keys, the supported view mode, and declared Kanban grouping. It never contains PHP serialization, closures, builders, SQL expressions, or model objects.
+
+```json
+{
+  "v": 1,
+  "query": {"v": 1, "filters": [], "search": null, "sorts": []},
+  "columns": ["id", "title", "weighted_score"],
+  "view_mode": "list",
+  "grouping": null
+}
+```
+
+Applying a view validates its query through `TableQueryStateApplier`, its computed keys through the CORE-21 column registry, and its parent scope against the current Resource. Removed fields, operators, computed columns, parents, or Kanban groups make the view unavailable rather than broadening its query. Private defaults use the scoped `table.saved_view.default` preference; Team-shared defaults remain explicit, authorized saved-view rows.
+
+Applications may resolve and manage views outside Livewire through `Aura\Base\Services\SavedViewManager`. Always supply the actor, Resource, and Team explicitly; the manager derives storage ownership and never accepts those identities from browser state.
+
 `Aura\Base\Table\TableQueryState` is the stable, versioned state shared by table rows, select-all/bulk queries, saved views, and code that builds an export query. `TableQueryStateApplier` applies the same validated state to an Eloquent builder without requiring Livewire.
 
 The canonical schema is:

@@ -38,6 +38,10 @@ The RBAC system in Aura CMS is built on Laravel's authorization foundation, enha
 
 ## Core Concepts
 
+### Saved-view permission
+
+When `AURA_SAVED_VIEWS=true`, Aura's permission synchronization adds `manage-aura-saved-views`. Users with normal Resource access may create and manage their own private views. Creating, changing, deleting, or selecting a Team-shared default additionally requires this permission in the current Team. Teams-off installations use the same permission for instance-shared views.
+
 ### Permission Model
 
 ```mermaid

@@ -13,6 +13,7 @@ use Aura\Base\Livewire\Table\Traits\Filters;
 use Aura\Base\Livewire\Table\Traits\Kanban;
 use Aura\Base\Livewire\Table\Traits\PerPagePagination;
 use Aura\Base\Livewire\Table\Traits\QueryFilters;
+use Aura\Base\Livewire\Table\Traits\SavedViews;
 use Aura\Base\Livewire\Table\Traits\Search;
 use Aura\Base\Livewire\Table\Traits\Select;
 use Aura\Base\Livewire\Table\Traits\Settings;
@@ -21,6 +22,7 @@ use Aura\Base\Livewire\Table\Traits\SwitchView;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Aura\Base\Routing\ResourceViewRoute;
+use Aura\Base\Services\SavedViewManager;
 use Aura\Base\Table\ResourceTableColumnCapabilityResolver;
 use Aura\Base\Table\TableColumnCapability;
 use Aura\Base\Table\TableColumnRegistry;
@@ -57,6 +59,7 @@ class Table extends Component
     use Kanban;
     use PerPagePagination;
     use QueryFilters;
+    use SavedViews;
     use Search;
     use Select;
     use Settings;
@@ -157,6 +160,7 @@ class Table extends Component
 
     protected $queryString = [
         'selectedFilter',
+        'savedViewId' => ['as' => 'saved-view', 'except' => null],
         'tableState' => ['as' => 'table', 'except' => ''],
     ];
 
@@ -386,6 +390,8 @@ class Table extends Component
                 $this->columns = $this->model()->getDefaultColumns();
             }
         }
+
+        $this->initializeSavedViews(app(SavedViewManager::class));
     }
 
     public function moveKanbanCard(

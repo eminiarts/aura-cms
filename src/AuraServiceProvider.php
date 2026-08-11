@@ -57,8 +57,10 @@ use Aura\Base\Livewire\Styleguide;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Livewire\TwoFactorAuthenticationForm;
 use Aura\Base\Livewire\UserTeams;
+use Aura\Base\Models\SavedView;
 use Aura\Base\Navigation\Navigation as AuraNavigation;
 use Aura\Base\Policies\ResourcePolicy;
+use Aura\Base\Policies\SavedViewPolicy;
 use Aura\Base\Policies\TeamPolicy;
 use Aura\Base\Policies\UserPolicy;
 use Aura\Base\Preferences\PreferenceDefinition;
@@ -69,12 +71,14 @@ use Aura\Base\Preferences\PreferenceValueType;
 use Aura\Base\Providers\AuraEloquentUserProvider;
 use Aura\Base\RecordLayout\RecordLayoutRegistry;
 use Aura\Base\RecordLayout\RecordLayoutResolver;
+use Aura\Base\ResourcePersistence\ResourceWriter;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Services\EmbeddedComponentAuthorizer;
 use Aura\Base\Services\EmbeddedComponentContextStore;
 use Aura\Base\Services\EmbeddedResourceIncarnationGuard;
 use Aura\Base\Services\EmbeddedResourceIncarnationStore;
+use Aura\Base\Services\SavedViewManager;
 use Aura\Base\Services\TransactionRollbackCallbacks;
 use Aura\Base\Widgets\Bar;
 use Aura\Base\Widgets\Donut;
@@ -128,6 +132,7 @@ class AuraServiceProvider extends PackageServiceProvider
         }
 
         Gate::policy(Resource::class, ResourcePolicy::class);
+        Gate::policy(SavedView::class, SavedViewPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
 
         // Global Admin: an instance-level operator that transcends the tenant
@@ -270,9 +275,11 @@ class AuraServiceProvider extends PackageServiceProvider
                 'add_global_admin_to_users',
                 'add_soft_deletes_to_options',
                 'enforce_unique_option_identity',
+                'enforce_unique_meta_identity',
                 'add_owner_identity_to_options',
                 'create_embedded_resource_incarnations',
                 'upgrade_embedded_resource_incarnations',
+                'create_aura_saved_views_table',
             ])
             ->runsMigrations()
             ->hasCommands([
@@ -501,6 +508,14 @@ class AuraServiceProvider extends PackageServiceProvider
         $this->app->singleton(PreferenceRegistry::class, function (): PreferenceRegistry {
             return (new PreferenceRegistry)
                 ->register(new PreferenceDefinition(
+                    key: SavedViewManager::DEFAULT_PREFERENCE,
+                    type: PreferenceValueType::Integer,
+                    default: null,
+                    scopes: [PreferenceScope::User],
+                    nullable: true,
+                    resourceAware: true,
+                ))
+                ->register(new PreferenceDefinition(
                     key: 'table.view',
                     type: PreferenceValueType::String,
                     default: 'list',
@@ -552,6 +567,7 @@ class AuraServiceProvider extends PackageServiceProvider
                     list: true,
                 ));
         });
+        $this->app->singleton(ResourceWriter::class);
         $this->app->singleton(PreferenceManager::class);
         $this->app->singleton(RecordLayoutRegistry::class);
         $this->app->singleton(RecordLayoutResolver::class);

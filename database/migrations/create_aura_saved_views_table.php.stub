@@ -1,0 +1,106 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    private const OWNERSHIP_KEY = 'create_aura_saved_views_table';
+
+    private const OWNERSHIP_TABLE = 'aura_migration_ownership';
+
+    private const TABLE = 'aura_saved_views';
+
+    public function down(): void
+    {
+        if (! Schema::hasTable(self::OWNERSHIP_TABLE)) {
+            return;
+        }
+
+        $record = DB::table(self::OWNERSHIP_TABLE)->where('migration', self::OWNERSHIP_KEY)->first();
+
+        if ($record === null) {
+            return;
+        }
+
+        $ownership = json_decode($record->ownership, true, flags: JSON_THROW_ON_ERROR);
+
+        if (($ownership['state'] ?? null) === 'owned' && ($ownership['created_table'] ?? false) === true) {
+            Schema::dropIfExists(self::TABLE);
+        }
+
+        DB::table(self::OWNERSHIP_TABLE)->where('migration', self::OWNERSHIP_KEY)->delete();
+    }
+
+    public function up(): void
+    {
+        if (! Schema::hasTable(self::OWNERSHIP_TABLE)) {
+            throw new RuntimeException('Aura saved views require the Aura migration ownership registry.');
+        }
+
+        $record = DB::table(self::OWNERSHIP_TABLE)->where('migration', self::OWNERSHIP_KEY)->first();
+
+        if ($record === null) {
+            if (Schema::hasTable(self::TABLE)) {
+                throw new RuntimeException('Aura saved views cannot claim the pre-existing aura_saved_views table.');
+            }
+
+            DB::table(self::OWNERSHIP_TABLE)->insert([
+                'migration' => self::OWNERSHIP_KEY,
+                'ownership' => json_encode([
+                    'state' => 'creating',
+                    'created_table' => true,
+                ], JSON_THROW_ON_ERROR),
+            ]);
+        } else {
+            $ownership = json_decode($record->ownership, true, flags: JSON_THROW_ON_ERROR);
+
+            if (($ownership['state'] ?? null) === 'owned') {
+                if (! Schema::hasTable(self::TABLE)) {
+                    throw new RuntimeException('The owned Aura saved-views table is missing.');
+                }
+
+                return;
+            }
+
+            if (($ownership['state'] ?? null) !== 'creating' || ($ownership['created_table'] ?? false) !== true) {
+                throw new RuntimeException('The Aura saved-views migration ownership state is invalid.');
+            }
+        }
+
+        if (! Schema::hasTable(self::TABLE)) {
+            Schema::create(self::TABLE, function (Blueprint $table): void {
+                $table->id();
+                $table->string('resource_type', 191);
+                $table->unsignedBigInteger('owner_id');
+                $table->unsignedBigInteger('team_id')->nullable();
+                $table->char('context_key', 64);
+                $table->string('visibility', 16);
+                $table->string('name', 120);
+                $table->unsignedSmallInteger('schema_version');
+                $table->json('state');
+                $table->char('default_key', 64)->nullable();
+                $table->timestamps();
+
+                $table->index(
+                    ['context_key', 'resource_type', 'visibility'],
+                    'aura_saved_views_context_resource_visibility_index',
+                );
+                $table->index(
+                    ['owner_id', 'context_key', 'resource_type'],
+                    'aura_saved_views_owner_context_resource_index',
+                );
+                $table->unique('default_key', 'aura_saved_views_default_unique');
+            });
+        }
+
+        DB::table(self::OWNERSHIP_TABLE)->where('migration', self::OWNERSHIP_KEY)->update([
+            'ownership' => json_encode([
+                'state' => 'owned',
+                'created_table' => true,
+            ], JSON_THROW_ON_ERROR),
+        ]);
+    }
+};

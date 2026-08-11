@@ -151,6 +151,8 @@
 
 <div class="flex justify-between items-center">
     <x-aura::button.primary wire:click="$refresh" class="mt-4">{{ __('Search') }}</x-aura::button.primary>
-        @include('aura::components.table.filters-save-as-template')
+        @unless ($this->savedViewsAvailable)
+            @include('aura::components.table.filters-save-as-template')
+        @endunless
 
 </div>

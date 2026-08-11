@@ -265,6 +265,7 @@ return [
     */
 
     'features' => [
+        'saved_views' => env('AURA_SAVED_VIEWS', false),
         'global_search' => true,
         'bookmarks' => true,
         'last_visited_pages' => true,
