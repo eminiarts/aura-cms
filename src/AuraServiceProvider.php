@@ -488,6 +488,14 @@ class AuraServiceProvider extends PackageServiceProvider
             ->bootLivewireComponents();
     }
 
+    public function registeringPackage(): void
+    {
+        // Bind early so peer packages discovered before eminiarts/aura-cms
+        // (e.g. aura/flows) resolve the same process-persistent instance when
+        // they call Aura::registerResources() during their own register/boot.
+        $this->app->singleton(Aura::class);
+    }
+
     public function packageRegistered()
     {
         parent::packageRegistered();
@@ -607,6 +615,8 @@ class AuraServiceProvider extends PackageServiceProvider
         // the facade would re-resolve a fresh, empty Aura and lose every
         // registration after the first request. Per-request mutable state is
         // reset back to the boot baseline via Aura::flushState() instead.
+        // Also bound in registeringPackage() so peer packages can resolve it
+        // during their own register() before this method runs.
         $this->app->singleton(Aura::class);
 
         $this->app->singleton(ComponentSlotCandidateValidator::class);
@@ -640,7 +650,14 @@ class AuraServiceProvider extends PackageServiceProvider
             return $app->make(AuraFacade::class);
         });
 
-        $aura = $this->app->make(Aura::class);
+        // Peer packages discovered before eminiarts/aura-cms (package names
+        // sort before it alphabetically, e.g. aura/flows) may have resolved
+        // Aura via the facade before the singleton was bound. That caches a
+        // non-singleton instance on the facade while container make() returns
+        // a different object — resource routes then only see the early set
+        // (flows) and miss team/user/app resources. Absorb early registrations
+        // and force the facade onto the canonical singleton.
+        $aura = $this->reconcileCanonicalAuraInstance();
         $aura->registerResources([
             config('aura.resources.attachment'),
             config('aura.resources.option'),
@@ -671,6 +688,41 @@ class AuraServiceProvider extends PackageServiceProvider
         // Register App Resources
         $aura->registerResources($aura->getAppResources());
         $aura->registerWidgets($aura->getAppWidgets());
+    }
+
+    /**
+     * Ensure the facade and container share one Aura instance, adopting any
+     * registrations made on a prematurely resolved facade root.
+     */
+    protected function reconcileCanonicalAuraInstance(): Aura
+    {
+        $this->app->singleton(Aura::class);
+
+        $canonical = $this->app->make(Aura::class);
+        $accessor = Aura::class;
+
+        $resolved = (new \ReflectionClass(\Illuminate\Support\Facades\Facade::class))
+            ->getStaticPropertyValue('resolvedInstance');
+
+        $early = is_array($resolved) ? ($resolved[$accessor] ?? null) : null;
+
+        if ($early instanceof Aura && $early !== $canonical) {
+            $canonical->registerResources($early->getResources());
+            $canonical->registerFields($early->getFields());
+            $canonical->registerWidgets($early->getWidgets());
+
+            foreach ($early->getInjectViews() as $name => $hooks) {
+                foreach ($hooks as $hook) {
+                    if ($hook instanceof Closure) {
+                        $canonical->registerInjectView($name, $hook);
+                    }
+                }
+            }
+        }
+
+        AuraFacade::clearResolvedInstance($accessor);
+
+        return $canonical;
     }
 
     protected function getResources(): array

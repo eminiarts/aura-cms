@@ -800,8 +800,11 @@ class MediaSecurityStore implements LockProvider
         $schema = is_object($row) ? ($row->table_schema ?? 'main') : null;
         $relationId = is_object($row) ? ($row->relation_id ?? $relationName) : null;
 
+        // Schema/database names may include hyphens (e.g. Herd/local DBs like
+        // `aura-demo`). Identifiers are always quoted; only a safe charset is
+        // accepted. Table names stay restricted to [a-z0-9_] elsewhere.
         if (! is_string($schema)
-            || preg_match('/\A[a-z][a-z0-9_]*\z/D', $schema) !== 1
+            || preg_match('/\A[a-z][a-z0-9_-]*\z/D', $schema) !== 1
             || ! is_string($relationId)) {
             $this->rejectConfigurationMutation();
         }
@@ -850,7 +853,9 @@ class MediaSecurityStore implements LockProvider
 
     private function quoteIdentifier(Connection $connection, string $identifier): string
     {
-        if (preg_match('/\A[a-z][a-z0-9_]*\z/D', $identifier) !== 1) {
+        // Allow hyphens so schema-qualified names like `aura-demo.media_security_cache`
+        // can be quoted safely on MySQL/MariaDB (and other drivers' quoted forms).
+        if (preg_match('/\A[a-z][a-z0-9_-]*\z/D', $identifier) !== 1) {
             $this->rejectConfigurationMutation();
         }
 

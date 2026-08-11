@@ -374,7 +374,14 @@ final class ResourceAggregateEngine implements AggregateEngine
 
         $configuration = $fieldClass->exactQueryConfiguration($field);
 
-        if (($configuration['precision'] ?? Number::DEFAULT_PRECISION) > 18 || $configuration['scale'] > 6) {
+        // Null precision means integer/legacy Number without an explicit
+        // DECIMAL(p, s) contract. Those are reporting-safe at scale 0 and must
+        // not fall back to Number::DEFAULT_PRECISION (19), which is outside the
+        // portable reporting envelope (precision ≤ 18, scale ≤ 6).
+        $precision = $configuration['precision'] ?? 18;
+        $scale = $configuration['scale'] ?? 0;
+
+        if ($precision > 18 || $scale > 6) {
             throw new InvalidArgumentException('Reporting metrics require precision at most 18 and scale at most 6.');
         }
 

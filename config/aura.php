@@ -434,7 +434,7 @@ return [
             // to false. File, Redis, DynamoDB,
             // Memcached, failover, process-local, custom, and proxied stores fail
             // closed. Multi-node deployments need one shared network database.
-            'cache_store' => null,
+            'cache_store' => env('AURA_MEDIA_SECURITY_CACHE_STORE'),
             'owner_token_ttl' => 900,
             'selection_ttl' => 15,
             'selection_retention' => 60,

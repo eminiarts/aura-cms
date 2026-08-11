@@ -55,15 +55,19 @@ final class CurrentStateProjectionReconciler
             return false;
         }
 
-        $precision = $field['precision'] ?? Number::DEFAULT_PRECISION;
-        $scale = $field['scale'] ?? Number::DEFAULT_SCALE;
+        $configuration = $fieldClass->exactQueryConfiguration($field);
 
-        return filter_var($precision, FILTER_VALIDATE_INT) !== false
-            && filter_var($scale, FILTER_VALIDATE_INT) !== false
-            && (int) $precision >= 1
-            && (int) $precision <= 18
-            && (int) $scale >= 0
-            && (int) $scale <= 6;
+        // Match ResourceAggregateEngine: null precision is integer/legacy and is
+        // eligible for projection within the portable envelope (≤ 18 / ≤ 6).
+        // Do not substitute Number::DEFAULT_PRECISION (19) — that would exclude
+        // every undeclared Number field from meta-backed reporting.
+        $precision = $configuration['precision'] ?? 18;
+        $scale = $configuration['scale'] ?? 0;
+
+        return $precision >= 1
+            && $precision <= 18
+            && $scale >= 0
+            && $scale <= 6;
     }
 
     private function projectedValues(Connection $connection, Resource $resource, int|string $resourceId, array $source): array
