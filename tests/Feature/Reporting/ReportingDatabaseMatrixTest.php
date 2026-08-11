@@ -2,6 +2,7 @@
 
 use Aura\Base\Tests\Fixtures\Reporting\PortableReportingProbe;
 use Aura\Base\Tests\Fixtures\Reporting\ReportingDatabase;
+use PHPUnit\Framework\SkippedWithMessageException;
 
 test('portable reporting semantics execute on every claimed database driver', function (string $driver): void {
     $connection = ReportingDatabase::connect($driver);
@@ -13,7 +14,7 @@ test('portable reporting semantics execute on every claimed database driver', fu
             'pgsql' => 'POSTGRES',
             default => null,
         };
-        $this->markTestSkipped($prefix === null
+        throw new SkippedWithMessageException($prefix === null
             ? 'SQLite is supplied by the package test harness.'
             : "Set AURA_TEST_{$prefix}_DATABASE to run the {$driver} reporting contract.");
     }

@@ -283,6 +283,20 @@ final class PortableReportingProbe
         return ['count' => count($ids), 'ids' => $ids];
     }
 
+    public function prepareBenchmarkStatistics(): void
+    {
+        $grammar = $this->connection->getQueryGrammar();
+
+        foreach ([$this->factsTable, $this->metaTable, $this->projectionTable] as $table) {
+            $wrappedTable = $grammar->wrapTable($table);
+            $statement = in_array($this->driver(), ['mysql', 'mariadb'], true)
+                ? "ANALYZE TABLE {$wrappedTable}"
+                : "ANALYZE {$wrappedTable}";
+
+            $this->connection->statement($statement);
+        }
+    }
+
     public function seedCorrectnessDataset(): void
     {
         $rows = [
