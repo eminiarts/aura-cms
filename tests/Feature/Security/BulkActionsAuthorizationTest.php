@@ -110,3 +110,20 @@ test('bulkAction runs a declared action for an authorized user', function () {
 
     expect(SecurityBulkModel::count())->toBe(0);
 });
+
+test('bulkAction fails closed when a forged id is mixed into an otherwise valid selection', function () {
+    $this->actingAs(createSuperAdmin());
+
+    $keep = SecurityBulkModel::create(['title' => 'Keep me']);
+    $delete = SecurityBulkModel::create(['title' => 'Delete me']);
+
+    $model = SecurityBulkModel::first();
+
+    livewire(Table::class, ['query' => null, 'model' => $model])
+        ->set('selected', [(string) $delete->id, '999999999'])
+        ->call('bulkAction', 'deleteSelected')
+        ->assertHasErrors(['selected']);
+
+    expect(SecurityBulkModel::find($keep->id))->not->toBeNull()
+        ->and(SecurityBulkModel::find($delete->id))->not->toBeNull();
+});

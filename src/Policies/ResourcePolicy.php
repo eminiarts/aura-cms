@@ -3,14 +3,17 @@
 namespace Aura\Base\Policies;
 
 use App\Models\Post;
+use Aura\Base\Contracts\ScopesMediaVisibility;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
-class ResourcePolicy
+class ResourcePolicy implements ScopesMediaVisibility
 {
     use HandlesAuthorization;
 
@@ -127,6 +130,36 @@ class ResourcePolicy
         }
 
         return false;
+    }
+
+    /**
+     * Refuse authorization when actor and resource clearly live on different
+     * database connections. If either side is not an Eloquent model (or lacks
+     * connection info), allow the rest of the policy to decide — do not break
+     * non-model ability checks (e.g. class-level create/viewAny).
+     */
+    public function scopeMediaVisibility(Builder $query, Authenticatable $actor, Resource $resource): Builder
+    {
+        if (! $actor instanceof User
+            || ! $this->usesSameConnection($actor, $resource)
+            || config('aura.resource-view-enabled') === false
+            || $resource::$viewEnabled === false) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($this->hasBlanketAccess($actor)) {
+            return $query;
+        }
+
+        if ($actor->hasPermissionTo('scope', $resource) && $actor->hasPermissionTo('view', $resource)) {
+            return $query->where($resource->getTable().'.user_id', $actor->getKey());
+        }
+
+        if ($actor->hasPermissionTo('view', $resource) || $actor->hasPermissionTo('viewAny', $resource)) {
+            return $query;
+        }
+
+        return $query->whereRaw('1 = 0');
     }
 
     /**
@@ -272,12 +305,6 @@ class ResourcePolicy
         return $user->isSuperAdmin() || $user->isAuraGlobalAdmin();
     }
 
-    /**
-     * Refuse authorization when actor and resource clearly live on different
-     * database connections. If either side is not an Eloquent model (or lacks
-     * connection info), allow the rest of the policy to decide — do not break
-     * non-model ability checks (e.g. class-level create/viewAny).
-     */
     private function usesSameConnection(mixed $user, mixed $resource): bool
     {
         if (! $user instanceof Model || ! $resource instanceof Model) {

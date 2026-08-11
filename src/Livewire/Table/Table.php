@@ -133,18 +133,37 @@ class Table extends Component
 
     public function action($data)
     {
-        // return redirect to post view
-        if ($data['action'] == 'view') {
-            return redirect()->route('aura.'.$this->model()->getSlug().'.view', ['id' => $data['id']]);
-        }
-        // edit
-        if ($data['action'] == 'edit') {
-            return redirect()->route('aura.'.$this->model()->getSlug().'.edit', ['id' => $data['id']]);
+        $action = $data['action'] ?? null;
+        $id = $data['id'] ?? null;
+
+        if (! is_string($action) || $action === '' || $id === null || $id === '') {
+            abort(422, 'Invalid table action.');
         }
 
-        if (method_exists($this->model, $data['action'])) {
-            return $this->model()->find($data['id'])->{$data['action']}();
+        if ($action === 'view' || $action === 'edit') {
+            $record = (clone $this->query())->whereKey($id)->firstOrFail();
+            Gate::authorize(
+                $action === 'view' ? 'view' : 'update',
+                $record,
+            );
+
+            $route = $action === 'view' ? 'view' : 'edit';
+
+            return redirect()->route('aura.'.$this->model()->getSlug().'.'.$route, ['id' => $record->getKey()]);
         }
+
+        $record = app(TableMutationAuthorizer::class)->authorizeRow(
+            scope: clone $this->query(),
+            id: $id,
+            action: $action,
+            declared: $this->normalizedRowActions(),
+        );
+
+        if (! method_exists($record, $action)) {
+            abort(403, 'This action is not allowed.');
+        }
+
+        return $record->{$action}();
     }
 
     public function allTableRows()
@@ -314,9 +333,17 @@ class Table extends Component
 
     public function openBulkActionModal($action, $data)
     {
+        $records = app(TableMutationAuthorizer::class)->authorizeBulk(
+            scope: clone $this->query(),
+            action: $action,
+            declared: (array) $this->getBulkActionsProperty(),
+            selected: $this->selected,
+            selectAll: (bool) $this->selectAll,
+        );
+
         $this->dispatch('openModal', $data['modal'], [
             'action' => $action,
-            'selected' => $this->selectedRowsQuery->pluck('id'),
+            'selected' => $records->map(fn ($record) => $record->getKey())->values()->all(),
             'model' => get_class($this->model),
         ]);
     }
@@ -530,6 +557,34 @@ class Table extends Component
         } else {
             $this->dispatch('selectedRows', $this->selected);
         }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function normalizedRowActions(): array
+    {
+        $actions = $this->model->getActions();
+
+        if (! is_array($actions)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($actions as $key => $definition) {
+            if (is_int($key) && is_string($definition)) {
+                $normalized[$definition] = ['ability' => $definition];
+
+                continue;
+            }
+
+            if (is_string($key)) {
+                $normalized[$key] = $definition;
+            }
+        }
+
+        return $normalized;
     }
 
     /**

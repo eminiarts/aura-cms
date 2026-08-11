@@ -3,6 +3,7 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Resource;
+use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Livewire;
@@ -71,7 +72,12 @@ test('global search hides users when the current user cannot view users', functi
     // Build a role with viewAny-user explicitly denied, then search by email.
     $this->actingAs($admin = createAdmin());
 
-    $admin->roles->first()->update([
+    $role = $admin->roles()->first()
+        ?? Role::where('slug', 'editor')
+            ->where('team_id', $admin->current_team_id)
+            ->firstOrFail();
+
+    $role->update([
         'permissions' => ['view-user' => false, 'viewAny-user' => false],
     ]);
 
