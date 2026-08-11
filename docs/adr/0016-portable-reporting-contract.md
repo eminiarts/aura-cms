@@ -53,7 +53,7 @@ Names may follow established Aura conventions, but these invariants may not chan
 
 - `groupBy` is optional. V1 accepts only a declared, physical, scalar field on the same Resource. Computed, relationship, arbitrary expression, and meta-backed grouping are rejected. Meta-backed metrics may still be aggregated through the numeric projection while grouping by an eligible physical field.
 - Results contain an ordered list of immutable points: canonical scalar `key`, presentation `label`, aggregate value, and row count. Numeric keys use the same six-decimal canonical form; booleans use `0`/`1`; strings use their stored scalar value. Presentation labels come from the declared field formatter after the query, never from SQL supplied by a caller.
-- Null is one explicit `Empty` point ordered last. Non-null points sort by canonical key ascending, with a stable Resource-key tie breaker. A query fetches at most 101 distinct points and rejects more than 100 rather than silently truncating or merging groups.
+- Null is one explicit `Empty` point ordered last. Non-null points sort after the bounded query using exact numeric order for Number/Currency and bytewise canonical-key order for other scalars, avoiding database-collation differences. A query fetches at most 101 distinct points and rejects more than 100 rather than silently truncating or merging groups.
 - Existing Pie/Donut definitions that group by a meta-backed field are outside the first CORE-29 cut and must fail configuration validation. Supporting them requires separate typed-text projection evidence; CORE-29 may not reintroduce raw meta grouping.
 
 ### Numeric semantics
@@ -77,15 +77,27 @@ The engine first authorizes `viewAny` for the resolved Resource, then starts fro
 
 ### Projection ownership and lifecycle
 
-CORE-29 may add an Aura-owned `aura_reporting_values` table through an exact, additive migration and ownership manifest. V1 uses Aura's current unsigned-big-integer Resource identity and an exact unique identity `(resource_type, resource_id, field_key)`. A row stores a nullable signed `value_scaled`, precision/scale contract version, source update/event version, and timestamps. Required indexes cover identity and `(resource_type, field_key, value_scaled, resource_id)`. The live authorized Resource query remains the left side of every join; copied Team/owner values are neither required nor trusted.
+CORE-29 may add two Aura-owned tables through exact, additive migrations and the migration ownership manifest:
 
-Projection maintenance listens to the immutable, after-commit `ResourceCreated`, `ResourceUpdated`, `ResourceDeleted`, `ResourceRestored`, and `ResourceForceDeleted` events from CORE-16. A projector re-reads the current Resource on its recorded connection and upserts/deletes idempotently. It ignores stale/out-of-order events based on the latest stored source version and never writes Resource/meta values. Quiet writes deliberately do not emit lifecycle events, so the documented explicit resync command is required after trusted quiet or legacy writes.
+- `aura_reporting_resources` is a persistent per-Resource coordinator/tombstone with unique `(resource_type, resource_id)`, `present`, optional last processed event ID for diagnostics only, and reconciliation timestamps.
+- `aura_reporting_values` has unique `(resource_type, resource_id, field_key)`, nullable signed `value_scaled`, precision/scale contract version, and timestamps. An index covers `(resource_type, field_key, value_scaled, resource_id)`.
+
+V1 uses Aura's current unsigned-big-integer Resource identity. Both tables live on each Resource's own connection. The live authorized Resource query remains the left side of every reporting join; copied Team/owner values are neither required nor trusted.
+
+CORE-16 event UUIDs and timestamps are not monotonic source versions. CORE-29 must never compare them to decide which state wins. Projection maintenance instead converges from authoritative current state:
+
+1. A listener receives immutable, after-commit `ResourceCreated`, `ResourceUpdated`, `ResourceDeleted`, `ResourceRestored`, or `ResourceForceDeleted` and verifies the recorded connection identity.
+2. On that Resource connection, one transaction `insertOrIgnore`s the coordinator, locks it with `SELECT ... FOR UPDATE`, and only then re-reads the current scoped-independent stored Resource/meta state through a narrow internal projector reader.
+3. If the source exists, the transaction replaces/upserts every currently declared projected numeric field and removes values no longer declared. If it does not exist, it removes all value rows but retains the coordinator tombstone. It then records presence, reconciliation time, and the triggering event ID as diagnostics.
+4. Duplicate and out-of-order events repeat the same reconciliation. They may do redundant work but cannot append duplicates or restore an older event payload because event payload values are never projected. A late update after deletion sees absence; a late delete after ID recreation sees the recreated current row.
+
+The coordinator serializes projectors for the same Resource, including the first projection. A source commit can still occur after a projector's authoritative read; its own after-commit event performs the next reconciliation, so consistency is intentionally eventual. Queue loss, quiet writes, direct SQL, or a worker crash are repaired by an idempotent explicit resync/backfill command that uses the same coordinator algorithm. Operators must run repair after trusted quiet/legacy writes; an optional scheduled bounded repair may be enabled. No correctness claim depends on UUID ordering, wall-clock ordering, or exactly-once delivery.
 
 Deployment is expand/backfill/verify/cut over:
 
-1. create the table and indexes with reporting disabled;
-2. run a resumable, idempotent, per-Resource-class backfill in bounded keyset chunks;
-3. enable event projection and repeat backfill to close the race;
+1. create both tables and indexes with reporting reads disabled;
+2. enable event projection, then run a resumable, idempotent, per-Resource-class backfill in bounded keyset chunks;
+3. repeat the same reconciliation pass to close scan/update races;
 4. shadow-read aggregate checks, including rejected legacy values, before enabling meta-backed reads;
 5. switch the feature flag per environment.
 
@@ -93,7 +105,7 @@ Rollback first disables projected reads and returns consumers to their pre-CORE-
 
 ## Evidence and threshold
 
-The reproducible harness covers SQLite 3.53.1, MySQL 8.4.11, MariaDB 11.8.8, and PostgreSQL 16.14. The correctness matrix proves exact decimals, excess-scale/out-of-range/exponent/null legacy values, all-null aggregates, numeric ranges, both Europe/Zurich daylight-saving transitions, every approved bucket type, invalid-input rejection, cross-tenant exclusion, and non-empty `EXPLAIN` output for physical, safe-meta, and projection paths. A separate real-Resource contract proves `viewAny`, the Resource connection, `indexQuery()`, owner and Team global scopes, and soft-delete exclusion without a caller-supplied tenant. Each benchmark workload performs one query.
+The reproducible harness covers SQLite 3.53.1, MySQL 8.4.11, MariaDB 11.8.8, and PostgreSQL 16.14. The correctness matrix proves exact decimals, excess-scale/out-of-range/exponent/null legacy values, all-null aggregates, numeric ranges, both Europe/Zurich daylight-saving transitions, every approved bucket type, invalid-input rejection, cross-tenant exclusion, and non-empty `EXPLAIN` output for physical, safe-meta, and projection paths. A real-Resource contract proves `viewAny`, `indexQuery()`, owner and Team global scopes, soft-delete exclusion, a genuinely separate Resource/actor connection with its own schema/data, exact Number and Boolean group keys, Select formatter labels, immutable ordered points, null-last behavior, and bounded cardinality without a caller-supplied tenant. A native four-engine reconciliation matrix proves duplicate/out-of-order/update/delete/recreate convergence without ordering event IDs. Each benchmark workload performs one query.
 
 At 100k Resources plus 1.19 million meta rows, the accepted interactive gate is p95 at most 500 ms and no more than five times the physical path on every claimed engine. Direct meta casting fails: MySQL grouped sum reaches 1,366.195 ms and MariaDB reaches 3,042.122 ms; MariaDB aggregate and range also exceed 500 ms. The projection's worst p95 is 198.424 ms. Full results and limitations are in `docs/benchmarks/core-28-reporting-baseline.md` and its JSON companion.
 

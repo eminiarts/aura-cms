@@ -2,26 +2,41 @@
 
 namespace Aura\Base\Tests\Fixtures\Reporting;
 
+use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Fields\Boolean;
 use Aura\Base\Fields\Number;
 use Aura\Base\Fields\Select;
 use Aura\Base\Fields\Text;
 use Aura\Base\Resource;
+use Aura\Base\Support\ExactDecimal;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
 use InvalidArgumentException;
 use RuntimeException;
 
+final readonly class ReportingGroupPoint
+{
+    public function __construct(
+        public ?string $key,
+        public string $label,
+        public int $value,
+        public int $rowCount,
+    ) {}
+}
+
 final class AuthorizedReportingQueryProbe
 {
     /**
-     * @return list<array{key: string|null, label: string, value: int, row_count: int}>
+     * @return list<ReportingGroupPoint>
      */
     public function groupedCount(Resource $prototype, string $field, int $maximumGroups = 100): array
     {
         $fieldClass = $prototype->fieldClassBySlug($field);
+        $fieldDefinition = $prototype->fieldBySlug($field);
 
         if (! $prototype->isTableField($field)
+            || ! is_array($fieldDefinition)
             || ! ($fieldClass instanceof Boolean
                 || $fieldClass instanceof Number
                 || $fieldClass instanceof Select
@@ -49,16 +64,39 @@ final class AuthorizedReportingQueryProbe
             throw new RuntimeException("Reporting groups exceed the [{$maximumGroups}] point limit.");
         }
 
-        return $rows->map(static function (Resource $row): array {
-            $key = $row->getAttribute('group_key');
+        $points = $rows->map(function (Resource $row) use ($fieldClass, $fieldDefinition, $prototype): ReportingGroupPoint {
+            $rawKey = $row->getAttribute('group_key');
+            $key = $this->canonicalGroupKey($rawKey, $fieldClass);
+            $label = $key ?? 'Empty';
 
-            return [
-                'key' => $key === null ? null : (string) $key,
-                'label' => $key === null ? 'Empty' : (string) $key,
-                'value' => (int) $row->getAttribute('aggregate'),
-                'row_count' => (int) $row->getAttribute('aggregate'),
-            ];
-        })->all();
+            if ($rawKey !== null && $fieldClass instanceof Select) {
+                $presented = $fieldClass->presentValue(
+                    $rawKey,
+                    $fieldDefinition,
+                    $prototype,
+                    FieldValueContext::Export,
+                );
+                $label = $presented instanceof Htmlable ? $presented->toHtml() : (string) $presented;
+            }
+
+            return new ReportingGroupPoint(
+                key: $key,
+                label: $label,
+                value: (int) $row->getAttribute('aggregate'),
+                rowCount: (int) $row->getAttribute('aggregate'),
+            );
+        });
+
+        return $points->sort(static function (ReportingGroupPoint $left, ReportingGroupPoint $right) use ($fieldClass): int {
+            if ($left->key === null || $right->key === null) {
+                return $left->key === $right->key ? 0 : ($left->key === null ? 1 : -1);
+            }
+
+            $leftKey = $fieldClass instanceof Number ? ExactDecimal::sortableKey($left->key) : $left->key;
+            $rightKey = $fieldClass instanceof Number ? ExactDecimal::sortableKey($right->key) : $right->key;
+
+            return strcmp($leftKey, $rightKey);
+        })->values()->all();
     }
 
     /** @return Builder<resource> */
@@ -73,5 +111,33 @@ final class AuthorizedReportingQueryProbe
         }
 
         return $query;
+    }
+
+    private function canonicalGroupKey(mixed $value, object $fieldClass): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($fieldClass instanceof Boolean) {
+            return (bool) $value ? '1' : '0';
+        }
+
+        if (! $fieldClass instanceof Number) {
+            return (string) $value;
+        }
+
+        $decimal = trim((string) $value);
+
+        if (preg_match('/\A([+-]?)(\d+)(?:\.(\d{1,6}))?\z/', $decimal, $matches) !== 1) {
+            throw new RuntimeException('The reporting number group key is not an exact six-decimal value.');
+        }
+
+        $integer = ltrim($matches[2], '0');
+        $integer = $integer === '' ? '0' : $integer;
+        $fraction = str_pad($matches[3] ?? '', 6, '0');
+        $negative = $matches[1] === '-' && ($integer !== '0' || trim($fraction, '0') !== '');
+
+        return ($negative ? '-' : '').$integer.'.'.$fraction;
     }
 }
