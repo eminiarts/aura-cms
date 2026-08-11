@@ -1,10 +1,14 @@
 <?php
 
+use Aura\Base\Aura;
 use Aura\Base\Fields\Boolean;
 use Aura\Base\Fields\Number;
 use Aura\Base\Fields\Select;
 use Aura\Base\Fields\Text;
 use Aura\Base\Models\Scopes\ScopedScope;
+use Aura\Base\Reporting\AggregateDefinition;
+use Aura\Base\Reporting\AggregateOperation;
+use Aura\Base\Reporting\ResourceAggregateEngine;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
@@ -193,9 +197,22 @@ test('reporting starts from the authorized resource query and preserves every re
         }
 
         $prototype = new Core28AuthorizedReportingResource;
+        app(Aura::class)->registerResources([Core28AuthorizedReportingResource::class]);
         $query = $probe->query($prototype);
+        $engine = new ResourceAggregateEngine;
+        $authorizedCount = $engine->run(new AggregateDefinition(
+            Core28AuthorizedReportingResource::class,
+            AggregateOperation::Count,
+        ));
+        $authorizedGroups = $engine->run(new AggregateDefinition(
+            Core28AuthorizedReportingResource::class,
+            AggregateOperation::Count,
+            groupBy: 'category',
+        ));
 
         expect($query->getModel()->getConnectionName())->toBe($prototype->getConnectionName())
+            ->and($authorizedCount->value)->toBe(3)
+            ->and(array_map(static fn ($point): ?string => $point->key, $authorizedGroups->points))->toBe(['alpha', 'beta', null])
             ->and($query->pluck('id')->all())->toBe([$visible->getKey(), $beta->getKey(), $empty->getKey()])
             ->and($probe->query($prototype)->count())->toBe(3)
             ->and($probe->groupedCount($prototype, 'category'))->toEqual([
@@ -224,7 +241,9 @@ test('reporting starts from the authorized resource query and preserves every re
 
         auth()->logout();
 
-        expect(fn () => $probe->query($prototype))->toThrow(AuthorizationException::class);
+        expect(fn () => $probe->query($prototype))->toThrow(AuthorizationException::class)
+            ->and(fn () => $engine->run(new AggregateDefinition(Core28AuthorizedReportingResource::class, AggregateOperation::Count)))
+            ->toThrow(AuthorizationException::class);
     });
 })->group('reporting-research', 'authorization');
 
