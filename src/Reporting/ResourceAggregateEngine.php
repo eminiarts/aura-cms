@@ -57,33 +57,33 @@ final class ResourceAggregateEngine implements AggregateEngine
     /** @param Builder<resource> $query */
     private function aggregate(Builder $query, AggregateOperation $operation, ?string $metric): int|string|null
     {
-        $row = $this->aggregateSelect($query, $operation, $metric)->first();
+        $row = $this->aggregateSelect($query, $operation, $metric)->toBase()->first();
 
-        if (! $row instanceof Resource) {
+        if (! is_object($row)) {
             throw new RuntimeException('Reporting aggregate did not return a result row.');
         }
 
         return $this->aggregateFromRow($row, $operation);
     }
 
-    private function aggregateFromRow(Resource $row, AggregateOperation $operation): int|string|null
+    private function aggregateFromRow(object $row, AggregateOperation $operation): int|string|null
     {
         if ($operation === AggregateOperation::Count) {
-            return (int) $row->getAttribute('row_count');
+            return (int) $row->row_count;
         }
 
-        $validCount = (int) $row->getAttribute('valid_count');
+        $validCount = (int) $row->valid_count;
 
         if ($validCount === 0) {
             return null;
         }
 
         return match ($operation) {
-            AggregateOperation::Average => $this->average((string) $row->getAttribute('scaled_sum'), $validCount),
-            AggregateOperation::Maximum => $this->decimal((string) $row->getAttribute('scaled_max')),
-            AggregateOperation::Minimum => $this->decimal((string) $row->getAttribute('scaled_min')),
-            AggregateOperation::Sum => $this->decimal((string) $row->getAttribute('scaled_sum')),
-            AggregateOperation::Count => (int) $row->getAttribute('row_count'),
+            AggregateOperation::Average => $this->average((string) $row->scaled_sum, $validCount),
+            AggregateOperation::Maximum => $this->decimal((string) $row->scaled_max),
+            AggregateOperation::Minimum => $this->decimal((string) $row->scaled_min),
+            AggregateOperation::Sum => $this->decimal((string) $row->scaled_sum),
+            AggregateOperation::Count => (int) $row->row_count,
         };
     }
 
@@ -224,13 +224,14 @@ final class ResourceAggregateEngine implements AggregateEngine
             ->selectRaw("{$expression} as bucket_key", $bindings)
             ->groupBy('bucket_key')
             ->orderBy('bucket_key')
+            ->toBase()
             ->get();
 
-        return $rows->map(fn (Resource $row): AggregatePoint => new AggregatePoint(
-            key: (string) $row->getAttribute('bucket_key'),
-            label: (string) $row->getAttribute('bucket_key'),
+        return $rows->map(fn (object $row): AggregatePoint => new AggregatePoint(
+            key: (string) $row->bucket_key,
+            label: (string) $row->bucket_key,
             value: $this->aggregateFromRow($row, $definition->operation),
-            rowCount: (int) $row->getAttribute('row_count'),
+            rowCount: (int) $row->row_count,
         ))->all();
     }
 
@@ -259,14 +260,15 @@ final class ResourceAggregateEngine implements AggregateEngine
             ->orderByRaw("CASE WHEN {$wrapped} IS NULL THEN 1 ELSE 0 END")
             ->orderBy($qualified)
             ->limit(self::MAX_GROUPS + 1)
+            ->toBase()
             ->get();
 
         if ($rows->count() > self::MAX_GROUPS) {
             throw new RuntimeException('Reporting groups exceed the 100 point limit.');
         }
 
-        return $rows->map(function (Resource $row) use ($definition, $field, $fieldClass, $resource): AggregatePoint {
-            $raw = $row->getAttribute('group_key');
+        return $rows->map(function (object $row) use ($definition, $field, $fieldClass, $resource): AggregatePoint {
+            $raw = $row->group_key;
             $key = $this->groupKey($raw, $fieldClass);
             $label = $key ?? 'Empty';
 
@@ -275,7 +277,7 @@ final class ResourceAggregateEngine implements AggregateEngine
                 $label = $presented instanceof Htmlable ? $presented->toHtml() : (string) $presented;
             }
 
-            return new AggregatePoint($key, $label, $this->aggregateFromRow($row, $definition->operation), (int) $row->getAttribute('row_count'));
+            return new AggregatePoint($key, $label, $this->aggregateFromRow($row, $definition->operation), (int) $row->row_count);
         })->sort(function (AggregatePoint $left, AggregatePoint $right) use ($fieldClass): int {
             if ($left->key === null || $right->key === null) {
                 return $left->key === $right->key ? 0 : ($left->key === null ? 1 : -1);
@@ -404,7 +406,7 @@ final class ResourceAggregateEngine implements AggregateEngine
 
         return match ($connection->getDriverName()) {
             'pgsql' => "CAST({$column} * 1000000 AS BIGINT)",
-            'mysql' => "CAST({$column} * 1000000 AS SIGNED)",
+            'mariadb', 'mysql' => "CAST({$column} * 1000000 AS SIGNED)",
             default => throw new RuntimeException('Reporting has no approved numeric expression for this database driver.'),
         };
     }

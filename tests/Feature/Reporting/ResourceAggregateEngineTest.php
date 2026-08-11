@@ -12,6 +12,7 @@ use Aura\Base\Reporting\ResourceAggregateEngine;
 use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 
@@ -19,7 +20,7 @@ final class Core29AggregateResource extends Resource
 {
     public static $customTable = true;
 
-    public static array $physicalFields = ['amount', 'stage', 'visible'];
+    public static array $physicalFields = ['amount', 'stage', 'visible', 'user_id', 'team_id'];
 
     public static ?string $slug = 'core29-aggregate-resource';
 
@@ -27,7 +28,7 @@ final class Core29AggregateResource extends Resource
 
     public static bool $usesMeta = false;
 
-    protected $fillable = ['amount', 'stage', 'visible'];
+    protected $fillable = ['amount', 'stage', 'visible', 'user_id', 'team_id'];
 
     protected $table = 'core29_aggregate_resources';
 
@@ -51,11 +52,14 @@ final class Core29AggregateResource extends Resource
 beforeEach(function (): void {
     Schema::create('core29_aggregate_resources', function (Blueprint $table): void {
         $table->id();
-        $table->decimal('amount', 18, 6)->nullable();
+        $table->text('amount')->nullable();
         $table->string('stage')->nullable();
         $table->boolean('visible');
+        $table->unsignedBigInteger('user_id')->nullable();
+        $table->unsignedBigInteger('team_id')->nullable();
         $table->timestamps();
     });
+    $this->actingAs($this->user = createSuperAdmin());
     app(Aura::class)->registerResources([Core29AggregateResource::class]);
     Gate::before(static fn (): bool => true);
 });
@@ -68,6 +72,8 @@ test('aggregates exact physical values through the authorized resource query', f
     Core29AggregateResource::withoutGlobalScopes()->create(['amount' => '1.250000', 'stage' => 'open', 'visible' => true]);
     Core29AggregateResource::withoutGlobalScopes()->create(['amount' => '2.500000', 'stage' => 'won', 'visible' => true]);
     Core29AggregateResource::withoutGlobalScopes()->create(['amount' => '99.000000', 'stage' => 'won', 'visible' => false]);
+
+    expect(Core29AggregateResource::withoutGlobalScopes()->count())->toBe(3);
 
     $result = (new ResourceAggregateEngine)->run(new AggregateDefinition(
         Core29AggregateResource::class,
@@ -99,8 +105,16 @@ test('returns immutable null-last formatted group points and rejects unregistere
 });
 
 test('uses half-open ranges', function (): void {
-    Core29AggregateResource::withoutGlobalScopes()->create(['amount' => '1.000000', 'stage' => 'open', 'visible' => true, 'created_at' => '2026-01-01 00:00:00', 'updated_at' => '2026-01-01 00:00:00']);
-    Core29AggregateResource::withoutGlobalScopes()->create(['amount' => '2.000000', 'stage' => 'open', 'visible' => true, 'created_at' => '2026-01-02 00:00:00', 'updated_at' => '2026-01-02 00:00:00']);
+    DB::table('core29_aggregate_resources')->insert([
+        ['amount' => '1.000000', 'stage' => 'open', 'visible' => true, 'user_id' => $this->user->id, 'team_id' => $this->user->current_team_id, 'created_at' => '2026-01-01 00:00:00', 'updated_at' => '2026-01-01 00:00:00'],
+        ['amount' => '2.000000', 'stage' => 'open', 'visible' => true, 'user_id' => $this->user->id, 'team_id' => $this->user->current_team_id, 'created_at' => '2026-01-02 00:00:00', 'updated_at' => '2026-01-02 00:00:00'],
+    ]);
+
+    expect(Core29AggregateResource::withoutGlobalScopes()->count())->toBe(2)
+        ->and(Core29AggregateResource::withoutGlobalScopes()
+            ->where('created_at', '>=', '2026-01-01 00:00:00')
+            ->where('created_at', '<', '2026-01-02 00:00:00')
+            ->count())->toBe(1);
 
     $result = (new ResourceAggregateEngine)->run(new AggregateDefinition(
         Core29AggregateResource::class,

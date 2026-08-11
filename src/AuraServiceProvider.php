@@ -78,7 +78,9 @@ use Aura\Base\Preferences\PreferenceValueType;
 use Aura\Base\Providers\AuraEloquentUserProvider;
 use Aura\Base\RecordLayout\RecordLayoutRegistry;
 use Aura\Base\RecordLayout\RecordLayoutResolver;
+use Aura\Base\Reporting\AggregateEngine;
 use Aura\Base\Reporting\CurrentStateProjectionReconciler;
+use Aura\Base\Reporting\ResourceAggregateEngine;
 use Aura\Base\ResourcePersistence\ResourceWriter;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
@@ -578,6 +580,7 @@ class AuraServiceProvider extends PackageServiceProvider
                 ));
         });
         $this->app->singleton(ResourceWriter::class);
+        $this->app->singleton(AggregateEngine::class, ResourceAggregateEngine::class);
         $this->app->singleton(CurrentStateProjectionReconciler::class);
         $this->app->singleton(PreferenceManager::class);
         $this->app->singleton(RecordLayoutRegistry::class);
