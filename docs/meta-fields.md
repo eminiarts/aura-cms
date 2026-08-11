@@ -2,6 +2,13 @@
 
 Meta fields in Aura CMS provide a flexible way to store additional data for your resources without modifying the database schema. This feature allows you to dynamically add custom fields to your resources while maintaining data integrity and performance.
 
+Meta identities are unique by Resource morph type, Resource key, and field key.
+Aura's Resource writer batches ordinary meta changes into one atomic upsert on
+the Resource's writer connection. Existing installations must publish and run
+`enforce_unique_meta_identity`; the migration refuses to guess which legacy row
+should survive when null keys or duplicate identities exist and never deletes
+or merges those rows automatically.
+
 ## Table of Contents
 
 - [Overview](#overview)

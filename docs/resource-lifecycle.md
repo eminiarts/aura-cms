@@ -57,3 +57,12 @@ Lifecycle listeners are post-commit observers. An exception from a synchronous c
 Laravel's `Model::withoutEvents()`, `saveQuietly()`, `deleteQuietly()`, and force-delete quiet variants intentionally suppress lifecycle events. Exact hard-delete cleanup still runs because referential integrity does not depend on event delivery. Callers that need the complete normalization, persistence, cleanup, and event pipeline must use the normal Resource write methods rather than quiet or query-builder writes.
 
 `Aura\Base\ResourceLifecycle\ResourceLifecycleDispatcher` is the public dispatcher seam for Aura's explicit write pipeline and first-party integrations. Its `beginSave()`, `beginDelete()`, and `beginRestore()` methods return a controlled, process-local operation snapshot bound to the resource object, stored subject, resolved connection fingerprint, table, operation kind, and the active native model callback sequence. Lifecycle state is intentionally not serializable. The matching `dispatchSaved()`, `dispatchDeleted()`, `dispatchRestored()`, and `dispatchForceDeleted()` methods validate those invariants, verify the persisted row transition and native callback completion, and consume the operation token exactly once. Aura calls `discard()` when a native veto, listener exception, or failed persistence aborts an operation; this immediately invalidates the active token without publishing an event. Mixed resources, connections, operation types, premature dispatch, stale state, cloned replay, and serialized replay are rejected. Ordinary consumers should listen for the event classes instead of dispatching or discarding lifecycle state manually.
+
+`Aura\Base\ResourcePersistence\ResourceWriter` validates and normalizes declared
+fields before the physical save. Its meta upsert and relationship hooks finish
+before the lifecycle dispatcher reads the committed-state candidate, so typed
+created and updated events contain both physical and meta changes. Publication
+still waits for the outer writer transaction to commit. Calling
+`ResourceWriter::saveWithFields()` inside Laravel's `withoutEvents()` preserves
+field normalization and meta persistence but intentionally publishes no native
+or typed lifecycle events.

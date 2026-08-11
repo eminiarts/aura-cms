@@ -171,7 +171,7 @@ class Create extends Component
 
         $userClass = config('aura.resources.user');
         if (config('aura.teams') && $this->model instanceof $userClass) {
-            $attributes['current_team_id'] = data_get(auth()->user(), 'current_team_id');
+            $this->model->setAttribute('current_team_id', data_get(auth()->user(), 'current_team_id'));
         }
 
         $writer = app(ResourceWriter::class);
