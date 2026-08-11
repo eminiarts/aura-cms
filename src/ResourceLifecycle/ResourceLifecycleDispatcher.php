@@ -18,7 +18,7 @@ use Throwable;
 
 final class ResourceLifecycleDispatcher
 {
-    /** @var \WeakMap<resource, object>|null */
+    /** @var \WeakMap<\Aura\Base\Resource, object>|null */
     private static ?\WeakMap $activeStates = null;
 
     /** @var \WeakMap<object, true>|null */
