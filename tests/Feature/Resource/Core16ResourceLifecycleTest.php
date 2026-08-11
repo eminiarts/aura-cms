@@ -65,7 +65,7 @@ final class Core16SharedLifecycleDocument extends Core16LifecycleDocument
     public static string $type = 'Core16SharedLifecycleDocument';
 }
 
-final class Core16GlobalLifecycleDocument extends Resource
+class Core16GlobalLifecycleDocument extends Resource
 {
     public static $customTable = true;
 
@@ -87,6 +87,13 @@ final class Core16GlobalLifecycleDocument extends Resource
     {
         return [['name' => 'Name', 'slug' => 'name', 'type' => Text::class]];
     }
+}
+
+final class Core16GlobalSoftLifecycleDocument extends Core16GlobalLifecycleDocument
+{
+    use SoftDeletes;
+
+    public static string $type = 'Core16GlobalSoftLifecycleDocument';
 }
 
 class Core16PostLifecycleAlpha extends Resource
@@ -534,4 +541,87 @@ test('after commit listeners are suppressed by rollback and fail after durable c
     DB::purge('core16_lifecycle');
     app()->instance('db.transactions', $testTransactionManager);
     unlink($databasePath);
+});
+
+test('restore and force delete lifecycle verification reads from the writer', function (): void {
+    $writerPath = tempnam(sys_get_temp_dir(), 'aura-core16-writer-');
+    $readerPath = tempnam(sys_get_temp_dir(), 'aura-core16-reader-');
+    expect($writerPath)->toBeString()
+        ->and($readerPath)->toBeString();
+
+    config()->set('database.connections.core16_split_lifecycle', [
+        'driver' => 'sqlite',
+        'database' => $writerPath,
+        'prefix' => '',
+        'foreign_key_constraints' => true,
+        'sticky' => false,
+    ]);
+    DB::purge('core16_split_lifecycle');
+    $connection = DB::connection('core16_split_lifecycle');
+    $connection->getSchemaBuilder()->create('core16_global_lifecycle_documents', function (Blueprint $table): void {
+        $table->id();
+        $table->string('name');
+        $table->timestamps();
+        $table->softDeletes();
+    });
+
+    $reader = new PDO('sqlite:'.$readerPath);
+    $reader->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $reader->exec(<<<'SQL'
+        CREATE TABLE core16_global_lifecycle_documents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR NOT NULL,
+            created_at DATETIME NULL,
+            updated_at DATETIME NULL,
+            deleted_at DATETIME NULL
+        )
+        SQL);
+    $connection->setReadPdo($reader);
+    Auth::logout();
+
+    $document = new Core16GlobalSoftLifecycleDocument(['name' => 'Writer lifecycle']);
+    $document->setConnection('core16_split_lifecycle');
+    expect($document->save())->toBeTrue()
+        ->and($document->delete())->toBeTrue();
+
+    $writerRow = $connection->table('core16_global_lifecycle_documents')
+        ->useWritePdo()
+        ->where('id', $document->getKey())
+        ->first();
+    expect($writerRow)->not->toBeNull();
+
+    $insert = $reader->prepare(<<<'SQL'
+        INSERT INTO core16_global_lifecycle_documents
+            (id, name, created_at, updated_at, deleted_at)
+        VALUES
+            (:id, :name, :created_at, :updated_at, :deleted_at)
+        SQL);
+    $insert->execute([
+        'id' => $writerRow->id,
+        'name' => $writerRow->name,
+        'created_at' => $writerRow->created_at,
+        'updated_at' => $writerRow->updated_at,
+        'deleted_at' => $writerRow->deleted_at,
+    ]);
+
+    Event::fake([
+        ResourceDeleting::class,
+        ResourceDeleted::class,
+        ResourceRestored::class,
+        ResourceForceDeleted::class,
+    ]);
+
+    expect($document->restore())->toBeTrue()
+        ->and($connection->table('core16_global_lifecycle_documents')->where('id', $document->getKey())->value('deleted_at'))->not->toBeNull()
+        ->and($connection->table('core16_global_lifecycle_documents')->useWritePdo()->where('id', $document->getKey())->value('deleted_at'))->toBeNull()
+        ->and($document->forceDelete())->toBeTrue()
+        ->and($connection->table('core16_global_lifecycle_documents')->where('id', $document->getKey())->exists())->toBeTrue()
+        ->and($connection->table('core16_global_lifecycle_documents')->useWritePdo()->where('id', $document->getKey())->exists())->toBeFalse();
+
+    Event::assertDispatchedTimes(ResourceRestored::class, 1);
+    Event::assertDispatchedTimes(ResourceForceDeleted::class, 1);
+
+    DB::purge('core16_split_lifecycle');
+    unlink($writerPath);
+    unlink($readerPath);
 });

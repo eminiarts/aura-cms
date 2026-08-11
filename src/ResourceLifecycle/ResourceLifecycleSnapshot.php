@@ -39,6 +39,7 @@ final class ResourceLifecycleSnapshot
 
         return $resource->getConnection()
             ->table($metaTable)
+            ->useWritePdo()
             ->where('metable_type', $resource->getMorphClass())
             ->where('metable_id', $resource->getKey())
             ->orderBy('id')
@@ -69,6 +70,7 @@ final class ResourceLifecycleSnapshot
 
         $row = $resource->getConnection()
             ->table($resource->getTable())
+            ->useWritePdo()
             ->where($resource->getKeyName(), $resource->getKey())
             ->first();
 
