@@ -12,6 +12,37 @@ class Number extends Field
 
     public $view = 'aura::fields.view-value';
 
+    /**
+     * Portable exact-query envelope for sorting/filtering/reporting.
+     *
+     * Minimal DEST port: enough for ResourceAggregateEngine precision/scale
+     * checks without the full FieldValueContract Number rewrite.
+     *
+     * @param  array<string, mixed>  $field
+     * @return array{mode: 'decimal'|'integer'|'legacy', precision: int|null, scale: int}
+     */
+    public function exactQueryConfiguration(array $field): array
+    {
+        $isDecimal = ($field['number_type'] ?? null) === 'decimal'
+            || array_key_exists('scale', $field);
+
+        if ($isDecimal) {
+            return [
+                'mode' => 'decimal',
+                'precision' => isset($field['precision']) ? (int) $field['precision'] : 18,
+                'scale' => isset($field['scale']) ? (int) $field['scale'] : 2,
+            ];
+        }
+
+        $precision = array_key_exists('precision', $field) ? (int) $field['precision'] : null;
+
+        return [
+            'mode' => array_key_exists('number_type', $field) ? 'integer' : 'legacy',
+            'precision' => $precision,
+            'scale' => 0,
+        ];
+    }
+
     public function filterOptions()
     {
         return [
@@ -79,6 +110,35 @@ class Number extends Field
             'min' => $field['min'] ?? null,
             'max' => $field['max'] ?? null,
         ];
+    }
+
+    /**
+     * Normalize a value for ExactDecimal comparisons when the full Number
+     * write-contract stack is not present on DEST.
+     *
+     * @param  array<string, mixed>  $field
+     */
+    public function normalizeForExactQuery(mixed $value, array $field): int|string|null
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        if (preg_match('/\A[+-]?\d+(?:\.\d+)?\z/', $value) !== 1) {
+            return null;
+        }
+
+        return $value;
     }
 
     public function set($post, $field, $value)

@@ -2,10 +2,15 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Aura\Base\Support\KanbanConfiguration;
+
 trait Settings
 {
     public function defaultSettings()
     {
+        $kanban = KanbanConfiguration::for($this->model);
+        $kanbanView = $this->model->tableKanbanView();
+
         return [
             'per_page' => 10,
             'columns' => $this->model->getTableHeaders(),
@@ -41,7 +46,9 @@ trait Settings
                 'table' => 'aura::components.table.index',
                 'list' => $this->model->tableView(),
                 'grid' => $this->model->tableGridView(),
-                'kanban' => $this->model->tableKanbanView(),
+                'kanban' => $kanban['enabled']
+                    ? (is_string($kanbanView) && $kanbanView !== '' ? $kanbanView : 'aura::components.table.kanban-view')
+                    : false,
                 'filter' => 'aura::components.table.filter',
                 'header' => 'aura::components.table.header',
                 'row' => $this->model->rowView(),

@@ -2,6 +2,13 @@
 
 namespace Aura\Base\Widgets;
 
+use Aura\Base\Aura;
+use Aura\Base\Fields\Number;
+use Aura\Base\Reporting\AggregateDefinition;
+use Aura\Base\Reporting\AggregateEngine;
+use Aura\Base\Reporting\AggregateOperation;
+use Aura\Base\Reporting\DateRange;
+use Aura\Base\Resource;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Locked;
@@ -28,34 +35,19 @@ class ValueWidget extends Widget
             $column = null;
         }
 
-        $isMetaColumn = $column && $this->model->isMetaField($column);
+        if ($this->canUseAggregateEngine($column)) {
+            $operation = $this->aggregateOperation();
 
-        $posts = $this->model->query()
-            ->where('created_at', '>=', $start)
-            ->where('created_at', '<', $end);
-
-        // Apply the query scope only if it maps to a real Eloquent scope on the model.
-        $queryScope = optional($this->widget)['queryScope'];
-        if ($queryScope && method_exists($this->model, 'scope'.ucfirst($queryScope))) {
-            $posts->{$queryScope}();
+            return $this->scalarFromAggregate(app(AggregateEngine::class)->run(new AggregateDefinition(
+                resource: $this->model::class,
+                operation: $operation,
+                metric: $operation === AggregateOperation::Count ? null : $column,
+                range: new DateRange($start, $end),
+                queryScope: is_string($this->widget['queryScope'] ?? null) ? $this->widget['queryScope'] : null,
+            ))->value);
         }
 
-        if ($isMetaColumn) {
-            $posts->select($this->model->getTable().'.*', DB::raw("CAST(meta.value as SIGNED) as $column"))
-                ->leftJoin('meta', function ($join) use ($column) {
-                    $join->on($this->model->getQualifiedKeyName(), '=', 'meta.metable_id')
-                        ->where('meta.key', '=', $column)
-                        ->where('meta.metable_type', '=', $this->model->getMorphClass());
-                });
-        }
-
-        return match ($this->method) {
-            'avg' => $posts->avg($isMetaColumn ? DB::raw('CAST(meta.value as SIGNED)') : $column),
-            'sum' => $posts->sum($isMetaColumn ? DB::raw('CAST(meta.value as SIGNED)') : $column),
-            'min' => $posts->min($isMetaColumn ? DB::raw('CAST(meta.value as SIGNED)') : $column),
-            'max' => $posts->max($isMetaColumn ? DB::raw('CAST(meta.value as SIGNED)') : $column),
-            default => $posts->count(),
-        };
+        return $this->legacyValue($start, $end, $column);
     }
 
     public function getValuesProperty()
@@ -86,7 +78,7 @@ class ValueWidget extends Widget
 
     public function mount()
     {
-        if ($this->widget['method']) {
+        if (optional($this->widget)['method']) {
             $this->method = $this->widget['method'];
         }
     }
@@ -101,5 +93,83 @@ class ValueWidget extends Widget
     {
         $this->start = $start;
         $this->end = $end;
+    }
+
+    protected function aggregateOperation(): AggregateOperation
+    {
+        return match ($this->method) {
+            'avg' => AggregateOperation::Average,
+            'sum' => AggregateOperation::Sum,
+            'min' => AggregateOperation::Minimum,
+            'max' => AggregateOperation::Maximum,
+            default => AggregateOperation::Count,
+        };
+    }
+
+    /**
+     * AggregateEngine requires a registered Resource and physical metrics (or count).
+     * Meta-backed metrics keep the legacy CAST path until projection reads exist.
+     */
+    protected function canUseAggregateEngine(?string $column): bool
+    {
+        if (! $this->model instanceof Resource) {
+            return false;
+        }
+
+        if (! in_array($this->model::class, app(Aura::class)->getResources(), true)) {
+            return false;
+        }
+
+        if ($column === null) {
+            return true;
+        }
+
+        return $this->model->isTableField($column)
+            && $this->model->fieldClassBySlug($column) instanceof Number;
+    }
+
+    protected function legacyValue($start, $end, ?string $column)
+    {
+        $isMetaColumn = $column && $this->model->isMetaField($column);
+
+        $posts = $this->model->query()
+            ->where('created_at', '>=', $start)
+            ->where('created_at', '<', $end);
+
+        // Apply the query scope only if it maps to a real Eloquent scope on the model.
+        $queryScope = optional($this->widget)['queryScope'];
+        if ($queryScope && method_exists($this->model, 'scope'.ucfirst($queryScope))) {
+            $posts->{$queryScope}();
+        }
+
+        if ($isMetaColumn) {
+            $posts->select($this->model->getTable().'.*', DB::raw("CAST(meta.value as SIGNED) as $column"))
+                ->leftJoin('meta', function ($join) use ($column) {
+                    $join->on($this->model->getQualifiedKeyName(), '=', 'meta.metable_id')
+                        ->where('meta.key', '=', $column)
+                        ->where('meta.metable_type', '=', $this->model->getMorphClass());
+                });
+        }
+
+        return match ($this->method) {
+            'avg' => $posts->avg($isMetaColumn ? DB::raw('CAST(meta.value as SIGNED)') : $column),
+            'sum' => $posts->sum($isMetaColumn ? DB::raw('CAST(meta.value as SIGNED)') : $column),
+            'min' => $posts->min($isMetaColumn ? DB::raw('CAST(meta.value as SIGNED)') : $column),
+            'max' => $posts->max($isMetaColumn ? DB::raw('CAST(meta.value as SIGNED)') : $column),
+            default => $posts->count(),
+        };
+    }
+
+    protected function scalarFromAggregate(int|string|null $value): int|float|null
+    {
+        if ($value === null || is_int($value)) {
+            return $value;
+        }
+
+        if (preg_match('/^-?\d+\.0+$/', $value) === 1) {
+            return (int) $value;
+        }
+
+        return (float) $value;
     }
 }

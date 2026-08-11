@@ -189,7 +189,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">02</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Typography') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Font family: Inter. The admin mostly lives between text-xs and text-2xl.') }}
+            {{ __('Font family: configured through the Aura theme. The admin mostly lives between text-xs and text-2xl.') }}
         </p>
 
         <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">

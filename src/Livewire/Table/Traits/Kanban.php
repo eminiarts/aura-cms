@@ -2,97 +2,102 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
-use Livewire\Attributes\On;
+use Aura\Base\Support\KanbanConfiguration;
 
 /**
- * Trait to handle sorting functionality.
+ * Trait to handle kanban board columns and preferences.
  */
 trait Kanban
 {
     public $kanbanStatuses = [];
 
-    public function mountKanban()
+    public function mountKanban(): void
     {
         $this->prepareKanban();
     }
 
-    public function reorderKanbanColumns($newOrder)
+    public function reorderKanbanColumns($newOrder): void
     {
-        // Filter out empty values from $newOrder using Laravel's collection methods
-        $newOrder = collect($newOrder)->filter()->values();
+        $this->reorderKanbanStatuses($newOrder);
+    }
 
-        $reorderedStatuses = collect();
+    public function reorderKanbanStatuses(mixed $statuses, mixed $position = null): void
+    {
+        $declared = $this->declaredKanbanStatuses();
+        $requested = $this->requestedKanbanStatusOrder($statuses, $position, $declared);
+        $orderedKeys = collect($requested)
+            ->filter(fn (mixed $key): bool => is_string($key) || is_int($key))
+            ->map(fn (string|int $key): string => (string) $key)
+            ->filter(fn (string $key): bool => array_key_exists($key, $declared))
+            ->unique()
+            ->merge(array_keys($declared))
+            ->unique();
 
-        // Reorder based on $newOrder
-        foreach ($newOrder as $key) {
-            if (isset($this->kanbanStatuses[$key])) {
-                $reorderedStatuses[$key] = $this->kanbanStatuses[$key];
-            }
-        }
-
-        // Add any remaining statuses that weren't in $newOrder
-        foreach ($this->kanbanStatuses as $key => $status) {
-            if (! $reorderedStatuses->has($key)) {
-                $reorderedStatuses[$key] = $status;
-            }
-        }
-
-        $this->kanbanStatuses = $reorderedStatuses->toArray();
+        $this->kanbanStatuses = $orderedKeys
+            ->mapWithKeys(fn (string $key): array => [
+                $key => array_replace($declared[$key], [
+                    'visible' => (bool) ($this->kanbanStatuses[$key]['visible'] ?? true),
+                ]),
+            ])
+            ->all();
 
         $this->saveKanbanStatusesOrder();
     }
 
-    public function reorderKanbanStatuses($statuses)
+    public function updatedKanbanStatuses(): void
     {
-        // Create a new collection from the ordered status keys
-        $orderedStatuses = collect($statuses);
-
-        // Create a new collection to store the reordered kanban statuses
-        $reorderedKanbanStatuses = collect();
-
-        // Iterate through the ordered status keys and rebuild the kanban statuses array
-        foreach ($orderedStatuses as $statusKey) {
-            if (isset($this->kanbanStatuses[$statusKey])) {
-                $reorderedKanbanStatuses[$statusKey] = $this->kanbanStatuses[$statusKey];
-            }
-        }
-
-        // Update the kanban statuses with the new order
-        $this->kanbanStatuses = $reorderedKanbanStatuses->toArray();
-
-        $this->saveKanbanStatusesOrder();
-    }
-
-    public function updatedKanbanStatuses()
-    {
+        $this->kanbanStatuses = $this->sanitizeKanbanStatuses($this->kanbanStatuses);
         $this->saveKanbanStatusesOrder();
     }
 
     protected function applyKanbanQuery($query)
     {
+        $kanbanQuery = $this->model->kanbanQuery($query);
 
-        if ($this->model->kanbanQuery($query)) {
-            return $this->model->kanbanQuery($query);
+        if ($kanbanQuery) {
+            return $kanbanQuery;
         }
 
         return $query;
     }
 
-    protected function initializeKanbanStatuses()
+    /**
+     * @return array<string, array{value: string, color: string|null, visible: bool}>
+     */
+    protected function declaredKanbanStatuses(): array
     {
-        $statuses = $this->model->fieldBySlug('status')['options'];
-        $this->kanbanStatuses = collect($statuses)->mapWithKeys(function ($status) {
+        $columns = $this->resolvedKanbanConfiguration()['columns'];
+
+        if ($columns !== []) {
+            return collect($columns)
+                ->map(fn (array $column): array => array_replace($column, ['visible' => true]))
+                ->all();
+        }
+
+        // Fallback: legacy status-field options when KanbanConfiguration has no columns.
+        $field = $this->model->fieldBySlug('status');
+        $options = is_array($field) ? ($field['options'] ?? []) : [];
+
+        return collect($options)->mapWithKeys(function ($status) {
+            if (! is_array($status) || ! array_key_exists('key', $status)) {
+                return [];
+            }
+
             return [$status['key'] => [
-                'value' => $status['value'],
-                'color' => $status['color'],
+                'value' => (string) ($status['value'] ?? $status['key']),
+                'color' => is_string($status['color'] ?? null) ? $status['color'] : null,
                 'visible' => true,
             ]];
-        })->toArray();
+        })->all();
+    }
 
-        // Load user preferences if they exist
+    protected function initializeKanbanStatuses(): void
+    {
+        $this->kanbanStatuses = $this->declaredKanbanStatuses();
+
         $userPreferences = auth()->user()->getOption('kanban_statuses.'.$this->model()->getType());
-        if ($userPreferences) {
-            $this->kanbanStatuses = $userPreferences;
+        if (is_array($userPreferences)) {
+            $this->kanbanStatuses = $this->sanitizeKanbanStatuses($userPreferences);
         }
     }
 
@@ -101,9 +106,9 @@ trait Kanban
      * declaration order, so mountKanban() can run before mountSwitchView()
      * has set $currentView — and switchView() never re-initializes statuses.
      */
-    protected function prepareKanban()
+    protected function prepareKanban(): void
     {
-        if ($this->currentView != 'kanban') {
+        if ($this->currentView !== 'kanban') {
             return;
         }
 
@@ -116,8 +121,80 @@ trait Kanban
         }
     }
 
-    protected function saveKanbanStatusesOrder()
+    /**
+     * @param  array<string, array{value: string, color: string|null, visible: bool}>  $declared
+     * @return array<int, string|int>
+     */
+    protected function requestedKanbanStatusOrder(mixed $statuses, mixed $position, array $declared): array
     {
+        if (is_array($statuses)) {
+            return $statuses;
+        }
+
+        if (
+            (! is_string($statuses) && ! is_int($statuses))
+            || ! is_int($position)
+            || $position < 0
+            || ! array_key_exists((string) $statuses, $declared)
+        ) {
+            abort(422, 'The Kanban column order is invalid.');
+        }
+
+        $status = (string) $statuses;
+        $ordered = collect(array_keys($this->sanitizeKanbanStatuses($this->kanbanStatuses)))
+            ->reject(fn (string $key): bool => $key === $status)
+            ->values()
+            ->all();
+
+        array_splice($ordered, min($position, count($ordered)), 0, [$status]);
+
+        return $ordered;
+    }
+
+    /**
+     * @return array{
+     *     enabled: bool,
+     *     valid: bool,
+     *     group_field: string,
+     *     columns: array<string, array{value: string, color: string|null}>,
+     *     card_title: string,
+     *     card_subtitle: string|null,
+     *     order_by: array{field: string, direction: 'asc'|'desc'}|null,
+     *     show_empty_columns: bool
+     * }
+     */
+    protected function resolvedKanbanConfiguration(): array
+    {
+        return KanbanConfiguration::for($this->model);
+    }
+
+    protected function sanitizeKanbanStatuses(array $preferences): array
+    {
+        $declared = $this->declaredKanbanStatuses();
+
+        if ($declared === []) {
+            return [];
+        }
+
+        $orderedKeys = collect(array_keys($preferences))
+            ->map(fn (string|int $key): string => (string) $key)
+            ->filter(fn (string $key): bool => array_key_exists($key, $declared))
+            ->unique()
+            ->merge(array_keys($declared))
+            ->unique();
+
+        return $orderedKeys->mapWithKeys(function (string $key) use ($declared, $preferences): array {
+            $preference = $preferences[$key] ?? [];
+
+            return [$key => array_replace($declared[$key], [
+                'visible' => is_array($preference) ? (bool) ($preference['visible'] ?? true) : true,
+            ])];
+        })->all();
+    }
+
+    protected function saveKanbanStatusesOrder(): void
+    {
+        $this->kanbanStatuses = $this->sanitizeKanbanStatuses($this->kanbanStatuses);
         auth()->user()->updateOption('kanban_statuses.'.$this->model()->getType(), $this->kanbanStatuses);
     }
 }

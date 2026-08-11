@@ -26,6 +26,8 @@ use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\AttachmentDetails;
 use Aura\Base\Livewire\BookmarkPage;
 use Aura\Base\Livewire\ChooseTemplate;
+use Aura\Base\Livewire\ComponentSlots\ArrayLivewireCollisionInspector;
+use Aura\Base\Livewire\ComponentSlots\LivewireCollisionInspector;
 use Aura\Base\Livewire\CreateResource;
 use Aura\Base\Livewire\EditResourceField;
 use Aura\Base\Livewire\GlobalSearch;
@@ -52,6 +54,12 @@ use Aura\Base\Navigation\Navigation as AuraNavigation;
 use Aura\Base\Policies\ResourcePolicy;
 use Aura\Base\Policies\TeamPolicy;
 use Aura\Base\Policies\UserPolicy;
+use Aura\Base\Preferences\PreferenceManager;
+use Aura\Base\Preferences\PreferenceRegistry;
+use Aura\Base\RecordLayout\RecordLayoutRegistry;
+use Aura\Base\RecordLayout\RecordLayoutResolver;
+use Aura\Base\Reporting\AggregateEngine;
+use Aura\Base\Reporting\ResourceAggregateEngine;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Widgets\Bar;
@@ -394,6 +402,8 @@ class AuraServiceProvider extends PackageServiceProvider
             return new AuraNavigation;
         });
 
+        $this->app->singleton(AggregateEngine::class, ResourceAggregateEngine::class);
+
         // Bind the concrete Aura instance as a process-persistent singleton so
         // its resource/field registrations and captured baseline survive across
         // requests on a long-running worker (Octane). Octane clears facade and
@@ -402,6 +412,12 @@ class AuraServiceProvider extends PackageServiceProvider
         // registration after the first request. Per-request mutable state is
         // reset back to the boot baseline via Aura::flushState() instead.
         $this->app->singleton(\Aura\Base\Aura::class);
+
+        $this->app->singleton(PreferenceRegistry::class);
+        $this->app->singleton(PreferenceManager::class);
+        $this->app->singleton(LivewireCollisionInspector::class, ArrayLivewireCollisionInspector::class);
+        $this->app->singleton(RecordLayoutRegistry::class);
+        $this->app->singleton(RecordLayoutResolver::class);
 
         $this->app->scoped('aura', function (): Aura {
             return app(Aura::class);

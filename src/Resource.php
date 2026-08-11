@@ -3,6 +3,7 @@
 namespace Aura\Base;
 
 use Aura\Base\Contracts\DefinesFields;
+use Aura\Base\Contracts\TableResource;
 use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\TypeScope;
@@ -39,7 +40,7 @@ use Illuminate\Support\Str;
  * @property-read Collection $fields  Computed input-field map (getFieldsAttribute()).
  * @property-read mixed $meta  The meta relation / normalized meta map (see getMeta()).
  */
-class Resource extends Model implements DefinesFields
+class Resource extends Model implements DefinesFields, TableResource
 {
     use AuraModelConfig;
     use HasFactory;

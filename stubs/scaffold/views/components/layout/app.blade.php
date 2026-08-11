@@ -20,7 +20,6 @@
 
   <style>[x-cloak] { display: none !important; }</style>
 
-  <link rel="stylesheet" href="/vendor/aura/public/inter.css">
   @vite(['resources/css/app.css'], 'vendor/aura')
   @vite('resources/css/app.css')
 

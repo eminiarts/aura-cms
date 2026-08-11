@@ -1,4 +1,4 @@
-@if ($model->tableGridView() || $model->tableKanbanView())
+@if ($model->tableGridView() || ($this->resolvedKanbanConfiguration()['enabled'] ?? false) || $model->tableKanbanView())
     @php
         $switchBase = 'inline-flex relative items-center p-1.5 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
         $switchActive = 'bg-white text-gray-900 shadow-xs ring-1 ring-gray-950/[0.07] dark:bg-gray-700 dark:text-white dark:ring-white/10';
@@ -20,7 +20,7 @@
                 </button>
             @endif
 
-            @if ($model->tableKanbanView())
+            @if (($this->resolvedKanbanConfiguration()['enabled'] ?? false) || $model->tableKanbanView())
                 <button wire:click="switchView('kanban')" type="button"
                     class="{{ $switchBase }} {{ ($currentView ?? null) == 'kanban' ? $switchActive : $switchIdle }}">
                     <span class="sr-only">Kanban View</span>
