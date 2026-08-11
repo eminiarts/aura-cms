@@ -71,5 +71,19 @@ test('saved view state rejects removed columns and future versions', function (a
         ->toThrow(InvalidArgumentException::class);
 })->with([
     'removed column' => [fn (): array => array_replace(validSavedViewState(), ['columns' => ['removed']])],
+    'invalid operator' => [function (): array {
+        $state = validSavedViewState();
+        $state['query']['filters'] = [[
+            'operator' => 'and',
+            'filters' => [[
+                'name' => 'title',
+                'operator' => 'forged',
+                'value' => 'x',
+                'main_operator' => 'and',
+            ]],
+        ]];
+
+        return $state;
+    }],
     'future version' => [fn (): array => array_replace(validSavedViewState(), ['v' => 99])],
 ]);
