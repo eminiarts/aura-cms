@@ -17,12 +17,19 @@ use Aura\Base\Commands\MakeUser;
 use Aura\Base\Commands\MigrateFromPostsToCustomTable;
 use Aura\Base\Commands\MigratePostMetaToMeta;
 use Aura\Base\Commands\PublishCommand;
+use Aura\Base\Commands\ResyncReportingProjections;
 use Aura\Base\Commands\RunGlobalSearchWorker;
 use Aura\Base\Commands\TransferFromPostsToCustomTable;
 use Aura\Base\Commands\TransformTableToResource;
 use Aura\Base\Commands\UpdateSchemaFromMigration;
 use Aura\Base\Database\Seeders\RoleCatalogSeeder;
+use Aura\Base\Events\ResourceCreated;
+use Aura\Base\Events\ResourceDeleted;
+use Aura\Base\Events\ResourceForceDeleted;
+use Aura\Base\Events\ResourceRestored;
+use Aura\Base\Events\ResourceUpdated;
 use Aura\Base\Facades\Aura as AuraFacade;
+use Aura\Base\Listeners\ReconcileReportingProjection;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\AttachmentDetails;
 use Aura\Base\Livewire\BookmarkPage;
@@ -71,6 +78,7 @@ use Aura\Base\Preferences\PreferenceValueType;
 use Aura\Base\Providers\AuraEloquentUserProvider;
 use Aura\Base\RecordLayout\RecordLayoutRegistry;
 use Aura\Base\RecordLayout\RecordLayoutResolver;
+use Aura\Base\Reporting\CurrentStateProjectionReconciler;
 use Aura\Base\ResourcePersistence\ResourceWriter;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
@@ -280,6 +288,7 @@ class AuraServiceProvider extends PackageServiceProvider
                 'create_embedded_resource_incarnations',
                 'upgrade_embedded_resource_incarnations',
                 'create_aura_saved_views_table',
+                'create_aura_reporting_projections',
             ])
             ->runsMigrations()
             ->hasCommands([
@@ -291,6 +300,7 @@ class AuraServiceProvider extends PackageServiceProvider
                 MakeField::class,
                 PublishCommand::class,
                 RunGlobalSearchWorker::class,
+                ResyncReportingProjections::class,
                 CreateResourceMigration::class,
                 DatabaseToResources::class,
                 TransformTableToResource::class,
@@ -568,9 +578,16 @@ class AuraServiceProvider extends PackageServiceProvider
                 ));
         });
         $this->app->singleton(ResourceWriter::class);
+        $this->app->singleton(CurrentStateProjectionReconciler::class);
         $this->app->singleton(PreferenceManager::class);
         $this->app->singleton(RecordLayoutRegistry::class);
         $this->app->singleton(RecordLayoutResolver::class);
+
+        Event::listen(ResourceCreated::class, ReconcileReportingProjection::class);
+        Event::listen(ResourceUpdated::class, ReconcileReportingProjection::class);
+        Event::listen(ResourceDeleted::class, ReconcileReportingProjection::class);
+        Event::listen(ResourceRestored::class, ReconcileReportingProjection::class);
+        Event::listen(ResourceForceDeleted::class, ReconcileReportingProjection::class);
 
         // Package discovery can load eminiarts/aura-cms before livewire/livewire
         // (alphabetical order). Register Livewire's services before installing
