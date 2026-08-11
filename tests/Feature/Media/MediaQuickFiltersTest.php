@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Aura;
 use Aura\Base\Livewire\MediaUploader;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resources\Attachment;
@@ -79,6 +80,7 @@ test('document quick filter means not image video or audio', function () {
 });
 
 test('type quick filters support custom-table attachments without meta', function () {
+    app(Aura::class)->registerResources([CustomTableAttachment::class]);
     Schema::create('custom_table_attachments', function (Blueprint $table): void {
         $table->id();
         $table->string('name');

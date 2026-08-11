@@ -4,6 +4,11 @@ namespace Aura\Base\Resources;
 
 use Aura\Base\Jobs\GenerateImageThumbnail;
 use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Reporting\AggregateDefinition;
+use Aura\Base\Reporting\AggregateEngine;
+use Aura\Base\Reporting\AggregateOperation;
+use Aura\Base\Reporting\DateBucket;
+use Aura\Base\Reporting\DateRange;
 use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Bus\DispatchesJobs;
@@ -514,23 +519,31 @@ class Attachment extends Resource
      */
     public static function uploadMonths(): array
     {
-        $expression = match (static::query()->getModel()->getConnection()->getDriverName()) {
-            'sqlite' => "strftime('%Y-%m', created_at)",
-            'mysql', 'mariadb' => "DATE_FORMAT(created_at, '%Y-%m')",
-            'pgsql' => "to_char(created_at, 'YYYY-MM')",
-            default => null,
-        };
+        $query = static::query();
+        Gate::authorize('viewAny', $query->getModel());
+        $oldest = (clone $query)->whereNotNull('created_at')->orderBy('created_at')->value('created_at');
+        $latest = (clone $query)->whereNotNull('created_at')->orderByDesc('created_at')->value('created_at');
 
-        if ($expression === null) {
+        if ($oldest === null || $latest === null) {
             return [];
         }
 
-        return static::query()
-            ->whereNotNull('created_at')
-            ->selectRaw("{$expression} as month")
-            ->distinct()
-            ->orderByDesc('month')
-            ->pluck('month')
+        $timezone = (string) config('app.timezone', 'UTC');
+        $start = Carbon::parse($oldest, 'UTC')->setTimezone($timezone)->startOfMonth();
+        $end = Carbon::parse($latest, 'UTC')->setTimezone($timezone)->startOfMonth()->addMonth();
+        $result = app(AggregateEngine::class)->run(new AggregateDefinition(
+            resource: static::class,
+            operation: AggregateOperation::Count,
+            range: new DateRange($start, $end),
+            bucket: DateBucket::Month,
+            timezone: $timezone,
+        ));
+
+        return collect($result->points)
+            ->pluck('key')
+            ->filter()
+            ->reverse()
+            ->values()
             ->all();
     }
 
