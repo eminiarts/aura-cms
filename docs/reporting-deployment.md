@@ -24,3 +24,7 @@ If a deploy or backfill is interrupted, leave projection reads disabled, correct
 Set `AURA_REPORTING_PROJECTION_READS_ENABLED=false` first. If projection maintenance must also stop, set `AURA_REPORTING_PROJECTION_ENABLED=false`. Preserve the projection migration and its rows so a later deploy can resume reconciliation or rebuild from authoritative Resource and meta state.
 
 Do not drop, rewrite, or cast the `meta` table as part of reporting rollback.
+
+## Reporting query scopes
+
+A Resource may expose a no-argument Eloquent scope to aggregate definitions only by implementing `Aura\Base\Contracts\DeclaresReportingQueryScopes` and returning its exact scope name from `reportingQueryScopes()`. Method existence alone is not authorization. Treat the allowlist as a security boundary: a reporting scope may narrow the already authorized Resource query, but must not remove tenant, owner, soft-delete, or other global scopes.

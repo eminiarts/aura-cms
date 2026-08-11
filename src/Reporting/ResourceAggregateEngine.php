@@ -3,6 +3,7 @@
 namespace Aura\Base\Reporting;
 
 use Aura\Base\Aura;
+use Aura\Base\Contracts\DeclaresReportingQueryScopes;
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Fields\Boolean;
 use Aura\Base\Fields\Number;
@@ -114,8 +115,14 @@ final class ResourceAggregateEngine implements AggregateEngine
             return;
         }
 
-        if (preg_match('/\A[a-zA-Z][a-zA-Z0-9_]*\z/', $scope) !== 1 || ! method_exists($resource, 'scope'.Str::studly($scope))) {
-            throw new InvalidArgumentException('Reporting query scopes must be declared no-argument Eloquent scopes.');
+        $declaredScopes = $resource instanceof DeclaresReportingQueryScopes
+            ? $resource::reportingQueryScopes()
+            : [];
+
+        if (preg_match('/\A[a-zA-Z][a-zA-Z0-9_]*\z/', $scope) !== 1
+            || ! in_array($scope, $declaredScopes, true)
+            || ! method_exists($resource, 'scope'.Str::studly($scope))) {
+            throw new InvalidArgumentException('Reporting query scopes must be explicitly allowlisted no-argument Eloquent scopes.');
         }
 
         $query->{$scope}();

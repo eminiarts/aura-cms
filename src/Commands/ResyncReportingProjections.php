@@ -17,7 +17,7 @@ final class ResyncReportingProjections extends Command
         {resource? : Registered resource class or Aura slug}
         {--chunk= : Keyset chunk size}';
 
-    public function __construct(private readonly Aura $aura, private readonly CurrentStateProjectionReconciler $reconciler)
+    public function __construct(private readonly CurrentStateProjectionReconciler $reconciler)
     {
         parent::__construct();
     }
@@ -54,9 +54,11 @@ final class ResyncReportingProjections extends Command
     private function resources(): array
     {
         $requested = $this->argument('resource');
+        $aura = app(Aura::class);
+        $resolved = $requested === null ? null : $aura->findResourceBySlug((string) $requested);
         $resources = $requested === null
-            ? $this->aura->getResources()
-            : [$this->aura->findResourceBySlug((string) $requested)];
+            ? $aura->getResources()
+            : ($resolved instanceof Resource ? [$resolved::class] : []);
 
         $resources = array_values(array_unique(array_filter($resources, fn (mixed $resource): bool => is_string($resource)
             && is_a($resource, Resource::class, true))));
@@ -88,12 +90,6 @@ final class ResyncReportingProjections extends Command
                 ->pluck($resource->getKeyName());
 
             foreach ($ids as $id) {
-                if ($this->sourceExists($resource, $id)) {
-                    $lastCoordinatorId = (int) $id;
-
-                    continue;
-                }
-
                 $current = new $resourceClass;
                 $current->setConnection($resource->getConnectionName());
                 $current->setAttribute($current->getKeyName(), $id);
@@ -115,11 +111,16 @@ final class ResyncReportingProjections extends Command
                 ->pluck('resource_id');
 
             foreach ($ids as $id) {
+                $lastCoordinatorId = (int) $id;
+
+                if ($this->sourceExists($resource, $id)) {
+                    continue;
+                }
+
                 $current = new $resourceClass;
                 $current->setConnection($resource->getConnectionName());
                 $current->setAttribute($current->getKeyName(), $id);
                 $this->reconciler->resync($current);
-                $lastCoordinatorId = (int) $id;
                 $processed++;
             }
         } while ($ids->isNotEmpty());

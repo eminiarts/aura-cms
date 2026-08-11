@@ -1,6 +1,7 @@
 <?php
 
 use Aura\Base\Aura;
+use Aura\Base\Contracts\DeclaresReportingQueryScopes;
 use Aura\Base\Fields\Boolean;
 use Aura\Base\Fields\Number;
 use Aura\Base\Fields\Select;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 
-final class Core29AggregateResource extends Resource
+final class Core29AggregateResource extends Resource implements DeclaresReportingQueryScopes
 {
     public static $customTable = true;
 
@@ -46,6 +47,17 @@ final class Core29AggregateResource extends Resource
     public function indexQuery(Builder $query): Builder
     {
         return $query->where($this->qualifyColumn('visible'), true);
+    }
+
+    public static function reportingQueryScopes(): array
+    {
+        return ['openStage'];
+    }
+
+    /** @param Builder<Core29AggregateResource> $query */
+    public function scopeOpenStage(Builder $query): Builder
+    {
+        return $query->where($this->qualifyColumn('stage'), 'open');
     }
 }
 
@@ -123,4 +135,21 @@ test('uses half-open ranges', function (): void {
     ));
 
     expect($result->value)->toBe(1);
+});
+
+test('only explicitly allowlisted reporting query scopes can run', function (): void {
+    Core29AggregateResource::withoutGlobalScopes()->create(['amount' => '1.000000', 'stage' => 'open', 'visible' => true]);
+    Core29AggregateResource::withoutGlobalScopes()->create(['amount' => '2.000000', 'stage' => 'won', 'visible' => true]);
+    $engine = new ResourceAggregateEngine;
+
+    expect($engine->run(new AggregateDefinition(
+        Core29AggregateResource::class,
+        AggregateOperation::Count,
+        queryScope: 'openStage',
+    ))->value)->toBe(1)
+        ->and(fn () => $engine->run(new AggregateDefinition(
+            Core29AggregateResource::class,
+            AggregateOperation::Count,
+            queryScope: 'indexQuery',
+        )))->toThrow(InvalidArgumentException::class, 'explicitly allowlisted');
 });
