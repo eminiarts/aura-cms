@@ -120,6 +120,54 @@ test('explicit resync repairs a quiet write without an event ordering claim', fu
     ]);
 });
 
+test('reconciliation excludes legacy numeric values beyond the declared scale', function (): void {
+    $resource = new Core29ProjectionResource;
+    $id = DB::table($resource->getTable())->insertGetId([
+        'title' => 'Excess scale',
+        'type' => Core29ProjectionResource::$type,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table($resource->getMetaTable())->insert([
+        'metable_type' => $resource->getMorphClass(),
+        'metable_id' => $id,
+        'key' => 'amount',
+        'value' => '1.0000005',
+    ]);
+
+    $resource->setAttribute('id', $id);
+    app(CurrentStateProjectionReconciler::class)->resync($resource);
+
+    expect(core29ProjectionState($resource, $id))->toMatchArray([
+        'present' => true,
+        'value_scaled' => null,
+        'value_rows' => 1,
+    ]);
+
+    $lowerScaleResource = new Core29LowerScaleProjectionResource;
+    $lowerScaleId = DB::table($lowerScaleResource->getTable())->insertGetId([
+        'title' => 'Lower scale',
+        'type' => Core29LowerScaleProjectionResource::$type,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table($lowerScaleResource->getMetaTable())->insert([
+        'metable_type' => $lowerScaleResource->getMorphClass(),
+        'metable_id' => $lowerScaleId,
+        'key' => 'amount',
+        'value' => '1.001',
+    ]);
+
+    $lowerScaleResource->setAttribute('id', $lowerScaleId);
+    app(CurrentStateProjectionReconciler::class)->resync($lowerScaleResource);
+
+    expect(core29ProjectionState($lowerScaleResource, $lowerScaleId))->toMatchArray([
+        'present' => true,
+        'value_scaled' => null,
+        'value_rows' => 1,
+    ]);
+});
+
 function core29ProjectionEvent(Core29ProjectionResource $resource, int $resourceId, string $eventId): ResourceUpdated
 {
     return new ResourceUpdated(
@@ -148,7 +196,7 @@ function core29ProjectionEvent(Core29ProjectionResource $resource, int $resource
     );
 }
 
-function core29ProjectionState(Core29ProjectionResource $resource, int $resourceId): array
+function core29ProjectionState(Resource $resource, int $resourceId): array
 {
     $coordinator = DB::table(ReportingProjection::COORDINATORS_TABLE)
         ->where('resource_type', $resource::class)
@@ -179,6 +227,23 @@ final class Core29ProjectionResource extends Resource
             'number_type' => 'decimal',
             'precision' => 12,
             'scale' => 6,
+        ]];
+    }
+}
+
+final class Core29LowerScaleProjectionResource extends Resource
+{
+    public static string $type = 'Core29LowerScaleProjectionResource';
+
+    public static function getFields(): array
+    {
+        return [[
+            'name' => 'Amount',
+            'slug' => 'amount',
+            'type' => 'Aura\\Base\\Fields\\Number',
+            'number_type' => 'decimal',
+            'precision' => 12,
+            'scale' => 2,
         ]];
     }
 }

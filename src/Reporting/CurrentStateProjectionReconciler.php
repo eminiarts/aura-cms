@@ -221,6 +221,22 @@ final class CurrentStateProjectionReconciler
 
     private function scaledValue(Number $fieldClass, array $field, mixed $value): ?int
     {
+        if (! is_int($value) && ! is_string($value)) {
+            return null;
+        }
+
+        $storedValue = is_string($value) ? trim($value) : (string) $value;
+
+        if (preg_match('/\A[+-]?\d+(?:\.(\d+))?\z/', $storedValue, $storedMatches) !== 1) {
+            return null;
+        }
+
+        $scale = (int) ($field['scale'] ?? Number::DEFAULT_SCALE);
+
+        if (strlen($storedMatches[1] ?? '') > $scale) {
+            return null;
+        }
+
         $normalized = $fieldClass->normalizeForExactQuery($value, $field);
 
         if ($normalized === null || ! preg_match('/\A(-?)(\d+)(?:\.(\d+))?\z/', (string) $normalized, $matches)) {

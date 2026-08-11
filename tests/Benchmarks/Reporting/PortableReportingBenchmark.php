@@ -7,6 +7,23 @@ use PHPUnit\Framework\SkippedWithMessageException;
 
 uses(TestCase::class);
 
+test('the accepted CORE-28 reporting baseline satisfies the regression gate', function (): void {
+    $baselinePath = dirname(__DIR__, 3).'/docs/benchmarks/core-28-reporting-baseline.json';
+    $baseline = json_decode((string) file_get_contents($baselinePath), true, flags: JSON_THROW_ON_ERROR);
+    $workloads = $baseline['dataset']['workload_order'];
+
+    foreach ($baseline['engines'] as $engine => $measurements) {
+        foreach ($workloads as $index => $workload) {
+            $physicalP95 = (float) $measurements['rows_100000']['physical'][$index];
+            $projectionP95 = (float) $measurements['rows_100000']['projection'][$index];
+
+            expect($projectionP95)
+                ->toBeLessThanOrEqual(500.0)
+                ->toBeLessThanOrEqual($physicalP95 * 5);
+        }
+    }
+})->group('reporting-research', 'benchmark');
+
 test('records the portable reporting storage-path baseline', function (): void {
     if (getenv('AURA_REPORTING_BENCHMARK') !== '1') {
         throw new SkippedWithMessageException(
@@ -63,6 +80,15 @@ test('records the portable reporting storage-path baseline', function (): void {
         ];
 
         expect($result['paths'])->toHaveKeys(['physical', 'meta', 'projection']);
+
+        foreach ($result['paths']['projection']['workloads'] as $workload => $measurement) {
+            $physicalP95 = (float) $result['paths']['physical']['workloads'][$workload]['p95_ms'];
+            $projectionP95 = (float) $measurement['p95_ms'];
+
+            expect($projectionP95)
+                ->toBeLessThanOrEqual(500.0)
+                ->toBeLessThanOrEqual($physicalP95 * 5);
+        }
 
         if (is_string($outputPath) && $outputPath !== '') {
             $encoded = json_encode($result, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES).PHP_EOL;
