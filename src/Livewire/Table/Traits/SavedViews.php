@@ -139,6 +139,12 @@ trait SavedViews
         $state = $manager->validatedState($savedView, $this->model(), $this->savedViewUser(), $this->savedViewTeam());
         $headers = array_keys($this->model()->getTableHeaders()->all());
 
+        if ($this->requiredParentScope !== null
+            && $state->query->parent !== null
+            && $state->query->parent !== $this->requiredParentScope) {
+            abort(422, 'The saved view belongs to a different required parent scope.');
+        }
+
         $this->tableState = $state->query->toQueryString();
         $this->filters = ['custom' => $state->query->filters];
         $this->search = $state->query->search;
@@ -169,6 +175,14 @@ trait SavedViews
         $query = $this->tableState !== ''
             ? TableQueryState::fromQueryString($this->tableState)
             : TableQueryState::fromLegacy($this->filters, $this->search, $this->sorts, $this->requiredParentScope);
+
+        if ($this->requiredParentScope !== null) {
+            $query = TableQueryState::fromArray([
+                ...$query->toArray(),
+                'parent' => $this->requiredParentScope,
+            ]);
+        }
+
         $columns = collect($this->columns)
             ->filter(fn (mixed $visible): bool => (bool) $visible)
             ->keys()
