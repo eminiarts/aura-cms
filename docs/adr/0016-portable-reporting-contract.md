@@ -49,6 +49,13 @@ interface AggregateEngine
 
 Names may follow established Aura conventions, but these invariants may not change: callers provide no table, SQL expression, Team, owner, connection, or actor identifier; enum-backed operations and buckets are allowlisted; fields resolve from the Resource declaration; and results are immutable. V1 runs only for the currently authenticated actor. Background reporting needs a later explicit trusted-context contract.
 
+### Grouping semantics
+
+- `groupBy` is optional. V1 accepts only a declared, physical, scalar field on the same Resource. Computed, relationship, arbitrary expression, and meta-backed grouping are rejected. Meta-backed metrics may still be aggregated through the numeric projection while grouping by an eligible physical field.
+- Results contain an ordered list of immutable points: canonical scalar `key`, presentation `label`, aggregate value, and row count. Numeric keys use the same six-decimal canonical form; booleans use `0`/`1`; strings use their stored scalar value. Presentation labels come from the declared field formatter after the query, never from SQL supplied by a caller.
+- Null is one explicit `Empty` point ordered last. Non-null points sort by canonical key ascending, with a stable Resource-key tie breaker. A query fetches at most 101 distinct points and rejects more than 100 rather than silently truncating or merging groups.
+- Existing Pie/Donut definitions that group by a meta-backed field are outside the first CORE-29 cut and must fail configuration validation. Supporting them requires separate typed-text projection evidence; CORE-29 may not reintroduce raw meta grouping.
+
 ### Numeric semantics
 
 - Count counts authorized Resource rows after the half-open time range is applied; it does not require a metric.
@@ -70,7 +77,7 @@ The engine first authorizes `viewAny` for the resolved Resource, then starts fro
 
 ### Projection ownership and lifecycle
 
-CORE-29 may add an Aura-owned `aura_reporting_values` table through an exact, additive migration and ownership manifest. V1 uses Aura's current unsigned-big-integer Resource identity and an exact unique identity `(resource_type, resource_id, field_key)`. A row stores a nullable signed `value_scaled`, precision/scale contract version, and timestamps. Required indexes cover identity and `(resource_type, field_key, value_scaled, resource_id)`. The live authorized Resource query remains the left side of every join; copied Team/owner values are neither required nor trusted.
+CORE-29 may add an Aura-owned `aura_reporting_values` table through an exact, additive migration and ownership manifest. V1 uses Aura's current unsigned-big-integer Resource identity and an exact unique identity `(resource_type, resource_id, field_key)`. A row stores a nullable signed `value_scaled`, precision/scale contract version, source update/event version, and timestamps. Required indexes cover identity and `(resource_type, field_key, value_scaled, resource_id)`. The live authorized Resource query remains the left side of every join; copied Team/owner values are neither required nor trusted.
 
 Projection maintenance listens to the immutable, after-commit `ResourceCreated`, `ResourceUpdated`, `ResourceDeleted`, `ResourceRestored`, and `ResourceForceDeleted` events from CORE-16. A projector re-reads the current Resource on its recorded connection and upserts/deletes idempotently. It ignores stale/out-of-order events based on the latest stored source version and never writes Resource/meta values. Quiet writes deliberately do not emit lifecycle events, so the documented explicit resync command is required after trusted quiet or legacy writes.
 
@@ -86,9 +93,9 @@ Rollback first disables projected reads and returns consumers to their pre-CORE-
 
 ## Evidence and threshold
 
-The reproducible harness covers SQLite 3.53.1, MySQL 8.4.11, MariaDB 11.8.8, and PostgreSQL 16.14. The correctness matrix proves exact decimals, invalid/null legacy values, numeric ranges, Europe/Zurich daylight-saving buckets, cross-tenant exclusion, and non-empty `EXPLAIN` output for physical, safe-meta, and projection paths. Each benchmark workload performs one query.
+The reproducible harness covers SQLite 3.53.1, MySQL 8.4.11, MariaDB 11.8.8, and PostgreSQL 16.14. The correctness matrix proves exact decimals, excess-scale/out-of-range/exponent/null legacy values, all-null aggregates, numeric ranges, both Europe/Zurich daylight-saving transitions, every approved bucket type, invalid-input rejection, cross-tenant exclusion, and non-empty `EXPLAIN` output for physical, safe-meta, and projection paths. A separate real-Resource contract proves `viewAny`, the Resource connection, `indexQuery()`, owner and Team global scopes, and soft-delete exclusion without a caller-supplied tenant. Each benchmark workload performs one query.
 
-At 100k Resources plus 1.19 million meta rows, the accepted interactive gate is p95 at most 500 ms and no more than five times the physical path on every claimed engine. Direct meta casting fails: MySQL grouped sum reaches 1,407.227 ms and MariaDB reaches 3,165.048 ms; MariaDB aggregate and range also exceed 500 ms. The projection's worst p95 is 169.567 ms. Full results and limitations are in `docs/benchmarks/core-28-reporting-baseline.md` and its JSON companion.
+At 100k Resources plus 1.19 million meta rows, the accepted interactive gate is p95 at most 500 ms and no more than five times the physical path on every claimed engine. Direct meta casting fails: MySQL grouped sum reaches 1,366.195 ms and MariaDB reaches 3,042.122 ms; MariaDB aggregate and range also exceed 500 ms. The projection's worst p95 is 198.424 ms. Full results and limitations are in `docs/benchmarks/core-28-reporting-baseline.md` and its JSON companion.
 
 The tested engine versions are the CORE-29 claim. Broader minimum-version claims require CI evidence before release. Benchmark thresholds are regression comparisons on a controlled runner, not production latency promises.
 

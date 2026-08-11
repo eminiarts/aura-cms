@@ -313,6 +313,9 @@ final class PortableReportingProbe
             ['team' => 1, 'owner' => 3, 'group' => 'gamma', 'amount' => null, 'meta' => 'legacy-invalid', 'at' => '2025-06-01 00:00:00'],
             ['team' => 1, 'owner' => 3, 'group' => 'gamma', 'amount' => null, 'meta' => '1e3', 'at' => '2025-07-01 00:00:00'],
             ['team' => 2, 'owner' => 4, 'group' => 'secret', 'amount' => '999.000000', 'meta' => '999.000000', 'at' => '2024-06-01 00:00:00'],
+            ['team' => 3, 'owner' => 5, 'group' => 'invalid', 'amount' => null, 'meta' => null, 'at' => '2024-01-01 00:00:00'],
+            ['team' => 3, 'owner' => 5, 'group' => 'invalid', 'amount' => null, 'meta' => '0.0000001', 'at' => '2024-01-02 00:00:00'],
+            ['team' => 3, 'owner' => 5, 'group' => 'invalid', 'amount' => null, 'meta' => '1000000000000.000000', 'at' => '2024-01-03 00:00:00'],
         ];
 
         $this->insertLogicalRows($rows);
