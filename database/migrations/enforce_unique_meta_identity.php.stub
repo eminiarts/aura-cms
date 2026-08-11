@@ -1,0 +1,52 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    private const INDEX = 'meta_metable_identity_unique';
+
+    public function down(): void
+    {
+        if (! Schema::hasTable('meta') || ! Schema::hasIndex('meta', self::INDEX, 'unique')) {
+            return;
+        }
+
+        Schema::table('meta', function (Blueprint $table): void {
+            $table->dropUnique(self::INDEX);
+        });
+    }
+
+    public function up(): void
+    {
+        if (! Schema::hasTable('meta') || Schema::hasIndex('meta', self::INDEX, 'unique')) {
+            return;
+        }
+
+        if (DB::table('meta')->whereNull('key')->exists()) {
+            throw new RuntimeException(
+                'Cannot enforce unique meta identities while rows with null keys exist.'
+            );
+        }
+
+        $duplicates = DB::table('meta')
+            ->select(['metable_type', 'metable_id', 'key'])
+            ->groupBy(['metable_type', 'metable_id', 'key'])
+            ->havingRaw('COUNT(*) > 1')
+            ->exists();
+
+        if ($duplicates) {
+            throw new RuntimeException(
+                'Cannot enforce unique meta identities while duplicate model/type/key rows exist.'
+            );
+        }
+
+        Schema::table('meta', function (Blueprint $table): void {
+            $table->string('key')->nullable(false)->change();
+            $table->unique(['metable_type', 'metable_id', 'key'], self::INDEX);
+        });
+    }
+};

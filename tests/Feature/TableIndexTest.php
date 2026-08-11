@@ -18,8 +18,11 @@ test('meta table index test', function () {
     $indexNames = array_column($indexes, 'name');
 
     expect($indexNames)->toHaveCount(3);
-    expect($indexNames)->toContain('meta_metable_type_metable_id_key_index');
+    expect($indexNames)->toContain('meta_metable_identity_unique');
     expect($indexNames)->toContain('meta_key_index');
+
+    $identityIndex = collect($indexes)->firstWhere('name', 'meta_metable_identity_unique');
+    expect((int) $identityIndex->unique)->toBe(1);
 
     // Additional checks can be added based on specific index requirements
 });

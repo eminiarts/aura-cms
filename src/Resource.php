@@ -1126,6 +1126,23 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
         return $this->belongsTo(get_class($this), 'parent_id');
     }
 
+    public function persistPreparedMetaFields(): void
+    {
+        static::persistMetaFieldsOnSaved($this);
+    }
+
+    /**
+     * Prepare declared fields through Aura's normal physical/meta field hooks
+     * without depending on Eloquent's model-event dispatcher.
+     *
+     * @param  array<string, mixed>  $fields
+     */
+    public function prepareFieldsForExplicitWrite(array $fields): void
+    {
+        $this->setAttribute('fields', $fields);
+        $this->prepareFieldAttributesForPersistence();
+    }
+
     /**
      * Promote an existing team row through the same global-write invariant and
      * policy used by createGlobal().
@@ -1269,6 +1286,11 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
     final public function resourceLifecycleSequence(): int
     {
         return $this->resourceLifecycleSequence;
+    }
+
+    public function resourceModelEventsAreMuted(): bool
+    {
+        return static::getEventDispatcher() instanceof NullDispatcher;
     }
 
     /**

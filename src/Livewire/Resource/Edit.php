@@ -4,6 +4,7 @@ namespace Aura\Base\Livewire\Resource;
 
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Facades\Aura;
+use Aura\Base\ResourcePersistence\ResourceWriter;
 use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
 use Aura\Base\Traits\HasActions;
 use Aura\Base\Traits\HydratesResourceFormFields;
@@ -173,18 +174,19 @@ class Edit extends Component
         $attributes = $this->validatedFormFields($validated, $this->model->editFields());
         $globalIntent = $this->pullGlobalFormIntent($attributes);
 
-        $persistenceAttributes = $this->model->usesCustomTable()
-            ? $attributes
-            : ['fields' => $attributes];
-
+        $writer = app(ResourceWriter::class);
         if ($globalIntent === true && $this->model->getAttribute('team_id') !== null) {
-            $this->model->promoteToGlobal($persistenceAttributes);
+            $this->model = $writer->promoteToGlobal($this->model, $attributes);
         } elseif ($globalIntent === false
             && $this->model::sharesRecordsAcrossTeams()
             && $this->model->getAttribute('team_id') === null) {
-            $this->model->moveGlobalToTeam(data_get(auth()->user(), 'current_team_id'), $persistenceAttributes);
+            $this->model = $writer->moveGlobalToTeam(
+                $this->model,
+                data_get(auth()->user(), 'current_team_id'),
+                $attributes,
+            );
         } else {
-            $this->model->update($persistenceAttributes);
+            $this->model = $writer->update($this->model, $attributes);
         }
 
         $this->notify(__('Successfully updated'));

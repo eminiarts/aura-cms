@@ -11,6 +11,19 @@ use Illuminate\Support\Str;
 trait SaveMetaFields
 {
     /**
+     * @return array{metable_type: string, metable_id: int|string, key: string, value: mixed}
+     */
+    protected static function metaUpsertRow($post, string $key, mixed $value): array
+    {
+        return [
+            'metable_type' => $post->getMorphClass(),
+            'metable_id' => $post->getKey(),
+            'key' => $key,
+            'value' => $value,
+        ];
+    }
+
+    /**
      * Persist the queued meta fields after the row itself is saved.
      *
      * Invoked from the saved listener registered in
@@ -19,6 +32,7 @@ trait SaveMetaFields
     protected static function persistMetaFieldsOnSaved($post): void
     {
         if (isset($post->metaFields)) {
+            $metaRows = [];
 
             foreach ($post->metaFields as $key => $value) {
 
@@ -37,7 +51,7 @@ trait SaveMetaFields
                 // Do not continue if the Field is not found
                 if (! $class) {
                     if ($post->usesMeta()) {
-                        $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                        $metaRows[] = static::metaUpsertRow($post, (string) $key, $value);
                     }
 
                     continue;
@@ -50,10 +64,23 @@ trait SaveMetaFields
                 }
 
                 if ($post->usesMeta()) {
-                    $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                    $metaRows[] = static::metaUpsertRow($post, (string) $key, $value);
                 }
 
             }
+
+            if ($metaRows !== []) {
+                $post->getConnection()
+                    ->table($post->getMetaTable())
+                    ->useWritePdo()
+                    ->upsert(
+                        $metaRows,
+                        ['metable_type', 'metable_id', 'key'],
+                        ['value'],
+                    );
+            }
+
+            $post->metaFields = [];
 
             $post->fireModelEvent('metaSaved');
         }

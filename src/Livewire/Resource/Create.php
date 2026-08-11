@@ -4,6 +4,7 @@ namespace Aura\Base\Livewire\Resource;
 
 use Aura\Base\Contracts\FieldValueContext;
 use Aura\Base\Facades\Aura;
+use Aura\Base\ResourcePersistence\ResourceWriter;
 use Aura\Base\Traits\HydratesResourceFormFields;
 use Aura\Base\Traits\InteractsWithFields;
 use Aura\Base\Traits\MediaFields;
@@ -173,13 +174,10 @@ class Create extends Component
             $attributes['current_team_id'] = data_get(auth()->user(), 'current_team_id');
         }
 
-        $persistenceAttributes = $this->model->usesCustomTable()
-            ? $attributes
-            : ['fields' => $attributes];
-
+        $writer = app(ResourceWriter::class);
         $model = $globalIntent === true
-            ? $this->model::createGlobal($persistenceAttributes, $this->model->getConnection())
-            : $this->model->create($persistenceAttributes);
+            ? $writer->createGlobal($this->model, $attributes)
+            : $writer->create($this->model, $attributes);
 
         $this->notify('Successfully created.');
 

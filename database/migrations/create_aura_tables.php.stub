@@ -260,10 +260,13 @@ return new class extends Migration
         Schema::create('meta', function (Blueprint $table) {
             $table->id();
             $table->morphs('metable');
-            $table->string('key')->nullable()->index();
+            $table->string('key')->index();
             $table->longText('value')->nullable();
 
-            $table->index(['metable_type', 'metable_id', 'key']);
+            $table->unique(
+                ['metable_type', 'metable_id', 'key'],
+                'meta_metable_identity_unique',
+            );
         });
 
         if (config('database.default') === 'mysql') {
