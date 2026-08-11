@@ -66,7 +66,12 @@ final class Core16RestoreExceptionLifecycleDocument extends Core16SoftLifecycleD
     public static string $type = 'Core16RestoreExceptionLifecycleDocument';
 }
 
-final class Core16SharedLifecycleDocument extends Core16LifecycleDocument
+final class Core16RestoreSavingVetoLifecycleDocument extends Core16SoftLifecycleDocument
+{
+    public static string $type = 'Core16RestoreSavingVetoLifecycleDocument';
+}
+
+class Core16SharedLifecycleDocument extends Core16LifecycleDocument
 {
     public static string $scopeMode = self::SCOPE_GLOBAL;
 
@@ -99,11 +104,35 @@ class Core16GlobalLifecycleDocument extends Resource
     }
 }
 
-final class Core16GlobalSoftLifecycleDocument extends Core16GlobalLifecycleDocument
+class Core16GlobalSoftLifecycleDocument extends Core16GlobalLifecycleDocument
 {
     use SoftDeletes;
 
     public static string $type = 'Core16GlobalSoftLifecycleDocument';
+}
+
+final class Core16SavingAbortLifecycleDocument extends Core16LifecycleDocument
+{
+    public static string $type = 'Core16SavingAbortLifecycleDocument';
+}
+
+final class Core16PrivilegedAbortLifecycleDocument extends Core16LifecycleDocument
+{
+    public static string $type = 'Core16PrivilegedAbortLifecycleDocument';
+}
+
+final class Core16GlobalAbortLifecycleDocument extends Core16LifecycleDocument
+{
+    public static string $scopeMode = self::SCOPE_TEAM;
+
+    public static bool $sharedAcrossTeams = true;
+
+    public static string $type = 'Core16GlobalAbortLifecycleDocument';
+}
+
+final class Core16RestoreSwapLifecycleDocument extends Core16GlobalSoftLifecycleDocument
+{
+    public static string $type = 'Core16RestoreSwapLifecycleDocument';
 }
 
 class Core16PostLifecycleAlpha extends Resource
@@ -361,6 +390,109 @@ test('restore vetoes and listener exceptions discard pending lifecycle state', f
     expect($exception->save())->toBeTrue();
 
     Event::assertDispatchedTimes(ResourceUpdated::class, 2);
+});
+
+test('saving vetoes and exceptions discard normal and privileged lifecycle state', function (): void {
+    Event::fake([ResourceUpdated::class]);
+
+    $normal = Core16SavingAbortLifecycleDocument::create(['name' => 'Normal abort']);
+    $normalMode = 'veto';
+    Core16SavingAbortLifecycleDocument::saving(function () use (&$normalMode): bool {
+        if ($normalMode === 'exception') {
+            throw new RuntimeException('normal saving listener failed');
+        }
+
+        return $normalMode !== 'veto';
+    });
+
+    $normal->name = 'Normal vetoed';
+    expect($normal->save())->toBeFalse();
+    $normalMode = 'pass';
+    $normal->name = 'Normal retry';
+    expect($normal->save())->toBeTrue();
+    $normalMode = 'exception';
+    $normal->name = 'Normal exception';
+    expect(fn (): bool => $normal->save())
+        ->toThrow(RuntimeException::class, 'normal saving listener failed');
+    $normalMode = 'pass';
+    $normal->name = 'Normal exception retry';
+    expect($normal->save())->toBeTrue();
+
+    $privileged = Core16PrivilegedAbortLifecycleDocument::create(['name' => 'Privileged abort']);
+    $privilegedMode = 'veto';
+    Core16PrivilegedAbortLifecycleDocument::saving(function () use (&$privilegedMode): bool {
+        if ($privilegedMode === 'exception') {
+            throw new RuntimeException('privileged saving listener failed');
+        }
+
+        return $privilegedMode !== 'veto';
+    });
+    $saveSystemResource = new ReflectionMethod(Resource::class, 'saveSystemResource');
+
+    $privileged->name = 'Privileged vetoed';
+    expect($saveSystemResource->invoke($privileged))->toBeFalse();
+    $privilegedMode = 'pass';
+    $privileged->name = 'Privileged retry';
+    expect($saveSystemResource->invoke($privileged))->toBeTrue();
+    $privilegedMode = 'exception';
+    $privileged->name = 'Privileged exception';
+    expect(fn (): mixed => $saveSystemResource->invoke($privileged))
+        ->toThrow(RuntimeException::class, 'privileged saving listener failed');
+    $privilegedMode = 'pass';
+    $privileged->name = 'Privileged exception retry';
+    expect($saveSystemResource->invoke($privileged))->toBeTrue();
+
+    if (config('aura.teams')) {
+        $global = Core16GlobalAbortLifecycleDocument::create(['name' => 'Global abort']);
+        $globalMode = 'veto';
+        Core16GlobalAbortLifecycleDocument::saving(function () use (&$globalMode): bool {
+            if ($globalMode === 'exception') {
+                throw new RuntimeException('global saving listener failed');
+            }
+
+            return $globalMode !== 'veto';
+        });
+        $saveGlobalResource = new ReflectionMethod(Resource::class, 'saveGlobalResource');
+
+        $global->name = 'Global vetoed';
+        expect($saveGlobalResource->invoke($global))->toBeFalse();
+        $globalMode = 'pass';
+        $global->name = 'Global retry';
+        expect($saveGlobalResource->invoke($global))->toBeTrue();
+        $globalMode = 'exception';
+        $global->name = 'Global exception';
+        expect(fn (): mixed => $saveGlobalResource->invoke($global))
+            ->toThrow(RuntimeException::class, 'global saving listener failed');
+        $globalMode = 'pass';
+        $global->name = 'Global exception retry';
+        expect($saveGlobalResource->invoke($global))->toBeTrue();
+    }
+
+    Event::assertDispatchedTimes(ResourceUpdated::class, config('aura.teams') ? 6 : 4);
+});
+
+test('a saving veto during restore is discarded across supported SoftDeletes behavior', function (): void {
+    Event::fake([ResourceRestored::class, ResourceUpdated::class]);
+
+    $document = Core16RestoreSavingVetoLifecycleDocument::create(['name' => 'Restore save veto']);
+    $document->delete();
+    $vetoNextSave = true;
+    Core16RestoreSavingVetoLifecycleDocument::saving(function () use (&$vetoNextSave): bool {
+        if (! $vetoNextSave) {
+            return true;
+        }
+
+        $vetoNextSave = false;
+
+        return false;
+    });
+
+    expect($document->restore())->toBeFalse();
+    Event::assertNotDispatched(ResourceRestored::class);
+
+    $document->name = 'Updated after restore save veto';
+    expect($document->save())->toBeTrue();
+    Event::assertDispatchedTimes(ResourceUpdated::class, 1);
 });
 
 test('quiet hard deletes suppress lifecycle events but still clean exact dependents', function (): void {
@@ -659,4 +791,69 @@ test('restore and force delete lifecycle verification reads from the writer', fu
     DB::purge('core16_split_lifecycle');
     unlink($writerPath);
     unlink($readerPath);
+});
+
+test('restore rejects connection and table swaps before writing', function (): void {
+    if (config('aura.teams')) {
+        $this->markTestSkipped('The two-writer restoration boundary is exercised with teams disabled.');
+    }
+
+    $firstPath = tempnam(sys_get_temp_dir(), 'aura-core16-first-');
+    $secondPath = tempnam(sys_get_temp_dir(), 'aura-core16-second-');
+    expect($firstPath)->toBeString()
+        ->and($secondPath)->toBeString();
+
+    foreach (['core16_restore_first' => $firstPath, 'core16_restore_second' => $secondPath] as $name => $path) {
+        config()->set("database.connections.{$name}", [
+            'driver' => 'sqlite',
+            'database' => $path,
+            'prefix' => '',
+            'foreign_key_constraints' => true,
+        ]);
+        DB::purge($name);
+    }
+
+    DB::connection('core16_restore_first')->getSchemaBuilder()
+        ->create('core16_global_lifecycle_documents', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->timestamps();
+            $table->softDeletes();
+        });
+    DB::connection('core16_restore_second')->getSchemaBuilder()
+        ->create('core16_swapped_lifecycle_documents', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->timestamps();
+            $table->softDeletes();
+        });
+    Auth::logout();
+
+    $document = new Core16RestoreSwapLifecycleDocument(['name' => 'Original writer']);
+    $document->setConnection('core16_restore_first');
+    expect($document->save())->toBeTrue()
+        ->and($document->delete())->toBeTrue();
+
+    Core16RestoreSwapLifecycleDocument::restoring(function (Core16RestoreSwapLifecycleDocument $resource): void {
+        $resource->setConnection('core16_restore_second');
+        $resource->setTable('core16_swapped_lifecycle_documents');
+    });
+
+    expect(fn (): bool => $document->restore())
+        ->toThrow(LogicException::class, 'cannot change during restoration')
+        ->and(DB::connection('core16_restore_first')
+            ->table('core16_global_lifecycle_documents')
+            ->useWritePdo()
+            ->where('id', $document->getKey())
+            ->whereNotNull('deleted_at')
+            ->exists())->toBeTrue()
+        ->and(DB::connection('core16_restore_second')
+            ->table('core16_swapped_lifecycle_documents')
+            ->useWritePdo()
+            ->count())->toBe(0);
+
+    DB::purge('core16_restore_first');
+    DB::purge('core16_restore_second');
+    unlink($firstPath);
+    unlink($secondPath);
 });

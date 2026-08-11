@@ -1776,6 +1776,12 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
     protected function fireModelEvent($event, $halt = true)
     {
         if ($event !== 'deleting' && $event !== 'forceDeleting') {
+            $restoreConnectionIdentity = $event === 'restoring'
+                ? User::connectionCacheIdentity($this->getConnection())
+                : null;
+            $restoreTable = $event === 'restoring' ? $this->getTable() : null;
+            $restoreKeyName = $event === 'restoring' ? $this->getKeyName() : null;
+
             if ($event === 'saving' && ! static::getEventDispatcher() instanceof NullDispatcher) {
                 $this->prepareFieldAttributesForPersistence();
             }
@@ -1792,6 +1798,15 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
 
             if ($event === 'restoring' && $result === false) {
                 $this->discardResourceLifecycleState();
+            }
+
+            if ($event === 'restoring'
+                && ($restoreConnectionIdentity !== User::connectionCacheIdentity($this->getConnection())
+                    || $restoreTable !== $this->getTable()
+                    || $restoreKeyName !== $this->getKeyName())) {
+                $this->discardResourceLifecycleState();
+
+                throw new LogicException('A resource connection, table, or key cannot change during restoration.');
             }
 
             return $result;
@@ -3273,6 +3288,8 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
             $keyForSaveQuery = $exists ? $this->getKeyForSaveQuery() : null;
 
             if (parent::fireModelEvent('saving') === false) {
+                $this->discardResourceLifecycleState();
+
                 return false;
             }
 
@@ -3313,12 +3330,18 @@ class Resource extends Model implements DefinesFields, ProvidesEmbeddedAuthoriza
                 );
 
             if (! $saved) {
+                $this->discardResourceLifecycleState();
+
                 return false;
             }
 
             $this->finishSave($options);
 
             return true;
+        } catch (\Throwable $exception) {
+            $this->discardResourceLifecycleState();
+
+            throw $exception;
         } finally {
             $this->restoreConnectionQueryInfrastructure($connection, $queryGrammar, $queryProcessor);
             $this->restorePhysicalWriter($connection, $writePdo, $transactionLevel);
