@@ -3,6 +3,11 @@
 namespace Aura\Base\Livewire;
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Reporting\AggregateDefinition;
+use Aura\Base\Reporting\AggregateEngine;
+use Aura\Base\Reporting\AggregateOperation;
+use Aura\Base\Reporting\DateBucket;
+use Aura\Base\Reporting\DateRange;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Aura\Base\Widgets\DashboardWidgetRegistry;
@@ -132,29 +137,37 @@ class Dashboard extends Component
     {
         $start = now()->subDays(29)->startOfDay();
         $previousStart = now()->subDays(59)->startOfDay();
+        $end = now()->addDay()->startOfDay();
+        $reporting = app(AggregateEngine::class);
 
-        return $resources->take(4)->map(function ($resource) use ($start, $previousStart) {
-            $daily = $resource->query()
-                ->where($resource->getTable().'.created_at', '>=', $start)
-                ->selectRaw('DATE('.$resource->getTable().'.created_at) as date, COUNT(*) as total')
-                ->groupBy('date')
-                ->pluck('total', 'date');
+        return $resources->take(4)->map(function ($resource) use ($end, $previousStart, $reporting, $start) {
+            $daily = collect($reporting->run(new AggregateDefinition(
+                resource: $resource::class,
+                operation: AggregateOperation::Count,
+                range: new DateRange($start, $end),
+                bucket: DateBucket::Day,
+                timezone: config('app.timezone', 'UTC'),
+            ))->points)->mapWithKeys(fn ($point): array => [$point->key => (int) $point->value]);
 
             $series = collect(range(29, 0))
                 ->map(fn ($daysAgo) => (int) ($daily[now()->subDays($daysAgo)->toDateString()] ?? 0))
                 ->all();
 
             $current = array_sum($series);
-            $previous = $resource->query()
-                ->where($resource->getTable().'.created_at', '>=', $previousStart)
-                ->where($resource->getTable().'.created_at', '<', $start)
-                ->count();
+            $previous = $reporting->run(new AggregateDefinition(
+                resource: $resource::class,
+                operation: AggregateOperation::Count,
+                range: new DateRange($previousStart, $start),
+            ))->value;
 
             return [
                 'name' => $resource->pluralName(),
                 'icon' => $resource->icon(),
                 'url' => $resource->indexUrl(),
-                'total' => $resource->query()->count(),
+                'total' => $reporting->run(new AggregateDefinition(
+                    resource: $resource::class,
+                    operation: AggregateOperation::Count,
+                ))->value,
                 'current' => $current,
                 'previous' => $previous,
                 'sparkline' => $this->sparkline($series),

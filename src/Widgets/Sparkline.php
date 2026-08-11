@@ -2,8 +2,12 @@
 
 namespace Aura\Base\Widgets;
 
+use Aura\Base\Reporting\AggregateDefinition;
+use Aura\Base\Reporting\AggregateEngine;
+use Aura\Base\Reporting\AggregateOperation;
+use Aura\Base\Reporting\DateBucket;
+use Aura\Base\Reporting\DateRange;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 
@@ -26,53 +30,35 @@ class Sparkline extends Widget
 
     public function getValue($start, $end)
     {
-        $column = optional($this->widget)['column'];
-        $createdAtColumn = $this->model->getTable().'.created_at';
+        $column = $this->widget['column'] ?? null;
 
-        // Never let an unknown/tampered column reach the meta-join / raw-SQL path.
         if ($column && ! $this->isSafeColumn($column)) {
             $column = null;
         }
-        $method = $this->method;
+        $operation = $this->aggregateOperation();
+        $result = app(AggregateEngine::class)->run(new AggregateDefinition(
+            resource: $this->model::class,
+            operation: $operation,
+            metric: $operation === AggregateOperation::Count ? null : $column,
+            range: new DateRange($start, $end),
+            bucket: DateBucket::Day,
+            timezone: is_string($this->widget['timezone'] ?? null) ? $this->widget['timezone'] : config('app.timezone', 'UTC'),
+            queryScope: is_string($this->widget['queryScope'] ?? null) ? $this->widget['queryScope'] : null,
+        ));
+        $postsByDate = collect($result->points)->mapWithKeys(fn ($point): array => [$point->key => $point->value])->all();
 
-        $query = $this->model->query()
-            ->where($createdAtColumn, '>=', $start)
-            ->where($createdAtColumn, '<', $end)
-            ->groupBy(DB::raw('DATE('.$createdAtColumn.')'))
-            ->select(DB::raw('DATE('.$createdAtColumn.') as date'));
-
-        if ($column && $this->model->isMetaField($column)) {
-            $query->leftJoin('meta', function ($join) use ($column) {
-                $join->on($this->model->getQualifiedKeyName(), '=', 'meta.metable_id')
-                    ->where('meta.key', '=', $column)
-                    ->where('meta.metable_type', '=', $this->model->getMorphClass());
-            });
-
-            if (in_array($method, ['avg', 'sum', 'min', 'max'])) {
-                $query->addSelect(DB::raw("{$method}(CAST(meta.value as SIGNED)) as count"));
-            } else {
-                $query->addSelect(DB::raw('COUNT(*) as count'));
-            }
-        } else {
-            $query->addSelect(DB::raw('COUNT(*) as count'));
-        }
-
-        $postsByDate = $query->get()->pluck('count', 'date')->toArray();
-
-        // Generate a date range between $start and $end
         $dateRange = [];
-        for ($date = $start; $date->lte($end); $date->addDay()) {
+        for ($date = Carbon::parse($start); $date->lte($end); $date->addDay()) {
             $dateRange[$date->format('Y-m-d')] = 0;
         }
 
-        // Merge date range with the results from the query
         return collect($dateRange)->merge($postsByDate);
     }
 
     public function getValuesProperty()
     {
-        $currentStart = $this->getCarbonDate($this->start)->copy()->addDay();
-        $currentEnd = $this->getCarbonDate($this->end);
+        $currentStart = $this->getCarbonDate($this->start ?? now()->subDays(30)->startOfDay())->copy()->addDay();
+        $currentEnd = $this->getCarbonDate($this->end ?? now()->endOfDay());
         $diff = round($currentStart->diffInDays($currentEnd));
 
         $previousStart = $currentStart->copy()->subDays($diff + 1);
@@ -102,6 +88,17 @@ class Sparkline extends Widget
         $this->start = $start;
         $this->end = $end;
         $this->refreshWidgetCacheState();
+    }
+
+    protected function aggregateOperation(): AggregateOperation
+    {
+        return match ($this->method) {
+            'avg' => AggregateOperation::Average,
+            'sum' => AggregateOperation::Sum,
+            'min' => AggregateOperation::Minimum,
+            'max' => AggregateOperation::Maximum,
+            default => AggregateOperation::Count,
+        };
     }
 
     protected function widgetCacheContextDimensions(): array

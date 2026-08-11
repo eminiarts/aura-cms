@@ -2,8 +2,11 @@
 
 namespace Aura\Base\Widgets;
 
+use Aura\Base\Reporting\AggregateDefinition;
+use Aura\Base\Reporting\AggregateEngine;
+use Aura\Base\Reporting\AggregateOperation;
+use Aura\Base\Reporting\DateRange;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 
@@ -21,41 +24,21 @@ class ValueWidget extends Widget
 
     public function getValue($start, $end)
     {
-        $column = optional($this->widget)['column'];
+        $column = $this->widget['column'] ?? null;
 
-        // Never let an unknown/tampered column reach the raw-SQL identifier path.
         if ($column && ! $this->isSafeColumn($column)) {
             $column = null;
         }
 
-        $isMetaColumn = $column && $this->model->isMetaField($column);
+        $operation = $this->aggregateOperation();
 
-        $posts = $this->model->query()
-            ->where('created_at', '>=', $start)
-            ->where('created_at', '<', $end);
-
-        // Apply the query scope only if it maps to a real Eloquent scope on the model.
-        $queryScope = optional($this->widget)['queryScope'];
-        if ($queryScope && method_exists($this->model, 'scope'.ucfirst($queryScope))) {
-            $posts->{$queryScope}();
-        }
-
-        if ($isMetaColumn) {
-            $posts->select($this->model->getTable().'.*', DB::raw("CAST(meta.value as SIGNED) as $column"))
-                ->leftJoin('meta', function ($join) use ($column) {
-                    $join->on($this->model->getQualifiedKeyName(), '=', 'meta.metable_id')
-                        ->where('meta.key', '=', $column)
-                        ->where('meta.metable_type', '=', $this->model->getMorphClass());
-                });
-        }
-
-        return match ($this->method) {
-            'avg' => $posts->avg($isMetaColumn ? DB::raw('CAST(meta.value as SIGNED)') : $column),
-            'sum' => $posts->sum($isMetaColumn ? DB::raw('CAST(meta.value as SIGNED)') : $column),
-            'min' => $posts->min($isMetaColumn ? DB::raw('CAST(meta.value as SIGNED)') : $column),
-            'max' => $posts->max($isMetaColumn ? DB::raw('CAST(meta.value as SIGNED)') : $column),
-            default => $posts->count(),
-        };
+        return app(AggregateEngine::class)->run(new AggregateDefinition(
+            resource: $this->model::class,
+            operation: $operation,
+            metric: $operation === AggregateOperation::Count ? null : $column,
+            range: new DateRange($start, $end),
+            queryScope: is_string($this->widget['queryScope'] ?? null) ? $this->widget['queryScope'] : null,
+        ))->value;
     }
 
     public function getValuesProperty()
@@ -102,6 +85,17 @@ class ValueWidget extends Widget
         $this->start = $start;
         $this->end = $end;
         $this->refreshWidgetCacheState();
+    }
+
+    protected function aggregateOperation(): AggregateOperation
+    {
+        return match ($this->method) {
+            'avg' => AggregateOperation::Average,
+            'sum' => AggregateOperation::Sum,
+            'min' => AggregateOperation::Minimum,
+            'max' => AggregateOperation::Maximum,
+            default => AggregateOperation::Count,
+        };
     }
 
     protected function widgetCacheContextDimensions(): array

@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Facades\Aura;
 use Aura\Base\Resource;
 use Aura\Base\Widgets\Donut;
 use Aura\Base\Widgets\Pie;
@@ -15,6 +16,7 @@ afterEach(function () {
 
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+    Aura::registerResources([CustomTableWidgetModel::class]);
 
     Schema::create('custom_widget_projects', function (Blueprint $table) {
         $table->id();
@@ -85,12 +87,15 @@ class CustomTableWidgetModel extends Resource
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'score',
+                'number_type' => 'decimal',
+                'precision' => 18,
+                'scale' => 6,
             ],
         ];
     }
 }
 
-test('value widget aggregates a meta-backed field on a custom table resource', function () {
+test('value widget rejects a meta-backed metric until typed projection reads are enabled', function () {
     $widgetTest = Livewire::test(ValueWidget::class, [
         'widget' => ['method' => 'sum', 'column' => 'score', 'name' => 'Score Sum', 'slug' => 'score_sum'],
         'model' => new CustomTableWidgetModel,
@@ -100,10 +105,11 @@ test('value widget aggregates a meta-backed field on a custom table resource', f
 
     $widget = $widgetTest->instance();
 
-    expect($widget->getValue($widget->start, $widget->end))->toBe(40);
+    expect(fn () => $widget->getValue($widget->start, $widget->end))
+        ->toThrow(InvalidArgumentException::class, 'typed projection reads');
 });
 
-test('pie widget aggregates deterministic meta-backed distribution on a custom table resource', function () {
+test('pie widget rejects meta-backed grouping', function () {
     $widgetTest = Livewire::test(Pie::class, [
         'widget' => ['method' => 'count', 'column' => 'score', 'name' => 'Score Pie', 'slug' => 'score_pie'],
         'model' => new CustomTableWidgetModel,
@@ -113,9 +119,8 @@ test('pie widget aggregates deterministic meta-backed distribution on a custom t
 
     $widget = $widgetTest->instance();
 
-    expect($widget->getValue($widget->start, $widget->end))
-        ->toBe(['10' => 2, '20' => 1])
-        ->not->toHaveKey('tag-1');
+    expect(fn () => $widget->getValue($widget->start, $widget->end))
+        ->toThrow(InvalidArgumentException::class, 'physical scalar fields');
 });
 
 test('donut widget aggregates deterministic table-column distribution on a custom table resource', function () {

@@ -1,5 +1,7 @@
 <?php
 
+use Aura\Base\Facades\Aura;
+use Aura\Base\Reporting\CurrentStateProjectionReconciler;
 use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Widgets\Sparkline;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,7 +17,13 @@ uses(RefreshDatabase::class);
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     Cache::clear();
+    config([
+        'aura.reporting.projection.enabled' => true,
+        'aura.reporting.projection.reads_enabled' => true,
+    ]);
+    (require dirname(__DIR__, 3).'/database/migrations/create_aura_reporting_projections.php.stub')->up();
     $this->actingAs($this->user = createSuperAdmin());
+    Aura::registerResources([Post::class]);
 
     // Create 3 posts before each test
     Post::create([
@@ -35,6 +43,8 @@ beforeEach(function () {
         'number' => 30,
         'created_at' => Carbon::now()->subDays(35),
     ]);
+
+    Post::query()->get()->each(fn (Post $post) => app(CurrentStateProjectionReconciler::class)->resync($post));
 
     $this->widget = (new Post)->widgets()->first();
 });
@@ -137,7 +147,7 @@ it('calculates values for the current date range correctly', function () {
 });
 
 it('calculates values for the previous date range correctly', function () {
-    $widget = ['method' => 'sum', 'name' => 'Total Posts Created'];
+    $widget = ['method' => 'sum', 'column' => 'number', 'name' => 'Total Posts Created'];
 
     $sparklineTest = Livewire::test(Sparkline::class, ['widget' => $widget, 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
@@ -172,11 +182,11 @@ it('calculates values for a custom column correctly', function () {
     $values = $sparkline->getValuesProperty();
 
     // Check if the last data point of the current date range has the correct value for the custom column (should be 10)
-    expect(end($values['current']))->toBe(40);
+    expect(end($values['current']))->toBe('40.000000');
 });
 
 it('mounts with the correct method if specified in the widget', function () {
-    $widget = ['method' => 'sum', 'name' => 'Total Posts Created'];
+    $widget = ['method' => 'sum', 'column' => 'number', 'name' => 'Total Posts Created'];
 
     Post::create([
         'title' => 'Post 4',
@@ -215,7 +225,7 @@ it('calculates sum correctly', function () {
 
     $values = $sparkline->getValuesProperty();
 
-    expect(end($values['current']))->toBe(100);
+    expect(end($values['current']))->toBe('100.000000');
 });
 
 it('calculates avg correctly', function () {
@@ -297,7 +307,7 @@ it('calculates max correctly', function () {
 });
 
 it('renders sparkline correctly', function () {
-    $widget = ['method' => 'max', 'name' => 'Test Name'];
+    $widget = ['method' => 'max', 'column' => 'number', 'name' => 'Test Name'];
 
     Livewire::test(Sparkline::class, ['widget' => $widget, 'model' => new Post])
         ->assertOk()

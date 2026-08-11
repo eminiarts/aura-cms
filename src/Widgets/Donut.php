@@ -2,8 +2,11 @@
 
 namespace Aura\Base\Widgets;
 
+use Aura\Base\Reporting\AggregateDefinition;
+use Aura\Base\Reporting\AggregateEngine;
+use Aura\Base\Reporting\AggregateOperation;
+use Aura\Base\Reporting\DateRange;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 
@@ -21,43 +24,32 @@ class Donut extends Widget
 
     public function getValue($start, $end)
     {
-        $column = optional($this->widget)['column'];
-        $table = $this->model->getTable();
+        $column = $this->widget['column'] ?? null;
 
-        // Never let an unknown/tampered column reach the raw-SQL identifier path.
         if ($column && ! $this->isSafeColumn($column)) {
             $column = null;
         }
 
-        $posts = $this->model->query()
-            ->where($table.'.created_at', '>=', $start)
-            ->where($table.'.created_at', '<', $end);
+        $operation = $this->aggregateOperation();
 
         if (! $column) {
-            return ['Total' => $posts->count()];
+            return ['Total' => app(AggregateEngine::class)->run(new AggregateDefinition(
+                resource: $this->model::class,
+                operation: AggregateOperation::Count,
+                range: new DateRange($start, $end),
+                queryScope: is_string($this->widget['queryScope'] ?? null) ? $this->widget['queryScope'] : null,
+            ))->value];
         }
 
-        if ($column && $this->model->isMetaField($column)) {
-            $posts->leftJoin('meta', function ($join) use ($column) {
-                $join->on($this->model->getQualifiedKeyName(), '=', 'meta.metable_id')
-                    ->where('meta.key', '=', $column)
-                    ->where('meta.metable_type', '=', $this->model->getMorphClass());
-            });
-
-            $aggregateExpression = 'CAST(meta.value as SIGNED)';
-            $labelExpression = 'meta.value';
-        } else {
-            $aggregateExpression = $table.'.'.$column;
-            $labelExpression = $table.'.'.$column;
-        }
-
-        $method = in_array($this->method, ['avg', 'sum', 'min', 'max'], true) ? strtoupper($this->method) : 'COUNT';
-        $aggregateSelect = $method === 'COUNT' ? 'COUNT(*)' : $method.'('.$aggregateExpression.')';
-
-        return $posts->selectRaw($labelExpression.' as label, '.$aggregateSelect.' as aggregate')
-            ->groupBy(DB::raw($labelExpression))
-            ->pluck('aggregate', 'label')
-            ->mapWithKeys(fn ($value, $label) => [(string) ($label ?: 'Empty') => $value])
+        return collect(app(AggregateEngine::class)->run(new AggregateDefinition(
+            resource: $this->model::class,
+            operation: $operation,
+            metric: $operation === AggregateOperation::Count ? null : $column,
+            groupBy: $column,
+            range: new DateRange($start, $end),
+            queryScope: is_string($this->widget['queryScope'] ?? null) ? $this->widget['queryScope'] : null,
+        ))->points)
+            ->mapWithKeys(fn ($point): array => [$point->label => $point->value])
             ->toArray();
     }
 
@@ -105,6 +97,17 @@ class Donut extends Widget
         $this->start = $start;
         $this->end = $end;
         $this->refreshWidgetCacheState();
+    }
+
+    protected function aggregateOperation(): AggregateOperation
+    {
+        return match ($this->method) {
+            'avg' => AggregateOperation::Average,
+            'sum' => AggregateOperation::Sum,
+            'min' => AggregateOperation::Minimum,
+            'max' => AggregateOperation::Maximum,
+            default => AggregateOperation::Count,
+        };
     }
 
     protected function widgetCacheContextDimensions(): array

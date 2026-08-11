@@ -1,5 +1,7 @@
 <?php
 
+use Aura\Base\Facades\Aura;
+use Aura\Base\Reporting\CurrentStateProjectionReconciler;
 use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Widgets\ValueWidget;
 use Illuminate\Support\Carbon;
@@ -12,8 +14,14 @@ beforeEach(function () {
     // between (routine on loaded CI runners) drops the -15d post out of the
     // window and flakes the calculation assertions.
     Carbon::setTestNow(Carbon::now());
+    config([
+        'aura.reporting.projection.enabled' => true,
+        'aura.reporting.projection.reads_enabled' => true,
+    ]);
+    (require dirname(__DIR__, 3).'/database/migrations/create_aura_reporting_projections.php.stub')->up();
 
     $this->actingAs($this->user = createSuperAdmin());
+    Aura::registerResources([Post::class]);
 
     // Create 3 posts before each test
     Post::create([
@@ -43,6 +51,8 @@ beforeEach(function () {
         'created_at' => Carbon::now()->subDays(35),
     ]);
 
+    Post::query()->get()->each(fn (Post $post) => app(CurrentStateProjectionReconciler::class)->resync($post));
+
     $this->widget = (new Post)->widgets()->first();
 });
 
@@ -64,7 +74,7 @@ it('calculates avg correctly', function () {
 
     $widget = $widgetTest->instance();
 
-    expect($widget->getValue($widget->start, $widget->end))->toBe(15.0);
+    expect($widget->getValue($widget->start, $widget->end))->toBe('15.000000');
 });
 
 it('calculates sum correctly', function () {
@@ -74,7 +84,7 @@ it('calculates sum correctly', function () {
 
     $widget = $widgetTest->instance();
 
-    expect($widget->getValue($widget->start, $widget->end))->toBe(30);
+    expect($widget->getValue($widget->start, $widget->end))->toBe('30.000000');
 });
 
 it('calculates min correctly', function () {
@@ -84,7 +94,7 @@ it('calculates min correctly', function () {
 
     $widget = $widgetTest->instance();
 
-    expect($widget->getValue($widget->start, $widget->end))->toBe(10);
+    expect($widget->getValue($widget->start, $widget->end))->toBe('10.000000');
 });
 
 it('calculates max correctly', function () {
@@ -94,7 +104,7 @@ it('calculates max correctly', function () {
 
     $widget = $widgetTest->instance();
 
-    expect($widget->getValue($widget->start, $widget->end))->toBe(20);
+    expect($widget->getValue($widget->start, $widget->end))->toBe('20.000000');
 });
 
 it('returns correct calculated values for current, previous, change', function () {

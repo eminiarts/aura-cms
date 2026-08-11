@@ -232,6 +232,9 @@ class Post extends Resource
                 'conditional_logic' => [
                 ],
                 'slug' => 'number',
+                'number_type' => 'decimal',
+                'precision' => 18,
+                'scale' => 6,
                 'on_view' => true,
                 'on_forms' => true,
                 'on_index' => true,
