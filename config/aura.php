@@ -94,6 +94,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Reporting Projection
+    |--------------------------------------------------------------------------
+    |
+    | Meta-backed numeric reporting uses an additive typed projection. Enable
+    | maintenance after the reporting tables are installed, backfill twice,
+    | verify shadow aggregates, and only then enable projection reads.
+    |
+    */
+
+    'reporting' => [
+        'projection' => [
+            'enabled' => env('AURA_REPORTING_PROJECTION_ENABLED', false),
+            'reads_enabled' => env('AURA_REPORTING_PROJECTION_READS_ENABLED', false),
+            'resync_chunk_size' => 250,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Component Slots
     |--------------------------------------------------------------------------
     |
