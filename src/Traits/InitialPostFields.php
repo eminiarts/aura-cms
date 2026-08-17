@@ -3,6 +3,7 @@
 namespace Aura\Base\Traits;
 
 use Aura\Base\Resources\User;
+use Aura\Base\Support\TeamExecutionContext;
 use Illuminate\Support\Str;
 
 trait InitialPostFields
@@ -34,7 +35,9 @@ trait InitialPostFields
         }
 
         if (config('aura.teams') && ! isset($post->team_id) && auth()->user()) {
-            $post->team_id = auth()->user()->current_team_id;
+            $post->team_id = TeamExecutionContext::active()
+                ? TeamExecutionContext::currentTeamId()
+                : auth()->user()->current_team_id;
         }
 
         if (! $post->type && ! $post::usesCustomTable()) {

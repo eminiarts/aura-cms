@@ -4,6 +4,7 @@ namespace Aura\Base\Models\Scopes;
 
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
+use Aura\Base\Support\TeamExecutionContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
@@ -116,6 +117,7 @@ class TeamScope implements Scope
     public static function flushState(): void
     {
         self::$applying = false;
+        TeamExecutionContext::clear();
     }
 
     /**
@@ -125,6 +127,10 @@ class TeamScope implements Scope
      */
     private function getCurrentTeamId()
     {
+        if (TeamExecutionContext::active()) {
+            return TeamExecutionContext::currentTeamId();
+        }
+
         if (! Auth::check()) {
             return;
         }
