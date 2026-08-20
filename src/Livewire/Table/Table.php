@@ -269,8 +269,11 @@ class Table extends Component
     #[On('media-uploaded')]
     public function mediaUploaded($ids = [])
     {
-        $this->recentUploadIds = collect($ids)
+        // Sequential uploads dispatch one event per file — accumulate.
+        $this->recentUploadIds = collect($this->recentUploadIds)
+            ->merge($ids)
             ->map(fn ($id) => (string) $id)
+            ->unique()
             ->values()
             ->all();
 

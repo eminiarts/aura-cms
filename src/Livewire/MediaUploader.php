@@ -175,6 +175,9 @@ class MediaUploader extends Component
 
         // Notify consumers (grid highlight, picker auto-select) about the freshly
         // created attachments. Only dispatch when at least one was created.
+        // media-uploaded already refreshes the table rows — do not also dispatch
+        // refreshTable, or two concurrent Table updates race and the later
+        // response can wipe recentUploadIds (badge disappears in the browser).
         if (! empty($attachments)) {
             $ids = collect($attachments)->pluck('id')->all();
 
@@ -184,6 +187,8 @@ class MediaUploader extends Component
                 'ids' => $ids,
             ];
             $this->dispatch('media-uploaded', ids: $ids);
+
+            return;
         }
 
         $this->dispatch('refreshTable');
