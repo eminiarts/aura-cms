@@ -96,7 +96,7 @@ test('media uploader stores file size correctly', function () {
     expect($attachment->size)->toBeGreaterThan(0);
 });
 
-test('media uploader dispatches refreshTable event after upload', function () {
+test('media uploader dispatches media-uploaded after a successful upload', function () {
     Storage::fake('public');
     Storage::fake('tmp-for-tests');
 
@@ -104,7 +104,8 @@ test('media uploader dispatches refreshTable event after upload', function () {
 
     Livewire::test(MediaUploader::class)
         ->set('media', [$file])
-        ->assertDispatched('refreshTable');
+        ->assertDispatched('media-uploaded')
+        ->assertNotDispatched('refreshTable');
 });
 
 test('media uploader stores correct mime type for jpg', function () {

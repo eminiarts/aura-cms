@@ -17,11 +17,9 @@ test('uploading a single image shows per-file progress and an uploaded indicator
 
     expect(Attachment::query()->count())->toBe(1);
 
-    // Grid card is the stable post-upload signal. The green badge depends on a
-    // follow-up Livewire media-uploaded round-trip and remains flaky in CI;
-    // coverage for recentUploadIds + data-uploaded-badge lives in feature tests.
     $page->assertSee('photo.jpg')
-        ->assertVisible('[data-attachment-card]');
+        ->assertVisible('[data-attachment-card]')
+        ->assertVisible('[data-uploaded-badge]');
 });
 
 test('uploading mixed file types succeeds for each file', function () {

@@ -379,7 +379,7 @@
                     </h1>
                 </div>
 
-                <livewire:aura::table :model="$model" :field="$field" />
+                <livewire:aura::table wire:key="media-uploader-table" :model="$model" :field="$field" />
             </div>
         @endif
     </div>
