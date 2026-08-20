@@ -28,9 +28,13 @@ function managerAttachment(string $name = 'photo.jpg'): Attachment
 function denyAttachmentViewForAdmin(): User
 {
     $user = createAdmin();
-    $role = Role::where('slug', 'editor')
-        ->where('team_id', $user->current_team_id)
-        ->firstOrFail();
+    $roleQuery = Role::where('slug', 'editor');
+
+    if (config('aura.teams')) {
+        $roleQuery->where('team_id', $user->current_team_id);
+    }
+
+    $role = $roleQuery->firstOrFail();
     $permissions = $role->permissions;
     $permissions['view-attachment'] = false;
     $permissions['viewAny-attachment'] = true;
@@ -120,7 +124,7 @@ test('select rejects foreign team attachment ids', function () {
         'selected' => [],
         'modalAttributes' => null,
     ])->call('select', [(string) $foreign->id]))->toThrow(InvalidMediaOwnerContext::class);
-});
+})->skip(fn () => ! config('aura.teams'), 'Requires teams');
 
 test('select accepts authorized attachment ids', function () {
     $attachment = managerAttachment('ok.jpg');

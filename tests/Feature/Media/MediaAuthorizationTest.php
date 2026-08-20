@@ -51,7 +51,7 @@ test('authorizeAttachments rejects foreign team attachment ids', function () {
     expect(fn () => app(MediaAuthorization::class)
         ->authorizeAttachments([(string) $foreign->id], $this->user))
         ->toThrow(InvalidMediaOwnerContext::class);
-});
+})->skip(fn () => ! config('aura.teams'), 'Requires teams');
 
 test('authorizeAttachments rejects unviewable attachment ids', function () {
     $user = createAdmin();

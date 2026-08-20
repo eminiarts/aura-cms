@@ -27,6 +27,10 @@ trait BulkActions
 
         foreach ($records as $item) {
             if (str_starts_with($action, 'callFlow.')) {
+                if (! method_exists($item, 'callFlow')) {
+                    continue;
+                }
+
                 $item->callFlow(explode('.', $action)[1]);
             } elseif (method_exists($item, $action)) {
                 $item->{$action}();

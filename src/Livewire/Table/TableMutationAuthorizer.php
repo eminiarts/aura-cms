@@ -35,7 +35,7 @@ final class TableMutationAuthorizer
     ) {}
 
     /**
-     * @param  array<string, mixed>  $declared
+     * @param  array<string, mixed>|string  $definition
      */
     public function abilityFor(string $action, mixed $definition): string
     {
