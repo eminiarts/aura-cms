@@ -353,13 +353,8 @@ cd my-awesome-cms
 # Install Aura CMS
 composer require eminiarts/aura-cms
 
-# Publish, configure, and initialize Aura
-php artisan vendor:publish --tag=aura-config
-php artisan aura:install-config
-php artisan aura:extend-user-model
-php artisan migrate
-php artisan aura:publish
-php artisan aura:user
+# Publish, configure, migrate, and create the first administrator
+php artisan aura:install
 
 # Create your first resource
 php artisan aura:resource Article
