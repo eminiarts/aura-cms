@@ -96,6 +96,9 @@ class InstallConfigCommand extends Command
                         options: $choices,
                         default: $currentValue
                     );
+                } elseif (is_array($currentValue)) {
+                    // Nested theme structures (colors, font, …) keep package defaults.
+                    continue;
                 } elseif (is_bool($currentValue)) {
                     // Boolean option
                     $theme[$option] = confirm("Enable '{$option}'?", $currentValue);
@@ -103,7 +106,7 @@ class InstallConfigCommand extends Command
                     // For other options, just ask for the value
                     $theme[$option] = text(
                         label: "Enter value for '{$option}':",
-                        default: $currentValue
+                        default: is_scalar($currentValue) ? (string) $currentValue : ''
                     );
                 }
             }
