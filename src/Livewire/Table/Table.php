@@ -255,6 +255,8 @@ class Table extends Component
             ->values()
             ->all();
 
+        $this->refreshRows();
+
         if (! $this->field) {
             return;
         }

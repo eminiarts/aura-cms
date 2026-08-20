@@ -11,12 +11,13 @@ test('uploading a single image shows per-file progress and an uploaded indicator
 
     browserAttachFiles($page, '#file-upload', __DIR__.'/fixtures/photo.jpg');
 
-    // Assert while the Alpine fresh-upload badge is still within its TTL
-    // (grid.blade.php clears recentUploads after a few seconds).
     $page->assertSee('Uploads')
         ->assertSee('photo.jpg')
-        ->assertSee('Uploaded')
-        ->assertVisible('[data-uploaded-badge]');
+        ->assertSee('Uploaded');
+
+    // Table applies media-uploaded in a follow-up Livewire request after the
+    // uploader response; wait briefly for the server-rendered badge to appear.
+    $page->wait(2)->assertVisible('[data-uploaded-badge]');
 
     expect(Attachment::query()->count())->toBe(1);
 });
