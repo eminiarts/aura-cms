@@ -59,23 +59,18 @@ class Aura
     /**
      * Determine if Aura's published assets are up-to-date.
      *
-     * @return bool
+     * Matching manifests alone are not enough — every Vite-referenced file
+     * under public/vendor/aura must also exist.
      *
      * @throws RuntimeException
      */
-    public static function assetsAreCurrent()
+    public static function assetsAreCurrent(): bool
     {
         if (app()->environment('testing')) {
             return true;
         }
 
-        $publishedPath = public_path('vendor/aura/manifest.json');
-
-        if (! File::exists($publishedPath)) {
-            throw new RuntimeException('Aura CMS assets are not published. Please run: php artisan aura:publish');
-        }
-
-        return File::get($publishedPath) === File::get(__DIR__.'/../resources/dist/manifest.json');
+        return Support\PublishedAssets::areCurrent();
     }
 
     /**

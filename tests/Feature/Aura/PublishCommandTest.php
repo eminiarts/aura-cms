@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Support\PublishedAssets;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 
@@ -24,9 +25,10 @@ afterEach(function () {
 describe('asset publishing', function () {
     it('publishes aura assets', function () {
         $this->artisan('aura:publish')
-            ->assertExitCode(0);
+            ->assertSuccessful();
 
         expect(File::exists($this->assetPath))->toBeTrue();
+        expect(PublishedAssets::verify(public_path('vendor/aura')))->toBeTrue();
     });
 
     it('removes existing assets before publishing', function () {
@@ -37,7 +39,7 @@ describe('asset publishing', function () {
         expect(File::exists($this->assetPath.'/dummy.txt'))->toBeTrue();
 
         $this->artisan('aura:publish')
-            ->assertExitCode(0);
+            ->assertSuccessful();
 
         expect(File::exists($this->assetPath.'/dummy.txt'))->toBeFalse();
     });
@@ -49,7 +51,7 @@ describe('asset publishing', function () {
         }
 
         $this->artisan('aura:publish')
-            ->assertExitCode(0);
+            ->assertSuccessful();
 
         expect(File::isDirectory($this->assetPath))->toBeTrue();
     });
