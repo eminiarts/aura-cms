@@ -26,8 +26,15 @@ class Modals extends Component
     }
 
     #[On('openModal')]
-    public function openModal($component, $arguments = [], $modalAttributes = []): void
+    public function openModal($component = null, $arguments = [], $modalAttributes = []): void
     {
+        // Alpine/Livewire may deliver named params as a single array payload.
+        if (is_array($component) && isset($component['component'])) {
+            $modalAttributes = $component['modalAttributes'] ?? [];
+            $arguments = $component['arguments'] ?? [];
+            $component = $component['component'];
+        }
+
         $id = md5($component.serialize($arguments));
 
         // Resolve component class - handle both namespaced and non-namespaced components

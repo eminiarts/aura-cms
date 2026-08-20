@@ -731,6 +731,25 @@ describe('InviteUser Livewire Component', function () {
             ->assertDispatched('refreshTable');
     });
 
+    it('does not dispatch closeModal when validation fails', function () {
+        Livewire::test(InviteUser::class)
+            ->set('form.fields.email', '')
+            ->set('form.fields.role', '')
+            ->call('save')
+            ->assertHasErrors(['form.fields.email', 'form.fields.role'])
+            ->assertNotDispatched('closeModal');
+    });
+
+    it('shows friendly validation attribute names', function () {
+        Livewire::test(InviteUser::class)
+            ->set('form.fields.email', '')
+            ->set('form.fields.role', '')
+            ->call('save')
+            ->assertHasErrors(['form.fields.email', 'form.fields.role'])
+            ->assertSee('The email field is required.')
+            ->assertSee('The role field is required.');
+    });
+
     it('stores invitation with correct team_id', function () {
         Mail::fake();
 
