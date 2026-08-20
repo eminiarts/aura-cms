@@ -11,17 +11,14 @@ test('uploading a single image shows per-file progress and an uploaded indicator
 
     browserAttachFiles($page, '#file-upload', __DIR__.'/fixtures/photo.jpg');
 
-    $page->wait(3);
-
-    // The queue row reports the file as uploaded.
+    // Assert while the Alpine fresh-upload badge is still within its TTL
+    // (grid.blade.php clears recentUploads after a few seconds).
     $page->assertSee('Uploads')
         ->assertSee('photo.jpg')
-        ->assertSee('Uploaded');
+        ->assertSee('Uploaded')
+        ->assertVisible('[data-uploaded-badge]');
 
-    // The attachment exists and appears in the grid with the fresh-upload badge.
     expect(Attachment::query()->count())->toBe(1);
-
-    $page->assertVisible('[data-uploaded-badge]');
 });
 
 test('uploading mixed file types succeeds for each file', function () {

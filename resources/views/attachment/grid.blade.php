@@ -6,7 +6,7 @@
             // Sequential uploads dispatch one event per file — accumulate.
             this.recentUploads = [...new Set([...this.recentUploads, ...(ids || []).map(String)])];
             clearTimeout(this.highlightTimer);
-            this.highlightTimer = setTimeout(() => this.recentUploads = [], 4000);
+            this.highlightTimer = setTimeout(() => this.recentUploads = [], 8000);
         }
     }"
     x-on:media-uploaded.window="markRecent($event.detail.ids)"
