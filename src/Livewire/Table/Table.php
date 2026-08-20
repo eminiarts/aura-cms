@@ -106,6 +106,13 @@ class Table extends Component
      */
     public array $quickFilters = [];
 
+    /**
+     * Attachment ids highlighted as freshly uploaded in the media grid.
+     *
+     * @var array<int, string>
+     */
+    public array $recentUploadIds = [];
+
     public $resource;
 
     /**
@@ -243,11 +250,16 @@ class Table extends Component
     #[On('media-uploaded')]
     public function mediaUploaded($ids = [])
     {
+        $this->recentUploadIds = collect($ids)
+            ->map(fn ($id) => (string) $id)
+            ->values()
+            ->all();
+
         if (! $this->field) {
             return;
         }
 
-        $uploaded = collect($ids)->map(fn ($id) => (string) $id);
+        $uploaded = collect($this->recentUploadIds);
 
         if ((int) ($this->field['max_files'] ?? 0) === 1) {
             $this->selected = $uploaded->slice(-1)->values()->all();

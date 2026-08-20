@@ -1,6 +1,6 @@
 <div
     x-data="{
-        recentUploads: [],
+        recentUploads: @entangle('recentUploadIds'),
         highlightTimer: null,
         markRecent(ids) {
             // Sequential uploads dispatch one event per file — accumulate.
@@ -9,6 +9,7 @@
             this.highlightTimer = setTimeout(() => this.recentUploads = [], 8000);
         }
     }"
+    x-init="if (recentUploads.length) { clearTimeout(highlightTimer); highlightTimer = setTimeout(() => recentUploads = [], 8000); }"
     x-on:media-uploaded.window="markRecent($event.detail.ids)"
 >
     <div class="grid grid-cols-2 gap-2 my-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-3 md:gap-4 lg:gap-5 sm:my-3 md:my-4 lg:my-5">

@@ -1,6 +1,7 @@
 <?php
 
 use Aura\Base\Livewire\MediaUploader;
+use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resources\Attachment;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -45,4 +46,14 @@ test('refreshTable is still dispatched on successful upload', function () {
         ->assertDispatched('refreshTable');
 
     expect(Attachment::count())->toBe(1);
+});
+
+test('table keeps recent upload ids after media-uploaded so the grid badge survives refresh', function () {
+    $attachment = Attachment::factory()->create();
+
+    livewire(Table::class, [
+        'model' => Attachment::class,
+    ])
+        ->dispatch('media-uploaded', ids: [$attachment->id])
+        ->assertSet('recentUploadIds', [(string) $attachment->id]);
 });
