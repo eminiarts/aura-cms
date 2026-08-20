@@ -52,7 +52,8 @@ test('table keeps recent upload ids after media-uploaded so the grid badge survi
     $attachment = Attachment::factory()->create();
 
     livewire(Table::class, [
-        'model' => Attachment::class,
+        'query' => null,
+        'model' => new Attachment,
     ])
         ->dispatch('media-uploaded', ids: [$attachment->id])
         ->assertSet('recentUploadIds', [(string) $attachment->id]);
