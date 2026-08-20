@@ -1,6 +1,6 @@
 <div class="">
 
-    <form wire:submit="save">
+    <form wire:submit.prevent="save">
         <x-aura::dialog.title>{{ __('Invite User') }}</x-aura::dialog.title>
 
         <div class="flex flex-wrap">

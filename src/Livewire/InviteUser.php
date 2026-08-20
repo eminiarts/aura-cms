@@ -129,4 +129,12 @@ class InviteUser extends Component
         $this->dispatch('closeModal');
         $this->dispatch('refreshTable');
     }
+
+    protected function validationAttributes(): array
+    {
+        return [
+            'form.fields.email' => 'email',
+            'form.fields.role' => 'role',
+        ];
+    }
 }
