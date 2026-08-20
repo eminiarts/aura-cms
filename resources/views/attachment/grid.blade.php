@@ -1,18 +1,14 @@
 <div
-    x-data="{
-        recentUploads: [],
-        highlightTimer: null,
-        markRecent(ids) {
-            // Sequential uploads dispatch one event per file — accumulate.
-            this.recentUploads = [...new Set([...this.recentUploads, ...(ids || []).map(String)])];
-            clearTimeout(this.highlightTimer);
-            this.highlightTimer = setTimeout(() => this.recentUploads = [], 4000);
-        }
-    }"
-    x-on:media-uploaded.window="markRecent($event.detail.ids)"
+    @if (count($this->recentUploadIds) > 0)
+        x-data
+        x-init="setTimeout(() => $wire.set('recentUploadIds', []), 8000)"
+    @endif
 >
     <div class="grid grid-cols-2 gap-2 my-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-3 md:gap-4 lg:gap-5 sm:my-3 md:my-4 lg:my-5">
         @forelse($rows as $row)
+        @php
+            $isRecentUpload = in_array((string) $row->id, $this->recentUploadIds, true);
+        @endphp
         <div class="relative group select-none" wire:key="grid_{{ $row->id }}">
             {{-- Picker: a card click only toggles selection (pure client state, no
                  Livewire roundtrip — mixing both races the entangled selection).
@@ -21,11 +17,10 @@
                 x-on:click="@if ($field) toggleRow($event, {{ $row->id }}) @else Livewire.dispatch('open-attachment-details', { id: {{ $row->id }}, ids: rows.map(Number) }) @endif"
                 data-attachment-card="{{ $row->id }}">
                 <div class="relative">
-                    <div class="overflow-hidden relative w-full bg-gray-100 rounded-lg shadow-sm transition-all duration-300 ease-in-out dark:bg-gray-800 aspect-w-10 aspect-h-7 hover:shadow-md focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100"
+                    <div class="overflow-hidden relative w-full bg-gray-100 rounded-lg shadow-sm transition-all duration-300 ease-in-out dark:bg-gray-800 aspect-w-10 aspect-h-7 hover:shadow-md focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100 {{ $isRecentUpload ? 'ring-2 ring-green-400 ring-offset-2 dark:ring-offset-gray-900' : '' }}"
                         :class="{
                             'shadow-[inset_0_0_0_4px_theme(colors.primary.500)]': selected.includes('{{ $row->id }}'),
-                            'opacity-50': maxFilesReached && !selected.includes('{{ $row->id }}'),
-                            'ring-2 ring-green-400 ring-offset-2 dark:ring-offset-gray-900': recentUploads.includes('{{ $row->id }}')
+                            'opacity-50': maxFilesReached && !selected.includes('{{ $row->id }}')
                         }">
                         @include('aura::attachment.thumbnail')
                         <div class="rounded-lg absolute inset-0 opacity-0 shadow-[inset_0_0_0_4px_theme(colors.primary.500)]"
@@ -45,12 +40,13 @@
                         </button>
                     @endif
 
-                    {{-- Freshly uploaded badge --}}
-                    <div x-cloak x-show="recentUploads.includes('{{ $row->id }}')" x-transition.opacity.duration.300ms
-                        class="flex absolute top-3 right-3 justify-center items-center w-6 h-6 text-white bg-green-500 rounded-full shadow"
-                        data-uploaded-badge>
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/></svg>
-                    </div>
+                    {{-- Freshly uploaded badge (server-rendered so it survives refreshTable) --}}
+                    @if ($isRecentUpload)
+                        <div class="flex absolute top-3 right-3 justify-center items-center w-6 h-6 text-white bg-green-500 rounded-full shadow"
+                            data-uploaded-badge>
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/></svg>
+                        </div>
+                    @endif
 
                     <div class="absolute top-3 left-3">
                         <x-aura::input.checkbox

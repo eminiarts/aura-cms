@@ -7,6 +7,7 @@ Aura CMS provides a comprehensive theming system that gives you complete control
 - [Overview](#overview)
 - [Theme Architecture](#theme-architecture)
 - [Configuration](#configuration)
+- [Semantic Theme Tokens](#semantic-theme-tokens)
 - [Color Palettes](#color-palettes)
 - [Dark Mode](#dark-mode)
 - [Sidebar Themes](#sidebar-themes)
@@ -118,6 +119,96 @@ $darkMode = $theme['darkmode-type'] ?? 'auto';
 $isDark = $darkMode === 'dark' || 
     ($darkMode === 'auto' && // Check system preference);
 ```
+
+## Semantic Theme Tokens
+
+Aura's token contract lets a host configure common application surfaces from
+`config/aura.php`. Values are rendered as CSS custom properties at runtime so a
+host-owned Tailwind build and Aura's package styles share the same tokens.
+
+```php
+'theme' => [
+    'color-palette' => 'aura',
+    'gray-color-palette' => 'slate',
+    'darkmode-type' => 'auto',
+
+    'font' => [
+        'family' => [
+            'ui-sans-serif',
+            'system-ui',
+            'sans-serif',
+            'Apple Color Emoji',
+            'Segoe UI Emoji',
+            'Segoe UI Symbol',
+            'Noto Color Emoji',
+        ],
+        'stylesheet' => false,
+    ],
+
+    // RGB channels without rgb(...), so Tailwind opacity modifiers keep working.
+    'colors' => [
+        'light' => [
+            'primary' => 'var(--primary-600)',
+            'background' => '255 255 255',
+            'panel' => '250 250 250',
+            'border' => '228 228 231',
+            'text' => '24 24 27',
+            'muted' => '82 82 91',
+            'success' => '22 163 74',
+            'warning' => '217 119 6',
+            'danger' => '220 38 38',
+        ],
+        'dark' => [
+            'primary' => 'var(--primary-600)',
+            'background' => '9 9 11',
+            'panel' => '24 24 27',
+            'border' => '63 63 70',
+            'text' => '244 244 245',
+            'muted' => '161 161 170',
+            'success' => '22 163 74',
+            'warning' => '217 119 6',
+            'danger' => '220 38 38',
+        ],
+    ],
+],
+```
+
+Public runtime variables:
+
+```css
+--aura-font-sans
+--aura-color-primary
+--aura-color-background
+--aura-color-panel
+--aura-color-border
+--aura-color-text
+--aura-color-muted
+--aura-color-success
+--aura-color-warning
+--aura-color-danger
+```
+
+The `.dark` selector swaps dark values. Existing `--primary-*`, `--gray-*`, and
+`--sidebar-*` utilities remain supported.
+
+Tailwind semantic colors use `aura.*` utilities and `font-sans` resolves to
+`var(--aura-font-sans)`.
+
+### Local custom fonts
+
+The default system stack makes no font network request. To opt into a custom
+font, serve the stylesheet from the host application and set:
+
+```php
+'theme' => [
+    'font' => [
+        'family' => ['Acme Sans', 'sans-serif'],
+        'stylesheet' => 'fonts/acme-sans.css', // local public path only
+    ],
+],
+```
+
+Remote stylesheets (`https://…`, `//…`, `data:…`) are rejected.
 
 ## Color Palettes
 

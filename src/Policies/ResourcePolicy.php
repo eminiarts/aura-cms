@@ -8,6 +8,7 @@ use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Database\Eloquent\Model;
 
 class ResourcePolicy
 {
@@ -20,6 +21,10 @@ class ResourcePolicy
      */
     public function create($user, $resource)
     {
+        if ($resource instanceof Model && ! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($resource::$createEnabled === false) {
             return false;
         }
@@ -43,6 +48,10 @@ class ResourcePolicy
      */
     public function delete($user, $resource)
     {
+        if ($resource instanceof Model && ! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($this->deniesGlobalRoleWrite($user, $resource)) {
             return false;
         }
@@ -75,6 +84,10 @@ class ResourcePolicy
      */
     public function forceDelete($user, $resource)
     {
+        if ($resource instanceof Model && ! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($this->deniesGlobalRoleWrite($user, $resource)) {
             return false;
         }
@@ -98,6 +111,10 @@ class ResourcePolicy
      */
     public function restore(User $user, $resource)
     {
+        if ($resource instanceof Model && ! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($this->deniesGlobalRoleWrite($user, $resource)) {
             return false;
         }
@@ -120,6 +137,10 @@ class ResourcePolicy
      */
     public function update($user, $resource)
     {
+        if ($resource instanceof Model && ! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($resource::$editEnabled === false) {
             return false;
         }
@@ -156,6 +177,10 @@ class ResourcePolicy
      */
     public function view($user, $resource)
     {
+        if ($resource instanceof Model && ! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         // Check if the config resource view is enabled
         if (config('aura.resource-view-enabled') === false) {
             return false;
@@ -194,6 +219,10 @@ class ResourcePolicy
      */
     public function viewAny($user, $resource)
     {
+        if ($resource instanceof Model && ! $this->usesSameConnection($user, $resource)) {
+            return false;
+        }
+
         if ($resource::$indexViewEnabled === false) {
             return false;
         }
@@ -241,5 +270,28 @@ class ResourcePolicy
     protected function hasBlanketAccess($user): bool
     {
         return $user->isSuperAdmin() || $user->isAuraGlobalAdmin();
+    }
+
+    /**
+     * Refuse authorization when actor and resource clearly live on different
+     * database connections. If either side is not an Eloquent model (or lacks
+     * connection info), allow the rest of the policy to decide — do not break
+     * non-model ability checks (e.g. class-level create/viewAny).
+     */
+    private function usesSameConnection(mixed $user, mixed $resource): bool
+    {
+        if (! $user instanceof Model || ! $resource instanceof Model) {
+            return true;
+        }
+
+        if (! method_exists($user, 'getConnectionName') || ! method_exists($resource, 'getConnectionName')) {
+            return true;
+        }
+
+        $default = (string) config('database.default');
+        $userConnection = $user->getConnectionName() ?: $default;
+        $resourceConnection = $resource->getConnectionName() ?: $default;
+
+        return $userConnection === $resourceConnection;
     }
 }

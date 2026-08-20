@@ -41,29 +41,44 @@ class TeamScope implements Scope
         self::$applying = true;
 
         try {
+            // Guests are not in a team context. Fail-closed is for authenticated
+            // actors missing a current team — never for unauthenticated requests.
+            // Guest flows (login, password reset, invitation register, registration
+            // role attach) must resolve models; applying 1=0 here 404/403s all of them.
+            // Admin/resource routes still require auth middleware, so skipping the
+            // scope for guests does not open team data to the public.
+            if (! Auth::check()) {
+                self::$applying = false;
+
+                return;
+            }
+
             $currentTeamId = $this->getCurrentTeamId();
             $userId = Auth::id();
 
             // Handle User model specially
             if ($model->getTable() === 'users') {
+                // A Global Admin transcends the team boundary: their user
+                // queries are never restricted to current-team members. The
+                // bypass is gated strictly on the authenticated user being a
+                // Global Admin, so it never leaks into ordinary requests.
+                // (Auth::user() is already resolved here; the $applying guard
+                // above prevents any re-entry while it is read.) The gate is
+                // consulted directly so the check is host-overridable and safe
+                // for any authenticatable, not only the Aura User model.
+                $authUser = Auth::user();
+                $isGlobalAdmin = $authUser && Gate::forUser($authUser)->allows(User::GLOBAL_ADMIN_GATE);
 
-                // Only apply team scoping if teams are enabled
-                if (config('aura.teams') && $currentTeamId) {
-                    // A Global Admin transcends the tenant boundary: their user
-                    // queries are never restricted to current-team members. The
-                    // bypass is gated strictly on the authenticated user being a
-                    // Global Admin, so it never leaks into ordinary requests.
-                    // (Auth::user() is already resolved here; the $applying guard
-                    // above prevents any re-entry while it is read.) The gate is
-                    // consulted directly so the check is host-overridable and safe
-                    // for any authenticatable, not only the Aura User model.
-                    $authUser = Auth::user();
-
-                    if (! ($authUser && Gate::forUser($authUser)->allows(User::GLOBAL_ADMIN_GATE))) {
+                if ($currentTeamId) {
+                    if (! $isGlobalAdmin) {
                         $builder->whereHas('teams', function ($query) use ($currentTeamId) {
                             $query->where('teams.id', $currentTeamId);
                         });
                     }
+                } elseif (! $isGlobalAdmin) {
+                    // No team context: fail closed for ordinary authenticated
+                    // users by restricting to the authenticated identity only.
+                    $builder->whereKey($authUser->getKey());
                 }
 
                 self::$applying = false;
@@ -71,17 +86,19 @@ class TeamScope implements Scope
                 return;  // Early return is important.
             }
 
-            // --- Rest of your scope (for other models) ---
-
-            // For team-enabled filtering
-            if (! $currentTeamId) {
+            // For Team model, don't apply team scope (leave unscoped as today)
+            if ($model->getTable() === 'teams') {
                 self::$applying = false;
 
                 return;
             }
 
-            // For Team model, don't apply team scope
-            if ($model->getTable() === 'teams') {
+            // Fail-closed: without a current team, never return unscoped rows.
+            // Roles previously needed currentTeamId for scopeVisibleToTeam; when
+            // it is missing, refuse the query rather than exposing the catalog.
+            if (! $currentTeamId) {
+                $builder->whereRaw('1 = 0');
+
                 self::$applying = false;
 
                 return;

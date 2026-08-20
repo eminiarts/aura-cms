@@ -21,6 +21,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -104,6 +105,13 @@ class Table extends Component
      * @var array<string, string|int|float|bool|array|null>
      */
     public array $quickFilters = [];
+
+    /**
+     * Attachment ids highlighted as freshly uploaded in the media grid.
+     *
+     * @var array<int, string>
+     */
+    public array $recentUploadIds = [];
 
     public $resource;
 
@@ -242,11 +250,18 @@ class Table extends Component
     #[On('media-uploaded')]
     public function mediaUploaded($ids = [])
     {
+        $this->recentUploadIds = collect($ids)
+            ->map(fn ($id) => (string) $id)
+            ->values()
+            ->all();
+
+        $this->refreshRows();
+
         if (! $this->field) {
             return;
         }
 
-        $uploaded = collect($ids)->map(fn ($id) => (string) $id);
+        $uploaded = collect($this->recentUploadIds);
 
         if ((int) ($this->field['max_files'] ?? 0) === 1) {
             $this->selected = $uploaded->slice(-1)->values()->all();
@@ -346,6 +361,7 @@ class Table extends Component
     public function render()
     {
         return view($this->model->tableComponentView(), [
+            'kanban' => $this->resolvedKanbanConfiguration(),
             'parent' => $this->parent,
             'rows' => $this->rows,
             'rowIds' => $this->rowIds,
@@ -465,14 +481,34 @@ class Table extends Component
 
     public function updateCardStatus($cardId, $newStatus)
     {
-        $card = $this->model->find($cardId);
-        if ($card) {
-            $card->status = $newStatus;
-            $card->save();
-            $this->notify('Card status updated successfully');
-        } else {
-            $this->notify('Card not found', 'error');
+        $kanbanConfiguration = $this->resolvedKanbanConfiguration();
+
+        if (! $kanbanConfiguration['enabled']) {
+            abort(422, 'Kanban mutations require an enabled configuration.');
         }
+
+        if (! is_string($newStatus) && ! is_int($newStatus)) {
+            abort(422, 'The Kanban destination is not declared.');
+        }
+
+        if (! array_key_exists((string) $newStatus, $kanbanConfiguration['columns'])) {
+            abort(422, 'The Kanban destination is not declared.');
+        }
+
+        $card = $this->model->newQuery()->find($cardId);
+
+        if (! $card) {
+            $this->notify('Card not found', 'error');
+
+            return;
+        }
+
+        Gate::authorize('update', $card);
+
+        $groupField = $kanbanConfiguration['group_field'];
+        $card->{$groupField} = $newStatus;
+        $card->save();
+        $this->notify('Card status updated successfully');
     }
 
     /**

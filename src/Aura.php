@@ -8,6 +8,8 @@ use Aura\Base\Livewire\Resource\Index;
 use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\RecordLayout\RecordLayoutPanel;
+use Aura\Base\RecordLayout\RecordLayoutRegistry;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Option;
 use Aura\Base\Resources\User;
@@ -21,6 +23,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use LogicException;
 use RuntimeException;
 use Symfony\Component\Finder\SplFileInfo;
 
@@ -84,6 +87,10 @@ class Aura
         $this->baselineInjectViews = $this->injectViews;
         $this->baselineResources = $this->resources;
         $this->baselineWidgets = $this->widgets;
+
+        if (app()->bound(RecordLayoutRegistry::class)) {
+            app(RecordLayoutRegistry::class)->captureBaselineState($this->getResources());
+        }
     }
 
     public static function checkCondition($model, $field, $post = null)
@@ -148,6 +155,10 @@ class Aura
         $this->injectViews = $this->baselineInjectViews;
         $this->resources = $this->baselineResources;
         $this->widgets = $this->baselineWidgets;
+
+        if (app()->bound(RecordLayoutRegistry::class)) {
+            app(RecordLayoutRegistry::class)->flushState();
+        }
 
         ConditionalLogic::clearConditionsCache();
         Resource::flushFieldCache();
@@ -322,7 +333,11 @@ class Aura
     {
         // Necessary to add TeamIds?
 
-        return Cache::remember('user-'.auth()->id().'-'.auth()->user()->current_team_id.'-navigation', 3600, function () {
+        // Cache plain arrays only. With cache.serializable_classes=false (common
+        // hardening default), Collection payloads become __PHP_Incomplete_Class
+        // and the sidebar foreach treats property values as group lists — strings
+        // then blow up with "foreach() argument must be of type array|object".
+        $payload = Cache::remember('user-'.auth()->id().'-'.auth()->user()->current_team_id.'-navigation', 3600, function () {
 
             $resources = collect($this->getResources());
 
@@ -379,8 +394,20 @@ class Aura
                 return $carry;
             }, []);
 
-            return collect($grouped)->groupBy('group');
+            return collect($grouped)
+                ->groupBy('group')
+                ->map(fn ($group) => $group->values()->all())
+                ->all();
         });
+
+        // Revive incomplete/legacy Collection payloads written before this fix.
+        if (! is_array($payload)) {
+            Cache::forget('user-'.auth()->id().'-'.auth()->user()->current_team_id.'-navigation');
+
+            return $this->navigation();
+        }
+
+        return collect($payload);
     }
 
     public function option($key)
@@ -401,6 +428,18 @@ class Aura
     public function registerInjectView(string $name, Closure $callback): void
     {
         $this->injectViews[$name][] = $callback;
+    }
+
+    /**
+     * @param  list<RecordLayoutPanel>  $panels
+     */
+    public function registerRecordLayoutPanels(string $source, array $panels): void
+    {
+        if (! app()->bound(RecordLayoutRegistry::class)) {
+            throw new LogicException('Record layout panels require Aura to be resolved through the application container.');
+        }
+
+        app(RecordLayoutRegistry::class)->register($source, $panels);
     }
 
     public function registerResources(array $resources): void
