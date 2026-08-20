@@ -2,7 +2,7 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
-use Illuminate\Support\Facades\Gate;
+use Aura\Base\Livewire\Table\TableMutationAuthorizer;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -17,43 +17,43 @@ trait BulkActions
      */
     public function bulkAction(string $action)
     {
-        $this->ensureBulkActionAllowed($action);
+        $records = $this->tableMutationAuthorizer()->authorizeBulk(
+            scope: clone $this->query(),
+            action: $action,
+            declared: (array) $this->getBulkActionsProperty(),
+            selected: $this->selected,
+            selectAll: (bool) $this->selectAll,
+        );
 
-        $ability = $this->bulkActionAbility($action);
-
-        $this->selectedRowsQuery->each(function ($item, $key) use ($action, $ability) {
-            // Authorize the action against each selected model before running it.
-            Gate::authorize($ability, $item);
-
+        foreach ($records as $item) {
             if (str_starts_with($action, 'callFlow.')) {
-                $item->callFlow(explode('.', $action)[1]);
-            } elseif (str_starts_with($action, 'multiple')) {
-                $posts = $this->selectedRowsQuery->get();
-                $response = $item->{$action}($posts);
+                if (! method_exists($item, 'callFlow')) {
+                    continue;
+                }
 
+                $item->callFlow(explode('.', $action)[1]);
             } elseif (method_exists($item, $action)) {
                 $item->{$action}();
             }
-        });
+        }
 
-        // Clear the selected array
         $this->selected = [];
+        $this->selectAll = false;
 
         $this->notify('Success: '.$action);
     }
 
     public function bulkCollectionAction($action)
     {
-        $this->ensureBulkActionAllowed($action);
+        $records = $this->tableMutationAuthorizer()->authorizeBulk(
+            scope: clone $this->query(),
+            action: $action,
+            declared: (array) $this->getBulkActionsProperty(),
+            selected: $this->selected,
+            selectAll: (bool) $this->selectAll,
+        );
 
-        $ability = $this->bulkActionAbility($action);
-
-        // Authorize the action against every selected model before running it.
-        $this->selectedRowsQuery->each(function ($item) use ($ability) {
-            Gate::authorize($ability, $item);
-        });
-
-        $ids = $this->selectedRowsQuery->pluck('id')->toArray();
+        $ids = $records->map(fn ($item) => $item->getKey())->all();
 
         $response = $this->model->{$action}($ids);
 
@@ -61,8 +61,8 @@ trait BulkActions
             return $response;
         }
 
-        // reset selected rows
         $this->selected = [];
+        $this->selectAll = false;
 
         $this->notify('Success: '.$action);
 
@@ -79,43 +79,8 @@ trait BulkActions
         return $this->model->getBulkActions();
     }
 
-    /**
-     * Map a declared bulk action to the policy ability it requires.
-     *
-     * Destructive actions are matched by name so they are authorized with the
-     * matching ability; anything else defaults to the mutating 'update' ability.
-     */
-    protected function bulkActionAbility(string $action): string
+    protected function tableMutationAuthorizer(): TableMutationAuthorizer
     {
-        $normalized = strtolower($action);
-
-        if (str_contains($normalized, 'forcedelete')) {
-            return 'forceDelete';
-        }
-
-        if (str_contains($normalized, 'restore')) {
-            return 'restore';
-        }
-
-        if (str_contains($normalized, 'delete') || str_contains($normalized, 'trash')) {
-            return 'delete';
-        }
-
-        return 'update';
-    }
-
-    /**
-     * Ensure the requested action is one the resource explicitly declares.
-     *
-     * This prevents a client from invoking arbitrary methods on the model by
-     * passing an unlisted action string to bulkAction()/bulkCollectionAction().
-     */
-    protected function ensureBulkActionAllowed(string $action): void
-    {
-        $allowed = array_keys((array) $this->getBulkActionsProperty());
-
-        if (! in_array($action, $allowed, true)) {
-            abort(403, 'This bulk action is not allowed.');
-        }
+        return app(TableMutationAuthorizer::class);
     }
 }

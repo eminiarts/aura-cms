@@ -2,7 +2,9 @@
 
 namespace Aura\Base\Livewire;
 
+use Aura\Base\Livewire\Media\MediaAuthorization;
 use Aura\Base\Resources\Attachment;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\On;
@@ -50,6 +52,18 @@ class MediaUploader extends Component
     public function mount(): void
     {
         $this->model = app($this->namespace);
+
+        $user = Auth::user();
+
+        // Only re-check existing selected IDs on mount. Create is authorized at
+        // upload time so forms that embed the uploader without create rights
+        // (e.g. user edit with an image field) can still open.
+        if ($user && is_array($this->selected) && $this->selected !== []) {
+            app(MediaAuthorization::class)->authorizeAttachments(
+                array_values($this->selected),
+                $user,
+            );
+        }
     }
 
     public function render(): View
@@ -75,6 +89,14 @@ class MediaUploader extends Component
             'message' => '',
             'ids' => [],
         ];
+
+        $user = Auth::user();
+
+        if (! $user) {
+            abort(403);
+        }
+
+        app(MediaAuthorization::class)->authorizeAttachmentCreate($user);
 
         try {
             $this->validate([

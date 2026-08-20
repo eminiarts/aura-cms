@@ -32,6 +32,7 @@ use Aura\Base\Livewire\CreateResource;
 use Aura\Base\Livewire\EditResourceField;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\InviteUser;
+use Aura\Base\Livewire\Media\MediaAuthorization;
 use Aura\Base\Livewire\MediaManager;
 use Aura\Base\Livewire\MediaUploader;
 use Aura\Base\Livewire\Modals;
@@ -418,6 +419,7 @@ class AuraServiceProvider extends PackageServiceProvider
         $this->app->singleton(LivewireCollisionInspector::class, ArrayLivewireCollisionInspector::class);
         $this->app->singleton(RecordLayoutRegistry::class);
         $this->app->singleton(RecordLayoutResolver::class);
+        $this->app->singleton(MediaAuthorization::class);
 
         $this->app->scoped('aura', function (): Aura {
             return app(Aura::class);
