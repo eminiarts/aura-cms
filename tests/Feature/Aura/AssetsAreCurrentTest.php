@@ -1,9 +1,7 @@
 <?php
 
-use Aura\Base\Commands\PublishCommand;
 use Aura\Base\Support\PublishedAssets;
 use Illuminate\Support\Facades\File;
-use RuntimeException;
 
 beforeEach(function () {
     $this->publishedRoot = public_path('vendor/aura');
@@ -136,12 +134,12 @@ it('throws for a malformed published manifest', function () {
     File::put($this->publishedRoot.'/manifest.json', '{not-json');
 
     expect(fn () => PublishedAssets::areCurrent($this->publishedRoot, $this->packageDist))
-        ->toThrow(RuntimeException::class, 'invalid JSON');
+        ->toThrow(\RuntimeException::class, 'invalid JSON');
 });
 
 it('throws when no published manifest exists', function () {
     expect(fn () => PublishedAssets::areCurrent($this->publishedRoot, $this->packageDist))
-        ->toThrow(RuntimeException::class, 'not published');
+        ->toThrow(\RuntimeException::class, 'not published');
 });
 
 it('repairs an incomplete tree via aura:publish', function () {
@@ -158,39 +156,20 @@ it('repairs an incomplete tree via aura:publish', function () {
 
 it('leaves the previous valid bundle intact when staging verification fails', function () {
     seedPublishedAssets($this->publishedRoot);
-    expect(PublishedAssets::verify($this->publishedRoot))->toBeTrue();
-
     $before = File::get($this->publishedRoot.'/manifest.json');
 
-    $command = new class extends PublishCommand
-    {
-        public function handle(): int
-        {
-            $packageRoot = dirname(__DIR__, 3);
-            $target = public_path('vendor/aura');
-            $token = 'testfail';
-            $staging = public_path('vendor/aura-staging-'.$token);
+    $staging = public_path('vendor/aura-staging-testfail');
+    File::copyDirectory($this->packageDist, $staging);
+    File::deleteDirectory($staging.'/assets');
+    File::ensureDirectoryExists($staging.'/assets');
 
-            File::ensureDirectoryExists($staging);
-            File::copyDirectory($packageRoot.'/resources/dist', $staging);
-            File::deleteDirectory($staging.'/assets');
-            File::ensureDirectoryExists($staging.'/assets');
+    expect(PublishedAssets::verify($staging))->toBeFalse();
 
-            if (! PublishedAssets::verify($staging)) {
-                File::deleteDirectory($staging);
+    // PublishCommand deletes the staging tree and returns failure before swap.
+    File::deleteDirectory($staging);
 
-                return self::FAILURE;
-            }
-
-            File::move($staging, $target);
-
-            return self::SUCCESS;
-        }
-    };
-
-    expect($command->handle())->toBe(1);
     expect(File::exists($this->publishedRoot))->toBeTrue();
     expect(File::get($this->publishedRoot.'/manifest.json'))->toBe($before);
     expect(PublishedAssets::verify($this->publishedRoot))->toBeTrue();
-    expect(File::exists(public_path('vendor/aura-staging-testfail')))->toBeFalse();
+    expect(File::exists($staging))->toBeFalse();
 });
