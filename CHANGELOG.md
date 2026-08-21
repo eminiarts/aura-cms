@@ -16,9 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The broken `aura:customize-component` command (superseded by `aura:customize`; it never copied views and generated routes outside the admin middleware group).
 
-## [1.0.0](https://github.com/eminiarts/aura-cms/compare/v0.2.0...v1.0.0) - 2026-07-18
+## [1.0.0-beta.4](https://github.com/eminiarts/aura-cms/compare/v0.2.0...v1.0.0-beta.4) - 2026-08-20
 
-First stable release (pre-released as `v1.0.0-beta.1` on 2026-07-17).
+Latest 1.0 pre-release. Beta series started with `v1.0.0-beta.1` on 2026-07-17 (`v1.0.0-beta.2`, `v1.0.0-beta.3`, then this tag). No stable `v1.0.0` tag yet.
 
 ### Changed
 
@@ -51,7 +51,7 @@ First stable release (pre-released as `v1.0.0-beta.1` on 2026-07-17).
 
 ### Upgrade notes
 
-Aura 1.0 is a fresh baseline and does not provide an automated 0.x data migration. See [UPGRADING.md](UPGRADING.md).
+The 1.0 line (still in beta) is a fresh baseline and does not provide an automated 0.x data migration. See [UPGRADING.md](UPGRADING.md).
 
 ## [0.2.0](https://github.com/eminiarts/aura-cms/compare/v0.1.0...v0.2.0) - 2026-06-03
 
