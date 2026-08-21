@@ -215,12 +215,12 @@ Your requirements could not be resolved to an installable set of packages.
 **Ubuntu/Debian:**
 ```bash
 sudo apt-get update
-sudo apt-get install php8.2-bcmath php8.2-gd php8.2-mbstring php8.2-xml php8.2-curl php8.2-zip
+sudo apt-get install php8.4-bcmath php8.4-gd php8.4-mbstring php8.4-xml php8.4-curl php8.4-zip
 ```
 
 **macOS (Homebrew):**
 ```bash
-brew install php@8.2
+brew install php@8.4
 pecl install imagick
 ```
 
@@ -512,8 +512,8 @@ php artisan livewire:discover
 php artisan livewire:list
 
 # Ensure proper namespace
-namespace App\Http\Livewire; // Default
-namespace App\Livewire; // Laravel 11+
+namespace App\Http\Livewire; // Legacy apps
+namespace App\Livewire; // Laravel 12+ default
 ```
 
 ### Wire:model Not Updating
