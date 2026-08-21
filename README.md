@@ -74,8 +74,10 @@ Drop it in `app/Aura/Resources` and `/admin/article` serves a full CRUD interfac
 
 ## Installation
 
+Aura 1.0 is on Packagist as a beta release. Default Composer stability resolves `eminiarts/aura-cms` to `0.2.x`, so require the 1.0 beta channel explicitly:
+
 ```bash
-composer require eminiarts/aura-cms
+composer require eminiarts/aura-cms:^1.0@beta
 php artisan aura:install
 ```
 
