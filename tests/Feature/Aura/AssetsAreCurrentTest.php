@@ -134,12 +134,12 @@ it('throws for a malformed published manifest', function () {
     File::put($this->publishedRoot.'/manifest.json', '{not-json');
 
     expect(fn () => PublishedAssets::areCurrent($this->publishedRoot, $this->packageDist))
-        ->toThrow(\RuntimeException::class, 'invalid JSON');
+        ->toThrow(RuntimeException::class, 'invalid JSON');
 });
 
 it('throws when no published manifest exists', function () {
     expect(fn () => PublishedAssets::areCurrent($this->publishedRoot, $this->packageDist))
-        ->toThrow(\RuntimeException::class, 'not published');
+        ->toThrow(RuntimeException::class, 'not published');
 });
 
 it('repairs an incomplete tree via aura:publish', function () {
