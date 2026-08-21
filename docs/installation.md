@@ -285,7 +285,7 @@ volumes:
 Create `Dockerfile`:
 
 ```dockerfile
-FROM php:8.2-fpm
+FROM php:8.4-fpm
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -610,10 +610,10 @@ DB_ENGINE=InnoDB
 php -m | grep -E 'bcmath|gd|imagick'
 
 # Install missing extensions (Ubuntu/Debian)
-sudo apt-get install php8.2-bcmath php8.2-gd php8.2-imagick
+sudo apt-get install php8.4-bcmath php8.4-gd php8.4-imagick
 
 # Install missing extensions (macOS with Homebrew)
-brew install php@8.2-gd php@8.2-imagick
+brew install php@8.4-gd php@8.4-imagick
 ```
 
 #### 5. Assets Not Loading
@@ -736,7 +736,7 @@ php artisan view:cache
 
 # 5. Restart services
 php artisan queue:restart
-sudo service php8.2-fpm restart
+sudo service php8.4-fpm restart
 sudo service nginx restart
 ```
 
