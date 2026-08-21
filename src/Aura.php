@@ -2,6 +2,7 @@
 
 namespace Aura\Base;
 
+use Aura\Base\Contracts\ResourceActionRegistry;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Livewire\Resource\Index;
@@ -160,6 +161,10 @@ class Aura
         ScopedScope::flushState();
         TeamScope::flushState();
         static::$userModel = User::class;
+
+        if (app()->bound(ResourceActionRegistry::class)) {
+            app(ResourceActionRegistry::class)->flushState();
+        }
     }
 
     public function getAppFields()
