@@ -42,7 +42,9 @@ php -m | grep -E 'bcmath|ctype|json|mbstring|openssl|pdo|tokenizer|xml|gd|imagic
 <a name="quick-installation"></a>
 ## Quick Installation
 
-For experienced Laravel developers, here's the fastest way to get started:
+For experienced Laravel developers, here's the fastest way to get started.
+
+Aura 1.0 is published as a beta on Packagist. Use `^1.0@beta` so Composer does not resolve the stable `0.2.x` line.
 
 ```bash
 # Create new Laravel project
@@ -55,8 +57,8 @@ cd my-aura-project
 # DB_USERNAME=root
 # DB_PASSWORD=
 
-# Install Aura CMS
-composer require eminiarts/aura-cms
+# Install Aura CMS (1.0 beta channel)
+composer require eminiarts/aura-cms:^1.0@beta
 
 # Publish, configure, migrate, and create the first administrator
 php artisan aura:install
@@ -130,10 +132,10 @@ php artisan db:show
 
 ```bash
 # Install via Composer
-composer require eminiarts/aura-cms
+composer require eminiarts/aura-cms:^1.0@beta
 
 # If you encounter memory issues
-COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms
+COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms:^1.0@beta
 ```
 
 ### Step 4: Publish and Configure Aura
@@ -350,7 +352,7 @@ cp .env.example .env
 docker-compose up -d --build
 
 # Install Aura CMS in container
-docker-compose exec app composer require eminiarts/aura-cms
+docker-compose exec app composer require eminiarts/aura-cms:^1.0@beta
 docker-compose exec app php artisan vendor:publish --tag=aura-config
 docker-compose exec app php artisan aura:install-config
 docker-compose exec app php artisan aura:extend-user-model
@@ -579,7 +581,7 @@ add_header Referrer-Policy "strict-origin-when-cross-origin";
 
 ```bash
 # Error: Allowed memory size exhausted
-COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms
+COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms:^1.0@beta
 ```
 
 #### 2. Permission Denied Errors
