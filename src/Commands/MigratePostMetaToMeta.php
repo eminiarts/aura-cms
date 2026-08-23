@@ -19,6 +19,17 @@ class MigratePostMetaToMeta extends Command
 
     public function handle()
     {
+        $legacyTables = collect(['post_meta', 'team_meta', 'user_meta'])
+            ->filter(fn ($table) => Schema::hasTable($table));
+
+        // A fresh install has none of the legacy meta tables, so there is nothing
+        // to migrate. Bail out cleanly instead of blowing up on a missing table.
+        if ($legacyTables->isEmpty()) {
+            $this->info('Nothing to migrate: the post_meta, team_meta and user_meta tables do not exist.');
+
+            return static::SUCCESS;
+        }
+
         $this->info('Starting migration of post_meta, team_meta, and user_meta to meta table...');
 
         if (! Schema::hasTable('meta')) {
@@ -32,6 +43,27 @@ class MigratePostMetaToMeta extends Command
         }
 
         // Migrate post_meta
+        if ($legacyTables->contains('post_meta')) {
+            $this->migratePostMeta();
+        }
+
+        // Migrate team_meta
+        if ($legacyTables->contains('team_meta')) {
+            $this->migrateTeamMeta();
+        }
+
+        // Migrate user_meta
+        if ($legacyTables->contains('user_meta')) {
+            $this->migrateUserMeta();
+        }
+
+        $this->info('Migration completed successfully.');
+
+        return static::SUCCESS;
+    }
+
+    protected function migratePostMeta(): void
+    {
         $postMeta = DB::table('post_meta')->get();
         $this->output->progressStart(count($postMeta));
         foreach ($postMeta as $meta) {
@@ -65,8 +97,10 @@ class MigratePostMetaToMeta extends Command
         }
         $this->output->progressFinish();
         $this->info('Migrated post_meta to meta table.');
+    }
 
-        // Migrate team_meta
+    protected function migrateTeamMeta(): void
+    {
         $teamMeta = DB::table('team_meta')->get();
         $this->output->progressStart(count($teamMeta));
         foreach ($teamMeta as $meta) {
@@ -89,8 +123,10 @@ class MigratePostMetaToMeta extends Command
         }
         $this->output->progressFinish();
         $this->info('Migrated team_meta to meta table.');
+    }
 
-        // Migrate user_meta
+    protected function migrateUserMeta(): void
+    {
         $userMeta = DB::table('user_meta')->get();
         $this->output->progressStart(count($userMeta));
         foreach ($userMeta as $meta) {
@@ -113,7 +149,5 @@ class MigratePostMetaToMeta extends Command
         }
         $this->output->progressFinish();
         $this->info('Migrated user_meta to meta table.');
-
-        $this->info('Migration completed successfully.');
     }
 }

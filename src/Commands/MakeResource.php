@@ -18,7 +18,7 @@ class MakeResource extends GeneratorCommand
      *
      * @var string
      */
-    protected $signature = 'aura:resource {name} {--custom}';
+    protected $signature = 'aura:resource {name : The name of the resource class, e.g. Article} {--custom : Store the resource in its own database table instead of the shared posts table}';
 
     /**
      * The type of class being generated.

@@ -18,7 +18,7 @@ class MakeField extends GeneratorCommand
      *
      * @var string
      */
-    protected $signature = 'aura:field {name}';
+    protected $signature = 'aura:field {name : The name of the field class, e.g. ColorPicker}';
 
     /**
      * The type of class being generated.
@@ -33,8 +33,6 @@ class MakeField extends GeneratorCommand
 
         $this->createViewFile();
         $this->createEditFile();
-
-        $this->info('Field created successfully.');
     }
 
     protected function buildEditFileContents()

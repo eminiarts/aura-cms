@@ -12,9 +12,9 @@ use function Laravel\Prompts\select;
 
 class TransferFromPostsToCustomTable extends Command
 {
-    protected $description = 'Transfer resources from posts and meta tables to custom tables';
+    protected $description = 'Copy the existing records of a resource from the posts and meta tables into its custom table';
 
-    protected $signature = 'aura:transfer-from-posts-to-custom-table {resource?}';
+    protected $signature = 'aura:transfer-from-posts-to-custom-table {resource? : The fully qualified resource class, e.g. "App\\Aura\\Resources\\Article"}';
 
     public function handle()
     {

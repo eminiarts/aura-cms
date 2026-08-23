@@ -11,7 +11,7 @@ class TransformTableToResource extends Command
 {
     protected $description = 'Create a resource based on a specific database table';
 
-    protected $signature = 'aura:transform-table-to-resource {table}';
+    protected $signature = 'aura:transform-table-to-resource {table : The name of the existing database table, e.g. articles}';
 
     public function handle()
     {

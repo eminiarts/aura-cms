@@ -156,6 +156,80 @@ describe('with teams enabled', function () {
         expect($user->global_admin)->toBeFalse();
     });
 
+    it('names the first team with the --team-name option', function () {
+        $this->artisan('aura:user', [
+            '--name' => 'Team Owner',
+            '--email' => 'team-owner@example.com',
+            '--password' => 'password',
+            '--team-name' => 'Acme Inc.',
+            '--no-interaction' => true,
+        ])->assertSuccessful();
+
+        $this->assertDatabaseHas('teams', ['name' => 'Acme Inc.']);
+    });
+
+    it('falls back to the user name when --team-name is omitted', function () {
+        $this->artisan('aura:user', [
+            '--name' => 'Fallback Owner',
+            '--email' => 'fallback-owner@example.com',
+            '--password' => 'password',
+            '--no-interaction' => true,
+        ])->assertSuccessful();
+
+        $this->assertDatabaseHas('teams', ['name' => 'Fallback Owner']);
+    });
+
+    it('rejects an invalid email address', function () {
+        $this->artisan('aura:user', [
+            '--name' => 'Bad Email',
+            '--email' => 'not-an-email',
+            '--password' => 'password',
+            '--no-interaction' => true,
+        ])->assertExitCode(1);
+
+        expect(User::where('name', 'Bad Email')->exists())->toBeFalse();
+    });
+
+    it('rejects a password shorter than 8 characters', function () {
+        $this->artisan('aura:user', [
+            '--name' => 'Short Password',
+            '--email' => 'short-password@example.com',
+            '--password' => 'x',
+            '--no-interaction' => true,
+        ])->assertExitCode(1);
+
+        expect(User::where('email', 'short-password@example.com')->exists())->toBeFalse();
+    });
+
+    it('rejects a missing name', function () {
+        $this->artisan('aura:user', [
+            '--name' => '',
+            '--email' => 'missing-name@example.com',
+            '--password' => 'password',
+            '--no-interaction' => true,
+        ])->assertExitCode(1);
+
+        expect(User::where('email', 'missing-name@example.com')->exists())->toBeFalse();
+    });
+
+    it('rejects a duplicate email instead of crashing on the unique constraint', function () {
+        $this->artisan('aura:user', [
+            '--name' => 'First Admin',
+            '--email' => 'duplicate@example.com',
+            '--password' => 'password',
+            '--no-interaction' => true,
+        ])->assertSuccessful();
+
+        $this->artisan('aura:user', [
+            '--name' => 'Second Admin',
+            '--email' => 'duplicate@example.com',
+            '--password' => 'password',
+            '--no-interaction' => true,
+        ])->assertExitCode(1);
+
+        expect(User::withoutGlobalScopes()->where('email', 'duplicate@example.com')->count())->toBe(1);
+    });
+
     it('does not grant Global Admin without the option', function () {
         $this->artisan('aura:user', [
             '--name' => 'Plain User',

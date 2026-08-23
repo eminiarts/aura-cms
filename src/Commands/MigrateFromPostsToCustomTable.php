@@ -15,9 +15,9 @@ use function Laravel\Prompts\select;
 
 class MigrateFromPostsToCustomTable extends Command
 {
-    protected $description = 'Migrate resources from posts and meta tables to custom tables';
+    protected $description = 'Switch a resource to its own table: set $customTable, generate the migration and optionally run it and copy the data';
 
-    protected $signature = 'aura:migrate-from-posts-to-custom-table {resource?}';
+    protected $signature = 'aura:migrate-from-posts-to-custom-table {resource? : The fully qualified resource class, e.g. "App\\Aura\\Resources\\Article"}';
 
     public function handle()
     {

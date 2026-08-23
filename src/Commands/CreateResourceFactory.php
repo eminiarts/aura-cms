@@ -15,7 +15,7 @@ class CreateResourceFactory extends Command
 
     protected $files;
 
-    protected $signature = 'aura:create-resource-factory {resource?}';
+    protected $signature = 'aura:create-resource-factory {resource? : The fully qualified resource class, e.g. "App\\Aura\\Resources\\Article"}';
 
     public function __construct(Filesystem $files)
     {

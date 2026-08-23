@@ -17,7 +17,7 @@ class CreateResourceMigration extends Command
 
     protected $files;
 
-    protected $signature = 'aura:create-resource-migration {resource}';
+    protected $signature = 'aura:create-resource-migration {resource : The fully qualified resource class, e.g. "App\\Aura\\Resources\\Article"}';
 
     public function __construct(Filesystem $files)
     {

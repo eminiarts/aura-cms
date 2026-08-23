@@ -238,8 +238,9 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasViews('aura')
             ->hasAssets()
             ->hasRoutes('web')
+            // Migrations are published, then run (ADR 0002: ownership-aware
+            // rollback). runsMigrations() cannot load .php.stub files anyway.
             ->hasMigrations(['create_aura_tables', 'consolidate_per_team_admin_roles', 'add_global_admin_to_users'])
-            ->runsMigrations()
             ->hasCommands([
                 InstallConfigCommand::class,
                 MakeResource::class,
@@ -261,16 +262,73 @@ class AuraServiceProvider extends PackageServiceProvider
                 TransferFromPostsToCustomTable::class,
             ])
             ->hasInstallCommand(function (InstallCommand $command) {
+                // Spatie's InstallCommand hides itself and describes itself as
+                // "Install aura". This is Aura's documented entry point, so it has to
+                // show up in `php artisan list` with a description that says what it does.
+                $command->setHidden(false);
+                $command->setDescription('Install Aura CMS: publish config, assets and migrations, run migrations, create the first admin');
+
                 $command
                     ->addOption('teams', null, InputOption::VALUE_REQUIRED, 'Enable teams: true or false')
                     ->addOption('registration', null, InputOption::VALUE_REQUIRED, 'Allow public registration: true or false')
                     ->addOption('admin-name', null, InputOption::VALUE_REQUIRED, 'Name for the first administrator')
                     ->addOption('admin-email', null, InputOption::VALUE_REQUIRED, 'Email for the first administrator')
-                    ->addOption('admin-password', null, InputOption::VALUE_REQUIRED, 'Password for the first administrator')
+                    ->addOption('admin-password', null, InputOption::VALUE_REQUIRED, 'Password for the first administrator (at least 8 characters)')
+                    ->addOption('team-name', null, InputOption::VALUE_REQUIRED, 'Name for the first team (defaults to the administrator name)')
                     ->addOption('no-admin', null, InputOption::VALUE_NONE, 'Skip creating the first administrator')
                     ->addOption('no-global-admin', null, InputOption::VALUE_NONE, 'Do not grant Global Admin status to the first administrator')
                     ->startWith(function (InstallCommand $command) {
                         $command->info('Hello, thank you for installing Aura!');
+
+                        // Everything is validated here, before the first side effect:
+                        // startWith runs ahead of publishing, migrating and seeding, so a
+                        // bad flag can no longer leave a half-installed application behind.
+                        $errors = [];
+
+                        foreach (['teams', 'registration'] as $booleanOption) {
+                            $value = $command->option($booleanOption);
+                            $accepted = ['1', 'true', 'yes', 'on', '0', 'false', 'no', 'off'];
+
+                            if (filled($value) && ! in_array(strtolower((string) $value), $accepted, true)) {
+                                $errors[] = "The --{$booleanOption} option must be true or false.";
+                            }
+                        }
+
+                        if ($command->option('no-interaction') && ! $command->option('no-admin')) {
+                            $missingOptions = array_keys(array_filter([
+                                '--admin-name' => $command->option('admin-name'),
+                                '--admin-email' => $command->option('admin-email'),
+                                '--admin-password' => $command->option('admin-password'),
+                            ], fn ($value) => blank($value)));
+
+                            if ($missingOptions !== []) {
+                                $errors[] = 'A non-interactive install requires '.implode(', ', $missingOptions).', or --no-admin.';
+                            }
+                        }
+
+                        $adminEmail = $command->option('admin-email');
+
+                        if (filled($adminEmail) && ! filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+                            $errors[] = 'The --admin-email option must be a valid email address.';
+                        }
+
+                        $adminPassword = $command->option('admin-password');
+
+                        if (filled($adminPassword) && strlen((string) $adminPassword) < 8) {
+                            $errors[] = 'The --admin-password option must be at least 8 characters.';
+                        }
+
+                        if ($errors === []) {
+                            return;
+                        }
+
+                        foreach ($errors as $error) {
+                            $command->error($error);
+                        }
+
+                        // fail() surfaces a clean error and a non-zero exit code instead of
+                        // an uncaught exception with a stack trace.
+                        $command->fail('Aura was not installed. Fix the options above and run the command again.');
                     })
                     ->publishConfigFile()
                     ->publishAssets()
@@ -278,6 +336,24 @@ class AuraServiceProvider extends PackageServiceProvider
                     ->askToStarRepoOnGitHub('eminiarts/aura-cms')
                     ->endWith(function (InstallCommand $command) {
                         $command->call('aura:extend-user-model');
+
+                        // The media library stores on the `public` disk and Attachment::url()
+                        // builds /storage/... URLs, so the symlink has to exist. Guarded so
+                        // re-running the installer stays idempotent.
+                        $finish = function (InstallCommand $command, bool $createdAdmin) {
+                            $link = public_path('storage');
+
+                            if (! file_exists($link) && ! is_link($link)) {
+                                $command->call('storage:link');
+                            }
+
+                            $command->newLine();
+                            $command->info('Next steps:');
+                            $command->line('  1. Open '.rtrim((string) config('app.url'), '/').'/admin');
+                            $command->line($createdAdmin
+                                ? '  2. Log in with the administrator you just created.'
+                                : '  2. Create an administrator with `php artisan aura:user`.');
+                        };
 
                         if ($command->option('no-interaction')) {
                             $configOptions = array_filter([
@@ -289,18 +365,17 @@ class AuraServiceProvider extends PackageServiceProvider
                             $command->call('migrate', ['--force' => true]);
                             RoleCatalogSeeder::seed();
 
-                            if (! $command->option('no-admin')) {
+                            $createdAdmin = ! $command->option('no-admin');
+
+                            if ($createdAdmin) {
                                 $adminOptions = [
                                     '--name' => $command->option('admin-name'),
                                     '--email' => $command->option('admin-email'),
                                     '--password' => $command->option('admin-password'),
                                 ];
-                                $missingOptions = array_keys(array_filter($adminOptions, fn ($value) => blank($value)));
 
-                                if ($missingOptions !== []) {
-                                    throw new \InvalidArgumentException(
-                                        'A non-interactive install requires --admin-name, --admin-email, and --admin-password, or --no-admin.'
-                                    );
+                                if (filled($command->option('team-name'))) {
+                                    $adminOptions['--team-name'] = $command->option('team-name');
                                 }
 
                                 if ($command->option('no-global-admin')) {
@@ -311,6 +386,8 @@ class AuraServiceProvider extends PackageServiceProvider
 
                                 $command->call('aura:user', $adminOptions);
                             }
+
+                            $finish($command, $createdAdmin);
 
                             return;
                         }
@@ -328,9 +405,13 @@ class AuraServiceProvider extends PackageServiceProvider
                             RoleCatalogSeeder::seed();
                         }
 
-                        if ($command->confirm('Do you want to create a user?', true)) {
+                        $createdAdmin = $command->confirm('Do you want to create a user?', true);
+
+                        if ($createdAdmin) {
                             $command->call('aura:user');
                         }
+
+                        $finish($command, $createdAdmin);
                     });
             });
 

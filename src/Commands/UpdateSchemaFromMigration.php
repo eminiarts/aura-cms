@@ -14,7 +14,7 @@ class UpdateSchemaFromMigration extends Command
 {
     protected $description = 'Update the database schema based on the provided migration file';
 
-    protected $signature = 'aura:schema-update {migration?}';
+    protected $signature = 'aura:schema-update {migration? : Path to the migration file to sync the table with}';
 
     public function handle()
     {

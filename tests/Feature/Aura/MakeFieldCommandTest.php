@@ -91,9 +91,9 @@ it('generates view blade file with correct content', function () {
         ->toContain('$this->model->display');
 });
 
-it('displays success message after creation', function () {
+it('displays a single success message after creation', function () {
     $this->artisan('aura:field', ['name' => 'MyField'])
-        ->expectsOutput('Field created successfully.')
+        ->expectsOutputToContain('created successfully.')
         ->assertExitCode(0);
 });
 

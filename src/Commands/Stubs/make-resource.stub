@@ -22,6 +22,14 @@ class PostName extends Resource
 
     public static function getFields()
     {
-        return [];
+        return [
+            // Fields are plain arrays. Uncomment to get started:
+            // [
+            //     'type' => 'Aura\\Base\\Fields\\Text',
+            //     'name' => 'Title',
+            //     'slug' => 'title',
+            //     'validation' => 'required|max:255',
+            // ],
+        ];
     }
 }
