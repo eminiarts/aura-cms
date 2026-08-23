@@ -15,7 +15,9 @@
         $appSettings = app('aura')::options();
     @endphp
 
-    <title>@yield('title') • {{ $appSettings['app_name'] ?? 'Aura CMS' }}</title>
+    @php($pageTitle = trim(strip_tags($__env->yieldContent('title'))))
+
+    <title>{{ $pageTitle !== '' ? $pageTitle.' • ' : '' }}{{ $appSettings['app_name'] ?? 'Aura CMS' }}</title>
 
     @include('aura::components.layout.favicon')
 

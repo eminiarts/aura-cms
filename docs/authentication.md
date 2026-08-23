@@ -297,9 +297,10 @@ class CreateNewUser implements CreatesNewUsers
 ```php
 // Login routes (defined in routes/auth.php)
 Route::get('login', [AuthenticatedSessionController::class, 'create'])
-    ->name('aura.login');
+    ->name('login');
 
-Route::post('login', [AuthenticatedSessionController::class, 'store']);
+Route::post('login', [AuthenticatedSessionController::class, 'store'])
+    ->name('login.store');
 ```
 
 #### Login Features

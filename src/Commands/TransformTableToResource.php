@@ -21,7 +21,7 @@ class TransformTableToResource extends Command
 
         $fields = $this->generateFields($columns);
 
-        $resourceContent = $this->generateResourceContent($resourceName, $fields);
+        $resourceContent = $this->generateResourceContent($resourceName, $fields, $table);
         $this->saveResourceFile($resourceName, $resourceContent);
 
         $this->info("Resource {$resourceName} generated successfully");
@@ -47,8 +47,9 @@ class TransformTableToResource extends Command
         return $fields;
     }
 
-    private function generateResourceContent(string $resourceName, array $fields): string
+    private function generateResourceContent(string $resourceName, array $fields, string $table): string
     {
+        $slug = Str::kebab($resourceName);
         $fieldsContent = '';
 
         foreach ($fields as $field) {
@@ -65,11 +66,17 @@ class TransformTableToResource extends Command
 
 namespace App\Aura\Resources;
 
+use Aura\Base\Resource;
+
 class {$resourceName} extends Resource
 {
+    public static \$customTable = true;
+
+    public static ?string \$slug = '{$slug}';
+
     public static string \$type = '{$resourceName}';
 
-    public static ?string \$slug = '{$resourceName}';
+    protected \$table = '{$table}';
 
     public static function getWidgets(): array
     {

@@ -26,19 +26,19 @@ describe('Registration Routes', function () {
     test('register link is hidden on login page when registration disabled', function () {
         config(['aura.auth.registration' => false]);
 
-        $this->get(route('aura.login'))
+        $this->get(route('login'))
             ->assertDontSee('Register.');
     });
 
     test('register link is visible on login page when registration enabled', function () {
-        $this->get(route('aura.login'))
+        $this->get(route('login'))
             ->assertSee('Register');
     });
 });
 
 describe('Login Routes', function () {
     test('login page renders successfully', function () {
-        $this->get(route('aura.login'))
+        $this->get(route('login'))
             ->assertSuccessful();
     });
 
@@ -48,7 +48,7 @@ describe('Login Routes', function () {
             'password' => 'password',
         ]);
 
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => 'test@example.com',
             'password' => 'password',
         ])
@@ -64,7 +64,7 @@ describe('Login Routes', function () {
             'password' => 'password',
         ]);
 
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => 'test@example.com',
             'password' => 'wrong-password',
         ])
@@ -74,7 +74,7 @@ describe('Login Routes', function () {
     });
 
     test('login fails with non-existent email', function () {
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => 'nonexistent@example.com',
             'password' => 'password',
         ])
@@ -84,21 +84,21 @@ describe('Login Routes', function () {
     });
 
     test('login requires email field', function () {
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'password' => 'password',
         ])
             ->assertSessionHasErrors('email');
     });
 
     test('login requires password field', function () {
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => 'test@example.com',
         ])
             ->assertSessionHasErrors('password');
     });
 
     test('login requires valid email format', function () {
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => 'invalid-email',
             'password' => 'password',
         ])

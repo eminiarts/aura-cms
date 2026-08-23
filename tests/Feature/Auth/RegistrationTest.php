@@ -29,14 +29,14 @@ describe('Registration Screen', function () {
     });
 
     test('register link is visible on login page when enabled', function () {
-        $this->get(route('aura.login'))
+        $this->get(route('login'))
             ->assertSee('Register');
     });
 
     test('register link is hidden on login page when disabled', function () {
         config(['aura.auth.registration' => false]);
 
-        $this->get(route('aura.login'))
+        $this->get(route('login'))
             ->assertDontSee('Register.');
     });
 

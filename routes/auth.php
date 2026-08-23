@@ -25,48 +25,48 @@ use Laravel\Fortify\RoutePath;
 
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('aura.logout');
 
-Route::middleware('guest')->name('aura.')->group(function () {
-    Route::get('/login-as/{id}', function ($id) {
-        if (! app()->environment('local')) {
-            abort(404);
+Route::middleware('guest')->group(function () {
+    // Named without the `aura.` prefix: Laravel's auth guard redirects guests to
+    // route('login'), so naming the real form here avoids a second redirect hop
+    // through a placeholder route.
+    Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
+
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+
+    Route::name('aura.')->group(function () {
+        Route::get('/login-as/{id}', function ($id) {
+            // Keep this condition in sync with the "Local / Admin" button guard in
+            // resources/views/auth/login.blade.php.
+            if (! app()->environment('local') || ! Str::endsWith(request()->getHost(), '.test')) {
+                abort(404);
+            }
+
+            // Bypass TeamScope: guests have no current team, and fail-closed
+            // scoping would hide every user (404) before Auth::login can run.
+            $user = app(config('aura.resources.user'))
+                ->newQueryWithoutScopes()
+                ->findOrFail($id);
+
+            Auth::login($user);
+
+            return redirect()->route('aura.dashboard');
+        })->name('login-as');
+
+        if (config('aura.auth.registration')) {
+            Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
+            Route::post('register', [RegisteredUserController::class, 'store'])->name('register.post');
         }
 
-        // Only allow .test domains
-        if (! Str::endsWith(request()->getHost(), '.test')) {
-            abort(404);
+        if (config('aura.teams')) {
+            Route::get('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'create'])->name('invitation.register')->middleware(['signed']);
+            Route::post('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'store'])->middleware(['signed'])->name('invitation.register.post');
         }
 
-        // Bypass TeamScope: guests have no current team, and fail-closed
-        // scoping would hide every user (404) before Auth::login can run.
-        $user = app(config('aura.resources.user'))
-            ->newQueryWithoutScopes()
-            ->findOrFail($id);
-
-        Auth::login($user);
-
-        return redirect()->route('aura.dashboard');
-    })->name('login-as');
-
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])
-        ->name('login');
-
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
-
-    if (config('aura.auth.registration')) {
-        Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
-        Route::post('register', [RegisteredUserController::class, 'store'])->name('register.post');
-
-    }
-
-    if (config('aura.teams')) {
-        Route::get('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'create'])->name('invitation.register')->middleware(['signed']);
-        Route::post('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'store'])->middleware(['signed'])->name('invitation.register.post');
-    }
-
-    Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
-    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
-    Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
-    Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
+        Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+        Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+        Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+        Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
+    });
 });
 
 Route::middleware('auth')->name('aura.')->group(function () {
@@ -137,7 +137,3 @@ Route::middleware('auth')->name('aura.')->group(function () {
             ->middleware($twoFactorMiddleware);
     }
 });
-
-Route::get('/aura-login', function () {
-    return redirect()->route('aura.login');
-})->name('login');

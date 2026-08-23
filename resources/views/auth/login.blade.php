@@ -1,7 +1,16 @@
 <x-dynamic-component :component="config('aura.views.login-layout')">
 
-    {{-- Bypass TeamScope: guests have no team, and fail-closed scoping returns no users. --}}
-    @php($localAdmin = app(config('aura.resources.user'))::withoutGlobalScopes()->orderBy('id')->first())
+    @php
+        // Same condition as the aura.login-as route in routes/auth.php: that route
+        // 404s outside local + .test, so the button must not render there either.
+        $localLoginAs = app()->environment('local')
+            && \Illuminate\Support\Str::endsWith(request()->getHost(), '.test');
+
+        // Bypass TeamScope: guests have no team, and fail-closed scoping returns no users.
+        $localAdmin = $localLoginAs
+            ? app(config('aura.resources.user'))::withoutGlobalScopes()->orderBy('id')->first()
+            : null;
+    @endphp
 
     <div class="mb-8">
         <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __('Welcome back') }}</h1>
@@ -60,21 +69,19 @@
         </p>
     @endif
 
-    @local
-        @if($localAdmin)
-            <div class="flex gap-3 items-center mt-8" aria-hidden="true">
-                <div class="flex-1 h-px bg-gray-950/5 dark:bg-white/10"></div>
-                <span class="text-xs font-medium tracking-wider text-gray-400 uppercase dark:text-gray-500">{{ __('Local') }}</span>
-                <div class="flex-1 h-px bg-gray-950/5 dark:bg-white/10"></div>
-            </div>
+    @if($localAdmin)
+        <div class="flex gap-3 items-center mt-8" aria-hidden="true">
+            <div class="flex-1 h-px bg-gray-950/5 dark:bg-white/10"></div>
+            <span class="text-xs font-medium tracking-wider text-gray-400 uppercase dark:text-gray-500">{{ __('Local') }}</span>
+            <div class="flex-1 h-px bg-gray-950/5 dark:bg-white/10"></div>
+        </div>
 
-            <div class="mt-4">
-                <x-aura::button.border href="{{ route('aura.login-as', ['id' => $localAdmin->id]) }}" size="xs" class="justify-center w-full login-as-admin">
-                    <x-aura::icon.user class="mr-2 -ml-1 w-4 h-4" />
-                    Admin
-                </x-aura::button.border>
-            </div>
-        @endif
-    @endlocal
+        <div class="mt-4">
+            <x-aura::button.border href="{{ route('aura.login-as', ['id' => $localAdmin->id]) }}" size="xs" class="justify-center w-full login-as-admin">
+                <x-aura::icon.user class="mr-2 -ml-1 w-4 h-4" />
+                Admin
+            </x-aura::button.border>
+        </div>
+    @endif
 
 </x-dynamic-component>

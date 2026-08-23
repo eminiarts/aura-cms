@@ -97,7 +97,8 @@ class CreateResourceFactory extends Command
 
     protected function generateFactoryContent($resource, $modelName)
     {
-        $fields = app($resource)->getFields();
+        // Only input fields map to columns; panels/tabs are layout wrappers.
+        $fields = app($resource)->inputFields();
         $factoryDefinition = $this->generateFactoryDefinition($fields);
 
         return <<<PHP
@@ -158,7 +159,9 @@ PHP;
                 // Assuming options are available, adjust if necessary
                 return '$this->faker->randomElement(["option1", "option2", "option3"])';
             case 'BelongsTo':
-                $relatedModel = class_basename($field['resource']);
+                if (empty($field['resource'])) {
+                    return '$this->faker->randomNumber()';
+                }
 
                 return "\\{$field['resource']}::factory()";
             default:

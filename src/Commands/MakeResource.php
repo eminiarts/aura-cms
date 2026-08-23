@@ -3,6 +3,7 @@
 namespace Aura\Base\Commands;
 
 use Illuminate\Console\GeneratorCommand;
+use Illuminate\Support\Str;
 
 class MakeResource extends GeneratorCommand
 {
@@ -63,9 +64,15 @@ class MakeResource extends GeneratorCommand
     {
         $stub = parent::replaceClass($stub, $name);
 
-        $stub = str_replace('PostName', ucfirst($this->argument('name')), $stub);
-        $stub = str_replace('PostSlug', str($this->argument('name'))->slug(), $stub);
-        $stub = str_replace('post_slug', str($this->argument('name'))->snake()->plural(), $stub);
+        $input = $this->argument('name');
+
+        // Readable names are set explicitly: the slug is kebab-case, and the
+        // Resource falls back to Str::title($slug), which would yield "Blog-Post".
+        $stub = str_replace('PostSingularName', Str::headline($input), $stub);
+        $stub = str_replace('PostPluralName', Str::plural(Str::headline($input)), $stub);
+        $stub = str_replace('PostName', ucfirst($input), $stub);
+        $stub = str_replace('PostSlug', Str::kebab($input), $stub);
+        $stub = str_replace('post_slug', str($input)->snake()->plural(), $stub);
 
         return $stub;
     }

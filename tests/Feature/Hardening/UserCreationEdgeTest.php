@@ -51,7 +51,7 @@ it('keeps the password working after a password-less edit (login still succeeds)
 
     // Story 13: the account is fully usable — the untouched password still logs in.
     auth()->logout();
-    $this->post(route('aura.login'), [
+    $this->post(route('login'), [
         'email' => 'renamed@example.com',
         'password' => 'KnownPass123!',
     ])->assertRedirect(config('aura.auth.redirect'));

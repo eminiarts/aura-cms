@@ -6,10 +6,8 @@ use Aura\Base\Resource;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use Symfony\Component\Process\ExecutableFinder;
 
 class CreateResourceMigration extends Command
 {
@@ -44,7 +42,9 @@ class CreateResourceMigration extends Command
             return 1;
         }
 
-        $tableName = Str::plural(Str::lower(class_basename($resourceClass)));
+        // Use the resource's own table so the migration matches what the model
+        // reads/writes (custom-table resources define $table explicitly).
+        $tableName = $resource->getTable();
 
         $migrationName = "create_{$tableName}_table";
 
@@ -118,9 +118,6 @@ class CreateResourceMigration extends Command
         $this->files->put($migrationFile, $replacedContent2);
 
         $this->info("Migration '{$migrationName}' created successfully.");
-
-        // Run "pint" on the migration file
-        $this->runPint($migrationFile);
     }
 
     protected function generateColumn($field)
@@ -175,20 +172,5 @@ class CreateResourceMigration extends Command
         }
 
         return false;
-    }
-
-    protected function runPint($migrationFile)
-    {
-        return;
-        $command = [
-            (new ExecutableFinder)->find('php', 'php', [
-                '/usr/local/bin',
-                '/opt/homebrew/bin',
-            ]),
-
-            'vendor/bin/pint', $migrationFile,
-        ];
-
-        $result = Process::path(base_path())->run($command);
     }
 }

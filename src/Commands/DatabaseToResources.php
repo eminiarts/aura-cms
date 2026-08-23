@@ -35,7 +35,7 @@ class DatabaseToResources extends Command
 
     protected function isSystemTable(string $table): bool
     {
-        return in_array($table, ['migrations', 'failed_jobs', 'password_resets', 'sessions'], true);
+        return in_array($table, ['migrations', 'failed_jobs', 'password_reset_tokens', 'password_resets', 'sessions'], true);
     }
 
     protected function transformTable(string $table): int

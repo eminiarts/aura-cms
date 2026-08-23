@@ -68,16 +68,30 @@ it('generates resource with --custom option for custom table', function () {
         ->toContain("protected \$table = 'my_custom_resources'");
 });
 
-it('generates correct slug from PascalCase name', function () {
+it('generates correct slug and readable names from a PascalCase name', function () {
     $this->artisan('aura:resource', ['name' => 'BlogPost'])
         ->assertExitCode(0);
 
     $resourceClass = File::get($this->resourcePath.'/BlogPost.php');
 
-    // Str::slug converts BlogPost to blogpost (no hyphens)
     expect($resourceClass)
-        ->toContain("public static ?string \$slug = 'blogpost';")
-        ->toContain("public static string \$type = 'BlogPost';");
+        ->toContain("public static ?string \$slug = 'blog-post';")
+        ->toContain("public static string \$type = 'BlogPost';")
+        ->toContain("public static \$singularName = 'Blog Post';")
+        ->toContain("public static \$pluralName = 'Blog Posts';");
+});
+
+it('gives custom table resources a matching slug and table', function () {
+    $this->artisan('aura:resource', ['name' => 'BlogPost', '--custom' => true])
+        ->assertExitCode(0);
+
+    $resourceClass = File::get($this->resourcePath.'/BlogPost.php');
+
+    expect($resourceClass)
+        ->toContain("public static ?string \$slug = 'blog-post';")
+        ->toContain("protected \$table = 'blog_posts';")
+        ->toContain("public static \$singularName = 'Blog Post';")
+        ->toContain("public static \$pluralName = 'Blog Posts';");
 });
 
 it('generates correct table name for custom table resources', function () {

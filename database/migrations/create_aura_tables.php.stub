@@ -88,7 +88,6 @@ return new class extends Migration
 
         $managedTables = [
             'users',
-            'password_resets',
             'personal_access_tokens',
             'password_reset_tokens',
             'teams',
@@ -176,14 +175,6 @@ return new class extends Migration
                 if (! Schema::hasColumn('users', 'deleted_at')) {
                     $table->softDeletes();
                 }
-            });
-        }
-
-        if (! Schema::hasTable('password_resets')) {
-            Schema::create('password_resets', function (Blueprint $table) {
-                $table->string('email')->index();
-                $table->string('token');
-                $table->timestamp('created_at')->nullable();
             });
         }
 

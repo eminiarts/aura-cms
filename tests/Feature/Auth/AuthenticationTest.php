@@ -13,7 +13,7 @@ beforeEach(function () {
 
 describe('Login Screen', function () {
     test('login page renders successfully', function () {
-        $this->get(route('aura.login'))
+        $this->get(route('login'))
             ->assertSuccessful()
             ->assertSee('Login')
             ->assertSee('Email')
@@ -23,32 +23,32 @@ describe('Login Screen', function () {
     test('login page renders in local env when no users exist', function () {
         app()['env'] = 'local';
 
-        $this->get(route('aura.login'))
+        $this->get(route('login'))
             ->assertSuccessful()
             ->assertSee('Login');
     });
 
     test('login page shows remember me checkbox', function () {
-        $this->get(route('aura.login'))
+        $this->get(route('login'))
             ->assertSee('Remember me');
     });
 
     test('login page shows forgot password link', function () {
-        $this->get(route('aura.login'))
+        $this->get(route('login'))
             ->assertSee('Forgot your password?');
     });
 
     test('login page shows registration link when enabled', function () {
         config(['aura.auth.registration' => true]);
 
-        $this->get(route('aura.login'))
+        $this->get(route('login'))
             ->assertSee('Register');
     });
 
     test('login page hides registration link when disabled', function () {
         config(['aura.auth.registration' => false]);
 
-        $this->get(route('aura.login'))
+        $this->get(route('login'))
             ->assertDontSee('Register.');
     });
 });
@@ -57,7 +57,7 @@ describe('Authentication', function () {
     test('user can authenticate with valid credentials', function () {
         $user = User::factory()->create();
 
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => $user->email,
             'password' => 'password',
         ])
@@ -70,7 +70,7 @@ describe('Authentication', function () {
     test('user cannot authenticate with invalid password', function () {
         $user = User::factory()->create();
 
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => $user->email,
             'password' => 'wrong-password',
         ])
@@ -80,7 +80,7 @@ describe('Authentication', function () {
     });
 
     test('user cannot authenticate with non-existent email', function () {
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => 'nonexistent@example.com',
             'password' => 'password',
         ])
@@ -94,7 +94,7 @@ describe('Authentication', function () {
 
         $user = User::factory()->create();
 
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => $user->email,
             'password' => 'password',
         ]);
@@ -108,7 +108,7 @@ describe('Authentication', function () {
         $user = User::factory()->create();
         $oldSessionId = session()->getId();
 
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => $user->email,
             'password' => 'password',
         ]);
@@ -119,21 +119,21 @@ describe('Authentication', function () {
 
 describe('Validation', function () {
     test('email is required', function () {
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'password' => 'password',
         ])
             ->assertSessionHasErrors('email');
     });
 
     test('password is required', function () {
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => 'test@example.com',
         ])
             ->assertSessionHasErrors('password');
     });
 
     test('email must be valid format', function () {
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => 'invalid-email',
             'password' => 'password',
         ])
@@ -148,14 +148,14 @@ describe('Rate Limiting', function () {
 
         // Make 5 failed login attempts
         for ($i = 0; $i < 5; $i++) {
-            $this->post(route('aura.login'), [
+            $this->post(route('login'), [
                 'email' => $user->email,
                 'password' => 'wrong-password',
             ]);
         }
 
         // The 6th attempt should be rate limited
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => $user->email,
             'password' => 'wrong-password',
         ])
@@ -169,14 +169,14 @@ describe('Rate Limiting', function () {
 
         // Make some failed attempts (but not enough to trigger lockout)
         for ($i = 0; $i < 3; $i++) {
-            $this->post(route('aura.login'), [
+            $this->post(route('login'), [
                 'email' => $user->email,
                 'password' => 'wrong-password',
             ]);
         }
 
         // Successful login should clear rate limit
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => $user->email,
             'password' => 'password',
         ]);
@@ -189,7 +189,7 @@ describe('Remember Me', function () {
     test('user can login with remember me option', function () {
         $user = User::factory()->create();
 
-        $this->post(route('aura.login'), [
+        $this->post(route('login'), [
             'email' => $user->email,
             'password' => 'password',
             'remember' => true,

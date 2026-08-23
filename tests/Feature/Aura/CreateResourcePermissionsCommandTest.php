@@ -8,6 +8,17 @@ use Illuminate\Support\Facades\Auth;
 
 uses(RefreshDatabase::class);
 
+$permissionTypes = [
+    'view' => 'View',
+    'viewAny' => 'View Any',
+    'create' => 'Create',
+    'update' => 'Update',
+    'restore' => 'Restore',
+    'delete' => 'Delete',
+    'forceDelete' => 'Force Delete',
+    'scope' => 'Scope',
+];
+
 beforeEach(function () {
     // Mock Aura::getResources() to return test resources
     Aura::shouldReceive('getResources')
@@ -17,36 +28,19 @@ beforeEach(function () {
         ]);
 });
 
-describe('permission creation', function () {
-    it('creates permissions for all resources', function () {
-        $user = User::factory()->create(['id' => 1]);
-
+describe('permission creation', function () use ($permissionTypes) {
+    it('creates permissions for all resources', function () use ($permissionTypes) {
         $this->artisan('aura:create-resource-permissions')
             ->assertSuccessful()
             ->expectsOutput('Resource permissions created successfully');
 
-        $resources = [User::class, Permission::class];
-
-        foreach ($resources as $resource) {
+        foreach ([User::class, Permission::class] as $resource) {
             $r = app($resource);
-            $slug = $r::$slug;
-
-            $permissionTypes = [
-                'view' => 'View',
-                'viewAny' => 'View Any',
-                'create' => 'Create',
-                'update' => 'Update',
-                'restore' => 'Restore',
-                'delete' => 'Delete',
-                'forceDelete' => 'Force Delete',
-                'scope' => 'Scope',
-            ];
 
             foreach ($permissionTypes as $type => $displayName) {
-                $permission = Permission::where([
-                    'slug' => "{$type}-{$slug}",
-                    'group' => $r->pluralName(),
-                ])->first();
+                $permission = Permission::withoutGlobalScopes()
+                    ->where('slug', "{$type}-{$r::$slug}")
+                    ->first();
 
                 expect($permission)->not->toBeNull()
                     ->and($permission->name)->toBe($displayName.' '.$r->pluralName())
@@ -56,71 +50,41 @@ describe('permission creation', function () {
     });
 
     it('creates correct number of permissions', function () {
-        $user = User::factory()->create(['id' => 1]);
-
-        $this->artisan('aura:create-resource-permissions')
-            ->assertSuccessful();
+        $this->artisan('aura:create-resource-permissions')->assertSuccessful();
 
         // 8 permission types * 2 resources
-        $expectedPermissionsCount = 8 * 2;
-        expect(Permission::count())->toBe($expectedPermissionsCount);
+        expect(Permission::withoutGlobalScopes()->count())->toBe(16);
+    });
+
+    it('does not log anybody in', function () {
+        $this->artisan('aura:create-resource-permissions')->assertSuccessful();
+
+        expect(Auth::check())->toBeFalse();
     });
 });
 
 describe('duplicate handling', function () {
-    it('does not duplicate existing permissions', function () {
-        $user = User::factory()->create(['id' => 1]);
+    it('is idempotent', function () {
+        $this->artisan('aura:create-resource-permissions')->assertSuccessful();
+        $this->artisan('aura:create-resource-permissions')->assertSuccessful();
 
-        $resource = app(User::class);
-        Permission::create([
-            'name' => 'View '.$resource->pluralName(),
-            'slug' => 'view-'.$resource::$slug,
-            'group' => $resource->pluralName(),
-        ]);
-
-        $initialCount = Permission::where('slug', 'view-'.$resource::$slug)->count();
-        expect($initialCount)->toBe(1);
-
-        $this->artisan('aura:create-resource-permissions')
-            ->assertSuccessful();
-
-        $finalCount = Permission::where('slug', 'view-'.$resource::$slug)->count();
-        expect($finalCount)->toBe(1);
+        expect(Permission::withoutGlobalScopes()->count())->toBe(16);
     });
 });
 
-describe('authentication', function () {
-    it('authenticates as user ID 1', function () {
-        $user = User::factory()->create(['id' => 1]);
-
-        $this->artisan('aura:create-resource-permissions')
+describe('team option', function () {
+    it('assigns the permissions to the given team', function () {
+        $this->artisan('aura:create-resource-permissions', ['--team' => 7])
             ->assertSuccessful();
 
-        expect(Auth::id())->toBe(1);
-    });
-});
+        expect(Permission::withoutGlobalScopes()->where('team_id', 7)->count())->toBe(16);
+    })->skip(fn () => ! config('aura.teams'), 'Teams are disabled.');
 
-describe('naming conventions', function () {
-    it('creates permissions with correct naming convention', function () {
-        $user = User::factory()->create(['id' => 1]);
+    it('rejects a non numeric team id', function () {
+        $this->artisan('aura:create-resource-permissions', ['--team' => 'abc'])
+            ->expectsOutput('The --team option must be a numeric team ID.')
+            ->assertFailed();
 
-        $this->artisan('aura:create-resource-permissions')
-            ->assertSuccessful();
-
-        $resource = app(User::class);
-        $permission = Permission::where('slug', 'view-'.$resource::$slug)->first();
-
-        expect($permission)
-            ->name->toBe('View '.$resource->pluralName())
-            ->slug->toBe('view-'.$resource::$slug)
-            ->group->toBe($resource->pluralName());
-    });
-
-    it('displays progress messages for each resource', function () {
-        $user = User::factory()->create(['id' => 1]);
-
-        $this->artisan('aura:create-resource-permissions')
-            ->expectsOutputToContain('Creating missing permissions for')
-            ->assertSuccessful();
+        expect(Permission::withoutGlobalScopes()->count())->toBe(0);
     });
 });

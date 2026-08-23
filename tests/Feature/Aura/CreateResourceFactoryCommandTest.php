@@ -6,6 +6,34 @@ use Illuminate\Support\Facades\File;
 
 uses(RefreshDatabase::class);
 
+class FactoryFixture extends Aura\Base\Resource
+{
+    public static ?string $slug = 'factory-fixture';
+
+    public static string $type = 'FactoryFixture';
+
+    public static function getFields()
+    {
+        return [
+            [
+                'name' => 'Main Panel',
+                'slug' => 'main_panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
+            ],
+            [
+                'name' => 'Title',
+                'slug' => 'title',
+                'type' => 'Aura\\Base\\Fields\\Text',
+            ],
+            [
+                'name' => 'Author',
+                'slug' => 'author_id',
+                'type' => 'Aura\\Base\\Fields\\BelongsTo',
+            ],
+        ];
+    }
+}
+
 beforeEach(function () {
     $this->factoryPath = database_path('factories');
 });
@@ -16,6 +44,7 @@ afterEach(function () {
         'UserFactory.php',
         'PostFactory.php',
         'TestFactory.php',
+        'FactoryFixtureFactory.php',
     ];
 
     foreach ($factoryFiles as $file) {
@@ -127,4 +156,24 @@ it('provides newFactory method instructions', function () {
         ->expectsOutputToContain("Don't forget to add the following method to your User Resource:")
         ->expectsOutputToContain('protected static function newFactory()')
         ->assertExitCode(0);
+});
+
+it('only uses input fields and tolerates a BelongsTo without a resource', function () {
+    $factoryPath = database_path('factories/FactoryFixtureFactory.php');
+
+    if (File::exists($factoryPath)) {
+        File::delete($factoryPath);
+    }
+
+    $this->artisan('aura:create-resource-factory', [
+        'resource' => FactoryFixture::class,
+    ])->assertExitCode(0);
+
+    $content = File::get($factoryPath);
+
+    expect($content)
+        ->toContain("'title' => \$this->faker->sentence")
+        ->toContain("'author_id' => \$this->faker->randomNumber()")
+        // Panels are layout wrappers, never columns.
+        ->not->toContain("'main_panel'");
 });

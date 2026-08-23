@@ -10,6 +10,10 @@ class PostName extends Resource
 
     public static ?string $slug = 'PostSlug';
 
+    public static $singularName = 'PostSingularName';
+
+    public static $pluralName = 'PostPluralName';
+
     public static function getWidgets(): array
     {
         return [];
