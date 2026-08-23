@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Per-resource page component hooks (`indexComponent()`, `createComponent()`, `editComponent()`, `viewComponent()`): a resource can swap in a custom Livewire component for any of its admin pages while keeping the default URI and `aura.{slug}.*` route name, so all generated links keep working.
 - `aura:customize` command: customize a resource page by copying its Blade view into `resources/views/aura/{slug}/`, generating a custom Livewire component in `app/Livewire/`, or both (`--mode=view|component|full`). Wires the resource to the generated files automatically and scaffolds an app-level subclass for package resources (User, Team, …).
 
+### Changed
+
+- Support matrix narrowed to Laravel 13 only (Laravel 12 dropped). PHP 8.4+, Livewire 4 unchanged.
+
 ### Removed
 
 - The broken `aura:customize-component` command (superseded by `aura:customize`; it never copied views and generated routes outside the admin middleware group).
@@ -242,7 +246,7 @@ Version 1.0.0 will include:
 ## Versioning Strategy
 
 - **0.1.x**: Current stable state, bug fixes and minor improvements only
-- **1.0.0**: PHP 8.4+, Laravel 12/13, Livewire 4, and the supported V1 baseline
+- **1.0.0**: PHP 8.4+, Laravel 13, Livewire 4, and the supported V1 baseline
 - **Breaking changes**: Expected between 0.x and 1.0, plan accordingly
 
 ## Support

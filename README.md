@@ -69,7 +69,7 @@ Drop it in `app/Aura/Resources` and `/admin/article` serves a full CRUD interfac
 ## Requirements
 
 - PHP 8.4+
-- Laravel 12 or 13
+- Laravel 13
 - Livewire 4
 
 ## Installation

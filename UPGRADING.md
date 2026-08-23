@@ -7,7 +7,7 @@ Aura CMS 1.0 is a fresh baseline. There is no automated upgrade path for 0.x sch
 The main breaking changes are:
 
 - PHP 8.4 or newer is required.
-- Laravel 12 and 13 are supported; Laravel 10 and 11 are not.
+- Laravel 13 is required; Laravel 12 and earlier are not supported.
 - Livewire 4 is required; Livewire 3 compatibility is not maintained.
 - The Resource Editor is available only in the `local` environment and must also be enabled by `aura.features.resource_editor`.
 - Teams-disabled installations are supported, but custom resources and application migrations must not assume team columns exist.
