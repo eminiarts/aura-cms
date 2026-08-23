@@ -125,7 +125,7 @@
 
                         </div>
 
-                        @if(config('aura.features.search'))
+                        @if(config('aura.features.global_search'))
                             <button type="button" @click="$dispatch('search')"
                                     class="hidden items-center py-1.5 pr-3 pl-2.5 w-full text-sm leading-6 rounded-lg ring-1 shadow-sm aura-sidebar-search lg:flex">
                                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true" class="flex-none mr-2.5 w-5 h-5">

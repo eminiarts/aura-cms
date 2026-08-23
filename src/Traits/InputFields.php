@@ -49,7 +49,7 @@ trait InputFields
 
         // If there is a get{key}Field() method, use that
         if ($value && method_exists($this, 'get'.ucfirst($studlyKey).'Field')) {
-            return $this->{'get'.ucfirst($key).'Field'}($value);
+            return $this->{'get'.ucfirst($studlyKey).'Field'}($value);
         }
 
         // Maybe delete this one?

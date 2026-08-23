@@ -332,7 +332,9 @@ class Aura
         // hardening default), Collection payloads become __PHP_Incomplete_Class
         // and the sidebar foreach treats property values as group lists — strings
         // then blow up with "foreach() argument must be of type array|object".
-        $payload = Cache::remember('user-'.auth()->id().'-'.auth()->user()->current_team_id.'-navigation', 3600, function () {
+        $cacheKey = $this->navigationCacheKey();
+
+        $payload = Cache::remember($cacheKey, 3600, function () {
 
             $resources = collect($this->getResources());
 
@@ -397,12 +399,24 @@ class Aura
 
         // Revive incomplete/legacy Collection payloads written before this fix.
         if (! is_array($payload)) {
-            Cache::forget('user-'.auth()->id().'-'.auth()->user()->current_team_id.'-navigation');
+            Cache::forget($cacheKey);
 
             return $this->navigation();
         }
 
         return collect($payload);
+    }
+
+    /**
+     * The registered resource list is part of the key so that registering a
+     * resource (e.g. a freshly generated one) invalidates the cached sidebar
+     * instead of staying invisible until the TTL expires.
+     */
+    public function navigationCacheKey(): string
+    {
+        return 'user-'.auth()->id()
+            .'-'.auth()->user()->current_team_id
+            .'-navigation-'.md5(implode(',', $this->getResources()));
     }
 
     public function option($key)

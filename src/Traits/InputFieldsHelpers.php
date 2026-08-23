@@ -110,11 +110,6 @@ trait InputFieldsHelpers
         return $this->fieldsCollection()->pluck('slug');
     }
 
-    public function getFieldValue($key)
-    {
-        return $this->fieldClassBySlug($key)->get($this->fieldBySlug($key), $this->meta->$key);
-    }
-
     public function groupedFieldBySlug($slug)
     {
         $fields = $this->getGroupedFields();

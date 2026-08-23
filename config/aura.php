@@ -192,6 +192,7 @@ return [
     */
 
     'features' => [
+        'dashboard' => true,
         'global_search' => true,
         'bookmarks' => true,
         'last_visited_pages' => true,
@@ -249,7 +250,6 @@ return [
 
     'reporting' => [
         'projection' => [
-            'enabled' => false,
             'reads_enabled' => false,
         ],
     ],

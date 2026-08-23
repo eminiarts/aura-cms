@@ -160,9 +160,6 @@ class AddIdsToFields implements Pipe
             return $field;
         });
 
-        if (request()->url() != 'http://aura-demo.test') {
-        }
-
         return $next($processedFields);
     }
 }

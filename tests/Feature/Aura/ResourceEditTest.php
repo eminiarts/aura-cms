@@ -1,9 +1,12 @@
 <?php
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\ResourceEditor;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+
+use function Pest\Livewire\livewire;
 
 uses(RefreshDatabase::class);
 
@@ -131,5 +134,20 @@ test('edit resource should not be available in staging', function () {
     createSuperAdmin();
 
     $this->get(route('aura.resource.editor', 'user'))
+        ->assertNotFound();
+});
+
+test('singleAction only invokes declared resource editor actions', function () {
+    createSuperAdmin();
+
+    config(['aura.features.resource_editor' => true]);
+
+    $appResource = new ResourceEditModel;
+
+    Aura::fake();
+    Aura::setModel($appResource);
+
+    livewire(ResourceEditor::class, ['slug' => 'resource'])
+        ->call('singleAction', 'checkAuthorization')
         ->assertNotFound();
 });

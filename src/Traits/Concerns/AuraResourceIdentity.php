@@ -29,7 +29,10 @@ trait AuraResourceIdentity
 
     public static function getSlug(): string
     {
-        return static::$slug ?? Str::slug(static::$name);
+        // Mirrors Aura::findResourceBySlug(), which falls back to the class
+        // basename. Without it a resource declaring neither $slug nor $name
+        // would produce an empty slug and therefore an empty /admin/ route.
+        return static::$slug ?? Str::slug(static::$name ?? class_basename(static::class));
     }
 
     public static function getType(): string

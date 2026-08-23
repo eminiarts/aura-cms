@@ -75,7 +75,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 2
 			path: src/Aura.php
 
 		-
@@ -117,7 +117,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\BaseResource\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: src/BaseResource.php
 
 		-
@@ -183,7 +183,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Fields\\Field\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: src/Fields/Field.php
 
 		-
@@ -336,7 +336,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\CreateResource\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 4
+			count: 2
 			path: src/Livewire/CreateResource.php
 
 		-
@@ -384,7 +384,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\InviteUser\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: src/Livewire/InviteUser.php
 
 		-
@@ -444,7 +444,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Notifications\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: src/Livewire/Notifications.php
 
 		-
@@ -486,7 +486,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Profile\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: src/Livewire/Profile.php
 
 		-
@@ -546,7 +546,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Settings\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: src/Livewire/Settings.php
 
 		-
@@ -750,7 +750,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\UserSettings\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: src/Livewire/UserSettings.php
 
 		-
