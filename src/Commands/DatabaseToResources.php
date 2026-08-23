@@ -33,9 +33,37 @@ class DatabaseToResources extends Command
         return Schema::getTableListing(schemaQualified: false);
     }
 
+    /**
+     * Tables owned by Laravel or by Aura itself. Aura already ships resources for
+     * its own tables, so generating resources for them would produce duplicates.
+     */
     protected function isSystemTable(string $table): bool
     {
-        return in_array($table, ['migrations', 'failed_jobs', 'password_reset_tokens', 'password_resets', 'sessions'], true);
+        return in_array($table, [
+            // Laravel
+            'cache',
+            'cache_locks',
+            'failed_jobs',
+            'job_batches',
+            'jobs',
+            'migrations',
+            'notifications',
+            'password_reset_tokens',
+            'password_resets',
+            'personal_access_tokens',
+            'sessions',
+            // Aura (database/migrations/create_aura_tables.php.stub)
+            'aura_migration_ownership',
+            'meta',
+            'options',
+            'permissions',
+            'post_relations',
+            'posts',
+            'roles',
+            'teams',
+            'user_role',
+            'users',
+        ], true);
     }
 
     protected function transformTable(string $table): int

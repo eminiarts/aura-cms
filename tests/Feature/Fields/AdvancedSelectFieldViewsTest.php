@@ -50,7 +50,7 @@ class HasManyFieldViewsModel extends Resource
 
     protected static ?string $slug = 'has-many-model';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -69,7 +69,7 @@ class HasManyFieldViewsModelCustomView extends Resource
 
     protected static ?string $slug = 'hasmanymodel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -89,7 +89,7 @@ class HasManyFieldViewsModelThumbnail extends Resource
 
     protected static ?string $slug = 'has-many-model';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -109,7 +109,7 @@ class HasManyFieldViewsModelCustomIndex extends Resource
 
     protected static ?string $slug = 'has-many-model';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

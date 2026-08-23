@@ -17,7 +17,7 @@ class TestInputFieldsClass extends Resource
     use InputFieldsValidation;
     use InteractsWithTable;
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -51,7 +51,7 @@ class TestInputFieldsWithArrayRules extends Resource
     use InputFieldsValidation;
     use InteractsWithTable;
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

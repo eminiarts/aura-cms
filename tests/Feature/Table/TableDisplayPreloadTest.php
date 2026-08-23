@@ -61,7 +61,7 @@ class PreloadAuthor extends Resource
 
     protected $table = 'preload_authors';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Name', 'type' => 'Aura\\Base\\Fields\\Text', 'slug' => 'name', 'validation' => '', 'conditional_logic' => []],
@@ -83,7 +83,7 @@ class PreloadBelongsToPost extends Resource
 
     public static string $type = 'PreloadBelongsToPost';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Author', 'slug' => 'author_id', 'type' => 'Aura\\Base\\Fields\\BelongsTo', 'resource' => PreloadAuthor::class, 'validation' => '', 'conditional_logic' => [], 'on_index' => true],
@@ -108,7 +108,7 @@ class PreloadBelongsToProject extends Resource
 
     protected $table = 'preload_projects';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Name', 'type' => 'Aura\\Base\\Fields\\Text', 'slug' => 'name', 'validation' => '', 'conditional_logic' => [], 'on_index' => true],
@@ -126,7 +126,7 @@ class PreloadTagPost extends Resource
 
     public static string $type = 'PreloadTagPost';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Tags', 'slug' => 'tags', 'type' => 'Aura\\Base\\Fields\\Tags', 'resource' => 'Aura\\Base\\Resources\\Tag', 'create' => true, 'validation' => '', 'conditional_logic' => [], 'on_index' => true],
@@ -143,7 +143,7 @@ class PreloadImagePost extends Resource
 
     public static string $type = 'PreloadImagePost';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Image', 'slug' => 'image', 'type' => 'Aura\\Base\\Fields\\Image', 'validation' => '', 'conditional_logic' => [], 'on_index' => true],
@@ -160,7 +160,7 @@ class PreloadMetaPost extends Resource
 
     public static string $type = 'PreloadMetaPost';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Subtitle', 'slug' => 'subtitle', 'type' => 'Aura\\Base\\Fields\\Text', 'validation' => '', 'conditional_logic' => []],

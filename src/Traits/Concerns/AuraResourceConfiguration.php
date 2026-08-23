@@ -38,7 +38,7 @@ trait AuraResourceConfiguration
 
     protected static bool $title = false;
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [];
     }

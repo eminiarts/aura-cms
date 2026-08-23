@@ -6,7 +6,6 @@ use Aura\Base\Events\SaveFields;
 use Aura\Base\Facades\DynamicFunctions;
 use Aura\Base\Listeners\CreateDatabaseMigration;
 use Aura\Base\Listeners\ModifyDatabaseMigration;
-use Aura\Base\Listeners\SyncDatabase;
 use Aura\Base\Navigation\Navigation;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Validator;
@@ -57,9 +56,6 @@ class AppServiceProvider extends ServiceProvider
         //     json_decode($value);
         //     return json_last_error() === JSON_ERROR_NONE;
         // });
-
-        // Register event and listener
-        // Event::listen(SaveFields::class, SyncDatabase::class);
 
         $customTableMigrations = config('aura.features.custom_tables_for_resources');
 

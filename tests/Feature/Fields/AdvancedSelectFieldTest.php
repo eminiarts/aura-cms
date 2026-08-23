@@ -33,7 +33,7 @@ class AdvancedSelectFieldModel extends Resource
 
     public static string $type = 'AdvancedSelectModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

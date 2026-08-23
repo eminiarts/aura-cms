@@ -11,3 +11,16 @@ test('check auth settings', function () {
     expect(config('aura.auth.invitation_expiry'))->toBe(7);
     expect(config('aura.auth.create_teams'))->toBeTrue();
 });
+
+test('auth redirect follows AURA_PATH', function () {
+    $_ENV['AURA_PATH'] = $_SERVER['AURA_PATH'] = 'backend';
+
+    try {
+        $config = require dirname(__DIR__, 3).'/config/aura.php';
+    } finally {
+        unset($_ENV['AURA_PATH'], $_SERVER['AURA_PATH']);
+    }
+
+    expect($config['auth']['redirect'])->toBe('/backend');
+    expect($config['path'])->toBe('backend');
+});

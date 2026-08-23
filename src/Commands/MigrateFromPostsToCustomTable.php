@@ -4,7 +4,6 @@ namespace Aura\Base\Commands;
 
 use Aura\Base\Facades\Aura;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 use ReflectionClass;
 
@@ -21,32 +20,37 @@ class MigrateFromPostsToCustomTable extends Command
 
     public function handle()
     {
-        // Step 1: Ask which resource to use
-        $resources = Aura::getResources();
-        $resourceOptions = [];
+        $resourceClass = $this->argument('resource');
 
-        foreach ($resources as $resourceClass) {
-            $resourceInstance = new $resourceClass;
-            $resourceName = $resourceInstance->name ?? class_basename($resourceClass);
-            $resourceOptions[$resourceName] = $resourceClass;
+        if ($resourceClass && ! class_exists($resourceClass)) {
+            error("Resource class '{$resourceClass}' not found.");
+
+            return self::FAILURE;
         }
 
-        $resourceName = select(
-            'Which resource do you want to migrate?',
-            array_keys($resourceOptions)
-        );
-        $resourceClass = $resourceOptions[$resourceName];
+        if (! $resourceClass) {
+            $resourceOptions = [];
 
-        // Step 2: Generate migration and modify resource
-        info('Generating migration for resource: '.$resourceName);
-        $this->generateMigration($resourceClass);
+            foreach (Aura::getResources() as $class) {
+                $resourceOptions[app($class)->name ?? class_basename($class)] = $class;
+            }
 
-        // Step 3: Ask if should run migration
+            $resourceClass = $resourceOptions[select(
+                'Which resource do you want to migrate?',
+                array_keys($resourceOptions)
+            )];
+        }
+
+        info('Generating migration for resource: '.$resourceClass);
+
+        if ($this->generateMigration($resourceClass) === self::FAILURE) {
+            return self::FAILURE;
+        }
+
         if (confirm('Do you want to run the migration now?', true)) {
             $this->call('migrate');
         }
 
-        // Step 4: Ask if should transfer data
         if (confirm('Do you want to transfer data from posts and meta tables?', true)) {
             $this->call('aura:transfer-from-posts-to-custom-table', [
                 'resource' => $resourceClass,
@@ -54,27 +58,29 @@ class MigrateFromPostsToCustomTable extends Command
         }
 
         info('Migration process completed.');
+
+        return self::SUCCESS;
     }
 
     protected function generateMigration($resourceClass)
     {
-        // Reflect on the resource class
         $reflection = new ReflectionClass($resourceClass);
         $filePath = $reflection->getFileName();
 
-        if (! file_exists($filePath)) {
-            error('Resource class file not found: '.$filePath);
+        if (! $filePath || ! file_exists($filePath)) {
+            error('Resource class file not found for: '.$resourceClass);
 
-            return;
+            return self::FAILURE;
         }
 
         $file = file_get_contents($filePath);
 
-        // Add or update $customTable
-        if (strpos($file, 'public static $customTable') === false) {
+        // Add or update $customTable. A column-backed resource must also stop
+        // writing its fields to the meta table (see make-custom-resource.stub).
+        if (! str_contains($file, 'public static $customTable')) {
             $file = preg_replace(
                 '/(class\s+'.$reflection->getShortName().'\s+extends\s+\S+\s*{)/i',
-                "$1\n    public static \$customTable = true;",
+                "$1\n    public static \$customTable = true;\n\n    public static bool \$usesMeta = false;",
                 $file
             );
         } else {
@@ -85,12 +91,10 @@ class MigrateFromPostsToCustomTable extends Command
             );
         }
 
-        // Add or update $table
-        $resourceInstance = new $resourceClass;
-        $modelClass = $resourceInstance->model ?? $resourceInstance->getModel();
-        $tableName = Str::snake(Str::pluralStudly(class_basename($modelClass)));
+        $tableName = Str::snake(Str::pluralStudly(class_basename($resourceClass)));
 
-        if (strpos($file, 'protected $table') === false) {
+        // Add or update $table
+        if (! str_contains($file, 'protected $table')) {
             $file = preg_replace(
                 '/(class\s+'.$reflection->getShortName().'\s+extends\s+\S+\s*{)/i',
                 "$1\n    protected \$table = '$tableName';",
@@ -107,13 +111,15 @@ class MigrateFromPostsToCustomTable extends Command
         file_put_contents($filePath, $file);
         info('Modified resource class file: '.$filePath);
 
-        // $resourceClass = str_replace('\\', '\\\\', $resourceClass);
-
-        // Call the artisan command to create the migration
+        // The class is already loaded, so its in-memory $table is still `posts`.
+        // Pass the new table name explicitly.
         $this->call('aura:create-resource-migration', [
             'resource' => $resourceClass,
+            '--table' => $tableName,
         ]);
 
         info('Migration generated for resource: '.$resourceClass);
+
+        return self::SUCCESS;
     }
 }

@@ -11,7 +11,7 @@ class EditUniqueValidationRulesTestModel extends Resource
 
     public static string $type = 'EditUniqueValidation';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

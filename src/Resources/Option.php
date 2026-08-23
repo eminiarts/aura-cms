@@ -31,7 +31,7 @@ class Option extends Resource
         return static::where('name', $name)->first();
     }
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

@@ -28,7 +28,7 @@ class GenreModel extends Resource
 
     public static string $type = 'Genre';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -59,7 +59,7 @@ class MovieModel extends Resource
 
     public static string $type = 'Movie';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

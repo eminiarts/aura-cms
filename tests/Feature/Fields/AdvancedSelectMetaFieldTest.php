@@ -34,7 +34,7 @@ class AdvancedSelectFieldMetaModel extends Resource
 
     public static string $type = 'AdvancedSelectMetaModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

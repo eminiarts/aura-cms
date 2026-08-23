@@ -8,7 +8,7 @@ class TabsInPanelTestModel extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
 

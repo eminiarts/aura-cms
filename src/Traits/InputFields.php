@@ -46,15 +46,21 @@ trait InputFields
         }
 
         $studlyKey = str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $key)));
+        $accessor = 'get'.ucfirst($studlyKey).'Field';
 
-        // If there is a get{key}Field() method, use that
-        if ($value && method_exists($this, 'get'.ucfirst($studlyKey).'Field')) {
-            return $this->{'get'.ucfirst($studlyKey).'Field'}($value);
+        // If there is a get{key}Field() method, use that. Probed on existence
+        // only — gating on a truthy $value would silently skip the accessor for
+        // 0, '' and false, which Resource::resolveFieldValue() does not do.
+        if (method_exists($this, $accessor)) {
+            return $this->{$accessor}($value);
         }
 
-        // Maybe delete this one?
-        if (optional($this->fieldBySlug($key))['display'] && $value) {
-            return $this->fieldBySlug($key)['display']($value, $this);
+        $field = $this->fieldBySlug($key);
+
+        // A per-field display closure is likewise defined-or-not, never
+        // value-dependent.
+        if (is_array($field) && isset($field['display'])) {
+            return $field['display']($value, $this);
         }
 
         // Only if uses Meta
@@ -147,34 +153,32 @@ trait InputFields
 
     public function getFieldsBeforeTree($fields = null)
     {
+        $pipes = [
+            MapFields::class,
+            AddIdsToFields::class,
+            TransformSlugs::class,
+            ApplyParentConditionalLogic::class,
+            DoNotDeferConditionalLogic::class,
+        ];
+
+        // Explicit field definitions bypass the cache entirely: the cache key is
+        // the class name, so caching a caller-supplied definition would serve it
+        // to every later call for the same resource.
+        if ($fields) {
+            return $this->sendThroughPipeline(is_array($fields) ? collect($fields) : $fields, $pipes);
+        }
+
         $cacheKey = get_class($this).'-getFieldsBeforeTree';
 
         if (! app()->bound($cacheKey)) {
-            // If fields is set and is an array, create a collection
-            if ($fields && is_array($fields)) {
-                $fields = collect($fields);
-            }
-
-            if (! $fields) {
-                $fields = $this->fieldsCollection();
-            }
-
-            $fieldsBeforeTree = $this->sendThroughPipeline($fields, [
-                MapFields::class,
-                AddIdsToFields::class,
-                TransformSlugs::class,
-                ApplyParentConditionalLogic::class,
-                DoNotDeferConditionalLogic::class,
-            ]);
+            $fieldsBeforeTree = $this->sendThroughPipeline($this->fieldsCollection(), $pipes);
 
             app()->singleton($cacheKey, function () use ($fieldsBeforeTree) {
                 return $fieldsBeforeTree;
             });
-
         }
 
         return app($cacheKey);
-
     }
 
     // Used in Resource

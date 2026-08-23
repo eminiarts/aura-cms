@@ -23,7 +23,7 @@ class DoNotDeferConditionalLogicTestModel extends Resource
 
     protected static ?string $slug = 'do-not-defer-conditional-logic-test';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

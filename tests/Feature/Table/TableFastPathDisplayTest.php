@@ -31,7 +31,7 @@ class FastPathPlainPost extends Resource
 
     public static string $type = 'FastPathPlainPost';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Headline', 'slug' => 'headline', 'type' => 'Aura\\Base\\Fields\\Text', 'validation' => '', 'conditional_logic' => [], 'on_index' => true],
@@ -58,7 +58,7 @@ class FastPathConditionalPost extends Resource
 
     public static string $type = 'FastPathConditionalPost';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

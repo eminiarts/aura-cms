@@ -97,6 +97,13 @@ class Aura
     {
         $this->clearRoutes();
 
+        // Deliberately a full flush: Aura's cache keys are not enumerable. The
+        // navigation key is per user x team x resource-set hash
+        // (navigationCacheKey()) and option keys are `aura.{arbitrary name}` /
+        // `{team}.aura.{arbitrary name}`, so there is no finite list to forget
+        // and the default file/database stores support neither tags nor prefix
+        // scans. Scoped invalidation lives on the individual writers
+        // (updateOption(), Team/User::updateOption()).
         Cache::clear();
     }
 
@@ -162,15 +169,21 @@ class Aura
         static::$userModel = User::class;
     }
 
+    /**
+     * Discover the app's own field classes, the counterpart to
+     * getAppResources(). Both read the canonical `aura-settings.paths.*` keys.
+     *
+     * @return array<int,class-string>
+     */
     public function getAppFields()
     {
-        $path = config('aura.fields.path');
+        $path = config('aura-settings.paths.fields.path');
 
-        if (! file_exists($path)) {
+        if (! $path || ! file_exists($path)) {
             return [];
         }
 
-        return $this->getAppFiles($path, $filter = 'Field', $namespace = config('aura.fields.namespace'));
+        return $this->getAppFiles($path, 'Field', config('aura-settings.paths.fields.namespace'));
     }
 
     public function getAppFiles($path, $filter, $namespace)
@@ -189,8 +202,7 @@ class Aura
     /**
      * Register the App resources
      *
-     * @param  array  $resources
-     * @return array<class-string<resource>>
+     * @return array<class-string<\Aura\Base\Resource>>
      */
     public function getAppResources()
     {
@@ -297,7 +309,7 @@ class Aura
 
     public static function getPath($id)
     {
-        $attachment = Attachment::find($id);
+        $attachment = app(config('aura.resources.attachment', Attachment::class))::find($id);
 
         return $attachment ? $attachment->url : null;
     }
@@ -508,6 +520,16 @@ class Aura
             auth()->user()->currentTeam->updateOption($key, $value);
         } else {
             Option::withoutGlobalScopes([app(TeamScope::class)])->updateOrCreate(['name' => $key], ['value' => $value]);
+        }
+
+        // Invalidate the exact keys getOption() reads. Team::updateOption()
+        // forgets its own `team.{id}.{key}` cache entry, which is a different
+        // key from the one getOption() writes — without this a write stays
+        // invisible for the rest of the hour-long TTL.
+        Cache::forget('aura.'.$key);
+
+        if ($teamId = optional(auth()->user())->current_team_id) {
+            Cache::forget($teamId.'.aura.'.$key);
         }
     }
 

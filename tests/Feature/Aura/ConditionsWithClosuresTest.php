@@ -18,7 +18,7 @@ class ConditionalLogicWithClosuresModel extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -55,7 +55,7 @@ class ConditionalLogicWithoutClosuresModel extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

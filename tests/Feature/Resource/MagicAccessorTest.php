@@ -65,7 +65,7 @@ class MagicAccessorResource extends Resource
         return false;
     }
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Colliding', 'slug' => 'colliding_accessor', 'type' => MagicAccessorSpyField::class, 'conditional_logic' => []],

@@ -18,7 +18,7 @@ class EditFieldsTestModel extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -60,7 +60,7 @@ class EditFieldsAllVisibleModel extends Resource
 
     public static string $type = 'EditAllVisible';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -89,7 +89,7 @@ class EditFieldsNestedPanelModel extends Resource
 
     public static string $type = 'EditNestedPanel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

@@ -15,7 +15,9 @@ class CreateResourceMigration extends Command
 
     protected $files;
 
-    protected $signature = 'aura:create-resource-migration {resource : The fully qualified resource class, e.g. "App\\Aura\\Resources\\Article"}';
+    protected $signature = 'aura:create-resource-migration
+        {resource : The fully qualified resource class, e.g. "App\\Aura\\Resources\\Article"}
+        {--table= : Table name to migrate, when it differs from the resource\'s currently loaded $table}';
 
     public function __construct(Filesystem $files)
     {
@@ -44,7 +46,7 @@ class CreateResourceMigration extends Command
 
         // Use the resource's own table so the migration matches what the model
         // reads/writes (custom-table resources define $table explicitly).
-        $tableName = $resource->getTable();
+        $tableName = $this->option('table') ?: $resource->getTable();
 
         $migrationName = "create_{$tableName}_table";
 
@@ -58,17 +60,17 @@ class CreateResourceMigration extends Command
 
         $fields = method_exists($resource, 'inputFields') ? $resource->inputFields() : [];
 
-        $combined = $baseFields->merge($fields)->merge(collect([
+        $combined = $baseFields->merge($fields)->merge(collect(array_filter([
             [
                 'name' => 'User Id',
                 'type' => 'Aura\\Base\\Fields\\BelongsTo',
                 'slug' => 'user_id',
             ],
-            [
+            config('aura.teams') ? [
                 'name' => 'Team Id',
                 'type' => 'Aura\\Base\\Fields\\BelongsTo',
                 'slug' => 'team_id',
-            ],
+            ] : null,
             [
                 'name' => 'created_at',
                 'type' => 'Aura\\Base\\Fields\\Datetime',
@@ -79,7 +81,7 @@ class CreateResourceMigration extends Command
                 'type' => 'Aura\\Base\\Fields\\Datetime',
                 'slug' => 'updated_at',
             ],
-        ]));
+        ])));
 
         $combined = $combined->unique('slug');
 

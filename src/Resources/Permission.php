@@ -27,7 +27,7 @@ class Permission extends Resource
 
     protected static string $type = 'Permission';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
 

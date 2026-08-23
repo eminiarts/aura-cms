@@ -4,10 +4,11 @@ use Aura\Base\BaseResource;
 use Aura\Base\Resource;
 
 /**
- * Characterization tests for getActions() / getBulkActions() probing (design §1
- * ResourceActions, §5 step 5). Pins the method-vs-property precedence AND the
- * fact that Resource::getBulkActions() (the class override on Resource.php:172)
- * wins over the AuraModelConfig trait version — the two behave differently.
+ * Pins the method-vs-property precedence of getActions() / getBulkActions().
+ * Both resolve through the single AuraResourceActions implementation: a
+ * bulkActions()/actions() method wins, otherwise the matching property is used.
+ * Resource used to override getBulkActions() to read the property only; that
+ * override is gone so Resource and BaseResource share one convention.
  */
 
 // getActions(): method_exists('actions') wins over the $actions property.
@@ -28,8 +29,7 @@ class ActionsPropertyResource extends Resource
 }
 
 // A Resource subclass that provides BOTH a bulkActions() method and a property.
-// Resource::getBulkActions() (the class override) returns the PROPERTY, ignoring
-// the method entirely.
+// The method wins, exactly like getActions().
 class BulkActionsResourceModel extends Resource
 {
     public array $bulkActions = ['from-property'];
@@ -40,9 +40,13 @@ class BulkActionsResourceModel extends Resource
     }
 }
 
-// The SAME shape on a BaseResource subclass. BaseResource does NOT override
-// getBulkActions(), so it uses the AuraModelConfig trait version, which DOES
-// call the bulkActions() method.
+// getBulkActions(): no bulkActions() method → falls back to the property.
+class BulkActionsPropertyResource extends Resource
+{
+    public array $bulkActions = ['from-property'];
+}
+
+// The SAME shape on a BaseResource subclass, which must resolve identically.
 class BulkActionsBaseResourceModel extends BaseResource
 {
     public array $bulkActions = ['from-property'];
@@ -65,26 +69,17 @@ test('getActions falls back to the $actions property when no method exists', fun
     expect((new ActionsPropertyResource)->getActions())->toBe(['from-property']);
 });
 
-test('Resource::getBulkActions (class override) returns the property, ignoring the bulkActions() method', function () {
-    // Resource.php:172 overrides getBulkActions() to `return $this->bulkActions;`
-    // — the method_exists('bulkActions') branch of the trait is never reached.
-    expect((new BulkActionsResourceModel)->getBulkActions())->toBe(['from-property']);
+test('getBulkActions returns the bulkActions() method result when the method exists', function () {
+    expect((new BulkActionsResourceModel)->getBulkActions())->toBe(['from-method']);
 });
 
-test('BaseResource (trait version) calls the bulkActions() method instead of returning the property', function () {
-    // BaseResource has no getBulkActions() override, so the AuraModelConfig trait
-    // version runs and its method_exists('bulkActions') branch wins.
-    expect((new BulkActionsBaseResourceModel)->getBulkActions())->toBe(['from-method']);
+test('getBulkActions falls back to the $bulkActions property when no method exists', function () {
+    expect((new BulkActionsPropertyResource)->getBulkActions())->toBe(['from-property']);
 });
 
-test('the two getBulkActions implementations diverge for identical method+property shapes', function () {
-    // This is the concrete difference the design flags as "duplicated": the class
-    // override (Resource) is property-only; the trait version (BaseResource) is
-    // method-first. The decomposition MUST keep both.
-    $resource = new BulkActionsResourceModel;
-    $base = new BulkActionsBaseResourceModel;
-
-    expect($resource->getBulkActions())->toBe(['from-property'])
-        ->and($base->getBulkActions())->toBe(['from-method'])
-        ->and($resource->getBulkActions())->not->toBe($base->getBulkActions());
+test('Resource and BaseResource resolve getBulkActions identically', function () {
+    // One convention: method wins, property is the fallback — the same rule
+    // getActions() follows, on both host classes.
+    expect((new BulkActionsResourceModel)->getBulkActions())
+        ->toBe((new BulkActionsBaseResourceModel)->getBulkActions());
 });

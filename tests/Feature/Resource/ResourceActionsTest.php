@@ -20,7 +20,7 @@ class ResourceActionsTestModel extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [];
     }
@@ -62,7 +62,7 @@ class ResourceActionsTestModel2 extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [];
     }
@@ -99,7 +99,7 @@ class ResourceActionsTestModelWithNoActions extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [];
     }
@@ -141,7 +141,7 @@ class ResourceActionsTestModelWithConditionalLogic extends Resource
         ];
     }
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [];
     }
@@ -184,7 +184,7 @@ class ResourceActionsTestModelWithConfirmation extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [];
     }

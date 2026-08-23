@@ -49,7 +49,7 @@ class CustomTableSortingModel extends Resource
 
     protected $table = 'custom_sort_projects';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

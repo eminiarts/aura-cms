@@ -12,7 +12,7 @@ class FactoryFixture extends Aura\Base\Resource
 
     public static string $type = 'FactoryFixture';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

@@ -70,7 +70,7 @@ class CustomTableWidgetModel extends Resource
 
     protected $table = 'custom_widget_projects';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -97,7 +97,7 @@ class CustomTableStatusWidgetModel extends CustomTableWidgetModel
 
     public static string $type = 'WidgetStatusProject';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

@@ -30,7 +30,7 @@ class SingleActionPropertyResource extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [];
     }
@@ -114,7 +114,7 @@ class SingleActionMethodResource extends Resource
         ];
     }
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [];
     }

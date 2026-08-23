@@ -10,7 +10,7 @@ class NestedGroupFieldsModel extends Resource
 {
     public static string $type = 'NestedGroupFields';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

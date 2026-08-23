@@ -85,7 +85,7 @@ class Team extends Resource
         Cache::forget($option);
     }
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
 

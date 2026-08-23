@@ -22,7 +22,7 @@ class TagsFieldModel extends Resource
 
     public static string $type = 'TagsModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

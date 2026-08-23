@@ -9,7 +9,7 @@ class NestedFieldsModel extends Resource
 {
     public static string $type = 'NestedFields';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -65,7 +65,7 @@ class NestedFields2Model extends Resource
 {
     public static string $type = 'NestedFields2';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

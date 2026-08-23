@@ -21,7 +21,7 @@ class SearchTableModel extends Resource
 
     public static string $type = 'Post';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

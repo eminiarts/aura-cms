@@ -16,7 +16,7 @@ class WhereMetaContainsModel extends Resource
 
     public static string $type = 'WhereMetaContainsModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

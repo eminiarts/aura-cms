@@ -17,7 +17,7 @@ class HasManyFieldOptionsModel extends Resource
 {
     public static string $type = 'HasManyModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -34,7 +34,7 @@ class HasManyFieldOptionsModel2 extends Resource
 {
     public static string $type = 'HasManyModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -51,7 +51,7 @@ class HasManyFieldOptionsModel3 extends Resource
 {
     public static string $type = 'HasManyModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -69,7 +69,7 @@ class HasManyFieldOptionsModel4 extends Resource
 {
     public static string $type = 'HasManyModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -90,7 +90,7 @@ class HasManyFieldOptionsModel5 extends Resource
 
     public static string $type = 'HasManyModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -109,7 +109,7 @@ class HasManyFieldOptionsModel6 extends Resource
 {
     public static string $type = 'HasManyModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -127,7 +127,7 @@ class HasManyFieldOptionsModel7 extends Resource
 {
     public static string $type = 'HasManyModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -146,7 +146,7 @@ class HasManyFieldOptionsModel8 extends Resource
 {
     public static string $type = 'HasManyModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -165,7 +165,7 @@ class HasManyFieldOptionsModel9 extends Resource
 {
     public static string $type = 'HasManyModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

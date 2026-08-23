@@ -39,7 +39,7 @@ class IssetTestResource extends Resource
 
     public static string $type = 'IssetTestResource';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Plain Text', 'slug' => 'plain_text', 'type' => 'Aura\\Base\\Fields\\Text', 'conditional_logic' => []],

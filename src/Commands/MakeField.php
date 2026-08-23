@@ -29,10 +29,12 @@ class MakeField extends GeneratorCommand
 
     public function handle()
     {
-        parent::handle();
+        $result = parent::handle();
 
         $this->createViewFile();
         $this->createEditFile();
+
+        return $result;
     }
 
     protected function buildEditFileContents()

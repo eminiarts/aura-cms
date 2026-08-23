@@ -28,7 +28,7 @@ class HasManyCustomTableModel extends Resource
 
     protected $fillable = ['type'];
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

@@ -12,7 +12,7 @@ class FieldsAfterRepeaterModel extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -57,7 +57,7 @@ class FieldsWithMultipleRepeatersModel extends Resource
 
     public static string $type = 'MultiRepeater';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

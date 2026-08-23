@@ -72,8 +72,13 @@ class ModifyDatabaseMigration
         // Run "pint" on the migration file
         $this->runPint($migrationFile);
 
-        // Run the migration
-        Artisan::call('aura:schema-update', ['migration' => $migrationFile]);
+        // Run the migration. The regenerated migration is the full desired schema,
+        // so removed fields have to drop their columns without prompting.
+        Artisan::call('aura:schema-update', [
+            'migration' => $migrationFile,
+            '--drop' => true,
+            '--force' => true,
+        ]);
     }
 
     protected function generateColumn($field)

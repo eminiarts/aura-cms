@@ -5,16 +5,19 @@ namespace Aura\Base\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
+use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\select;
 
 class UpdateSchemaFromMigration extends Command
 {
     protected $description = 'Update the database schema based on the provided migration file';
 
-    protected $signature = 'aura:schema-update {migration? : Path to the migration file to sync the table with}';
+    protected $signature = 'aura:schema-update
+        {migration? : Path to the migration file to sync the table with}
+        {--drop : Drop columns that are missing from the migration file}
+        {--force : Do not ask for confirmation before dropping columns}';
 
     public function handle()
     {
@@ -31,7 +34,7 @@ class UpdateSchemaFromMigration extends Command
         if (! file_exists($migrationFile)) {
             $this->error('Migration file does not exist.');
 
-            return;
+            return self::FAILURE;
         }
 
         $table = $this->getTableNameFromMigration($migrationFile);
@@ -39,54 +42,73 @@ class UpdateSchemaFromMigration extends Command
         if (! $table) {
             $this->error('Unable to determine table name from the migration.');
 
-            return;
+            return self::FAILURE;
         }
 
-        $existingColumns = DB::getSchemaBuilder()->getColumnListing($table);
         $desiredColumns = $this->getDesiredColumnsFromMigration($migrationFile);
 
-        $newColumns = array_diff(array_keys($desiredColumns), $existingColumns);
+        // A failed or partial parse would look like "the table has no columns",
+        // which previously dropped every existing column. Abort instead.
+        if ($desiredColumns === []) {
+            $this->error("No columns could be parsed from '{$migrationFile}'. Aborting without touching '{$table}'.");
 
-        $dropColumns = array_diff($existingColumns, array_keys($desiredColumns));
-        $dropColumns = array_diff($dropColumns, ['id', 'created_at', 'updated_at', 'deleted_at']);
+            return self::FAILURE;
+        }
 
         if (! Schema::hasTable($table)) {
             $this->info("Table '{$table}' does not exist. Running the migration...");
 
-            // Run the migration
             Artisan::call('migrate');
 
             $this->info("Migration completed. Table '{$table}' has been created.");
 
-            return;
+            return self::SUCCESS;
         }
 
-        // Add new columns
-        Schema::table($table, function (Blueprint $table) use ($existingColumns, $desiredColumns) {
-            $newColumns = array_diff(array_keys($desiredColumns), $existingColumns);
+        $existingColumns = Schema::getColumnListing($table);
 
-            foreach ($newColumns as $column) {
+        $addColumns = array_values(array_diff(array_keys($desiredColumns), $existingColumns));
+        $dropColumns = array_values(array_diff(
+            $existingColumns,
+            array_keys($desiredColumns),
+            ['id', 'created_at', 'updated_at', 'deleted_at']
+        ));
 
-                $table->{$desiredColumns[$column]['type']}($column)->nullable();
+        $this->line("Table '{$table}':");
+        $this->line('  add:  '.($addColumns === [] ? '-' : implode(', ', $addColumns)));
+        $this->line('  drop: '.($dropColumns === [] ? '-' : implode(', ', $dropColumns)));
+
+        if ($dropColumns !== [] && ! $this->option('drop')) {
+            $this->warn('Keeping '.implode(', ', $dropColumns).'. Pass --drop to remove them.');
+            $dropColumns = [];
+        }
+
+        if ($dropColumns !== [] && ! $this->option('force') && ! confirm(
+            label: 'Drop '.implode(', ', $dropColumns).'? The data in those columns is lost.',
+            default: false
+        )) {
+            $dropColumns = [];
+        }
+
+        if ($addColumns === [] && $dropColumns === []) {
+            $this->info('Nothing to do, the schema already matches the migration file.');
+
+            return self::SUCCESS;
+        }
+
+        Schema::table($table, function (Blueprint $blueprint) use ($addColumns, $desiredColumns, $dropColumns) {
+            foreach ($addColumns as $column) {
+                $blueprint->{$desiredColumns[$column]['type']}($column)->nullable();
             }
 
-            // Drop outdated columns
-            $dropColumns = array_diff($existingColumns, array_keys($desiredColumns));
-            $dropColumns = array_diff($dropColumns, ['id', 'created_at', 'updated_at', 'deleted_at']);
-
-            foreach ($dropColumns as $column) {
-                $table->dropColumn($column);
-            }
-        });
-
-        // Modify existing columns if needed
-        Schema::table($table, function (Blueprint $table) use ($desiredColumns) {
-            foreach ($desiredColumns as $column => $definition) {
-                $table->{$definition['type']}($column)->nullable()->change();
+            if ($dropColumns !== []) {
+                $blueprint->dropColumn($dropColumns);
             }
         });
 
         $this->info('Schema updated successfully based on the migration file.');
+
+        return self::SUCCESS;
     }
 
     protected function getDesiredColumnsFromMigration($migrationFile)

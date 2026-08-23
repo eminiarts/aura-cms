@@ -40,7 +40,7 @@ class ApplyWrappersModel extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
 
@@ -161,7 +161,7 @@ class ApplyWrappersModel2 extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
 
