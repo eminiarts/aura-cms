@@ -21,16 +21,28 @@ class InstallConfigCommand extends Command
         // Get the config path
         $configPath = config_path('aura.php');
 
-        // Include the config array
+        // Include the config array to read the current values
         $config = include $configPath;
 
+        if (! is_array($config)) {
+            $this->error('The published config/aura.php does not return an array.');
+
+            return self::FAILURE;
+        }
+
+        // The published config is edited in place: every change is a targeted
+        // replacement of a single value, so comments, env() calls and manual
+        // edits survive untouched.
+        $contents = file_get_contents($configPath);
+        $original = $contents;
+
         // 1. Do you want to use teams?
+        $currentTeams = (bool) ($config['teams'] ?? true);
         $useTeams = $this->input->isInteractive()
             ? confirm('Do you want to use teams?')
-            : $this->booleanOption('teams', (bool) $config['teams']);
+            : $this->booleanOption('teams', $currentTeams);
 
-        // Modify the 'teams' value
-        $config['teams'] = $useTeams;
+        $this->applySetting($contents, 'teams', $useTeams, $currentTeams);
 
         // 2. Do you want to modify default features?
         $modifyFeatures = $this->input->isInteractive()
@@ -38,34 +50,31 @@ class InstallConfigCommand extends Command
 
         if ($modifyFeatures) {
             // For each feature, ask if they want to enable/disable it
-            $features = $config['features'];
+            foreach (($config['features'] ?? []) as $feature => $value) {
+                if (! is_bool($value)) {
+                    continue;
+                }
 
-            foreach ($features as $feature => $value) {
-                $features[$feature] = confirm("Enable feature '{$feature}'?", $value);
+                $this->applySetting($contents, "features.{$feature}", confirm("Enable feature '{$feature}'?", $value), $value);
             }
-
-            // Update the features in config
-            $config['features'] = $features;
         }
 
         // 3. Do you want to allow registration?
+        $currentRegistration = (bool) ($config['auth']['registration'] ?? true);
         $allowRegistration = $this->input->isInteractive()
             ? confirm('Do you want to allow registration?')
-            : $this->booleanOption('registration', (bool) $config['auth']['registration']);
+            : $this->booleanOption('registration', $currentRegistration);
 
-        $config['auth']['registration'] = $allowRegistration;
-
-        // Update the env variable AURA_REGISTRATION
-        $this->setEnvValue('AURA_REGISTRATION', $allowRegistration ? 'true' : 'false');
+        // Writes AURA_REGISTRATION when the config value is env-backed, and
+        // rewrites the config line when it holds a literal.
+        $this->applySetting($contents, 'auth.registration', $allowRegistration, $currentRegistration);
 
         // 4. Do you want to modify the default theme?
         $modifyTheme = $this->input->isInteractive()
             && confirm('Do you want to modify the default theme?');
 
         if ($modifyTheme) {
-            $theme = $config['theme'];
-
-            foreach ($theme as $option => $currentValue) {
+            foreach (($config['theme'] ?? []) as $option => $currentValue) {
 
                 if (in_array($option, ['login-bg', 'login-bg-darkmode', 'app-favicon', 'app-favicon-darkmode', 'sidebar-darkmode-type'])) {
                     continue;
@@ -73,35 +82,35 @@ class InstallConfigCommand extends Command
 
                 if ($option == 'color-palette') {
                     $choices = ['aura', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose', 'mountain-meadow', 'sandal', 'slate', 'gray', 'zinc', 'neutral', 'stone'];
-                    $theme[$option] = select(
+                    $newValue = select(
                         label: "Select value for '{$option}':",
                         options: $choices,
                         default: $currentValue
                     );
                 } elseif ($option == 'gray-color-palette') {
                     $choices = ['slate', 'purple-slate', 'gray', 'zinc', 'neutral', 'stone', 'blue', 'smaragd', 'dark-slate', 'blackout'];
-                    $theme[$option] = select(
+                    $newValue = select(
                         label: "Select value for '{$option}':",
                         options: $choices,
                         default: $currentValue
                     );
                 } elseif ($option == 'darkmode-type') {
                     $choices = ['auto', 'light', 'dark'];
-                    $theme[$option] = select(
+                    $newValue = select(
                         label: "Select value for '{$option}':",
                         options: $choices,
                         default: $currentValue
                     );
                 } elseif ($option == 'sidebar-size') {
                     $choices = ['standard', 'compact'];
-                    $theme[$option] = select(
+                    $newValue = select(
                         label: "Select value for '{$option}':",
                         options: $choices,
                         default: $currentValue
                     );
                 } elseif ($option == 'sidebar-type') {
                     $choices = ['primary', 'light', 'dark'];
-                    $theme[$option] = select(
+                    $newValue = select(
                         label: "Select value for '{$option}':",
                         options: $choices,
                         default: $currentValue
@@ -111,33 +120,24 @@ class InstallConfigCommand extends Command
                     continue;
                 } elseif (is_bool($currentValue)) {
                     // Boolean option
-                    $theme[$option] = confirm("Enable '{$option}'?", $currentValue);
-                } else {
+                    $newValue = confirm("Enable '{$option}'?", $currentValue);
+                } elseif (is_scalar($currentValue)) {
                     // For other options, just ask for the value
-                    $theme[$option] = text(
+                    $newValue = text(
                         label: "Enter value for '{$option}':",
-                        default: is_scalar($currentValue) ? (string) $currentValue : ''
+                        default: (string) $currentValue
                     );
+                } else {
+                    continue;
                 }
-            }
 
-            // Update the theme in config
-            $config['theme'] = $theme;
+                $this->applySetting($contents, "theme.{$option}", $newValue, $currentValue);
+            }
         }
 
-        // Now, write back the config file
-        $arrayExport = var_export($config, true);
-
-        // Remove numeric array keys
-        $arrayExport = preg_replace('/[0-9]+ => /', '', $arrayExport);
-
-        $code = '<?php'.PHP_EOL.PHP_EOL.'return '.str_replace(
-            ['array (', ')', "[\n    ]"],
-            ['[', ']', '[]'],
-            $arrayExport
-        ).';'.PHP_EOL;
-
-        file_put_contents($configPath, $code);
+        if ($contents !== $original) {
+            file_put_contents($configPath, $contents);
+        }
 
         $this->info('Aura configuration has been updated.');
 
@@ -146,6 +146,37 @@ class InstallConfigCommand extends Command
         $this->call('cache:clear');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Apply a single setting either to the .env file (when the config value is
+     * env-backed) or by replacing exactly that value in the config file.
+     */
+    private function applySetting(string &$contents, string $path, bool|string|int|float $value, mixed $currentValue = null): void
+    {
+        $location = $this->locateValue($contents, $path);
+
+        if ($location === null) {
+            $this->warn("Could not find [{$path}] in config/aura.php. Skipping it, please update the value manually.");
+
+            return;
+        }
+
+        $raw = substr($contents, $location['start'], $location['end'] - $location['start']);
+
+        // env()-backed values are only ever changed through the .env file, so
+        // the published config keeps working as documented.
+        if (preg_match('/^env\(\s*[\'"]([A-Za-z_][A-Za-z0-9_]*)[\'"]/', $raw, $matches)) {
+            $this->setEnvValue($matches[1], $this->formatEnvValue($value));
+
+            return;
+        }
+
+        if ($currentValue === $value) {
+            return;
+        }
+
+        $contents = substr_replace($contents, var_export($value, true), $location['start'], $location['end'] - $location['start']);
     }
 
     private function booleanOption(string $name, bool $default): bool
@@ -163,28 +194,194 @@ class InstallConfigCommand extends Command
         };
     }
 
+    private function formatEnvValue(bool|string|int|float $value): string
+    {
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
+        $value = (string) $value;
+
+        if ($value === '' || preg_match('/[\s#"\']/', $value)) {
+            return '"'.addcslashes($value, '"\\').'"';
+        }
+
+        return $value;
+    }
+
+    /**
+     * Find the byte range of a dot-notated config value, e.g. `auth.registration`.
+     *
+     * @return array{start: int, end: int}|null
+     */
+    private function locateValue(string $contents, string $path): ?array
+    {
+        return $this->mapScalarValues($contents)[$path] ?? null;
+    }
+
+    /**
+     * Map every non-array config value to its byte range in the file.
+     *
+     * The file is tokenized so brackets inside strings and comments cannot
+     * confuse the lookup.
+     *
+     * @return array<string, array{start: int, end: int}>
+     */
+    private function mapScalarValues(string $contents): array
+    {
+        $offset = 0;
+        $tokens = [];
+
+        foreach (token_get_all($contents) as $token) {
+            $text = is_array($token) ? $token[1] : $token;
+            $id = is_array($token) ? $token[0] : null;
+
+            if ($id === null || ! in_array($id, [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                $tokens[] = ['id' => $id, 'text' => $text, 'start' => $offset, 'end' => $offset + strlen($text)];
+            }
+
+            $offset += strlen($text);
+        }
+
+        $map = [];
+        $frames = [];
+        $count = count($tokens);
+        $i = 0;
+
+        while ($i < $count) {
+            $token = $tokens[$i];
+
+            if ($token['id'] === T_CONSTANT_ENCAPSED_STRING && ($tokens[$i + 1]['id'] ?? null) === T_DOUBLE_ARROW && isset($tokens[$i + 2])) {
+                $key = $this->unquote($token['text']);
+                $value = $tokens[$i + 2];
+
+                // Nested array: descend into it.
+                if ($value['id'] === null && $value['text'] === '[') {
+                    $frames[] = $key;
+                    $i += 3;
+
+                    continue;
+                }
+
+                $depth = 0;
+                $j = $i + 2;
+                $end = null;
+
+                while ($j < $count) {
+                    $current = $tokens[$j];
+
+                    if ($current['id'] === null && in_array($current['text'], ['[', '('], true)) {
+                        $depth++;
+                    } elseif ($current['id'] === null && in_array($current['text'], [']', ')'], true)) {
+                        if ($depth === 0) {
+                            break;
+                        }
+
+                        $depth--;
+                    } elseif ($current['id'] === null && $current['text'] === ',' && $depth === 0) {
+                        break;
+                    }
+
+                    $end = $current['end'];
+                    $j++;
+                }
+
+                $resolved = $this->resolvePath($frames, $key);
+
+                if ($resolved !== null && $end !== null) {
+                    $map[$resolved] = ['start' => $value['start'], 'end' => $end];
+                }
+
+                // Leave the terminator to the outer loop so `]` pops the frame.
+                $i = $j;
+
+                continue;
+            }
+
+            if ($token['id'] === null && $token['text'] === '[') {
+                // The returned root array does not contribute to the path.
+                $frames[] = ($tokens[$i - 1]['id'] ?? null) === T_RETURN ? null : '*';
+                $i++;
+
+                continue;
+            }
+
+            if ($token['id'] === null && $token['text'] === ']') {
+                array_pop($frames);
+                $i++;
+
+                continue;
+            }
+
+            $i++;
+        }
+
+        return $map;
+    }
+
+    /**
+     * Build the dot-notated path for a key, or null when it sits inside a
+     * list-style array whose position we cannot address.
+     *
+     * @param  list<string|null>  $frames
+     */
+    private function resolvePath(array $frames, string $key): ?string
+    {
+        $parts = [];
+
+        foreach ($frames as $frame) {
+            if ($frame === null) {
+                continue;
+            }
+
+            if ($frame === '*') {
+                return null;
+            }
+
+            $parts[] = $frame;
+        }
+
+        $parts[] = $key;
+
+        return implode('.', $parts);
+    }
+
     private function setEnvValue(string $key, string $value): void
     {
         $envPath = app()->environmentFilePath();
 
-        if (file_exists($envPath)) {
-            // Read the .env file
-            $env = file_get_contents($envPath);
+        if (! file_exists($envPath)) {
+            $this->warn("No .env file found, could not set {$key}={$value}.");
 
-            // Replace the value
-            $pattern = '/^'.preg_quote($key, '/').'=.*/m';
-            $replacement = $key.'='.$value;
-
-            if (preg_match($pattern, $env)) {
-                // Replace existing value
-                $env = preg_replace($pattern, $replacement, $env);
-            } else {
-                // Add new value
-                $env .= PHP_EOL.$replacement;
-            }
-
-            // Write back to the .env file
-            file_put_contents($envPath, $env);
+            return;
         }
+
+        $env = file_get_contents($envPath);
+
+        $pattern = '/^'.preg_quote($key, '/').'=.*$/m';
+        $replacement = $key.'='.$value;
+
+        if (preg_match($pattern, $env)) {
+            // Replace the existing value, leaving every other line untouched.
+            // Every occurrence is rewritten so a duplicated key cannot keep a stale value.
+            $env = preg_replace($pattern, $replacement, $env);
+        } else {
+            $env = rtrim($env, "\r\n");
+            $env = ($env === '' ? '' : $env.PHP_EOL).$replacement.PHP_EOL;
+        }
+
+        file_put_contents($envPath, $env);
+    }
+
+    private function unquote(string $token): string
+    {
+        $quote = $token[0] ?? "'";
+        $inner = substr($token, 1, -1);
+
+        if ($quote === "'") {
+            return str_replace(['\\\\', "\\'"], ['\\', "'"], $inner);
+        }
+
+        return stripcslashes($inner);
     }
 }
