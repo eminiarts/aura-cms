@@ -19,7 +19,7 @@ class SecuritySearchModel extends Resource
 
     public static string $type = 'SecuritySearch';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

@@ -26,7 +26,7 @@ class SecurityRowActionModel extends Resource
 
     public static string $type = 'SecurityRow';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

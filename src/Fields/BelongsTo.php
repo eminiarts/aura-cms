@@ -105,7 +105,9 @@ class BelongsTo extends Field implements PreloadsTableDisplay
 
             $related = $this->resolveDisplayModel($field, $value, $model);
 
-            return "<a class='font-semibold' href='".route('aura.'.$slug.'.edit', $value)."'>".optional($related)->title().'</a>';
+            // The related title is database-backed and this producer emits
+            // markup that view-value renders raw, so escape it here.
+            return "<a class='font-semibold' href='".e(route('aura.'.$slug.'.edit', $value))."'>".e(optional($related)->title()).'</a>';
         }
 
         return $value;

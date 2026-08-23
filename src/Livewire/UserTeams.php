@@ -8,6 +8,8 @@ use Aura\Base\Traits\WithLivewireHelpers;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
@@ -53,7 +55,12 @@ class UserTeams extends Component
      */
     public array $roleSelections = [];
 
-    /** The viewed user's primary key. */
+    /**
+     * The viewed user's primary key. Locked: every mutation resolves the target
+     * user from it, and mount() is the only place the actor is authorized
+     * against that target — a client-side swap would bypass that check.
+     */
+    #[Locked]
     public $userId;
 
     public function attach(): void
@@ -253,6 +260,8 @@ class UserTeams extends Component
 
         $this->userId = $userId;
 
+        $this->authorizeTargetUser();
+
         $this->seedRoleSelections();
     }
 
@@ -306,6 +315,41 @@ class UserTeams extends Component
             ->visibleToTeam($teamId)
             ->whereKey($roleId)
             ->first();
+    }
+
+    /**
+     * Authorize the actor against the TARGET user, not just the target team.
+     *
+     * user() deliberately loads unscoped so a Global Admin can manage
+     * Memberships across teams; that bypass is a Global Admin privilege. Every
+     * other actor must reach the target through the team-scoped query (so a
+     * user of another team is invisible) and hold `update` on it.
+     */
+    protected function authorizeTargetUser(): void
+    {
+        $actor = $this->actor();
+
+        abort_unless($actor, 403);
+
+        // A Global Admin transcends the team boundary — the unscoped lookup in
+        // user() is their privilege, not a general one.
+        if ($actor->isAuraGlobalAdmin()) {
+            return;
+        }
+
+        // Everyone else must reach the target through the team boundary: either
+        // the target is a member of the actor's current team (TeamScope), or the
+        // actor holds `update` on them by policy (a Super Admin, or a delegated
+        // user manager onboarding a user who has no Membership yet). A user of
+        // another team the actor neither shares a team with nor may update is
+        // invisible, so their Membership list cannot be enumerated.
+        if (User::query()->whereKey($this->userId)->exists()) {
+            return;
+        }
+
+        $target = User::withoutGlobalScopes()->find($this->userId);
+
+        abort_unless($target && Gate::forUser($actor)->allows('update', $target), 403);
     }
 
     /**

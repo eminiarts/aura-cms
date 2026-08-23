@@ -17,12 +17,12 @@ if(!$iconClass){
         class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
         <span class="sr-only">{{ __('Go to home') }}</span>
         <x-aura::icon :icon="$icon" size="xs" :iconClass="$iconClass" />
-        {!! $title !!}
+        {{ $title }}
     </a>
     @else
     <div class="flex items-center">
         <x-aura::icon :icon="$icon" size="xs" :iconClass="$iconClass" />
-        <span class="ml-1 text-sm font-medium text-gray-400 md:ml-2 dark:text-gray-400">{!! $title !!}</span>
+        <span class="ml-1 text-sm font-medium text-gray-400 md:ml-2 dark:text-gray-400">{{ $title }}</span>
     </div>
     @endif
 </li>

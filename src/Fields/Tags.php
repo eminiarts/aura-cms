@@ -44,7 +44,9 @@ class Tags extends Field implements ProvidesTableEagerLoad
         }
 
         return $resource->map(function ($item) {
-            $title = $item->title ?? $item->title();
+            // The tag title is database-backed and this producer emits markup
+            // that view-value renders raw, so escape it here.
+            $title = e($item->title ?? $item->title());
 
             return "<span class='px-2 py-1 text-xs text-white whitespace-nowrap rounded-full bg-primary-500'>$title</span>";
         })->implode(' ');

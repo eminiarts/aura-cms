@@ -7,9 +7,14 @@
     $url = null;
 
     try {
-        // Temporarily disable permission scope
-        $attachment = Aura\Base\Resources\Attachment::withoutGlobalScopes()->find($id);
-        if ($attachment) {
+        // Resolve WITH global scopes (TeamScope) and check the view policy:
+        // this component is embedded in relation pickers and the sidebar logo,
+        // so it must never surface an attachment the viewer may not see.
+        $attachment = $id
+            ? app(config('aura.resources.attachment'))->newQuery()->find($id)
+            : null;
+
+        if ($attachment && \Illuminate\Support\Facades\Gate::allows('view', $attachment)) {
             $url = $attachment->path($size);
         }
     } catch (\Exception $e) {

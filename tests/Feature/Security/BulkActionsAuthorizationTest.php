@@ -28,7 +28,7 @@ class SecurityBulkModel extends Resource
         $this->delete();
     }
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
