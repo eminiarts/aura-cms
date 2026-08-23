@@ -145,12 +145,6 @@ parameters:
 			path: src/Collection/MetaCollection.php
 
 		-
-			message: '#^Access to an undefined property Aura\\Base\\Resources\\User\:\:\$current_team_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Commands/Installation.php
-
-		-
 			message: '#^Method Aura\\Base\\Commands\\MakeField\:\:handle\(\) should return bool\|null but return statement is missing\.$#'
 			identifier: return.missing
 			count: 1
