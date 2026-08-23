@@ -4,6 +4,7 @@ namespace Aura\Base\Fields;
 
 use Aura\Base\Contracts\ProvidesTableEagerLoad;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -161,19 +162,7 @@ class Tags extends Field implements ProvidesTableEagerLoad
             $value = json_decode($value, true);
         }
 
-        $ids = collect($value)->map(function ($tagName) use ($field) {
-
-            if (is_int($tagName)) {
-                return $tagName;
-            } else {
-                $tag = app($field['resource'])->create([
-                    'title' => $tagName,
-                    'slug' => Str::slug($tagName),
-                ]);
-
-                return $tag->id;
-            }
-        })->toArray();
+        $ids = $this->resolveIds($field, $value);
 
         if (is_array($ids) && count($ids) > 0) {
             // Prepare pivot data for each ID
@@ -199,5 +188,85 @@ class Tags extends Field implements ProvidesTableEagerLoad
         }
 
         return $field['slug'];
+    }
+
+    /**
+     * A submitted value is an id when it is an int or a digit-only string.
+     * Everything else is a free-text label typed by the user.
+     */
+    protected function isId($value): bool
+    {
+        return is_int($value) || (is_string($value) && ctype_digit($value));
+    }
+
+    /**
+     * Resolve the submitted values into ids that may be attached.
+     *
+     * Ids are re-read through the resource's own (globally scoped) query so
+     * unknown or out-of-team ids are dropped instead of being attached blindly.
+     * Labels only become records when the field allows creating and the user is
+     * authorized to create on the target resource; otherwise they are dropped
+     * without failing the save.
+     *
+     * @param  mixed  $value
+     * @return array<int, int>
+     */
+    protected function resolveIds($field, $value): array
+    {
+        $values = collect($value)
+            ->filter(fn ($item) => is_int($item) || is_string($item))
+            ->values();
+
+        if ($values->isEmpty()) {
+            return [];
+        }
+
+        $submittedIds = $values
+            ->filter(fn ($item) => $this->isId($item))
+            ->map(fn ($item) => (int) $item);
+
+        $existingIds = $submittedIds->isEmpty()
+            ? collect()
+            : app($field['resource'])->newQuery()
+                ->whereIn('id', $submittedIds->all())
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id);
+
+        $canCreate = ($field['create'] ?? true) !== false
+            && Gate::allows('create', app($field['resource']));
+
+        return $values
+            ->map(function ($item) use ($field, $existingIds, $canCreate) {
+                if ($this->isId($item)) {
+                    return $existingIds->contains((int) $item) ? (int) $item : null;
+                }
+
+                return $canCreate ? $this->resolveLabel($field, $item) : null;
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Turn a free-text label into a record id, reusing a tag that already
+     * exists in the current scope instead of duplicating it on every save.
+     */
+    protected function resolveLabel($field, string $label): ?int
+    {
+        $label = trim($label);
+        $slug = Str::slug($label);
+
+        if ($label === '' || $slug === '') {
+            return null;
+        }
+
+        $tag = app($field['resource'])->newQuery()->firstOrCreate(
+            ['slug' => $slug],
+            ['title' => $label]
+        );
+
+        return $tag->id;
     }
 }
