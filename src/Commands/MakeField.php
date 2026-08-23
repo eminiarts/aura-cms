@@ -94,7 +94,8 @@ class MakeField extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace.'\Aura\Fields';
+        // Generate where Aura::getAppFields() discovers (config/aura-settings.php).
+        return trim(config('aura-settings.paths.fields.namespace', $rootNamespace.'\Aura\Fields'), '\\');
     }
 
     /**

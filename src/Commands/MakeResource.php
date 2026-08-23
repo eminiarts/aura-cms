@@ -36,7 +36,8 @@ class MakeResource extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace.'\Aura\Resources';
+        // Generate where Aura::getAppResources() discovers (config/aura-settings.php).
+        return trim(config('aura-settings.paths.resources.namespace', $rootNamespace.'\Aura\Resources'), '\\');
     }
 
     /**

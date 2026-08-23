@@ -147,7 +147,11 @@ class CreateResourceMigration extends Command
             $schema .= $this->generateColumn($field);
         }
 
-        return $schema;
+        // Lay the columns out like a hand-written migration: one per line,
+        // indented inside the Schema::create closure.
+        $lines = array_filter(array_map('trim', preg_split('/\r?\n/', $schema)));
+
+        return PHP_EOL.implode(PHP_EOL, array_map(fn ($line) => '            '.$line, $lines)).PHP_EOL.'        ';
     }
 
     protected function getMigrationPath($name)

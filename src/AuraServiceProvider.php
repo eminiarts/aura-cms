@@ -278,8 +278,6 @@ class AuraServiceProvider extends PackageServiceProvider
                     ->addOption('no-admin', null, InputOption::VALUE_NONE, 'Skip creating the first administrator')
                     ->addOption('no-global-admin', null, InputOption::VALUE_NONE, 'Do not grant Global Admin status to the first administrator')
                     ->startWith(function (InstallCommand $command) {
-                        $command->info('Hello, thank you for installing Aura!');
-
                         // Everything is validated here, before the first side effect:
                         // startWith runs ahead of publishing, migrating and seeding, so a
                         // bad flag can no longer leave a half-installed application behind.
@@ -319,6 +317,8 @@ class AuraServiceProvider extends PackageServiceProvider
                         }
 
                         if ($errors === []) {
+                            $command->info('Hello, thank you for installing Aura!');
+
                             return;
                         }
 
