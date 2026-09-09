@@ -8,6 +8,8 @@ use Illuminate\Support\Collection;
 
 class AdvancedSelect extends Field implements ProvidesTableEagerLoad
 {
+    public bool $api = true;
+
     public $edit = 'aura::fields.advanced-select';
 
     public $filter = 'aura::fields.filters.advanced-select';
@@ -33,7 +35,9 @@ class AdvancedSelect extends Field implements ProvidesTableEagerLoad
         $this->constrainApiQuery($query, $request);
 
         return $query
-            ->take(5)
+            ->orderBy($model->getQualifiedKeyName())
+            ->skip((max(1, $request->integer('page', 1)) - 1) * 10)
+            ->take(10)
             ->get()
             ->map(function ($item) use ($field) {
                 return [
