@@ -712,8 +712,16 @@ class Table extends Component
     {
         $model = $this->model();
         $relations = [];
+        $slugs = $model->inputFieldsSlugs();
 
-        foreach ($model->inputFieldsSlugs() as $slug) {
+        // Grid and Kanban cards can use fields outside the list columns.
+        if ($this->currentView === 'list') {
+            $slugs = collect($this->headers())->keys()
+                ->filter(fn ($slug) => ! empty($this->columns[$slug]))
+                ->intersect($slugs);
+        }
+
+        foreach ($slugs as $slug) {
             $fieldClass = $model->fieldClassBySlug($slug);
 
             if (! $fieldClass instanceof ProvidesTableEagerLoad) {
