@@ -164,19 +164,18 @@ class InstallConfigCommand extends Command
 
         $raw = substr($contents, $location['start'], $location['end'] - $location['start']);
 
-        // env()-backed values are only ever changed through the .env file, so
-        // the published config keeps working as documented.
+        // Persist env()-backed values through .env so the published config
+        // keeps working as documented.
         if (preg_match('/^env\(\s*[\'"]([A-Za-z_][A-Za-z0-9_]*)[\'"]/', $raw, $matches)) {
             $this->setEnvValue($matches[1], $this->formatEnvValue($value));
 
-            return;
+        } elseif ($currentValue !== $value) {
+            $contents = substr_replace($contents, var_export($value, true), $location['start'], $location['end'] - $location['start']);
         }
 
-        if ($currentValue === $value) {
-            return;
-        }
-
-        $contents = substr_replace($contents, var_export($value, true), $location['start'], $location['end'] - $location['start']);
+        // The installer continues in this process, so the selected value must
+        // be visible before migrations or the first admin are created.
+        config(["aura.{$path}" => $value]);
     }
 
     private function booleanOption(string $name, bool $default): bool

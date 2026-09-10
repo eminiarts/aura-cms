@@ -16,6 +16,7 @@ function withTemporaryAuraConfig(string $configContents, Closure $callback, stri
     $temporaryPath = storage_path('framework/testing/aura-install-'.Str::uuid());
     $originalConfigPath = app()->configPath();
     $originalEnvironmentPath = app()->environmentPath();
+    $originalAuraConfig = config('aura');
 
     File::ensureDirectoryExists($temporaryPath);
     File::put($temporaryPath.'/aura.php', $configContents);
@@ -27,6 +28,7 @@ function withTemporaryAuraConfig(string $configContents, Closure $callback, stri
     try {
         $callback($temporaryPath);
     } finally {
+        config(['aura' => $originalAuraConfig]);
         app()->useConfigPath($originalConfigPath);
         app()->useEnvironmentPath($originalEnvironmentPath);
         File::deleteDirectory($temporaryPath);
@@ -66,7 +68,9 @@ PHP, function (string $path) {
             $config = include $path.'/aura.php';
 
             expect($config['teams'])->toBeFalse()
-                ->and($config['auth']['registration'])->toBeFalse();
+                ->and($config['auth']['registration'])->toBeFalse()
+                ->and(config('aura.teams'))->toBeFalse()
+                ->and(config('aura.auth.registration'))->toBeFalse();
         });
     });
 
@@ -91,7 +95,9 @@ PHP, function (string $path) {
                 ->and($after)->toContain("env('AURA_DOMAIN')")
                 ->and($after)->toContain("env('AURA_CREATE_TEAMS', true)")
                 ->and($after)->toContain('| You can customise the Aura theme')
-                ->and($after)->toContain("'primary' => 'var(--primary-600)'");
+                ->and($after)->toContain("'primary' => 'var(--primary-600)'")
+                ->and(config('aura.teams'))->toBeFalse()
+                ->and(config('aura.auth.registration'))->toBeFalse();
 
             $env = File::get($path.'/.env');
 
@@ -155,7 +161,8 @@ PHP, function (string $path) {
                 ->and(trim(reset($changed)[0]))->toBe("'color-palette' => 'aura',")
                 ->and(trim(reset($changed)[1]))->toBe("'color-palette' => 'red',")
                 ->and($after)->toContain("'primary' => 'var(--primary-600)'")
-                ->and($after)->toContain("env('AURA_TEAMS', true)");
+                ->and($after)->toContain("env('AURA_TEAMS', true)")
+                ->and(config('aura.theme.color-palette'))->toBe('red');
         });
     });
 

@@ -1,15 +1,53 @@
 <?php
 
+use Illuminate\Console\Command;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 
 uses(RefreshDatabase::class);
 
-// Installation tests are commented out because they modify shared configuration
-// which can cause test pollution in parallel execution.
-// These tests should be run in isolation during package development.
-
 describe('installation commands', function () {
+    it('stops without reporting success when a setup command fails', function (string $failedCommand) {
+        $calls = [];
+        $this->app->usePublicPath(sys_get_temp_dir().'/aura-install-'.bin2hex(random_bytes(8)));
+
+        foreach (['vendor:publish', 'aura:extend-user-model', 'aura:install-config', 'migrate', 'aura:user', 'storage:link'] as $name) {
+            $command = new class($name, $failedCommand, $calls) extends Command
+            {
+                public function __construct(string $name, private string $failedCommand, private array &$calls)
+                {
+                    parent::__construct();
+                    $this->setName($name);
+                    $this->ignoreValidationErrors();
+                }
+
+                public function handle(): int
+                {
+                    $this->calls[] = $this->getName();
+
+                    return $this->getName() === $this->failedCommand ? self::FAILURE : self::SUCCESS;
+                }
+            };
+
+            $this->app->make(Kernel::class)->registerCommand($command);
+        }
+
+        $this->artisan('aura:install', [
+            '--no-interaction' => true,
+            '--admin-name' => 'Admin',
+            '--admin-email' => 'admin@example.com',
+            '--admin-password' => 'installation-password',
+        ])
+            ->expectsConfirmation('Would you like to star our repo on GitHub?', false)
+            ->expectsOutputToContain("Aura installation stopped: {$failedCommand} failed.")
+            ->doesntExpectOutputToContain('Next steps:')
+            ->doesntExpectOutputToContain('aura has been installed!')
+            ->assertFailed();
+
+        expect(end($calls))->toBe($failedCommand);
+    })->with(['aura:extend-user-model', 'aura:install-config', 'migrate', 'aura:user', 'storage:link']);
+
     it('is visible in the artisan command list with a description of what it does', function () {
         $command = Artisan::all()['aura:install'];
 

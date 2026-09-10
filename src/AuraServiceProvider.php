@@ -335,16 +335,22 @@ class AuraServiceProvider extends PackageServiceProvider
                     ->publishMigrations()
                     ->askToStarRepoOnGitHub('eminiarts/aura-cms')
                     ->endWith(function (InstallCommand $command) {
-                        $command->call('aura:extend-user-model');
+                        $run = function (string $step, array $options = []) use ($command): void {
+                            if ($command->call($step, $options) !== InstallCommand::SUCCESS) {
+                                $command->fail("Aura installation stopped: {$step} failed.");
+                            }
+                        };
+
+                        $run('aura:extend-user-model');
 
                         // The media library stores on the `public` disk and Attachment::url()
                         // builds /storage/... URLs, so the symlink has to exist. Guarded so
                         // re-running the installer stays idempotent.
-                        $finish = function (InstallCommand $command, bool $createdAdmin) {
+                        $finish = function (InstallCommand $command, bool $createdAdmin) use ($run) {
                             $link = public_path('storage');
 
                             if (! file_exists($link) && ! is_link($link)) {
-                                $command->call('storage:link');
+                                $run('storage:link');
                             }
 
                             $command->newLine();
@@ -361,8 +367,8 @@ class AuraServiceProvider extends PackageServiceProvider
                                 '--registration' => $command->option('registration'),
                             ], fn ($value) => $value !== null);
 
-                            $command->call('aura:install-config', $configOptions);
-                            $command->call('migrate', ['--force' => true]);
+                            $run('aura:install-config', $configOptions);
+                            $run('migrate', ['--force' => true]);
                             RoleCatalogSeeder::seed();
 
                             $createdAdmin = ! $command->option('no-admin');
@@ -384,7 +390,7 @@ class AuraServiceProvider extends PackageServiceProvider
                                     $adminOptions['--global-admin'] = true;
                                 }
 
-                                $command->call('aura:user', $adminOptions);
+                                $run('aura:user', $adminOptions);
                             }
 
                             $finish($command, $createdAdmin);
@@ -393,11 +399,11 @@ class AuraServiceProvider extends PackageServiceProvider
                         }
 
                         if ($command->confirm('Do you want to modify the aura configuration?', true)) {
-                            $command->call('aura:install-config');
+                            $run('aura:install-config');
                         }
 
                         if ($command->confirm('Do you want to run the migrations?', true)) {
-                            $command->call('migrate');
+                            $run('migrate');
 
                             // Seed the base Role Catalog (admin + user Global Roles)
                             // so a fresh install works in both Teams-on and
@@ -408,7 +414,7 @@ class AuraServiceProvider extends PackageServiceProvider
                         $createdAdmin = $command->confirm('Do you want to create a user?', true);
 
                         if ($createdAdmin) {
-                            $command->call('aura:user');
+                            $run('aura:user');
                         }
 
                         $finish($command, $createdAdmin);
