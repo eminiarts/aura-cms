@@ -2,6 +2,7 @@
 
 namespace Aura\Base;
 
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 
 class ConditionalLogic
@@ -136,26 +137,18 @@ class ConditionalLogic
 
     private static function handleDefaultCondition($model, $condition, $post)
     {
-        $fieldValue = null;
+        $formFields = $post['fields'] ?? [];
 
-        if (is_object($model)) {
-            if (property_exists($model, $condition['field'])) {
-                $fieldValue = $model->{$condition['field']};
-            } elseif (method_exists($model, 'getMeta')) {
+        // An unsaved form value, including an explicit null, takes precedence
+        // over persisted data. Custom-table resources do not have meta values.
+        if (Arr::has($formFields, $condition['field'])) {
+            $fieldValue = data_get($formFields, $condition['field']);
+        } else {
+            $fieldValue = data_get($model, $condition['field']);
+
+            if ($fieldValue === null && is_object($model) && method_exists($model, 'getMeta')) {
                 $fieldValue = $model->getMeta($condition['field']);
             }
-        } elseif (is_array($model) && array_key_exists($condition['field'], $model)) {
-            $fieldValue = $model[$condition['field']];
-        }
-
-        if ($fieldValue === null && $post !== null) {
-            $fieldValue = data_get($post['fields'] ?? [], $condition['field']);
-        }
-
-        if ($fieldValue === null && str_contains($condition['field'], '.')) {
-            $fieldValue = is_array($model)
-                ? data_get($model, $condition['field'])
-                : data_get($model instanceof \ArrayAccess ? $model->toArray() : (array) $model, $condition['field']);
         }
 
         $result = $fieldValue !== null ? self::checkFieldCondition($condition, $fieldValue) : false;

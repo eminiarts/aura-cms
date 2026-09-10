@@ -85,6 +85,31 @@ describe('basic conditional logic', function () {
 
         expect($result)->toBeTrue();
     });
+
+    it('uses the current form value before the stored value', function ($stored, $current, $visible) {
+        $model = new BasicConditionalLogicOnFieldModel;
+        $model->text1 = $stored;
+        $field = collect($model->getFields())->firstWhere('slug', 'text2');
+
+        expect(ConditionalLogic::checkCondition($model, $field, ['fields' => ['text1' => $current]]))
+            ->toBe($visible);
+    })->with([
+        'show an unsaved matching value' => ['different', 'test', true],
+        'hide an unsaved nonmatching value' => ['test', 'different', false],
+        'clear a stored matching value' => ['test', null, false],
+    ]);
+
+    it('reads stored columns when a custom-table resource has no form values', function () {
+        $model = new class(['status' => 'published']) extends BasicConditionalLogicOnFieldModel
+        {
+            public static $customTable = true;
+
+            public static bool $usesMeta = false;
+        };
+        $field = ['conditional_logic' => [['field' => 'status', 'operator' => '==', 'value' => 'published']]];
+
+        expect(ConditionalLogic::checkCondition($model, $field))->toBeTrue();
+    });
 });
 
 describe('operators', function () {
