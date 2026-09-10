@@ -463,7 +463,7 @@ test('user can only delete his own posts', function () {
     // Attempt to delete user's own post
     Livewire::test(Edit::class, ['id' => $userPost->id])
         ->call('singleAction', 'delete')
-        ->assertDispatched('notify')
+        ->assertRedirect(route('aura.'.$userPost->getSlug().'.index'))
         ->assertSuccessful();
 
     $this->assertDatabaseMissing('posts', ['id' => $userPost->id]);

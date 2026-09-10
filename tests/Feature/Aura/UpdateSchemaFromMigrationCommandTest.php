@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Symfony\Component\Process\Process;
 
 uses(RefreshDatabase::class);
 
@@ -50,10 +51,9 @@ function generatedSchemaForSchemaUpdate(array $fields): string
 
 function runPintForSchemaUpdateMigration(string $migrationFile): void
 {
-    $listener = app(ModifyDatabaseMigration::class);
-    $method = (new ReflectionClass($listener))->getMethod('runPint');
-    $method->setAccessible(true);
-    $method->invoke($listener, $migrationFile);
+    $packagePath = dirname(__DIR__, 3);
+    (new Process([PHP_BINARY, $packagePath.'/vendor/bin/pint', '--config='.$packagePath.'/pint.json', $migrationFile], $packagePath))
+        ->mustRun();
 }
 
 beforeEach(function () {
@@ -136,6 +136,8 @@ it('drops unlisted columns with --drop --force', function () {
 });
 
 it('keeps relation columns and persisted data from a formatted listener schema during a forced sync', function () {
+    config(['aura.teams' => true]);
+
     DB::table('schema_update_targets')->insert([
         'title' => 'Persisted title',
         'legacy' => 'Remove me',
