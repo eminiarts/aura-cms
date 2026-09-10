@@ -42,9 +42,8 @@ return [
     | Teams
     |--------------------------------------------------------------------------
     |
-    | If you change this to false, you will not be able to create teams.
-    | You will need to rerun your migrations to remove the teams table.
-    | Run `php artisan migrate:fresh`.
+    | Choose this before installation. Changing it on an existing application
+    | requires a migration for its team columns and memberships.
     |
     */
 
@@ -171,7 +170,7 @@ return [
     */
 
     'views' => [
-        'layout' => 'aura::layouts.app',
+        'layout' => 'aura::layout.app',
         'login-layout' => 'aura::layout.login',
         'logo' => 'aura::application-logo',
     ],

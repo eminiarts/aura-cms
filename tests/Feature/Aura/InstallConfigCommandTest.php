@@ -16,6 +16,7 @@ function withTemporaryAuraConfig(string $configContents, Closure $callback, stri
     $temporaryPath = storage_path('framework/testing/aura-install-'.Str::uuid());
     $originalConfigPath = app()->configPath();
     $originalEnvironmentPath = app()->environmentPath();
+    $originalBootstrapPath = app()->bootstrapPath();
     $originalAuraConfig = config('aura');
 
     File::ensureDirectoryExists($temporaryPath);
@@ -24,6 +25,7 @@ function withTemporaryAuraConfig(string $configContents, Closure $callback, stri
 
     app()->useConfigPath($temporaryPath);
     app()->useEnvironmentPath($temporaryPath);
+    app()->useBootstrapPath($temporaryPath);
 
     try {
         $callback($temporaryPath);
@@ -31,6 +33,7 @@ function withTemporaryAuraConfig(string $configContents, Closure $callback, stri
         config(['aura' => $originalAuraConfig]);
         app()->useConfigPath($originalConfigPath);
         app()->useEnvironmentPath($originalEnvironmentPath);
+        app()->useBootstrapPath($originalBootstrapPath);
         File::deleteDirectory($temporaryPath);
     }
 }
@@ -41,6 +44,22 @@ function publishedAuraConfig(): string
 }
 
 describe('config installation command', function () {
+    it('clears cached configuration after saving settings', function () {
+        withTemporaryAuraConfig(publishedAuraConfig(), function (string $path) {
+            File::ensureDirectoryExists(dirname(app()->getCachedConfigPath()));
+            File::put(app()->getCachedConfigPath(), '<?php return [];');
+
+            $this->artisan('aura:install-config', [
+                '--no-interaction' => true,
+                '--teams' => 'false',
+                '--registration' => 'false',
+            ])->assertSuccessful();
+
+            expect(File::exists(app()->getCachedConfigPath()))->toBeFalse()
+                ->and(config('aura.teams'))->toBeFalse();
+        });
+    });
+
     it('command is registered', function () {
         $commands = Artisan::all();
         expect(array_key_exists('aura:install-config', $commands))->toBeTrue();

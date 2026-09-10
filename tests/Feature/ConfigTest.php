@@ -1,7 +1,18 @@
 <?php
 
+use Illuminate\Support\Facades\Blade;
+
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+});
+
+test('the configured layout renders as a Blade component', function () {
+    $html = Blade::render(
+        '<x-dynamic-component :component="$layout"><p>Configured layout content</p></x-dynamic-component>',
+        ['layout' => config('aura.views.layout')]
+    );
+
+    expect($html)->toContain('Configured layout content');
 });
 
 test('features config has correct default values', function () {

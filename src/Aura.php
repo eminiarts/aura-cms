@@ -145,7 +145,7 @@ class Aura
 
     public static function findTemplateBySlug($slug)
     {
-        return app('Aura\Base\Templates\\'.str($slug)->title);
+        return app('Aura\Base\Templates\\'.Str::studly($slug));
     }
 
     /**

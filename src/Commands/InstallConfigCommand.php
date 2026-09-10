@@ -143,9 +143,11 @@ class InstallConfigCommand extends Command
 
         // Cache clear
         $this->info('Clearing cache...');
-        $this->call('cache:clear');
+        if ($this->call('config:clear') !== self::SUCCESS) {
+            return self::FAILURE;
+        }
 
-        return self::SUCCESS;
+        return $this->call('cache:clear');
     }
 
     /**

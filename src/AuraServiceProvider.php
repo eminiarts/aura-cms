@@ -355,7 +355,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
                             $command->newLine();
                             $command->info('Next steps:');
-                            $command->line('  1. Open '.rtrim((string) config('app.url'), '/').'/admin');
+                            $command->line('  1. Open '.route('aura.dashboard'));
                             $command->line($createdAdmin
                                 ? '  2. Log in with the administrator you just created.'
                                 : '  2. Create an administrator with `php artisan aura:user`.');
