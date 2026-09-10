@@ -85,12 +85,6 @@ parameters:
 			path: src/AuraServiceProvider.php
 
 		-
-			message: '#^Access to an undefined property Aura\\Base\\BaseResource\:\:\$meta\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/BaseResource.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$key\.$#'
 			identifier: property.notFound
 			count: 1
