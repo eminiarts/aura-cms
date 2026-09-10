@@ -7,6 +7,8 @@ use Aura\Base\Fields\Roles;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
@@ -89,5 +91,44 @@ describe('Roles Field Attach', function () {
         (new Roles)->saved($target, rolesFieldDefinition(), [$role->id]);
 
         expect($target->fresh()->roles()->pluck('roles.id'))->toContain($role->id);
+    });
+
+    test('saved rejects a global role shadowed by the target team', function () {
+        if (! config('aura.teams')) {
+            $this->markTestSkipped('Shadow resolution requires teams enabled.');
+        }
+
+        $teamId = $this->user->current_team_id;
+        $globalRole = Role::withoutGlobalScopes()->newModelInstance([
+            'name' => 'Global Editor',
+            'slug' => 'shadowed-role-field-editor',
+            'super_admin' => false,
+            'permissions' => [],
+            'team_id' => null,
+        ]);
+        $globalRole->saveQuietly();
+        Role::bumpCatalogVersion();
+
+        Role::withoutGlobalScopes()->create([
+            'team_id' => $teamId,
+            'type' => 'Role',
+            'title' => 'Team Editor',
+            'slug' => 'shadowed-role-field-editor',
+            'name' => 'Team Editor',
+            'description' => 'Shadow role.',
+            'super_admin' => false,
+            'permissions' => [],
+        ]);
+
+        $target = User::factory()->create(['current_team_id' => $teamId]);
+
+        expect(fn () => (new Roles)->saved($target, rolesFieldDefinition(), [$globalRole->id]))
+            ->toThrow(HttpException::class);
+
+        expect(DB::table('user_role')
+            ->where('user_id', $target->id)
+            ->where('role_id', $globalRole->id)
+            ->where('team_id', $teamId)
+            ->exists())->toBeFalse();
     });
 });

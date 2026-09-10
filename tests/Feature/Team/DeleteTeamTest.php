@@ -2,6 +2,7 @@
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\TeamInvitation;
@@ -159,6 +160,34 @@ describe('Team Delete Side Effects', function () {
 
         // Invitations should be deleted with the team
         expect(TeamInvitation::where('team_id', $team->id)->count())->toBe(0);
+    });
+
+    it('deletes invitations and options unscoped after switching affected users away from the team', function () {
+        Team::factory()->create();
+        $team = Team::factory()->create();
+
+        expect($this->user->fresh()->current_team_id)->toBe($team->id);
+
+        $invitation = $team->teamInvitations()->create([
+            'email' => 'deletion-scope@example.com',
+            'role' => globalAdminRole()->id,
+        ]);
+        $option = Option::withoutGlobalScopes()->create([
+            'name' => 'team.'.$team->id.'.deletion-scope',
+            'team_id' => $team->id,
+            'value' => ['enabled' => true],
+        ]);
+
+        $team->delete();
+
+        expect($this->user->fresh()->current_team_id)->not->toBe($team->id);
+        expect([
+            'invitation' => TeamInvitation::withoutGlobalScopes()->find($invitation->id),
+            'option' => Option::withoutGlobalScopes()->find($option->id),
+        ])->toBe([
+            'invitation' => null,
+            'option' => null,
+        ]);
     });
 
     it('deletes team meta when team is deleted', function () {

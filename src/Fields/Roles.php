@@ -123,6 +123,10 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
             // by another team stay unassignable, so cross-team injection is still
             // refused. (The super_admin escalation guard below is unchanged.)
             $assignableRoles->visibleToTeam($teamId);
+
+            if ($teamId !== null) {
+                $assignableRoles->shadowResolved($teamId);
+            }
         }
 
         $requestedRoles = $assignableRoles->whereKey($roleIds)->get();

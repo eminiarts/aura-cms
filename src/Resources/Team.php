@@ -353,10 +353,15 @@ class Team extends Resource
             $team->meta()->delete();
 
             // Delete all the team's invitations
-            $team->teamInvitations()->delete();
+            TeamInvitation::withoutGlobalScopes()
+                ->where('type', TeamInvitation::$type)
+                ->where('team_id', $team->id)
+                ->delete();
 
             // Delete all the team's options
-            Option::where('name', 'like', 'team.'.$team->id.'.%')->delete();
+            Option::withoutGlobalScopes()
+                ->where('name', 'like', 'team.'.$team->id.'.%')
+                ->delete();
 
             $reassignedUserIds->each(function ($userId) {
                 User::clearCurrentTeamCache($userId);

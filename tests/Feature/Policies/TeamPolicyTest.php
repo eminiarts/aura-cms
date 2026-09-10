@@ -77,7 +77,53 @@ afterEach(function () {
 
 test('super admin can add team members', function () {
     $this->actingAs($user = createSuperAdmin());
-    expect($this->policy->addTeamMember($user, $this->team))->toBeTrue();
+    $team = Team::withoutGlobalScopes()->findOrFail($user->current_team_id);
+
+    expect($this->policy->addTeamMember($user, $team))->toBeTrue();
+});
+
+test('super admin cannot add team members to a foreign team', function () {
+    $this->actingAs($user = createSuperAdmin());
+    $foreignTeam = Team::factory()->createQuietly([
+        'user_id' => User::factory()->create()->id,
+    ]);
+
+    expect($this->policy->addTeamMember($user, $foreignTeam))->toBeFalse();
+});
+
+test('super admin can add team members to a team where they are a member from another current team', function () {
+    $currentTeam = Team::factory()->createQuietly(['user_id' => User::factory()->create()->id]);
+    $targetTeam = Team::factory()->createQuietly(['user_id' => User::factory()->create()->id]);
+    $user = User::factory()->create(['current_team_id' => $currentTeam->id]);
+
+    $currentRole = Role::withoutGlobalScopes()->create([
+        'team_id' => $currentTeam->id,
+        'type' => 'Role',
+        'title' => 'Current Team Member',
+        'slug' => 'current-team-member',
+        'name' => 'Current Team Member',
+        'description' => 'Current team role.',
+        'super_admin' => false,
+        'permissions' => [],
+    ]);
+    $targetRole = Role::withoutGlobalScopes()->create([
+        'team_id' => $targetTeam->id,
+        'type' => 'Role',
+        'title' => 'Target Team Super Admin',
+        'slug' => 'target-team-super-admin',
+        'name' => 'Target Team Super Admin',
+        'description' => 'Target team super admin role.',
+        'super_admin' => true,
+        'permissions' => [],
+    ]);
+
+    $user->roles()->attach($currentRole->id, ['team_id' => $currentTeam->id]);
+    $user->roles()->attach($targetRole->id, ['team_id' => $targetTeam->id]);
+    $user->refresh();
+
+    $this->actingAs($user);
+
+    expect($this->policy->addTeamMember($user, $targetTeam))->toBeTrue();
 });
 
 test('aura global admin can add team members', function () {
@@ -179,6 +225,63 @@ test('user with invite permission can invite users', function () {
     expect($this->policy->inviteUsers($userWithPermission, $this->team))->toBeTrue();
 });
 
+test('a current-team invitation permission cannot invite users to a foreign team', function () {
+    $user = User::factory()->create(['current_team_id' => $this->team->id]);
+    $role = Role::withoutGlobalScopes()->create([
+        'team_id' => $this->team->id,
+        'type' => 'Role',
+        'title' => 'Inviter',
+        'slug' => 'current-team-inviter',
+        'name' => 'Current Team Inviter',
+        'description' => 'Can invite users in the current team.',
+        'super_admin' => false,
+        'permissions' => ['invite-users-team' => true],
+    ]);
+    $user->roles()->attach($role->id, ['team_id' => $this->team->id]);
+    $foreignTeam = Team::factory()->createQuietly([
+        'user_id' => User::factory()->create()->id,
+    ]);
+
+    $this->actingAs($user->refresh());
+
+    expect($this->policy->inviteUsers($user, $foreignTeam))->toBeFalse();
+});
+
+test('a target-team invitation permission applies even when another team is current', function () {
+    $currentTeam = Team::factory()->createQuietly(['user_id' => User::factory()->create()->id]);
+    $targetTeam = Team::factory()->createQuietly(['user_id' => User::factory()->create()->id]);
+    $user = User::factory()->create(['current_team_id' => $currentTeam->id]);
+
+    $currentRole = Role::withoutGlobalScopes()->create([
+        'team_id' => $currentTeam->id,
+        'type' => 'Role',
+        'title' => 'Current Team Member',
+        'slug' => 'current-team-member',
+        'name' => 'Current Team Member',
+        'description' => 'Current team role.',
+        'super_admin' => false,
+        'permissions' => [],
+    ]);
+    $targetRole = Role::withoutGlobalScopes()->create([
+        'team_id' => $targetTeam->id,
+        'type' => 'Role',
+        'title' => 'Target Team Inviter',
+        'slug' => 'target-team-inviter',
+        'name' => 'Target Team Inviter',
+        'description' => 'Can invite users in the target team.',
+        'super_admin' => false,
+        'permissions' => ['invite-users-team' => true],
+    ]);
+
+    $user->roles()->attach($currentRole->id, ['team_id' => $currentTeam->id]);
+    $user->roles()->attach($targetRole->id, ['team_id' => $targetTeam->id]);
+    $user->refresh();
+
+    $this->actingAs($user);
+
+    expect($this->policy->inviteUsers($user, $targetTeam))->toBeTrue();
+});
+
 test('regular user cannot invite users', function () {
     $this->actingAs($this->regularUser);
     expect($this->policy->inviteUsers($this->regularUser, $this->team))->toBeFalse();
@@ -260,6 +363,12 @@ test('non team member cannot view team', function () {
     $nonTeamMember = User::factory()->create();
     $this->actingAs($nonTeamMember);
     expect($this->policy->view($nonTeamMember, $this->team))->toBeFalse();
+});
+
+test('aura global admin can view a team without a membership', function () {
+    $this->actingAs($this->auraGlobalAdmin);
+
+    expect($this->policy->view($this->auraGlobalAdmin, $this->team))->toBeTrue();
 });
 
 test('aura global admin can view any team when enabled', function () {
