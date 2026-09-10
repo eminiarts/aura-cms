@@ -113,7 +113,7 @@ php artisan storage:link
 
 Keep teams disabled in `config/aura.php` by leaving the `teams` setting at `false`. Changing this setting after installation requires a planned schema migration. Do not use a destructive reset command on an application that contains data.
 
-If you want teams enabled in beta4, you can use the installer without interactive prompts and supply the administrator details directly:
+You can use the installer without interactive prompts and supply the administrator details directly:
 
 ```bash
 php artisan aura:install \
