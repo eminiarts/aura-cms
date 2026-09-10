@@ -7,7 +7,9 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Symfony\Component\Process\ExecutableFinder;
+use Throwable;
 
 class ModifyDatabaseMigration
 {
@@ -37,7 +39,9 @@ class ModifyDatabaseMigration
 
         $schema = $this->generateSchema($newFields);
 
-        if ($this->migrationExists($migrationName)) {
+        $migrationExisted = $this->migrationExists($migrationName);
+
+        if ($migrationExisted) {
             // $this->error("Migration '{$migrationName}' already exists.");
             // return 1;
             $migrationFile = $this->getMigrationPath($migrationName);
@@ -67,18 +71,30 @@ class ModifyDatabaseMigration
         $replacement = '${1}'.PHP_EOL.'    '.$down.PHP_EOL.'}';
         $replacedContent2 = preg_replace($pattern, $replacement, $replacedContent);
 
-        $this->files->put($migrationFile, $replacedContent2);
+        try {
+            $this->files->put($migrationFile, $replacedContent2);
+            $this->runPint($migrationFile);
 
-        // Run "pint" on the migration file
-        $this->runPint($migrationFile);
+            // The regenerated migration describes the desired schema, including
+            // removed fields. A rejected sync must not look like a successful save.
+            $exitCode = Artisan::call('aura:schema-update', [
+                'migration' => $migrationFile,
+                '--drop' => true,
+                '--force' => true,
+            ]);
 
-        // Run the migration. The regenerated migration is the full desired schema,
-        // so removed fields have to drop their columns without prompting.
-        Artisan::call('aura:schema-update', [
-            'migration' => $migrationFile,
-            '--drop' => true,
-            '--force' => true,
-        ]);
+            if ($exitCode !== 0) {
+                throw new RuntimeException('Schema update failed for ['.$tableName.']. '.trim(Artisan::output()));
+            }
+        } catch (Throwable $exception) {
+            if ($migrationExisted) {
+                $this->files->put($migrationFile, $content);
+            } else {
+                $this->files->delete($migrationFile);
+            }
+
+            throw $exception;
+        }
     }
 
     protected function generateColumn($field)
@@ -100,7 +116,11 @@ class ModifyDatabaseMigration
         }
 
         $schema .= '$table->foreignId("user_id");'."\n";
-        $schema .= '$table->foreignId("team_id");'."\n";
+
+        if (config('aura.teams')) {
+            $schema .= '$table->foreignId("team_id");'."\n";
+        }
+
         $schema .= '$table->timestamps();'."\n";
         $schema .= '$table->softDeletes();'."\n";
 

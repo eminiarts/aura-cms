@@ -73,12 +73,6 @@ parameters:
 			path: src/Aura.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Support\\Stringable\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Aura.php
-
-		-
 			message: '#^Unsafe usage of new static\(\)\.$#'
 			identifier: new.static
 			count: 1
@@ -324,7 +318,7 @@ parameters:
 		-
 			message: '#^Call to an undefined method Aura\\Base\\Livewire\\EditResourceField\:\:notify\(\)\.$#'
 			identifier: method.notFound
-			count: 3
+			count: 1
 			path: src/Livewire/EditResourceField.php
 
 		-
@@ -474,7 +468,7 @@ parameters:
 		-
 			message: '#^Call to an undefined method Aura\\Base\\Livewire\\ResourceEditor\:\:notify\(\)\.$#'
 			identifier: method.notFound
-			count: 5
+			count: 3
 			path: src/Livewire/ResourceEditor.php
 
 		-

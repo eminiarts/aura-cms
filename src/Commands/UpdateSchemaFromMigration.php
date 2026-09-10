@@ -12,6 +12,12 @@ use function Laravel\Prompts\select;
 
 class UpdateSchemaFromMigration extends Command
 {
+    protected const STANDARD_TABLE_METHODS = [
+        'id',
+        'softDeletes',
+        'timestamps',
+    ];
+
     protected $description = 'Update the database schema based on the provided migration file';
 
     protected $signature = 'aura:schema-update
@@ -46,6 +52,12 @@ class UpdateSchemaFromMigration extends Command
         }
 
         $desiredColumns = $this->getDesiredColumnsFromMigration($migrationFile);
+
+        if ($desiredColumns === null) {
+            $this->error("Unable to safely parse columns from '{$migrationFile}'. Aborting without touching '{$table}'.");
+
+            return self::FAILURE;
+        }
 
         // A failed or partial parse would look like "the table has no columns",
         // which previously dropped every existing column. Abort instead.
@@ -111,41 +123,58 @@ class UpdateSchemaFromMigration extends Command
         return self::SUCCESS;
     }
 
-    protected function getDesiredColumnsFromMigration($migrationFile)
+    protected function getDesiredColumnsFromMigration(string $migrationFile): ?array
     {
-        $body = file($migrationFile);
-        $upMethodStarted = false;
+        $migration = file_get_contents($migrationFile);
+
+        if ($migration === false || ! preg_match(
+            '/Schema::create\(\s*([\'\"])[a-zA-Z0-9_-]+\1\s*,\s*function\s*\(\s*Blueprint\s+\$table\s*\)\s*\{(?<schema>[\s\S]*?)^\s*\}\);/m',
+            $migration,
+            $matches
+        )) {
+            return null;
+        }
+
         $columns = [];
 
-        foreach ($body as $line) {
-            if (preg_match('/public function up\(\)/', $line)) {
-                $upMethodStarted = true;
+        foreach (preg_split('/;/', $matches['schema']) as $statement) {
+            if (! str_contains($statement, '$table->')) {
+                continue;
+            }
+
+            if (! preg_match('/^\s*\$table->([a-zA-Z][a-zA-Z0-9_]*)\((.*?)\)(?:->.*)?\s*$/s', trim($statement), $matches)) {
+                return null;
+            }
+
+            $method = $matches[1];
+            $arguments = $matches[2];
+
+            if (in_array($method, self::STANDARD_TABLE_METHODS, true)) {
+                if (trim($arguments) !== '') {
+                    return null;
+                }
 
                 continue;
             }
 
-            if ($upMethodStarted) {
-                if (preg_match('/\}/', $line)) {
-                    break;
-                }
-
-                if (preg_match('/\$table->([a-zA-Z]+)\(\'([a-zA-Z0-9_]+)\'\)/', $line, $matches)) {
-                    $columns[$matches[2]] = ['type' => $matches[1]];
-                }
+            if (! preg_match('/^\s*([\'\"])([a-zA-Z0-9_-]+)\1\s*$/', $arguments, $matches)) {
+                return null;
             }
+
+            $columns[$matches[2]] = ['type' => $method];
         }
 
         return $columns;
     }
 
-    protected function getTableNameFromMigration($migration)
+    protected function getTableNameFromMigration(string $migration): ?string
     {
-        $body = file($migration);
+        $body = file_get_contents($migration);
 
-        foreach ($body as $line) {
-            if (preg_match('/Schema::create\(\'([a-zA-Z0-9_]+)\'/', $line, $matches)) {
-                return $matches[1];
-            }
+        if ($body !== false && preg_match('/Schema::create\(\s*([\'\"])([a-zA-Z0-9_-]+)\1/', $body, $matches)) {
+            return $matches[2];
         }
+
+        return null;
     }
 }
