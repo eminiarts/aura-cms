@@ -1,406 +1,295 @@
-# Fields Reference
+# Fields
 
+Fields are PHP classes under `Aura\Base\Fields`. Each class controls how a value is entered, validated, stored, and displayed. You declare fields as plain arrays in a resource's `getFields()` method. The package registers 44 concrete field classes from `src/Fields`.
 
-Fields are the building blocks of Aura CMS, transforming your resources into powerful, feature-rich forms and interfaces. With 42 field types available out of the box, you can handle any data requirement from simple text inputs to complex relationships and media management.
+This page is the field type reference. For how fields fit into a resource, see [Resources](/docs/resources); for the meta vs. custom-table storage split, see [Meta Fields](/docs/meta-fields) and [Custom Tables](/docs/custom-tables).
 
-## Table of Contents
+## Defining fields
 
-- [Introduction](#introduction)
-- [Field Structure](#field-structure)
-- [Common Field Options](#common-field-options)
-- [Field Categories](#field-categories)
-- [Input Fields](#input-fields)
-  - [Text](#text)
-  - [Textarea](#textarea)
-  - [Number](#number)
-  - [Email](#email)
-  - [Phone](#phone)
-  - [Password](#password)
-  - [Slug](#slug)
-  - [Date](#date)
-  - [Datetime](#datetime)
-  - [Time](#time)
-- [Choice Fields](#choice-fields)
-  - [Boolean](#boolean)
-  - [Select](#select)
-  - [Radio](#radio)
-  - [Checkbox](#checkbox)
-  - [Status](#status)
-- [Media Fields](#media-fields)
-  - [Image](#image)
-  - [File](#file)
-- [JS Fields](#js-fields)
-  - [AdvancedSelect](#advancedselect)
-  - [Color](#color)
-  - [Code](#code)
-  - [Wysiwyg](#wysiwyg)
-- [Relationship Fields](#relationship-fields)
-  - [BelongsTo](#belongsto)
-  - [HasMany](#hasmany)
-  - [HasOne](#hasone)
-  - [BelongsToMany](#belongstomany)
-  - [Tags](#tags)
-- [Structure Fields](#structure-fields)
-  - [Group](#group)
-  - [Repeater](#repeater)
-  - [Panel](#panel)
-  - [Tab](#tab)
-  - [Tabs](#tabs)
-- [Layout Fields](#layout-fields)
-  - [Heading](#heading)
-  - [HorizontalLine](#horizontalline)
-  - [View](#view)
-  - [ViewValue](#viewvalue)
-  - [LivewireComponent](#livewirecomponent)
-- [Special Fields](#special-fields)
-  - [ID](#id)
-  - [Hidden](#hidden)
-  - [Embed](#embed)
-  - [Json](#json)
-  - [Permissions](#permissions)
-  - [Roles](#roles)
-- [Field Comparison Table](#field-comparison-table)
-- [Custom Fields](#custom-fields)
-- [Best Practices](#best-practices)
-
-## Introduction
-
-Fields in Aura CMS are PHP classes that handle everything from data input to validation, storage, and display. Each field type is designed for specific use cases, providing a rich set of features:
-
-- **Type-specific UI components** - Optimized interfaces for each data type
-- **Built-in validation** - Laravel validation rules with custom validators
-- **Conditional logic** - Show/hide fields based on conditions
-- **Custom styling** - Tailwind CSS integration
-- **Relationship handling** - Automatic relationship management
-- **Media integration** - Built-in media manager support
-- **Livewire integration** - Real-time updates without page refresh
-
-### Field Architecture
+A field definition is a plain array. Every definition requires `type` (the field class) and `slug`. Layout fields also need a slug even though they do not store a value:
 
 ```php
-// Every field extends the base Field class
-abstract class Field
+use Aura\Base\Resource;
+
+class Article extends Resource
 {
-    public $edit = 'aura::fields.text';      // Edit form view
-    public $view = 'aura::fields.view-value'; // Display view
-    public $index = null;                     // Table/index view
-    
-    public $type = 'input';                   // Field type category
-    public $group = false;                    // Groups other fields?
-    public $on_forms = true;                  // Show on forms?
-    public $tableColumnType = 'string';       // Database column type
-    public $tableNullable = true;             // Nullable in database?
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Title',
+                'slug' => 'title',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => 'required|max:255',
+            ],
+            [
+                'name' => 'Body',
+                'slug' => 'body',
+                'type' => 'Aura\\Base\\Fields\\Wysiwyg',
+                'validation' => 'nullable',
+            ],
+        ];
+    }
 }
 ```
 
-## Field Structure
+The `type` value is resolved through Laravel's container with `app($field['type'])`, so it must be a resolvable class name or container binding. Always use the fully-qualified class name, such as `Aura\Base\Fields\Text`. Short aliases like `Text` do not resolve.
 
-Each field in Aura CMS follows a consistent structure with these key components:
+## Shared options
 
-### Core Properties
+Every field class extends `Aura\Base\Fields\Field`. The base field's editor exposes these keys, so they are valid on any field:
 
-| Property | Description | Default |
-|----------|-------------|---------|
-| `$edit` | Blade view for edit forms | Field-specific |
-| `$view` | Blade view for display | `aura::fields.view-value` |
-| `$index` | Blade view for table display | `null` |
-| `$type` | Field category (input, relation, etc.) | `'input'` |
-| `$group` | Whether field groups other fields | `false` |
-| `$on_forms` | Display on create/edit forms | `true` |
-| `$optionGroup` | Category in field selector | Field-specific |
-| `$tableColumnType` | Database column type | `'string'` |
-| `$tableNullable` | Allow NULL in database | `true` |
-| `$taxonomy` | Is taxonomy field | `false` |
+| Key | Type | Purpose |
+|-----|------|---------|
+| `name` | string | Label shown in forms and table headers. |
+| `slug` | string | Unique field key. Layout fields need a slug even though they store no value. |
+| `type` | string | The field class (fully-qualified). |
+| `validation` | string/array | Laravel validation rules, applied on create and update. |
+| `instructions` | string | Help text rendered under the field. |
+| `searchable` | bool | Include the field in resource search. |
+| `on_index` | bool | Show as a column in the table. |
+| `on_forms` | bool | Show on create and edit forms. |
+| `on_view` | bool | Show on the view page. |
+| `style.width` | string/int | Field width in the form, in percent (`'style' => ['width' => '50']`). |
+| `conditional_logic` | array/Closure | Show/hide rules. See [Conditional logic](#conditional-logic). |
 
-### Core Methods
+Two more keys are honored at runtime even though the base editor does not list them:
 
-```php
-// Get value from model
-public function get($model, $field)
+- `default`. The create form seeds the field with this value (see [Defaults](#defaults)).
+- `live`. On supported inputs such as `Text`, this switches the input to `wire:model.live` so the value updates on every keystroke instead of on blur.
 
-// Set value on model
-public function set($model, $field, $value)
+`placeholder` and other keys are field-specific. They only take effect on fields whose class or Blade view reads them, as documented below. The `disabled` key is also read by the shared `Field::isDisabled()` helper and the input views.
 
-// Display formatted value
-public function display($model, $field)
+## Visibility
 
-// Transform value before display
-public function value($value, $field = [])
+Form visibility is resolved by pipeline filters, not by the field class:
 
-// Get field configuration options
-public static function getFields(): array
+- `on_forms => false` removes the field from both the create and edit forms.
+- `on_create => false` removes it from the create form only.
+- `on_edit => false` removes it from the edit form only.
+- `on_view => false` removes it from the view page.
+- `on_index => false` removes it from the table.
 
-// Get filter options for table
-public function filterOptions($field): array
+`on_create` and `on_edit` are optional; if you omit them, only `on_forms` applies. Group, Panel, and Tab wrappers propagate their display attributes to the fields nested inside them.
 
-// Check if field is input type
-public function isInputField(): bool
+<a id="defaults"></a>
 
-// Check if field is relation
-public function isRelation(): bool
-```
+## Defaults
 
-## Common Field Options
+When the create form initializes, it seeds each declared input field:
 
-All fields share these common configuration options:
+- If the field array has a `default`, that value is used. For a `Checkbox` with array `options`, a scalar default is wrapped into a single-element array.
+- A `Boolean` with no `default` initializes to `false`.
+- A `Tags` field with no `default` initializes to an empty array.
+- Every other field with no `default` initializes to `null`.
+
+For a handwritten resource definition, set `default` explicitly. Defaults declared by a field class are used by the Resource Editor when it writes a definition; they are not merged into an arbitrary field array at render time.
+
+The `Aura\Base\Traits\DefaultFields` trait also exposes three reusable definitions through `Aura::fields($key)`: `created_at` and `updated_at` use `Aura\\Base\\Fields\\Date` with `enable_time => true`, and `user_id` uses `Aura\\Base\\Fields\\BelongsTo`. The trait does not add these fields to every resource automatically.
+
+<a id="conditional-logic"></a>
+
+## Conditional logic
+
+`conditional_logic` hides a field until its conditions pass. Each condition is an array of `field`, `operator`, and `value`. All conditions must pass (AND).
 
 ```php
 [
-    'name' => 'Field Label',              // Display name
-    'slug' => 'field_slug',               // Unique identifier
-    'type' => 'Aura\\Base\\Fields\\Text',  // Field class
-    'validation' => 'required|max:255',   // Laravel validation
-    'instructions' => 'Help text',        // User guidance
-    'default' => 'Default value',         // Default value
-    'placeholder' => 'Placeholder text',  // Input placeholder
-    'on_index' => true,                   // Show in table
-    'on_forms' => true,                   // Show in forms
-    'on_view' => true,                    // Show in view
-    'on_create' => true,                  // Show on create
-    'on_edit' => true,                    // Show on edit
-    'searchable' => true,                 // Include in search
-    'style' => [                          // Styling options
-        'width' => '50',                  // Width percentage
-        'wrapper_class' => 'mt-4',        // Wrapper CSS
-    ],
-    'conditional_logic' => [              // Show/hide rules
+    'name' => 'Shipping Address',
+    'slug' => 'shipping_address',
+    'type' => 'Aura\\Base\\Fields\\Textarea',
+    'conditional_logic' => [
         [
-            'field' => 'status',
-            'operator' => '=',
-            'value' => 'active',
+            'field' => 'needs_shipping',
+            'operator' => '==',
+            'value' => true,
         ],
     ],
-    'live' => true,                       // Livewire live updates
 ]
 ```
 
-## Field Categories
+Supported operators are `==`, `!=`, `>`, `>=`, `<`, and `<=`. Any other operator (including a single `=`) evaluates to false and the field stays hidden.
 
-Aura CMS organizes fields into logical categories based on their `$optionGroup` property:
+Set `field` to `role` to key the condition off the current user's role instead of another field's value. Role conditions support `==` and `!=`, and super admins always pass:
 
-1. **Input Fields** - Basic data entry (Text, Textarea, Number, Email, Phone, Password, Slug, Date, Datetime, Time)
-2. **Choice Fields** - Selection from options (Boolean, Select, Radio, Checkbox, Status)
-3. **Media Fields** - File handling (Image, File)
-4. **JS Fields** - Interactive JavaScript-powered fields (AdvancedSelect, Color, Code, Wysiwyg)
-5. **Relationship Fields** - Model relationships (BelongsTo, HasMany, HasOne, BelongsToMany)
-6. **Structure Fields** - Form organization (Group, Repeater, Panel, Tab, Tabs)
-7. **Layout Fields** - Visual elements (Heading, HorizontalLine, View, ViewValue, LivewireComponent)
-8. **Special Fields** - Utility fields (ID, Hidden, Tags, Embed, Json, Permissions, Roles)
+```php
+'conditional_logic' => [
+    ['field' => 'role', 'operator' => '==', 'value' => 'admin'],
+],
+```
 
-## Input Fields
+For logic the operator table cannot express, pass a closure. It receives the model and the current form state and returns a boolean:
 
-Basic fields for text and numeric data entry.
+```php
+'conditional_logic' => function ($model, $form) {
+    return data_get($form, 'fields.status') === 'published'
+        && data_get($form, 'fields.price') > 0;
+},
+```
+
+## Input fields
 
 ### Text
 
-The most common field type for single-line text input.
+Single-line text input.
+
+![Text field](/images/Fields/Text.png)
 
 ```php
 [
     'name' => 'Title',
     'slug' => 'title',
     'type' => 'Aura\\Base\\Fields\\Text',
-    'validation' => 'required|string|max:255',
-    'placeholder' => 'Enter title...',
+    'validation' => 'required|max:255',
+    'placeholder' => 'Enter a title',
     'default' => '',
     'prefix' => 'https://',
     'suffix' => '.com',
     'autocomplete' => 'off',
     'max_length' => 255,
+    'live' => true,
 ]
 ```
 
-**Features:**
-- Prefix/suffix support
-- Character counter
-- Autocomplete control
-- Real-time validation
-- Livewire integration
+Options: `default`, `placeholder`, `autocomplete`, `prefix`, `suffix`, `max_length`. `prefix`/`suffix` render as input adornments. `max_length` is stored on the field config but is not enforced by the input element; enforce length with a `max:` validation rule.
 
-**Database:** `string` column type
+Column type: `string`.
 
 ### Textarea
 
-Multi-line text input for longer content.
+Multi-line text input.
 
 ```php
 [
-    'name' => 'Description',
-    'slug' => 'description',
+    'name' => 'Excerpt',
+    'slug' => 'excerpt',
     'type' => 'Aura\\Base\\Fields\\Textarea',
-    'validation' => 'required|string|min:10|max:500',
-    'placeholder' => 'Enter description...',
-    'default' => '',              // Default value on create
-    'rows' => 3,                  // Number of visible rows (default: 3, min: 1)
-    'max_length' => 500,          // Maximum character count
+    'validation' => 'nullable|max:300',
+    'placeholder' => 'Short summary',
+    'rows' => 3,
+    'max_length' => 300,
 ]
 ```
 
-**Features:**
-- Adjustable rows
-- Character counter with max_length
-- Default value support
-- Preserves line breaks
+Options: `default`, `placeholder`, `autocomplete`, `rows` (the Resource Editor default is 3; the input falls back to 4 rows when the key is absent), and `max_length`. `max_length` is stored on the field config but is not enforced by the element. Use a validation rule.
 
-**Database:** `text` column type
+Column type: `text`.
 
 ### Number
 
-Numeric input with validation and formatting.
+Numeric input.
 
 ```php
 [
     'name' => 'Price',
     'slug' => 'price',
     'type' => 'Aura\\Base\\Fields\\Number',
-    'validation' => 'required|numeric|min:0|max:99999',
-    'placeholder' => '0.00',
-    'default' => '',              // Default value on create
-    'prefix' => '$',              // Display prefix
-    'suffix' => 'USD',            // Display suffix
+    'validation' => 'required|numeric|min:0',
+    'placeholder' => '0',
+    'prefix' => '$',
+    'suffix' => 'USD',
 ]
 ```
 
-**Features:**
-- Number validation
-- Prefix/suffix display
-- Casts to integer via `value()` method
-- Default value support
+Options: `default`, `placeholder`, `autocomplete`, `prefix`, and `suffix`. The value is cast to an integer when read back. The class also reads `number_type`, `precision`, and `scale` for exact-query configuration, but those keys are not exposed by its configuration fields and do not change the integer cast. Numeric filter operators are `equals`, `not_equals`, `greater_than`, `less_than`, `greater_than_or_equal`, `less_than_or_equal`, `is_empty`, and `is_not_empty`.
 
-**Database:** `integer` column type
-
-**Filter Options:**
-- equals / not_equals
-- greater_than / less_than
-- greater_than_or_equal / less_than_or_equal
-- is_empty / is_not_empty
+Column type: `integer`.
 
 ### Email
 
-Specialized input for email addresses.
+Email input.
 
 ```php
 [
-    'name' => 'Email Address',
+    'name' => 'Email',
     'slug' => 'email',
     'type' => 'Aura\\Base\\Fields\\Email',
-    'validation' => 'required|email:rfc,dns',
+    'validation' => 'required|email',
     'placeholder' => 'user@example.com',
-    'autocomplete' => 'email',
 ]
 ```
 
-**Features:**
-- Email validation
-- HTML5 email input
-- Mobile keyboard optimization
-- Autocomplete support
+Options: `default`, `placeholder`, and `autocomplete`.
 
-**Database:** `string` column type
+Column type: `string`.
 
 ### Phone
 
-Phone number input with formatting.
+Telephone input (`type="tel"`). No formatting or international handling is applied.
 
 ```php
 [
-    'name' => 'Phone Number',
+    'name' => 'Phone',
     'slug' => 'phone',
     'type' => 'Aura\\Base\\Fields\\Phone',
-    'validation' => 'required|regex:/^[0-9\-\+\(\)\s]+$/',
-    'placeholder' => '+1 (555) 123-4567',
+    'validation' => 'nullable|string',
 ]
 ```
 
-**Features:**
-- Phone number validation
-- International format support
-- Mobile keyboard optimization
+The class adds no configuration fields. Its view reads the shared `placeholder`, `autocomplete`, `disabled`, and `live` keys.
 
-**Database:** `string` column type
+Column type: `string`.
 
 ### Password
 
-Secure password input with hashing.
+Password input. The value is hashed with `Hash::make()` on save unless it is already hashed. An empty value is skipped, so submitting a blank password leaves the stored value unchanged.
 
 ```php
 [
     'name' => 'Password',
     'slug' => 'password',
     'type' => 'Aura\\Base\\Fields\\Password',
-    'validation' => 'required|min:8|confirmed',
-    'placeholder' => 'Enter password...',
+    'validation' => 'nullable|min:8',
 ]
 ```
 
-**Features:**
-- Automatic hashing
-- Confirmation field
-- Show/hide toggle
-- Strength indicator
-- Skips empty updates
+Options: none beyond the shared options. There is no built-in confirmation, strength meter, or show/hide toggle on the field itself.
 
-**Database:** `string` column type
+Column type: `string`.
 
 ### Slug
 
-Auto-generated URL-friendly slugs.
+Text that the browser derives from another field and slugifies as the user types. The current script lowercases text, removes accents, and replaces spaces and punctuation with underscores.
 
 ```php
 [
     'name' => 'Slug',
     'slug' => 'slug',
     'type' => 'Aura\\Base\\Fields\\Slug',
-    'validation' => 'required|regex:/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/|not_regex:/^[0-9]+$/',
-    'based_on' => 'title',      // Required: field to generate slug from
-    'custom' => true,           // Allow custom slug input
-    'disabled' => true,         // Show as disabled/readonly
-    'placeholder' => 'auto-generated-slug',
-    'default' => '',
+    'validation' => 'required',
+    'based_on' => 'title',
+    'custom' => true,
+    'disabled' => true,
 ]
 ```
 
-**Features:**
-- Auto-generation from specified field (`based_on`)
-- Manual override option when `custom` is enabled
-- Uniqueness validation
-- Real-time preview
-- Disabled state support
+Options: `based_on` (required, and it must be the slug of the source field), `custom` (render the manual-edit toggle), `disabled` (start locked and derive from `based_on`; the initial editable state is `! disabled`), `default`, and `placeholder`. The Blade view throws an exception when `based_on` is missing. Uniqueness is not added automatically, so add a `unique:` rule to `validation` when needed.
 
-**Database:** `string` column type
+Column type: `string`.
 
 ### Date
 
-Date picker with calendar interface.
+Date picker.
+
+![Date field](/images/Fields/Date.png)
 
 ```php
 [
     'name' => 'Published Date',
-    'slug' => 'published_date',
+    'slug' => 'published_at',
     'type' => 'Aura\\Base\\Fields\\Date',
-    'validation' => 'required|date|after:today',
-    'format' => 'd.m.Y',              // Storage format (default: d.m.Y)
-    'display_format' => 'd.m.Y',      // Display format (default: d.m.Y)
-    'enable_input' => true,           // Allow manual input (default: true)
-    'maxDate' => 30,                  // Days from today to max date (0-365)
-    'weekStartsOn' => 1,              // 0=Sunday to 6=Saturday (default: 1=Monday)
+    'validation' => 'nullable|date',
+    'format' => 'd.m.Y',
+    'display_format' => 'd.m.Y',
+    'enable_input' => true,
+    'maxDate' => 30,
+    'weekStartsOn' => 1,
 ]
 ```
 
-**Features:**
-- Calendar picker
-- Configurable storage and display formats (PHP date format)
-- Max date constraint in days from today
-- Week start customization
-- Manual input option
+Options: `format` (default `d.m.Y`), `display_format` (default `d.m.Y`), `enable_input` (default true), `maxDate` (the number of days from today to the latest selectable date, validated from 0 to 365 by the Resource Editor), `minDate` (read by the Blade view when supplied), `weekStartsOn` (0 Sunday to 6 Saturday, default 1), and `options.native` (use the browser's native date input). Formats use PHP `date()` tokens. Filter operators are `date_is`, `date_is_not`, `date_before`, `date_after`, `date_on_or_before`, `date_on_or_after`, `date_is_empty`, and `date_is_not_empty`.
 
-**Database:** `date` column type
-
-**Filter Options:**
-- date_is / date_is_not
-- date_before / date_after
-- date_on_or_before / date_on_or_after
-- date_is_empty / date_is_not_empty
+Column type: `date`.
 
 ### Datetime
 
@@ -411,191 +300,152 @@ Combined date and time picker.
     'name' => 'Event Start',
     'slug' => 'event_start',
     'type' => 'Aura\\Base\\Fields\\Datetime',
-    'validation' => 'required|date',
-    'format' => 'd.m.Y H:i',          // Storage format (default: d.m.Y H:i)
-    'display_format' => 'd.m.Y H:i',  // Display format (default: d.m.Y H:i)
-    'enable_input' => true,           // Allow manual input (default: true)
-    'maxDate' => 30,                  // Days from today to max date
-    'minTime' => '09:00',             // Minimum selectable time
-    'maxTime' => '18:00',             // Maximum selectable time
-    'weekStartsOn' => 1,              // 0=Sunday to 6=Saturday (default: 1=Monday)
+    'validation' => 'nullable|date',
+    'format' => 'd.m.Y H:i',
+    'display_format' => 'd.m.Y H:i',
+    'enable_input' => true,
+    'maxDate' => 30,
+    'minTime' => '09:00',
+    'maxTime' => '18:00',
+    'weekStartsOn' => 1,
 ]
 ```
 
-**Features:**
-- Combined date/time picker
-- Time constraints (minTime, maxTime)
-- Configurable storage and display formats
-- Week start customization
+Options: `format` (default `d.m.Y H:i`), `display_format` (default `d.m.Y H:i`), `enable_input` (default true), `maxDate`, `minDate`, `minTime`, `maxTime`, `weekStartsOn` (default 1), and `options.native`. Filter operators are `date_is`, `date_is_not`, `date_before`, `date_after`, `date_on_or_before`, `date_on_or_after`, `date_is_empty`, and `date_is_not_empty`. Saved filters using the older bare range names remain supported.
 
-**Database:** `timestamp` column type
-
-**Filter Options:**
-- is / is_not
-- before / after
-- on_or_before / on_or_after
-- is_empty / is_not_empty
+Column type: `timestamp`.
 
 ### Time
 
-Time-only picker.
+Time picker.
 
 ```php
 [
     'name' => 'Opening Time',
     'slug' => 'opening_time',
     'type' => 'Aura\\Base\\Fields\\Time',
-    'validation' => 'required',
-    'format' => 'H:i',                // Storage format (default: H:i)
-    'display_format' => 'H:i',        // Display format (default: H:i)
-    'enable_input' => true,           // Allow manual input (default: true)
-    'enable_seconds' => false,        // Show seconds picker (default: false)
-    'minTime' => '09:00',             // Minimum selectable time
-    'maxTime' => '17:00',             // Maximum selectable time
+    'validation' => 'nullable',
+    'format' => 'H:i',
+    'display_format' => 'H:i',
+    'enable_input' => true,
+    'enable_seconds' => false,
+    'minTime' => '09:00',
+    'maxTime' => '17:00',
 ]
 ```
 
-**Features:**
-- Time picker interface
-- Optional seconds support
-- Time constraints (minTime, maxTime)
-- Manual input option
+Options: `format` (default `H:i`), `display_format` (default `H:i`), `enable_input` (default true), `enable_seconds` (the Resource Editor default is false, but the current Time template does not pass this key to the date-time picker), `minTime`, `maxTime`, `weekStartsOn` (default 1), and `options.native`.
 
-**Database:** `string` column type
+Column type: `string`.
 
-## Choice Fields
-
-Fields for selecting from predefined options.
+## Choice fields
 
 ### Boolean
 
-Toggle switch for true/false values.
+Toggle switch. The value is cast to a boolean on read and write. On the table and view page it renders as a check or cross icon.
+
+![Boolean field](/images/Fields/Boolean.png)
 
 ```php
 [
-    'name' => 'Active',
-    'slug' => 'is_active',
+    'name' => 'Featured',
+    'slug' => 'is_featured',
     'type' => 'Aura\\Base\\Fields\\Boolean',
-    'validation' => 'boolean',
-    'default' => true,
+    'default' => false,
 ]
 ```
 
-**Features:**
-- Toggle switch UI
-- Casts to boolean automatically via `get()` and `set()` methods
-- Default value support
-- Livewire integration
+Options: `default` (default false).
 
-**Database:** `string` column type (stores boolean values)
-
-**Display:** Check icon (✓) for true, X icon (✗) for false
+Column type: `string`.
 
 ### Select
 
-Dropdown selection from options.
+Dropdown. Options are defined as a repeater of key/value pairs.
+
+![Select field](/images/Fields/Select.png)
 
 ```php
 [
     'name' => 'Category',
     'slug' => 'category',
     'type' => 'Aura\\Base\\Fields\\Select',
-    'validation' => 'required|in:news,blog,tutorial',
+    'validation' => 'required',
     'options' => [
         ['key' => 'news', 'value' => 'News'],
         ['key' => 'blog', 'value' => 'Blog Post'],
         ['key' => 'tutorial', 'value' => 'Tutorial'],
     ],
-    'default' => 'blog',              // Default value on create
-    'allow_multiple' => false,        // Allow multiple selections
+    'default' => 'blog',
 ]
 ```
 
-**Dynamic Options:** Define a method on your model:
+Options: `options` (key/value repeater), `default`, and `allow_multiple`. The current select template renders a single `<select>` and does not add a `multiple` attribute, so `allow_multiple` has no effect at runtime. To compute options at runtime, define a `get{Slug}Options()` method on the resource returning a key => label array:
+
 ```php
 public function getCategoryOptions()
 {
-    return ['option1' => 'Label 1', 'option2' => 'Label 2'];
+    return ['news' => 'News', 'blog' => 'Blog Post'];
 }
 ```
 
-**Features:**
-- Static or dynamic options via model method
-- Multiple selection support with `allow_multiple`
-- Options defined as repeater (key/value pairs)
-
-**Database:** `string` column type
-
-**Filter Options:**
-- is / is_not
-- is_empty / is_not_empty
+Filter operators: `is`, `is_not`, `is_empty`, `is_not_empty`. Column type: `string`.
 
 ### Radio
 
-Single selection with radio buttons.
+Single choice rendered as radio buttons.
 
 ```php
 [
     'name' => 'Plan',
     'slug' => 'plan',
     'type' => 'Aura\\Base\\Fields\\Radio',
-    'validation' => 'required|in:basic,pro,enterprise',
+    'validation' => 'required',
     'options' => [
-        'basic' => 'Basic Plan - $9/mo',
-        'pro' => 'Pro Plan - $29/mo',
-        'enterprise' => 'Enterprise - Contact us',
+        ['key' => 'basic', 'value' => 'Basic'],
+        ['key' => 'pro', 'value' => 'Pro'],
+        ['key' => 'enterprise', 'value' => 'Enterprise'],
     ],
     'default' => 'basic',
 ]
 ```
 
-**Features:**
-- Radio button group
-- Default selection
-- Inline or stacked layout
+Options: `options` (key/value repeater) and `default`. The view reads the options from the field definition and renders one selected value.
 
-**Database:** `string` column type
+Column type: `string`.
 
 ### Checkbox
 
-Multiple selection with checkboxes.
+Multiple choice rendered as checkboxes. Selected values are stored as a JSON array and read back as an array.
+
+![Checkbox field](/images/Fields/Checkbox.png)
 
 ```php
 [
     'name' => 'Features',
     'slug' => 'features',
     'type' => 'Aura\\Base\\Fields\\Checkbox',
-    'validation' => 'array',
     'options' => [
-        'api' => 'API Access',
-        'support' => 'Priority Support',
-        'analytics' => 'Advanced Analytics',
-        'export' => 'Data Export',
+        ['key' => 'api', 'value' => 'API Access'],
+        ['key' => 'support', 'value' => 'Priority Support'],
+        ['key' => 'export', 'value' => 'Data Export'],
     ],
     'default' => ['api'],
 ]
 ```
 
-**Features:**
-- Multiple selection
-- Stores as JSON array
-- Select all option
-- Grid layout support
-
-**Database:** `string` column type (JSON)
+Options: `options` (key/value repeater) and `default`. The class defines an `options()` helper for callers, but the current Checkbox form template reads the field's `options` array directly, so a `get{Slug}Options()` method does not replace options in that form. Column type: `string` (holds JSON).
 
 ### Status
 
-Specialized select with color-coded options.
+Select whose options carry a color, rendered as a colored badge on the table and view page.
 
 ```php
 [
     'name' => 'Status',
     'slug' => 'status',
     'type' => 'Aura\\Base\\Fields\\Status',
-    'validation' => 'required',
-    'default' => 'draft',             // Default value on create
-    'allow_multiple' => false,        // Allow multiple selections
+    'default' => 'draft',
     'options' => [
         ['key' => 'draft', 'value' => 'Draft', 'color' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'],
         ['key' => 'review', 'value' => 'In Review', 'color' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'],
@@ -604,621 +454,402 @@ Specialized select with color-coded options.
 ]
 ```
 
-**Available Colors:**
-- Blue, Green, Red, Yellow, Indigo, Purple, Pink, Gray, Orange, Teal
+Options: `options` (key/value/color repeater), `default`, and `allow_multiple`. Each option's `color` is a set of Tailwind classes; the field's editor offers presets for Blue, Green, Red, Yellow, Indigo, Purple, Pink, Gray, Orange, and Teal, each with dark-mode variants. The class defines an `options()` helper for callers, but the current Status form template reads the field's `options` array directly, so a `get{Slug}Options()` method does not replace options in that form. The current template renders one selected key, so `allow_multiple` is also ignored.
 
-Each color includes dark mode variants automatically.
+Column type: `string`.
 
-**Features:**
-- Color-coded badge display on index and view
-- Custom status workflows
-- Multiple selection support
-- Dynamic options via model method
+## Media fields
 
-**Database:** `string` column type
-
-## Media Fields
-
-Fields for handling file uploads and media.
+Media fields store attachment IDs and integrate with the [Media Library](/docs/media-manager).
 
 ### Image
 
-Image upload with preview and management. Part of the **Media Fields** category.
+Image upload with thumbnail preview. Stored as a JSON array of attachment IDs; the table cell shows the first image plus a `+N` badge for the rest.
+
+![Image field](/images/Fields/Image.png)
 
 ```php
 [
     'name' => 'Featured Image',
     'slug' => 'featured_image',
     'type' => 'Aura\\Base\\Fields\\Image',
-    'validation' => 'required|image|max:2048',
-    'use_media_manager' => true,      // Enable media manager integration
-    'min_files' => 1,                 // Minimum number of files
-    'max_files' => 5,                 // Maximum number of files
-    'allowed_file_types' => 'jpg, png, gif',  // Comma-separated list of extensions
+    'validation' => 'nullable',
+    'use_media_manager' => true,
+    'min_files' => 1,
+    'max_files' => 5,
+    'allowed_file_types' => 'jpg, png, gif',
 ]
 ```
 
-**Features:**
-- Media manager integration
-- Image preview with thumbnails
-- Multiple image support
-- Min/max file constraints
-- File type restrictions (comma-separated extensions)
-- Stores as JSON array
+Options: `use_media_manager`, `min_files`, `max_files`, and `allowed_file_types` (a comma-separated extension list). The current Image view always mounts the media uploader, regardless of `use_media_manager`. `min_files` and `allowed_file_types` are stored on the field but are not enforced. `max_files` limits selections in the media picker. The uploader itself accepts at most 20 files per batch, uses `aura.media.max_file_size` with a default of 102400 KiB, and applies its own MIME and blocked-extension rules.
 
-**Database:** `string` column type (JSON array of attachment IDs)
+Column type: `string` (holds a JSON array of attachment IDs).
 
 ### File
 
-General file upload field.
+General file upload. Stored as JSON for multiple files.
 
 ```php
 [
     'name' => 'Attachments',
     'slug' => 'attachments',
     'type' => 'Aura\\Base\\Fields\\File',
-    'validation' => 'required|file|max:10240',
-    'use_media_manager' => true,
-    'min_files' => 1,
-    'max_files' => 10,
-    'allowed_file_types' => [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ],
+    'validation' => 'nullable',
 ]
 ```
 
-**Features:**
-- Media manager integration
-- Multiple file support
-- Type restrictions
-- Size limits
-- Download links
+Options: none beyond the shared options. `File` does not define the media configuration keys that `Image` does, and it uses the same uploader policy described above.
 
-**Database:** `string` column type (JSON for multiple)
+Column type: `string`.
 
-## JS Fields
-
-Interactive JavaScript-powered fields with enhanced UI components.
+## JavaScript fields
 
 ### AdvancedSelect
 
-Enhanced select with search and AJAX. Part of the **JS Fields** category.
+Relationship selector. Its class default is `api = true`, so it loads selected records first and fetches search results over AJAX in pages of 10. Set `api => false` to preload every record and filter the list in the browser. The related resource class is required.
 
 ```php
 [
     'name' => 'Products',
     'slug' => 'products',
     'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
-    'validation' => 'required|array',
-    'resource' => 'App\\Resources\\Product',
-    'multiple' => true,                     // Allow multiple selections (default: true)
-    'create' => true,                       // Allow creating new items
-    'return_type' => 'id',                  // 'id' or 'object'
-    'polymorphic_relation' => true,         // Use polymorphic relations (default: true)
-    'thumbnail' => 'image',                 // Field slug for thumbnail display
-    'view_selected' => 'custom.selected',   // Custom view for selected items
-    'view_select' => 'custom.select',       // Custom view for dropdown items
-    'view_view' => 'custom.view',           // Custom view for display mode
-    'view_index' => 'custom.index',         // Custom view for table display
+    'resource' => 'App\\Aura\\Resources\\Product',
+    'multiple' => true,
+    'create' => true,
+    'return_type' => 'id',
+    'polymorphic_relation' => true,
+    'thumbnail' => 'featured_image',
+    'view_select' => 'custom.select',
+    'view_selected' => 'custom.selected',
+    'view_view' => 'custom.view',
+    'view_index' => 'custom.index',
 ]
 ```
 
-**Features:**
-- AJAX search/loading with 5 results limit
-- Create new items inline
-- Multiple or single selection
-- Polymorphic relationship support
-- Custom display views for selected items and dropdown
-- Stores as JSON when multiple
+Options: `resource` (required related resource class), `multiple` (the editor default is true), `create` (show the inline create action, default false), `return_type` (`id` or `object` in the field configuration), `polymorphic_relation` (defaults to true in relationship resolution), `api` (defaults to true on the field class), `reverse`, `thumbnail` (field slug used by custom views), and the custom view slugs `view_select`, `view_selected`, `view_view`, and `view_index`. `api` and `reverse` are runtime options and are not exposed by `AdvancedSelect::getFields()`.
 
-**Database:** `string` column type (JSON)
+Storage: when `polymorphic_relation` is truthy, the field syncs records through the `post_relations` pivot table. Set `polymorphic_relation => false` to store selected IDs as JSON in the resource's meta. The API endpoint returns ten records per page and keeps selected records visible even when they are outside the first page.
+
+Option group: JavaScript fields.
 
 ### Color
 
-Color picker with multiple formats. Part of the **JS Fields** category.
+Color picker.
 
 ```php
 [
     'name' => 'Brand Color',
     'slug' => 'brand_color',
     'type' => 'Aura\\Base\\Fields\\Color',
-    'validation' => 'required',
-    'format' => 'hex',      // Options: hex, rgb, hsl, hsv, cmyk
-    'native' => false,      // Use native browser color picker
+    'validation' => 'nullable',
+    'format' => 'hex',
+    'options' => ['native' => true],
     'default' => '#3B82F6',
 ]
 ```
 
-**Features:**
-- Visual color picker (JS-powered)
-- Multiple format support (Hex, RGB, HSL, HSV, CMYK)
-- Native browser picker option
-- Custom color picker when native is disabled
+Options: `format` (`hex`, `rgb`, `hsl`, `hsv`, `cmyk`) and `options.native`. Set `'options' => ['native' => true]` to use the browser's native color input. The runtime view reads the nested key. The Resource Editor currently writes the `native` setting as a top-level field key, so that editor toggle has no effect until this source mismatch is fixed.
 
-**Database:** `string` column type
+Column type: `string`.
 
 ### Code
 
-Syntax-highlighted code editor. Part of the **JS Fields** category.
+Code editor with syntax highlighting. JSON values are pretty-printed when read back.
+
+![Code field](/images/Fields/Code.png)
 
 ```php
 [
     'name' => 'Custom CSS',
     'slug' => 'custom_css',
     'type' => 'Aura\\Base\\Fields\\Code',
-    'validation' => 'nullable',
-    'language' => 'css',          // Required: html, css, javascript, php, json, yaml, markdown
-    'line_numbers' => true,       // Show line numbers
-    'min_height' => 200,          // Minimum height in pixels (min: 100)
+    'language' => 'css',
+    'line_numbers' => true,
+    'min_height' => 200,
 ]
 ```
 
-**Features:**
-- Syntax highlighting
-- Line numbers toggle
-- Configurable minimum height
-- JSON pretty-printing on get
+Options: `language` (required. Accepted values are `html`, `css`, `javascript`, `php`, `json`, `yaml`, and `markdown`), `line_numbers`, and `min_height` (pixels, minimum 100).
 
-**Supported Languages:**
-- HTML, CSS, JavaScript, PHP
-- JSON, YAML, Markdown
-
-**Database:** `string` column type
+Column type: `string`.
 
 ### Wysiwyg
 
-Rich text editor with formatting tools. Part of the **JS Fields** category.
+Rich text editor producing HTML. On display, the field sanitizes string values with Symfony's HTML sanitizer before returning them.
 
 ```php
 [
     'name' => 'Content',
     'slug' => 'content',
     'type' => 'Aura\\Base\\Fields\\Wysiwyg',
-    'validation' => 'required|min:100',
-]
-```
-
-**Features:**
-- Rich text editing
-- HTML output
-- Standard formatting tools
-
-**Database:** `text` column type
-
-### Code
-
-Syntax-highlighted code editor. Part of the **JS Fields** category.
-
-```php
-[
-    'name' => 'Custom CSS',
-    'slug' => 'custom_css',
-    'type' => 'Aura\\Base\\Fields\\Code',
     'validation' => 'nullable',
-    'language' => 'css',          // Required: html, css, javascript, php, json, yaml, markdown
-    'line_numbers' => true,       // Show line numbers
-    'min_height' => 200,          // Minimum height in pixels (min: 100)
 ]
 ```
 
-**Features:**
-- Syntax highlighting
-- Line numbers toggle
-- Configurable minimum height
-- JSON pretty-printing on get
+Options: none beyond the shared options.
 
-**Supported Languages:**
-- HTML, CSS, JavaScript, PHP
-- JSON, YAML, Markdown
+Column type: `text`.
 
-**Database:** `string` column type
-
-### Embed
-
-External content embedding.
-
-```php
-[
-    'name' => 'Video',
-    'slug' => 'video_embed',
-    'type' => 'Aura\\Base\\Fields\\Embed',
-    'validation' => 'required|url',
-    'providers' => ['youtube', 'vimeo', 'twitter'],
-]
-```
-
-**Features:**
-- oEmbed support
-- Provider restrictions
-- Preview display
-- Responsive embeds
-
-**Database:** `string` column type
-
-### Json
-
-JSON data editor.
-
-```php
-[
-    'name' => 'Settings',
-    'slug' => 'settings',
-    'type' => 'Aura\\Base\\Fields\\Json',
-    'validation' => 'nullable|json',
-    'default' => '{}',
-]
-```
-
-**Features:**
-- JSON validation
-- Pretty formatting
-- Syntax highlighting
-- Array/object support
-
-**Database:** `text` column type
-
-## Relationship Fields
-
-Fields for managing Eloquent relationships.
+## Relationship fields
 
 ### BelongsTo
 
-Many-to-one relationship selector.
+Many-to-one selector. Stores the related record's ID and links to it on the table. Its `resource` key is required. By default it preloads every record and filters them client-side. Set `api => true` to search over AJAX instead.
 
 ```php
 [
     'name' => 'Author',
-    'slug' => 'user_id',
+    'slug' => 'author_id',
     'type' => 'Aura\\Base\\Fields\\BelongsTo',
-    'validation' => 'required|exists:users,id',
-    'resource' => 'Aura\\Base\\Resources\\User',  // Required: Related resource class
+    'resource' => 'App\\Aura\\Resources\\Author',
+    'on_index' => true,
 ]
 ```
 
-**Features:**
-- AJAX search with searchable fields
-- Displays linked resource title on index
-- Meta field support (searches through meta table)
-- Custom table support with optimized queries
+Options: `resource` (required related resource class), `api` (search over AJAX instead of preloading all records), and `relation` when the field is used to resolve a named relationship. In AJAX mode the search covers the related resource's searchable fields, including meta fields. The API returns up to 20 results for shared-table resources and up to 50 for custom-table resources.
 
-**Database:** `bigInteger` column type
+Column type: `bigInteger`.
 
 ### HasMany
 
-One-to-many relationship display.
+One-to-many list of related records, rendered as an embedded table. It is a `relation` type and stores nothing on the resource itself. The `resource` key is required unless you provide a custom `relation` closure.
 
 ```php
 [
     'name' => 'Comments',
     'slug' => 'comments',
     'type' => 'Aura\\Base\\Fields\\HasMany',
-    'resource' => 'App\\Resources\\Comment',  // Required: Related resource class
-    'foreign_key' => 'post_id',               // Foreign key for create links
-    'column' => 'post_id',                    // Column for direct hasMany relation
-    'reverse' => false,                       // Use reverse relationship
-    'reverse_slug' => 'field_slug',           // Slug for reverse relationship
+    'resource' => 'App\\Aura\\Resources\\Comment',
+    'foreign_key' => 'post_id',
 ]
 ```
 
-**Features:**
-- Related items display as table
-- Support for polymorphic relations via `post_relations`
-- Reverse relationship support
-- Embedded table component for related resources
+Options: `resource`, `foreign_key` (used to prefill the create link), `column` (resolve a direct `hasMany` on that column), `reverse` and `reverse_slug` (resolve the inverse through `post_relations`), and `relation` (a closure that receives the query and parent model). Without `column`, `reverse`, or a custom closure, the relation resolves through the `post_relations` pivot using the field slug.
 
-**Type:** `relation` (not stored in database, uses relationship queries)
+Type: `relation`.
 
 ### HasOne
 
-One-to-one relationship selector.
+Extends `AdvancedSelect` with class properties `multiple = false`, `api = true`, and `searchable = true`. Its editor view is currently a placeholder that renders only the literal text "Has one" and does not render a working selector on the form. To pick a single related record on a form today, use `AdvancedSelect` with `multiple => false` instead.
 
 ```php
 [
     'name' => 'Profile',
     'slug' => 'profile',
     'type' => 'Aura\\Base\\Fields\\HasOne',
-    'resource' => 'App\\Resources\\Profile',
-    'searchable' => true,
+    'resource' => 'App\\Aura\\Resources\\Profile',
     'create' => true,
 ]
 ```
 
-**Features:**
-- Single relationship
-- Create inline
-- Advanced select features
-- Search functionality
+Options: those of `AdvancedSelect`, including the required `resource`, `create`, `return_type`, `polymorphic_relation`, and view slugs. `multiple` is fixed on the field class, although manually supplied field arrays should still set it to `false` for value normalization.
 
-**Extends:** AdvancedSelect field
+Type: `relation`.
 
 ### BelongsToMany
 
-Many-to-many relationship manager.
+Embedded many-to-many table field. It sets `type = relation` and `group = true` and scopes the target table to a relation on the parent record. The `resource` key is required by the embedded table view as the target model, but it does not choose or sync the parent's relation. Set the field slug to the parent's relation method, or set a string `relation` option with that method name. With a parent but no matching relation method it returns no rows. With no parent it leaves the target query unchanged.
 
 ```php
 [
     'name' => 'Categories',
     'slug' => 'categories',
     'type' => 'Aura\\Base\\Fields\\BelongsToMany',
-    'resource' => 'App\\Resources\\Category',
-    'pivot_table' => 'post_categories',
-    'display_field' => 'name',
+    'resource' => 'App\\Aura\\Resources\\Category',
+    // The parent record must expose a categories() many-to-many relation.
 ]
 ```
 
-**Features:**
-- Pivot table management
-- Multiple selection
-- Relationship sync
-- Custom pivot data
-
-**Type:** `relation` (uses pivot table)
+Type: `relation`.
 
 ### Tags
 
-Specialized tagging system with taxonomy support.
+Tagging field backed by a polymorphic relationship. The `resource` key is required. Selected tags are stored in the `post_relations` pivot, ordered by its `order` column, and rendered as badges.
 
 ```php
 [
-    'name' => 'Tags',
-    'slug' => 'tags',
+    'name' => 'Categories',
+    'slug' => 'categories',
     'type' => 'Aura\\Base\\Fields\\Tags',
-    'validation' => 'nullable|array',
-    'resource' => 'App\\Resources\\Tag',  // Required: Tag resource class
-    'create' => true,                     // Allow creating new tags (default: false)
-    'max_tags' => 10,                     // Maximum number of tags
+    'resource' => 'App\\Aura\\Resources\\Category',
+    'create' => true,
+    'max_tags' => 10,
 ]
 ```
 
-**Features:**
-- Tag creation on-the-fly when `create` is enabled
-- Auto-complete from existing tags
-- Morphable relationships via `post_relations` table
-- Badge display with primary color
-- Ordered tags via pivot `order` column
+Options: `resource` (required tag resource class), `create` (show the UI for adding tags and allow label creation when true; the Resource Editor writes false by default), and `max_tags` (a client-side Tagify limit). Existing IDs are checked through the related resource's scoped query. Text labels are created only when creation is allowed and the current user can create the target resource. Set `create => false` to reject new labels. Filter operators are `contains` and `does_not_contain`. This is a taxonomy field.
 
-**Database:** Uses polymorphic relationship (`morphToMany` via `post_relations` table)
+Type: `input` (relation-backed via `post_relations`).
 
-**Filter Options:**
-- contains / does_not_contain
+## Structure fields
 
-## Structure Fields
+Structure fields group other fields. They store no value of their own. Their child fields are what get stored.
 
-Fields for organizing form layout.
+> Structure fields do not take a `fields` key in the resource definition. Declare children as following siblings in the same flat `getFields()` array. The field pipeline reads the array in order and builds the tree from declaration order. A nested `fields` array is skipped by the pipeline, so its children do not receive runtime field instances.
+
+Use these rules to close or change the current nesting:
+
+- `'exclude_level' => N` moves the field up `N` levels. Use it to put a field after a Repeater or Group.
+- A global Tab with `'global' => true` resets the parent stack and groups global tabs under a `Tabs` wrapper.
+- `same_level_grouping => false` disables the same-level behavior of a `Panel` or `Tab` for that definition.
+
+If a Repeater or Group is the last field in its Tab or Panel, the end of the array closes it.
 
 ### Group
 
-Groups fields without repetition. Part of the **Structure Fields** category.
+Groups child fields under one visual block on the same form. Declare the child fields as the following siblings.
 
 ```php
 [
-    'name' => 'Contact Information',
+    'name' => 'Contact',
     'slug' => 'contact',
     'type' => 'Aura\\Base\\Fields\\Group',
-    'fields' => [
-        [
-            'name' => 'Email',
-            'slug' => 'email',
-            'type' => 'Aura\\Base\\Fields\\Email',
-        ],
-        [
-            'name' => 'Phone',
-            'slug' => 'phone',
-            'type' => 'Aura\\Base\\Fields\\Phone',
-        ],
-    ],
-]
+],
+['name' => 'Email', 'slug' => 'email', 'type' => 'Aura\\Base\\Fields\\Email'],
+['name' => 'Phone', 'slug' => 'phone', 'type' => 'Aura\\Base\\Fields\\Phone'],
+// The next field belongs to the group too. Add 'exclude_level' => 1 to it
+// (or start a new Panel/Tab) if it should sit outside the group instead.
 ```
 
-**Features:**
-- Visual grouping with `$group = true`
-- No data storage (groups child fields only)
-- Nested fields support
-- Type: `group`
+Type: `group`.
 
 ### Repeater
 
-Repeatable field groups. Part of the **Structure Fields** category.
+Repeatable set of child fields. Stored as JSON. The child fields are the following siblings, and their runtime slugs are prefixed with the repeater slug and row index.
 
 ```php
 [
-    'name' => 'FAQ Items',
+    'name' => 'FAQ',
     'slug' => 'faq',
     'type' => 'Aura\\Base\\Fields\\Repeater',
-    'validation' => 'array|min:1',
-    'min' => 0,               // Minimum entries (default: 0)
-    'max' => 10,              // Maximum entries (default: 0 = unlimited)
-    'fields' => [
-        [
-            'name' => 'Question',
-            'slug' => 'question',
-            'type' => 'Aura\\Base\\Fields\\Text',
-        ],
-        [
-            'name' => 'Answer',
-            'slug' => 'answer',
-            'type' => 'Aura\\Base\\Fields\\Textarea',
-        ],
-    ],
-]
+    'min' => 0,
+    'max' => 10,
+],
+['name' => 'Question', 'slug' => 'question', 'type' => 'Aura\\Base\\Fields\\Text'],
+['name' => 'Answer', 'slug' => 'answer', 'type' => 'Aura\\Base\\Fields\\Textarea'],
+// A field that should come AFTER the repeater, not inside it:
+['name' => 'Note', 'slug' => 'note', 'type' => 'Aura\\Base\\Fields\\Text', 'exclude_level' => 1],
 ```
 
-**Features:**
-- Add/remove items dynamically
-- Min/max entry constraints
-- Nested field support with automatic slug prefixing
-- JSON storage with automatic encoding/decoding
-- Groups child fields (`$group = true`)
+Options: `min` and `max` are written by the Resource Editor with a default of 0. The current repeater view does not enforce these values when adding rows.
 
-**Database:** JSON encoded array (`string` column type)
+Column type: `string` (holds JSON).
 
 ### Panel
 
-Collapsible content panel. Part of the **Structure Fields** category.
+Groups child fields into a panel. Panels use same-level grouping by default. The panel's fields are the following siblings.
 
 ```php
 [
-    'name' => 'Advanced Settings',
-    'slug' => 'advanced',
+    'name' => 'Sidebar',
+    'slug' => 'panel-sidebar',
     'type' => 'Aura\\Base\\Fields\\Panel',
-    'fields' => [
-        // Panel fields
-    ],
-]
+    'style' => ['width' => '30'],
+],
+['name' => 'Status', 'slug' => 'status', 'type' => 'Aura\\Base\\Fields\\Text'],
+// Fields keep flowing into this panel until the next Panel or Tab is declared.
 ```
 
-**Features:**
-- Groups child fields (`$group = true`)
-- Same-level grouping enabled (`$sameLevelGrouping = true`)
-- Cannot nest panels inside other panels
-- Type: `panel`
+Type: `panel`.
 
 ### Tab
 
-Individual tab within Tabs container. Part of the **Structure Fields** category.
+A single tab. Its fields are the following siblings. Mark the tab `'global' => true` (the common case) so consecutive tabs sit side by side; the pipeline wraps them in a `Tabs` container automatically.
 
 ```php
-[
-    'name' => 'Content',
-    'slug' => 'content_tab',
-    'type' => 'Aura\\Base\\Fields\\Tab',
-    'fields' => [
-        // Tab fields
-    ],
-]
+['name' => 'Content', 'slug' => 'tab-content', 'type' => 'Aura\\Base\\Fields\\Tab', 'global' => true],
+['name' => 'Body', 'slug' => 'body', 'type' => 'Aura\\Base\\Fields\\Wysiwyg'],
+
+['name' => 'Settings', 'slug' => 'tab-settings', 'type' => 'Aura\\Base\\Fields\\Tab', 'global' => true],
+['name' => 'Published', 'slug' => 'published', 'type' => 'Aura\\Base\\Fields\\Boolean'],
 ```
 
-**Features:**
-- Tab navigation
-- Active state
-- Conditional display
-
-**Must be wrapped in Tabs field**
+Type: `tab`.
 
 ### Tabs
 
-Container for tab fields. Part of the **Structure Fields** category.
+Container that groups `Tab` fields into a tabbed interface. You rarely declare `Tabs` yourself. Declaring consecutive `Tab` fields is enough because the pipeline wraps them.
 
-```php
-[
-    'type' => 'Aura\\Base\\Fields\\Tabs',
-    'fields' => [
-        [
-            'name' => 'General',
-            'type' => 'Aura\\Base\\Fields\\Tab',
-            'fields' => [...],
-        ],
-        [
-            'name' => 'Advanced',
-            'type' => 'Aura\\Base\\Fields\\Tab',
-            'fields' => [...],
-        ],
-    ],
-]
-```
+Type: `tabs`.
 
-**Features:**
-- Tab container
-- Auto-wraps tabs
-- Responsive design
-- State persistence
+## Layout fields
 
-## Layout Fields
-
-Non-data fields for visual organization.
+Layout fields render presentation only and store no value.
 
 ### Heading
 
-Section heading display. Part of the **Layout Fields** category.
+Section heading. It still needs a slug because all field definitions pass through the same definition validator.
 
 ```php
 [
     'name' => 'User Settings',
+    'slug' => 'user-settings-heading',
     'type' => 'Aura\\Base\\Fields\\Heading',
 ]
 ```
 
-**Features:**
-- Visual hierarchy
-- No data storage
-- No additional configuration needed
-
 ### HorizontalLine
 
-Visual separator line. Part of the **Layout Fields** category.
+Horizontal rule. It also needs a slug.
 
 ```php
 [
+    'slug' => 'content-divider',
     'type' => 'Aura\\Base\\Fields\\HorizontalLine',
 ]
 ```
 
-**Features:**
-- Visual separation
-- No configuration needed
-
 ### View
 
-Custom view rendering. Part of the **Layout Fields** category.
+Renders a Blade view you name.
 
 ```php
 [
-    'name' => 'Custom Content',
+    'name' => 'Custom Block',
+    'slug' => 'custom-block',
     'type' => 'Aura\\Base\\Fields\\View',
-    'view' => 'custom.field.view',
-    'data' => ['key' => 'value'],
+    'view' => 'custom.field-block',
 ]
 ```
 
-**Features:**
-- Custom Blade views
-- Pass data to view
-- Full control
+Options: `view` (the Blade view to include). The view receives the field and model; there is no separate `data` option.
+
+Type: `view`.
 
 ### ViewValue
 
-Display-only field value. Part of the **Layout Fields** category.
+Displays the stored value read-only, using the shared value view. Use it for a computed or system value that should appear on the form without an input.
 
 ```php
 [
     'name' => 'Created At',
-    'slug' => 'created_at',
+    'slug' => 'created_at_display',
     'type' => 'Aura\\Base\\Fields\\ViewValue',
 ]
 ```
 
-**Features:**
-- Read-only display
-- Formatted output
-- No editing
-
 ### LivewireComponent
 
-Embed Livewire component. Part of the **Layout Fields** category.
+Embeds a Livewire component.
 
 ```php
 [
     'name' => 'Custom Widget',
+    'slug' => 'custom-widget-field',
     'type' => 'Aura\\Base\\Fields\\LivewireComponent',
     'component' => 'custom-widget',
-    'params' => ['setting' => 'value'],
 ]
 ```
 
-**Features:**
-- Full Livewire component
-- Interactive features
-- Custom parameters
+Options: `component` (the component name). The component is passed the current `model` and `field`; there is no `params` option.
 
-## Special Fields
+Type: `livewire-component`.
 
-Utility and system fields.
+## Utility fields
 
 ### ID
 
-Auto-incrementing identifier.
+The primary key. Not shown on forms (`on_forms = false`).
 
 ```php
 [
@@ -1228,17 +859,11 @@ Auto-incrementing identifier.
 ]
 ```
 
-**Features:**
-- Auto-increment
-- Not shown on forms
-- Primary key
-- Read-only
-
-**Database:** `bigIncrements` column type
+Column type: `bigIncrements`, non-nullable.
 
 ### Hidden
 
-Hidden form input.
+Stores a value without rendering an input.
 
 ```php
 [
@@ -1249,161 +874,230 @@ Hidden form input.
 ]
 ```
 
-**Features:**
-- Not visible
-- Stores value
-- Default support
+Options: none beyond the shared options; `default` works as described in [Defaults](#defaults).
+
+Column type: `string`.
 
 ### Embed
 
-External content embedding.
+Renders an HTML `<embed>` for the current model's own `url` and `mime_type` attributes. It ignores the field's own slug and stored value entirely, so it only produces output on resources that expose those attributes (such as the built-in Attachment resource). It adds no field-specific options (no provider or URL configuration).
 
 ```php
 [
-    'name' => 'Video',
-    'slug' => 'video_embed',
+    'name' => 'Preview',
+    'slug' => 'preview',
     'type' => 'Aura\\Base\\Fields\\Embed',
-    'validation' => 'required|url',
 ]
 ```
 
-**Features:**
-- URL input
-- Preview display
-- Responsive embeds
-
-**Database:** `string` column type
+Column type: `string`.
 
 ### Json
 
-JSON data editor.
+Stores structured data. Arrays are JSON-encoded on save and decoded on read.
 
 ```php
 [
     'name' => 'Settings',
     'slug' => 'settings',
     'type' => 'Aura\\Base\\Fields\\Json',
-    'validation' => 'nullable|json',
-    'default' => '{}',
+    'validation' => 'nullable',
 ]
 ```
 
-**Features:**
-- JSON validation
-- Pretty formatting
-- Array/object support
+Options: `height` (editor height in pixels, default 300) plus the shared options. The class does not override the column type, so on custom tables it maps to `string`.
 
-**Database:** `text` column type
+Column type: `string`.
 
 ### Permissions
 
-Permission management field.
+Permission matrix used by the [Roles & Permissions](/docs/roles-permissions) system. Stored as JSON.
 
 ```php
 [
     'name' => 'Permissions',
     'slug' => 'permissions',
     'type' => 'Aura\\Base\\Fields\\Permissions',
-    'resource' => 'App\\Resources\\Permission',
+    'resource' => 'App\\Aura\\Resources\\Permission',
 ]
 ```
 
-**Features:**
-- Permission grid
-- Group by resource
-- Select all/none
-- Role integration
+Options: `resource`.
 
-**Database:** JSON encoded permissions
+Column type: `string` (holds JSON).
 
 ### Roles
 
-Role assignment with team support.
+Role assignment field, team-aware when [teams](/docs/teams) are enabled. Extends `AdvancedSelect` and syncs the user's roles on save. Primarily used on the built-in User resource.
 
 ```php
 [
     'name' => 'Roles',
     'slug' => 'roles',
     'type' => 'Aura\\Base\\Fields\\Roles',
-    'validation' => 'required|array',
+    'resource' => 'Aura\\Base\\Resources\\Role',
+    'multiple' => false,
 ]
 ```
 
-**Features:**
-- Team-aware roles
-- Multiple role assignment
-- Permission inheritance
-- Advanced select UI
+Type: `input`. The class inherits the base `input` type, reports itself as a relation via `isRelation()`, and syncs the user's `roles` relationship on save. The built-in User resource supplies the related Role resource and uses `multiple => false`.
 
-**Extends:** AdvancedSelect field
+### GlobalAdmin
 
-## Field Comparison Table
+Boolean field used by the built-in User resource for the instance-level `global_admin` flag. It inherits the Boolean field's input and display behavior. Its `saved()` hook only changes the real users-table column when the acting user is already allowed by the `AuraGlobalAdmin` gate. Other actors are ignored without changing the stored flag.
 
-| Field Type | Input | Storage | $type | $group | Filter |
-|------------|-------|---------|-------|--------|--------|
-| Text | ✓ | string | input | - | ✓ |
-| Textarea | ✓ | text | input | - | ✓ |
-| Number | ✓ | integer | input | - | ✓ |
-| Email | ✓ | string | input | - | ✓ |
-| Date | ✓ | date | input | - | ✓ |
-| Datetime | ✓ | timestamp | input | - | ✓ |
-| Time | ✓ | string | input | - | - |
-| Boolean | ✓ | string | input | - | - |
-| Select | ✓ | string | input | - | ✓ |
-| Radio | ✓ | string | input | - | - |
-| Checkbox | ✓ | string | input | - | - |
-| Status | ✓ | string | input | - | - |
-| Image | ✓ | string (JSON) | input | - | - |
-| File | ✓ | string (JSON) | input | - | - |
-| AdvancedSelect | ✓ | string (JSON) | input | - | ✓ |
-| Color | ✓ | string | input | - | - |
-| Code | ✓ | string | input | - | - |
-| Wysiwyg | ✓ | text | input | - | - |
-| BelongsTo | ✓ | bigInteger | input | - | - |
-| HasMany | - | - | relation | - | - |
-| HasOne | ✓ | - | input | - | - |
-| BelongsToMany | - | - | relation | - | - |
-| Tags | ✓ | - | input | - | ✓ |
-| Group | - | - | group | ✓ | - |
-| Repeater | ✓ | string (JSON) | input | ✓ | - |
-| Panel | - | - | panel | ✓ | - |
-| Tab | - | - | input | ✓ | - |
-| Tabs | - | - | input | ✓ | - |
-| Heading | - | - | input | - | - |
-| HorizontalLine | - | - | input | - | - |
-| View | - | - | input | - | - |
-| ViewValue | - | - | input | - | - |
-| LivewireComponent | - | - | input | - | - |
-| ID | - | bigIncrements | input | - | - |
-| Hidden | ✓ | string | input | - | - |
-| Embed | ✓ | string | input | - | - |
-| Json | ✓ | text | input | - | - |
-| Permissions | ✓ | string (JSON) | input | - | - |
-| Roles | ✓ | - | input | - | - |
+```php
+[
+    'name' => 'Global Admin',
+    'slug' => 'global_admin',
+    'type' => 'Aura\\Base\\Fields\\GlobalAdmin',
+    'default' => false,
+]
+```
 
-## Custom Fields
+Option group: Choice Fields. Column type: `string` in the inherited field metadata. The built-in User resource writes this value to its `global_admin` column through the guarded hook.
 
-Create your own field types by extending the base Field class:
+### UserTeams
+
+User-to-team field used by the built-in User resource when teams are enabled. It extends `BelongsToMany` for parent-aware table scoping and uses a dedicated Livewire membership editor on the User view page.
+
+```php
+[
+    'name' => 'Teams',
+    'slug' => 'teams',
+    'type' => 'Aura\\Base\\Fields\\UserTeams',
+    'resource' => 'Aura\\Base\\Resources\\Team',
+    'on_forms' => false,
+    'on_view' => true,
+]
+```
+
+Type: `relation`. The built-in definition hides this field when teams are disabled and only shows it on the User view page.
+
+## Field reference
+
+Column type applies only to [custom tables](/docs/custom-tables); on the shared meta store every scalar value lives in the meta `value` column. "Option group" is the heading a field appears under in the resource editor's field picker. A relation or layout field has no generated value column.
+
+| Field | `type` | `group` | Column type | Option group |
+|-------|--------|---------|-------------|--------------|
+| Text | input | no | string | Input Fields |
+| Textarea | input | no | text | Input Fields |
+| Number | input | no | integer | Input Fields |
+| Email | input | no | string | Input Fields |
+| Phone | input | no | string | Input Fields |
+| Password | input | no | string | Input Fields |
+| Slug | input | no | string | Input Fields |
+| Date | input | no | date | Input Fields |
+| Datetime | input | no | timestamp | Input Fields |
+| Time | input | no | string | Input Fields |
+| Boolean | input | no | string | Choice Fields |
+| GlobalAdmin | input | no | string | Choice Fields |
+| Select | input | no | string | Choice Fields |
+| Radio | input | no | string | Choice Fields |
+| Checkbox | input | no | string | Choice Fields |
+| Status | input | no | string | Choice Fields |
+| Image | input | no | string | Media Fields |
+| File | input | no | string | Media Fields |
+| AdvancedSelect | input | no | string or pivot | JS Fields |
+| Color | input | no | string | JS Fields |
+| Code | input | no | string | JS Fields |
+| Wysiwyg | input | no | text | JS Fields |
+| BelongsTo | input | no | bigInteger | Relationship Fields |
+| HasMany | relation | no | none | Relationship Fields |
+| HasOne | relation | no | none | Relationship Fields |
+| BelongsToMany | relation | yes | none | Relationship Fields |
+| Tags | input | no | string or pivot | Fields |
+| Group | group | yes | none | Structure Fields |
+| Repeater | input | yes | string | Structure Fields |
+| Panel | panel | yes | none | Structure Fields |
+| Tab | tab | yes | none | Structure Fields |
+| Tabs | tabs | yes | none | Fields |
+| Heading | input | no | none | Layout Fields |
+| HorizontalLine | input | no | none | Layout Fields |
+| View | view | no | none | Fields |
+| ViewValue | input | no | none | Fields |
+| LivewireComponent | livewire-component | no | none | Fields |
+| ID | input | no | bigIncrements | Fields |
+| Hidden | input | no | string | Fields |
+| Embed | input | no | string | Fields |
+| Json | input | no | string | Fields |
+| Permissions | input | no | string | Fields |
+| Roles | input | no | string or pivot | Fields |
+| UserTeams | relation | yes | none | Relationship Fields |
+
+## Field lifecycle and storage hooks
+
+When a resource is saved, Aura walks each field value and calls the field class's hooks. Only `display`, `get`, and `value` are defined on the base `Field` class; `set`, `saving`, `shouldSkip`, and `saved` are optional hooks that the save pipeline invokes only when your field class defines them (they are discovered with `method_exists`, so you implement just the ones you need):
+
+| Method | When it runs |
+|--------|--------------|
+| `set($post, $field, $value)` | Transforms the value before it is written. Return the value to store. |
+| `saving($post, $field, $value)` | Runs during the model's `saving` event; return a modified model to replace it. |
+| `shouldSkip($post, $field)` | Return true to skip writing this field entirely. |
+| `saved($post, $field, $value)` | Runs after the model is saved. Relationship fields use it to sync pivots. |
+| `get($class, $value, $field = null)` | Transforms the raw stored value when it is read back. |
+| `value($value)` | Casts the value for display/use (e.g. `Number` casts to int). |
+| `display($field, $value, $model)` | Returns the HTML shown on the table and view page. |
+
+You can also attach a per-field `set` closure in the field array, which runs before the field class's `set()`:
+
+```php
+[
+    'name' => 'Title',
+    'slug' => 'title',
+    'type' => 'Aura\\Base\\Fields\\Text',
+    'set' => fn ($post, $field, $value) => trim($value),
+]
+```
+
+## Custom fields
+
+Generate a field class with the Artisan command:
+
+```bash
+php artisan aura:field Rating
+```
+
+This creates `app/Aura/Fields/Rating.php` extending `Aura\Base\Fields\Field`, plus two Blade files under `resources/views/components/fields/`: the editor (`rating.blade.php`) and the display view (`rating-view.blade.php`). Fields in `app/Aura/Fields` are discovered and registered automatically. No manual registration is needed for that path.
+
+The generated class looks like this:
 
 ```php
 <?php
 
-namespace App\Fields;
+namespace App\Aura\Fields;
 
 use Aura\Base\Fields\Field;
 
-class RatingField extends Field
+class Rating extends Field
 {
-    // Views
-    public $edit = 'fields.rating-edit';
+    public $edit = 'fields.rating';
+
     public $view = 'fields.rating-view';
-    
-    // Properties
-    public $optionGroup = 'Custom Fields';
+
+    public function getFields()
+    {
+        return array_merge(parent::getFields(), [
+            // Configuration options for this field
+        ]);
+    }
+}
+```
+
+Add configuration options by returning field arrays from `getFields()` (they show up in the resource editor), and control storage and rendering with the lifecycle hooks above. For example, a rating field that casts to an integer and renders stars:
+
+```php
+class Rating extends Field
+{
+    public $edit = 'fields.rating';
+
+    public $view = 'fields.rating-view';
+
     public $tableColumnType = 'integer';
-    
-    // Configuration
-    public static function getFields(): array
+
+    public $optionGroup = 'Custom Fields';
+
+    public function getFields()
     {
         return array_merge(parent::getFields(), [
             [
@@ -1412,271 +1106,39 @@ class RatingField extends Field
                 'type' => 'Aura\\Base\\Fields\\Number',
                 'default' => 5,
             ],
-            [
-                'name' => 'Allow Half',
-                'slug' => 'allow_half',
-                'type' => 'Aura\\Base\\Fields\\Boolean',
-                'default' => false,
-            ],
         ]);
     }
-    
-    // Value handling
-    public function set($model, $field, $value)
+
+    public function set($post, $field, $value)
     {
         return (int) $value;
     }
-    
-    // Display
-    public function display($model, $field)
+
+    public function display($field, $value, $model)
     {
-        $value = $this->getValue($model, $field);
-        $stars = str_repeat('★', $value);
-        $empty = str_repeat('☆', $field['max_stars'] - $value);
-        
-        return $stars . $empty;
+        $max = $field['max_stars'] ?? 5;
+
+        return str_repeat('★', (int) $value) . str_repeat('☆', $max - (int) $value);
     }
 }
 ```
 
-### Registering Custom Fields
-
-Register your custom field in a service provider:
+If you register fields from a package or service provider rather than the `app/Aura/Fields` directory, add their class names with `registerFields()`:
 
 ```php
-public function boot()
-{
-    Aura::registerField('rating', RatingField::class);
-}
+use Aura\Base\Facades\Aura;
+
+Aura::registerFields([
+    \App\Aura\Fields\Rating::class,
+]);
 ```
 
-## Best Practices
+For a full walkthrough of the generated Blade files and editor wiring, see [Creating Fields](/docs/creating-fields).
 
-### 1. Field Selection
+## Related
 
-Choose the right field for your data:
-
-```php
-// ❌ Wrong: Using Text for email
-[
-    'type' => 'Aura\\Base\\Fields\\Text',
-    'validation' => 'email',
-]
-
-// ✅ Right: Using Email field
-[
-    'type' => 'Aura\\Base\\Fields\\Email',
-    'validation' => 'required|email:rfc,dns',
-]
-```
-
-### 2. Validation
-
-Always validate user input:
-
-```php
-// ❌ Insufficient validation
-[
-    'type' => 'Aura\\Base\\Fields\\Number',
-    'validation' => 'numeric',
-]
-
-// ✅ Comprehensive validation
-[
-    'type' => 'Aura\\Base\\Fields\\Number',
-    'validation' => 'required|numeric|min:0|max:100',
-]
-```
-
-### 3. Conditional Logic
-
-Use conditional logic to create dynamic forms:
-
-```php
-[
-    'name' => 'Shipping Address',
-    'slug' => 'shipping_address',
-    'type' => 'Aura\\Base\\Fields\\Textarea',
-    'conditional_logic' => [
-        [
-            'field' => 'needs_shipping',
-            'operator' => '=',
-            'value' => true,
-        ],
-    ],
-]
-```
-
-### 4. Field Organization
-
-Group related fields for better UX:
-
-```php
-[
-    'name' => 'SEO Settings',
-    'type' => 'Aura\\Base\\Fields\\Panel',
-    'fields' => [
-        ['name' => 'Meta Title', 'type' => 'Text'],
-        ['name' => 'Meta Description', 'type' => 'Textarea'],
-        ['name' => 'Meta Keywords', 'type' => 'Tags'],
-    ],
-]
-```
-
-### 5. Performance
-
-Consider performance implications:
-
-```php
-// ❌ Heavy relationship loading
-[
-    'type' => 'Aura\\Base\\Fields\\BelongsTo',
-    'resource' => 'User',
-    // Loads all users immediately
-]
-
-// ✅ Optimized with AJAX
-[
-    'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
-    'resource' => 'User',
-    'searchable' => true,
-    // Loads users on demand
-]
-```
-
-### 6. User Experience
-
-Provide helpful guidance:
-
-```php
-[
-    'name' => 'API Key',
-    'slug' => 'api_key',
-    'type' => 'Aura\\Base\\Fields\\Text',
-    'instructions' => 'Find your API key in Settings > Developer',
-    'placeholder' => 'sk_live_...',
-    'validation' => 'required|regex:/^sk_live_/',
-]
-```
-
-## Field Development Tips
-
-### 1. Custom Validation
-
-Add custom validation rules:
-
-```php
-public function validate($value, $field)
-{
-    if ($field['unique_per_user'] ?? false) {
-        $exists = Model::where('user_id', auth()->id())
-            ->where($field['slug'], $value)
-            ->exists();
-            
-        if ($exists) {
-            throw new ValidationException('This value already exists.');
-        }
-    }
-    
-    return parent::validate($value, $field);
-}
-```
-
-### 2. Dynamic Options
-
-Load options dynamically:
-
-```php
-public function options($field)
-{
-    if (isset($field['options_from'])) {
-        $method = $field['options_from'];
-        return $this->model->$method();
-    }
-    
-    return $field['options'] ?? [];
-}
-```
-
-### 3. Custom Storage
-
-Handle complex data storage:
-
-```php
-public function set($model, $field, $value)
-{
-    // Store as JSON
-    if ($field['store_as_json'] ?? false) {
-        return json_encode($value);
-    }
-    
-    // Store in pivot table
-    if ($field['use_pivot'] ?? false) {
-        $model->saved(function($model) use ($field, $value) {
-            $model->{$field['slug']}()->sync($value);
-        });
-        return null; // Don't store in model
-    }
-    
-    return $value;
-}
-```
-
-### 4. Enhanced Display
-
-Create rich displays:
-
-```php
-public function display($model, $field)
-{
-    $value = $this->getValue($model, $field);
-    
-    // Return HTML
-    if ($field['display_as_badge'] ?? false) {
-        $color = $field['badge_color'] ?? 'blue';
-        return "<span class=\"badge badge-{$color}\">{$value}</span>";
-    }
-    
-    // Return view
-    if ($field['custom_view'] ?? false) {
-        return view($field['custom_view'], [
-            'value' => $value,
-            'field' => $field,
-            'model' => $model,
-        ])->render();
-    }
-    
-    return $value;
-}
-```
-
-## Summary
-
-Aura CMS provides a comprehensive field system that handles virtually any data requirement:
-
-- **42 field types** out of the box
-- **Consistent API** across all fields
-- **Built-in validation** with Laravel rules
-- **Conditional logic** for dynamic forms
-- **Relationship handling** with Eloquent
-- **Media management** integration
-- **Livewire support** for reactivity
-- **Extensible architecture** for custom fields
-
-### Complete Field List
-
-| Category | Fields |
-|----------|--------|
-| **Input Fields** | Text, Textarea, Number, Email, Phone, Password, Slug, Date, Datetime, Time |
-| **Choice Fields** | Boolean, Select, Radio, Checkbox, Status |
-| **Media Fields** | Image, File |
-| **JS Fields** | AdvancedSelect, Color, Code, Wysiwyg |
-| **Relationship Fields** | BelongsTo, HasMany, HasOne, BelongsToMany |
-| **Structure Fields** | Group, Repeater, Panel, Tab, Tabs |
-| **Layout Fields** | Heading, HorizontalLine, View, ViewValue, LivewireComponent |
-| **Special Fields** | ID, Hidden, Tags, Embed, Json, Permissions, Roles |
-
-Whether you're building a simple blog or a complex enterprise application, Aura's field system provides the flexibility and power you need while maintaining a clean, intuitive API.
-
-
-For more information on using fields in resources, see the [Resources Documentation](resources.md) and [Creating Resources Guide](creating-resources.md).
+- [Resources](/docs/resources), declaring fields on a resource
+- [Meta Fields](/docs/meta-fields), how meta-backed values are stored
+- [Custom Tables](/docs/custom-tables), dedicated columns and `tableColumnType`
+- [Creating Fields](/docs/creating-fields), building a custom field end to end
+- [Media Library](/docs/media-manager), how Image and File uploads are handled

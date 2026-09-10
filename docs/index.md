@@ -1,82 +1,62 @@
-# Aura CMS Documentation
+# Aura CMS documentation
 
-Welcome to the comprehensive documentation for Aura CMS - a modern, flexible content management system built on Laravel's TALL stack.
+Documentation for Laravel developers using Aura CMS to define Resources, Fields, and admin workflows with the TALL stack.
 
-## 🚀 Getting Started
-- [Introduction](/introduction) - Overview of Aura CMS features and architecture
-- [Installation](/installation) - Step-by-step installation guide
-- [Configuration](/configuration) - Configure your Aura CMS instance
-- [Quick Start Guide](/quick-start) - Build your first application in 15 minutes
+These guides describe the current `main` branch. The public Composer release is `v1.0.0-beta.4`; follow [Installation](/installation) for release-specific setup.
 
-## 📦 Resources & Content Management
-- [Understanding Resources](/resources) - Core concepts and architecture
-- [Creating Resources](/creating-resources) - Build custom content types
-- [Resource Editor](/resource-editor) - Visual resource configuration
-- [Meta Fields](/meta-fields) - Flexible data storage
-- [Custom Tables](/custom-tables) - Performance optimization with custom tables
+## Getting started
 
-## 🎨 Fields System
-- [Introduction to Fields](/fields) - All 40+ field types explained
-- [Creating Fields](/creating-fields) - Build custom field types
+- [Introduction](/introduction) - Learn how Resources, Fields, storage, teams, and authorization fit together
+- [Installation](/installation) - Install Aura CMS and choose whether to enable teams
+- [Quick start](/quick-start) - Generate a Resource, add Fields, choose storage, and grant access
+- [Configuration](/configuration) - Configure paths, defaults, feature flags, and built-in Resources
 
-## 🎯 User Interface & Components
-- [Table Component](/table) - Advanced data tables with filtering and sorting
-- [Livewire Components](/livewire-components) - Dynamic UI components
-- [Media Manager](/media-manager) - File and image management
-- [Global Search](/global-search) - Instant search across resources
-- [Notifications](/notifications) - Real-time user notifications
+## Core concepts
 
-## 🛡️ Security & Access Control
-- [Authentication](/authentication) - User authentication and 2FA
-- [Roles and Permissions](/roles-permissions) - Fine-grained access control
-- [Teams](/teams) - Multi-tenancy support
-- [Settings](/settings) - System and user settings
+- [Resources](/resources) - Define Resource classes, Fields, storage, navigation, and admin pages
+- [Fields](/fields) - Configure built-in Field types, visibility, defaults, validation, and storage
+- [Meta fields](/meta-fields) - Store and query fields in the shared `meta` table
+- [Custom tables](/custom-tables) - Move a Resource to dedicated columns and manage its schema
+- [Resource editor](/resource-editor) - Edit Resource fields in the local-development browser editor
 
-## 🎨 Customization & Extension
-- [Themes](/themes) - Create and customize themes
-- [Customizing Views](/customizing-views) - Override default views
-- [Widgets](/widgets) - Dashboard widgets and analytics
-- [Plugins](/plugins) - Extend functionality with plugins
+## Building
 
-## 🔌 API & Integration
-- [API Integration Guide](/api-reference) - Build application-specific endpoints around Aura resources
+- [Creating resources](/creating-resources) - Generate and register Resources, define Fields, and customize behavior
+- [Creating fields](/creating-fields) - Build custom Field classes, lifecycle hooks, and Blade views
+- [Table](/table) - Configure columns, search, filters, sorting, and actions
+- [Widgets](/widgets) - Add metrics and charts to Resource index pages
+- [Recipes](/recipes) - Copy resource patterns for blogs, tags, custom tables, and attachments
 
-## 🚀 Developer Resources
-- [Testing Guide](/testing) - Write tests for your Aura applications
-- [Performance Optimization](/performance) - Caching, optimization, and scaling
-- [Troubleshooting & FAQ](/troubleshooting) - Common issues and solutions
-- [Best Practices & Patterns](/best-practices) - Code standards and design patterns
+## UI components
 
-## 📚 Additional Resources
-- [Changelog](https://github.com/eminiarts/aura-cms/blob/main/CHANGELOG.md) - Version history and updates
-- [Contributing](https://github.com/eminiarts/aura-cms/blob/main/CONTRIBUTING.md) - How to contribute to Aura CMS
-- [Community](https://discord.gg/aura-cms) - Discord community and support
-- [License](https://github.com/eminiarts/aura-cms/blob/main/LICENSE) - MIT License
+- [Livewire components](/livewire-components) - Use Aura's registered admin, modal, table, and media components
+- [Media library](/media-manager) - Manage attachments, uploads, media picking, metadata, and thumbnails
+- [Global search](/global-search) - Configure keyboard search across permitted Resources and Fields
+- [Notifications](/notifications) - Use toast messages and Laravel database notifications, with host channels when needed
 
-## 🎯 Quick Links
+## Users and access
 
-### For Beginners
-1. Start with the [Introduction](/introduction)
-2. Follow the [Installation](/installation) guide
-3. Complete the [Quick Start](/quick-start) tutorial
+- [Authentication](/authentication) - Configure users, registration, invitations, password flows, and two-factor authentication
+- [Roles and permissions](/roles-permissions) - Define role catalogs, team roles, Resource permissions, and policies
+- [Teams](/teams) - Configure teams, membership, switching, and TeamScope behavior
+- [Settings](/settings) - Configure global and team settings in the admin panel
+- [Profile](/profile) - Customize profile fields, password and two-factor settings, and account deletion
 
-### For Developers
-1. Explore [Resources](/resources) and [Fields](/fields)
-2. Learn about [Livewire Components](/livewire-components)
-3. Read [Best Practices](/best-practices)
+## Customization
 
-### For Production
-1. Review [Performance Optimization](/performance)
-2. Set up [Authentication](/authentication) and [Permissions](/roles-permissions)
-3. Check [Troubleshooting](/troubleshooting) for common issues
+- [Themes](/themes) - Configure palettes, semantic colors, fonts, dark mode, and assets
+- [Customizing views](/customizing-views) - Override package views, table views, components, and layouts
+- [Record layouts](/record-layouts) - Add plugin and Resource panels to record pages
+- [Preferences](/preferences) - Define typed values with user, team, and instance-wide scopes
+- [Plugins](/plugins) - Package Resources, Fields, Widgets, routes, and views for reuse
+- [Hooks and events](/hooks-events) - Register navigation, view, Resource, Field, and Livewire extension hooks
 
----
+## Advanced
 
-<div align="center">
-  <p>Built with ❤️ by the Aura CMS team</p>
-  <p>
-    <a href="https://github.com/eminiarts/aura-cms">GitHub</a> •
-    <a href="https://discord.gg/aura-cms">Discord</a> •
-    <a href="https://twitter.com/auracms">Twitter</a>
-  </p>
-</div>
+- [API reference](/api-reference) - Reference the Aura facade, Resource and Field contracts, and host API patterns
+- [Frontend integration](/frontend-integration) - Query Resource data in Blade or a host API and resolve Field values
+- [Performance](/performance) - Measure requests and tune storage, caching, queries, media, and widgets
+- [Testing](/testing) - Test Resources, Fields, permissions, Livewire components, and browser flows
+- [Migration](/migration) - Upgrade releases and move Resource data between storage models
+- [Troubleshooting](/troubleshooting) - Diagnose asset, navigation, storage, team, permission, validation, and media issues
+- [Best practices](/best-practices) - Apply conventions for Resources, Fields, storage, authorization, and testing

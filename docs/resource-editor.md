@@ -1,204 +1,106 @@
-# Resource Editor
+# Resource editor
 
-The Resource Editor allows developers to create, modify, and manage resources directly from the CMS interface. It provides an intuitive UI for editing resource fields, configuring properties, and defining relationships without manually altering code files.
+The Resource Editor is a local development tool for changing an App resource from the Aura admin UI. It edits the PHP class on disk. Adding, editing, reordering, duplicating, or deleting a field rewrites the array returned by `getFields()`. The top Save action also writes the resource's editable navigation properties.
 
----
+Review the working-tree diff after every change. The Delete action removes the resource class file. Keep the resource under version control before opening the editor.
 
-## Table of Contents
+![Resource editor overview](/images/docs/resource-editor/resource-editor-overview.png)
 
-- [Introduction](#introduction)
-- [Enabling the Resource Editor](#enabling-the-resource-editor)
-- [Accessing the Resource Editor](#accessing-the-resource-editor)
-- [Features and Capabilities](#features-and-capabilities)
-  - [Field Management](#field-management)
-  - [Conditional Logic](#conditional-logic)
-  - [Templates](#templates)
-  - [Resource Properties](#resource-properties)
-  - [Actions and Utilities](#actions-and-utilities)
-- [Using the Resource Editor](#using-the-resource-editor)
-  - [Creating a New Resource](#creating-a-new-resource)
-  - [Creating a New Field](#creating-a-new-field)
-  - [Editing Existing Fields](#editing-existing-fields)
-  - [Reordering Fields](#reordering-fields)
-  - [Deleting Fields](#deleting-fields)
-  - [Adding Conditional Logic](#adding-conditional-logic)
-  - [Applying Templates](#applying-templates)
-- [Field Properties](#field-properties)
-- [Best Practices](#best-practices)
-- [Limitations and Considerations](#limitations-and-considerations)
+## Access requirements
 
----
+The editor is available only when all of these conditions hold:
 
-## Introduction
+- The application environment is `local` or `testing`.
+- `aura.features.resource_editor` is true. The default is true when `app.env` is `local` and false otherwise.
+- The authenticated user is Aura's `User` model and `isSuperAdmin()` returns true.
+- The resource class name starts with `App`.
 
-The Resource Editor is a Livewire component (`Aura\Base\Livewire\ResourceEditor`) that provides a graphical interface for defining and editing resources. It abstracts the underlying code structure, allowing developers to focus on the resource's configuration rather than its implementation details.
+The editor has no separate policy check. The route middleware and the Livewire component enforce the environment, feature, and super-admin checks. A disabled feature or a non-local environment returns `404`. A non-super-admin user returns `403`.
 
-Key components:
-- **ResourceEditor** (`src/Livewire/ResourceEditor.php`) - Main editor interface
-- **CreateResource** (`src/Livewire/CreateResource.php`) - Modal for creating new resources
-- **EditResourceField** (`src/Livewire/EditResourceField.php`) - Slide-over panel for editing field properties
+The resource check is based on the class name, not the file path. Built-in Aura resources and resources provided by packages are treated as vendor resources and cannot be edited. An application class under the `App` prefix is eligible even when its file is discovered through a customised path.
 
----
+The route is:
 
-## Enabling the Resource Editor
-
-The Resource Editor is controlled by the `resource_editor` feature flag in your configuration. By default, it is **only enabled in local environments**.
-
-```php
-// config/aura.php
-'features' => [
-    'resource_editor' => config('app.env') == 'local' ? true : false,
-    // ...
-],
+```text
+/{aura.path}/resources/{slug}/editor
 ```
 
-The editor cannot be enabled outside the `local` environment. Both the route and Livewire component enforce that boundary even if a deployed configuration mistakenly sets the feature flag to `true`.
+`aura.path` defaults to `admin`, so the usual URL is `/admin/resources/{slug}/editor`. The route name is `aura.resource.editor`. The default `aura-admin` middleware group is `['web', 'auth']`; applications can customise that group in `config/aura-settings.php`.
 
-The editor rewrites PHP resource classes and can delete resource files. Keep the affected source files under version control and review the generated diff before committing it.
+Creating a new resource uses the Create Resource action. That Livewire component also requires a super admin and rejects the `production` environment. The resulting editor page still requires `local` or `testing`, so use the create flow in a local development environment.
 
----
+## Prepare the resource
 
-## Accessing the Resource Editor
-
-To access the Resource Editor:
-
-1. Navigate to the Aura CMS dashboard.
-2. In the sidebar, locate the resource you wish to edit.
-3. Click on the "Edit Resource" option next to the resource.
-
-Alternatively, navigate directly to: `/admin/resources/{slug}/editor`
-
-**Requirements:**
-- The Resource Editor feature must be enabled
-- Resources must be defined in the `App` namespace (vendor resources cannot be edited)
-- Creating new resources requires **super admin** privileges
-
----
-
-## Features and Capabilities
-
-### Field Management
-
-- **Add Fields**: Create new fields of various types, including custom fields
-- **Edit Fields**: Modify existing fields' properties via a slide-over panel
-- **Reorder Fields**: Drag and drop fields to rearrange their order within the resource
-- **Duplicate Fields**: Quickly create copies of existing fields with auto-generated slugs
-- **Delete Fields**: Remove fields that are no longer needed
-
-### Conditional Logic
-
-- **Define Conditions**: Set up rules to show or hide fields based on the values of other fields
-- **Add Condition Groups**: Group multiple conditions together for complex logic (AND/OR)
-- **Flexible Operators**: Use operators for comparisons:
-  - `==` - Equal to
-  - `!=` - Not equal to
-  - `>` - Greater than
-  - `<` - Less than
-  - `>=` - Greater than or equal to
-  - `<=` - Less than or equal to
-- **Role-Based Conditions**: Show/hide fields based on user roles
-
-### Templates
-
-Aura CMS includes built-in templates to quickly scaffold field structures:
-
-| Template | Description |
-|----------|-------------|
-| `Plain` | Simple layout without tabs or panels, just a text field |
-| `Tabs` | Uses global tabs to group fields into separate sections |
-| `TabsWithPanels` | Combines tabs with panels for complex content structures |
-| `PanelWithSidebar` | Two-column layout with 70/30 split (main content + sidebar) |
-
-Templates are located in `src/Templates/` and provide predefined field configurations.
-
-### Resource Properties
-
-The Resource Editor allows you to configure:
-
-| Property | Description |
-|----------|-------------|
-| **Type** | The resource type name (e.g., `Post`, `Page`) - read-only |
-| **Slug** | The unique URL identifier for the resource - read-only |
-| **Icon** | SVG icon or icon class to represent the resource in navigation |
-| **Group** | Organize resources into navigation groups |
-| **Dropdown** | Configure dropdown menus for resource navigation |
-| **Sort** | Numeric value for ordering resources in navigation |
-
-### Actions and Utilities
-
-- **Generate Migration**: Automatically generate database migration files for custom tables. This also sets `$customTable = true` and configures the `$table` property on the resource class.
-- **Delete Resource**: Permanently remove a resource by deleting its PHP class file.
-- **Save**: Persist all field and property changes to the resource class file.
-
----
-
-## Using the Resource Editor
-
-### Creating a New Resource
-
-To create a new resource:
-
-1. Use the global "Create Resource" action in the dashboard
-2. Enter the resource name (singular form, e.g., "Post", "Product")
-3. The system generates a new resource class in `app/Aura/Resources/`
-
-**Requirements:**
-- Super admin privileges
-- Non-production environment (this action is disabled in production)
+The editor can rewrite only a literal field array. Keep `getFields()` in this shape:
 
 ```php
-// The CreateResource component enforces these requirements
-abort_if(app()->environment('production'), 403);
-abort_unless(auth()->user()->isSuperAdmin(), 403);
+<?php
+
+namespace App\Aura\Resources;
+
+use Aura\Base\Resource;
+
+class Product extends Resource
+{
+    public static string $type = 'Product';
+
+    public static ?string $slug = 'product';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Name',
+                'slug' => 'name',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => 'required|max:255',
+            ],
+        ];
+    }
+}
 ```
 
-### Creating a New Field
+Do not build this array with a helper, a conditional branch, or a closure if you want to edit it in the UI. `SaveFields::saveFields()` looks for a `return [ ... ];` statement inside `getFields()`. If it cannot find the method or return statement, it shows a notification and does not rewrite the file. It still dispatches the `SaveFields` event, so inspect the file and any schema output after a failed save.
 
-1. Click the **"+ Add Field"** button below the last field
-2. Choose the field type from the dropdown list
-3. A slide-over panel opens with field configuration options
-4. Fill in the required properties:
-   - **Name**: The display label for the field
-   - **Slug**: The unique identifier (auto-generated from name, can be customized)
-   - **Type**: The field class (e.g., `Aura\Base\Fields\Text`)
-   - **Validation**: Laravel validation rules
-5. Configure additional options based on field type
-6. Click **Save**
+The editor also refuses to mount when any field definition contains a closure. Maintain those resources in PHP instead.
 
-### Editing Existing Fields
+## Edit fields
 
-1. Click on any field in the editor to open the slide-over panel
-2. Modify the desired properties
-3. Click **Save** to persist changes
+Open the editor from the resource index or visit the route directly. The field controls work as follows:
 
-Changes are written directly to the resource's PHP class file.
+| Action | Result |
+| --- | --- |
+| Add field | Opens the field slide-over after the selected field. New fields start with the type supplied by the add control, or `Aura\\Base\\Fields\\Text` when no type is supplied. |
+| Edit field | Opens the same slide-over for the selected field. |
+| Duplicate | Copies the field after the original, adds a random four-character suffix to its slug, and appends ` Copy` to its name. |
+| Reorder | Drag the handle. The new order is written when the drop completes. |
+| Delete | Removes the field from the PHP array immediately. |
 
-### Reordering Fields
+Field actions save the field array as soon as the action runs. The top Save button saves the current field array and the editable resource properties. It does not defer field changes until the top button.
 
-- Use the **drag handle** (left side of each field) to drag and drop
-- The new order is automatically saved when you drop the field
-- Fields maintain their wrapper/parent relationships during reordering
+New fields receive these initial values before the field-specific editor adds its own options:
 
-### Deleting Fields
+| Key | Initial value |
+| --- | --- |
+| `type` | `Aura\\Base\\Fields\\Text` when no type is supplied |
+| `slug` | An empty string until the editor derives or validates one |
+| `name` | An empty string |
+| `validation` | An empty string |
+| `on_index` | `true` |
+| `on_forms` | `true` |
+| `on_view` | `true` |
+| `searchable` | `false` |
+| `conditional_logic` | An empty string |
 
-1. Click on the field to open the slide-over panel
-2. Click the **Delete** button (red, top-right of the panel)
-3. The field is immediately removed
+The field editor applies the selected field class's own validation rules as well. Slugs must start with a letter or number, contain only letters, numbers, `_`, or `-`, and cannot contain only numbers. Keep slugs unique within the resource. `id` and `type` are real resource columns and should not be used as field slugs. The current field editor does not reliably reject those reserved names.
 
-**Warning**: Deleting a field removes it from the resource definition. Any data stored in that field remains in the database but becomes inaccessible.
+Deleting a definition does not perform a data migration. In the default shared `posts` and `meta` storage, old values remain until the application removes them, but the field no longer reads them. A custom-table schema listener can generate or apply a column drop. Review the generated migration before applying it.
 
-### Adding Conditional Logic
+## Conditional logic
 
-1. Click on a field to open the slide-over panel
-2. Locate the **Conditional Logic** section
-3. Add a condition with:
-   - **Field**: The slug of the field to check
-   - **Operator**: The comparison operator (`==`, `!=`, `>`, `<`, `>=`, `<=`)
-   - **Value**: The value to compare against
-4. Add multiple conditions for AND logic
-5. Create condition groups for OR logic
+Conditional logic is a flat list. Aura evaluates every rule and hides the field when the first rule fails, so multiple rules are combined with AND. The evaluator does not implement OR groups even though the component contains methods for editing grouped data.
 
-**Example**: Show "Company Name" only when "Employment Status" equals "employed":
+Use a field slug, one of the supported operators, and a comparison value:
 
 ```php
 'conditional_logic' => [
@@ -210,72 +112,89 @@ Changes are written directly to the resource's PHP class file.
 ],
 ```
 
-You can also use role-based conditions:
+The supported operators are `==`, `!=`, `>`, `>=`, `<`, and `<=`. Set `field` to `role` to compare the current user's role slug. Role conditions support only `==` and `!=`, and super admins pass role conditions automatically:
 
 ```php
 'conditional_logic' => [
     [
         'field' => 'role',
         'operator' => '==',
-        'value' => 'super_admin',
+        'value' => 'editor',
     ],
 ],
 ```
 
-### Applying Templates
+## Templates and presets
 
-When starting with an empty resource, template options appear:
+An empty resource offers three templates:
 
-1. **Plain** - Simple layout with a single text field
-2. **Tabs** - Tabbed interface for organizing fields
-3. **Tabs and Panels** - Complex layout with tabs containing panels
+- `Plain` adds a text field.
+- `Tabs` adds global tabs and text fields.
+- `TabsWithPanels` adds global tabs, panels, and text fields.
 
-For existing resources with fields:
-1. Click **"+ Add Field"** at any position
-2. Select from preset options like "Panel with Sidebar (70/30)" or "Simple Panel with Text"
+When a global tab has no fields, it offers `PanelWithSidebar` and `Plain` as presets. These presets are inserted after that tab. The preset insertion path adds a random suffix to each slug. The empty-resource template path keeps the template slugs unchanged, so review for collisions when using it on a resource that already has definitions.
 
-Templates insert predefined field structures with auto-generated slugs to prevent conflicts.
+`PanelWithTabs` exists in `src/Templates/` but the Resource Editor does not currently show it.
 
----
+## Resource properties
 
-## Field Properties
+The editor displays the resource type and slug as read-only values. The top Save action can write the following properties when the class uses the conventional declarations or `getIcon()` method that `saveProps()` expects:
 
-When editing a field, the following properties are available (varies by field type):
+| Property | Effect |
+| --- | --- |
+| `icon` | Stores the icon returned by `getIcon()`. Aura renders the value as HTML, commonly an inline SVG. There is no icon-class resolver. |
+| `group` | Sets the navigation group. |
+| `dropdown` | Sets the navigation dropdown value. |
+| `sort` | Sets the integer navigation order. |
 
-| Property | Description |
-|----------|-------------|
-| `name` | Display label for the field |
-| `slug` | Unique identifier (used in code and database) |
-| `type` | The field class (e.g., `Aura\Base\Fields\Text`) |
-| `validation` | Laravel validation rules (e.g., `required|max:255`) |
-| `instructions` | Help text displayed below the field |
-| `on_index` | Show this field in table/index views (default: `true`) |
-| `on_forms` | Show this field in create/edit forms (default: `true`) |
-| `on_view` | Show this field in detail views (default: `true`) |
-| `searchable` | Include this field in search queries (default: `false`) |
-| `conditional_logic` | Rules for showing/hiding the field |
-| `style.width` | Field width as percentage (e.g., `50` for 50%) |
+The type and slug remain class identity values. Change them in the resource class when the editor's read-only controls are not sufficient, then review every route and registration that depends on the slug.
 
----
+## Schema listeners
 
-## Best Practices
+Changing a field definition normally changes only the PHP class. The `custom_tables_for_resources` feature controls optional listeners for the `SaveFields` event emitted by the editor:
 
-- **Unique Slugs**: Ensure each field slug is unique within the resource. The editor validates this automatically.
-- **Validation Rules**: Use Laravel's validation rules to maintain data integrity. Common rules include `required`, `max:255`, `email`, `numeric`.
-- **Reserved Words**: The slugs `id` and `type` are reserved and cannot be used.
-- **Slug Format**: Slugs must start with a letter, contain only alphanumeric characters, hyphens, and underscores.
-- **Organize with Tabs and Panels**: Use structural fields (Tab, Panel) to create logical groupings for complex resources.
-- **Backup Before Deletion**: The Resource Editor modifies PHP files directly. Use version control to track changes.
-- **Use Global Tabs Sparingly**: Global tabs affect the entire form layout. Use them for major sections.
+```php
+// config/aura.php
+'features' => [
+    'custom_tables_for_resources' => false,
+],
+```
 
----
+The listener returns without changing a schema when the resource has the base `$customTable = false` setting. Custom-table storage and the `$usesMeta` flag are separate decisions. Read [Custom tables](/docs/custom-tables) before enabling a listener.
 
-## Limitations and Considerations
+| Value | Listener behavior |
+| --- | --- |
+| `false` | No schema listener runs. The editor rewrites the PHP file only. |
+| `true` or `'single'` | `ModifyDatabaseMigration` rewrites the `create_{table}_table` migration and invokes `aura:schema-update` with column dropping enabled. It compares column names and does not change the type of an existing column. |
+| `'multiple'` | `CreateDatabaseMigration` writes an `update_{table}_table_TIMESTAMP` migration for changed fields and attempts to run `migrate`. The generated migration can contain additions, renames, type changes, and drops. |
 
-- **Vendor Resources**: Resources provided by third-party packages (in the `vendor/` directory) cannot be edited through the Resource Editor.
-- **Fields with Closures**: If a resource's `getFields()` method uses closures for dynamic field definitions, the Resource Editor cannot process them. You'll see an error: "Your fields have closures. You can not use the Resource Builder with Closures."
-- **Environment Boundary**: The Resource Editor route and component are unavailable outside the `local` environment.
-- **File Modifications**: The editor writes directly to PHP class files. Ensure proper file permissions and use version control.
-- **Migration Generation**: When generating migrations for custom tables, review the generated migration file before running it. The editor automatically sets `$customTable = true` on your resource class.
+The single mode treats the regenerated create migration as the full desired schema. The multiple mode records each field change in a new update migration. Neither mode is a substitute for a reviewed application migration when a change needs data conversion, a production rollout, or a constraint that the field class does not describe.
 
----
+The Generate Migration action is separate from these listeners. It changes the resource class to set `public static $customTable = true;` and a protected `$table` based on the resource's plural name, then calls `aura:create-resource-migration`. Review the generated file and run the migration yourself. The action does not copy existing posts or meta rows into the custom table.
+
+### Single-mode parser limits
+
+`aura:schema-update` accepts simple column declarations with single- or double-quoted names. Hyphenated field names are supported. It stops before changing the table when declarations contain unsupported arguments or cannot be parsed safely. It does not alter existing column types. The listener includes `team_id` only when teams are enabled.
+
+A failed schema sync reports an error and restores the resource definition and previous migration file. If the listener created a new migration, it removes that file. The editor does not report a successful save after that failure.
+
+The editor rewrites a `getFields(): array` method that returns an array literal. If it cannot rewrite the method, it stops before dispatching schema changes. Use code for dynamic field definitions.
+
+Review the generated migration and command result. Use an application migration for constraints, conversions, or other changes outside this parser's supported declarations.
+
+## Practical workflow
+
+1. Commit or otherwise save the resource class before opening the editor.
+2. Enable `aura.features.resource_editor` in a local environment if it is disabled.
+3. Open `/admin/resources/{slug}/editor`, or use the configured `aura.path`.
+4. Add or edit fields, then save each field. Use the top Save button for icon, group, dropdown, or sort changes.
+5. Review the PHP diff immediately. Check slugs, field classes, nested panel or tab structure, and conditional rules.
+6. If the resource uses a custom table and a schema listener is enabled, inspect the migration and the command output before keeping the database change.
+7. Run the focused resource-editor and storage tests for the application. The editor does not convert existing data when you change a field definition.
+
+## Related guides
+
+- [Fields](/docs/fields) lists field classes and their options.
+- [Creating resources](/docs/creating-resources) covers the `aura:resource` command and resource layout.
+- [Custom tables](/docs/custom-tables) explains storage flags, migrations, and posts-to-custom transfer.
+- [Meta fields](/docs/meta-fields) explains the shared key/value storage.

@@ -1,1739 +1,668 @@
-# Best Practices & Patterns
+# Best practices
 
-This guide covers coding standards, design patterns, security best practices, and scalability patterns for developing with Aura CMS.
+This guide collects conventions that are specific to Aura CMS. It assumes that
+you already know Laravel and Eloquent. Use the linked pages for complete field,
+Resource, table, team, and storage references.
 
-## Table of Contents
+<a id="coding-standards"></a>
+## Keep Resource definitions explicit
 
-1. [Coding Standards](#coding-standards)
-2. [Design Patterns](#design-patterns)
-3. [Resource Development](#resource-development)
-4. [Field Development](#field-development)
-5. [Livewire Components](#livewire-components)
-6. [Database Design](#database-design)
-7. [Security Best Practices](#security-best-practices)
-8. [Performance Patterns](#performance-patterns)
-9. [Code Organization](#code-organization)
-10. [Testing Practices](#testing-practices)
-11. [Scalability Patterns](#scalability-patterns)
-12. [Common Patterns](#common-patterns)
-13. [Common Gotchas](#common-gotchas)
-14. [Pro Tips](#pro-tips)
+An Aura Resource is an Eloquent record class with a static definition. Extend
+<code>Aura\Base\Resource</code> and keep application Resources under the path
+configured in <code>config/aura-settings.php</code>:
 
-## Coding Standards
+~~~bash
+php artisan aura:resource Product
+~~~
 
-### PHP Standards
+The generated class is placed in <code>app/Aura/Resources</code> with the
+default <code>App\Aura\Resources</code> namespace:
 
-Aura CMS follows Laravel's coding standards with PSR-12 compliance:
-
-```php
+~~~php
 <?php
 
 namespace App\Aura\Resources;
 
 use Aura\Base\Resource;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Product extends Resource
 {
-    // 1. Use traits first
-    use HasFactory;
-    
-    // 2. Public constants
-    public const STATUS_ACTIVE = 'active';
-    public const STATUS_INACTIVE = 'inactive';
-    
-    // 3. Protected/private constants (alphabetically within group)
-    protected const CACHE_TTL = 3600;
-    
-    // 4. Public properties (static, then instance)
-    public static $customTable = true;
-    
-    public static ?string $slug = 'product';
-    
     public static string $type = 'Product';
-    
-    // 5. Protected properties
-    protected static ?string $group = 'Shop';
-    
-    protected static array $searchable = ['name', 'description'];
-    
-    protected $fillable = ['name', 'price', 'status'];
-    
-    protected $table = 'products';
-    
-    // 6. Private properties
-    private array $cache = [];
-    
-    // 7. Constructor
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-    }
-    
-    // 8. Magic methods (__get, __set, __call, etc.)
-    
-    // 9. Public methods (alphabetically sorted by Pint)
-    public static function getFields(): array
-    {
-        return [
-            // Field definitions using array syntax
-        ];
-    }
-    
-    public function getIcon()
-    {
-        return '<svg>...</svg>';
-    }
-    
-    public function title()
-    {
-        return $this->name ?? '';
-    }
-    
-    // 10. Protected methods (alphabetically)
-    protected function calculatePrice(): float
-    {
-        return $this->base_price * (1 + $this->tax_rate);
-    }
-    
-    // 11. Private methods (alphabetically)
-    private function clearCache(): void
-    {
-        $this->cache = [];
-    }
-}
-```
 
-> **Note**: Pint automatically sorts methods alphabetically within each visibility group. Run `composer format` to apply formatting.
-
-### Laravel Pint Configuration
-
-Aura CMS uses Laravel Pint for code formatting:
-
-```json
-{
-    "preset": "laravel",
-    "exclude": ["build"],
-    "rules": {
-        "simplified_null_return": true,
-        "ordered_class_elements": {
-            "order": [
-                "use_trait",
-                "constant_public",
-                "constant_protected",
-                "constant_private",
-                "property_public",
-                "property_protected",
-                "property_private",
-                "construct",
-                "destruct",
-                "magic",
-                "phpunit",
-                "method_public",
-                "method_protected",
-                "method_private"
-            ],
-            "sort_algorithm": "alpha"
-        }
-    }
-}
-```
-
-Run formatting:
-```bash
-./vendor/bin/pint
-./vendor/bin/pint --test # Check without fixing
-```
-
-### Naming Conventions
-
-```php
-// Classes - PascalCase
-class ProductResource extends Resource
-
-// Methods - camelCase
-public function getActiveProducts()
-
-// Variables - camelCase
-$productCount = Product::count();
-
-// Constants - UPPER_SNAKE_CASE
-const MAX_UPLOAD_SIZE = 10240;
-
-// Database columns - snake_case
-$table->string('product_name');
-
-// Routes - kebab-case
-Route::get('/product-categories', [ProductController::class, 'categories']);
-
-// Blade files - kebab-case
-resources/views/products/create-form.blade.php
-```
-
-## Design Patterns
-
-### Repository Pattern (Optional)
-
-While Aura CMS uses Eloquent directly, you can implement repositories for complex business logic:
-
-```php
-// app/Repositories/ProductRepository.php
-namespace App\Repositories;
-
-use App\Models\Product;
-use Illuminate\Support\Collection;
-
-class ProductRepository
-{
-    public function __construct(
-        private Product $model
-    ) {}
-    
-    public function findActive(): Collection
-    {
-        return $this->model
-            ->where('status', Product::STATUS_ACTIVE)
-            ->with(['category', 'tags'])
-            ->orderBy('name')
-            ->get();
-    }
-    
-    public function findByCategory(int $categoryId): Collection
-    {
-        return $this->model
-            ->where('category_id', $categoryId)
-            ->where('status', Product::STATUS_ACTIVE)
-            ->get();
-    }
-}
-
-// In your resource or service
-class ProductService
-{
-    public function __construct(
-        private ProductRepository $repository
-    ) {}
-    
-    public function getActiveProducts(): Collection
-    {
-        return Cache::remember('active-products', 3600, function () {
-            return $this->repository->findActive();
-        });
-    }
-}
-```
-
-### Service Pattern
-
-Encapsulate business logic in service classes:
-
-```php
-// app/Services/OrderService.php
-namespace App\Services;
-
-use App\Models\Order;
-use App\Models\Product;
-use App\Notifications\OrderConfirmation;
-use Illuminate\Support\Facades\DB;
-
-class OrderService
-{
-    public function createOrder(array $data): Order
-    {
-        return DB::transaction(function () use ($data) {
-            // Create order
-            $order = Order::create([
-                'user_id' => auth()->id(),
-                'status' => Order::STATUS_PENDING,
-                'total' => 0,
-            ]);
-            
-            // Add items
-            $total = 0;
-            foreach ($data['items'] as $item) {
-                $product = Product::findOrFail($item['product_id']);
-                
-                $order->items()->create([
-                    'product_id' => $product->id,
-                    'quantity' => $item['quantity'],
-                    'price' => $product->price,
-                ]);
-                
-                $total += $product->price * $item['quantity'];
-                
-                // Update stock
-                $product->decrement('stock', $item['quantity']);
-            }
-            
-            // Update total
-            $order->update(['total' => $total]);
-            
-            // Send notification
-            $order->user->notify(new OrderConfirmation($order));
-            
-            return $order->fresh();
-        });
-    }
-}
-```
-
-### Action Classes
-
-For single-responsibility operations:
-
-```php
-// app/Actions/PublishProduct.php
-namespace App\Actions;
-
-use App\Models\Product;
-use App\Events\ProductPublished;
-use App\Jobs\GenerateProductThumbnails;
-
-class PublishProduct
-{
-    public function execute(Product $product): Product
-    {
-        // Validate product is ready
-        if (!$product->hasRequiredFields()) {
-            throw new \Exception('Product missing required fields');
-        }
-        
-        // Update status
-        $product->update([
-            'status' => 'published',
-            'published_at' => now(),
-        ]);
-        
-        // Dispatch jobs
-        GenerateProductThumbnails::dispatch($product);
-        
-        // Fire event
-        event(new ProductPublished($product));
-        
-        // Clear caches
-        Cache::tags(['products'])->flush();
-        
-        return $product->fresh();
-    }
-    
-    private function hasRequiredFields(): bool
-    {
-        return $this->name 
-            && $this->price 
-            && $this->description 
-            && $this->images->isNotEmpty();
-    }
-}
-```
-
-### Observer Pattern
-
-Use Eloquent observers for model events:
-
-```php
-// app/Observers/ProductObserver.php
-namespace App\Observers;
-
-use App\Models\Product;
-use Illuminate\Support\Facades\Cache;
-
-class ProductObserver
-{
-    public function created(Product $product): void
-    {
-        // Generate SKU
-        if (!$product->sku) {
-            $product->update(['sku' => $this->generateSku($product)]);
-        }
-        
-        // Clear cache
-        $this->clearCache();
-    }
-    
-    public function updated(Product $product): void
-    {
-        // Log price changes
-        if ($product->isDirty('price')) {
-            $product->priceHistory()->create([
-                'old_price' => $product->getOriginal('price'),
-                'new_price' => $product->price,
-                'changed_by' => auth()->id(),
-            ]);
-        }
-        
-        $this->clearCache();
-    }
-    
-    public function deleted(Product $product): void
-    {
-        // Clean up relationships
-        $product->images()->delete();
-        $product->reviews()->delete();
-        
-        $this->clearCache();
-    }
-    
-    private function clearCache(): void
-    {
-        Cache::tags(['products'])->flush();
-    }
-}
-
-// Register in AppServiceProvider
-Product::observe(ProductObserver::class);
-```
-
-### Pipeline Pattern
-
-Aura CMS uses pipelines for field processing:
-
-```php
-// app/Pipeline/ValidateProductData.php
-namespace App\Pipeline;
-
-use Closure;
-
-class ValidateProductData
-{
-    public function handle($product, Closure $next)
-    {
-        // Validate data
-        if ($product->price < 0) {
-            throw new \InvalidArgumentException('Price cannot be negative');
-        }
-        
-        if (strlen($product->name) < 3) {
-            throw new \InvalidArgumentException('Name too short');
-        }
-        
-        return $next($product);
-    }
-}
-
-// Usage
-use Illuminate\Pipeline\Pipeline;
-
-$product = app(Pipeline::class)
-    ->send($productData)
-    ->through([
-        ValidateProductData::class,
-        SanitizeProductData::class,
-        EnrichProductData::class,
-    ])
-    ->thenReturn();
-```
-
-## Resource Development
-
-### Resource Structure
-
-Follow this structure for resources. Aura CMS uses array-based field definitions with fully qualified class names:
-
-```php
-namespace App\Aura\Resources;
-
-use Aura\Base\Resource;
-
-class Product extends Resource
-{
-    // Use traits first (enforced by Pint)
-    
-    // Public static properties
     public static ?string $slug = 'product';
-    
-    public static ?int $sort = 10;
-    
-    public static string $type = 'Product';
-    
-    // Protected static properties
+
     protected static ?string $group = 'Shop';
-    
-    protected static array $searchable = ['name', 'description', 'sku'];
-    
-    // Protected properties
-    protected $hidden = ['password'];
-    
+
     public static function getFields(): array
     {
         return [
             [
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => 'Details',
-                'slug' => 'tab-details',
-                'global' => true,
-            ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Panel',
-                'name' => 'Product Info',
-                'slug' => 'product-info',
-                'style' => [
-                    'width' => '70',
-                ],
-            ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Text',
                 'name' => 'Name',
                 'slug' => 'name',
-                'validation' => 'required|min:3|max:255',
-                'on_index' => true,
-                'on_forms' => true,
-                'on_view' => true,
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => 'required|max:255',
                 'searchable' => true,
-            ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Number',
-                'name' => 'Price',
-                'slug' => 'price',
-                'validation' => 'required|numeric|min:0',
-                'on_index' => true,
-                'on_forms' => true,
-                'on_view' => true,
-            ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Select',
-                'name' => 'Status',
-                'slug' => 'status',
-                'options' => [
-                    'draft' => 'Draft',
-                    'active' => 'Active',
-                    'inactive' => 'Inactive',
-                ],
-                'validation' => 'required|in:draft,active,inactive',
-                'on_index' => true,
-                'on_forms' => true,
-                'on_view' => true,
-            ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Panel',
-                'name' => 'Sidebar',
-                'slug' => 'sidebar',
-                'style' => [
-                    'width' => '30',
-                ],
-            ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Tags',
-                'name' => 'Tags',
-                'slug' => 'tags',
-                'resource' => 'Aura\\Base\\Resources\\Tag',
-                'create' => true,
-                'validation' => '',
-                'on_index' => true,
-                'on_forms' => true,
-                'on_view' => true,
-            ],
-            [
-                'type' => 'Aura\\Base\\Fields\\BelongsTo',
-                'name' => 'Category',
-                'slug' => 'category_id',
-                'resource' => 'App\\Aura\\Resources\\Category',
-                'validation' => '',
-                'on_index' => true,
-                'on_forms' => true,
-                'on_view' => true,
             ],
         ];
     }
-    
-    public function indexQuery($query)
-    {
-        return $query->with(['category', 'tags']);
-    }
-    
-    public function getIcon()
-    {
-        return '<svg>...</svg>';
-    }
-    
-    public function title()
-    {
-        return $this->name ?? '';
-    }
 }
-```
+~~~
 
-### Custom Table Resources
+Use the generated declarations as the type reference when overriding inherited
+static properties. Do not add a new type to an inherited untyped property such
+as <code>$customTable</code>. PHP rejects an incompatible property declaration
+before Aura can load the Resource.
 
-For better performance with large datasets, use custom tables instead of the shared `posts` table with meta:
+The settings that affect a Resource most often are:
 
-```php
+| Setting | Effect |
+| --- | --- |
+| <code>$type</code> | Type discriminator for rows stored in the shared <code>posts</code> table. |
+| <code>$slug</code> | URL and route-name segment. |
+| <code>$singularName</code> and <code>$pluralName</code> | Navigation and page labels. |
+| <code>$group</code> and <code>$sort</code> | Navigation group and order. Lower sort values appear first. |
+| <code>$globalSearch</code> | Includes the Resource in database-backed global search. |
+| <code>$customTable</code> | Uses the Resource's <code>$table</code> instead of <code>posts</code>. |
+| <code>$usesMeta</code> | Allows fields without a table column to use the <code>meta</code> table. |
+| <code>$createEnabled</code>, <code>$editEnabled</code>, <code>$viewEnabled</code>, <code>$indexViewEnabled</code> | Gates the matching Resource policy ability. |
+
+These flags configure Aura's Resource and policy pipeline. They do not replace
+the host application's Eloquent relationships, casts, scopes, or migrations.
+See [Resources](/docs/resources) for the full configuration reference.
+
+<a id="field-development"></a>
+## Define fields as arrays
+
+<code>getFields(): array</code> returns plain arrays. Aura resolves the class
+named by <code>type</code> through the container. Use a fully qualified field
+class string:
+
+~~~php
+public static function getFields(): array
+{
+    return [
+        [
+            'name' => 'Status',
+            'slug' => 'status',
+            'type' => 'Aura\\Base\\Fields\\Select',
+            'options' => [
+                'draft' => 'Draft',
+                'published' => 'Published',
+            ],
+            'validation' => 'required|in:draft,published',
+            'on_index' => true,
+            'on_forms' => true,
+            'on_view' => true,
+            'searchable' => true,
+        ],
+        [
+            'name' => 'Category',
+            'slug' => 'category_id',
+            'type' => 'Aura\\Base\\Fields\\BelongsTo',
+            'resource' => 'App\\Aura\\Resources\\Category',
+        ],
+    ];
+}
+~~~
+
+The field pipeline validates <code>type</code> and <code>slug</code> and then
+maps each definition to its field class. Include <code>name</code> for the
+label used by forms and tables. Use stable lower-case slugs, usually in
+<code>snake_case</code>. A slug is a storage key and a dynamic Resource
+attribute. Changing a meta slug changes the meta key. Changing a custom-table
+slug changes the column that Aura expects.
+
+Use these keys for the common Resource concerns:
+
+- <code>validation</code> supplies the form rules used by Aura's Resource form.
+  It can be a Laravel rule string or an array.
+- <code>searchable</code> opts the field into table search and global search.
+  Search is field-level. Aura does not use a separate static
+  <code>$searchable</code> property.
+- <code>on_index</code>, <code>on_forms</code>, and <code>on_view</code> control
+  the matching presentation. <code>on_create</code> and <code>on_edit</code>
+  refine form visibility.
+- <code>default</code> supplies an initial form value.
+- <code>conditional_logic</code> controls field visibility when the field
+  supports it.
+- <code>Tab</code> and <code>Panel</code> group the fields that follow them.
+
+Presentation keys do not authorize a write. Keep validation and policy checks
+in place when a field is hidden from a form. See [Fields](/docs/fields) for
+the built-in field catalogue and its options.
+
+<a id="database-design"></a>
+## Choose storage deliberately
+
+<code>$customTable</code> and <code>$usesMeta</code> are independent flags. The
+four combinations have different write paths:
+
+| <code>$customTable</code> | <code>$usesMeta</code> | Field storage |
+| --- | --- | --- |
+| <code>false</code> | <code>true</code> | Base fillable attributes use <code>posts</code>. Other input fields use <code>meta</code>. |
+| <code>false</code> | <code>false</code> | Base fillable attributes use <code>posts</code>. Other input fields have no meta destination. |
+| <code>true</code> | <code>true</code> | Base fillable attributes use the custom table. Other input fields use <code>meta</code>. |
+| <code>true</code> | <code>false</code> | Every input field slug must be a column on the custom table. |
+
+The default is shared <code>posts</code> plus <code>meta</code>. Base fillable
+attributes include Aura's core columns such as <code>title</code>,
+<code>content</code>, <code>type</code>, <code>status</code>, <code>slug</code>,
+<code>user_id</code>, <code>parent_id</code>, <code>order</code>, team and
+timestamp columns. The exact fillable list belongs to the Resource class and
+its schema.
+
+Use <code>isTableField($slug)</code> and <code>isMetaField($slug)</code> when
+code needs to know the selected destination. Do not infer the destination from
+<code>$customTable</code> alone.
+
+A custom table with no meta storage requires a physical column for every input
+field:
+
+~~~php
 class Product extends Resource
 {
-    // Enable custom table mode
     public static $customTable = true;
-    
-    // Optionally disable meta fields if all data is in columns
+
     public static bool $usesMeta = false;
-    
-    public static ?string $slug = 'product';
-    
-    public static string $type = 'Product';
-    
+
     protected $table = 'products';
-    
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Name',
+                'slug' => 'name',
+                'type' => 'Aura\\Base\\Fields\\Text',
+            ],
+            [
+                'name' => 'Price',
+                'slug' => 'price',
+                'type' => 'Aura\\Base\\Fields\\Number',
+            ],
+        ];
+    }
+}
+~~~
+
+The generated custom stub uses this column-backed mode. It does not create the
+database table. Create and review a migration before saving records. In
+custom-table plus meta mode, add the column-backed fields to the Resource's
+<code>$fillable</code> list. Aura captures that original list as its base
+fillable list before it merges input field slugs at runtime:
+
+~~~php
+class Product extends Resource
+{
+    public static $customTable = true;
+
+    public static bool $usesMeta = true;
+
+    protected $table = 'products';
+
     protected $fillable = [
         'name',
-        'slug',
         'price',
-        'description',
-        'status',
-        'featured',
-        'category_id',
-        'stock',
-        'sku',
-        'team_id',
         'user_id',
+        'team_id',
     ];
-    
-    protected $casts = [
-        'price' => 'decimal:2',
-        'featured' => 'boolean',
-    ];
-    
-    // Fields map directly to database columns
-    public static function getFields(): array
-    {
-        return [
-            [
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'name' => 'Name',
-                'slug' => 'name',
-                'validation' => 'required|max:255',
-                'on_index' => true,
-                'searchable' => true,
-            ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Number',
-                'name' => 'Price',
-                'slug' => 'price',
-                'validation' => 'required|numeric|min:0',
-                'on_index' => true,
-            ],
-            // ... more fields
-        ];
-    }
 }
-```
+~~~
 
-## Field Development
+Changing a Resource's storage flags is a schema and data change. Plan the
+columns, existing meta rows, team ownership, and rollback before changing an
+existing Resource. See [Custom tables](/docs/custom-tables) and
+[Meta fields](/docs/meta-fields).
 
-### Custom Field Best Practices
+Meta scopes use relation subqueries:
 
-```php
-namespace App\Fields;
+~~~php
+Article::whereMeta('featured', true)->get();
+Article::whereMeta('priority', '>', 5)->get();
+Article::whereMeta(['featured' => true, 'locale' => 'en'])->get();
+Article::whereInMeta('category', ['news', 'updates'])->get();
+Article::whereNotInMeta('category', ['internal', 'archived'])->get();
+Article::whereMetaContains('tags', 'laravel')->get();
+~~~
+
+Use a real column when a value needs an ordinary database index, join, or
+database-native sort. Meta values remain useful for fields whose shape does not
+justify a column.
+
+<a id="resource-development"></a>
+## Use the generated commands as extension points
+
+The generators encode Aura's current paths and method names:
+
+| Command | Result |
+| --- | --- |
+| <code>aura:resource Product</code> | Resource class in the configured Resource path. |
+| <code>aura:resource Product --custom</code> | Resource class with <code>$customTable</code>, <code>$usesMeta = false</code>, and a table name. It does not create the table. |
+| <code>aura:field ColorPicker</code> | Field class plus edit and display Blade views in the configured field path. |
+| <code>aura:create-resource-migration "App\Aura\Resources\Product"</code> | Migration columns derived from the Resource's fields and table. It does not run the migration. |
+| <code>aura:create-resource-permissions</code> | Generates missing Resource permission rows. |
+| <code>aura:schema-update</code> | Compares a supported <code>Schema::create</code> migration with the existing table. |
+
+<code>aura:schema-update</code> fails before changing the table when it cannot
+determine the table or safely parse columns. It keeps columns by default.
+Pass <code>--drop</code> and confirm the prompt before the command removes
+columns and their data. Add <code>--force</code> only when that confirmation is
+already part of the controlled operation. Treat the migration as the source to
+review, not as a substitute for reviewing the schema change.
+
+The Resource Editor is a local-development tool. Its middleware blocks the
+feature outside a local environment. Do not use it as a production schema
+editor. See [Resource Editor](/docs/resource-editor) and
+[Custom tables](/docs/custom-tables).
+
+<a id="custom-fields"></a>
+## Extend field classes without changing their contract
+
+Generate a field before editing it:
+
+~~~bash
+php artisan aura:field ColorPicker
+~~~
+
+The command creates a class under the configured field namespace and views at
+<code>resources/views/components/fields/colorpicker.blade.php</code> and
+<code>colorpicker-view.blade.php</code>. A custom field extends
+<code>Aura\Base\Fields\Field</code>:
+
+~~~php
+namespace App\Aura\Fields;
 
 use Aura\Base\Fields\Field;
 
 class ColorPicker extends Field
 {
-    public $component = 'fields.color-picker';
-    
-    protected string $default = '#000000';
-    
-    protected array $swatches = [];
-    
-    public function mount()
+    public $edit = 'fields.colorpicker';
+
+    public $view = 'fields.colorpicker-view';
+
+    public function get($class, $value, $field = null)
     {
-        $this->swatches = config('aura.color_swatches', []);
+        return $value ?: '#000000';
     }
-    
-    public function swatches(array $colors): static
+
+    public function set($post, $field, $value)
     {
-        $this->swatches = $colors;
-        return $this;
+        return strtoupper((string) $value);
     }
-    
-    public function get($value)
+
+    public function getFields()
     {
-        // Transform stored value for display
-        return $value ?: $this->default;
-    }
-    
-    public function set($value)
-    {
-        // Transform input for storage
-        return strtoupper($value);
-    }
-    
-    public function getValidationRules(): array
-    {
-        return array_merge(parent::getValidationRules(), [
-            'regex:/^#[0-9A-F]{6}$/i',
-        ]);
-    }
-    
-    public function getSearchableValue($model)
-    {
-        // Return null to exclude from search
-        return null;
-    }
-}
-```
-
-### Field View Components
-
-```blade
-{{-- resources/views/fields/color-picker.blade.php --}}
-<x-aura::fields.wrapper :field="$field" :model="$model ?? null">
-    <div 
-        x-data="colorPicker(@js($field), @entangle('form.fields.' . $field['slug']))"
-        class="relative"
-    >
-        <div class="flex items-center space-x-2">
-            <input
-                type="text"
-                x-model="value"
-                @input="updateColor"
-                class="form-input"
-                placeholder="#000000"
-                maxlength="7"
-            >
-            <div
-                class="w-10 h-10 rounded border cursor-pointer"
-                :style="`background-color: ${value}`"
-                @click="showPicker = !showPicker"
-            ></div>
-        </div>
-        
-        {{-- Swatches --}}
-        @if($field->swatches)
-            <div class="flex flex-wrap gap-2 mt-2">
-                @foreach($field->swatches as $color => $label)
-                    <button
-                        type="button"
-                        @click="value = '{{ $color }}'"
-                        class="w-8 h-8 rounded border"
-                        style="background-color: {{ $color }}"
-                        title="{{ $label }}"
-                    ></button>
-                @endforeach
-            </div>
-        @endif
-    </div>
-</x-aura::fields.wrapper>
-
-@pushOnce('scripts')
-<script>
-    function colorPicker(field, value) {
-        return {
-            field: field,
-            value: value || field.default || '#000000',
-            showPicker: false,
-            
-            updateColor() {
-                // Validate hex format
-                if (/^#[0-9A-F]{6}$/i.test(this.value)) {
-                    this.$wire.set(`form.fields.${field.slug}`, this.value);
-                }
-            }
-        }
-    }
-</script>
-@endPushOnce
-```
-
-## Livewire Components
-
-### Component Best Practices
-
-```php
-namespace Aura\Base\Livewire;
-
-use Aura\Base\Traits\WithLivewireHelpers;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Livewire\Component;
-use Livewire\WithPagination;
-
-class ProductManager extends Component
-{
-    use AuthorizesRequests;
-    use WithLivewireHelpers;
-    use WithPagination;
-    
-    // Public properties for binding
-    public $search = '';
-    public $filters = [
-        'status' => '',
-        'category' => '',
-    ];
-    
-    // Protected properties
-    protected $queryString = [
-        'search' => ['except' => ''],
-        'filters' => ['except' => []],
-    ];
-    
-    protected $listeners = [
-        'productCreated' => '$refresh',
-        'productDeleted' => '$refresh',
-    ];
-    
-    // Validation rules
-    protected $rules = [
-        'search' => 'nullable|string|max:255',
-        'filters.status' => 'nullable|in:active,inactive,draft',
-        'filters.category' => 'nullable|exists:categories,id',
-    ];
-    
-    // Lifecycle hooks
-    public function mount()
-    {
-        $this->authorize('viewAny', Product::class);
-    }
-    
-    // Real-time validation
-    public function updated($propertyName)
-    {
-        $this->validateOnly($propertyName);
-    }
-    
-    // Reset pagination on search
-    public function updatingSearch()
-    {
-        $this->resetPage();
-    }
-    
-    // Computed properties
-    #[Computed]
-    public function products()
-    {
-        return Product::query()
-            ->when($this->search, fn($q) => $q->search($this->search))
-            ->when($this->filters['status'], fn($q, $status) => 
-                $q->where('status', $status)
-            )
-            ->when($this->filters['category'], fn($q, $category) => 
-                $q->where('category_id', $category)
-            )
-            ->with(['category', 'tags'])
-            ->latest()
-            ->paginate(20);
-    }
-    
-    // Actions
-    public function deleteProduct($id)
-    {
-        $product = Product::findOrFail($id);
-        
-        $this->authorize('delete', $product);
-        
-        $product->delete();
-        
-        $this->notify('Product deleted successfully');
-    }
-    
-    public function render()
-    {
-        return view('livewire.product-manager', [
-            'products' => $this->products,
-        ]);
-    }
-}
-```
-
-### Component View
-
-```blade
-<div>
-    {{-- Filters --}}
-    <div class="flex items-center space-x-4 mb-4">
-        <x-aura::input.text
-            wire:model.live.debounce.300ms="search"
-            placeholder="Search products..."
-            class="flex-1"
-        />
-        
-        <x-aura::input.select
-            wire:model.live="filters.status"
-            :options="$statusOptions"
-            placeholder="All Statuses"
-        />
-        
-        <x-aura::input.select
-            wire:model.live="filters.category"
-            :options="$categoryOptions"
-            placeholder="All Categories"
-        />
-    </div>
-    
-    {{-- Table --}}
-    <x-aura::table>
-        <x-slot name="head">
-            <x-aura::table.heading>Name</x-aura::table.heading>
-            <x-aura::table.heading>Price</x-aura::table.heading>
-            <x-aura::table.heading>Status</x-aura::table.heading>
-            <x-aura::table.heading>Actions</x-aura::table.heading>
-        </x-slot>
-        
-        <x-slot name="body">
-            @forelse($products as $product)
-                <x-aura::table.row wire:key="product-{{ $product->id }}">
-                    <x-aura::table.cell>{{ $product->name }}</x-aura::table.cell>
-                    <x-aura::table.cell>${{ number_format($product->price, 2) }}</x-aura::table.cell>
-                    <x-aura::table.cell>
-                        <x-aura::badge :type="$product->status">
-                            {{ $product->status }}
-                        </x-aura::badge>
-                    </x-aura::table.cell>
-                    <x-aura::table.cell>
-                        <x-aura::button.link href="{{ route('products.edit', $product) }}">
-                            Edit
-                        </x-aura::button.link>
-                        <x-aura::button.link
-                            wire:click="deleteProduct({{ $product->id }})"
-                            wire:confirm="Are you sure?"
-                            class="text-red-600"
-                        >
-                            Delete
-                        </x-aura::button.link>
-                    </x-aura::table.cell>
-                </x-aura::table.row>
-            @empty
-                <x-aura::table.row>
-                    <x-aura::table.cell colspan="4" class="text-center">
-                        No products found
-                    </x-aura::table.cell>
-                </x-aura::table.row>
-            @endforelse
-        </x-slot>
-    </x-aura::table>
-    
-    {{-- Pagination --}}
-    {{ $products->links() }}
-</div>
-```
-
-## Database Design
-
-### Schema Best Practices
-
-```php
-// Good migration example
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-
-return new class extends Migration
-{
-    public function up(): void
-    {
-        Schema::create('products', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('slug')->unique();
-            $table->text('description')->nullable();
-            $table->decimal('price', 10, 2);
-            $table->decimal('cost', 10, 2)->default(0);
-            $table->integer('stock')->default(0);
-            $table->string('sku')->unique()->nullable();
-            $table->enum('status', ['draft', 'active', 'inactive'])
-                ->default('draft');
-            $table->boolean('featured')->default(false);
-            
-            // Foreign keys
-            $table->foreignId('category_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
-            
-            $table->foreignId('user_id')
-                ->constrained()
-                ->cascadeOnDelete();
-            
-            // Team support
-            if (config('aura.teams')) {
-                $table->foreignId('team_id')
-                    ->constrained()
-                    ->cascadeOnDelete();
-            }
-            
-            // Metadata
-            $table->json('meta')->nullable();
-            
-            // Timestamps
-            $table->timestamps();
-            $table->softDeletes();
-            
-            // Indexes for performance
-            $table->index(['status', 'featured']);
-            $table->index(['category_id', 'status']);
-            $table->index('created_at');
-            
-            if (config('aura.teams')) {
-                $table->index(['team_id', 'status']);
-            }
-            
-            // Full-text search
-            $table->fullText(['name', 'description']);
-        });
-    }
-    
-    public function down(): void
-    {
-        Schema::dropIfExists('products');
-    }
-};
-```
-
-### Model Best Practices
-
-```php
-namespace App\Models;
-
-use Aura\Base\Traits\HasMeta;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Laravel\Scout\Searchable;
-
-class Product extends Model
-{
-    use HasFactory;
-    use HasMeta;
-    use Searchable;
-    use SoftDeletes;
-    
-    protected $fillable = [
-        'name',
-        'slug',
-        'description',
-        'price',
-        'cost',
-        'stock',
-        'sku',
-        'status',
-        'featured',
-        'category_id',
-        'user_id',
-        'team_id',
-        'meta',
-    ];
-    
-    protected $casts = [
-        'price' => 'decimal:2',
-        'cost' => 'decimal:2',
-        'featured' => 'boolean',
-        'meta' => 'array',
-        'published_at' => 'datetime',
-    ];
-    
-    protected $attributes = [
-        'status' => 'draft',
-        'featured' => false,
-        'stock' => 0,
-    ];
-    
-    // Relationships
-    public function category()
-    {
-        return $this->belongsTo(Category::class);
-    }
-    
-    public function reviews()
-    {
-        return $this->hasMany(Review::class);
-    }
-    
-    public function tags()
-    {
-        return $this->belongsToMany(Tag::class);
-    }
-    
-    // Scopes
-    public function scopeActive($query)
-    {
-        return $query->where('status', 'active');
-    }
-    
-    public function scopeFeatured($query)
-    {
-        return $query->where('featured', true);
-    }
-    
-    public function scopeInStock($query)
-    {
-        return $query->where('stock', '>', 0);
-    }
-    
-    // Accessors & Mutators
-    public function getProfitAttribute()
-    {
-        return $this->price - $this->cost;
-    }
-    
-    public function getProfitMarginAttribute()
-    {
-        if ($this->price == 0) return 0;
-        return ($this->profit / $this->price) * 100;
-    }
-    
-    // Methods
-    public function isAvailable(): bool
-    {
-        return $this->status === 'active' && $this->stock > 0;
-    }
-    
-    public function decrementStock(int $quantity = 1): bool
-    {
-        if ($this->stock < $quantity) {
-            return false;
-        }
-        
-        return $this->decrement('stock', $quantity);
-    }
-    
-    // Scout search
-    public function toSearchableArray()
-    {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'description' => $this->description,
-            'sku' => $this->sku,
-            'category' => $this->category?->name,
-            'tags' => $this->tags->pluck('name')->implode(' '),
-        ];
-    }
-}
-```
-
-## Security Best Practices
-
-### Authorization
-
-Always check permissions:
-
-```php
-// In Controllers
-public function update(Request $request, Product $product)
-{
-    $this->authorize('update', $product);
-    
-    // Update logic
-}
-
-// In Livewire Components
-public function mount($productId)
-{
-    $this->product = Product::findOrFail($productId);
-    $this->authorize('view', $this->product);
-}
-
-// In Blade Views
-@can('update', $product)
-    <x-aura::button href="{{ route('products.edit', $product) }}">
-        Edit
-    </x-aura::button>
-@endcan
-
-// In Resources
-public static function can($ability, $model = null)
-{
-    return auth()->user()->can($ability, $model ?? static::$model);
-}
-```
-
-### Input Validation
-
-```php
-// Form Request
-namespace App\Http\Requests;
-
-use Illuminate\Foundation\Http\FormRequest;
-
-class UpdateProductRequest extends FormRequest
-{
-    public function authorize(): bool
-    {
-        return $this->user()->can('update', $this->route('product'));
-    }
-    
-    public function rules(): array
-    {
-        return [
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:products,slug,' . $this->route('product')->id,
-            'price' => 'required|numeric|min:0|max:999999.99',
-            'description' => 'nullable|string|max:5000',
-            'category_id' => 'nullable|exists:categories,id',
-            'status' => 'required|in:draft,active,inactive',
-            'featured' => 'boolean',
-            'images' => 'array|max:10',
-            'images.*' => 'image|max:5120', // 5MB
-        ];
-    }
-    
-    public function messages(): array
-    {
-        return [
-            'price.min' => 'Price cannot be negative.',
-            'images.*.max' => 'Each image must be less than 5MB.',
-        ];
-    }
-    
-    protected function prepareForValidation(): void
-    {
-        $this->merge([
-            'slug' => Str::slug($this->slug ?: $this->name),
-            'featured' => $this->boolean('featured'),
-        ]);
-    }
-}
-```
-
-### XSS Prevention
-
-```blade
-{{-- Always escape output --}}
-{{ $product->name }}
-
-{{-- Only use unescaped for trusted content --}}
-{!! $product->trusted_html_content !!}
-
-{{-- Escape in JavaScript --}}
-<script>
-    const productName = @js($product->name);
-    const productData = @json($product->toArray());
-</script>
-
-{{-- Escape in attributes --}}
-<div title="{{ $product->description }}">
-```
-
-### SQL Injection Prevention
-
-```php
-// Always use parameter binding
-$products = DB::select('SELECT * FROM products WHERE price > ?', [$minPrice]);
-
-// Or use query builder
-$products = DB::table('products')
-    ->where('price', '>', $minPrice)
-    ->get();
-
-// Never do this
-$products = DB::select("SELECT * FROM products WHERE price > $minPrice");
-
-// Use whereIn safely
-$ids = $request->collect('ids')->filter()->values();
-$products = Product::whereIn('id', $ids)->get();
-```
-
-### File Upload Security
-
-```php
-// Validate file types and size
-$request->validate([
-    'document' => 'required|file|mimes:pdf,doc,docx|max:10240',
-    'image' => 'required|image|dimensions:min_width=100,min_height=100|max:5120',
-]);
-
-// Store files securely
-$path = $request->file('document')->store('documents', 'private');
-
-// Generate secure download URLs
-return Storage::disk('private')->temporaryUrl(
-    $path,
-    now()->addMinutes(5),
-    ['ResponseContentDisposition' => 'attachment']
-);
-```
-
-## Performance Patterns
-
-### Query Optimization
-
-```php
-// Eager load relationships
-$products = Product::with(['category', 'tags', 'images'])->get();
-
-// Select only needed columns
-$products = Product::select(['id', 'name', 'price', 'status'])->get();
-
-// Use chunking for large operations
-Product::chunk(100, function ($products) {
-    foreach ($products as $product) {
-        // Process product
-    }
-});
-
-// Cache expensive queries
-$categories = Cache::remember('categories', 3600, function () {
-    return Category::with('children')->get();
-});
-```
-
-### Lazy Loading Components
-
-```php
-// Livewire component
-public $readyToLoad = false;
-
-public function loadData()
-{
-    $this->readyToLoad = true;
-}
-
-public function getProductsProperty()
-{
-    if (!$this->readyToLoad) {
-        return collect();
-    }
-    
-    return Product::with('category')->paginate();
-}
-```
-
-```blade
-<div wire:init="loadData">
-    @if($readyToLoad)
-        @foreach($this->products as $product)
-            {{-- Product display --}}
-        @endforeach
-    @else
-        <x-aura::loading />
-    @endif
-</div>
-```
-
-## Code Organization
-
-### Directory Structure
-
-```
-app/
-├── Actions/              # Single-purpose action classes
-├── Aura/
-│   ├── Resources/       # Aura resources
-│   └── Fields/          # Custom fields
-├── Events/              # Custom events
-├── Exceptions/          # Custom exceptions
-├── Http/
-│   ├── Controllers/     # HTTP controllers
-│   ├── Livewire/       # Livewire components
-│   ├── Middleware/     # Custom middleware
-│   └── Requests/       # Form requests
-├── Jobs/               # Queued jobs
-├── Listeners/          # Event listeners
-├── Mail/               # Mailable classes
-├── Models/             # Eloquent models
-├── Notifications/      # Notification classes
-├── Observers/          # Model observers
-├── Policies/           # Authorization policies
-├── Providers/          # Service providers
-├── Repositories/       # Repository classes (optional)
-├── Rules/              # Custom validation rules
-├── Services/           # Business logic services
-└── Traits/             # Reusable traits
-```
-
-### Service Provider Organization
-
-```php
-namespace App\Providers;
-
-use Illuminate\Support\ServiceProvider;
-
-class AuraCustomizationServiceProvider extends ServiceProvider
-{
-    public function register(): void
-    {
-        // Register bindings
-        $this->app->bind(ProductRepository::class, function ($app) {
-            return new ProductRepository(new Product);
-        });
-    }
-    
-    public function boot(): void
-    {
-        // Boot customizations
-        $this->bootResources();
-        $this->bootFields();
-        $this->bootMacros();
-        $this->bootObservers();
-    }
-    
-    private function bootResources(): void
-    {
-        // Register custom resources
-        Aura::resources([
-            Product::class,
-            Category::class,
-            Order::class,
-        ]);
-    }
-    
-    private function bootFields(): void
-    {
-        // Register custom fields
-        Aura::fields([
-            ColorPicker::class,
-            PriceRange::class,
-            LocationPicker::class,
-        ]);
-    }
-    
-    private function bootMacros(): void
-    {
-        // Add collection macros
-        Collection::macro('formatCurrency', function () {
-            return $this->map(function ($value) {
-                return '$' . number_format($value, 2);
-            });
-        });
-    }
-    
-    private function bootObservers(): void
-    {
-        Product::observe(ProductObserver::class);
-        Order::observe(OrderObserver::class);
-    }
-}
-```
-
-## Testing Practices
-
-### Test Organization
-
-Aura CMS uses Pest for testing with helper functions defined in `tests/Pest.php`:
-
-```php
-<?php
-
-use Aura\Base\Livewire\CreateResource;
-use Aura\Base\Resources\User;
-
-use function Pest\Livewire\livewire;
-
-// Before each test, create a Superadmin and login
-beforeEach(function () {
-    $this->actingAs($this->user = createSuperAdmin());
-});
-
-test('only superadmins can access this component', function () {
-    livewire(CreateResource::class)
-        ->assertOk();
-});
-
-test('user without role can not access component', function () {
-    // Create User without super admin role
-    $user = User::factory()->create();
-    
-    $this->actingAs($user);
-    
-    livewire(CreateResource::class)
-        ->assertForbidden();
-});
-
-test('validation works correctly', function () {
-    livewire(CreateResource::class)
-        ->call('save')
-        ->assertHasErrors(['form.fields.name' => 'required']);
-});
-
-test('can save with valid data', function () {
-    livewire(CreateResource::class)
-        ->set('form.fields.name', 'Test')
-        ->call('save')
-        ->assertHasNoErrors();
-});
-```
-
-### Test Helper Functions
-
-These helpers are defined in `tests/Pest.php`:
-
-```php
-// Creates a super admin user with team (for teams-enabled tests)
-$user = createSuperAdmin();
-
-// Creates a super admin without team context
-$user = createSuperAdminWithoutTeam();
-
-// Creates an admin user with limited permissions
-$user = createAdmin();
-
-// Creates a test post
-$post = createPost(['title' => 'Test Post']);
-```
-
-### Livewire Component Testing
-
-Use the `livewire()` function from Pest Livewire:
-
-```php
-use function Pest\Livewire\livewire;
-
-test('component renders correctly', function () {
-    livewire(ProductTable::class)
-        ->assertOk()
-        ->assertSee('Products');
-});
-
-test('can set properties and call methods', function () {
-    livewire(EditResource::class, ['slug' => 'post', 'id' => 1])
-        ->set('form.fields.title', 'Updated Title')
-        ->call('save')
-        ->assertHasNoErrors();
-});
-
-test('filters work correctly', function () {
-    livewire(Table::class, ['slug' => 'post'])
-        ->set('search', 'test')
-        ->assertSet('search', 'test');
-});
-```
-
-### Database Testing
-
-- Feature tests automatically use `RefreshDatabase` trait
-- Tests in `FeatureWithDatabaseMigrations/` use `DatabaseMigrations`
-- Use factories for creating test data
-
-```php
-test('can create user with factory', function () {
-    $user = User::factory()->create([
-        'name' => 'Test User',
-        'email' => 'test@example.com',
-    ]);
-    
-    expect($user->name)->toBe('Test User');
-});
-```
-
-### Test Groups
-
-Run tests by group using Pest:
-
-```bash
-vendor/bin/pest --group=fields
-vendor/bin/pest --group=flows
-vendor/bin/pest --group=table
-vendor/bin/pest --group=resource
-```
-
-## Scalability Patterns
-
-### Horizontal Scaling
-
-```php
-// Use cache tags for easy invalidation
-Cache::tags(['products', 'team-' . $teamId])->remember($key, 3600, $callback);
-
-// Implement read/write splitting
-config([
-    'database.connections.mysql.read' => [
-        'host' => [
-            '192.168.1.1',
-            '192.168.1.2',
-        ],
-    ],
-    'database.connections.mysql.write' => [
-        'host' => ['192.168.1.3'],
-    ],
-]);
-
-// Use job queues for heavy operations
-ProcessProductImport::dispatch($file)->onQueue('imports');
-```
-
-### Microservices Integration
-
-```php
-// Service class for external APIs
-namespace App\Services;
-
-use Illuminate\Support\Facades\Http;
-
-class InventoryService
-{
-    private string $baseUrl;
-    
-    public function __construct()
-    {
-        $this->baseUrl = config('services.inventory.url');
-    }
-    
-    public function getStock(int $productId): int
-    {
-        $response = Http::withToken(config('services.inventory.token'))
-            ->get("{$this->baseUrl}/products/{$productId}/stock");
-        
-        return $response->json('stock', 0);
-    }
-    
-    public function updateStock(int $productId, int $quantity): bool
-    {
-        $response = Http::withToken(config('services.inventory.token'))
-            ->patch("{$this->baseUrl}/products/{$productId}/stock", [
-                'quantity' => $quantity,
-            ]);
-        
-        return $response->successful();
-    }
-}
-```
-
-## Common Patterns
-
-### Settings Pattern
-
-```php
-// Create a settings resource
-class Settings extends Resource
-{
-    public static $customTable = true;
-    
-    public static ?string $slug = 'settings';
-    
-    public static string $type = 'Settings';
-    
-    protected $table = 'settings';
-    
-    public static function getFields(): array
-    {
-        return [
+        return array_merge(parent::getFields(), [
             [
+                'name' => 'Default',
                 'type' => 'Aura\\Base\\Fields\\Text',
-                'name' => 'Site Name',
-                'slug' => 'site_name',
-                'validation' => 'required|max:255',
+                'slug' => 'default',
             ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Textarea',
-                'name' => 'Site Description',
-                'slug' => 'site_description',
-                'validation' => 'max:500',
-            ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Image',
-                'name' => 'Logo',
-                'slug' => 'logo',
-            ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Select',
-                'name' => 'Timezone',
-                'slug' => 'timezone',
-                'options' => timezone_identifiers_list(),
-            ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Toggle',
-                'name' => 'Maintenance Mode',
-                'slug' => 'maintenance_mode',
-            ],
-        ];
-    }
-    
-    public static function get($key, $default = null)
-    {
-        return Cache::remember("settings.{$key}", 3600, function () use ($key, $default) {
-            return static::where('key', $key)->value('value') ?? $default;
-        });
-    }
-    
-    public static function set($key, $value)
-    {
-        static::updateOrCreate(['key' => $key], ['value' => $value]);
-        Cache::forget("settings.{$key}");
+        ]);
     }
 }
-```
+~~~
 
-### Trait Composition
+Aura calls these optional hooks from the Resource save pipeline:
 
-```php
-// Combine traits for functionality
-trait Publishable
+| Hook | Use |
+| --- | --- |
+| <code>get($class, $value, $field = null)</code> | Decode or normalize a stored value for the form and display path. |
+| <code>set($post, $field, $value)</code> | Normalize submitted input before Aura stores it. |
+| <code>saving($post, $field, $value)</code> | Change the Resource during its saving event. |
+| <code>saved($post, $field, $value)</code> | Persist a relation or other value that needs the saved Resource. |
+
+The edit view receives <code>$field</code> as an array. The field object is in
+<code>$field['field']</code>. Bind input to <code>form.fields.{slug}</code> and
+keep the wrapper:
+
+~~~blade
+<x-aura::fields.wrapper :field="$field">
+    <x-aura::input.text
+        wire:model="form.fields.{{ optional($field)['slug'] }}"
+        error="form.fields.{{ optional($field)['slug'] }}"
+        id="resource-field-{{ optional($field)['slug'] }}"
+    />
+</x-aura::fields.wrapper>
+~~~
+
+Read configuration as array keys. Do not use object property syntax such as
+<code>$field->slug</code> in this view. The base field display path escapes
+scalar values. If a custom field emits HTML, escape interpolated stored values
+and mark the field as raw only when the output is intentionally trusted.
+
+<a id="code-organization"></a>
+## Register and customize in the application
+
+Aura discovers application Resources and fields from
+<code>aura-settings.paths.resources</code> and
+<code>aura-settings.paths.fields</code>:
+
+~~~php
+// config/aura-settings.php
+'paths' => [
+    'resources' => [
+        'namespace' => 'App\\Aura\\Resources',
+        'path' => app_path('Aura/Resources'),
+    ],
+    'fields' => [
+        'namespace' => 'App\\Aura\\Fields',
+        'path' => app_path('Aura/Fields'),
+    ],
+],
+~~~
+
+Register classes from another path or package in a service provider:
+
+~~~php
+use Aura\Base\Facades\Aura;
+
+public function boot(): void
 {
-    public function initializePublishable()
-    {
-        $this->fillable[] = 'published_at';
-        $this->casts['published_at'] = 'datetime';
-    }
-    
-    public function publish()
-    {
-        $this->update(['published_at' => now()]);
-    }
-    
-    public function unpublish()
-    {
-        $this->update(['published_at' => null]);
-    }
-    
-    public function isPublished(): bool
-    {
-        return $this->published_at && $this->published_at->isPast();
-    }
-    
-    public function scopePublished($query)
-    {
-        return $query->whereNotNull('published_at')
-            ->where('published_at', '<=', now());
-    }
-}
+    Aura::registerResources([
+        \Acme\Blog\Resources\Article::class,
+    ]);
 
-// Use in models
-class Product extends Model
+    Aura::registerFields([
+        \Acme\Blog\Fields\Rating::class,
+    ]);
+}
+~~~
+
+Use the actual methods <code>registerResources(array)</code> and
+<code>registerFields(array)</code>. Aura has no <code>resources()</code> or
+<code>fields()</code> registration shortcuts.
+
+To replace an admin page, run <code>aura:customize</code>. It can generate an
+application Livewire component, copy the corresponding Blade view, or both.
+The command writes a static <code>indexComponent()</code>,
+<code>createComponent()</code>, <code>editComponent()</code>, or
+<code>viewComponent()</code> hook into the Resource. The existing Aura route and
+route name continue to serve the replacement. Keep application components
+under <code>App\Livewire</code>. Do not put application code in
+<code>Aura\Base\Livewire</code>.
+
+Aura Base does not generate a REST API for Resources. If an application
+exposes Resource data over HTTP, define its routes and controllers in the host
+application and authorize each operation with the Resource policy.
+
+<a id="performance-patterns"></a>
+## Compose table queries with Aura's scopes
+
+The table starts with the Resource query and its normal global scopes. It then
+calls <code>indexQuery($query, $table)</code>, applies relationship constraints
+when the table belongs to a parent Resource, adds Kanban constraints when
+needed, eager loads meta and opted-in relationships, applies filters and
+search, sorts, and paginates. Keep a custom <code>indexQuery</code> composable:
+
+~~~php
+public function indexQuery($query, $table = null)
 {
-    use Publishable;
-    use HasSlug;
-    use Searchable;
+    return $query
+        ->where('status', 'published')
+        ->withCount('comments');
 }
-```
+~~~
 
+Do not call <code>withoutGlobalScopes()</code> in a normal index hook. It removes
+type, team, ownership, and other Resource restrictions that the request depends
+on. Cross-team maintenance queries need their own authorization and explicit
+constraints. See [Teams](/docs/teams#bypassing-team-scope).
 
-## Common Gotchas
+Mark fields with <code>'searchable' => true</code> for the default table search.
+Table search uses a column condition for table fields and an <code>EXISTS</code>
+query for meta fields. Define <code>modifySearch($query, $search)</code> when
+the query must include relations or a different condition. That method replaces
+the default search logic:
 
-Be aware of these common issues when developing with Aura CMS:
+~~~php
+public function modifySearch($query, $search)
+{
+    return $query->where(function ($query) use ($search) {
+        $query
+            ->where('sku', 'like', '%'.$search.'%')
+            ->orWhereHas('supplier', function ($supplier) use ($search) {
+                $supplier->where('name', 'like', '%'.$search.'%');
+            });
+    });
+}
+~~~
 
-1. **Team Scope**: Most models use `TeamScope` global scope. Use `withoutGlobalScope()` to bypass in tests:
-   ```php
-   $role = Role::withoutGlobalScope(\Aura\Base\Models\Scopes\TeamScope::class)
-       ->where('slug', 'super_admin')
-       ->first();
-   ```
+The same field-level searchable definitions feed Aura's database-backed global
+search. Global search applies the Resource's normal query and policy checks. It
+does not resolve a related record's title or a display closure before matching.
+See [Global search](/docs/global-search) for its result and authorization
+rules.
 
-2. **Aura Facade Reset**: Tests automatically reset the Aura facade after each test to prevent pollution. This is configured in `tests/Pest.php`.
+The table defaults are ten rows per page, ID descending. Override only the
+methods the Resource needs:
 
-3. **Meta Fields**: Resources can store fields in a `meta` table. Check `usesMeta()` to determine storage method:
-   ```php
-   if ($this->usesMeta()) {
-       // Fields stored in meta table
-   }
-   ```
+~~~php
+public function defaultPerPage()
+{
+    return 25;
+}
 
-4. **Type Column**: The `posts` table uses a `type` column for single-table inheritance. Custom table resources should set `$customTable = true`.
+public function defaultTableSort()
+{
+    return 'created_at';
+}
 
-5. **Field Type Strings**: Always use fully qualified class names with escaped backslashes in field definitions:
-   ```php
-   'type' => 'Aura\\Base\\Fields\\Text',  // Correct
-   'type' => 'Aura\Base\Fields\Text',     // Wrong - will fail
-   ```
+public function defaultTableSortDirection()
+{
+    return 'asc';
+}
+~~~
 
-6. **Static Analysis**: PHPStan is configured at level 3. Run `composer analyse` before committing.
+Relation and media fields can opt into Aura's table eager-load and display
+preload contracts. Implement those contracts when a field needs related rows
+for visible table cells. The table limits eager loads to visible list columns
+and primes the current page before rendering. Measure the actual route and
+query shape before changing this code. See [Table component](/docs/table) and
+[Performance](/docs/performance).
 
-## Pro Tips
+Row and bulk actions must be declared by the Resource. Include the ability that
+the action requires. Aura resolves records through the current table scope and
+authorizes each record before invoking a custom method. A custom Livewire
+control still needs an explicit policy check.
 
-1. **Use Type Declarations**: Always use type hints for parameters and return types
-2. **Leverage Laravel Features**: Use Laravel's built-in features before creating custom solutions
-3. **Keep It Simple**: Don't over-engineer; start simple and refactor as needed
-4. **Document Complex Logic**: Add comments for non-obvious code
-5. **Use Dependency Injection**: Inject dependencies rather than using facades in classes
-6. **Follow PSR Standards**: Use PSR-12 for coding style and PSR-4 for autoloading
-7. **Write Tests First**: TDD helps design better APIs
-8. **Use Value Objects**: For complex data structures
-9. **Implement Caching Early**: But make it configurable
-10. **Monitor Performance**: Use tools like Telescope and Debugbar
+<a id="security-best-practices"></a>
+## Keep authorization and ownership in the policy layer
 
-## Conclusion
+<code>Aura\Base\Policies\ResourcePolicy</code> handles <code>viewAny</code>,
+<code>view</code>, <code>create</code>, <code>update</code>,
+<code>delete</code>, <code>restore</code>, and <code>forceDelete</code>. The
+Resource capability flags disable the matching screen or ability. Otherwise
+the policy accepts a Global Admin, a Super Admin in the current team, or the
+matching generated permission.
 
-Following these best practices and patterns will help you build maintainable, scalable, and secure Aura CMS applications. Remember:
+Generate permission rows after adding a Resource:
 
-- **Consistency** is more important than perfection
-- **Readability** trumps cleverness
-- **Security** should never be an afterthought
-- **Performance** matters at scale
-- **Testing** saves time in the long run
+~~~bash
+php artisan aura:create-resource-permissions
+php artisan aura:create-resource-permissions --team=42
+~~~
 
-For more resources, consult the [Laravel Best Practices](https://github.com/alexeymezenin/laravel-best-practices) and contribute your own patterns to the Aura CMS community.
+Assign those permissions through the Roles Resource. A
+<code>scope-{resource}</code> permission also narrows normal Resource queries
+to rows whose <code>user_id</code> is the current User. It does not replace team
+scoping, and a Resource that uses this permission needs a <code>user_id</code>
+column.
+
+Use Laravel abilities for Resource actions:
+
+~~~php
+Gate::authorize('update', $product);
+
+if (auth()->user()->hasPermissionTo('create', Product::class)) {
+    // The permission check is explicit. The policy still guards the write.
+}
+~~~
+
+The field's <code>validation</code> rules protect form input. They do not
+authorize a caller. The <code>on_forms</code> and <code>on_view</code> settings
+control presentation. Keep policy checks around programmatic saves, imports,
+jobs, and custom Livewire actions.
+
+<a id="team-ownership"></a>
+## Preserve team ownership
+
+With Teams enabled, Aura adds <code>TeamScope</code> to Resources. Ordinary
+team-aware Resource queries use the authenticated user's current Team. An
+authenticated user without a current Team gets a fail-closed query for
+ordinary team-scoped Resources. A normal save receives its <code>team_id</code>
+from the active team context.
+
+The built-in Resources have different ownership rules:
+
+- Ordinary Resources use their <code>team_id</code> column.
+- The User Resource filters membership through <code>user_role</code>. A Global
+  Admin can list Users across Teams.
+- The Team Resource is the context record and is not filtered by TeamScope.
+- The Role Resource combines Team Roles with the shared Global Role catalog and
+  resolves Shadowing by role slug.
+- Teams-off mode makes TeamScope a no-op and uses the schema without team
+  columns.
+
+Do not describe every Resource as permanently team-scoped. Inspect the Resource
+and its schema when adding a new query. Do not remove a global scope to make a
+row visible in a request unless the operation is an authorized administrative
+operation with an explicit Team filter.
+
+Keep the role terms distinct:
+
+| Term | Meaning |
+| --- | --- |
+| Global Admin | Instance-level status. It can enter any Team without creating Membership. |
+| Super Admin | Role-level grant with full Resource permissions inside the Team where that role resolves. |
+| Global Role | Shared role definition in the Role Catalog. Only a Global Admin can define it. |
+| Team Role | Role owned by one Team. A same-slug Team Role shadows the Global Role in that Team. |
+| Membership | One user's role in one Team, stored in <code>user_role</code>. |
+
+Global Admin visitation does not turn into Membership. Resource data still
+follows the current Team context. See [Teams](/docs/teams) and
+[Roles and permissions](/docs/roles-permissions).
+
+<a id="livewire-components"></a>
+## Customize Livewire pages through the Resource
+
+Use <code>aura:customize</code> for an Index, Create, Edit, or View page.
+Override the generated component's lifecycle methods and call
+<code>parent::</code> when the default save or mount work must remain.
+
+For a custom field or page view, preserve Aura's state paths:
+
+- Resource forms use <code>form.fields.{slug}</code>.
+- Edit and View components receive the Resource ID and slug through their
+  existing mount contract.
+- A custom page can return a view with
+  <code>->layout('aura::components.layout.app')</code> when it replaces the
+  generated view.
+
+Do not create a second table query that skips the Resource's global scopes. Use
+the table's Resource hook or the generated component seam so team and policy
+behavior remains in one place. See [Customizing views](/docs/customizing-views)
+and [Livewire components](/docs/livewire-components).
+
+<a id="testing-practices"></a>
+## Test the Resource through its real paths
+
+For a form test, drive the same Livewire component and state path that the
+admin page uses:
+
+~~~php
+use Aura\Base\Livewire\Resource\Create;
+
+use function Pest\Livewire\livewire;
+
+beforeEach(function () {
+    $this->actingAs(createSuperAdmin());
+});
+
+test('creates a product', function () {
+    livewire(Create::class, ['slug' => 'product'])
+        ->set('form.fields.name', 'Example')
+        ->call('save')
+        ->assertHasNoErrors();
+});
+~~~
+
+The Aura package test suite provides helpers such as
+<code>createSuperAdmin()</code>, <code>createSuperAdminWithoutTeam()</code>,
+<code>createAdmin()</code>, and <code>createPost()</code> in
+<code>tests/Pest.php</code>. Those helpers belong to the package test
+environment. An application test suite should create its own authenticated
+Users and Teams through its factories.
+
+Use focused coverage for the behavior you changed:
+
+- <code>tests/Feature/Resource</code> covers Resource configuration, storage,
+  and actions.
+- <code>tests/Feature/Fields</code> covers field input and display behavior.
+- <code>tests/Feature/Table</code> covers search, filters, sorting, selection,
+  and table display loading.
+- <code>tests/Feature/Octane/OctaneSupportTest.php</code> covers process-state
+  resets and lifecycle listeners.
+- <code>tests/Browser</code> covers the rendered admin flow.
+
+Feature tests use <code>RefreshDatabase</code>. Tests under
+<code>FeatureWithDatabaseMigrations</code> use <code>DatabaseMigrations</code>.
+The package Pest setup resets the Aura facade and process caches after feature
+tests. The browser base class clears field and conditional-logic caches before
+each browser test.
+
+<a id="runtime-state"></a>
+## Treat static state as process state
+
+Aura caches field definitions and mapped field classes in static arrays keyed by
+Resource class. A Resource instance also caches its resolved <code>fields</code>
+and normalized meta map. Those caches are different from the Laravel cache
+store.
+
+Register Resources and fields during application boot. Do not put the current
+User, Team, or request data in class-static caches. If code changes definitions
+or registrations inside a long-lived process, clear the relevant state before
+the next request. <code>Aura::flushState()</code> restores boot registrations
+and clears field, conditional-logic, team-scope, and ownership caches.
+
+When Laravel Octane is installed, Aura wires <code>Aura::flushState()</code> to
+<code>RequestReceived</code>, <code>TaskReceived</code>, and
+<code>TickReceived</code>. Queue completion and queue failure also flush Aura
+state. This keeps process-local definitions and team/user state from crossing
+request boundaries. It does not clear database rows or Laravel's cache store.
+
+If code changes the meta relation on an existing Resource instance, call
+<code>clearFieldsAttributeCache()</code> before reading the computed fields
+again. Do not reuse a Resource instance across users or Teams.
+
+<a id="common-gotchas"></a>
+## Keep these boundaries visible
+
+- Aura Base does not provide generated REST routes. A host application owns
+  external HTTP contracts.
+- The core thumbnail path uses Intervention Image 3 with the GD driver. Enable
+  PHP GD. Do not make the optional Laravel image facade or Imagick the only
+  requirement for core thumbnails. See [Media Library](/docs/media-manager).
+- Teams-on and Teams-off use different migration schemas. Choose
+  <code>AURA_TEAMS</code> before the first migration and plan a data migration
+  before changing it. See [Teams](/docs/teams#schema-differences).
+- A custom-table Resource does not acquire columns from its field arrays. The
+  migration and physical table must match the field slugs.
+- A field hidden with <code>on_forms</code> or a disabled screen is not an
+  authorization boundary.
+- Do not use <code>migrate:fresh</code>, regenerate an application key, broad
+  permission changes, or disabled authentication as a generic Aura
+  troubleshooting step.
+
+## Related guides
+
+- [Resources](/docs/resources) for Resource configuration and lifecycle.
+- [Fields](/docs/fields) for built-in field options.
+- [Creating fields](/docs/creating-fields) for package and application field
+  extensions.
+- [Custom tables](/docs/custom-tables) and [Meta fields](/docs/meta-fields) for
+  storage and migrations.
+- [Table component](/docs/table) for search, filters, sorting, and actions.
+- [Teams](/docs/teams) and [Roles and permissions](/docs/roles-permissions) for
+  ownership and authorization.
+- [Performance](/docs/performance) for measurements and cache behavior.

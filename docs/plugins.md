@@ -1,130 +1,528 @@
-# Plugin Development
+# Plugins
 
-Aura CMS provides a powerful plugin system that allows you to extend and customize the platform's functionality. Built on Laravel's package ecosystem, plugins can add new resources, fields, widgets, and more while maintaining clean separation from the core code.
+An Aura plugin is a Laravel package that adds resources, fields, routes, views, migrations, Livewire components, or other application code. Use a plugin when the feature should be developed and installed as a package. Put a resource or field that belongs to one application under `app/Aura` instead. See [Creating Resources](/docs/creating-resources) and [Creating Fields](/docs/creating-fields).
 
-## Table of Contents
+Aura Base provides the registration points and the admin integration. It does not scan arbitrary directories for plugins, generate a REST API, or turn resource widgets into global dashboard widgets. A plugin owns its routes, policies, controllers, Livewire components, and other application code.
 
-- [Overview](#overview)
-- [Plugin Architecture](#plugin-architecture)
-- [Creating Plugins](#creating-plugins)
-- [Plugin Types](#plugin-types)
-- [Plugin Development](#plugin-development)
-- [Hook System](#hook-system)
-- [Event System](#event-system)
-- [Testing Plugins](#testing-plugins)
-- [Distribution](#distribution)
-- [Best Practices](#best-practices)
-- [Example Plugins](#example-plugins)
+## Generate a plugin
 
-## Overview
+Run the generator from the Laravel application that contains Aura:
 
-Aura plugins are standard Laravel packages with additional conventions for seamless integration:
-
-- **Composer-based**: Install and update via Composer
-- **PSR-4 Autoloading**: Standard PHP namespace conventions
-- **Service Provider**: Register functionality with Aura using Spatie's Laravel Package Tools
-- **Isolated**: Each plugin has its own namespace and dependencies
-- **Testable**: Full testing support with PHPUnit/Pest
-
-## Plugin Architecture
-
-### Directory Structure
-
-The plugin generator creates the following structure (complete plugin example):
-
-```
-plugins/
-└── vendor-name/
-    └── plugin-name/
-        ├── src/
-        │   ├── PluginNameServiceProvider.php
-        │   ├── Commands/
-        │   │   └── PluginNameCommand.php
-        │   ├── Facades/
-        │   │   └── PluginName.php
-        │   └── PluginName.php
-        ├── resources/
-        │   └── views/
-        ├── config/
-        │   └── plugin-name.php
-        ├── database/
-        │   ├── factories/
-        │   │   └── ModelFactory.php
-        │   └── migrations/
-        │       └── create_plugin_name_table.php.stub
-        ├── composer.json
-        ├── configure.php
-        ├── README.md
-        ├── CHANGELOG.md
-        └── LICENSE.md
-```
-
-### Registration Flow
-
-1. **Composer Autoloading**: Plugin classes are autoloaded via PSR-4 (added to main `composer.json`)
-2. **Service Provider**: Optionally registered in `config/app.php` via the generator
-3. **Spatie Package Tools**: Uses `PackageServiceProvider` for Laravel integration
-4. **Runtime**: Plugin features available throughout application
-
-## Creating Plugins
-
-### Using the Plugin Generator
-
-Aura provides an Artisan command to scaffold new plugins:
-
-```bash
-php artisan aura:plugin vendor/plugin-name
-```
-
-The generator offers three plugin types:
-1. **Complete Plugin**: Full-featured Laravel package with config, migrations, commands, and views
-2. **Resource Plugin**: Adds new resource types to Aura CMS
-3. **Field Plugin**: Adds new custom field types
-
-### Step-by-Step Creation
-
-```bash
-# 1. Create plugin (interactive)
-php artisan aura:plugin
-
-# Or with name argument
+~~~bash
 php artisan aura:plugin acme/blog
+~~~
 
-# 2. Select plugin type from the menu
-# > Complete plugin
+If you omit the argument, the command asks for it. Use the `vendor/name` form. The command then asks which stub to copy:
 
-# 3. Plugin created at plugins/acme/blog
-# 4. Optionally adds service provider to config/app.php
-# 5. Updates composer.json autoload and runs dump-autoload
-```
+| Option | Value | Files added |
+| --- | --- | --- |
+| Complete plugin | `plugin` | Service provider, config, migration stub, command, facade, and package class |
+| Resource plugin | `plugin-resource` | Service provider, resource class, and two field view stubs |
+| Field plugin | `plugin-field` | Service provider, field class, and two field view stubs |
 
-The generator will:
-- Create the plugin directory structure at `plugins/vendor/name`
-- Run a configure script to replace placeholder values
-- Offer to add the ServiceProvider to `config/app.php`
-- Update the main `composer.json` with PSR-4 autoloading
-- Run `composer dump-autoload` automatically
+These are the three choices in `CreateAuraPlugin`. There is no widget-specific stub.
 
-### Manual Creation
+The generator performs these steps:
 
-```bash
-# Create directory structure
-mkdir -p plugins/acme/blog/src
+1. It creates `plugins/{vendor}/{name}` and copies the selected directory from Aura's `stubs` directory.
+2. It runs `configure.php` inside that directory. The script replaces the `VendorName`, `Skeleton`, and other placeholders, renames generated classes and files, and deletes itself.
+3. The configure script asks for an author username. It uses the Git remote as its initial guess.
+4. The command offers to add the generated service provider to `config/app.php`.
+5. It adds a PSR-4 entry for the plugin source directory to the application's root `composer.json`.
+6. It runs `composer dump-autoload`.
 
-# Create composer.json
-cat > plugins/acme/blog/composer.json << 'EOF'
+For the simple name `acme/blog`, the generated source namespace is `Acme\Blog\`, the source path is `plugins/acme/blog/src`, and the provider class is `Acme\Blog\BlogServiceProvider`.
+
+The command expects a vendor and package separated by one slash. Use a simple lowercase `vendor/name` while running the generator. It does not validate malformed names before calling `explode()` or before writing the Composer namespace entry.
+
+The generated application is active only after its classes are autoloaded and its provider is registered. A local generated plugin uses the root PSR-4 mapping and the optional `config/app.php` entry. An installed Composer package can use Laravel package discovery through the `extra.laravel.providers` entry in its own `composer.json`, unless the host application disables discovery.
+
+## Generated files
+
+After generating `acme/blog`, the resource and field stubs contain the following relevant files. The `Skeleton` names below have already been renamed to `Blog`.
+
+~~~text
+plugins/acme/blog/
+├── composer.json
+├── resources/views/components/fields/blog.blade.php
+├── resources/views/components/fields/blog-view.blade.php
+├── src/Blog.php
+├── src/BlogServiceProvider.php
+├── README.md
+├── CHANGELOG.md
+└── LICENSE.md
+~~~
+
+The complete `plugin` stub also contains:
+
+~~~text
+config/blog.php
+database/factories/ModelFactory.php
+database/migrations/create_blog_table.php.stub
+src/Commands/BlogCommand.php
+src/Facades/Blog.php
+~~~
+
+The resource stub registers its resource in `configurePackage()`. The field stub does not register its field with Aura. Add that registration yourself. The resource and field Composer templates both retain a `Skeleton` facade alias in `extra.laravel`, but neither stub contains a facade class. Do not use that alias unless you add and rename a facade class.
+
+The generated Composer templates currently declare `php: ^8.1`, `spatie/laravel-package-tools: ^1.14.0`, and `illuminate/contracts: ^10.0`. The current Aura source targets PHP 8.4, Laravel 13, Livewire 4, and package tools 1.16. Treat the generated Composer file as a starting point and update its constraints for the host application before distributing the plugin.
+
+## Configure the service provider
+
+Plugin providers extend Spatie's `PackageServiceProvider`. Configure only the package features that the plugin actually ships:
+
+~~~php
+<?php
+
+namespace Acme\Blog;
+
+use Acme\Blog\Commands\BlogCommand;
+use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
+
+class BlogServiceProvider extends PackageServiceProvider
+{
+    public function configurePackage(Package $package): void
+    {
+        $package
+            ->name('blog')
+            ->hasConfigFile()
+            ->hasViews('acme-blog')
+            ->hasRoutes('web')
+            ->hasMigration('create_blog_table')
+            ->hasCommand(BlogCommand::class);
+    }
+}
+~~~
+
+`hasConfigFile()` loads `config/blog.php` and gives it the package name. `hasViews('acme-blog')` registers the `acme-blog::` view and anonymous component namespace. `hasRoutes('web')` loads the package's `routes/web.php`. `hasMigration()` publishes the named migration into the host application when the package is installed. It does not run the migration by itself. `hasCommand()` registers the command with Artisan.
+
+The package-tools lifecycle is:
+
+1. `configurePackage()` runs during service-provider registration.
+2. `packageRegistered()` runs later in the same registration phase, after package configuration has been merged.
+3. `packageBooted()` runs during the framework boot phase after package tools have loaded routes, views, migrations, and commands.
+
+Register Aura resources and fields in `configurePackage()` or in `packageBooted()` while the application is still booting. Register record layout panels before the application's booted callbacks run. Do not defer those registrations with `$this->app->booted()`, because the record layout registry is finalized at that point.
+
+## A small resource plugin
+
+This example registers one resource and gives its index page a count widget. It is a complete plugin feature once the files are placed under the package's `src` directory.
+
+`src/BlogServiceProvider.php`:
+
+~~~php
+<?php
+
+namespace Acme\Blog;
+
+use Acme\Blog\Resources\Post;
+use Aura\Base\Facades\Aura;
+use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
+
+class BlogServiceProvider extends PackageServiceProvider
+{
+    public function configurePackage(Package $package): void
+    {
+        $package
+            ->name('blog')
+            ->hasViews('acme-blog');
+
+        Aura::registerResources([Post::class]);
+    }
+}
+~~~
+
+`src/Resources/Post.php`:
+
+~~~php
+<?php
+
+namespace Acme\Blog\Resources;
+
+use Aura\Base\Fields\Text;
+use Aura\Base\Fields\Textarea;
+use Aura\Base\Resource;
+use Aura\Base\Widgets\ValueWidget;
+
+class Post extends Resource
+{
+    public static string $type = 'BlogPost';
+
+    public static ?string $slug = 'blog-post';
+
+    protected static ?string $group = 'Acme';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Title',
+                'type' => Text::class,
+                'slug' => 'title',
+                'validation' => 'required|max:255',
+                'on_index' => true,
+            ],
+            [
+                'name' => 'Summary',
+                'type' => Textarea::class,
+                'slug' => 'summary',
+            ],
+        ];
+    }
+
+    public static function getWidgets(): array
+    {
+        return [
+            [
+                'name' => 'Posts',
+                'slug' => 'post-count',
+                'type' => ValueWidget::class,
+                'method' => 'count',
+                'style' => ['width' => '100'],
+            ],
+        ];
+    }
+}
+~~~
+
+The resource class must be registered with `Aura::registerResources()`. Its field definitions are arrays with a field class in `type`. The `slug` is the key used by the form, storage, and table layers. The default storage and custom-table choices remain the same as for an app resource. See [Resources](/docs/resources), [Meta Fields](/docs/meta-fields), and [Custom Tables](/docs/custom-tables).
+
+When a resource redeclares an inherited static property, keep the type declared by `Aura\Base\Resource`. For example, `$group` and `$name` are nullable strings. Some inherited properties are intentionally untyped. Adding a conflicting type causes a PHP fatal error.
+
+## Register resources, fields, and widgets
+
+The Aura facade exposes three registration methods:
+
+| Method | Use |
+| --- | --- |
+| `Aura::registerResources([...])` | Add resource classes to Aura's resource registry. Registered resources receive navigation and admin routes when their class is valid. |
+| `Aura::registerFields([...])` | Add field classes to the Resource Editor's field list and option groups. |
+| `Aura::registerWidgets([...])` | Add widget classes to Aura's widget registry. A resource still needs a definition in `getWidgets()` for the index renderer to mount it. |
+
+~~~php
+use Aura\Base\Facades\Aura;
+
+Aura::registerResources([\Acme\Blog\Resources\Post::class]);
+Aura::registerFields([\Acme\Blog\Fields\ColorPicker::class]);
+Aura::registerWidgets([\Acme\Blog\Widgets\ReadingTime::class]);
+~~~
+
+`Aura::registerWidgets()` does not create a global dashboard widget. Resource widgets are arrays returned by `Resource::getWidgets()` and render above that resource's index table. See [Widgets](/docs/widgets).
+
+## Resource plugins
+
+The `plugin-resource` stub generates a resource class and registers it in the generated provider. For `acme/blog`, the generated class is `Acme\Blog\Blog`, with slug `blog` and type `Blog`. The stub does not create a `Resources\Post` class.
+
+The generated resource is equivalent to this shape:
+
+~~~php
+namespace Acme\Blog;
+
+use Aura\Base\Resource;
+
+class Blog extends Resource
+{
+    public static ?string $slug = 'blog';
+
+    public static string $type = 'Blog';
+
+    protected static ?string $group = 'Acme';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Title',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'title',
+                'validation' => 'required',
+                'on_index' => true,
+                'style' => ['width' => '100'],
+            ],
+        ];
+    }
+
+    public static function getWidgets(): array
+    {
+        return [];
+    }
+}
+~~~
+
+The resource provider calls `Aura::registerResources([Blog::class])` in `configurePackage()`. Add views, routes, migrations, and other package code only when the resource needs them.
+
+## Field plugins
+
+A custom field extends `Aura\Base\Fields\Field`. Aura calls `Field::edit()` for the form and `Field::view()` for the display view. Set `$edit` and `$view` to the package's anonymous component names:
+
+~~~php
+namespace Acme\Blog\Fields;
+
+use Aura\Base\Fields\Field;
+
+class ColorPicker extends Field
+{
+    public $edit = 'acme-blog::fields.colorpicker';
+
+    public $view = 'acme-blog::fields.colorpicker-view';
+
+    public function getFields()
+    {
+        return array_merge(parent::getFields(), [
+            [
+                'name' => 'Default color',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'default',
+                'instructions' => 'Hex value, for example #FF0000',
+            ],
+        ]);
+    }
+}
+~~~
+
+The generated `plugin-field` class currently uses `$component` for the edit view. Aura's runtime reads `$edit`, so replace `$component` with `$edit` before using the field. This is a package stub defect, not a supported field property. The generated service provider calls only `name()` and `hasViews()`. Register the field explicitly:
+
+~~~php
+use Aura\Base\Facades\Aura;
+use Acme\Blog\Fields\ColorPicker;
+
+public function configurePackage(Package $package): void
+{
+    $package
+        ->name('blog')
+        ->hasViews('acme-blog');
+
+    Aura::registerFields([ColorPicker::class]);
+}
+~~~
+
+The two generated views live under `resources/views/components/fields`. With the `acme-blog` view namespace, `acme-blog::fields.colorpicker` resolves to the anonymous component at `components/fields/colorpicker.blade.php`.
+
+The edit view receives the field definition in `$field` and must bind to the form field slug:
+
+~~~blade
+{{-- resources/views/components/fields/colorpicker.blade.php --}}
+<x-aura::fields.wrapper :field="$field">
+    <x-aura::input.text
+        wire:model="form.fields.{{ $field['slug'] }}"
+        :disabled="optional($field)['disabled']"
+        :placeholder="$field['placeholder'] ?? $field['name']"
+        id="resource-field-{{ $field['slug'] }}"
+    />
+</x-aura::fields.wrapper>
+~~~
+
+The display view can delegate to the resource's display method:
+
+~~~blade
+{{-- resources/views/components/fields/colorpicker-view.blade.php --}}
+<x-aura::fields.wrapper :field="$field">
+    {!! $this->model->display($field['slug']) !!}
+</x-aura::fields.wrapper>
+~~~
+
+`getFields()` returns the settings shown when a user configures the field in the Resource Editor. Merge `parent::getFields()` to retain Aura's standard name, slug, validation, type, view, and conditional-logic settings.
+
+Implement `set($post, $field, $value)` only when the field transforms a value before saving. Aura calls it when the concrete field class defines it. The base `Field` class does not define `set()`, so do not call `parent::set()`.
+
+## Resource layout panels
+
+Plugins can add validated Livewire panels to record pages. Register them before the application finishes booting:
+
+~~~php
+use Aura\Base\Facades\Aura;
+use Aura\Base\RecordLayout\RecordLayoutPanel;
+use Aura\Base\RecordLayout\RecordLayoutRegion;
+use Acme\Blog\Livewire\ReadingStatsPanel;
+
+public function packageBooted(): void
+{
+    Aura::registerRecordLayoutPanels('acme/blog', [
+        new RecordLayoutPanel(
+            key: 'reading-stats',
+            region: RecordLayoutRegion::RightSidebar,
+            component: ReadingStatsPanel::class,
+            order: 20,
+            resources: ['blog-post'],
+            ability: 'view-reading-stats',
+            eagerLoad: ['author'],
+        ),
+    ]);
+}
+~~~
+
+The source string must be a lowercase Composer package name. A panel key is unique within that source. The component must be a concrete Livewire component that accepts the record as a `model` property or `mount()` parameter and accepts the modal state as an `inModal` property or parameter. Aura checks `ability` before rendering, loads declared relationships together, and ignores hidden or unauthorized panels. A panel action must authorize its own state-changing request.
+
+A resource can provide panels without a plugin registry by implementing `DefinesRecordLayoutPanels` and returning `RecordLayoutPanel` objects. See [Record Layouts](/docs/record-layouts) for the complete contract, preferences, ordering, and resource scoping.
+
+## Navigation and hooks
+
+Aura resolves a `HookManager` from the `hook_manager` container binding:
+
+~~~php
+app('hook_manager')->addHook('navigation', function ($navigation) {
+    $navigation->push([
+        'name' => 'Reports',
+        'slug' => 'reports',
+        'route' => 'aura.dashboard',
+        'group' => 'Acme',
+    ]);
+
+    return $navigation;
+});
+~~~
+
+Hook callbacks receive one argument and must return the modified value. Aura applies the `navigation` hook to the resource collection while building the sidebar. The core source does not apply `resource.fields`, `dashboard.widgets`, `navigation.after`, or `aura.hooks` hooks.
+
+Use `Navigation::add()` for menu items:
+
+~~~php
+use Aura\Base\Navigation\Navigation;
+
+public function packageBooted(): void
+{
+    Navigation::add([
+        [
+            'name' => 'Reports',
+            'slug' => 'reports',
+            'icon' => 'chart-bar',
+            'route' => 'aura.dashboard',
+            'group' => 'Acme',
+        ],
+    ]);
+}
+~~~
+
+`Navigation::add()` accepts an optional second argument that returns a boolean. The callback runs when `add()` is called, so it is not a per-request authorization check. Protect the destination route or action with Laravel authorization. `Navigation::clear()` registers a hook that returns an empty collection.
+
+## Inject view fragments
+
+`Aura::registerInjectView($slot, $callback)` appends the callback's rendered value wherever Aura calls `injectView($slot)`:
+
+~~~php
+use Aura\Base\Facades\Aura;
+
+Aura::registerInjectView('widgets_before', function () {
+    return view('acme-blog::partials.banner');
+});
+~~~
+
+The callback is called through Laravel's container and its result is cast to a string. The slots currently rendered by Aura are:
+
+| Location | Slots |
+| --- | --- |
+| Resource index | `index_before`, `widgets_before`, `widgets_after` |
+| Table | `table_before`, `table_after`, `table_before_{Type}`, `table_after_{Type}` |
+| Table header | `header_before`, `header_after` |
+| Breadcrumbs | `breadcrumbs_before`, `breadcrumbs_after` |
+| Resource edit | `post_edit_title_before`, `post_edit_title_after`, `post_edit_breadcrumbs_before`, `post_edit_breadcrumbs_after` |
+| Profile | `profile_before_header`, `profile_after_header` |
+
+There is no core `head` or `dashboard.footer` slot. A plugin that needs those locations must own the relevant layout or view override.
+
+## Config, routes, and migrations
+
+The package tools methods configure package resources. They do not wrap a plugin's route file in Aura's middleware or URL prefix. Add that contract in the route file when the route belongs in the Aura admin area:
+
+~~~php
+// routes/web.php
+use Illuminate\Support\Facades\Route;
+
+Route::middleware(config('aura-settings.middleware.aura-admin'))
+    ->prefix(config('aura.path'))
+    ->name('aura.')
+    ->group(function () {
+        Route::get('/blog', \Acme\Blog\Livewire\Feed::class)
+            ->name('blog.feed');
+    });
+~~~
+
+The admin middleware defaults to `web` and `auth` in `config/aura-settings.php`. The URL prefix comes from `config('aura.path')`, which defaults to `admin`. There is no `aura.middleware.*` configuration key.
+
+For a package migration, call `hasMigration('create_blog_table')` or `hasMigrations([...])` with the files the package ships. The default package-tools behavior publishes those files into the host application's `database/migrations` directory. The host then runs `php artisan migrate`. Do not assume that installing a plugin changes the database without a migration step.
+
+Use `hasConfigFile()` for package-owned settings. Use Aura's `config/aura.php` and `config/aura-settings.php` only for host-level Aura configuration. A plugin's config file is not an Aura feature flag unless the plugin reads that config key itself.
+
+## Plugin discovery and the admin page
+
+Aura does not scan `plugins/` and does not discover a provider from a directory name. The local generator updates the host Composer autoload map and can add a provider to `config/app.php`. A separately installed Composer package can use Laravel package discovery through its own `extra.laravel.providers` metadata.
+
+Aura also ships a plugin information page at `/{aura-path}/plugins`. With the default path, the URL is `/admin/plugins` and the route name is `aura.plugins`. `PluginsPage` allows only a Super Admin to open the page. It reads the host `composer.json` and `composer.lock`, then reads each installed package's `vendor/{package}/composer.json` to show its name, locked version, description, and keywords. It does not install packages, update packages, or query Packagist for newer versions.
+
+The `aura.features.plugins` setting defaults to `true` and controls the Plugins quick action on the dashboard. The `/plugins` route is registered regardless of that setting, so disabling the flag does not disable the route or its authorization check.
+
+## Test a plugin
+
+Orchestra Testbench can boot both Aura and the plugin provider:
+
+~~~php
+namespace Acme\Blog\Tests;
+
+use Acme\Blog\BlogServiceProvider;
+use Aura\Base\AuraServiceProvider;
+use Orchestra\Testbench\TestCase as Orchestra;
+
+class TestCase extends Orchestra
+{
+    protected function getPackageProviders($app): array
+    {
+        return [
+            AuraServiceProvider::class,
+            BlogServiceProvider::class,
+        ];
+    }
+
+    protected function defineEnvironment($app): void
+    {
+        $app['config']->set('database.default', 'testing');
+        $app['config']->set('aura.teams', false);
+    }
+}
+~~~
+
+The test application still needs Aura's schema and the plugin's own migrations. In a package test suite, load the migration stub or migration files from the checked-out Aura package and run the plugin migrations before creating records. Do not point tests at an unrelated `vendor/aura/base` path. The current package name is `eminiarts/aura-cms`.
+
+Aura's resource pages are Livewire components behind GET routes. There are no POST `*.create` routes. Drive the component or the model in a feature test:
+
+~~~php
+use Aura\Base\Livewire\Resource\Create;
+use function Pest\Livewire\livewire;
+
+test('creates a blog post', function () {
+    $this->actingAs($this->user);
+
+    livewire(Create::class, ['slug' => 'blog-post'])
+        ->set('form.fields.title', 'Hello')
+        ->call('save')
+        ->assertHasNoErrors();
+});
+~~~
+
+Test a custom field's transformation directly when the field implements `set()`:
+
+~~~php
+test('normalises a color', function () {
+    $field = new \Acme\Blog\Fields\ColorPicker;
+
+    expect($field->set(null, ['slug' => 'color'], '#FF0000'))
+        ->toBe('#FF0000');
+});
+~~~
+
+Focused tests in Aura's source cover the generator in `tests/Feature/Aura/CreatePluginTest.php`, the Plugins page in `tests/Feature/Livewire/PluginsPageTest.php`, navigation in `tests/Feature/NavigationTest.php`, view slots in `tests/Feature/Table/SettingsTableTest.php`, and record layout panels in `tests/Feature/Resource/RecordLayoutTest.php`.
+
+## Package a plugin
+
+For a Composer-installed plugin, ship a package `composer.json` with a PSR-4 mapping and the provider under `extra.laravel.providers`:
+
+~~~json
 {
     "name": "acme/blog",
-    "description": "Blog plugin for Aura CMS",
-    "type": "library",
-    "require": {
-        "php": "^8.2",
-        "spatie/laravel-package-tools": "^1.14.0",
-        "illuminate/contracts": "^10.0|^11.0|^12.0"
-    },
     "autoload": {
         "psr-4": {
-            "Acme\\Blog\\": "src"
+            "Acme\\Blog\\": "src/"
         }
     },
     "extra": {
@@ -135,1128 +533,15 @@ cat > plugins/acme/blog/composer.json << 'EOF'
         }
     }
 }
-EOF
+~~~
 
-# Update main composer.json to include the plugin path
-# Add to autoload.psr-4: "Acme\\Blog\\": "plugins/acme/blog/src"
-# Then run:
-composer dump-autoload
-```
+Declare the Aura package version and framework constraints that the plugin supports. Include setup instructions for config publication, migrations, routes, permissions, and any required host configuration. The generator's root Composer mapping is for the current application and should not be treated as the distribution package's release metadata.
 
-## Plugin Types
+## Related documentation
 
-### Complete Plugin
-
-A full-featured plugin uses Spatie's Laravel Package Tools for configuration and can integrate with Aura:
-
-```php
-namespace Acme\Blog;
-
-use Aura\Base\Facades\Aura;
-use Spatie\LaravelPackageTools\Package;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Acme\Blog\Commands\BlogCommand;
-
-class BlogServiceProvider extends PackageServiceProvider
-{
-    public function configurePackage(Package $package): void
-    {
-        /*
-         * This class is a Package Service Provider
-         *
-         * More info: https://github.com/spatie/laravel-package-tools
-         */
-        $package
-            ->name('blog')
-            ->hasConfigFile()
-            ->hasViews()
-            ->hasMigration('create_blog_table')
-            ->hasCommand(BlogCommand::class);
-
-        // Register Aura resources in configurePackage
-        Aura::registerResources([
-            Resources\Post::class,
-            Resources\Category::class,
-        ]);
-
-        // Register custom fields
-        Aura::registerFields([
-            Fields\MarkdownEditor::class,
-            Fields\TagSelector::class,
-        ]);
-
-        // Register widgets
-        Aura::registerWidgets([
-            Widgets\RecentPosts::class,
-            Widgets\PopularPosts::class,
-        ]);
-    }
-
-    public function packageBooted(): void
-    {
-        // Additional boot logic (optional)
-        // Register routes if needed
-        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
-    }
-}
-```
-
-### Resource Plugin
-
-Adds new resource types to Aura CMS. The generated structure includes a basic resource class and service provider:
-
-```php
-namespace Acme\Products;
-
-use Aura\Base\Facades\Aura;
-use Spatie\LaravelPackageTools\Package;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
-
-class ProductsServiceProvider extends PackageServiceProvider
-{
-    public function configurePackage(Package $package): void
-    {
-        /*
-         * This class is a Package Service Provider
-         *
-         * More info: https://github.com/spatie/laravel-package-tools
-         */
-        $package
-            ->name('products')
-            ->hasViews('acme-products');
-
-        /*
-         * Register Aura Resources
-         *
-         * More info: https://aura-cms.com/docs/resources
-         */
-        Aura::registerResources([
-            \Acme\Products\Product::class,
-        ]);
-    }
-}
-```
-
-Product Resource example (generated scaffold):
-
-```php
-namespace Acme\Products;
-
-use Aura\Base\Resource;
-
-class Product extends Resource
-{
-    public static ?string $slug = 'product';
-
-    public static string $type = 'Product';
-
-    protected static ?string $group = 'Acme';
-
-    public static function getFields()
-    {
-        return [
-            [
-                'name' => 'Title',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'validation' => 'required',
-                'on_index' => true,
-                'slug' => 'title',
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
-        ];
-    }
-
-    public function getIcon()
-    {
-        return '<svg class="w-5 h-5" viewBox="0 0 18 18" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M15.75 9a6.75 6.75 0 1 1-13.5 0 6.75 6.75 0 0 1 13.5 0Z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    }
-
-    public static function getWidgets(): array
-    {
-        return [];
-    }
-}
-```
-
-Extended Resource example with more fields:
-
-```php
-namespace Acme\Products;
-
-use Aura\Base\Resource;
-
-class Product extends Resource
-{
-    public static string $type = 'Product';
-    
-    public static ?string $slug = 'product';
-    
-    public static ?string $name = 'Products';
-    
-    public static ?string $singularName = 'Product';
-    
-    protected static ?string $group = 'E-Commerce';
-    
-    public static function getFields()
-    {
-        return [
-            [
-                'name' => 'Product Information',
-                'type' => 'Aura\\Base\\Fields\\Panel',
-                'slug' => 'product-info',
-            ],
-            [
-                'name' => 'Name',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'slug' => 'name',
-                'validation' => 'required|max:255',
-                'searchable' => true,
-                'on_index' => true,
-            ],
-            [
-                'name' => 'Price',
-                'type' => 'Aura\\Base\\Fields\\Number',
-                'slug' => 'price',
-                'validation' => 'required|numeric|min:0',
-                'on_index' => true,
-            ],
-            [
-                'name' => 'Description',
-                'type' => 'Aura\\Base\\Fields\\Wysiwyg',
-                'slug' => 'description',
-            ],
-            [
-                'name' => 'Images',
-                'type' => 'Aura\\Base\\Fields\\Image',
-                'slug' => 'images',
-            ],
-        ];
-    }
-
-    public function getIcon()
-    {
-        return '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>';
-    }
-}
-```
-
-### Field Plugin
-
-Creates custom field types. The generated structure includes a field class and Blade views:
-
-**Service Provider** (`src/ColorPickerServiceProvider.php`):
-
-```php
-namespace Acme\ColorPicker;
-
-use Spatie\LaravelPackageTools\Package;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
-
-class ColorPickerServiceProvider extends PackageServiceProvider
-{
-    public function configurePackage(Package $package): void
-    {
-        /*
-         * This class is a Package Service Provider
-         *
-         * More info: https://github.com/spatie/laravel-package-tools
-         */
-        $package
-            ->name('colorpicker')
-            ->hasViews('acme-colorpicker');
-    }
-}
-```
-
-**Field Class** (`src/ColorPicker.php`):
-
-```php
-namespace Acme\ColorPicker;
-
-use Aura\Base\Fields\Field;
-
-class ColorPicker extends Field
-{
-    // Component view for editing (form input)
-    public $component = 'acme-colorpicker::fields.color-picker';
-    
-    // View for displaying the value (read-only)
-    public $view = 'acme-colorpicker::fields.color-picker-view';
-    
-    public function getFields()
-    {
-        return array_merge(parent::getFields(), [
-            // Custom field configuration options
-            // These appear in the Resource Editor when configuring the field
-            [
-                'name' => 'Default Color',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'slug' => 'default_color',
-                'validation' => 'regex:/^#[0-9A-F]{6}$/i',
-                'instructions' => 'Default color in hex format (e.g., #FF0000)',
-            ],
-        ]);
-    }
-}
-```
-
-**Edit View** (`resources/views/components/fields/color-picker.blade.php`):
-
-```blade
-<x-aura::fields.wrapper :field="$field">
-    <x-aura::input.text 
-        :disabled="optional($field)['disabled']" 
-        wire:model="form.fields.{{ optional($field)['slug'] }}" 
-        error="form.fields.{{ optional($field)['slug'] }}" 
-        placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" 
-        id="resource-field-{{ optional($field)['slug'] }}"
-    />
-</x-aura::fields.wrapper>
-```
-
-**View Mode** (`resources/views/components/fields/color-picker-view.blade.php`):
-
-```blade
-<x-aura::fields.wrapper :field="$field">
-    {!! $this->model->display($field['slug']) !!}
-</x-aura::fields.wrapper>
-```
-
-**Extended Example with Color Picker UI**:
-
-```blade
-{{-- resources/views/components/fields/color-picker.blade.php --}}
-<x-aura::fields.wrapper :field="$field">
-    <div x-data="{ 
-        color: $wire.entangle('form.fields.{{ optional($field)['slug'] }}'),
-        showPicker: false 
-    }" class="relative">
-        <div class="flex items-center space-x-2">
-            <input 
-                type="text" 
-                x-model="color"
-                class="aura-input flex-1"
-                placeholder="#000000"
-            >
-            
-            <div 
-                @click="showPicker = !showPicker"
-                class="w-10 h-10 rounded cursor-pointer border"
-                :style="{ backgroundColor: color }"
-            ></div>
-        </div>
-        
-        <div 
-            x-show="showPicker" 
-            x-transition
-            @click.outside="showPicker = false"
-            class="absolute z-10 mt-2 p-2 bg-white rounded-lg shadow-lg"
-        >
-            <!-- Color picker implementation -->
-        </div>
-    </div>
-</x-aura::fields.wrapper>
-```
-
-### Adding Widgets
-
-To add dashboard widgets to your plugin, create a widget class and register it with Aura. Widgets can be added to any plugin type:
-
-```php
-namespace Acme\Analytics;
-
-use Aura\Base\Widgets\Widget;
-
-class PageViewsWidget extends Widget
-{
-    public function render()
-    {
-        $views = $this->getPageViews();
-        
-        return view('acme-analytics::widgets.page-views', [
-            'views' => $views,
-            'period' => $this->period,
-        ]);
-    }
-    
-    protected function getPageViews()
-    {
-        // Your analytics logic here
-        return [
-            'total' => 15234,
-            'trend' => '+12.5%',
-            'chart' => [...],
-        ];
-    }
-}
-```
-
-Register widgets in your service provider:
-
-```php
-use Aura\Base\Facades\Aura;
-
-public function configurePackage(Package $package): void
-{
-    $package
-        ->name('analytics')
-        ->hasViews('acme-analytics');
-
-    Aura::registerWidgets([
-        \Acme\Analytics\PageViewsWidget::class,
-    ]);
-}
-```
-
-## Plugin Development
-
-### Using Aura APIs
-
-All Aura registrations should typically be done in the `configurePackage()` method of your service provider:
-
-```php
-use Aura\Base\Facades\Aura;
-use Spatie\LaravelPackageTools\Package;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
-
-class MyPluginServiceProvider extends PackageServiceProvider
-{
-    public function configurePackage(Package $package): void
-    {
-        $package
-            ->name('my-plugin')
-            ->hasViews('my-plugin');
-
-        // Register multiple resources
-        Aura::registerResources([
-            Resources\Article::class,
-            Resources\Author::class,
-            Resources\Category::class,
-        ]);
-
-        // Register custom fields
-        Aura::registerFields([
-            Fields\LocationPicker::class,
-            Fields\VideoEmbed::class,
-        ]);
-
-        // Register widgets
-        Aura::registerWidgets([
-            Widgets\Statistics::class,
-            Widgets\RecentActivity::class,
-        ]);
-    }
-
-    public function packageBooted(): void
-    {
-        // Access configuration at runtime
-        $mediaSettings = Aura::option('media');
-        $siteTitle = Aura::option('general')['site_title'] ?? 'My Site';
-
-        // Get registered resources
-        $resources = Aura::getResources();
-        $productResource = Aura::findResourceBySlug('product');
-
-        // Inject views into specific locations
-        Aura::registerInjectView('dashboard.footer', function () {
-            return view('my-plugin::partials.dashboard-footer');
-        });
-    }
-}
-```
-
-### Database Migrations
-
-Create migrations for custom tables:
-
-```php
-// database/migrations/2024_01_01_000000_create_products_table.php
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-
-return new class extends Migration
-{
-    public function up()
-    {
-        Schema::create('products', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->decimal('price', 10, 2);
-            $table->string('sku')->unique();
-            $table->integer('stock')->default(0);
-            $table->boolean('is_active')->default(true);
-            
-            // Team support
-            if (config('aura.teams')) {
-                $table->foreignId('team_id')->constrained()->cascadeOnDelete();
-            }
-            
-            $table->timestamps();
-            $table->softDeletes();
-        });
-    }
-    
-    public function down()
-    {
-        Schema::dropIfExists('products');
-    }
-};
-```
-
-### Configuration Files
-
-```php
-// config/my-plugin.php
-return [
-    'features' => [
-        'comments' => true,
-        'ratings' => true,
-        'reviews' => false,
-    ],
-    
-    'api' => [
-        'key' => env('MY_PLUGIN_API_KEY'),
-        'endpoint' => env('MY_PLUGIN_API_ENDPOINT', 'https://api.example.com'),
-    ],
-    
-    'cache' => [
-        'enabled' => true,
-        'ttl' => 3600, // 1 hour
-    ],
-];
-```
-
-### Routes
-
-```php
-// routes/web.php
-use Illuminate\Support\Facades\Route;
-use Acme\Blog\Http\Controllers\BlogController;
-
-Route::middleware(config('aura.middleware.web'))
-    ->prefix('blog')
-    ->name('blog.')
-    ->group(function () {
-        Route::get('/', [BlogController::class, 'index'])->name('index');
-        Route::get('/{slug}', [BlogController::class, 'show'])->name('show');
-        Route::get('/category/{category}', [BlogController::class, 'category'])->name('category');
-    });
-
-// API routes
-Route::middleware(config('aura.middleware.api'))
-    ->prefix('api/blog')
-    ->group(function () {
-        Route::get('/posts', [BlogController::class, 'apiIndex']);
-        Route::get('/posts/{id}', [BlogController::class, 'apiShow']);
-    });
-```
-
-### Views and Assets
-
-```blade
-{{-- resources/views/blog/index.blade.php --}}
-<x-aura::layout.app>
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-8">Blog Posts</h1>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach($posts as $post)
-                <article class="bg-white rounded-lg shadow-md overflow-hidden">
-                    @if($post->featured_image)
-                        <img 
-                            src="{{ $post->featured_image->thumbnail('md') }}" 
-                            alt="{{ $post->title }}"
-                            class="w-full h-48 object-cover"
-                        >
-                    @endif
-                    
-                    <div class="p-6">
-                        <h2 class="text-xl font-semibold mb-2">
-                            <a href="{{ route('blog.show', $post->slug) }}" class="hover:text-blue-600">
-                                {{ $post->title }}
-                            </a>
-                        </h2>
-                        
-                        <p class="text-gray-600 mb-4">{{ Str::limit($post->excerpt, 150) }}</p>
-                        
-                        <div class="flex items-center text-sm text-gray-500">
-                            <span>{{ $post->author->name }}</span>
-                            <span class="mx-2">•</span>
-                            <time>{{ $post->published_at->format('M d, Y') }}</time>
-                        </div>
-                    </div>
-                </article>
-            @endforeach
-        </div>
-        
-        {{ $posts->links() }}
-    </div>
-</x-aura::layout.app>
-```
-
-## Hook System
-
-Aura provides a hook system for extending functionality:
-
-### Registering Hooks
-
-```php
-use Aura\Base\Facades\Aura;
-
-class PluginServiceProvider extends ServiceProvider
-{
-    public function boot()
-    {
-        // Add navigation items
-        app('aura.hooks')->addHook('navigation.after', function ($navigation) {
-            $navigation[] = [
-                'name' => 'Analytics',
-                'slug' => 'analytics',
-                'icon' => 'chart-bar',
-                'route' => 'analytics.dashboard',
-                'sort' => 100,
-            ];
-            
-            return $navigation;
-        });
-        
-        // Modify resource fields
-        app('aura.hooks')->addHook('resource.fields.post', function ($fields) {
-            $fields[] = [
-                'name' => 'SEO Title',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'slug' => 'seo_title',
-                'validation' => 'max:60',
-                'instructions' => 'Maximum 60 characters',
-            ];
-            
-            return $fields;
-        });
-        
-        // Add to dashboard
-        app('aura.hooks')->addHook('dashboard.widgets', function ($widgets) {
-            $widgets[] = \Acme\Analytics\Widgets\TrafficWidget::class;
-            return $widgets;
-        });
-    }
-}
-```
-
-### Available Hooks
-
-- `navigation.before` - Modify navigation before rendering
-- `navigation.after` - Add items after existing navigation
-- `resource.fields.{type}` - Modify fields for specific resource type
-- `dashboard.widgets` - Add widgets to dashboard
-- `table.filters.{resource}` - Add filters to resource tables
-- `table.actions.{resource}` - Add actions to resource tables
-
-## Event System
-
-### Listening to Events
-
-```php
-use Aura\Base\Events\SaveFields;
-use Illuminate\Support\Facades\Event;
-
-class PluginServiceProvider extends ServiceProvider
-{
-    public function boot()
-    {
-        // Listen to field save events
-        Event::listen(SaveFields::class, function (SaveFields $event) {
-            $model = $event->model;
-            $fields = $event->fields;
-            
-            // Process saved fields
-            if ($model->type === 'Product') {
-                $this->updateInventory($model, $fields);
-            }
-        });
-        
-        // Listen to login events
-        Event::listen(\Aura\Base\Events\LoggedIn::class, function ($event) {
-            $user = $event->user;
-            
-            // Track user login
-            activity()
-                ->performedOn($user)
-                ->log('User logged in');
-        });
-    }
-    
-    protected function updateInventory($product, $fields)
-    {
-        // Your inventory logic
-    }
-}
-```
-
-### Dispatching Events
-
-```php
-namespace Acme\Inventory\Events;
-
-use Illuminate\Foundation\Events\Dispatchable;
-
-class StockLevelChanged
-{
-    use Dispatchable;
-    
-    public function __construct(
-        public $product,
-        public $oldStock,
-        public $newStock
-    ) {}
-}
-
-// Dispatch the event
-StockLevelChanged::dispatch($product, $oldStock, $newStock);
-```
-
-
-## Testing Plugins
-
-### Setting Up Tests
-
-```php
-// tests/TestCase.php
-namespace Acme\Blog\Tests;
-
-use Orchestra\Testbench\TestCase as Orchestra;
-use Aura\Base\AuraServiceProvider;
-use Acme\Blog\BlogServiceProvider;
-
-class TestCase extends Orchestra
-{
-    protected function getPackageProviders($app)
-    {
-        return [
-            AuraServiceProvider::class,
-            BlogServiceProvider::class,
-        ];
-    }
-    
-    protected function defineEnvironment($app)
-    {
-        $app['config']->set('database.default', 'testing');
-        $app['config']->set('aura.teams', false);
-    }
-    
-    protected function defineDatabaseMigrations()
-    {
-        $this->loadMigrationsFrom(__DIR__.'/../vendor/aura/base/database/migrations');
-        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-    }
-}
-```
-
-### Writing Tests
-
-```php
-// tests/Feature/BlogPostTest.php
-namespace Acme\Blog\Tests\Feature;
-
-use Acme\Blog\Tests\TestCase;
-use Acme\Blog\Resources\Post;
-use Aura\Base\Resources\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-class BlogPostTest extends TestCase
-{
-    use RefreshDatabase;
-    
-    public function test_can_create_blog_post()
-    {
-        $user = User::factory()->create();
-        
-        $this->actingAs($user);
-        
-        $post = Post::create([
-            'title' => 'Test Post',
-            'content' => 'Test content',
-            'author_id' => $user->id,
-        ]);
-        
-        $this->assertDatabaseHas('posts', [
-            'title' => 'Test Post',
-            'type' => 'BlogPost',
-        ]);
-    }
-    
-    public function test_blog_post_requires_title()
-    {
-        $user = User::factory()->create();
-        
-        $this->actingAs($user);
-        
-        $response = $this->post(route('aura.blog-post.create'), [
-            'content' => 'Test content',
-        ]);
-        
-        $response->assertSessionHasErrors('title');
-    }
-    
-    public function test_can_view_blog_posts()
-    {
-        Post::factory()->count(5)->create();
-        
-        $response = $this->get(route('blog.index'));
-        
-        $response->assertOk();
-        $response->assertViewHas('posts');
-    }
-}
-```
-
-### Testing Custom Fields
-
-```php
-public function test_color_picker_field_saves_value()
-{
-    $field = new ColorPicker();
-    
-    $processedValue = $field->set(null, ['slug' => 'color'], '#FF0000');
-    
-    $this->assertEquals('#FF0000', $processedValue);
-}
-
-public function test_color_picker_field_validates_hex_format()
-{
-    $this->expectException(ValidationException::class);
-    
-    $field = new ColorPicker();
-    $field->set(null, ['slug' => 'color'], 'invalid-color');
-}
-```
-
-## Distribution
-
-### Preparing for Distribution
-
-1. **Documentation**
-   ```markdown
-   # My Plugin
-   
-   Description of what the plugin does.
-   
-   ## Installation
-   ```bash
-   composer require vendor/plugin
-   ```
-   
-   ## Configuration
-   
-   Publish the config file:
-   ```bash
-   php artisan vendor:publish --tag=plugin-config
-   ```
-   ```
-
-2. **Version Tags**
-   ```bash
-   git tag -a v1.0.0 -m "Initial release"
-   git push origin v1.0.0
-   ```
-
-3. **Composer Package**
-   ```json
-   {
-       "name": "vendor/plugin",
-       "description": "Plugin description",
-       "keywords": ["aura-cms", "plugin", "laravel"],
-       "license": "MIT",
-       "authors": [{
-           "name": "Your Name",
-           "email": "email@example.com"
-       }],
-       "require": {
-           "php": "^8.2",
-           "aura/base": "^1.0|^2.0",
-           "laravel/framework": "^10.0|^11.0|^12.0",
-           "spatie/laravel-package-tools": "^1.14.0"
-       },
-       "autoload": {
-           "psr-4": {
-               "Vendor\\Plugin\\": "src/"
-           }
-       },
-       "extra": {
-           "laravel": {
-               "providers": [
-                   "Vendor\\Plugin\\PluginServiceProvider"
-               ]
-           }
-       }
-   }
-   ```
-
-### Publishing to Packagist
-
-1. Create account on [packagist.org](https://packagist.org)
-2. Submit your package URL
-3. Set up webhook for auto-updates
-4. Add badges to README:
-   ```markdown
-   [![Latest Version](https://img.shields.io/packagist/v/vendor/plugin.svg)](https://packagist.org/packages/vendor/plugin)
-   [![Total Downloads](https://img.shields.io/packagist/dt/vendor/plugin.svg)](https://packagist.org/packages/vendor/plugin)
-   ```
-
-### Installation Instructions
-
-```bash
-# Install via Composer
-composer require vendor/plugin
-
-# Publish assets (if needed)
-php artisan vendor:publish --provider="Vendor\Plugin\PluginServiceProvider"
-
-# Run migrations (if needed)
-php artisan migrate
-
-# Clear cache
-php artisan aura:clear
-```
-
-## Best Practices
-
-### Code Organization
-
-1. **Follow PSR Standards**
-   - PSR-4 for autoloading
-   - PSR-12 for coding style
-   - Use PHP-CS-Fixer for consistency
-
-2. **Namespace Everything**
-   ```php
-   namespace Vendor\Plugin\Resources;
-   namespace Vendor\Plugin\Fields;
-   namespace Vendor\Plugin\Widgets;
-   ```
-
-3. **Use Type Declarations**
-   ```php
-   public function process(array $data): ProcessedResult
-   {
-       // Type-safe code
-   }
-   ```
-
-### Performance
-
-1. **Lazy Loading**
-   ```php
-   public function boot()
-   {
-       // Only load routes if needed
-       if ($this->app->runningInConsole()) {
-           return;
-       }
-       
-       $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
-   }
-   ```
-
-2. **Cache Expensive Operations**
-   ```php
-   public function getStatistics(): array
-   {
-       return Cache::remember('plugin.stats', 3600, function () {
-           return $this->calculateStatistics();
-       });
-   }
-   ```
-
-3. **Use Database Indexes**
-   ```php
-   Schema::table('products', function (Blueprint $table) {
-       $table->index('sku');
-       $table->index(['category_id', 'is_active']);
-   });
-   ```
-
-### Security
-
-1. **Validate All Input**
-   ```php
-   public function rules(): array
-   {
-       return [
-           'name' => 'required|string|max:255',
-           'email' => 'required|email|unique:users',
-           'price' => 'required|numeric|min:0',
-       ];
-   }
-   ```
-
-2. **Use Policies**
-   ```php
-   public function viewAny(User $user): bool
-   {
-       return $user->can('view-products');
-   }
-   ```
-
-3. **Sanitize Output**
-   ```blade
-   {{-- Always escape output --}}
-   {{ $product->description }}
-   
-   {{-- Only use unescaped for trusted HTML --}}
-   {!! $product->trusted_html !!}
-   ```
-
-### Compatibility
-
-1. **Version Constraints**
-   ```json
-    "require": {
-        "php": "^8.2",
-        "aura/base": "^1.0|^2.0",
-        "laravel/framework": "^10.0|^11.0|^12.0",
-        "spatie/laravel-package-tools": "^1.14.0"
-    }
-   ```
-
-2. **Feature Detection**
-   ```php
-   if (method_exists(Aura::class, 'registerWidgets')) {
-       Aura::registerWidgets($this->widgets);
-   }
-   ```
-
-3. **Graceful Degradation**
-   ```php
-   try {
-       $this->publishAdvancedFeatures();
-   } catch (\Exception $e) {
-       logger()->warning('Advanced features not available', [
-           'error' => $e->getMessage()
-       ]);
-   }
-   ```
-
-## Example Plugins
-
-### E-Commerce Plugin
-
-```php
-namespace Acme\Commerce;
-
-use Spatie\LaravelPackageTools\Package;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Aura\Base\Facades\Aura;
-
-class CommerceServiceProvider extends PackageServiceProvider
-{
-    public function configurePackage(Package $package): void
-    {
-        $package
-            ->name('commerce')
-            ->hasConfigFile()
-            ->hasViews()
-            ->hasMigrations([
-                'create_products_table',
-                'create_orders_table',
-                'create_order_items_table',
-            ]);
-    }
-    
-    public function packageBooted()
-    {
-        Aura::registerResources([
-            Resources\Product::class,
-            Resources\Order::class,
-            Resources\Customer::class,
-        ]);
-        
-        Aura::registerFields([
-            Fields\PriceField::class,
-            Fields\StockField::class,
-        ]);
-        
-        Aura::registerWidgets([
-            Widgets\SalesChart::class,
-            Widgets\RecentOrders::class,
-        ]);
-        
-        // Add menu items
-        app('aura.hooks')->addHook('navigation.after', function ($nav) {
-            $nav[] = [
-                'name' => 'Commerce',
-                'icon' => 'shopping-cart',
-                'children' => [
-                    ['name' => 'Products', 'route' => 'aura.product.index'],
-                    ['name' => 'Orders', 'route' => 'aura.order.index'],
-                    ['name' => 'Customers', 'route' => 'aura.customer.index'],
-                ],
-            ];
-            return $nav;
-        });
-    }
-}
-```
-
-### SEO Plugin
-
-```php
-namespace Acme\Seo;
-
-class SeoServiceProvider extends PackageServiceProvider
-{
-    public function packageBooted()
-    {
-        // Add SEO fields to all resources
-        app('aura.hooks')->addHook('resource.fields', function ($fields, $resource) {
-            if (!in_array($resource->type, ['Attachment', 'User'])) {
-                $fields[] = [
-                    'name' => 'SEO',
-                    'type' => 'Aura\\Base\\Fields\\Panel',
-                    'slug' => 'seo-panel',
-                ];
-                
-                $fields[] = [
-                    'name' => 'Meta Title',
-                    'type' => 'Aura\\Base\\Fields\\Text',
-                    'slug' => 'meta_title',
-                    'validation' => 'max:60',
-                    'instructions' => 'Recommended: 50-60 characters',
-                ];
-                
-                $fields[] = [
-                    'name' => 'Meta Description',
-                    'type' => 'Aura\\Base\\Fields\\Textarea',
-                    'slug' => 'meta_description',
-                    'validation' => 'max:160',
-                    'instructions' => 'Recommended: 150-160 characters',
-                ];
-            }
-            
-            return $fields;
-        });
-        
-        // Inject SEO tags into head
-        Aura::registerInjectView('head', function () {
-            return view('acme-seo::meta-tags');
-        });
-    }
-}
-```
-
-
-### Pro Tips
-
-1. **Use Aura's Built-in Components**: Leverage existing fields and UI components
-2. **Follow Laravel Conventions**: Use Laravel's patterns for familiarity
-3. **Document Everything**: Include inline docs and README
-4. **Test Thoroughly**: Include unit and feature tests
-5. **Version Carefully**: Use semantic versioning
-6. **Consider Teams**: Support both team and non-team installations
-7. **Optimize Assets**: Minimize JS/CSS for production
-8. **Provide Migrations**: Always include rollback methods
-
-The plugin system provides unlimited possibilities for extending Aura CMS while maintaining clean architecture and ensuring compatibility with future updates.
+- [Creating Resources](/docs/creating-resources)
+- [Creating Fields](/docs/creating-fields)
+- [Widgets](/docs/widgets)
+- [Record Layouts](/docs/record-layouts)
+- [Testing](/docs/testing)
+- [Configuration](/docs/configuration)

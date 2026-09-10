@@ -1,69 +1,24 @@
 # Resources
 
+A resource is a PHP class that extends `Aura\Base\Resource`. It defines a content type through static configuration and a `getFields(): array` method. Aura uses that definition for the admin pages, routes, navigation entry, table, and policy checks. The class remains an Eloquent model, so normal casts, fillable attributes, relationships, scopes, and model events still apply.
 
-Resources are the heart of Aura CMS, transforming Laravel's Eloquent models into powerful, feature-rich content management entities. This comprehensive guide covers everything from basic resource creation to advanced patterns like soft deletes, versioning, and custom storage strategies.
+This page covers the resource contract. See [Creating resources](/docs/creating-resources) for the first resource walkthrough and [Fields](/docs/fields) for field types and their options.
 
-## Table of Contents
+<a id="creating-resources"></a>
+## Creating a resource
 
-- [Introduction](#introduction)
-- [Creating Resources](#creating-resources)
-- [Resource Properties](#resource-properties)
-- [Resource Traits](#resource-traits)
-- [Resource Methods](#resource-methods)
-- [Fields Management](#fields-management)
-- [Data Storage Strategies](#data-storage-strategies)
-- [Relationships](#relationships)
-- [Querying Resources](#querying-resources)
-- [Actions and Permissions](#actions-and-permissions)
-- [Table Configuration](#table-configuration)
-- [Advanced Features](#advanced-features)
-- [Resource Lifecycle](#resource-lifecycle)
-- [Performance Optimization](#performance-optimization)
-- [Best Practices](#best-practices)
+Generate a resource in the configured application resource directory:
 
-## Introduction
-
-Resources in Aura CMS are enhanced Eloquent models that provide:
-
-- **Dynamic Field System**: Define fields without database migrations
-- **Meta Storage**: Flexible key-value storage for additional data
-- **Built-in Admin UI**: Automatic CRUD interface generation
-- **Advanced Features**: Soft deletes, versioning, team scoping
-- **Permission Integration**: Role-based access control out of the box
-- **Global Search**: Integrated full-text search capabilities
-
-Think of Resources as Laravel models on steroids - they handle everything from data definition to UI generation.
-
-### Resource vs Model Comparison
-
-| Feature | Laravel Model | Aura Resource |
-|---------|--------------|---------------|
-| Database Interaction | ✅ | ✅ |
-| Relationships | ✅ | ✅ Enhanced |
-| Admin UI | ❌ | ✅ Automatic |
-| Field Definitions | ❌ | ✅ Dynamic |
-| Meta Storage | ❌ | ✅ Built-in |
-| Permissions | Manual | ✅ Automatic |
-| Search | Manual | ✅ Integrated |
-| Soft Deletes | ✅ | ✅ Enhanced |
-
-## Creating Resources
-
-### Using Artisan Command
-
-The fastest way to create a resource:
-
-```bash
-# Basic resource
+~~~bash
 php artisan aura:resource Article
-
-# Resource with custom table
 php artisan aura:resource Product --custom
-```
+~~~
 
-This generates a resource class in `app/Aura/Resources/`:
+The command signature is `aura:resource {name} {--custom}`. With the default configuration, it writes the class to app/Aura/Resources in the `App\Aura\Resources` namespace.
 
-```php
+A posts-backed resource starts with these declarations:
+
+~~~php
 <?php
 
 namespace App\Aura\Resources;
@@ -73,56 +28,12 @@ use Aura\Base\Resource;
 class Article extends Resource
 {
     public static string $type = 'Article';
+
     public static ?string $slug = 'article';
-    protected static ?string $group = 'Content';
-}
-```
 
-### Manual Resource Creation
-
-For more control, create resources manually:
-
-```php
-<?php
-
-namespace App\Aura\Resources;
-
-use Aura\Base\Resource;
-use Aura\Base\Fields\ID;
-use Aura\Base\Fields\Text;
-use Aura\Base\Fields\Wysiwyg;
-use Aura\Base\Fields\BelongsTo;
-use Aura\Base\Fields\Status;
-
-class Article extends Resource
-{
-    // Resource identification
-    public static string $type = 'Article';
-    public static ?string $slug = 'articles';
-    
-    // Display configuration
-    public static ?string $name = 'Article';
-    public static ?string $pluralName = 'Articles';
-    public static ?string $singularName = 'Article';
-    
-    // Navigation settings
-    protected static ?string $group = 'Content';
-    protected static ?int $sort = 10;
-    public static ?string $icon = '<svg>...</svg>';
-    
-    // Feature flags
-    public static bool $globalSearch = true;
-    public static bool $showInNavigation = true;
-    
-    // Define fields
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
-            [
-                'name' => 'ID',
-                'slug' => 'id',
-                'type' => 'Aura\\Base\\Fields\\ID',
-            ],
             [
                 'name' => 'Title',
                 'slug' => 'title',
@@ -130,1848 +41,617 @@ class Article extends Resource
                 'validation' => 'required|max:255',
                 'on_index' => true,
                 'on_forms' => true,
-                'searchable' => true,
             ],
-            // More fields...
         ];
     }
 }
-```
+~~~
 
-> **Pro Tip**: Use namespace imports for cleaner field definitions instead of full class names.
+The generated class is enough for Aura to register the resource. The default field with the title slug is saved in the shared posts table. The generated slug becomes the route segment and the route-name segment.
 
-## Resource Properties
+The --custom stub sets public static `$customTable` = true, public static bool `$usesMeta` = false, and a protected `$table` name. It does not create the database table. Add a migration and make every input field slug a column when meta storage is disabled.
 
-### Static Properties Reference
+![Resource index page](/images/docs/resources/resources-index.png)
 
-```php
-class Product extends Resource
-{
-    // === IDENTIFICATION ===
-    public static string $type = 'Product';              // Resource type identifier (required)
-    public static ?string $slug = 'products';            // URL slug (defaults to slugified $name)
-    
-    // === DISPLAY ===
-    public static ?string $name = 'Product';             // Display name
-    public static ?string $pluralName = 'Products';      // Plural display name (auto-generated)
-    public static ?string $singularName = 'Product';     // Singular display name (auto-generated)
-    protected static ?string $icon = '<svg>...</svg>';   // Navigation icon (SVG string)
-    
-    // === NAVIGATION ===
-    protected static ?string $group = 'Resources';       // Navigation group (default: 'Resources')
-    protected static ?int $sort = 100;                   // Sort order (lower = higher priority)
-    protected static bool $showInNavigation = true;      // Show in sidebar navigation
-    protected static $dropdown = false;                  // Dropdown menu grouping (false or string)
-    
-    // === FEATURES ===
-    public static $globalSearch = true;                  // Enable global search
-    protected static array $searchable = ['title'];      // Fields to include in search
-    public static $createEnabled = true;                 // Allow creation
-    public static $editEnabled = true;                   // Allow editing
-    public static $viewEnabled = true;                   // Allow viewing
-    public static bool $indexViewEnabled = true;         // Show index page
-    
-    // === DATA STORAGE ===
-    public static $customTable = false;                  // Use custom table (not posts)
-    public static bool $usesMeta = true;                 // Store fields in meta table
-    public static $taxonomy = false;                     // Is taxonomy/category resource
-    protected static bool $title = false;                // Uses title field in posts table
-    
-    // === UI CONFIGURATION ===
-    public static $showActionsAsButtons = false;         // Show actions as buttons vs dropdown
-    public static $contextMenu = true;                   // Enable right-click context menu
-    
-    // === INSTANCE PROPERTIES ===
-    public array $actions = [];                          // Available row actions
-    public array $bulkActions = [];                      // Bulk actions for table
-    public array $metaFields = [];                       // Meta fields to save
-    public array $taxonomyFields = [];                   // Taxonomy fields to save
-    public array $widgetSettings = [                      // Widget date range options
-        'default' => '30d',
-        'options' => ['1d', '7d', '30d', '60d', '90d', '180d', '365d', 'all', 'ytd', 'mtd', 'wtd'],
-    ];
-    protected $baseFillable = [];                        // Original fillable before merge
-    
-    // === ELOQUENT PROPERTIES ===
-    protected $table = 'products';                       // Custom table name
-    protected $fillable = ['name', 'sku', 'price'];     // Mass assignable fields
-    protected $casts = [                                 // Attribute casting
-        'price' => 'decimal:2',
-        'features' => 'array',
-    ];
-    protected $hidden = ['internal_notes'];              // Hidden from JSON
-    protected $appends = ['fields'];                     // Appended attributes (fields is default)
-    protected $with = ['meta'];                          // Eager load (meta added when usesMeta)
-}
-```
+<a id="registration-and-discovery"></a>
+## Registration and discovery
 
-### Dynamic Properties
+Aura registers application resources by scanning `config('aura-settings.paths.resources.path')` and keeping classes that extend `Aura\Base\Resource`. The default paths are:
 
-Resources also support dynamic configuration through methods:
+~~~php
+// config/aura-settings.php
+'paths' => [
+    'resources' => [
+        'namespace' => 'App\\Aura\\Resources',
+        'path' => app_path('Aura/Resources'),
+    ],
+    'fields' => [
+        'namespace' => 'App\\Aura\\Fields',
+        'path' => app_path('Aura/Fields'),
+    ],
+],
 
-```php
-class Product extends Resource
-{
-    // Dynamic icon based on context
-    public function getIcon()
-    {
-        return '<svg class="w-5 h-5" viewBox="0 0 18 18">...</svg>';
-    }
-    
-    // Conditional navigation display
-    public static function getShowInNavigation(): bool
-    {
-        return auth()->user()->hasRole(['admin', 'editor']);
-    }
-    
-    // Dynamic dropdown grouping
-    public static function getDropdown()
-    {
-        return 'Commerce'; // Groups this resource under "Commerce" dropdown
-    }
-}
-```
+'widgets' => [
+    'namespace' => 'App\\Aura\\Widgets',
+    'path' => app_path('Aura/Widgets'),
+],
+~~~
 
-## Resource Traits
+Aura also registers the built-in resources from `config('aura.resources')`. Attachment, Option, Permission, Role, and User are registered by default. Team and TeamInvitation are registered only when `config('aura.teams')` is true.
 
-Resources use several traits that provide core functionality. Understanding these is key to extending behavior:
+A package or service provider can add resources to the registry:
 
-```php
-class Resource extends Model
-{
-    // Core Aura traits
-    use AuraModelConfig;      // Properties, navigation, meta, scopes
-    use InitialPostFields;    // Auto-sets user_id, team_id, type on create
-    use InputFields;          // Field processing pipeline
-    use InteractsWithTable;   // Table/grid/kanban configuration
-    use SaveFieldAttributes;  // Moves field values to fields array
-    use SaveMetaFields;       // Persists meta fields after save
-    
-    // Laravel traits
-    use HasFactory;
-    use HasTimestamps;
-}
-```
+~~~php
+use Aura\Base\Facades\Aura;
 
-### Trait: AuraModelConfig
+Aura::registerResources([
+    \Acme\Blog\Resources\Article::class,
+]);
+~~~
 
-Provides all static properties and core methods for resources:
+`Aura::getResources()` returns the registered class strings. `Aura::getAppResources()` scans the configured application directory and returns only subclasses of Resource.
 
-- Navigation methods: `navigation()`, `getIcon()`, `indexUrl()`, `createUrl()`, `editUrl()`, `viewUrl()`
-- Display methods: `pluralName()`, `singularName()`, `title()`, `display()`, `displayFieldValue()`
-- Meta queries: `scopeWhereMeta()`, `scopeOrWhereMeta()`, `scopeWhereInMeta()`, `scopeWhereMetaContains()`, `scopeWhereNotInMeta()`
-- Type checking: `isMetaField()`, `isTableField()`, `isTaxonomyField()`, `isAppResource()`, `isVendorResource()`
+<a id="configuration"></a>
+## Resource configuration
 
-### Trait: InteractsWithTable
+Configuration lives in static properties on the resource. The base declarations below show the visibility and type that a subclass must respect. The generated application stub redeclares several protected properties as public, which PHP permits.
 
-Controls table display settings:
+### Identity
 
-```php
-class Product extends Resource
-{
-    public function defaultPerPage() { return 10; }           // Items per page
-    public function defaultTableSort() { return 'id'; }       // Default sort column
-    public function defaultTableSortDirection() { return 'desc'; } // Sort direction
-    public function defaultTableView() { return 'list'; }     // 'list', 'grid', or 'kanban'
-    public function showTableSettings() { return true; }      // Show settings button
-    public function tableView() { return 'aura::components.table.list-view'; }
-    public function tableGridView() { return false; }         // Custom grid view
-    public function tableKanbanView() { return false; }       // Custom kanban view
-    public function kanbanQuery($query) { return false; }     // Kanban query modifier
-}
-```
+| Property | Base declaration and default | Used for |
+|---|---|---|
+| `$type` | protected static string = 'Resource' | Type discriminator for posts-backed rows. |
+| `$slug` | protected static ?string = null | URL and route-name segment. |
+| `$name` | protected static ?string = null | Optional internal name. |
+| `$singularName` | public static = null | Singular navigation and title label. |
+| `$pluralName` | public static = null | Explicit plural navigation label. |
 
-### Trait: SaveMetaFields
+Set `$type` and `$slug` explicitly in application resources:
 
-Handles the meta field persistence lifecycle:
+~~~php
+public static string $type = 'Article';
+public static ?string $slug = 'article';
+~~~
 
-1. On `saving`: processes field values, calls `set()` methods on field classes
-2. On `saved`: persists meta fields to the `meta` table via `updateOrCreate`
-3. Fires `metaSaved` event after meta persistence
+`getSlug()` uses the explicit slug. If it is null, it slugifies `$name` or the class basename. `singularName()` uses the raw static `$slug` when no singular label is set. `pluralName()` pluralizes that singular label. The static `getPluralName()` method instead pluralizes `$type`, so use the instance `pluralName()` method for the navigation label.
 
-## Resource Methods
+The generated stub makes `$slug` public. Keep that declaration even when you rely on a derived route slug, because the permission generator currently reads the static property directly.
 
-### Core Methods Reference
+### Navigation
 
-```php
-class Article extends Resource
-{
-    // === FIELD MANAGEMENT ===
-    public static function getFields() { }              // Define resource fields (override this)
-    public function fieldBySlug($slug) { }              // Get field definition by slug
-    public function fieldClassBySlug($slug) { }         // Get field class instance
-    public function fieldsCollection() { }              // All fields as collection
-    public function mappedFields() { }                  // Fields with field class instances
-    public function inputFields() { }                   // Only input-type fields
-    public function indexFields() { }                   // Fields for table display
-    public function viewFields() { }                    // Fields for view page
-    public function createFields() { }                  // Fields for create form
-    public function editFields() { }                    // Fields for edit form
-    public function getFieldSlugs() { }                 // All field slugs as collection
-    public function inputFieldsSlugs() { }              // Input field slugs as array
-    public function getGroupedFields() { }              // Fields processed into tree
-    public function getFieldsBeforeTree() { }           // Flat fields with IDs
-    public function getSearchableFields() { }           // Fields marked searchable
-    
-    // === DATA ACCESS ===
-    public function getMeta($key = null) { }            // Get meta value(s)
-    public function getFieldsAttribute() { }            // Virtual 'fields' attribute
-    public function getFieldsWithoutConditionalLogic() { } // All field values
-    public function display($key) { }                   // Display formatted value
-    public function displayFieldValue($key, $value) { } // Format specific field
-    public function getFieldValue($key) { }             // Get raw field value
-    
-    // === URLS ===
-    public function indexUrl() { }                      // Index page URL
-    public function createUrl() { }                     // Create page URL
-    public function editUrl() { }                       // Edit page URL
-    public function viewUrl() { }                       // View page URL
-    public function getIndexRoute() { }                 // Named route for index
-    
-    // === VIEWS ===
-    public function indexView() { }                     // Livewire view for index
-    public function createView() { }                    // Livewire view for create
-    public function editView() { }                      // Livewire view for edit
-    public function viewView() { }                      // Livewire view for show
-    public function editHeaderView() { }                // Edit page header partial
-    public function viewHeaderView() { }                // View page header partial
-    public function tableComponentView() { }            // Table component view
-    public function rowView() { }                       // Table row view
-    
-    // === DISPLAY ===
-    public function title() { }                         // Display title for instance
-    public function pluralName() { }                    // Plural resource name
-    public function singularName() { }                  // Singular resource name
-    public function icon() { }                          // Icon (alias for getIcon)
-    public function getIcon() { }                       // SVG icon string
-    public function getBadge() { }                      // Navigation badge count
-    public function getBadgeColor() { }                 // Badge color class
-    public function navigation() { }                    // Full navigation config array
-    
-    // === PERMISSIONS & ACTIONS ===
-    public function actions() { }                       // Define row actions (override)
-    public function getActions() { }                    // Get available actions
-    public function getBulkActions() { }                // Get bulk actions
-    public function allowedToPerformActions() { }       // Check if actions allowed
-    
-    // === TYPE CHECKING ===
-    public static function usesCustomTable() { }        // Uses custom table?
-    public static function usesMeta() { }               // Uses meta storage?
-    public static function usesTitle() { }              // Uses title field?
-    public function isTaxonomy() { }                    // Is taxonomy resource?
-    public function isMetaField($key) { }               // Field stored in meta?
-    public function isTableField($key) { }              // Field stored in table?
-    public function isTaxonomyField($key) { }           // Is taxonomy relation?
-    public function isRelation($key) { }                // Is Eloquent relation?
-    public function isBaseFillable($key) { }            // In base fillable array?
-    public function isAppResource() { }                 // Defined in app namespace?
-    public function isVendorResource() { }              // Defined in vendor?
-    
-    // === RELATIONSHIPS ===
-    public function meta() { }                          // MorphMany to Meta model
-    public function user() { }                          // BelongsTo user
-    public function team() { }                          // BelongsTo team
-    public function parent() { }                        // BelongsTo parent (self)
-    public function children() { }                      // HasMany children (self)
-    public function revision() { }                      // HasMany revisions
-    public function attachment() { }                    // HasMany attachments
-    
-    // === CONFIGURATION ===
-    public function getHeaders() { }                    // Table headers config
-    public function getColumns() { }                    // Available columns
-    public function getDefaultColumns() { }             // Default visible columns
-    public function getTableHeaders() { }               // Filtered table headers
-    public function indexTableSettings() { }            // Custom table settings
-    public function getBaseFillable() { }               // Original fillable array
-    public static function getWidgets() { }             // Dashboard widgets
-    public function widgets() { }                       // Processed widgets
-}
-```
+| Property | Base declaration and default | Used for |
+|---|---|---|
+| `$group` | protected static ?string = 'Resources' | Sidebar group. |
+| `$sort` | protected static ?int = 100 | Order within the group. |
+| `$showInNavigation` | protected static bool = true | Whether Aura shows the entry. |
+| `$dropdown` | protected static = false | Optional dropdown name. |
+| `$icon` | protected static ?string = null | SVG returned by `getIcon()`. |
+| `$contextMenu` | public static = true | Whether the table context menu is enabled. |
 
-### Magic Methods
+`getIcon()` returns the configured `$icon` or Aura's default SVG. Override it when the icon must be computed at runtime. `getBadge()` and `getBadgeColor()` return empty values by default and can add a navigation badge.
 
-Resources override `__get` and `__call` to provide dynamic access to field values and relationships:
+### Storage and capabilities
 
-```php
-// __get behavior (accessing $article->featured)
-1. Try parent Eloquent __get
-2. If field slug exists and is a relation field, resolve relationship
-3. If key exists in $this->fields array, return that value
-4. Return null
+| Property | Base declaration and default | Used for |
+|---|---|---|
+| `$customTable` | public static = false | Use a dedicated table instead of posts. |
+| `$usesMeta` | public static bool = true | Store overflow field values in meta. |
+| `$title` | protected static bool = false | Treat title as a configured table field and initialize it on save. |
+| `$createEnabled` | public static = true | Allow the policy's create ability. |
+| `$editEnabled` | public static = true | Allow the policy's update ability. |
+| `$viewEnabled` | public static = true | Allow the policy's view ability. |
+| `$indexViewEnabled` | public static bool = true | Allow the policy's viewAny ability. |
+| `$globalSearch` | public static = true | Include the resource in global search. |
+| `$taxonomy` | public static = false | Mark the resource as a taxonomy. |
+| `$showActionsAsButtons` | public static = false | Render record actions as buttons instead of a dropdown. |
 
-// __call behavior (calling $article->author())
-1. If method name matches a field slug that is a relation
-2. Return the relationship query builder
-3. Otherwise, pass to parent __call
-```
+Every resource also has these public arrays:
 
-**Practical Examples**
+~~~php
+public array $actions = [];
+public array $bulkActions = [];
+public array $metaFields = [];
+public array $taxonomyFields = [];
+public array $widgetSettings = [
+    'default' => '30d',
+    'options' => [
+        '1d' => '1 Day',
+        '7d' => '7 Days',
+        '30d' => '30 Days',
+        '60d' => '60 Days',
+        '90d' => '90 Days',
+        '180d' => '180 Days',
+        '365d' => '365 Days',
+        'all' => 'All',
+        'ytd' => 'Year to Date',
+        'qtd' => 'Quarter to Date',
+        'mtd' => 'Month to Date',
+        'wtd' => 'Week to Date',
+        'last-year' => 'Last Year',
+        'last-month' => 'Last Month',
+        'last-week' => 'Last Week',
+        'custom' => 'Custom',
+    ],
+];
+~~~
 
-```php
-$article = Article::find(1);
+The inherited Eloquent properties `$table`, `$fillable`, `$casts`, `$hidden`, and `$appends` keep their normal Laravel meaning. A resource starts with posts as its table, the shared posts columns in its base fillable list, meta hidden from serialization, and fields appended to array and JSON output. When `$usesMeta` is true, the constructor eager loads meta.
 
-// These are equivalent for accessing field values:
-$article->featured;              // Via __get magic
-$article->fields['featured'];    // Via fields accessor
-$article->getMeta('featured');   // Explicit meta access (for meta fields)
+Do not add a type when redeclaring an untyped inherited property:
 
-// Relation fields work like Eloquent relations:
-$article->categories;            // Returns collection (via __get)
-$article->categories();          // Returns relationship builder (via __call)
-```
+~~~php
+// Correct
+public static $customTable = true;
 
-### Implementing Custom Methods
+// Fatal property declaration
+public static bool $customTable = true;
+~~~
 
-```php
-class Article extends Resource
-{
-    // Custom display title
-    public function getDisplayTitle(): string
-    {
-        return $this->title ?: 'Untitled Article';
-    }
-    
-    // Custom URL generation
-    public function getPublicUrl(): string
-    {
-        return route('blog.show', $this->slug);
-    }
-    
-    // Business logic
-    public function publish(): bool
-    {
-        $this->update([
-            'status' => 'published',
-            'published_at' => now(),
-        ]);
-        
-        event(new ArticlePublished($this));
-        
-        return true;
-    }
-    
-    // Computed properties (Eloquent accessor)
-    public function getReadingTimeAttribute(): int
-    {
-        $words = str_word_count(strip_tags($this->content));
-        return ceil($words / 200);
-    }
-    
-    // Custom field getter (called during field processing)
-    public function getFeaturedField($value)
-    {
-        return $value ? 'Yes' : 'No';
-    }
-    
-    // Custom field setter (called during save)
-    public function setSlugField($value)
-    {
-        // Custom processing
-        $this->attributes['slug'] = Str::slug($value);
-        return $this;
-    }
-}
-```
+The typed properties `$type`, `$slug`, `$name`, `$group`, `$sort`, `$showInNavigation`, `$icon`, `$usesMeta`, `$title`, and `$indexViewEnabled` must keep compatible types. The generated stub is the safe starting point.
 
-## Fields Management
+<a id="fields"></a>
+## Fields
 
-### Field Pipeline
+`getFields(): array` returns plain configuration arrays. The type value must be a fully qualified field class string because Aura resolves it through the container.
 
-Aura processes fields through a sophisticated pipeline:
-
-```php
-// The field processing pipeline
-$fields = collect($resource->getFields())
-    ->pipe(new MapFields($request))              // Map field instances
-    ->pipe(new AddIdsToFields())                 // Add unique IDs
-    ->pipe(new FilterCreateFields($model))       // Filter for context
-    ->pipe(new ApplyParentConditionalLogic())    // Parent conditions
-    ->pipe(new DoNotDeferConditionalLogic())     // Immediate conditions
-    ->pipe(new ApplyGroupedInputs())             // Group inputs
-    ->pipe(new ApplyTabs())                      // Process tabs
-    ->pipe(new ApplyWrappers())                  // Apply wrappers
-    ->pipe(new BuildTreeFromFields())            // Build field tree
-    ->pipe(new TransformSlugs($model))           // Transform slugs
-    ->pipe(new ApplyLayoutFields($model));       // Apply layout
-```
-
-### Advanced Field Definition
-
-```php
-public static function getFields()
+~~~php
+public static function getFields(): array
 {
     return [
-        // Basic field with all options
         [
             'name' => 'Title',
             'slug' => 'title',
             'type' => 'Aura\\Base\\Fields\\Text',
             'validation' => 'required|max:255',
-            'placeholder' => 'Enter article title...',
-            'helper' => 'SEO-friendly title for your article',
-            'default' => '',
             'on_index' => true,
             'on_forms' => true,
-            'on_view' => true,
             'searchable' => true,
-            'style' => [
-                'width' => '66.66',
-                'wrapper_class' => 'mt-4',
-            ],
         ],
-        
-        // Field with conditional logic
         [
-            'name' => 'Featured Image Caption',
-            'slug' => 'featured_caption',
-            'type' => 'Aura\\Base\\Fields\\Text',
-            'conditional_logic' => [
-                [
-                    'field' => 'featured_image',
-                    'operator' => '!=',
-                    'value' => '',
-                ],
-            ],
-        ],
-        
-        // Field with dynamic options
-        [
-            'name' => 'Category',
-            'slug' => 'category_id',
-            'type' => 'Aura\\Base\\Fields\\Select',
-            'options' => function() {
-                return Category::pluck('name', 'id')->toArray();
-            },
-        ],
-        
-        // Complex validation with closures
-        [
-            'name' => 'Slug',
-            'slug' => 'slug',
-            'type' => 'Aura\\Base\\Fields\\Slug',
-            'validation' => [
-                'required',
-                'regex:/^[a-z0-9-]+$/',
-                function ($attribute, $value, $fail) {
-                    if (Article::where('slug', $value)->exists()) {
-                        $fail('This slug is already taken.');
-                    }
-                },
-            ],
+            'name' => 'Body',
+            'slug' => 'body',
+            'type' => 'Aura\\Base\\Fields\\Wysiwyg',
+            'instructions' => 'The article body.',
+            'on_forms' => true,
         ],
     ];
 }
-```
+~~~
 
-### Field Caching
+Common field keys are:
 
-Fields are cached for performance:
+| Key | Effect |
+|---|---|
+| name | Label shown in forms and tables. |
+| slug | Storage key and dynamic attribute name. |
+| type | Fully qualified field class. |
+| validation | Laravel validation rules as a string or array. |
+| on_index | Include the field in the resource table. |
+| on_forms | Include it on create and edit forms. |
+| on_create, on_edit, on_view | Limit the field to one page. |
+| searchable | Include the field in Aura's resource search queries. |
+| default | Value used when the form initializes. |
+| instructions | Help text shown under the field. |
+| conditional_logic | Rules or a closure that controls visibility. |
 
-```php
-class Article extends Resource
-{
-    // Clear cache when fields change
-    public static function clearFieldCache()
-    {
-        cache()->forget('aura.resource.Article.fields');
-        
-        // Clear related caches
-        cache()->tags(['aura-fields'])->flush();
-    }
-    
-    // Custom field caching strategy
-    public static function getFields()
-    {
-        return cache()->remember(
-            'aura.resource.Article.fields',
-            now()->addHours(24),
-            fn() => static::defineFields()
-        );
-    }
-}
-```
+Wrapper fields such as Tab and Panel can pass display flags to nested fields. Use [Fields](/docs/fields) for the complete field catalogue and per-type options.
 
-## Data Storage Strategies
+The resource field helpers are:
 
-### Strategy 1: Posts Table (Default)
+- `fieldBySlug($slug)` returns the raw definition or null.
+- `fieldClassBySlug($slug)` resolves the field class from the container.
+- `fieldsCollection()` returns the cached raw definitions as a collection.
+- `inputFields()` returns processed input fields.
+- `inputFieldsSlugs()` returns their slugs as an array.
+- `indexFields()` returns fields whose on_index value is not false.
+- `getFieldsWithIds()` and `getFieldsWithIdsWithoutWrappers()` add generated IDs to processed definitions.
+- `getGroupedFields()`, `createFields()`, `editFields()`, and `viewFields()` run the field pipelines used by the corresponding forms and views.
+- `flushFieldCache()` clears process-static field caches. Call it after changing definitions in a long-lived process or between test definitions.
 
-Uses the shared `posts` table with type discrimination:
+![Resource edit page](/images/docs/resources/resources-edit.png)
 
-```php
-class Article extends Resource
-{
-    public static string $type = 'Article';
-    // No additional configuration needed
-}
+<a id="storage"></a>
+## Storage
 
-// Database structure:
-// posts table: id, type, title, content, slug, user_id, team_id...
-// meta table: id, metable_type, metable_id, key, value
-```
+Aura combines two independent flags. `$customTable` selects the model table. `$usesMeta` selects whether overflow field values can use the meta table.
 
-### Strategy 2: Custom Table
+| `$customTable` | `$usesMeta` | Storage behavior |
+|---|---|---|
+| false | true | Base fillable attributes go to posts; other input fields go to meta. |
+| false | false | Only base fillable posts attributes are saved. Other input fields have no meta destination. |
+| true | false | Every input field slug must be a column on the custom table. |
+| true | true | Base fillable custom-table columns are saved in the table; remaining input fields go to meta. |
 
-Uses a dedicated table for better performance:
+Check the destination for a slug with `isTableField($slug)` and `isMetaField($slug)`. The custom-table migration and physical columns are the application's responsibility. See [Custom tables](/docs/custom-tables) and [Meta fields](/docs/meta-fields) for migrations and transfer commands.
 
-```php
+A custom-table resource with no meta storage looks like this:
+
+~~~php
 class Product extends Resource
 {
-    public static bool $customTable = true;
+    public static string $type = 'Product';
+    public static ?string $slug = 'product';
+
+    public static $customTable = true;
+    public static bool $usesMeta = false;
+
     protected $table = 'products';
-    
+
     protected $fillable = [
-        'name', 'sku', 'price', 'description',
-        'stock', 'category_id', 'brand_id'
+        'name',
+        'price',
+        'user_id',
+        'team_id',
     ];
-    
-    // Migration example
-    Schema::create('products', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');
-        $table->string('sku')->unique();
-        $table->decimal('price', 10, 2);
-        $table->text('description')->nullable();
-        $table->integer('stock')->default(0);
-        $table->foreignId('category_id')->constrained();
-        $table->foreignId('brand_id')->nullable()->constrained();
-        $table->foreignId('user_id')->constrained();
-        $table->foreignId('team_id')->nullable()->constrained();
-        $table->timestamps();
-        $table->softDeletes();
-        
-        $table->index(['sku', 'name']);
-        $table->index('category_id');
-    });
-}
-```
 
-### Strategy 3: Hybrid Approach
+    protected $casts = [
+        'price' => 'decimal:2',
+    ];
 
-Combines custom table with meta storage:
-
-```php
-class Product extends Resource
-{
-    public static bool $customTable = true;
-    public static bool $usesMeta = true;
-    protected $table = 'products';
-    
-    // Core fields in table
-    protected $fillable = ['name', 'sku', 'price'];
-    
-    // Additional fields in meta
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
-            // Table fields
-            ['slug' => 'name', 'type' => 'Text'],
-            ['slug' => 'sku', 'type' => 'Text'],
-            ['slug' => 'price', 'type' => 'Number'],
-            
-            // Meta fields
-            ['slug' => 'specifications', 'type' => 'Json'],
-            ['slug' => 'warranty_info', 'type' => 'Textarea'],
-            ['slug' => 'shipping_notes', 'type' => 'Text'],
+            [
+                'name' => 'Name',
+                'slug' => 'name',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'on_forms' => true,
+            ],
+            [
+                'name' => 'Price',
+                'slug' => 'price',
+                'type' => 'Aura\\Base\\Fields\\Number',
+                'on_forms' => true,
+            ],
         ];
     }
 }
-```
+~~~
 
-> **Pro Tip**: Use custom tables for resources with many records or complex queries. Use meta storage for flexibility.
+For posts-backed resources, Aura fills the posts columns content, user_id, team_id when the relevant configuration and authenticated user are present, type from `$type`, and slug from the title when the row uses the posts table. `$title` initializes an empty title when the resource opts into title handling.
 
-## Relationships
+The built-in meta scopes query the polymorphic meta relation:
 
-### Built-in Relationships
+~~~php
+Article::whereMeta('featured', true)->get();
+Article::whereMeta('priority', '>', 5)->get();
+Article::whereMeta(['featured' => true, 'locale' => 'en'])->get();
+Article::orWhereMeta('spotlight', true)->get();
+Article::whereInMeta('category', ['news', 'updates'])->get();
+Article::whereNotInMeta('category', ['internal', 'archived'])->get();
+Article::whereMetaContains('tags', 'laravel')->get();
+~~~
 
-Every Resource inherits these relationships from the base class:
+These scopes use relation subqueries. Store frequently filtered or sorted values in a real table column when you need database indexes or ordinary joins.
 
-```php
-class Resource extends Model
+<a id="attributes"></a>
+## Attribute resolution
+
+Resource property access is meta-aware. The resolution order is:
+
+1. Eloquent attributes, accessors, and loaded or lazy relations.
+2. A non-null result from that Eloquent lookup, including 0, false, and an empty string.
+3. A relation field's `getRelation()` result.
+4. The computed fields collection.
+5. null when no value exists.
+
+The fields accessor resolves input fields and caches the collection on the model instance. `clearFieldsAttributeCache()` clears it and refreshes the meta relation when needed. The default `aura.features.legacy_fields_append` setting is true, so fields is included in serialization. Set it to false when serialized resources do not need the computed map, then opt in for a model with `$model->append('fields')`.
+
+A resource can intercept one field during reads and saves:
+
+~~~php
+public function getStatusField($value)
 {
-    // Meta storage - polymorphic relationship
-    public function meta()
+    return strtoupper((string) $value);
+}
+~~~
+
+A `get{Slug}Field($value)` method transforms the resolved value. A `set{Slug}Field($value)` method consumes the submitted value instead of sending that field to a table column or ordinary meta write. Use the actual StudlyCase slug in the method name.
+
+<a id="routes-and-pages"></a>
+## Routes and page components
+
+Aura registers resource routes inside the web and auth middleware configured at `aura-settings.middleware.aura-admin`. The prefix is `config('aura.path')`, which defaults to admin. `config('aura.domain')` can restrict the routes to a domain.
+
+For a resource with slug article, the generic route names and paths are:
+
+| Route name | Method and path |
+|---|---|
+| `aura.article.index` | GET /admin/article |
+| `aura.article.create` | GET /admin/article/create |
+| `aura.article.edit` | GET /admin/article/{id}/edit |
+| `aura.article.view` | GET /admin/article/{id} |
+
+Use the configured prefix when `aura.path` is changed. The built-in Attachment resource has only `aura.attachment.index`, which points to the media page. It has no generic create, edit, or view routes.
+
+The URL helpers guard missing routes:
+
+~~~php
+$article->indexUrl();
+$article->createUrl();
+$article->editUrl();
+$article->viewUrl();
+~~~
+
+`indexUrl()` and `createUrl()` return null when their route is absent. `editUrl()` and `viewUrl()` also return null for an unsaved model. `getIndexRoute()` calls Laravel's `route()` helper without a route-existence check and throws when the index route is absent.
+
+Override a static component hook to replace one page while keeping its URI and route name:
+
+~~~php
+public static function indexComponent(): string;
+public static function createComponent(): string;
+public static function editComponent(): string;
+public static function viewComponent(): string;
+~~~
+
+The defaults are `Aura\Base\Livewire\Resource\Index`, Create, Edit, and View. A custom edit or view component receives `mount($id, $slug = null)`. Index and create components receive `mount($slug = null)`.
+
+~~~php
+namespace App\Livewire;
+
+use Aura\Base\Livewire\Resource\View as BaseView;
+
+class ViewArticle extends BaseView
+{
+    public function mount($id, $slug = null)
     {
-        return $this->morphMany(Meta::class, 'metable');
+        parent::mount($id, $slug ?? 'article');
     }
-    
-    // Owner of the resource
-    public function user()
+
+    public function render()
     {
-        return $this->belongsTo(config('aura.resources.user'));
-    }
-    
-    // Team (when multi-tenancy enabled)
-    public function team()
-    {
-        return $this->belongsTo(config('aura.resources.team'));
-    }
-    
-    // Self-referential parent
-    public function parent()
-    {
-        return $this->belongsTo(get_class($this), 'parent_id');
-    }
-    
-    // Self-referential children
-    public function children()
-    {
-        return $this->hasMany(get_class($this), 'parent_id');
-    }
-    
-    // Revisions (for versioning)
-    public function revision()
-    {
-        return $this->hasMany(self::class, 'parent_id')
-            ->where('post_type', 'revision');
-    }
-    
-    // Attachments
-    public function attachment()
-    {
-        return $this->hasMany(self::class, 'post_parent')
-            ->where('post_type', 'attachment');
+        return view('aura.article.view')
+            ->layout('aura::components.layout.app');
     }
 }
-```
+~~~
 
-### Custom Eloquent Relationships
+Point the resource hook at the custom component:
 
-```php
-class Article extends Resource
+~~~php
+public static function viewComponent(): string
 {
-    // Custom BelongsTo
-    public function author()
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-    
-    // BelongsToMany
-    public function tags()
-    {
-        return $this->belongsToMany(Tag::class, 'article_tags');
-    }
-    
-    // HasMany
-    public function comments()
-    {
-        return $this->hasMany(Comment::class);
-    }
-    
-    // HasOne
-    public function featuredComment()
-    {
-        return $this->hasOne(Comment::class)->where('featured', true);
-    }
-    
-    // MorphMany
-    public function media()
-    {
-        return $this->morphMany(Media::class, 'mediable');
-    }
+    return \App\Livewire\ViewArticle::class;
 }
-```
+~~~
 
-### Dynamic Field Relationships
+Use `php artisan aura:customize Article view --mode=full` to generate a component and view. The command accepts page types index, create, edit, and view, and modes full, view, and component. To change only markup, override `indexView()`, `createView()`, `editView()`, `viewView()`, `editHeaderView()`, `viewHeaderView()`, `rowView()`, or `tableComponentView()`.
 
-Aura handles relationships defined in fields automatically:
+The Resource Editor route is `aura.resource.editor`. It is available only in the local or testing environment when `aura.features.resource_editor` is enabled, and it requires a Super Admin. It is not a production resource-management route.
 
-```php
-public static function getFields()
+<a id="navigation"></a>
+## Navigation and icons
+
+`navigation()` returns the sidebar data built from `pluralName()`, `getSort()`, `getGroup()`, `getDropdown()`, `getShowInNavigation()`, `getIndexRoute()`, and `icon()`. A missing index route therefore breaks navigation generation for that resource.
+
+Override the navigation values with the static properties or these methods:
+
+~~~php
+public static function getGroup(): ?string;
+public static function getSort(): ?int;
+public static function getDropdown();
+public static function getShowInNavigation(): bool;
+public static function getContextMenu();
+
+public function getIcon();
+public function icon();
+public function getBadge();
+public function getBadgeColor();
+~~~
+
+`icon()` delegates to `getIcon()`. The base `getIcon()` uses `$icon` when set and otherwise returns Aura's default SVG.
+
+<a id="table"></a>
+## Table configuration
+
+Table configuration methods are instance methods:
+
+~~~php
+public function defaultPerPage();              // 10
+public function defaultTableSort();            // id
+public function defaultTableSortDirection();  // desc
+public function defaultTableView();            // list
+public function showTableSettings();            // true
+public function tableView();                   // list view name
+public function tableRowView();                // row view name
+public function tableGridView();               // false, or a view name
+public function tableKanbanView();             // false, or a view name
+public function kanbanQuery($query);           // false
+public function kanbanSettings(): array;
+public function indexTableSettings();          // []
+~~~
+
+The default Kanban settings use status as group_field, title as card_title, no explicit order, and show empty columns. Set enabled, group_field, columns, card_title, card_subtitle, order_by, and show_empty_columns in `kanbanSettings()`.
+
+The table uses input fields with on_index enabled for its headers and always prepends an ID column. It also prepends title when `usesTitle()` is true. Field classes provide filter behavior. Define an optional `indexQuery($query, $table = null)` method to constrain the index query before field filters run:
+
+~~~php
+public function indexQuery($query, $table = null)
+{
+    return $query->where('status', 'published');
+}
+~~~
+
+`display($slug)` resolves a value through the field class's display method. `getHeaders()` returns the visible header map. `isNumberField($slug)` checks whether the field class is Aura's Number field.
+
+<a id="widgets"></a>
+## Widgets
+
+Return widget definitions from `getWidgets(): array`. Aura renders them above the resource table.
+
+~~~php
+public static function getWidgets(): array
 {
     return [
         [
-            'name' => 'Author',
-            'slug' => 'author',
-            'type' => 'Aura\\Base\\Fields\\BelongsTo',
-            'resource' => 'User',
-            'display_field' => 'name',
-            'validation' => 'required|exists:users,id',
-        ],
-        [
-            'name' => 'Categories',
-            'slug' => 'categories',
-            'type' => 'Aura\\Base\\Fields\\BelongsToMany',
-            'resource' => 'Category',
-            'pivot_table' => 'article_categories',
-            'multiple' => true,
+            'type' => \Aura\Base\Widgets\ValueWidget::class,
+            'name' => 'Total articles',
+            'slug' => 'total-articles',
+            'method' => 'count',
+            'style' => ['width' => 50],
         ],
     ];
 }
+~~~
 
-// Access relationships
-$article->author;      // Automatically resolved
-$article->categories;  // Automatically resolved
-```
+The date range available to widgets comes from the resource's `$widgetSettings` array. See [Widgets](/docs/widgets) for widget-specific options.
 
-### Advanced Relationship Patterns
+<a id="actions"></a>
+## Actions
 
-```php
-class Article extends Resource
+A row action key is the method name Aura calls on the resource. Define row actions with an `actions()` method or the public `$actions` array. `getActions()` uses the method when it exists and otherwise falls back to the property.
+
+~~~php
+public function actions(): array
 {
-    // Polymorphic relations
-    public function reactions()
-    {
-        return $this->morphMany(Reaction::class, 'reactable');
-    }
-    
-    // Through relationships
-    public function authorTeam()
-    {
-        return $this->hasOneThrough(
-            Team::class,
-            User::class,
-            'id',
-            'id',
-            'user_id',
-            'team_id'
-        );
-    }
-    
-    // Dynamic relationships
-    public function relatedArticles()
-    {
-        return $this->belongsToMany(
-            Article::class,
-            'related_articles',
-            'article_id',
-            'related_id'
-        )->withPivot('relevance_score')
-          ->orderByPivot('relevance_score', 'desc');
-    }
-}
-```
-
-## Querying Resources
-
-### Basic Queries
-
-```php
-// Standard Eloquent queries work
-$articles = Article::where('status', 'published')->get();
-$article = Article::find(1);
-$latest = Article::latest()->take(10)->get();
-
-// With scopes
-$published = Article::published()->get();
-$byAuthor = Article::byAuthor($userId)->get();
-```
-
-### Meta Field Queries
-
-Resources provide query scopes for meta fields (from `AuraModelConfig` trait):
-
-```php
-// Basic meta query (2 arguments: key, value)
-$featured = Article::whereMeta('featured', true)->get();
-
-// With operator (3 arguments: key, operator, value)
-$highPriority = Article::whereMeta('priority', '>', 5)->get();
-
-// Multiple meta conditions
-$special = Article::whereMeta('featured', true)
-    ->whereMeta('priority', '>', 5)
-    ->get();
-
-// Array of conditions
-$filtered = Article::whereMeta([
-    'featured' => true,
-    'status' => 'active',
-])->get();
-
-// OR conditions
-$highlighted = Article::whereMeta('featured', true)
-    ->orWhereMeta('spotlight', true)
-    ->get();
-
-// IN queries - match any value in array
-$selected = Article::whereInMeta('category', ['news', 'updates'])->get();
-
-// NOT IN queries - exclude values
-$excluded = Article::whereNotInMeta('status', ['draft', 'archived'])->get();
-
-// JSON contains - search within JSON meta values
-$tagged = Article::whereMetaContains('tags', 'laravel')->get();
-```
-
-**Note**: Meta queries use `whereHas` internally, which may impact performance on large datasets. Consider using custom tables for frequently queried fields.
-
-### Complex Queries
-
-```php
-class ArticleRepository
-{
-    public function findPublishedWithAuthor($limit = 10)
-    {
-        return Article::with(['author', 'categories', 'tags'])
-            ->where('status', 'published')
-            ->where('published_at', '<=', now())
-            ->whereMeta('visibility', 'public')
-            ->orderBy('published_at', 'desc')
-            ->limit($limit)
-            ->get();
-    }
-    
-    public function searchArticles($term)
-    {
-        return Article::where(function ($query) use ($term) {
-            $query->where('title', 'like', "%{$term}%")
-                  ->orWhere('content', 'like', "%{$term}%");
-        })
-        ->orWhereHas('author', function ($query) use ($term) {
-            $query->where('name', 'like', "%{$term}%");
-        })
-        ->orWhereHas('tags', function ($query) use ($term) {
-            $query->where('name', 'like', "%{$term}%");
-        })
-        ->get();
-    }
-}
-```
-
-### Global Scopes
-
-Resources automatically apply these scopes (defined in `Resource::booted()`):
-
-```php
-use Aura\Base\Models\Scopes\TypeScope;
-use Aura\Base\Models\Scopes\TeamScope;
-use Aura\Base\Models\Scopes\ScopedScope;
-
-// TypeScope - filters by resource type (only for non-custom tables)
-// Applied when $customTable = false, filters posts by type column
-Article::withoutGlobalScope(TypeScope::class)->get(); // All post types
-
-// TeamScope - multi-tenancy filtering
-// Filters by team_id when config('aura.teams') is true
-Article::withoutGlobalScope(TeamScope::class)->get(); // All teams
-
-// ScopedScope - user-based filtering
-// Can restrict resources to owner based on configuration
-Article::withoutGlobalScope(ScopedScope::class)->get(); // All users
-```
-
-**Removing Multiple Scopes**
-
-```php
-// Remove all global scopes
-Article::withoutGlobalScopes()->get();
-
-// Remove specific scopes
-Article::withoutGlobalScopes([
-    TypeScope::class,
-    TeamScope::class,
-])->get();
-```
-
-**Custom Global Scopes**
-
-```php
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Scope;
-
-class PublishedScope implements Scope
-{
-    public function apply(Builder $builder, Model $model)
-    {
-        $builder->where('status', 'published');
-    }
-}
-
-// In your resource
-protected static function booted()
-{
-    parent::booted(); // Important: call parent first!
-    static::addGlobalScope(new PublishedScope);
-}
-```
-
-## Actions and Permissions
-
-### Defining Resource Actions
-
-```php
-class Article extends Resource
-{
-    public static array $actions = [
+    return [
         'publish' => [
             'label' => 'Publish',
-            'icon' => '<svg>...</svg>',
-            'class' => 'text-green-600 hover:text-green-700',
+            'ability' => 'update',
+            'conditional_logic' => fn () => auth()->user()->hasRole('editor'),
+        ],
+        'delete' => [
+            'label' => 'Delete',
+            'ability' => 'delete',
+            'icon-view' => 'aura::components.actions.trash',
             'confirm' => true,
-            'confirm-title' => 'Publish Article?',
-            'confirm-message' => 'This will make the article public.',
-            'condition' => function($model) {
-                return $model->status === 'draft';
-            },
-        ],
-        'archive' => [
-            'label' => 'Archive',
-            'icon' => '<svg>...</svg>',
-            'class' => 'text-yellow-600',
-            'modal' => 'archive-modal',
-        ],
-    ];
-    
-    public static array $bulkActions = [
-        'publish' => 'Publish Selected',
-        'archive' => [
-            'label' => 'Archive Selected',
-            'confirm' => true,
-        ],
-        'export' => [
-            'label' => 'Export to CSV',
-            'handler' => 'exportToCsv',
+            'confirm-title' => 'Delete article?',
+            'confirm-content' => 'Are you sure you want to delete this article?',
+            'confirm-button' => 'Delete',
+            'confirm-button-class' => 'ml-3 bg-red-600 hover:bg-red-700',
         ],
     ];
 }
-```
 
-### Permission Integration
-
-```php
-// Automatic permission generation
-php artisan aura:permissions Article
-
-// Creates permissions:
-// - view Article
-// - create Article
-// - update Article
-// - delete Article
-// - publish Article (custom action)
-// - archive Article (custom action)
-
-// In your resource
-public function allowedToPerformAction($action): bool
+public function publish(): void
 {
-    // Super admin bypass
-    if (auth()->user()->isSuperAdmin()) {
-        return true;
-    }
-    
-    // Check specific permission
-    return auth()->user()->can("{$action} {$this->type}");
+    $this->update(['status' => 'published']);
 }
+~~~
 
-// Usage in views
+Supported row-action options are label, description, icon for raw SVG, icon-view for an included Blade view, class, onclick, conditional_logic, confirm, confirm-title, confirm-content, confirm-button, and confirm-button-class. The ability option is used by table mutation authorization. Resource-page `singleAction()` authorizes update unless `allowedToPerformActions()` returns true, then checks that the action is declared and its conditional closure allows it.
+
+Bulk actions use `bulkActions()` or the public `$bulkActions` array. The method takes precedence over the property:
+
+~~~php
+public array $bulkActions = [
+    'deleteSelected' => [
+        'label' => 'Delete',
+        'ability' => 'delete',
+    ],
+];
+~~~
+
+The table authorizer requires the action to be declared and checks its Gate ability for every selected row in the current table query. Built-in ability mappings cover delete, deleteAttachment, deleteSelected, forceDelete, restore, update, view, and edit. A custom table action must set ability. Selections are capped at 500 rows.
+
+Set `method => collection` to call the model action once with the selected IDs. Set `modal => modal-name` to open a modal with the authorized IDs.
+
+<a id="permissions"></a>
+## Permissions and scopes
+
+Create the standard permissions for registered resources with:
+
+~~~bash
+php artisan aura:create-resource-permissions
+php artisan aura:create-resource-permissions --team=3
+~~~
+
+The optional --team value is a numeric team ID. Without it, the job uses the authenticated user's current team when teams are enabled. It creates these eight abilities for each eligible registered resource:
+
+view-{slug}, viewAny-{slug}, create-{slug}, update-{slug}, restore-{slug}, delete-{slug}, forceDelete-{slug}, and scope-{slug}.
+
+The all-resources job skips Team and its subclasses. Custom actions do not create new permission rows. Map table actions to an existing Gate ability with the ability option.
+
+`Aura\Base\Policies\ResourcePolicy` applies the standard abilities:
+
+~~~blade
 @can('create', App\Aura\Resources\Article::class)
-    <a href="{{ route('aura.article.create') }}">New Article</a>
+    <a href="{{ app(App\Aura\Resources\Article::class)->createUrl() }}">
+        New article
+    </a>
 @endcan
-```
+~~~
 
-### Custom Permission Logic
+Setting `$createEnabled`, `$editEnabled`, `$viewEnabled`, or `$indexViewEnabled` to false denies the matching policy ability. Super Admins and Global Admins have blanket resource access, except that a team Super Admin cannot mutate a Global Role. A user with the scope-{slug} permission and the matching read or write ability is restricted to rows whose user_id is their own.
 
-```php
-class Article extends Resource
-{
-    public static function canCreate(): bool
-    {
-        $user = auth()->user();
-        
-        // Custom logic
-        if ($user->articles()->count() >= 10 && !$user->isPro()) {
-            return false;
-        }
-        
-        return $user->can('create Article');
-    }
-    
-    public function canEdit(): bool
-    {
-        // Owner can always edit
-        if ($this->user_id === auth()->id()) {
-            return true;
-        }
-        
-        // Editors can edit published articles
-        if (auth()->user()->hasRole('editor')) {
-            return $this->status === 'published';
-        }
-        
-        return auth()->user()->can('update Article');
-    }
-}
-```
+When `config('aura.teams')` is true, TeamScope restricts most resource queries to the active team. User queries use team membership, the Team resource itself is left unscoped, and Role queries include the team's roles and global roles. When teams are disabled, Aura does not register team resources and does not apply team filtering.
 
-## Table Configuration
+<a id="relationships"></a>
+## Relationships
 
-### Basic Table Setup
+Every Resource provides these Eloquent relationships:
 
-```php
-class Article extends Resource
-{
-    // Table defaults (instance methods, not static)
-    public function defaultPerPage(): int
-    {
-        return 10; // Default is 10
-    }
-    
-    public function defaultTableSort(): string
-    {
-        return 'id'; // Default sort column
-    }
-    
-    public function defaultTableSortDirection(): string
-    {
-        return 'desc'; // 'asc' or 'desc'
-    }
-    
-    public function defaultTableView(): string
-    {
-        return 'list'; // 'list', 'grid', or custom view
-    }
-    
-    public function showTableSettings(): bool
-    {
-        return true; // Show/hide table settings button
-    }
-}
-```
+~~~php
+$article->meta();     // morphMany when $usesMeta is true
+$article->user();     // belongsTo the configured user resource
+$article->team();     // belongsTo the configured team resource
+$article->parent();   // belongsTo the same resource through parent_id
+$article->children(); // hasMany the same resource through parent_id
+~~~
 
-### Custom Table Columns
+When `$usesMeta` is false, `meta()` returns no relationship. Custom tables need the columns required by any inherited relationship you use.
 
-```php
-public static function indexTableColumns(): array
-{
-    return [
-        'thumbnail' => [
-            'label' => '',
-            'sortable' => false,
-            'class' => 'w-16',
-            'view' => function($model) {
-                if ($model->featured_image) {
-                    return '<img src="'.$model->featured_image.'" class="w-12 h-12 rounded">';
-                }
-                return '<div class="w-12 h-12 bg-gray-200 rounded"></div>';
-            },
-        ],
-        'title' => [
-            'label' => 'Title',
-            'sortable' => true,
-            'searchable' => true,
-            'class' => 'font-medium',
-            'href' => function($model) {
-                return $model->editUrl();
-            },
-        ],
-        'author.name' => [
-            'label' => 'Author',
-            'sortable' => true,
-            'relation' => 'author',
-        ],
-        'status' => [
-            'label' => 'Status',
-            'sortable' => true,
-            'badge' => true,
-            'badge_color' => function($value) {
-                return match($value) {
-                    'published' => 'green',
-                    'draft' => 'gray',
-                    'archived' => 'red',
-                    default => 'blue',
-                };
-            },
-        ],
-        'published_at' => [
-            'label' => 'Published',
-            'sortable' => true,
-            'format' => function($value) {
-                return $value?->format('M j, Y') ?? 'Not published';
-            },
-        ],
-        'actions' => [
-            'label' => '',
-            'view' => 'aura::table.actions',
-        ],
-    ];
-}
-```
+A relationship field can point to another resource:
 
-### Table Filters
+~~~php
+[
+    'name' => 'Author',
+    'slug' => 'author_id',
+    'type' => 'Aura\\Base\\Fields\\BelongsTo',
+    'resource' => 'App\\Aura\\Resources\\Author',
+    'on_forms' => true,
+]
+~~~
 
-```php
-public static function tableFilters(): array
-{
-    return [
-        'status' => [
-            'label' => 'Status',
-            'type' => 'select',
-            'options' => [
-                '' => 'All Statuses',
-                'draft' => 'Draft',
-                'published' => 'Published',
-                'archived' => 'Archived',
-            ],
-        ],
-        'author_id' => [
-            'label' => 'Author',
-            'type' => 'select',
-            'options' => User::authors()->pluck('name', 'id')
-                ->prepend('All Authors', ''),
-        ],
-        'date_range' => [
-            'label' => 'Date Range',
-            'type' => 'date_range',
-            'default' => [
-                'start' => now()->subMonth(),
-                'end' => now(),
-            ],
-        ],
-        'has_image' => [
-            'label' => 'Has Image',
-            'type' => 'boolean',
-            'query' => function($query, $value) {
-                if ($value) {
-                    $query->whereNotNull('featured_image');
-                }
-            },
-        ],
-    ];
-}
-```
+HasMany, Tags, and AdvancedSelect use relation field behavior, so `Resource::__call()` can expose their configured relation as a method. BelongsTo is an input field and stores the foreign key; it does not create a magic relation method. Use ordinary Eloquent relationships when you need a named belongsTo relation.
 
-### Custom Table Views
+<a id="lifecycle"></a>
+## Save lifecycle
 
-```php
-// Grid view
-public static function tableGridView(): string
-{
-    return 'resources.articles.grid';
-}
+Resource saves use one saving listener followed by one saved listener.
 
-// Kanban view
-public static function tableKanbanView(): string
-{
-    return 'resources.articles.kanban';
-}
+1. Aura fills initial posts values when applicable: title, content, user_id, team_id, type, and slug.
+2. Aura packs submitted input fields into the transient fields attribute.
+3. Aura applies field setters and field-class `set()`, `saving()`, and `shouldSkip()` hooks, then routes each value to a table column or a queued meta write.
+4. The saved listener writes queued meta values, calls field-class `saved()` hooks, and fires the metaSaved model event.
 
-public static function kanbanColumns(): array
-{
-    return [
-        'draft' => ['label' => 'Draft', 'class' => 'bg-gray-50'],
-        'review' => ['label' => 'In Review', 'class' => 'bg-yellow-50'],
-        'published' => ['label' => 'Published', 'class' => 'bg-green-50'],
-    ];
-}
-```
+A field definition can also provide a set closure. The model-level `set{Slug}Field()` method is useful when a resource owns a non-column payload or needs to transform a submitted value before storage.
 
-## Advanced Features
+<a id="built-in-resources"></a>
+## Built-in resources and soft deletes
 
-### Soft Deletes
+The built-in resources use these storage profiles:
 
-```php
+| Resource | Slug | Storage | Notes |
+|---|---|---|---|
+| `Aura\Base\Resources\User` | user | Custom users table with meta | The authenticatable user and team membership resource. |
+| `Aura\Base\Resources\Role` | role | Custom roles table without meta | Stores global and team roles. |
+| `Aura\Base\Resources\Permission` | permission | Custom permissions table without meta | Stores generated permissions. |
+| `Aura\Base\Resources\Team` | team | Custom teams table with meta | Registered only when teams are enabled and uses SoftDeletes. |
+| `Aura\Base\Resources\TeamInvitation` | teaminvitation | Shared posts table | Registered only when teams are enabled and cannot be created through the resource policy. |
+| `Aura\Base\Resources\Attachment` | attachment | Shared posts table | Uses the dedicated media index route. |
+| `Aura\Base\Resources\Option` | option | Custom options table | Stores Aura options. |
+
+The base Resource does not use Laravel's SoftDeletes trait and has no `$softDeletes` flag. Add the trait to a resource when the table has a deleted_at column:
+
+~~~php
+use Aura\Base\Resource;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Article extends Resource
 {
     use SoftDeletes;
-    
-    // Enable trash functionality
-    public static bool $softDeletes = true;
-    
-    // Customize trash behavior
-    public function prunable()
-    {
-        return static::where('deleted_at', '<=', now()->subDays(30));
-    }
 }
+~~~
 
-// Usage
-$article->delete(); // Soft delete
-$article->restore(); // Restore
-$article->forceDelete(); // Permanent delete
+<a id="related"></a>
+## Related pages
 
-// Querying
-Article::withTrashed()->get(); // Include soft deleted
-Article::onlyTrashed()->get(); // Only soft deleted
-```
-
-### Versioning/Revisions
-
-```php
-class Article extends Resource
-{
-    public static bool $versioning = true;
-    
-    // Relationship to revisions
-    public function revisions()
-    {
-        return $this->hasMany(Post::class, 'parent_id')
-            ->where('type', 'revision')
-            ->orderBy('created_at', 'desc');
-    }
-    
-    // Create a revision
-    public function createRevision(): self
-    {
-        $revision = $this->replicate();
-        $revision->type = 'revision';
-        $revision->parent_id = $this->id;
-        $revision->save();
-        
-        // Copy meta fields
-        foreach ($this->meta as $meta) {
-            $revision->meta()->create($meta->toArray());
-        }
-        
-        return $revision;
-    }
-    
-    // Restore from revision
-    public function restoreFromRevision($revisionId): bool
-    {
-        $revision = $this->revisions()->findOrFail($revisionId);
-        
-        $this->fill($revision->only($this->fillable));
-        $this->save();
-        
-        return true;
-    }
-}
-```
-
-### Import/Export
-
-```php
-class Article extends Resource
-{
-    public static function exportColumns(): array
-    {
-        return [
-            'id' => 'ID',
-            'title' => 'Title',
-            'slug' => 'URL Slug',
-            'author.name' => 'Author Name',
-            'status' => 'Status',
-            'published_at' => 'Published Date',
-            'created_at' => 'Created Date',
-        ];
-    }
-    
-    public static function importRules(): array
-    {
-        return [
-            'title' => 'required|string|max:255',
-            'slug' => 'required|string|unique:posts,slug',
-            'author_email' => 'required|email|exists:users,email',
-            'status' => 'required|in:draft,published',
-        ];
-    }
-    
-    public static function importMap($row): array
-    {
-        return [
-            'title' => $row['title'],
-            'slug' => Str::slug($row['title']),
-            'user_id' => User::where('email', $row['author_email'])->first()->id,
-            'status' => $row['status'],
-            'published_at' => $row['status'] === 'published' ? now() : null,
-        ];
-    }
-}
-```
-
-### Webhooks & Events
-
-```php
-class Article extends Resource
-{
-    protected $dispatchesEvents = [
-        'created' => ArticleCreated::class,
-        'updated' => ArticleUpdated::class,
-        'deleted' => ArticleDeleted::class,
-    ];
-    
-    protected static function booted()
-    {
-        parent::booted();
-        
-        // Automatic slug generation
-        static::creating(function ($article) {
-            if (empty($article->slug)) {
-                $article->slug = Str::slug($article->title);
-            }
-        });
-        
-        // Clear cache on changes
-        static::saved(function ($article) {
-            cache()->tags(['articles'])->flush();
-        });
-        
-        // Send notifications
-        static::created(function ($article) {
-            $article->author->notify(new ArticlePublished($article));
-        });
-    }
-}
-```
-
-### Media Attachments
-
-```php
-class Article extends Resource
-{
-    // Multiple media collections
-    public function registerMediaCollections(): void
-    {
-        $this->addMediaCollection('featured')
-            ->singleFile()
-            ->acceptsMimeTypes(['image/jpeg', 'image/png']);
-            
-        $this->addMediaCollection('gallery')
-            ->acceptsMimeTypes(['image/jpeg', 'image/png']);
-            
-        $this->addMediaCollection('downloads')
-            ->useDisk('downloads');
-    }
-    
-    // Custom media conversions
-    public function registerMediaConversions(Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-            ->width(300)
-            ->height(200)
-            ->quality(90)
-            ->optimize()
-            ->nonQueued();
-            
-        $this->addMediaConversion('preview')
-            ->width(800)
-            ->height(600)
-            ->quality(85);
-    }
-}
-```
-
-## Resource Lifecycle
-
-### Complete Lifecycle Flow
-
-```php
-class Article extends Resource
-{
-    // 1. CREATING
-    protected static function booting()
-    {
-        static::creating(function ($article) {
-            $article->user_id = auth()->id();
-            $article->team_id = auth()->user()->currentTeam->id;
-            $article->generateSlug();
-        });
-    }
-    
-    // 2. CREATED
-    protected static function booted()
-    {
-        static::created(function ($article) {
-            // Generate initial revision
-            $article->createRevision();
-            
-            // Process media uploads
-            $article->processMediaUploads();
-            
-            // Update search index
-            $article->updateSearchIndex();
-        });
-    }
-    
-    // 3. UPDATING
-    public function updating()
-    {
-        // Track changes
-        $this->trackChanges();
-        
-        // Validate business rules
-        if ($this->status === 'published' && empty($this->published_at)) {
-            $this->published_at = now();
-        }
-    }
-    
-    // 4. UPDATED
-    public function updated()
-    {
-        // Create revision if significant changes
-        if ($this->hasSignificantChanges()) {
-            $this->createRevision();
-        }
-        
-        // Clear caches
-        $this->clearCaches();
-        
-        // Trigger webhooks
-        $this->triggerWebhooks('updated');
-    }
-    
-    // 5. DELETING
-    public function deleting()
-    {
-        // Clean up relationships
-        $this->comments()->delete();
-        $this->tags()->detach();
-        
-        // Archive data
-        $this->archiveData();
-    }
-    
-    // 6. DELETED
-    public function deleted()
-    {
-        // Remove from search index
-        $this->removeFromSearchIndex();
-        
-        // Clean up media
-        $this->clearMediaCollection();
-    }
-}
-```
-
-### Field Value Processing
-
-Understanding how field values flow through the system is essential for customization:
-
-```
-SAVING FLOW:
-1. Form input received (Livewire component)
-2. Field validation (Laravel rules + custom)
-3. SaveFieldAttributes trait (saving event):
-   - Collects field values into $attributes['fields'] array
-   - Removes non-base-fillable fields from $attributes
-4. SaveMetaFields trait (saving event):
-   - Processes each field through field class set() method
-   - Calls saving() on field classes
-   - Stores in $metaFields for later persistence
-5. Eloquent saves to database (table fields)
-6. SaveMetaFields trait (saved event):
-   - Persists $metaFields to meta table
-   - Calls saved() on field classes
-   - Fires 'metaSaved' model event
-
-READING FLOW:
-1. Model loaded with meta relationship eager loaded
-2. getFieldsAttribute() accessor called
-3. getFieldsWithoutConditionalLogic() builds values:
-   - Merges table attributes + meta values
-   - Calls get() on field classes
-4. Conditional logic filters visible fields
-5. Result cached in $fieldsAttributeCache
-```
-
-**The `fields` Attribute**
-
-Every resource has a computed `fields` attribute that combines table and meta values:
-
-```php
-// Access field values
-$article = Article::find(1);
-
-// All field values (filtered by conditional logic)
-$article->fields;              // Collection
-
-// Specific field value
-$article->fields['featured'];  // Via fields array
-$article->featured;            // Via __get magic method
-
-// Raw value without conditional logic
-$article->getFieldsWithoutConditionalLogic();
-
-// Clear fields cache after updates
-$article->clearFieldsAttributeCache();
-```
-
-## Performance Optimization
-
-### Query Optimization
-
-```php
-class Article extends Resource
-{
-    // Eager load relationships
-    protected $with = ['author', 'categories'];
-    
-    // Define indexes in migration
-    public function up()
-    {
-        Schema::table('posts', function (Blueprint $table) {
-            $table->index(['type', 'status', 'published_at']);
-            $table->index(['type', 'user_id']);
-            $table->fullText(['title', 'content']);
-        });
-    }
-    
-    // Optimize meta queries
-    public function scopeOptimizedMeta($query, $key, $value)
-    {
-        return $query->whereExists(function ($query) use ($key, $value) {
-            $query->select(DB::raw(1))
-                  ->from('meta')
-                  ->whereColumn('meta.metable_id', 'posts.id')
-                  ->where('meta.metable_type', static::class)
-                  ->where('meta.key', $key)
-                  ->where('meta.value', $value);
-        });
-    }
-}
-```
-
-### Caching Strategies
-
-```php
-class Article extends Resource
-{
-    // Cache individual resources
-    public static function findCached($id)
-    {
-        return cache()->remember(
-            "article.{$id}",
-            now()->addHours(1),
-            fn() => static::with(['author', 'categories'])->find($id)
-        );
-    }
-    
-    // Cache queries
-    public static function popularThisWeek()
-    {
-        return cache()->remember(
-            'articles.popular.week',
-            now()->addHours(6),
-            fn() => static::withCount('views')
-                ->where('published_at', '>=', now()->subWeek())
-                ->orderByDesc('views_count')
-                ->limit(10)
-                ->get()
-        );
-    }
-    
-    // Clear caches on update
-    protected static function booted()
-    {
-        static::saved(function ($article) {
-            cache()->forget("article.{$article->id}");
-            cache()->tags(['articles'])->flush();
-        });
-    }
-}
-```
-
-### Database Optimization
-
-```php
-// Use custom table for high-volume resources
-class PageView extends Resource
-{
-    public static bool $customTable = true;
-    protected $table = 'page_views';
-    
-    // Partition by date for better performance
-    public function up()
-    {
-        DB::statement("
-            CREATE TABLE page_views (
-                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-                page_id BIGINT UNSIGNED NOT NULL,
-                user_id BIGINT UNSIGNED NULL,
-                ip_address VARCHAR(45),
-                user_agent TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (id, created_at)
-            ) PARTITION BY RANGE (YEAR(created_at)) (
-                PARTITION p2023 VALUES LESS THAN (2024),
-                PARTITION p2024 VALUES LESS THAN (2025),
-                PARTITION p2025 VALUES LESS THAN (2026)
-            )
-        ");
-    }
-}
-```
-
-## Best Practices
-
-### 1. Resource Organization
-
-```php
-// Group related resources
-app/Aura/Resources/
-├── Blog/
-│   ├── Article.php
-│   ├── Category.php
-│   └── Tag.php
-├── Commerce/
-│   ├── Product.php
-│   ├── Order.php
-│   └── Customer.php
-└── System/
-    ├── User.php
-    ├── Role.php
-    └── Permission.php
-```
-
-### 2. Field Organization
-
-```php
-class Article extends Resource
-{
-    public static function getFields()
-    {
-        return [
-            ...static::contentFields(),
-            ...static::seoFields(),
-            ...static::mediaFields(),
-            ...static::taxonomyFields(),
-            ...static::metadataFields(),
-        ];
-    }
-    
-    protected static function contentFields(): array
-    {
-        return [
-            ['name' => 'Title', 'slug' => 'title', 'type' => 'Text'],
-            ['name' => 'Content', 'slug' => 'content', 'type' => 'Wysiwyg'],
-        ];
-    }
-    
-    protected static function seoFields(): array
-    {
-        return [
-            ['name' => 'SEO Title', 'slug' => 'seo_title', 'type' => 'Text'],
-            ['name' => 'SEO Description', 'slug' => 'seo_description', 'type' => 'Textarea'],
-        ];
-    }
-}
-```
-
-### 3. Validation Patterns
-
-```php
-class Article extends Resource
-{
-    // Centralize validation rules
-    public static function validationRules($id = null): array
-    {
-        return [
-            'title' => ['required', 'string', 'max:255'],
-            'slug' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('posts')->ignore($id)->where('type', 'Article'),
-            ],
-            'content' => ['required', 'string', 'min:100'],
-            'published_at' => ['nullable', 'date', 'after_or_equal:today'],
-        ];
-    }
-    
-    // Custom validation messages
-    public static function validationMessages(): array
-    {
-        return [
-            'title.required' => 'Every article needs a title!',
-            'content.min' => 'Articles should be at least 100 characters.',
-        ];
-    }
-}
-```
-
-### 4. Security Patterns
-
-```php
-class Article extends Resource
-{
-    // Sanitize input
-    protected static function booting()
-    {
-        static::saving(function ($article) {
-            $article->title = strip_tags($article->title);
-            $article->content = clean($article->content); // Use HTML purifier
-        });
-    }
-    
-    // Scope by permissions
-    public function scopeAccessible($query)
-    {
-        if (!auth()->user()->isAdmin()) {
-            $query->where(function ($q) {
-                $q->where('user_id', auth()->id())
-                  ->orWhere('status', 'published');
-            });
-        }
-        
-        return $query;
-    }
-}
-```
-
-### 5. Testing Resources
-
-```php
-class ArticleResourceTest extends TestCase
-{
-    public function test_article_creation_with_meta_fields()
-    {
-        $user = User::factory()->create();
-        
-        $article = Article::create([
-            'title' => 'Test Article',
-            'content' => 'Test content',
-            'user_id' => $user->id,
-            'meta' => [
-                'featured' => true,
-                'reading_time' => 5,
-            ],
-        ]);
-        
-        $this->assertEquals('Test Article', $article->title);
-        $this->assertTrue($article->getMeta('featured'));
-        $this->assertEquals(5, $article->getMeta('reading_time'));
-    }
-    
-    public function test_article_query_scopes()
-    {
-        Article::factory()->count(5)->published()->create();
-        Article::factory()->count(3)->draft()->create();
-        
-        $this->assertEquals(5, Article::published()->count());
-        $this->assertEquals(3, Article::draft()->count());
-    }
-}
-```
-
-## Common Patterns
-
-### Repository Pattern
-
-```php
-class ArticleRepository
-{
-    protected Article $model;
-    
-    public function __construct(Article $model)
-    {
-        $this->model = $model;
-    }
-    
-    public function findPublished(int $limit = 10)
-    {
-        return $this->model
-            ->with(['author', 'categories'])
-            ->published()
-            ->latest('published_at')
-            ->limit($limit)
-            ->get();
-    }
-    
-    public function findByCategory(Category $category)
-    {
-        return $this->model
-            ->whereHas('categories', fn($q) => $q->where('id', $category->id))
-            ->published()
-            ->get();
-    }
-}
-```
-
-### Service Pattern
-
-```php
-class ArticleService
-{
-    public function __construct(
-        protected ArticleRepository $repository,
-        protected MediaService $mediaService,
-        protected NotificationService $notifications
-    ) {}
-    
-    public function create(array $data): Article
-    {
-        DB::beginTransaction();
-        
-        try {
-            $article = $this->repository->create($data);
-            
-            if (isset($data['featured_image'])) {
-                $this->mediaService->attach($article, $data['featured_image']);
-            }
-            
-            if ($article->status === 'published') {
-                $this->notifications->notifySubscribers($article);
-            }
-            
-            DB::commit();
-            
-            return $article;
-        } catch (\Exception $e) {
-            DB::rollBack();
-            throw $e;
-        }
-    }
-}
-```
-
-### Factory Pattern
-
-```php
-class ResourceFactory
-{
-    public static function make(string $type): Resource
-    {
-        $class = match($type) {
-            'article' => Article::class,
-            'product' => Product::class,
-            'page' => Page::class,
-            default => throw new InvalidArgumentException("Unknown resource type: {$type}")
-        };
-        
-        return new $class;
-    }
-}
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Fields not showing in forms**
-   ```php
-   // Check field configuration
-   'on_forms' => true, // Must be true
-   'conditional_logic' => [], // Check conditions
-   ```
-
-2. **Meta fields not saving**
-   ```php
-   // Ensure resource uses meta
-   public static bool $usesMeta = true;
-   
-   // Check fillable doesn't include meta fields
-   protected $fillable = ['title', 'content']; // Not meta fields
-   ```
-
-3. **Relationships not loading**
-   ```php
-   // Check field type and configuration
-   [
-       'type' => 'Aura\\Base\\Fields\\BelongsTo',
-       'resource' => 'User', // Must match resource class
-   ]
-   ```
-
-4. **Performance issues**
-   ```php
-   // Add eager loading
-   protected $with = ['author', 'categories'];
-   
-   // Use custom table for large datasets
-   public static bool $customTable = true;
-   ```
-
-
-## Next Steps
-
-Now that you understand Resources, explore:
-
-1. 📝 **[Creating Resources](creating-resources.md)** - Step-by-step resource creation
-2. 🎨 **[Fields Reference](fields.md)** - All 40+ field types
-3. 🔧 **[Custom Fields](creating-fields.md)** - Build your own fields
-4. 📊 **[Table Component](table.md)** - Advanced table features
-5. 🔒 **[Permissions](roles-permissions.md)** - Access control
-
----
-
-Resources are the foundation of every Aura CMS application. Master them, and you'll unlock the full potential of the platform. Happy building! 🚀
+- [Creating resources](/docs/creating-resources) covers the generator and first field.
+- [Fields](/docs/fields) lists field types and options.
+- [Custom tables](/docs/custom-tables) and [Meta fields](/docs/meta-fields) cover storage migrations and queries.
+- [Table](/docs/table) covers list, grid, and Kanban configuration.
+- [Widgets](/docs/widgets) covers index-page metrics.
+- [Customizing views](/docs/customizing-views) covers Blade overrides and aura:customize.
+- [Roles and permissions](/docs/roles-permissions) covers role and team access.
+- [Testing](/docs/testing) covers Livewire resource tests.

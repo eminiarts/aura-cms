@@ -1,1107 +1,670 @@
-# Troubleshooting & FAQ
+# Troubleshooting
 
-This guide helps you resolve common issues with Aura CMS, provides debugging techniques, and answers frequently asked questions.
+This page covers failures caused by Aura's installer, resources, fields, teams, permissions, assets, and configuration. For Composer, PHP extensions, database drivers, and HTTP limits, use the Laravel documentation.
 
-## Table of Contents
+The page describes the current `main` branch unless it says `beta4`. The public Composer release is `v1.0.0-beta.4`, and that release has separate installer and cache behavior. Use the release-specific steps in [Installation](/docs/installation) when `composer show eminiarts/aura-cms` reports beta4.
 
-1. [Common Issues](#common-issues)
-2. [Common Gotchas](#common-gotchas)
-3. [Installation Problems](#installation-problems)
-4. [Database Issues](#database-issues)
-5. [Authentication & Permissions](#authentication--permissions)
-6. [Resource & Field Errors](#resource--field-errors)
-7. [Livewire Component Issues](#livewire-component-issues)
-8. [Media & File Upload Problems](#media--file-upload-problems)
-9. [Performance Issues](#performance-issues)
-10. [Testing Issues](#testing-issues)
-11. [Debugging Guide](#debugging-guide)
-12. [Error Messages Reference](#error-messages-reference)
-13. [Upgrade Procedures](#upgrade-procedures)
-14. [Migration Troubleshooting](#migration-troubleshooting)
-15. [Frequently Asked Questions](#frequently-asked-questions)
+<a id="common-issues"></a>
+<a id="common-issues-and-solutions"></a>
 
-## Common Issues
+## Quick triage
 
-### Issue: "Aura CMS assets are not published"
+Check the installed package and application runtime first:
 
-**Error Message:**
-```
-RuntimeException: Aura CMS assets are not published. Please run: php artisan aura:publish
-```
-
-**Solution:**
 ```bash
-# Publish assets
-php artisan aura:publish
-
-# Or force republish
-php artisan vendor:publish --tag=aura-assets --force
-
-# Clear views
-php artisan view:clear
-```
-
-### Issue: Blank Page After Installation
-
-**Possible Causes:**
-- PHP version mismatch
-- Missing extensions
-- Permission issues
-- Cache problems
-
-**Solutions:**
-```bash
-# Check PHP version (8.2+ required)
+composer show eminiarts/aura-cms
 php -v
+php artisan about
+```
 
-# Check required extensions
-php -m | grep -E 'bcmath|ctype|curl|dom|fileinfo|json|mbstring|openssl|pcre|pdo|tokenizer|xml|gd|imagick'
+Current `main` requires PHP 8.4, Laravel 13, Livewire 4, and the GD extension used by Intervention Image3. The public beta4 release supports an older runtime matrix. Check [Installation](/docs/installation) before applying a `main` example to beta4.
 
-# Fix permissions
-sudo chown -R $USER:www-data storage bootstrap/cache
-sudo chmod -R 775 storage bootstrap/cache
+Then check the route, configuration, and migration state that match the failure:
 
-# Clear all caches
-php artisan cache:clear
+```bash
+php artisan route:list --path=admin
+php artisan migrate:status
 php artisan config:clear
-php artisan route:clear
-php artisan view:clear
 ```
 
-### Issue: Styles Not Loading Correctly
+`config:clear` removes Laravel's compiled configuration file and does not alter database data.
 
-**Solutions:**
+<a id="installation-problems"></a>
+
+## Installation problems
+
+### The installer reports success after a child command failed
+
+Current `main` stops `aura:install` when `aura:extend-user-model`, `aura:install-config`, `migrate`, `aura:user`, or `storage:link` fails. Read the first failed child command and fix that problem before rerunning the installer. Check the final route with `php artisan route:list --path=admin`.
+
+Beta4 can print its final installer message after a child command failed. Check each command's output and confirm that `/login` loads before treating beta4 installation as complete. The beta4 teams-off sequence is documented in [Installation](/docs/installation#without-teams).
+
+### Aura-owned tables already exist
+
+The Aura migration stops when package-owned tables such as `posts`, `meta`, `roles`, or `permissions` already exist. Run `php artisan migrate:status` to inspect migration state and compare the existing schema with the published migration. Use a database with no conflicting Aura-owned tables for a fresh installation, or plan a data-preserving migration for an existing application. Do not drop tables or reset the database as an installation shortcut.
+
+### The User model was not updated
+
+`aura:extend-user-model` edits a standard `app/Models/User.php` that extends Laravel's `Authenticatable` class. If you declined the prompt, run:
+
 ```bash
-# Rebuild assets
-npm install
-npm run build
-
-# Create storage link
-php artisan storage:link
-
-# Check Vite configuration
-npm run dev # For development
+php artisan aura:extend-user-model
 ```
 
-## Common Gotchas
+Review a custom User model manually. It should extend `Aura\Base\Resources\User` or preserve the contracts and traits that Aura's authentication flow requires. The command does not rewrite an arbitrary custom model.
 
-These are important architectural patterns in Aura CMS that can cause unexpected behavior if not understood:
+### Teams-off installation behaves like teams-on
 
-### 1. Team Scope Filtering
+Choose the teams setting before the schema is created. On current `main`, a non-interactive installation passes the option to the installer:
 
-Most models in Aura CMS use `TeamScope` which automatically filters records by the user's current team. This can cause records to appear "missing" when they exist in the database.
-
-**Problem:** Records exist in database but queries return empty results
-
-**Solution:**
-```php
-use Aura\Base\Models\Scopes\TeamScope;
-
-// Bypass TeamScope when you need all records
-$allRecords = YourResource::withoutGlobalScope(TeamScope::class)->get();
-
-// Or for specific queries
-$record = YourResource::withoutGlobalScope(TeamScope::class)
-    ->where('id', $id)
-    ->first();
-```
-
-**Important:** When changing a user's team, you must clear the cached team ID:
-```php
-use Illuminate\Support\Facades\Cache;
-
-// After updating user's team
-$user->update(['current_team_id' => $newTeamId]);
-
-// Clear the TeamScope cache
-Cache::forget("user_{$user->id}_current_team_id");
-```
-
-### 2. Type Column for Single-Table Inheritance
-
-The `posts` table uses a `type` column for single-table inheritance. Resources sharing the posts table are differentiated by this column.
-
-**Problem:** Queries return wrong resource types or unexpected records
-
-**Solution:**
-```php
-// The TypeScope automatically filters by type
-// If you need to query across types:
-use Aura\Base\Models\Scopes\TypeScope;
-
-$allPosts = Post::withoutGlobalScope(TypeScope::class)->get();
-```
-
-### 3. Meta Fields Storage
-
-Resources can store field data in a separate `meta` table instead of directly in columns. Use the `usesMeta()` method to check.
-
-**Problem:** Field values not saving or returning null
-
-**Solution:**
-```php
-// Check if resource uses meta storage
-if ($resource->usesMeta()) {
-    // Values are stored in meta table, not the main table
-    // Access via the model's meta relationship
-}
-
-// For custom meta table, define it in your model:
-class Product extends Model
-{
-    protected $metaTable = 'product_meta';
-}
-```
-
-### 4. Resource Editor Environment Restriction
-
-The Resource Editor is automatically disabled outside of local environments for security.
-
-**Configuration in `config/aura.php`:**
-```php
-'features' => [
-    'resource_editor' => config('app.env') == 'local' ? true : false,
-],
-```
-
-**Problem:** Resource Editor not visible in staging/production
-
-**Solution:** This is intentional and cannot be overridden by configuration. Use the editor locally, commit the generated PHP changes, and deploy those reviewed source changes.
-
-## Installation Problems
-
-### Composer Memory Limit
-
-**Error:**
-```
-Fatal error: Allowed memory size of X bytes exhausted
-```
-
-**Solution:**
 ```bash
-# Increase memory limit for composer
-COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms:^1.0@beta
+php artisan aura:install \
+    --no-interaction \
+    --teams=false \
+    --registration=false \
+    --admin-name="Aura Admin" \
+    --admin-email="admin@example.com" \
+    --admin-password="replace-this-value"
 ```
 
-### Package Discovery Failed
+For beta4, follow the separate [teams-off sequence](/docs/installation#without-teams), where `aura:install-config` runs before `migrate` in a new PHP process. Changing `AURA_TEAMS` after the schema exists needs a planned schema migration.
 
-**Error:**
-```
-Script @php artisan package:discover --ansi handling the post-autoload-dump event returned with error code 1
-```
+<a id="configuration-and-cache"></a>
 
-**Solutions:**
+## Configuration and cache
+
+### Configuration changes have no effect
+
+When `.env` or `config/aura.php` changes do not affect the request, clear the compiled configuration before testing again:
+
 ```bash
-# Clear composer cache
-composer clear-cache
-
-# Update composer
-composer self-update
-
-# Remove vendor and reinstall
-rm -rf vendor composer.lock
-composer install
-```
-
-### Missing PHP Extensions
-
-**Error:**
-```
-Your requirements could not be resolved to an installable set of packages.
-```
-
-**Check and Install Extensions:**
-
-**Ubuntu/Debian:**
-```bash
-sudo apt-get update
-sudo apt-get install php8.4-bcmath php8.4-gd php8.4-mbstring php8.4-xml php8.4-curl php8.4-zip
-```
-
-**macOS (Homebrew):**
-```bash
-brew install php@8.4
-pecl install imagick
-```
-
-**Windows:**
-Enable extensions in `php.ini`:
-```ini
-extension=bcmath
-extension=gd
-extension=mbstring
-extension=openssl
-extension=pdo_mysql
-```
-
-## Database Issues
-
-### Migration Errors
-
-**Error: "Table already exists"**
-```bash
-# Option 1: Fresh migration (WARNING: Deletes all data)
-php artisan migrate:fresh --seed
-
-# Option 2: Rollback and remigrate
-php artisan migrate:rollback
-php artisan migrate
-```
-
-**Error: "Foreign key constraint fails"**
-```php
-// In your migration
-Schema::disableForeignKeyConstraints();
-// ... your migrations
-Schema::enableForeignKeyConstraints();
-```
-
-### MySQL 8.0 Authentication
-
-**Error:**
-```
-SQLSTATE[HY000] [2054] The server requested authentication method unknown to the client
-```
-
-**Solution:**
-```sql
-ALTER USER 'your_user'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';
-FLUSH PRIVILEGES;
-```
-
-### PostgreSQL Connection
-
-**Error:**
-```
-SQLSTATE[08006] [7] FATAL: password authentication failed for user
-```
-
-**Solution in `.env`:**
-```env
-DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=aura_cms
-DB_USERNAME=postgres
-DB_PASSWORD=your_password
-DB_SCHEMA=public
-```
-
-### SQLite Issues
-
-**Error:**
-```
-SQLSTATE[HY000]: General error: 1 no such table: posts
-```
-
-**Solution:**
-```bash
-# Create database file
-touch database/database.sqlite
-
-# Run migrations
-php artisan migrate
-```
-
-## Authentication & Permissions
-
-### Cannot Login
-
-**Symptoms:**
-- Login form submits but redirects back
-- No error messages
-- Session not persisting
-
-**Solutions:**
-```bash
-# Regenerate application key
-php artisan key:generate
-
-# Clear all caches
+php artisan config:clear
 php artisan cache:clear
-php artisan config:cache
-php artisan route:cache
-
-# Check session configuration
-# In .env
-SESSION_DRIVER=file # or database, redis
-SESSION_DOMAIN=yourdomain.com
-SESSION_SECURE_COOKIE=true # Only if using HTTPS
 ```
 
-### 403 Forbidden Errors
+Current `main`'s `aura:install-config` clears both configuration and application cache after it writes the selected values. Beta4 can leave a cached configuration file and writes literal values into the published config. Review the beta4 notes in [Installation](/docs/installation).
 
-**Error:**
-```
-403 | This action is unauthorized.
-```
+The current layout component alias is `aura::layout.app`. If an older published config still contains `aura::layouts.app`, update the `views.layout` value and clear the config cache. The shipped component is `resources/views/components/layout/app.blade.php`.
 
-**Common Causes:**
-1. User lacks required permissions
-2. Resource policy denying access
-3. Team scope restrictions
+### A new resource or permission is missing from the sidebar
 
-**Solutions:**
-```php
-// Check user permissions
-$user = auth()->user();
-dd($user->getAllPermissions());
+Current `main` includes the registered resource list in the navigation cache key, so adding a resource invalidates the relevant sidebar entry. After changing a role's permissions, an already cached sidebar can still show the old result. Run `php artisan cache:clear` if a fresh request does not reflect the grant. Beta4 has a stale navigation cache after adding a resource. Use the beta4 instructions in [Installation](/docs/installation).
 
-// Regenerate permissions
-php artisan aura:permissions
+<a id="assets-and-media"></a>
+<a id="media--file-upload-problems"></a>
 
-// Check if user is super admin
-if (!$user->isSuperAdmin()) {
-    // Assign super admin role
-    $user->assignRole('Super Admin');
-}
+## Assets and media
+
+### The admin page is unstyled or JavaScript does not run
+
+Aura checks `public/vendor/aura/manifest.json` and the files referenced by that manifest. If the admin panel renders unstyled or the JavaScript is dead, republish the package assets:
+
+```bash
+php artisan aura:publish
 ```
 
-### Team Scope Issues
+`aura:publish` has no `--force` option. It stages a complete asset tree, verifies the manifest references, and replaces the previous tree only after verification. You do not need to run `npm install` or rebuild the host application's Vite bundle to publish Aura's compiled assets. Run it after every package update.
 
-**Problem:** User can't see resources from their team
+If the command fails, inspect its error and the package installation. Confirm that `public/vendor/aura/manifest.json` exists after a successful publish.
 
-**Solution:**
-```php
-// Ensure user has current team set
-$user = auth()->user();
-if (!$user->current_team_id && $user->teams->isNotEmpty()) {
-    $user->switchTeam($user->teams->first());
-}
+### Uploaded files or images return 404
 
-// Check team scope in resource
-class YourResource extends Resource
-{
-    protected static function booted()
-    {
-        parent::booted();
-        
-        // Only apply team scope if teams enabled
-        if (config('aura.teams')) {
-            static::addGlobalScope(new TeamScope);
-        }
-    }
-}
+Aura stores media on the disk configured by `aura.media.disk`, which defaults to the `public` disk under the `media` path. The public storage link must exist:
+
+```bash
+php artisan storage:link
 ```
 
-## Resource & Field Errors
+Current `main` creates the link during `aura:install`. Beta4 does not, so the command is required after a beta4 installation. See the beta4 notes in [Installation](/docs/installation).
 
-### InvalidMetaTableException
+Check GD before investigating the upload record:
 
-**Error:**
-```
-InvalidMetaTableException: You need to define a custom meta table for this model.
-```
-
-**Solution:**
-```php
-// In your model
-class Product extends Model
-{
-    protected $metaTable = 'product_meta';
-    
-    // Or use a custom table instead
-    protected $table = 'products';
-    protected $customTable = true;
-}
+```bash
+php -m | grep -i '^gd$'
 ```
 
-### "Function getFields() not found"
+Aura uses Intervention Image3 with the GD driver. Imagick is not required by the core thumbnail path.
 
-**Error when using Resource Editor:**
-```
-Function getFields() not found
-```
+### A thumbnail request returns `Requested thumbnail dimensions are not allowed.`
 
-**Solution:**
-Ensure your resource has the proper structure:
+When `aura.media.restrict_to_dimensions` is `true`, the requested width and height must match one of the entries in `aura.media.dimensions`. The default named sizes include `xs` at 200 pixels, `sm` at 600, `md` at 1200, `lg` at 2000, and a 600 by 600 `thumbnail` size.
+
+If the source file is missing, the thumbnail generator reports `Original image not found: {path}`. Check the configured disk, the `media` path, and the stored attachment URL before changing thumbnail settings.
+
+Thumbnails are intentionally skipped in the `testing` environment. Tests should not expect generated thumbnail files.
+
+<a id="resource-and-field-errors"></a>
+<a id="resource--field-errors"></a>
+
+## Resources and field storage
+
+### A resource does not appear in the sidebar
+
+Aura discovers application resources under `aura-settings.paths.resources.path`, which defaults to `app/Aura/Resources` with the `App\Aura\Resources` namespace. Only classes that extend `Aura\Base\Resource` are registered.
+
+A resource goes missing when:
+
+- The file is not under `app/Aura/Resources`.
+- The class does not `extend Aura\Base\Resource`.
+- The class name / namespace do not match the file path (PSR-4 autoloading fails silently).
+
 ```php
 namespace App\Aura\Resources;
 
 use Aura\Base\Resource;
 
-class Product extends Resource
+class Project extends Resource
 {
-    public static string $model = \App\Models\Product::class;
-    
-    public static function getFields()
+    public static string $type = 'Project';
+
+    public static ?string $slug = 'project';
+
+    public static function getFields(): array
     {
         return [
             [
                 'name' => 'Title',
-                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'title',
+                'type' => 'Aura\Base\Fields\Text',
                 'validation' => 'required|max:255',
             ],
-            // More fields...
         ];
     }
 }
 ```
 
-### Field Validation Not Working
+Aura resources are Eloquent models themselves. There is no separate `$model` property pointing at an `App\Models` class.
 
-**Problem:** Validation rules are ignored
+After adding a resource, generate its permissions so roles can be granted access:
 
-**Solution:**
-```php
-// Ensure field has validation key
-[
-    'name' => 'Email',
-    'type' => 'Aura\\Base\\Fields\\Email',
-    'validation' => 'required|email|unique:users,email',
-    'validation_messages' => [
-        'required' => 'Email address is required',
-        'email' => 'Please enter a valid email',
-        'unique' => 'This email is already taken',
-    ],
-]
-
-// For conditional validation
-'validation' => function($form) {
-    return $form['type'] === 'business' 
-        ? 'required|email|unique:businesses,email'
-        : 'required|email';
-},
+```bash
+php artisan aura:create-resource-permissions
 ```
 
-### Conditional Fields Not Showing
+Current `main` includes the registered resource list in the navigation cache key, so adding a resource invalidates the relevant sidebar entry. After changing a role's permissions, an already cached sidebar can still show the old result. Run `php artisan cache:clear` if a fresh request does not reflect the grant.
 
-**Problem:** Fields with displayIf/hideIf not working
+### Resource Editor returns 404 or 403
 
-**Solution:**
+The resource editor (`/admin/resources/{slug}/editor`) guards itself in three ways in `mount()`. Each aborts with a specific status:
+
+| Status | Message | Cause |
+|--------|---------|-------|
+| 404 | (none) | `config('aura.features.resource_editor')` is `false` |
+| 403 | `Only App resources can be edited.` | `isVendorResource()` is true. The resource class is outside the `App\` namespace. |
+| 403 | `Your fields have closures. You can not use the Resource Builder with Closures.` | `getFields()` contains closures (dynamic options, closure validation, etc.) |
+
+The feature flag defaults to on only in the local environment:
+
 ```php
-// Check field slugs match exactly
-[
-    'name' => 'Product Type',
-    'type' => 'Aura\\Base\\Fields\\Select',
-    'slug' => 'product_type', // Note the slug
-    'options' => [
-        'physical' => 'Physical Product',
-        'digital' => 'Digital Product',
-    ],
+// config/aura.php
+'features' => [
+    'resource_editor' => config('app.env') == 'local' ? true : false,
 ],
+```
+
+This is read directly from config. There is no `AURA_RESOURCE_EDITOR` env var. The middleware also permits the `testing` environment.
+
+The closure guard is by design. The editor rewrites your `getFields()` array to a file and cannot serialize closures. If you need dynamic field behaviour, edit the resource by hand.
+
+<a id="common-gotchas"></a>
+<a id="database-issues"></a>
+
+## Teams and missing records
+
+### Records exist in the database but queries return empty
+
+Resources can apply three global scopes:
+
+- `TypeScope` limits shared `posts` records to the resource's `type`.
+- `TeamScope` limits team-owned records to the authenticated user's current team when teams are enabled.
+- `ScopedScope` limits records to the current user when the role has the resource's `scope` permission and the user is not a Super Admin.
+
+A missing current team fails closed for ordinary authenticated users. Guests skip `TeamScope` so login, registration, and password reset can resolve their models. The `Team` resource itself is not team-scoped. `Role` queries in a team context include that team's Team Roles and the shared Global Roles, with shadow resolution applied by the role catalog.
+
+First inspect the runtime context:
+
+```php
+$user = auth()->user();
+
+config('aura.teams');
+$user?->current_team_id;
+$user?->belongsToTeam($team);
+```
+
+Use `withoutGlobalScope(TeamScope::class)` or `withoutGlobalScopes()` only in controlled administrative or diagnostic code where the wider result set is intended. Do not remove a scope from a normal web query to work around a missing permission:
+
+```php
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Models\Scopes\TypeScope;
+
+$all = Project::withoutGlobalScope(TeamScope::class)
+    ->withoutGlobalScope(TypeScope::class)
+    ->get();
+```
+
+Do not re-add these scopes manually in your resource's `booted()`. `Aura\Base\Resource` already registers them, and `TeamScope` no-ops when `config('aura.teams') === false`.
+
+### Switching teams does not change the result set
+
+`User::switchTeam()` refuses a non-member unless the user is a Global Admin visiting that team. A normal model save that changes `current_team_id` clears the `user_{id}_current_team_id` cache key on current `main`.
+
+If an integration writes the column through `DB::table()` instead of the User model, clear the same key through the public helper:
+
+```php
+\Aura\Base\Resources\User::clearCurrentTeamCache($userId);
+```
+
+The current-team pointer does not create a Membership. A Global Admin visiting a team remains a visitor unless a Membership is added separately.
+
+### A team role appears twice or the wrong role is applied
+
+In teams-on mode, a Global Role has `team_id = null`. A Team Role with the same slug shadows it inside that team. `Role::resolveForTeam($slug, $teamId)` returns the Team Role when one exists and otherwise returns the Global Role. Current role lists and pickers apply the same shadow resolution, and server-side role saving rejects a hidden Global Role ID when its slug is shadowed by the target team.
+
+When investigating a role mismatch, compare the role slug and the target team's ID. Do not change Membership pivot rows to point at the Shadow. Membership identity is the role slug, and creating or deleting a Shadow changes the resolved role.
+
+### Teams-off mode has missing tables or resources
+
+With `aura.teams` set to `false` before migration, Aura does not create the `teams` table or register the Team and TeamInvitation resources. The role and membership tables use their teams-off shape, and `TeamScope` is disabled. Follow the version-specific [installation steps](/docs/installation), especially the [beta4 teams-off sequence](/docs/installation#without-teams), instead of changing the setting on an existing schema without a migration plan.
+
+## Field storage
+
+### A field value saves as `null`
+
+`$customTable` and `$usesMeta` are independent flags. Check both on the resource and check the table that the model uses:
+
+```php
+$resource = app(\App\Aura\Resources\Project::class);
+
+$resource->getTable();
+$resource->usesCustomTable();
+$resource->usesMeta();
+$resource->isMetaField('title');
+$resource->isTableField('title');
+```
+
+The four storage combinations are:
+
+| `$customTable` | `$usesMeta` | Field storage |
+| --- | --- | --- |
+| `false` | `true` | Base fillable fields use `posts`; other input fields use the shared `meta` table. |
+| `false` | `false` | Only base fillable fields have table storage. Other input fields are not written by Aura. |
+| `true` | `true` | Base fillable fields use the custom table; other input fields use the shared `meta` table. |
+| `true` | `false` | Input field slugs must be columns on the custom table. |
+
+The default generated resource uses the shared `posts` and `meta` tables. `php artisan aura:resource Project --custom` generates a custom table resource with `$usesMeta = false`; create and run the matching migration before saving fields.
+
+If a field is meta-backed, it is not a column on the resource table. Read it through the resource or its `meta` relation. If a field is column-backed, confirm that the migration created the column and that the model's fillable configuration permits the write.
+
+For a custom-table resource, the declaration looks like this:
+
+```php
+namespace App\Aura\Resources;
+
+use Aura\Base\Resource;
+
+class Project extends Resource
+{
+    public static string $type = 'Project';
+
+    public static ?string $slug = 'project';
+
+    public static $customTable = true;
+
+    protected $table = 'projects';
+
+    public static bool $usesMeta = false;
+
+    public static function getFields(): array
+    {
+        return [/* ... */];
+    }
+}
+```
+
+When converting existing posts to a custom table, review the generated migration first. The transfer command is explicit and does not preserve IDs or make the operation idempotent:
+
+```bash
+php artisan aura:transfer-from-posts-to-custom-table "App\Aura\Resources\Project"
+```
+
+Run the transfer in a new PHP process after the target migration exists. Do not accept a bulk transfer without checking the target schema and a backup or recovery plan.
+
+<a id="authentication--permissions"></a>
+<a id="permissions-and-403s"></a>
+
+## Authentication, permissions, and 403 responses
+
+### A valid password leads to the two-factor challenge
+
+This is expected for a user with a confirmed Fortify two-factor secret. Aura stores the pending user ID in the session, leaves the request unauthenticated, and redirects to `/two-factor-challenge`. Submit the authenticator code or a recovery code on the challenge page. A successful challenge redirects to the intended URL or `config('aura.auth.redirect')`.
+
+The default OTP limiter permits five attempts per minute. A host value at `fortify.limiters.two-factor` replaces Aura's `two-factor` limiter. A 429 response after repeated invalid codes means the limiter is working. Start a new challenge after the limiter window instead of disabling it.
+
+Setting `aura.auth.2fa` to `false` disables Aura's management routes for enabling and viewing two-factor data. An already confirmed user still receives the pre-authentication challenge.
+
+To inspect the routes without signing in:
+
+```bash
+php artisan route:list --path=two-factor-challenge
+```
+
+### A resource action returns 403
+
+```
+403 | This action is unauthorized.
+```
+
+Aura does not use Spatie Laravel Permission. Permissions are stored as a JSON map on each role, and access is checked with `hasPermissionTo($ability, $resource)`, which looks for an `"{$ability}-{$slug}"` key set to `true` on any of the user's roles. A role flagged `super_admin` short-circuits `hasPermissionTo()`. The create, update, view, and view-any policies check `$createEnabled`, `$editEnabled`, `$viewEnabled`, and `$indexViewEnabled` before the Super Admin grant.
+
+Useful methods on the user (from `Aura\Base\Resources\User`):
+
+| Method | Purpose |
+|--------|---------|
+| `isSuperAdmin()` | `true` if any role has `super_admin` |
+| `hasRole('admin')` | Role membership by slug (compares against each role's `slug`, not its name) |
+| `hasPermissionTo('view', $resource)` | Ability check against a resource |
+| `roles()` | The roles relation |
+
+There is no `getAllPermissions()` or `assignRole()`. Inspect a user's access with the methods above:
+
+```php
+$user->isSuperAdmin();
+$user->hasPermissionTo('viewAny', \App\Aura\Resources\Project::class);
+```
+
+When a new resource returns 403 for everyone, its permissions probably do not exist yet. Generate the missing ones:
+
+```bash
+php artisan aura:create-resource-permissions
+```
+
+(The command is `aura:create-resource-permissions`, not `aura:permissions`.) Then grant the relevant abilities to the appropriate role.
+
+In teams-on mode, pass a numeric target team when the rows belong to a team other than the authenticated user's current team:
+
+```bash
+php artisan aura:create-resource-permissions --team=12
+```
+
+The command excludes the Team resource from the generated resource set. A Super Admin is a role-level grant inside one team. A Global Admin is instance-level and is decided by the `AuraGlobalAdmin` gate.
+
+In teams-on mode, a Global Role has `team_id = null`. A Team Role with the same slug shadows it inside that team. Current role lists and pickers apply that shadow resolution, and server-side role saving rejects a hidden Global Role ID when its slug is shadowed by the target team.
+
+### A role grant works in one team but not another
+
+Built-in team policies evaluate role abilities against the target team. If a custom policy calls `$user->isSuperAdmin()` or `$user->hasPermissionTo()` directly, it uses the User instance's current-team context. Set and validate the target-team context inside that policy before making the decision. Keep the actor's persisted `current_team_id` unchanged.
+
+## Validation rules are ignored
+
+Field validation is a single `validation` key per field. Use a Laravel rule string or array. That is the only validation input `InputFieldsValidation` reads.
+
+```php
+[
+    'name' => 'Email',
+    'slug' => 'email',
+    'type' => 'Aura\Base\Fields\Text',
+    'validation' => 'required|email|unique:users,email',
+],
+```
+
+Two patterns from older docs do not work as you might expect:
+
+- **`validation_messages`** is not a field option and is ignored. Customize messages through Laravel or the resource-level hook below.
+- A closure in `validation` is passed to the validator as-is. Use a plain Laravel rule string or array, and adjust rules dynamically with `modifyValidationRules()` below.
+
+To adjust rules dynamically, add a `modifyValidationRules()` method to the resource. Both the create and edit components call it if it exists:
+
+```php
+public function modifyValidationRules($rules, $form, $component)
+{
+    if (($form['fields']['type'] ?? null) === 'business') {
+        $rules['fields.email'] = 'required|email|unique:businesses,email';
+    }
+
+    return $rules;
+}
+```
+
+## Conditional fields never show (or always show)
+
+Field visibility uses the `conditional_logic` key, evaluated by `Aura\Base\ConditionalLogic`. There is no `displayIf` or `hideIf` API.
+
+The operator must be one of the following exact strings. Any other value, including a bare `=`, falls through to `false`, so the field is hidden:
+
+| Operator | Meaning |
+|----------|---------|
+| `==` | equals |
+| `!=` | not equals |
+| `<=` | less than or equal |
+| `>=` | greater than or equal |
+| `<` | less than |
+| `>` | greater than |
+
+```php
 [
     'name' => 'Weight',
-    'type' => 'Aura\\Base\\Fields\\Number',
     'slug' => 'weight',
+    'type' => 'Aura\Base\Fields\Number',
     'conditional_logic' => [
         [
-            'field' => 'product_type', // Must match slug above
-            'operator' => '=',
+            'field' => 'product_type', // must match the other field's slug exactly
+            'operator' => '==',        // NOT '='
             'value' => 'physical',
         ],
     ],
 ],
 ```
 
-## Livewire Component Issues
+`field` must match the referenced field's `slug` exactly. A special `field => 'role'` condition is supported with `==` / `!=` and checks the current user's role; super admins pass all role conditions.
 
-### Component Not Found
+## Filtered tables and bulk actions
 
-**Error:**
-```
-Unable to find component: [component-name]
-```
+### A bulk action says a selected row is unavailable
 
-**Solutions:**
-```bash
-# Clear component cache
-php artisan livewire:discover
+Current `main` resolves selected rows against the table's filtered and searched `rowsQuery()`, then authorizes each record. If you select a row and change the filter, the row may no longer belong to the current table scope. Clear the selection and select rows from the current result set.
 
-# Check component registration
-php artisan livewire:list
+`select all` is limited to 500 rows. A larger selection returns `Selection exceeds the maximum of 500 rows.` Split the operation or define a reviewed collection action that handles a bounded set.
 
-# Ensure proper namespace
-namespace App\Http\Livewire; // Legacy apps
-namespace App\Livewire; // Laravel 12+ default
-```
+### A Date or Datetime filter returns no rows
 
-### Wire:model Not Updating
+The `Date` and `Datetime` fields expose these operator keys:
 
-**Problem:** Form inputs not binding to component properties
-
-**Solutions:**
-```blade
-<!-- Use wire:model.live for real-time updates -->
-<input type="text" wire:model.live="name">
-
-<!-- Use wire:model.blur for updates on blur -->
-<input type="text" wire:model.blur="email">
-
-<!-- For nested properties -->
-<input type="text" wire:model="form.fields.title">
-
-<!-- With debouncing -->
-<input type="text" wire:model.live.debounce.500ms="search">
+```text
+date_is
+date_is_not
+date_before
+date_after
+date_on_or_before
+date_on_or_after
+date_is_empty
+date_is_not_empty
 ```
 
-### File Upload Errors
+Use the field's generated filter UI or store those exact keys in a saved filter. The query layer still accepts the older bare range aliases `before`, `after`, `on_or_before`, and `on_or_after`, but new filter payloads should use the `date_*` names.
 
-**Error:**
-```
-Livewire encountered corrupt data when trying to hydrate the [component] component
-```
+## Media upload details
 
-**Solutions:**
+Images get thumbnails from a queued job: creating an `Attachment` dispatches `GenerateImageThumbnail`. The job returns early when:
+
+- The app is in the `testing` environment (thumbnails are intentionally skipped in tests).
+- `config('aura.media.generate_thumbnails')` is `false`.
+
+Thumbnails are served through the named route `aura.image`. The route is registered under the `config('aura.path')` prefix (default `admin`), so with the default config it resolves to `/admin/img/{path}` with a `width` query parameter. When `config('aura.media.restrict_to_dimensions')` is `true` (the default), only widths listed in `config('aura.media.dimensions')` are allowed:
+
 ```php
-// In component
-use Livewire\WithFileUploads;
-
-class MediaUploader extends Component
-{
-    use WithFileUploads;
-    
-    public $file;
-    
-    protected $rules = [
-        'file' => 'required|file|max:10240', // 10MB max
-    ];
-    
-    public function updatedFile()
-    {
-        $this->validateOnly('file');
-    }
-}
-```
-
-**In config/livewire.php:**
-```php
-'temporary_file_upload' => [
-    'disk' => 'local',
-    'rules' => 'file|mimes:png,jpg,pdf|max:10240',
-    'directory' => 'livewire-tmp',
-    'middleware' => 'throttle:60,1',
-    'preview_mimes' => [
-        'png', 'gif', 'bmp', 'svg', 'wav', 'mp4',
-        'mov', 'avi', 'wmv', 'mp3', 'm4a', 'jpg', 'jpeg',
-        'mpga', 'webp', 'wma',
+// config/aura.php
+'media' => [
+    'disk' => 'public',
+    'restrict_to_dimensions' => true,
+    'dimensions' => [
+        ['name' => 'xs', 'width' => 200],
+        ['name' => 'sm', 'width' => 600],
+        ['name' => 'md', 'width' => 1200],
+        ['name' => 'lg', 'width' => 2000],
+        ['name' => 'thumbnail', 'width' => 600, 'height' => 600],
     ],
-    'max_upload_time' => 5, // Minutes
 ],
 ```
 
-## Media & File Upload Problems
+Requesting a width that is not in that list aborts with 404:
 
-### Thumbnail Generation Failed
-
-**Error in logs:**
 ```
-Failed to generate thumbnail: Unable to read image from path
+Requested thumbnail dimensions are not allowed.
 ```
 
-**Solutions:**
-```bash
-# Install image processing libraries
-# Ubuntu/Debian
-sudo apt-get install imagemagick php-imagick
+Fix it by either requesting one of the configured sizes (use `$attachment->thumbnail('sm')`, which maps a size name to its configured width) or adding the width to `dimensions`. If the source file is missing you get:
 
-# macOS
-brew install imagemagick
-pecl install imagick
-
-# Check PHP memory limit
-php -i | grep memory_limit
-# Increase if needed in php.ini
-memory_limit = 256M
+```
+Original image not found: {path}
 ```
 
-### Large File Upload Timeout
+Media lives on the `public` disk, so a missing `php artisan storage:link` also breaks image display.
 
-**Error:**
-```
-413 Request Entity Too Large
-```
+<a id="testing-gotchas"></a>
+<a id="testing-issues"></a>
 
-**Solutions:**
+## Testing problems
 
-**PHP Configuration (`php.ini`):**
-```ini
-upload_max_filesize = 50M
-post_max_size = 55M
-max_execution_time = 300
-max_input_time = 300
-```
+- Aura resets its facade registrations and process-level scope state between the package Feature test groups. A custom test bootstrap must also reset the Aura facade, resource registrations, conditional-logic cache, TeamScope state, and ScopedScope state between tests.
 
-**Nginx Configuration:**
-```nginx
-client_max_body_size 50M;
-client_body_timeout 300s;
-```
+- Changing `current_team_id` through the User model clears the current-team cache. If the test writes the column directly, call:
 
-**Apache Configuration:**
-```apache
-LimitRequestBody 52428800
-```
+  ```php
+  \Aura\Base\Resources\User::clearCurrentTeamCache($user->id);
+  ```
 
-### Storage Permission Denied
+`find()` and `first()` still apply global scopes in tests. If a controlled diagnostic needs an unscoped record, bypass only the named scopes needed for that check:
 
-**Error:**
-```
-Unable to write to storage/app/public
-```
+  ```php
+  $record = Project::withoutGlobalScope(TeamScope::class)
+      ->withoutGlobalScope(TypeScope::class)
+      ->find($id);
+  ```
 
-**Solution:**
-```bash
-# Fix storage permissions
-sudo chown -R www-data:www-data storage/app/public
-sudo chmod -R 755 storage/app/public
+Thumbnail generation returns early in the `testing` environment. Do not assert on generated thumbnail files.
 
-# Recreate symlink
-php artisan storage:link
-```
+For teams-off package tests, run the dedicated configuration:
 
-## Performance Issues
+  ```bash
+  vendor/bin/pest -c phpunit-without-teams.xml
+  ```
 
-### Slow Page Load
+<a id="migration-troubleshooting"></a>
 
-**Diagnosis:**
-```php
-// Enable query log
-DB::enableQueryLog();
+## Migration and schema problems
 
-// Your operation
-$products = Product::with('category')->get();
+### `aura:schema-update` aborts without changing the table
 
-// Check queries
-dd(DB::getQueryLog());
-```
-
-**Common Solutions:**
-
-1. **Enable Caching:**
-```bash
-# Use Redis
-composer require predis/predis
-# Set in .env
-CACHE_DRIVER=redis
-SESSION_DRIVER=redis
-```
-
-2. **Optimize Queries:**
-```php
-// Bad - N+1 problem
-$posts = Post::all();
-foreach ($posts as $post) {
-    echo $post->author->name;
-}
-
-// Good - Eager loading
-$posts = Post::with('author')->get();
-```
-
-3. **Add Indexes:**
-```php
-Schema::table('posts', function (Blueprint $table) {
-    $table->index(['type', 'status', 'created_at']);
-});
-```
-
-### High Memory Usage
-
-**Solutions:**
-```php
-// Use chunking for large datasets
-Product::chunk(100, function ($products) {
-    foreach ($products as $product) {
-        // Process product
-    }
-});
-
-// Use cursor for minimal memory
-foreach (Product::cursor() as $product) {
-    // Process one at a time
-}
-```
-
-## Testing Issues
-
-### Aura Facade Pollution Between Tests
-
-**Problem:** Tests pass individually but fail when run together
-
-The Aura facade maintains state that can leak between tests, causing unexpected failures.
-
-**Solution:**
-```php
-// In tests/Pest.php or your test setup
-uses()->afterEach(function () {
-    // Reset the Aura facade to its original state
-    app()->forgetInstance(\Aura\Base\Aura::class);
-    app()->singleton(\Aura\Base\Aura::class);
-    \Aura\Base\Facades\Aura::clearResolvedInstances();
-})->in('Feature');
-```
-
-### TeamScope Cache Issues in Tests
-
-**Problem:** User's team changes don't reflect in queries during tests
-
-**Solution:**
-```php
-// After updating user's team, clear the cache
-$user->update(['current_team_id' => $team->id]);
-\Illuminate\Support\Facades\Cache::forget("user_{$user->id}_current_team_id");
-```
-
-### Records Not Found Due to Global Scopes
-
-**Problem:** Records exist but `find()` or `first()` returns null in tests
-
-**Solution:**
-```php
-use Aura\Base\Models\Scopes\TeamScope;
-use Aura\Base\Models\Scopes\TypeScope;
-
-// Bypass scopes when needed
-$record = YourResource::withoutGlobalScope(TeamScope::class)
-    ->withoutGlobalScope(TypeScope::class)
-    ->where('id', $id)
-    ->first();
-```
-
-### Running Tests Without Teams Feature
-
-If you need to test without the teams feature:
+The schema synchronizer fails closed when it cannot safely parse the migration or when it finds no columns. This protects an existing table from a partial parse followed by a drop operation. Inspect the migration named in the error. It must contain a `Schema::create()` block with simple quoted column names. The parser accepts the standard `id`, `softDeletes`, and `timestamps` methods and chained modifiers such as `->nullable()`.
 
 ```bash
-# Use the dedicated phpunit config
-vendor/bin/pest -c phpunit-without-teams.xml
+php artisan aura:schema-update database/migrations/2026_01_01_000000_create_projects_table.php
 ```
 
-### Test Helper Functions
+The command adds missing columns and only drops unlisted columns when `--drop` is supplied and the drop is confirmed or `--force` is supplied. Review the migration before using either option. It does not change the type of an existing column. Use a normal Laravel migration for a type change.
 
-Aura CMS provides helper functions in `tests/Pest.php`:
+Moving a resource off the shared `posts` table onto a custom table:
 
-```php
-// Create a super admin user with team
-$user = createSuperAdmin();
-
-// Create a super admin without team context
-$user = createSuperAdminWithoutTeam();
-
-// Create an admin with limited permissions
-$user = createAdmin();
-
-// Create a test post
-$post = createPost(['title' => 'Test']);
-```
-
-### Livewire Component Testing
-
-```php
-use function Pest\Livewire\livewire;
-
-test('component works correctly', function () {
-    $this->actingAs(createSuperAdmin());
-    
-    livewire(YourComponent::class)
-        ->set('form.fields.name', 'Test')
-        ->call('save')
-        ->assertHasNoErrors();
-});
-```
-
-## Debugging Guide
-
-### Enable Debug Mode
-
-**In `.env`:**
-```env
-APP_DEBUG=true
-APP_ENV=local
-LOG_LEVEL=debug
-```
-
-### Laravel Telescope
-
-Install for detailed debugging:
 ```bash
-composer require laravel/telescope --dev
-php artisan telescope:install
-php artisan migrate
+php artisan aura:transfer-from-posts-to-custom-table "App\Aura\Resources\Project"
 ```
 
-### Ray Debugging
+Review the generated custom table migration and run the transfer in a new PHP process after the migration has completed. The transfer reads the old `posts` and `meta` rows, inserts new records, does not preserve IDs, and is not idempotent or transactional. If the target table does not contain every column included by the transfer payload, the insert can fail.
 
-Aura CMS includes Ray support:
-```php
-// Debug variables
-ray($variable);
-ray()->showQueries();
+### Migrating legacy per-type meta tables
 
-// Measure performance
-ray()->measure();
-// ... code to measure
-ray()->measure();
+If an older application has `post_meta`, `team_meta`, or `user_meta`, run:
 
-// Pause execution
-ray()->pause();
-```
-
-### Logging
-
-```php
-// Log to specific channel
-Log::channel('aura')->info('Resource created', [
-    'resource' => $resource->toArray(),
-    'user' => auth()->id(),
-]);
-
-// Custom log file
-Log::build([
-    'driver' => 'single',
-    'path' => storage_path('logs/aura-debug.log'),
-])->info('Debug message');
-```
-
-### Debug Livewire
-
-```blade
-<!-- Show component state -->
-<div>
-    @if(config('app.debug'))
-        <pre>{{ json_encode($this->all(), JSON_PRETTY_PRINT) }}</pre>
-    @endif
-</div>
-```
-
-```php
-// In component
-public function dehydrate()
-{
-    if (config('app.debug')) {
-        ray()->showQueries();
-        ray($this->all());
-    }
-}
-```
-
-## Error Messages Reference
-
-### Common Error Messages and Solutions
-
-| Error Message | Cause | Solution |
-|--------------|-------|----------|
-| "Aura CMS assets are not published" | Assets not published after install | Run `php artisan aura:publish` |
-| "You need to define a custom meta table for this model" | Using meta fields without meta table | Define `$metaTable` property in model |
-| "Only App resources can be edited" | Trying to edit vendor resources | Copy resource to app/Aura/Resources |
-| "The 'resource' key is not set or is empty" | Tags field missing resource config | Add `'resource' => TagResource::class` to field config |
-| "Function getFields() not found" | Malformed resource class | Ensure `getFields()` method exists and returns array |
-| "Call to undefined method" | Missing trait in model | Add required traits (HasFields, HasMeta, etc.) |
-| "Target class does not exist" | Incorrect namespace | Check class namespace and autoloading |
-| "Undefined array key" | Missing field configuration | Ensure all required field keys are present |
-| "Unknown field type" | Invalid field type class | Verify field type class exists (e.g., `Aura\Base\Fields\Text`) |
-| "Requested thumbnail dimensions are not allowed" | Invalid thumbnail size | Check `config/aura.php` media dimensions |
-| "Original image not found" | Missing source image for thumbnail | Verify image exists at the specified path |
-| "Unable to find migration file" | Migration file not found | Check migration name and ensure file exists |
-| "Width is not defined for thumbnail size" | Thumbnail config missing width | Add `width` key to thumbnail dimension config |
-| "Invalid filter name" | Non-existent filter in table | Check filter slug matches field slug |
-| "Invalid filter type" | Unsupported filter type | Use supported filter types for the field |
-
-## Upgrade Procedures
-
-### Upgrading Aura CMS
-
-1. **Backup Your Application:**
 ```bash
-# Backup database
-mysqldump -u root -p aura_cms > backup.sql
-
-# Backup files
-tar -czf aura-backup.tar.gz .
-```
-
-2. **Update Package:**
-```bash
-composer update eminiarts/aura-cms
-```
-
-3. **Publish Updated Assets:**
-```bash
-php artisan aura:publish --force
-```
-
-4. **Run Migrations:**
-```bash
-php artisan migrate
-```
-
-5. **Clear Caches:**
-```bash
-php artisan cache:clear
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-```
-
-6. **Rebuild Assets:**
-```bash
-npm install
-npm run build
-```
-
-### Breaking Changes
-
-Always check the [CHANGELOG.md](../CHANGELOG.md) for breaking changes.
-
-Common breaking changes to watch for:
-- Field API changes
-- Resource method signatures
-- Configuration structure changes
-- Database schema updates
-
-## Migration Troubleshooting
-
-### Posts to Custom Table Migration
-
-**Issue:** Migration fails with "Column not found"
-
-**Solution:**
-```php
-// Ensure fillable attributes in model
-protected $fillable = [
-    'title',
-    'slug',
-    'content',
-    // Add all columns from migration
-];
-
-// Run migration command
-php artisan aura:migrate-from-posts-to-custom-table Product
-```
-
-### Meta Table Migration
-
-**Issue:** Orphaned meta records
-
-**Solution:**
-```bash
-# Clean orphaned records before migration
-DELETE FROM meta WHERE metable_id NOT IN (SELECT id FROM posts);
-
-# Run migration
 php artisan aura:migrate-post-meta-to-meta
 ```
 
-### Custom Table Creation
+The command creates the current polymorphic `meta` table when needed and skips orphaned rows. The table is shared by posts, teams, users, and custom resources. Do not delete rows from `meta` manually before the migration.
 
-**Issue:** Foreign key constraints fail
+<a id="performance-issues"></a>
 
-**Solution:**
+## Slow resource tables
+
+Aura appends the computed `fields` accessor to resource serialization by default for compatibility. Resolving it computes every input field. For a large table or Livewire payload, set this feature off in `config/aura.php` and append `fields` only where the response needs it:
+
 ```php
-// In migration
-public function up()
-{
-    Schema::disableForeignKeyConstraints();
-    
-    Schema::create('products', function (Blueprint $table) {
-        // ... columns
-    });
-    
-    Schema::enableForeignKeyConstraints();
-}
+'features' => [
+    'legacy_fields_append' => false,
+],
 ```
 
-## Frequently Asked Questions
+See [Performance](/docs/performance) for query and table rendering guidance.
 
-### General Questions
+<a id="upgrade-procedures"></a>
 
-**Q: Can I use Aura CMS with an existing Laravel application?**
-A: Yes! Aura CMS is designed to be integrated into existing Laravel applications. Follow the installation guide and ensure there are no routing conflicts.
+## Upgrade checks
 
-**Q: Does Aura CMS support multi-tenancy?**
-A: Yes, Aura CMS has built-in team support for multi-tenancy. Enable it during installation or set `AURA_TEAMS=true` in your `.env` file.
+After updating the Aura package:
 
-**Q: Can I use custom database tables instead of the posts table?**
-A: Absolutely! Aura CMS supports custom tables. Use `php artisan aura:resource Product --custom-table` to create resources with custom tables.
-
-**Q: Is Aura CMS compatible with Laravel Octane?**
-A: Yes. Aura supports Laravel Octane (Swoole / RoadRunner / FrankenPHP). When `laravel/octane` is installed, Aura automatically resets its process-level static state (field caches, resource registry, conditional-logic cache, team/scope guards and the user model) on every `RequestReceived`/`TaskReceived`/`TickReceived` event via `Aura::flushState()`, so requests for different users and teams stay isolated. No configuration is required. The only caveat is to not hold resolved `Resource` instances in your own static properties across requests. See the [Laravel Octane](performance.md#laravel-octane) section of the performance guide.
-
-### Development Questions
-
-**Q: How do I create custom fields?**
-A: Use `php artisan aura:field MyCustomField` to generate a field class, then implement the required methods. See the [Creating Fields](creating-fields.md) guide.
-
-**Q: Can I use Vue.js or React instead of Livewire?**
-A: While Aura CMS is built with Livewire, you can create custom fields and components using any frontend framework via the API.
-
-**Q: How do I extend existing resources?**
-A: Create a new resource that extends the base resource:
-```php
-class CustomUser extends \Aura\Base\Resources\User
-{
-    public static function getFields()
-    {
-        $fields = parent::getFields();
-        // Add your custom fields
-        return $fields;
-    }
-}
-```
-
-**Q: Can I disable the Resource Editor in production?**
-A: The Resource Editor is always unavailable outside the `local` environment. The `aura.features.resource_editor` flag can additionally disable it during local development, but cannot enable it in production.
-
-### Performance Questions
-
-**Q: How many resources can Aura CMS handle?**
-A: Aura CMS can handle millions of records when properly configured with caching, indexes, and custom tables.
-
-**Q: Should I use posts table or custom tables?**
-A: Start with posts table for flexibility. Migrate to custom tables when you need better performance or specific database features.
-
-**Q: How can I improve search performance?**
-A: Use Laravel Scout for full-text search, add database indexes, and consider Elasticsearch for large datasets.
-
-### Troubleshooting Questions
-
-**Q: Why are my changes not appearing?**
-A: Clear all caches:
 ```bash
-php artisan cache:clear
+php artisan migrate
+php artisan aura:publish
 php artisan config:clear
-php artisan route:clear
-php artisan view:clear
-npm run build
 ```
 
-**Q: How do I debug Livewire components?**
-A: Use `@dump($variable)` in Blade views, `ray()` for debugging, or Laravel Telescope for detailed inspection.
+Review [Installation](/docs/installation) when moving between beta4 and current `main`. Review changed keys such as `views.layout`, `features.legacy_fields_append`, and the teams settings before copying an old published config over a new one.
 
-**Q: Why am I getting 419 errors?**
-A: This is a CSRF token mismatch. Ensure:
-- CSRF token is included in forms: `@csrf`
-- Session configuration is correct
-- APP_URL matches your actual URL
+<a id="debugging-guide"></a>
 
+## Safe diagnostics
 
-## Getting Help
+Use the smallest read-only check that answers the question:
 
-If you can't find a solution here:
+```bash
+composer show eminiarts/aura-cms
+php -v
+php artisan about
+php artisan route:list --path=admin
+php artisan route:list --path=two-factor-challenge
+php artisan migrate:status
+php artisan config:clear
+```
 
-1. **Check the Documentation**: Review relevant sections in the docs
-2. **Search GitHub Issues**: Look for similar issues on [GitHub](https://github.com/eminiarts/aura-cms/issues)
-3. **Community Support**: Join the Aura CMS community forum
-4. **Professional Support**: Contact support@eminiarts.com for priority support
+For a resource, inspect its class namespace, `$slug`, `$customTable`, `$usesMeta`, and `getTable()`. For a permission failure, inspect the user's current team, the resolved role slug, the resource capability flags, and the exact permission key. For an asset failure, inspect `public/vendor/aura/manifest.json`, the public storage link, the configured media disk, and GD.
 
-Remember to include:
-- Aura CMS version
-- Laravel version
-- PHP version
-- Error messages
-- Steps to reproduce
-- Relevant code snippets
+<a id="error-messages-reference"></a>
 
-## Pro Tips
+## Common messages
 
-1. **Always backup before upgrades**
-2. **Use version control (Git)**
-3. **Test in staging before production**
-4. **Monitor error logs regularly**
-5. **Keep dependencies updated**
-6. **Use Laravel Telescope in development**
-7. **Enable query logging when debugging**
-8. **Clear caches after deployments**
-9. **Document your customizations**
-10. **Follow Laravel best practices**
+| Message | Check |
+| --- | --- |
+| `Aura CMS assets are not published. Please run: php artisan aura:publish` | Publish the current package assets and confirm `public/vendor/aura/manifest.json` exists. |
+| `Requested thumbnail dimensions are not allowed.` | Match the request to `aura.media.dimensions`. |
+| `Original image not found: {path}` | Check the configured media disk and the original attachment path. |
+| `This action is unauthorized.` | Check the resource capability flag, current team, role slug, and exact permission key. |
+| `Selection exceeds the maximum of 500 rows.` | Reduce the current filtered selection. |
+| `Unable to safely parse columns from ...` | Review the migration's `Schema::create` block and simple column declarations. The command aborts without changing the table. |
+
+<a id="frequently-asked-questions"></a>
+
+## Frequently asked questions
+
+### Does Aura provide a generated REST API?
+
+Aura Base does not generate REST routes. A host application or a separate plugin must define its routes, controllers, authorization, and serialization.
+
+### Does Aura require Spatie Laravel Permission?
+
+No. Aura uses its Role and Permission resources, JSON permission maps, the `AuraGlobalAdmin` gate, and the built-in Resource and Team policies.
+
+### Can I enable the Resource Editor in production?
+
+The Resource Editor is intended for local development. Use it locally, review the generated PHP and migration changes, and deploy those source changes. Do not use it as a production schema editor.
+
+### Should I regenerate the application key or reset the database when Aura fails?
+
+No. Check the installed version, command output, config cache, migration state, published assets, and current team first. Preserve application data while diagnosing the failure.
+
+## Related
+
+- [Resources](/docs/resources) and [Custom Tables](/docs/custom-tables)
+- [Meta Fields](/docs/meta-fields)
+- [Roles and Permissions](/docs/roles-permissions)
+- [Teams](/docs/teams)
+- [Media Library](/docs/media-manager)
+- [Testing](/docs/testing)

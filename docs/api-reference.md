@@ -1,752 +1,698 @@
-# API Reference
+# API reference
 
-This document covers the PHP API for interacting with Aura CMS programmatically. It includes the Aura Facade, Resource class methods, and utility classes that power the CMS.
+This page documents the PHP APIs that host applications can use with Aura CMS:
+the `Aura` facade, resource models, field classes, query helpers, and the
+admin routes used by relationship fields.
 
-## Table of Contents
+Aura does not provide a public CRUD REST API or token-authentication
+endpoints. Its resource pages use session-authenticated web routes and
+Livewire. If an application needs an HTTP API, the application must define the
+routes, authentication guard, authorization policy, and response format. A
+host-written example is included at the end of this page.
 
-- [Aura Facade](#aura-facade)
-- [Resource Class](#resource-class)
-- [DynamicFunctions](#dynamicfunctions)
-- [ConditionalLogic](#conditionallogic)
-- [Building Custom REST APIs](#building-custom-rest-apis)
+## The Aura facade
 
-## Aura Facade
+`Aura\Base\Facades\Aura` proxies the `Aura\Base\Aura` singleton. Resolve it
+through the facade in application or package code:
 
-The `Aura` facade (`Aura\Base\Facades\Aura`) provides access to core CMS functionality. It proxies to the `Aura\Base\Aura` class.
-
-### Resource Management
-
-```php
+~~~php
 use Aura\Base\Facades\Aura;
+~~~
 
-// Get all registered resources
+### Resource, field, and widget registries
+
+Aura registers built-in resources and scans the configured application
+directories during boot. Registration methods accept class strings:
+
+~~~php
+// Registered resource class names.
 $resources = Aura::getResources();
-// Returns: ['App\Aura\Resources\Post', 'App\Aura\Resources\Page', ...]
 
-// Register resources programmatically
+// Add resources from a package or another application directory.
 Aura::registerResources([
     \App\Aura\Resources\Product::class,
     \App\Aura\Resources\Category::class,
 ]);
 
-// Find a resource by its slug
-$resource = Aura::findResourceBySlug('post');
-// Returns: App\Aura\Resources\Post instance
+// Resolve a registered resource by class name, declared slug, or class name.
+$resource = Aura::findResourceBySlug('product'); // Resource instance or null
 
-// Get app-defined resources (from configured path)
+// Classes found under aura-settings.paths.resources.
 $appResources = Aura::getAppResources();
-```
+~~~
 
-### Field Management
+The default resource directory and namespace are
+`config('aura-settings.paths.resources.path')` and
+`config('aura-settings.paths.resources.namespace')`. Aura keeps only classes
+that extend `Aura\Base\Resource`.
 
-```php
-// Get all registered field types
-$fields = Aura::getFields();
-// Returns: ['Aura\Base\Fields\Text', 'Aura\Base\Fields\Number', ...]
+The field and widget registries use the same pattern:
 
-// Get fields organized by group
+~~~php
+$fieldClasses = Aura::getFields();
 $fieldGroups = Aura::getFieldsWithGroups();
-// Returns: ['Fields' => ['Text' => 'Aura\Base\Fields\Text', ...], 'Relations' => [...]]
 
-// Register custom field types
 Aura::registerFields([
-    \App\Fields\CustomField::class,
+    \App\Aura\Fields\ColorPicker::class,
 ]);
 
-// Get app-defined fields
 $appFields = Aura::getAppFields();
-```
 
-### Widget Management
-
-```php
-// Get all registered widgets
-$widgets = Aura::getWidgets();
-
-// Register custom widgets
+$widgetClasses = Aura::getWidgets();
 Aura::registerWidgets([
-    \App\Widgets\SalesChart::class,
-    \App\Widgets\RecentOrders::class,
+    \App\Aura\Widgets\SalesChart::class,
 ]);
-
-// Get app-defined widgets
 $appWidgets = Aura::getAppWidgets();
-```
+~~~
 
-### Options & Settings
+`getFieldsWithGroups()` returns an array keyed by the field class's
+`$optionGroup`. Each group maps a fully qualified class name to its basename:
 
-```php
-// Get an option value (cached, team-aware)
-$settings = Aura::getOption('site-settings');
-// Returns decoded JSON or array
+~~~php
+[
+    'Fields' => [
+        'Aura\\Base\\Fields\\Text' => 'Text',
+    ],
+    'Relationship Fields' => [
+        'Aura\\Base\\Fields\\BelongsTo' => 'BelongsTo',
+    ],
+]
+~~~
 
-// Update an option
-Aura::updateOption('site-settings', ['logo' => 'path/to/logo.png']);
+Field discovery reads `config('aura-settings.paths.fields.path')`. Widget
+discovery reads `config('aura-settings.widgets.path')`. Use the registration
+methods from a service provider when a package keeps its classes outside the
+configured application directories.
 
-// Get a specific config value from aura.php
-$value = Aura::option('features.teams');
+### Configuration and stored options
 
-// Get all aura config options
-$allOptions = Aura::options();
-// Returns: config('aura')
-```
+`options()` and `option($key)` read the package configuration array from
+`config('aura')`. `option()` performs a top-level lookup. It does not parse
+dot notation:
 
-### Navigation
+~~~php
+$allConfig = Aura::options();
+$teamsEnabled = Aura::option('teams');
 
-```php
-// Get the navigation structure (cached per user/team)
-$navigation = Aura::navigation();
-// Returns grouped navigation items based on user permissions
-```
+// For nested configuration, use Laravel's config helper.
+$globalSearch = config('aura.features.global_search');
+~~~
 
-### Route Registration
+Stored options are different from package configuration. `getOption()` reads a
+value from the `options` table and returns an empty array when no value exists.
+With teams enabled, it reads the current team's option. Reads are cached for one
+hour. `updateOption()` writes the value and invalidates the facade cache keys:
 
-```php
-// Register CRUD routes for a resource
-Aura::registerRoutes('products');
-// Creates: /admin/products, /admin/products/create, /admin/products/{id}, /admin/products/{id}/edit
+~~~php
+$settings = Aura::getOption('settings') ?: [];
 
-// Clear route caches
-Aura::clearRoutes();
+Aura::updateOption('settings', [
+    ...$settings,
+    'support_email' => 'support@example.test',
+]);
+~~~
 
-// Clear all caches
-Aura::clear();
-```
+Call these methods after authenticating the user and establishing the current
+team when teams are enabled. `updateOption()` does not authorize the caller.
+Authorize the operation in the controller, policy, or Livewire action. See
+[Settings](/docs/settings) for the built-in settings option and
+[Teams](/docs/teams) for team context.
 
-### View Injection
+### Routes, navigation, and view injection
 
-```php
-// Register a view injection hook
-Aura::registerInjectView('dashboard.sidebar', function () {
-    return view('my-sidebar-widget');
+`registerRoutes($slug, $resource = null)` registers four session-authenticated
+Livewire routes under `config('aura.path')`. The optional resource argument can
+be a resource class string or an object and supplies custom page components:
+
+~~~php
+Aura::registerRoutes('products', \App\Aura\Resources\Product::class);
+
+Aura::clearRoutes(); // Refresh in-memory route name and action lookups.
+Aura::clear();       // Refresh route lookups and flush the application cache.
+~~~
+
+The package registers application resources during boot, so most applications
+do not call `registerRoutes()` themselves. See [Resources](/docs/resources) for
+the resource component hooks.
+
+`navigation()` returns a permission-filtered `Collection` of navigation
+entries. `getInjectViews()` returns registered view callbacks. Register and
+render a callback like this:
+
+~~~php
+Aura::registerInjectView('resource.edit.top', function () {
+    return view('partials.edit-banner')->render();
 });
+~~~
 
-// Render injected views (in Blade templates)
-{!! Aura::injectView('dashboard.sidebar') !!}
+~~~blade
+{!! Aura::injectView('resource.edit.top') !!}
+~~~
 
-// Get all registered injection points
-$injections = Aura::getInjectViews();
-```
+The callback is called through Laravel's container and the rendered output is
+returned as an `Htmlable`.
 
-### Asset Management
+### Assets and templates
 
-```php
-// Get compiled scripts view
-{!! Aura::scripts() !!}
+Use the view helpers in a layout that includes Aura's assets:
 
-// Get compiled styles view  
+~~~blade
 {!! Aura::styles() !!}
+{!! Aura::scripts() !!}
+~~~
 
-// Vite integration for development
-{!! Aura::viteScripts() !!}
-{!! Aura::viteStyles() !!}
+`viteStyles()` and `viteScripts()` select Aura's Vite hot file and build
+directory for local package development. `assetsAreCurrent()` returns a
+boolean after comparing the published manifest and referenced files. It throws
+a `RuntimeException` when a required manifest is missing or invalid.
 
-// Check if published assets are current
-if (!Aura::assetsAreCurrent()) {
-    // Assets need republishing
-}
-```
+`templates()` returns a cached collection of application template file names
+under `app_path('Aura/Templates')`. `findTemplateBySlug($slug)` resolves a
+class under `Aura\Base\Templates`:
 
-### User Model Configuration
-
-```php
-// Get the configured user model class
-$userModel = Aura::userModel();
-// Returns: 'Aura\Base\Resources\User' (default)
-
-// Set a custom user model
-Aura::useUserModel(\App\Models\CustomUser::class);
-```
-
-### Templates
-
-```php
-// Get all registered templates
+~~~php
 $templates = Aura::templates();
+$plain = Aura::findTemplateBySlug('Plain');
+$fields = $plain->getFields();
+~~~
 
-// Find a template by slug
+The lookup converts kebab-case and snake_case slugs to StudlyCase. It also
+accepts existing class basenames, such as `PanelWithSidebar`. For example:
+
+~~~php
 $template = Aura::findTemplateBySlug('panel-with-sidebar');
-```
+$fields = $template->getFields();
+~~~
 
-### Utilities
+The Resource Editor uses these template classes. See
+[Resource Editor](/docs/resource-editor).
 
-```php
-// Check conditional logic for a field
-$shouldShow = Aura::checkCondition($model, $field, $post);
+### Other facade helpers
 
-// Clear conditional logic cache
+The facade also exposes these focused helpers:
+
+~~~php
+// A reusable default field definition, or null when the key is unknown.
+$createdAt = Aura::fields('created_at');
+
+// Conditional logic and its cache.
+$visible = Aura::checkCondition($model, $field, $post);
 Aura::clearConditionsCache();
 
-// Get attachment path by ID
-$path = Aura::getPath($attachmentId);
+// Resolve a configured attachment URL by id.
+$url = Aura::getPath($attachmentId);
 
-// Export array as PHP code
-$code = Aura::varexport($array, true);
-```
+// Configure the user model used by Aura resources.
+$class = Aura::userModel();
+Aura::useUserModel(\App\Models\User::class);
 
-## Resource Class
+// Register immutable record-layout panels during application boot.
+Aura::registerRecordLayoutPanels('vendor/package', $panels);
+~~~
 
-The `Aura\Base\Resource` class is the base for all Aura resources. It extends Eloquent Model and provides extensive functionality.
+See [Record layouts](/docs/record-layouts) for the panel contract. `flushState()`
+resets process-level registrations and caches to the boot baseline. Aura calls
+it around queue work and, when available, Octane request boundaries.
 
-### Static Properties
+## The resource contract
 
-```php
+`Aura\Base\Resource` is an Eloquent model that implements
+`Aura\Base\Contracts\DefinesFields` and
+`Aura\Base\Contracts\TableResource`. A resource declares its identity and
+returns field-definition arrays from a static `getFields()` method:
+
+~~~php
+namespace App\Aura\Resources;
+
+use Aura\Base\Fields\Text;
+use Aura\Base\Resource;
+
 class Post extends Resource
 {
-    // Resource type identifier
     public static string $type = 'Post';
-    
-    // URL slug for routes
-    protected static ?string $slug = 'post';
-    
-    // Display names
-    public static $singularName = 'Post';
-    public static $pluralName = 'Posts';
-    
-    // Navigation group
-    protected static ?string $group = 'Content';
-    
-    // Sort order in navigation
-    protected static ?int $sort = 10;
-    
-    // Feature flags
-    public static $createEnabled = true;
-    public static $editEnabled = true;
-    public static $viewEnabled = true;
-    public static bool $indexViewEnabled = true;
-    public static $contextMenu = true;
-    public static $globalSearch = true;
-    protected static bool $showInNavigation = true;
-    
-    // Table configuration
-    public static $customTable = false;  // Use posts table with type column
-    public static bool $usesMeta = true; // Store extra fields in meta table
-    protected static bool $title = false; // Has title column
-    
-    // Dropdown grouping in navigation
-    protected static $dropdown = false;
-    
-    // Taxonomy resource
-    public static $taxonomy = false;
-    
-    // Show actions as buttons instead of dropdown
-    public static $showActionsAsButtons = false;
-}
-```
+    public static ?string $slug = 'post';
 
-### Defining Fields
-
-```php
-public static function getFields(): array
-{
-    return [
-        [
-            'type' => 'Aura\\Base\\Fields\\Text',
-            'name' => 'Title',
-            'slug' => 'title',
-            'validation' => 'required|max:255',
-            'on_index' => true,
-            'searchable' => true,
-        ],
-        [
-            'type' => 'Aura\\Base\\Fields\\Textarea',
-            'name' => 'Content',
-            'slug' => 'content',
-            'on_index' => false,
-        ],
-        [
-            'type' => 'Aura\\Base\\Fields\\BelongsTo',
-            'name' => 'Category',
-            'slug' => 'category_id',
-            'resource' => 'App\\Aura\\Resources\\Category',
-        ],
-    ];
-}
-```
-
-### Field Methods
-
-```php
-$resource = new Post();
-
-// Get all input field slugs
-$slugs = $resource->inputFieldsSlugs();
-// Returns: ['title', 'content', 'category_id', ...]
-
-// Get a field definition by slug
-$field = $resource->fieldBySlug('title');
-// Returns: ['type' => 'Aura\Base\Fields\Text', 'name' => 'Title', ...]
-
-// Get the field class instance
-$fieldClass = $resource->fieldClassBySlug('title');
-// Returns: Aura\Base\Fields\Text instance
-
-// Get all input fields as collection
-$fields = $resource->inputFields();
-
-// Get fields for different contexts
-$createFields = $resource->createFields();  // Filtered for create form
-$editFields = $resource->editFields();      // Filtered for edit form
-$viewFields = $resource->viewFields();      // Filtered for view page
-$indexFields = $resource->indexFields();    // Fields shown in table
-
-// Get fields with IDs assigned
-$fieldsWithIds = $resource->getFieldsWithIds();
-
-// Get grouped/nested fields structure
-$grouped = $resource->getGroupedFields();
-
-// Check if field should display based on conditional logic
-$shouldShow = $resource->shouldDisplayField($field);
-
-// Display a field value (applies field transformations)
-$displayValue = $resource->display('title');
-$displayValue = $resource->displayFieldValue('status', 'active');
-
-// Get searchable fields
-$searchable = $resource->getSearchableFields();
-
-// Get validation rules for all fields
-$rules = $resource->validationRules();
-// Returns: ['title' => 'required|max:255', 'status' => 'required', ...]
-
-// Get validation rules prefixed for Livewire forms
-$formRules = $resource->resourceFieldValidationRules();
-// Returns: ['form.fields.title' => 'required|max:255', ...]
-```
-
-### Meta Fields
-
-```php
-// Check if resource uses meta table
-$usesMeta = Post::usesMeta();
-
-// Check if using custom table
-$customTable = Post::usesCustomTable();
-
-// Get meta values
-$meta = $post->getMeta();           // All meta as collection
-$value = $post->getMeta('custom');  // Specific meta key
-
-// Check if a field is stored in meta
-$isMeta = $post->isMetaField('custom_field');
-
-// Check if field is in main table
-$isTable = $post->isTableField('title');
-
-// Query by meta values
-Post::whereMeta('status', 'published')->get();
-Post::whereMeta('views', '>', 100)->get();
-Post::whereMeta(['status' => 'published', 'featured' => true])->get();
-
-Post::orWhereMeta('status', 'draft')->get();
-Post::whereInMeta('category', [1, 2, 3])->get();
-Post::whereNotInMeta('category', [4, 5])->get();
-Post::whereMetaContains('tags', 'featured')->get(); // JSON contains
-```
-
-### URL Methods
-
-```php
-$post = Post::find(1);
-
-// Get various URLs
-$indexUrl = $post->indexUrl();    // /admin/post
-$createUrl = $post->createUrl();  // /admin/post/create
-$editUrl = $post->editUrl();      // /admin/post/1/edit
-$viewUrl = $post->viewUrl();      // /admin/post/1
-
-// Get index route
-$route = $post->getIndexRoute();
-```
-
-### View Methods
-
-```php
-// Get view paths for customization
-$post->indexView();       // 'aura::livewire.resource.index'
-$post->createView();      // 'aura::livewire.resource.create'
-$post->editView();        // 'aura::livewire.resource.edit'
-$post->viewView();        // 'aura::livewire.resource.view'
-
-// Header views
-$post->editHeaderView();  // 'aura::livewire.resource.edit-header'
-$post->viewHeaderView();  // 'aura::livewire.resource.view-header'
-
-// Table views
-$post->tableView();           // 'aura::components.table.list-view'
-$post->rowView();             // 'aura::components.table.row'
-$post->tableComponentView();  // 'aura::livewire.table'
-```
-
-### Actions & Bulk Actions
-
-```php
-// Define actions on resource
-public array $actions = [
-    'publish' => 'Publish',
-    'archive' => 'Archive',
-];
-
-// Or as a method for dynamic actions
-public function actions(): array
-{
-    return [
-        'publish' => 'Publish',
-    ];
-}
-
-// Define bulk actions
-public array $bulkActions = [
-    'delete' => 'Delete Selected',
-    'export' => 'Export',
-];
-
-// Get configured actions
-$actions = $post->getActions();
-$bulkActions = $post->getBulkActions();
-```
-
-### Table Configuration
-
-```php
-// Default table settings
-public function defaultPerPage(): int
-{
-    return 10;
-}
-
-public function defaultTableSort(): string
-{
-    return 'id';
-}
-
-public function defaultTableSortDirection(): string
-{
-    return 'desc';
-}
-
-public function defaultTableView(): string
-{
-    return 'list';  // 'list', 'grid', 'kanban'
-}
-
-// Enable different view modes
-public function tableGridView(): bool
-{
-    return true;
-}
-
-public function tableKanbanView(): bool
-{
-    return false;
-}
-
-public function kanbanQuery($query)
-{
-    return false; // Return query for kanban grouping
-}
-
-public function showTableSettings(): bool
-{
-    return true;
-}
-
-// Get table headers
-$headers = $post->getHeaders();
-```
-
-### Navigation Configuration
-
-```php
-// Get navigation data for this resource
-$nav = $post->navigation();
-// Returns: [
-//     'icon' => '<svg>...</svg>',
-//     'resource' => 'App\Aura\Resources\Post',
-//     'type' => 'Post',
-//     'name' => 'Posts',
-//     'slug' => 'post',
-//     'sort' => 10,
-//     'group' => 'Content',
-//     'route' => '/admin/post',
-//     'dropdown' => false,
-//     'showInNavigation' => true,
-//     'badge' => null,
-//     'badgeColor' => null,
-// ]
-
-// Custom icon
-public function getIcon(): string
-{
-    return '<svg>...</svg>';
-}
-
-// Badge for navigation item
-public function getBadge()
-{
-    return Post::count();
-}
-
-public function getBadgeColor()
-{
-    return 'red';
-}
-```
-
-### Widgets
-
-```php
-// Define widgets for resource dashboard
-public static function getWidgets(): array
-{
-    return [
-        [
-            'type' => 'Aura\\Base\\Widgets\\ValueWidget',
-            'name' => 'Total Posts',
-            // widget configuration...
-        ],
-    ];
-}
-
-// Widget time range settings
-public array $widgetSettings = [
-    'default' => '30d',
-    'options' => [
-        '7d' => '7 Days',
-        '30d' => '30 Days',
-        // ...
-    ],
-];
-
-// Get widgets
-$widgets = $post->widgets();
-```
-
-### Relationships
-
-```php
-// Built-in relationships
-$user = $post->user();      // BelongsTo user
-$team = $post->team();      // BelongsTo team
-$parent = $post->parent();  // BelongsTo parent (self-referential)
-$children = $post->children(); // HasMany children
-$meta = $post->meta();      // MorphMany meta records
-
-// Dynamic relationships from fields are auto-generated
-$category = $post->category; // From BelongsTo field
-$tags = $post->tags;         // From Tags/HasMany field
-```
-
-### Accessors
-
-```php
-// Get all field values (with conditional logic applied)
-$fields = $post->fields;
-// Returns collection of field slug => value pairs
-
-// Get field values without conditional logic filtering
-$allFields = $post->getFieldsWithoutConditionalLogic();
-
-// Access field values directly
-$title = $post->title;
-$category = $post->category;
-
-// Title generation
-$displayTitle = $post->title(); // "Post (#1)"
-
-// Get singular/plural names
-$singular = $post->singularName(); // "Post"  
-$plural = $post->pluralName();     // "Posts"
-```
-
-### Utility Methods
-
-```php
-// Check resource type
-$isApp = $post->isAppResource();      // Starts with 'App\'
-$isVendor = $post->isVendorResource(); // Package resource
-
-// Check field types
-$isTaxonomy = $post->isTaxonomy();
-$isTaxonomyField = $post->isTaxonomyField('tags');
-$isNumberField = $post->isNumberField('price');
-
-// Clear cached field values
-$post->clearFieldsAttributeCache();
-
-// Get base fillable columns
-$baseFillable = $post->getBaseFillable();
-$isBaseFillable = $post->isBaseFillable('title');
-```
-
-## DynamicFunctions
-
-The `DynamicFunctions` class allows registering and calling closures dynamically, used primarily for conditional logic.
-
-```php
-use Aura\Base\Facades\DynamicFunctions;
-
-// Register a closure, returns a hash
-$hash = DynamicFunctions::add(function () {
-    return auth()->user()->isAdmin();
-});
-
-// Call the registered closure by hash
-$result = DynamicFunctions::call($hash);
-```
-
-## ConditionalLogic
-
-The `ConditionalLogic` class handles field visibility based on conditions.
-
-```php
-use Aura\Base\ConditionalLogic;
-
-// Check if a field should be displayed
-$shouldShow = ConditionalLogic::shouldDisplayField($model, $field, $formData);
-
-// Check if field is visible to a specific user (role-based)
-$isVisible = ConditionalLogic::fieldIsVisibleTo($field, $user);
-
-// Clear the conditions cache
-ConditionalLogic::clearConditionsCache();
-```
-
-## Building Custom REST APIs
-
-Aura CMS provides the foundation for building your own REST APIs using Laravel's standard patterns.
-
-### Basic API Controller
-
-```php
-namespace App\Http\Controllers\Api;
-
-use App\Aura\Resources\Post;
-use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
-
-class PostController extends Controller
-{
-    public function index(Request $request)
-    {
-        $query = Post::query();
-        
-        // Apply search
-        if ($request->has('search')) {
-            $searchable = (new Post)->getSearchableFields();
-            $query->where(function ($q) use ($request, $searchable) {
-                foreach ($searchable as $field) {
-                    $q->orWhere($field['slug'], 'like', '%' . $request->search . '%');
-                }
-            });
-        }
-        
-        // Apply filters using meta
-        if ($request->has('status')) {
-            $query->whereMeta('status', $request->status);
-        }
-        
-        return $query->paginate($request->get('per_page', 15));
-    }
-    
-    public function show(Post $post)
-    {
-        return response()->json([
-            'data' => $post->fields,
-        ]);
-    }
-    
-    public function store(Request $request)
-    {
-        $post = new Post();
-        $rules = $post->validationRules();
-        
-        $validated = $request->validate($rules);
-        
-        $post = Post::create($validated);
-        
-        return response()->json(['data' => $post], 201);
-    }
-    
-    public function update(Request $request, Post $post)
-    {
-        $rules = $post->validationRules();
-        $validated = $request->validate($rules);
-        
-        $post->update($validated);
-        
-        return response()->json(['data' => $post]);
-    }
-    
-    public function destroy(Post $post)
-    {
-        $post->delete();
-        
-        return response()->json(['message' => 'Deleted successfully']);
-    }
-}
-```
-
-### API Routes
-
-```php
-// routes/api.php
-use App\Http\Controllers\Api\PostController;
-use Illuminate\Support\Facades\Route;
-
-Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('posts', PostController::class);
-});
-```
-
-### Using Resource API Transformers
-
-```php
-namespace App\Http\Resources;
-
-use Illuminate\Http\Resources\Json\JsonResource;
-
-class PostResource extends JsonResource
-{
-    public function toArray($request): array
+    public static function getFields(): array
     {
         return [
-            'id' => $this->id,
-            'type' => $this->getType(),
-            'fields' => $this->fields,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            [
+                'name' => 'Title',
+                'slug' => 'title',
+                'type' => Text::class,
+                'validation' => 'required|max:255',
+                'searchable' => true,
+                'on_index' => true,
+            ],
         ];
     }
 }
-```
+~~~
 
-### Dynamic Resource API
+The `type` value in a field definition must be a fully qualified field class
+name. Aura does not provide fluent field builders. See
+[Creating resources](/docs/creating-resources) and [Fields](/docs/fields) for
+the resource properties and field options.
 
-```php
+The `DefinesFields` contract is:
+
+~~~php
+public static function getFields(): array;
+~~~
+
+`TableResource` extends that contract and requires the methods shared by the
+resource table:
+
+~~~php
+public function fieldBySlug($slug);
+public function fieldClassBySlug($slug);
+public function getActions();
+public function getBulkActions();
+public function isMetaField($key): bool;
+public function isTableField($key): bool;
+~~~
+
+`Aura\Base\BaseResource` implements the same contracts for models whose fields
+live in physical columns on their own table. It uses the shared field and table
+helpers but does not resolve values from Aura's meta relation.
+
+### Identity, storage, and relationships
+
+Common identity methods are `getName()`, `getPluralName()`, `getSlug()`,
+`getType()`, `singularName()`, `pluralName()`, and `title()`. The slug becomes
+the admin URL segment and route-name segment.
+
+The storage flags are independent:
+
+~~~php
+Post::usesCustomTable(); // false by default
+Post::usesMeta();        // true by default
+
+$post->isTableField('title');
+$post->isMetaField('subtitle');
+$post->getMeta();         // Collection of decoded and field-cast values
+$post->getMeta('subtitle');
+~~~
+
+In the default posts-plus-meta mode, base fillable values use the shared
+`posts` table and other input fields use `meta`. A custom-table resource can
+store all input fields in its own columns with `$customTable = true` and
+`$usesMeta = false`, or combine its own columns with meta storage. See
+[Meta fields](/docs/meta-fields) and [Custom tables](/docs/custom-tables) for
+the storage matrix and migrations.
+
+Resource models provide `user()`, `team()`, `parent()`, and `children()`
+relations where the corresponding configuration is available. Field classes
+can add dynamic relations when `isRelation()` returns true. A `BelongsTo` field
+keeps its stored foreign id as a scalar field value. It is not a dynamic
+Eloquent relation on the resource. `HasMany`, `HasOne`, `Tags`, `Roles`, and
+polymorphic `AdvancedSelect` fields provide relation behavior.
+
+### Field access and validation
+
+These helpers expose the raw definitions, processed definitions, and resolved
+values:
+
+~~~php
+$post = new Post;
+
+$post->fieldsCollection();        // Cached raw definitions, as a Collection.
+$post->fieldBySlug('title');      // Definition array or null.
+$post->fieldClassBySlug('title'); // Field instance or false.
+$post->getFieldSlugs();           // Collection of all definition slugs.
+
+$post->inputFields();             // Processed input fields.
+$post->inputFieldsSlugs();        // Array of input slugs.
+$post->indexFields();             // Input fields not marked on_index=false.
+$post->createFields();
+$post->editFields();
+$post->viewFields();
+$post->getFieldsWithIds();
+$post->getGroupedFields();
+
+$post->fields;                    // Conditional-logic filtered value map.
+$post->getFieldsWithoutConditionalLogic();
+$post->getSearchableFields();
+
+$post->validationRules();
+$post->resourceFieldValidationRules(); // form.fields.* keys for Livewire.
+~~~
+
+`clearFieldsAttributeCache()` clears the computed field and normalized meta
+values for a model instance. `Resource::flushFieldCache()` clears process-static
+field-definition caches after a resource definition changes in a long-running
+process.
+
+The `display($key)` method resolves a value through the field's display
+transformation. `displayFieldValue($key, $value)` applies the same field-level
+display logic to a value supplied by the caller:
+
+~~~php
+$label = $post->display('title');
+$label = $post->displayFieldValue('title', 'Draft');
+~~~
+
+Resource dynamic property access checks real Eloquent attributes and relations
+before computed field values. A non-null real attribute, including `0`, `false`,
+or an empty string, wins over a field definition. Relation fields then resolve
+through the field class, followed by the computed `fields` map.
+
+### Meta query scopes and search
+
+`AuraQueriesMeta` queries values stored in `meta`. These examples assume declared text fields such as `category` and `subtitle`, a Boolean `featured` field, and a JSON `topics` field:
+
+~~~php
+Post::whereMeta('category', 'news')->get();
+Post::whereMeta('subtitle', 'like', 'Aura%')->get();
+Post::whereMeta([
+    'category' => 'news',
+    'featured' => true,
+])->get();
+
+Post::orWhereMeta('category', 'updates')->get();
+Post::whereInMeta('category_id', [1, 2, 3])->get();
+Post::whereNotInMeta('category_id', [4, 5])->get();
+Post::whereMetaContains('topics', 'laravel')->get();
+~~~
+
+`whereMeta()` and `orWhereMeta()` accept `key, value`, `key, operator,
+value`, or one associative array. `whereInMeta()` and `whereNotInMeta()` accept
+an array, collection, or scalar. `whereMetaContains()` checks a JSON meta value.
+
+Aura also registers the `searchIn($columns, $search, $model)` Eloquent builder
+macro. It searches physical columns directly and uses a correlated meta query
+for meta-backed fields:
+
+~~~php
+$post = new Post;
+$columns = $post->getSearchableFields()->pluck('slug')->all();
+
+$results = Post::query()
+    ->searchIn($columns, request('q'), $post)
+    ->paginate(15);
+~~~
+
+Use this macro when a search includes both table and meta fields. A loop of
+plain `orWhere()` calls does not search the meta table.
+
+### URLs, views, actions, and table settings
+
+Resource URL helpers use the `aura.{slug}.*` route names:
+
+~~~php
+$post->indexUrl();
+$post->createUrl();
+$post->editUrl();
+$post->viewUrl();
+$post->getIndexRoute();
+~~~
+
+The first four helpers return `null` when the route is missing. The edit and
+view helpers also return `null` for unsaved resources. `getIndexRoute()` calls
+Laravel's `route()` helper directly and therefore throws if the index route does
+not exist.
+
+The resource view methods return Blade view names:
+
+~~~php
+$post->indexView();
+$post->createView();
+$post->editView();
+$post->viewView();
+$post->editHeaderView();
+$post->viewHeaderView();
+$post->rowView();
+$post->tableComponentView();
+~~~
+
+Table configuration methods include `defaultPerPage()`,
+`defaultTableSort()`, `defaultTableSortDirection()`, `defaultTableView()`,
+`tableView()`, `tableGridView()`, `tableKanbanView()`, `kanbanQuery()`,
+`kanbanSettings()`, `showTableSettings()`, `getHeaders()`, and
+`indexTableSettings()`. `tableGridView()` and `tableKanbanView()` return a
+Blade view name or `false`. They do not return a boolean enable flag. See
+[Table](/docs/table).
+
+`getActions()` and `getBulkActions()` read an `actions` or `bulkActions`
+method when present, otherwise the corresponding public array. The default
+`allowedToPerformActions()` returns `false`, so a resource that exposes actions
+must implement its authorization rules.
+
+`navigation()` returns the resource's icon, slug, route, group, sort order,
+badge, and visibility values. Override `getIcon()`, `getBadge()`, or
+`getBadgeColor()` when the navigation entry needs custom values.
+
+### Optional resource contracts
+
+Reporting accepts an explicit scope allowlist. A resource that implements
+`DeclaresReportingQueryScopes` must return the names of no-argument Eloquent
+scopes that the reporting engine may call:
+
+~~~php
+use Aura\Base\Contracts\DeclaresReportingQueryScopes;
+
+class Post extends Resource implements DeclaresReportingQueryScopes
+{
+    public static function reportingQueryScopes(): array
+    {
+        return ['published'];
+    }
+
+    public function scopePublished($query)
+    {
+        return $query->where('status', 'published');
+    }
+}
+~~~
+
+The reporting service authorizes `viewAny`, applies the resource's `indexQuery`
+when present, and keeps the normal resource scopes. It rejects scope names that
+are not returned by `reportingQueryScopes()`.
+
+## The field contract
+
+Every field class extends `Aura\Base\Fields\Field`, which implements Livewire's
+`Wireable` contract. A resource field is an array. Aura resolves its `type` to
+the field class through the container.
+
+The base class exposes properties that control field behavior:
+
+| Property | Meaning |
+| --- | --- |
+| `$type` | `input`, `relation`, `repeater`, `group`, or another field type. |
+| `$optionGroup` | Group label in the field picker. |
+| `$edit` and `$view` | Blade views for editing and viewing a value. |
+| `$index` | Optional Blade component for index output. |
+| `$on_forms` | Whether the field is available in forms. |
+| `$tableColumnType` and `$tableNullable` | Defaults used for custom-table schema generation. |
+| `$taxonomy` | Whether the field is a taxonomy field. |
+| `$rawHtmlDisplay` | Whether the field intentionally returns trusted HTML. |
+
+The field class methods used by the resource and table layers include
+`get($class, $value, $field = null)`, `display($field, $value, $model)`,
+`value($value)`, `isInputField()`, `isRelation()`, `isTaxonomyField()`,
+`filterOptions()`, `getFilterValues($model, $field)`, `isDisabled($model,
+$field)`, `edit()`, and `view()`. See [Creating fields](/docs/creating-fields)
+for a complete custom field example.
+
+### Field lifecycle hooks
+
+Aura calls these hooks when the corresponding field behavior exists:
+
+| Hook | Signature | Use |
+| --- | --- | --- |
+| `set` | `set($post, $field, $value)` | Transform submitted data before it is routed to a column, meta row, or relation. |
+| `saving` | `saving($post, $field, $value)` | Adjust the model before it is saved. A returned model replaces the current model for the remainder of the hook. |
+| `saved` | `saved($post, $field, $value)` | Persist relations or other data after the model row is saved. |
+| `get` | `get($class, $value, $field = null)` | Cast a stored value when Aura reads it. |
+| `display` | `display($field, $value, $model)` | Format a value for a table or record page. |
+| `api` | `api($request)` | Respond to the internal relationship-field option request. |
+
+These hooks are conventions checked with `method_exists`; they are not methods
+declared abstract on the base class. When a resource does not intercept the
+slug with `set{StudlySlug}Field()`, a field definition may provide a `set`
+closure. Aura calls that closure before the field class's `set()` hook:
+
+~~~php
+[
+    'name' => 'Slug',
+    'slug' => 'slug',
+    'type' => \Aura\Base\Fields\Text::class,
+    'set' => fn ($post, $field, $value) => \Illuminate\Support\Str::slug($value),
+]
+~~~
+
+Resources can intercept a field with `get{StudlySlug}Field($value)` and
+`set{StudlySlug}Field($value)`. The setter can consume a custom payload that is
+not a regular Aura field.
+
+### Relation fields and table loading
+
+`Field::isRelation()` returns true for a field whose `$type` is `relation`.
+`HasMany` and `HasOne` use that type. `Tags` and `Roles` override the method,
+and `AdvancedSelect` treats a field as a relation unless
+`polymorphic_relation` is `false`. `BelongsTo` intentionally remains an
+`input` field and stores a scalar foreign id.
+
+A relation field that supports table eager loading may implement
+`ProvidesTableEagerLoad`:
+
+~~~php
+public function tableEagerLoad(array $field): string|array|null;
+~~~
+
+A field that can batch-resolve display values after pagination may implement
+`PreloadsTableDisplay`:
+
+~~~php
+use Illuminate\Database\Eloquent\Collection;
+
+public function preloadTableDisplay(Collection $rows, array $field): void;
+~~~
+
+The table calls these optional contracts only when the field implements them.
+Keep the resource's normal team, type, and authorization scopes in any custom
+query. See [Table](/docs/table) for the rendering and eager-loading behavior.
+
+## Conditional logic
+
+`Aura\Base\ConditionalLogic` evaluates a field's `conditional_logic`
+definition. Conditions can be arrays, closures, or role checks:
+
+~~~php
+use Aura\Base\ConditionalLogic;
 use Aura\Base\Facades\Aura;
 
-Route::get('/api/resources', function () {
-    return collect(Aura::getResources())->map(function ($class) {
-        $resource = app($class);
-        return [
-            'type' => $resource->getType(),
-            'slug' => $resource->getSlug(),
-            'fields' => $resource::getFields(),
-        ];
-    });
-});
+$visible = ConditionalLogic::shouldDisplayField($model, $field, $post);
+$visible = ConditionalLogic::checkCondition($model, $field, $post);
+$roleVisible = ConditionalLogic::fieldIsVisibleTo($field, $user);
 
-Route::get('/api/{resource}', function (string $resource) {
-    $resourceInstance = Aura::findResourceBySlug($resource);
-    
-    if (!$resourceInstance) {
-        abort(404, 'Resource not found');
+// The facade delegates to shouldDisplayField().
+$visible = Aura::checkCondition($model, $field, $post);
+
+ConditionalLogic::clearConditionsCache();
+~~~
+
+The supported array operators are `==`, `!=`, `>`, `>=`, `<`, and `<=`. The
+package also registers `@checkCondition($model, $field, $post)` for Blade
+templates:
+
+~~~blade
+@checkCondition($model, $field, $post)
+    {{-- Render the field. --}}
+@endcheckCondition
+~~~
+
+## Admin routes and the internal fields endpoint
+
+Aura's resource pages are web routes protected by the configured
+`aura-admin` middleware. The default stack is `web` and `auth`. If `aura.path`
+is `admin` and a resource slug is `post`, the routes are:
+
+| Route name | Method and path |
+| --- | --- |
+| `aura.post.index` | `GET /admin/post` |
+| `aura.post.create` | `GET /admin/post/create` |
+| `aura.post.edit` | `GET /admin/post/{id}/edit` |
+| `aura.post.view` | `GET /admin/post/{id}` |
+
+The prefix comes from `config('aura.path')`, and `config('aura.domain')` can
+restrict the routes to a host. Attachment uses a dedicated
+`aura.attachment.index` media route and does not receive generic create, edit,
+or view routes.
+
+For resource data, the package registers one internal JSON endpoint. It is used
+by relationship fields to load selectable values:
+
+~~~
+POST {config('aura.path')}/api/fields/values
+Route name: aura.api.fields.values
+Middleware: aura-admin (web, auth)
+~~~
+
+The controller requires `model`, `slug`, and `field` request values:
+
+| Key | Requirement |
+| --- | --- |
+| `model` | A class string that extends `Aura\Base\Resource`. The caller must pass the `viewAny` policy check for it. |
+| `field` | A class string that extends `Aura\Base\Fields\Field` and provides an `api()` method. |
+| `slug` | The field slug used by the requesting form. |
+| `search` | Search text consumed by fields that support search. |
+| `id` | A selected id that a field may append to its result. |
+| `page` | Page number used by `AdvancedSelect`. |
+| `fullField` | The complete field definition used by `AdvancedSelect` to render option markup. |
+
+The response is field-specific. `BelongsTo::api()` returns id/title rows.
+`AdvancedSelect::api()` returns paged rows with option and selected-item view
+markup. The endpoint is an implementation detail of the admin UI. It is not a
+stable public API and it does not issue bearer tokens.
+
+## Building a host API
+
+The following route belongs in the host application. Aura does not register
+`auth:sanctum`, the `/api/posts` path, or the controller logic. Replace the
+guard and policy with the host application's choices when they differ:
+
+~~~php
+// routes/api.php
+use App\Aura\Resources\Post;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
+
+Route::middleware('auth:sanctum')->get('/posts', function (Request $request) {
+    $validated = $request->validate([
+        'q' => ['nullable', 'string', 'max:255'],
+        'status' => ['nullable', 'string', 'max:20'],
+        'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+    ]);
+
+    $user = $request->user();
+    $resource = app(Post::class);
+
+    Gate::forUser($user)->authorize('viewAny', $resource);
+
+    if (config('aura.teams') && ! $user->current_team_id) {
+        abort(403, 'Select a team before reading posts.');
     }
-    
-    return $resourceInstance::paginate(15);
-});
-```
 
-The Aura CMS PHP API provides a powerful foundation for building content management systems, custom admin panels, and integrating with external services.
+    $post = new Post;
+    $query = Post::query();
+
+    if ($search = $request->string('q')->toString()) {
+        $columns = $post->getSearchableFields()->pluck('slug')->all();
+        $query->searchIn($columns, $search, $post);
+    }
+
+    if ($status = $request->string('status')->toString()) {
+        $query->where('status', $status);
+    }
+
+    return $query->paginate($validated['per_page'] ?? 15)
+        ->through(fn (Post $post): array => [
+            'id' => $post->getKey(),
+            'title' => $post->title,
+            'status' => $post->status,
+        ]);
+});
+~~~
+
+This example authorizes the collection with `viewAny`, requires a current team
+when teams are enabled, and keeps the normal Eloquent scopes on `Post::query()`.
+`TeamScope`, `TypeScope`, and `ScopedScope` then apply according to the
+installation and the authenticated user's permissions. The package's default
+`ResourcePolicy` is registered for Aura resources, but a host application may
+replace it with its own policy.
+
+The response lists its fields explicitly. Returning raw Aura resources can include the appended `fields` collection. `status` is a core `posts` column, so the example uses `where()` for it.
+
+If an endpoint must read across teams, define that ability explicitly and
+authorize it before considering any `withoutGlobalScope()` call. Do not expose
+the internal fields endpoint as a public content API.
+
+## Related guides
+
+- [Resources](/docs/resources) and [Creating resources](/docs/creating-resources)
+- [Fields](/docs/fields) and [Creating fields](/docs/creating-fields)
+- [Meta fields](/docs/meta-fields) and [Custom tables](/docs/custom-tables)
+- [Table](/docs/table), [Teams](/docs/teams), and [Configuration](/docs/configuration)
+- [Record layouts](/docs/record-layouts) and [Resource Editor](/docs/resource-editor)

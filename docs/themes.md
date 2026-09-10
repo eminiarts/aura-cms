@@ -1,151 +1,161 @@
 # Themes
 
-Aura CMS provides a comprehensive theming system that gives you complete control over the visual appearance of your application. Built with Tailwind CSS and CSS variables, the theme system supports multiple color palettes, dark mode, and extensive customization options.
+Aura resolves theme values from the package defaults, the host application's
+`config/aura.php`, and the saved Settings option. The saved option controls the
+palette, sidebar, and uploaded logos. Semantic colors and fonts are configured
+in `config/aura.php`.
 
-## Table of Contents
+## Configuration defaults
 
-- [Overview](#overview)
-- [Theme Architecture](#theme-architecture)
-- [Configuration](#configuration)
-- [Semantic Theme Tokens](#semantic-theme-tokens)
-- [Color Palettes](#color-palettes)
-- [Dark Mode](#dark-mode)
-- [Sidebar Themes](#sidebar-themes)
-- [Custom Themes](#custom-themes)
-- [CSS Variables](#css-variables)
-- [Tailwind Integration](#tailwind-integration)
-- [Login Page Customization](#login-page-customization)
-- [Team-Specific Themes](#team-specific-themes)
-- [Advanced Customization](#advanced-customization)
-- [Theme Development](#theme-development)
-
-## Overview
-
-The Aura theme system provides:
-- **35+ Primary Color Palettes**: Pre-designed color schemes
-- **15 Gray Palettes**: Neutral color options
-- **Dark Mode Support**: Auto, light, or dark modes
-- **Sidebar Customization**: Independent sidebar theming
-- **Custom Colors**: Create your own color schemes
-- **Per-Team Themes**: Different themes for different teams
-- **Login Page Customization**: Custom backgrounds and favicons
-- **Live Preview**: Real-time theme updates
-
-
-## Theme Architecture
-
-### Component Structure
-
-```
-Theme System
-├── Configuration (config/aura.php)
-├── Settings Component (Livewire)
-├── Color Generation (Blade)
-├── CSS Variables
-├── Tailwind Config
-└── Storage (Options Table)
-```
-
-### How Themes Work
-
-1. **Configuration**: Default theme settings in `config/aura.php`
-2. **Settings UI**: Admin interface for theme customization
-3. **CSS Generation**: Dynamic CSS variables based on selected palette
-4. **Application**: CSS classes and variables applied to UI
-5. **Persistence**: Settings stored in database
-
-## Configuration
-
-### Default Configuration
-
-Set default theme options in `config/aura.php`:
-
-```php
-return [
-    'theme' => [
-        // Primary color palette
-        'color-palette' => 'aura',
-        
-        // Gray color palette
-        'gray-color-palette' => 'slate',
-        
-        // Dark mode: auto, light, dark
-        'darkmode-type' => 'auto',
-        
-        // Sidebar size: standard, compact
-        'sidebar-size' => 'standard',
-        
-        // Sidebar theme: primary, light, dark
-        'sidebar-type' => 'primary',
-        
-        // Dark mode sidebar theme
-        'sidebar-darkmode-type' => 'dark',
-        
-        // Login page background image (path or false)
-        'login-bg' => false,
-        'login-bg-darkmode' => false,
-        
-        // Application favicon (path or false)
-        'app-favicon' => false,
-        'app-favicon-darkmode' => false,
-    ],
-];
-```
-
-### Enabling Theme Settings
-
-Enable the settings interface for admins:
-
-```php
-// config/aura.php
-return [
-    'features' => [
-        'settings' => true, // Enable settings UI
-    ],
-];
-```
-
-### Accessing Theme Settings
-
-```php
-use Aura\Base\Facades\Aura;
-
-// Get current theme settings
-$theme = Aura::getOption('theme');
-$colorPalette = $theme['color-palette'] ?? 'aura';
-$darkMode = $theme['darkmode-type'] ?? 'auto';
-
-// Check if dark mode is active
-$isDark = $darkMode === 'dark' || 
-    ($darkMode === 'auto' && // Check system preference);
-```
-
-## Semantic Theme Tokens
-
-Aura's token contract lets a host configure common application surfaces from
-`config/aura.php`. Values are rendered as CSS custom properties at runtime so a
-host-owned Tailwind build and Aura's package styles share the same tokens.
+The published `config/aura.php` contains the theme defaults. The current main
+defaults are:
 
 ```php
 'theme' => [
     'color-palette' => 'aura',
     'gray-color-palette' => 'slate',
-    'darkmode-type' => 'auto',
+    'darkmode-type' => 'auto',       // auto, light, or dark
+    'sidebar-size' => 'standard',    // standard or compact
+    'sidebar-type' => 'dark',        // primary, light, or dark
+    'sidebar-darkmode-type' => 'dark',
 
+    'login-bg' => false,
+    'login-bg-darkmode' => false,
+    'app-favicon' => false,
+    'app-favicon-darkmode' => false,
+],
+```
+
+The Settings page is enabled by default. Disable it with:
+
+```php
+'features' => [
+    'settings' => false,
+],
+```
+
+The page is mounted at `/{config('aura.path')}/settings`, which is
+`/admin/settings` when the default path is used. `Aura\Base\Livewire\Settings`
+returns a 404 when the feature is disabled and a 403 unless the current user
+is a super admin.
+
+## The Settings screen
+
+The form contains these fields:
+
+| Field | Slug | Options |
+| --- | --- | --- |
+| Logo | `logo` | Uploaded image |
+| Logo dark mode | `logo-darkmode` | Uploaded image |
+| Size | `sidebar-size` | `standard`, `compact` |
+| Sidebar | `sidebar-type` | `primary`, `light`, `dark` |
+| Dark mode | `darkmode-type` | `auto`, `light`, `dark` |
+| Sidebar dark mode | `sidebar-darkmode-type` | `primary`, `light`, `dark` |
+| Primary color palette | `color-palette` | 39 presets or `custom` |
+| Gray color palette | `gray-color-palette` | 14 presets or `custom` |
+
+The sidebar dark mode field is shown only when `darkmode-type` is `auto`.
+When either palette is `custom`, the form shows color fields for shades
+`25`, `50`, `100`, `200`, `300`, `400`, `500`, `600`, `700`, `800`, `900`, and
+`950`.
+
+On the first visit, the component creates one `Option` record with six values
+from `config/aura.php`: `darkmode-type`, `sidebar-type`, `color-palette`,
+`gray-color-palette`, `sidebar-size`, and `sidebar-darkmode-type`. After saving,
+the record contains the complete form field set, including uploaded image IDs
+and custom color values. `save()` clears the application cache after updating
+the record.
+
+The record name depends on the teams setting:
+
+- With teams enabled, it is `team.{teamId}.settings`.
+- With teams disabled, it is `settings`.
+
+Read the saved values with the `settings` option name:
+
+```php
+use Aura\Base\Facades\Aura;
+
+$settings = Aura::getOption('settings');
+$palette = $settings['color-palette'] ?? config('aura.theme.color-palette');
+$darkMode = $settings['darkmode-type'] ?? config('aura.theme.darkmode-type');
+```
+
+`Aura::getOption('settings')` returns the current team's record when teams are
+enabled and returns an empty array when no record exists. It does not read a
+global record as a fallback for a team that has no settings. Reads are cached
+for one hour. The layout falls back to `config('aura.theme')` when it resolves
+the CSS values.
+
+The Settings screen has no live preview. Reload the page after saving to make
+the new layout CSS and dark mode class apply.
+
+## Color palettes
+
+The primary palette select contains these 39 preset slugs:
+
+```text
+aura, red, orange, amber, yellow, lime, forest-green, green, emerald,
+mountain-meadow, teal, ocean-breeze, cyan, sky, blue, indigo, violet,
+purple, fuchsia, pink, rose, sandal, desert-sand, salmon, autumn-rust,
+slate, dark-slate, blackout, obsidian, amethyst, opal, gray, zinc, neutral,
+stone, sandstone, rose-quartz, olive, smaragd
+```
+
+The gray palette select contains these 14 preset slugs:
+
+```text
+slate, dark-slate, blackout, obsidian, amethyst, opal, gray, zinc, neutral,
+stone, sandstone, rose-quartz, olive, smaragd
+```
+
+Every preset defines RGB channel values for the 12 shades listed above. Aura
+emits those values as `--primary-*` and `--gray-*` CSS variables. The custom
+palette fields accept hex colors and the renderer converts them to the same
+space-separated RGB form:
+
+```php
+'theme' => [
+    'color-palette' => 'custom',
+    'primary-500' => '#3c73f2',
+    'primary-600' => '#1f55e9',
+
+    'gray-color-palette' => 'custom',
+    'gray-500' => '#64748b',
+],
+```
+
+Provide all 12 shades for each custom palette. The conversion helper returns
+channel strings without `rgb(...)`:
+
+```php
+use Aura\Base\TransformColor;
+
+TransformColor::hexToRgb('#3c73f2'); // "60 115 242"
+```
+
+## Semantic colors and fonts
+
+The `theme.colors` configuration controls semantic values shared by Aura's
+package CSS and a host stylesheet. Aura accepts either a space-separated RGB
+channel string or a single CSS variable reference such as
+`var(--primary-600)`. Do not include `rgb(...)` around the value.
+
+The supported semantic names are `primary`, `background`, `panel`, `border`,
+`text`, `muted`, `success`, `warning`, and `danger`. Configure light and dark
+values separately:
+
+```php
+'theme' => [
     'font' => [
         'family' => [
             'ui-sans-serif',
             'system-ui',
             'sans-serif',
-            'Apple Color Emoji',
-            'Segoe UI Emoji',
-            'Segoe UI Symbol',
-            'Noto Color Emoji',
         ],
         'stylesheet' => false,
     ],
 
-    // RGB channels without rgb(...), so Tailwind opacity modifiers keep working.
     'colors' => [
         'light' => [
             'primary' => 'var(--primary-600)',
@@ -173,7 +183,7 @@ host-owned Tailwind build and Aura's package styles share the same tokens.
 ],
 ```
 
-Public runtime variables:
+`resources/views/components/layout/colors.blade.php` emits these variables:
 
 ```css
 --aura-font-sans
@@ -188,683 +198,226 @@ Public runtime variables:
 --aura-color-danger
 ```
 
-The `.dark` selector swaps dark values. Existing `--primary-*`, `--gray-*`, and
-`--sidebar-*` utilities remain supported.
-
-Tailwind semantic colors use `aura.*` utilities and `font-sans` resolves to
-`var(--aura-font-sans)`.
-
-### Local custom fonts
-
-The default system stack makes no font network request. To opt into a custom
-font, serve the stylesheet from the host application and set:
-
-```php
-'theme' => [
-    'font' => [
-        'family' => ['Acme Sans', 'sans-serif'],
-        'stylesheet' => 'fonts/acme-sans.css', // local public path only
-    ],
-],
-```
-
-Remote stylesheets (`https://…`, `//…`, `data:…`) are rejected.
-
-## Color Palettes
-
-### Primary Color Palettes
-
-Aura includes 35+ professionally designed primary color palettes:
-
-| Palette | Description | Use Case |
-|---------|-------------|----------|
-| `aura` | Default Aura blue | Professional, corporate |
-| `red` | Vibrant red | Alerts, urgency |
-| `orange` | Warm orange | Energy, creativity |
-| `amber` | Golden amber | Warmth, attention |
-| `yellow` | Bright yellow | Optimism, clarity |
-| `lime` | Fresh lime | Growth, freshness |
-| `forest-green` | Deep forest green | Nature, stability |
-| `green` | Classic green | Success, growth |
-| `emerald` | Rich emerald | Luxury, balance |
-| `mountain-meadow` | Natural meadow teal | Fresh, organic |
-| `teal` | Ocean teal | Calm, sophisticated |
-| `ocean-breeze` | Soft ocean blue | Tranquil, refreshing |
-| `cyan` | Bright cyan | Modern, tech |
-| `sky` | Light sky blue | Open, friendly |
-| `blue` | Classic blue | Trust, reliability |
-| `indigo` | Deep indigo | Wisdom, depth |
-| `violet` | Rich violet | Creativity, luxury |
-| `purple` | Royal purple | Premium, imaginative |
-| `fuchsia` | Vibrant fuchsia | Bold, playful |
-| `pink` | Soft pink | Gentle, caring |
-| `rose` | Romantic rose | Elegant, passionate |
-
-**Neutral/Earth Tone Palettes:**
-
-| Palette | Description |
-|---------|-------------|
-| `sandal` | Warm sandy beige |
-| `desert-sand` | Earthy desert tones |
-| `salmon` | Soft coral salmon |
-| `autumn-rust` | Rich autumn rust |
-
-**Monochrome/Gray-Based Primary Palettes:**
-
-| Palette | Description |
-|---------|-------------|
-| `slate` | Cool blue-gray |
-| `dark-slate` | Deeper blue-gray |
-| `blackout` | High contrast near-black |
-| `obsidian` | Deep volcanic black |
-| `amethyst` | Purple-tinted gray |
-| `opal` | Soft blue-tinted gray |
-| `gray` | Pure neutral gray |
-| `zinc` | Industrial cool gray |
-| `neutral` | Perfect neutral |
-| `stone` | Warm stone gray |
-| `sandstone` | Earthy warm neutral |
-| `rose-quartz` | Pink-tinted gray |
-| `olive` | Green-tinted gray |
-| `smaragd` | Emerald-tinted gray |
-
-### Gray Color Palettes
-
-15 neutral color palettes for UI backgrounds and text:
-
-| Palette | Description | Style |
-|---------|-------------|-------|
-| `slate` | Classic slate (default) | Cool blue-gray |
-| `dark-slate` | Deeper slate | Deep cool gray |
-| `blackout` | High contrast | Near black darks |
-| `obsidian` | Deep obsidian | Rich volcanic black |
-| `amethyst` | Purple-tinted | Warm purple gray |
-| `opal` | Soft opal | Light blue-tinted |
-| `gray` | Pure gray | True neutral |
-| `zinc` | Industrial zinc | Cool industrial |
-| `neutral` | Balanced neutral | Perfect neutral |
-| `stone` | Warm stone | Warm earthy gray |
-| `sandstone` | Natural sandstone | Earthy warm neutral |
-| `rose-quartz` | Pink-tinted | Warm pink gray |
-| `olive` | Green-tinted | Organic olive gray |
-| `smaragd` | Emerald-tinted | Cool emerald gray |
-
-### Color Shades
-
-Each palette includes 12 precisely calculated shades:
-
-```php
-$shades = [
-    '25'  => 'Lightest tint',
-    '50'  => 'Very light',
-    '100' => 'Light',
-    '200' => 'Light medium',
-    '300' => 'Medium light',
-    '400' => 'Medium',
-    '500' => 'Base color',
-    '600' => 'Medium dark',
-    '700' => 'Dark medium',
-    '800' => 'Dark',
-    '900' => 'Very dark',
-    '950' => 'Darkest shade',
-];
-```
-
-
-## Dark Mode
-
-### Dark Mode Options
-
-```php
-// Auto mode - follows system preference
-'darkmode-type' => 'auto'
-
-// Force light mode
-'darkmode-type' => 'light'
-
-// Force dark mode
-'darkmode-type' => 'dark'
-```
-
-### Implementation
-
-Dark mode is implemented using:
-- CSS `.dark` class on HTML element (using Tailwind's `selector` strategy)
-- Tailwind's dark mode utilities (`dark:` prefix)
-- CSS variables that adapt to theme
-- System preference detection for `auto` mode
+Light values are declared on `:root`. Dark values replace the semantic
+variables under `.dark`. The package Tailwind configuration maps the same
+values to `aura.*` colors:
 
 ```html
-<!-- Automatic dark mode classes -->
-<div class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-    <!-- Content adapts to theme -->
+<div class="bg-aura-panel text-aura-text border border-aura-border">
+    Themed content
 </div>
 ```
 
-When `darkmode-type` is set to `auto`, the system detects the user's OS preference using `window.matchMedia('(prefers-color-scheme: dark)')`.
-
-### JavaScript Detection
-
-```javascript
-// Check dark mode status
-const isDarkMode = () => {
-    return document.documentElement.classList.contains('dark');
-};
-
-// Listen for theme changes
-window.addEventListener('theme-changed', (event) => {
-    console.log('Theme changed to:', event.detail);
-});
-```
-
-## Sidebar Themes
-
-### Sidebar Types
-
-1. **Primary** (default)
-   ```css
-   --sidebar-bg: var(--primary-600);
-   --sidebar-text: var(--primary-100);
-   ```
-
-2. **Light**
-   ```css
-   --sidebar-bg: var(--gray-100);
-   --sidebar-text: var(--gray-700);
-   ```
-
-3. **Dark**
-   ```css
-   --sidebar-bg: var(--gray-900);
-   --sidebar-text: var(--gray-100);
-   ```
-
-### Sidebar Configuration
+The `font-sans` utility uses `var(--aura-font-sans)` before Tailwind's default
+sans-serif fallbacks. The default system stack makes no font request. To load
+a custom font, place its stylesheet in the host application's public
+directory and set a local path:
 
 ```php
-// Standard sidebar
-'sidebar-size' => 'standard',
-'sidebar-type' => 'primary',
-
-// Compact sidebar with dark theme
-'sidebar-size' => 'compact',
-'sidebar-type' => 'dark',
-
-// Different sidebar for dark mode
-'sidebar-darkmode-type' => 'dark',
-```
-
-### Sidebar CSS Variables
-
-Each color palette defines its own sidebar variables. The default values are:
-
-```css
-:root {
-    /* Background colors */
-    --sidebar-bg: var(--primary-600);
-    --sidebar-bg-hover: var(--primary-500);
-    --sidebar-bg-dropdown: var(--primary-700);
-    
-    /* Text colors */
-    --sidebar-text: var(--primary-400);
-    
-    /* Icon colors */
-    --sidebar-icon: var(--primary-300);
-    --sidebar-icon-hover: var(--primary-200);
-}
-```
-
-Color palettes can override these defaults. For example, the `aura` palette uses:
-
-```css
-:root {
-    --sidebar-bg: var(--primary-700);
-    --sidebar-bg-hover: var(--primary-600);
-    --sidebar-bg-dropdown: var(--primary-800);
-}
-```
-
-## Custom Themes
-
-### Creating Custom Colors
-
-```php
-// In Settings UI or config
-'color-palette' => 'custom',
-'primary-25' => '#fefce8',
-'primary-50' => '#fef3c7',
-'primary-100' => '#fde68a',
-'primary-200' => '#fcd34d',
-'primary-300' => '#fbbf24',
-'primary-400' => '#f59e0b',
-'primary-500' => '#d97706',
-'primary-600' => '#b45309',
-'primary-700' => '#92400e',
-'primary-800' => '#78350f',
-'primary-900' => '#451a03',
-'primary-950' => '#281203',
-```
-
-### Using TransformColor
-
-```php
-use Aura\Base\TransformColor;
-
-// Convert hex to RGB for CSS variables
-$rgb = TransformColor::hexToRgb('#3B82F6');
-// Returns: "59 130 246"
-
-// Use in CSS
-$css = "--primary-500: {$rgb};";
-```
-
-### Custom Theme Class
-
-```php
-namespace App\Themes;
-
-use Aura\Base\TransformColor;
-
-class BrandTheme
-{
-    public static function colors()
-    {
-        return [
-            'primary' => [
-                '25' => TransformColor::hexToRgb('#fefce8'),
-                '50' => TransformColor::hexToRgb('#fef3c7'),
-                // ... all shades
-            ],
-            'gray' => [
-                '25' => TransformColor::hexToRgb('#fafafa'),
-                '50' => TransformColor::hexToRgb('#f4f4f5'),
-                // ... all shades
-            ],
-        ];
-    }
-    
-    public static function sidebarVariables()
-    {
-        return [
-            '--sidebar-bg' => 'var(--primary-800)',
-            '--sidebar-bg-hover' => 'var(--primary-700)',
-            '--sidebar-text' => 'var(--primary-100)',
-            // ... other variables
-        ];
-    }
-}
-```
-
-## CSS Variables
-
-### Generated Variables
-
-Aura generates CSS variables for all color shades:
-
-```css
-:root {
-    /* Primary colors */
-    --primary-25: 251 254 255;
-    --primary-50: 240 244 254;
-    --primary-100: 224 234 253;
-    /* ... through 950 */
-    
-    /* Gray colors */
-    --gray-25: 250 250 250;
-    --gray-50: 245 245 245;
-    --gray-100: 235 235 235;
-    /* ... through 950 */
-}
-```
-
-### Using Variables in CSS
-
-```css
-/* Direct usage */
-.custom-element {
-    background-color: rgb(var(--primary-500));
-    color: rgb(var(--gray-100));
-}
-
-/* With opacity */
-.transparent-bg {
-    background-color: rgb(var(--primary-500) / 0.5);
-}
-
-/* In Tailwind classes */
-.custom-class {
-    @apply bg-primary-500 text-gray-100;
-}
-```
-
-## Tailwind Integration
-
-### Tailwind Configuration
-
-Aura uses a custom function to support opacity modifiers with CSS variables:
-
-```javascript
-// tailwind.config.js
-function withOpacityValue(variable) {
-    return ({ opacityValue }) => {
-        if (opacityValue === undefined) {
-            return `rgb(var(${variable}))`
-        }
-        return `rgb(var(${variable}) / ${opacityValue})`
-    }
-}
-
-module.exports = {
-    darkMode: 'selector',
-    
-    theme: {
-        extend: {
-            colors: {
-                // Sidebar colors from CSS variables
-                sidebar: {
-                    'bg': withOpacityValue('--sidebar-bg'),
-                    'bg-hover': withOpacityValue('--sidebar-bg-hover'),
-                    'bg-dropdown': withOpacityValue('--sidebar-bg-dropdown'),
-                    'icon': withOpacityValue('--sidebar-icon'),
-                    'icon-hover': withOpacityValue('--sidebar-icon-hover'),
-                    'text': withOpacityValue('--sidebar-text'),
-                },
-                // Primary colors (shades 25-900)
-                primary: {
-                    '25': withOpacityValue('--primary-25'),
-                    '50': withOpacityValue('--primary-50'),
-                    '100': withOpacityValue('--primary-100'),
-                    // ... through 900
-                },
-                // Gray colors (shades 25-900)
-                gray: {
-                    '25': withOpacityValue('--gray-25'),
-                    '50': withOpacityValue('--gray-50'),
-                    '100': withOpacityValue('--gray-100'),
-                    // ... through 900
-                },
-            },
-        },
-    },
-};
-```
-
-### Using Theme Colors
-
-```html
-<!-- Primary colors -->
-<div class="bg-primary-500 hover:bg-primary-600">
-    <span class="text-primary-100">Themed text</span>
-</div>
-
-<!-- Gray colors -->
-<div class="bg-gray-50 dark:bg-gray-900">
-    <p class="text-gray-700 dark:text-gray-300">Adaptive text</p>
-</div>
-
-<!-- With opacity -->
-<div class="bg-primary-500/20 border-primary-500/50">
-    Semi-transparent elements
-</div>
-```
-
-## Login Page Customization
-
-Customize the login page appearance with custom backgrounds and favicons:
-
-### Login Background
-
-```php
-// config/aura.php
-'theme' => [
-    // Custom background image for login page
-    'login-bg' => '/path/to/background.jpg',
-    
-    // Different background for dark mode
-    'login-bg-darkmode' => '/path/to/dark-background.jpg',
+'font' => [
+    'family' => ['Acme Sans', 'sans-serif'],
+    'stylesheet' => 'fonts/acme-sans.css',
 ],
 ```
 
-Set to `false` to use the default gradient background.
+Aura rejects remote URLs, data URLs, backslashes, control characters, and
+parent-directory segments in `font.stylesheet`. Invalid semantic color values
+fall back per token. Invalid font-family entries are dropped, and the package
+font stack is used when no valid family remains.
 
-### Application Favicon
+## Dark mode
+
+`darkmode-type` accepts three values:
+
+- `dark` adds the `dark` class to the document root.
+- `light` removes the `dark` class.
+- `auto` checks `window.matchMedia('(prefers-color-scheme: dark)')`.
+
+Aura's Tailwind 3 configuration uses `darkMode: 'selector'`, so `dark:*`
+utilities respond to the `dark` class on `<html>`. The inline script in the
+layout evaluates the setting when the page loads. It does not dispatch a
+`theme-changed` event or update the class when the setting changes in the
+Settings component. Reload after changing the setting.
+
+Favicon switching is separate from the page dark mode setting. Its script
+listens to the operating system color-scheme media query and swaps the light
+and dark favicon paths when that preference changes.
+
+## Sidebar
+
+The sidebar uses these generated variables when its type is `primary`:
+
+```css
+--sidebar-bg
+--sidebar-bg-hover
+--sidebar-bg-dropdown
+--sidebar-text
+--sidebar-icon
+--sidebar-icon-hover
+```
+
+The fallback values are:
+
+```css
+--sidebar-bg: var(--primary-600);
+--sidebar-bg-hover: var(--primary-500);
+--sidebar-bg-dropdown: var(--primary-700);
+--sidebar-text: var(--primary-400);
+--sidebar-icon: var(--primary-300);
+--sidebar-icon-hover: var(--primary-200);
+```
+
+Palettes can override those values. The `aura` palette uses primary shades
+`700`, `600`, `800`, `400`, `300`, and `200` for the six variables. A palette
+without an override uses the fallback values.
+
+`sidebar-type` selects the light-mode CSS:
+
+- `primary` uses the sidebar variables.
+- `light` uses `bg-gray-50` with dark text.
+- `dark` uses `#18181b` with light text.
+
+When `darkmode-type` is `auto`, `sidebar-darkmode-type` selects the matching
+dark-mode class. The navigation markup does not add that class for forced
+`light` or forced `dark` mode.
+
+The Settings form labels `sidebar-size` as `standard` and `compact`. The
+current navigation template tests the value for truthiness, so both non-empty
+values choose the `md:w-56` width. The wider `md:w-72` branch is used only
+when the value is empty. See the review report for this source defect.
+
+## Logos, login backgrounds, and favicons
+
+The Settings form stores uploaded attachment IDs under `logo` and
+`logo-darkmode`. When both are set, the navigation renders both images and
+uses the sidebar type classes to show the light or dark variant. With no
+uploaded sidebar logo, it renders the component named by
+`config('aura.views.logo')`.
+
+The login layout also renders `config('aura.views.logo')`. The default
+component is `aura::application-logo`. A host can point the `logo` view
+configuration at its own Blade component.
+
+Set login background paths in `config/aura.php`. Use root-relative public URLs:
 
 ```php
-// config/aura.php
 'theme' => [
-    // Custom favicon
-    'app-favicon' => '/path/to/favicon.ico',
-    
-    // Different favicon for dark mode (optional)
-    'app-favicon-darkmode' => '/path/to/dark-favicon.ico',
+    'login-bg' => '/images/login-light.jpg',
+    'login-bg-darkmode' => '/images/login-dark.jpg',
 ],
 ```
 
-## Team-Specific Themes
+With both paths set, the light image is used first and the dark image replaces
+it when the `dark` class is present at `DOMContentLoaded`. The login view does
+not react to later system or Settings changes. With only one path set, that
+image is used in every mode. With neither path set, the login view uses its
+default gradient background.
 
-### Configuration
-
-When teams are enabled, each team can have custom themes:
-
-```php
-// Enable teams and settings
-return [
-    'teams' => true,
-    'features' => [
-        'settings' => true,
-    ],
-];
-```
-
-### Accessing Team Themes
+The favicon values are inserted into the `<link rel="icon">` tag. Use explicit
+root-relative paths when customizing them:
 
 ```php
-// Get current team's theme
-$teamTheme = auth()->user()->currentTeam->getOption('theme');
-
-// Set team theme
-auth()->user()->currentTeam->setOption('theme', [
-    'color-palette' => 'emerald',
-    'darkmode-type' => 'dark',
-]);
+'theme' => [
+    'app-favicon' => '/vendor/aura/public/favicon-32x32.png',
+    'app-favicon-darkmode' => '/vendor/aura/public/favicon-darkmode-32x32.png',
+],
 ```
 
-### Theme Hierarchy
+The shipped `false` favicon defaults pass through the null-coalescing lookup
+and produce an empty `href`. Set the keys to `null`, remove them, or provide
+paths to use the bundled or a custom icon.
 
-1. Team theme (if set and teams enabled)
-2. User preference (if implemented)
-3. Global theme (default)
+The login layout falls back to `aura.theme` values when no `$appSettings`
+array is passed to it. Verify `/login` after configuring background overrides.
 
-## Advanced Customization
+## View overrides and extension points
 
-### Custom Theme Provider
+The current `views` configuration contains these keys:
 
 ```php
-namespace App\Providers;
-
-use Illuminate\Support\ServiceProvider;
-use Aura\Base\Facades\Aura;
-
-class ThemeServiceProvider extends ServiceProvider
-{
-    public function boot()
-    {
-        // Add custom palettes
-        $this->app->booted(function () {
-            $this->registerCustomPalettes();
-        });
-        
-        // Override theme logic
-        Aura::macro('getTheme', function () {
-            // Custom theme resolution logic
-            return $this->customThemeLogic();
-        });
-    }
-    
-    protected function registerCustomPalettes()
-    {
-        // Register brand colors
-        config([
-            'aura.palettes.brand' => [
-                'name' => 'Brand Colors',
-                'colors' => [
-                    '25' => '#fefce8',
-                    // ... all shades
-                ],
-            ],
-        ]);
-    }
-}
+'views' => [
+    'layout' => 'aura::layout.app',
+    'login-layout' => 'aura::layout.login',
+    'logo' => 'aura::application-logo',
+],
 ```
 
-### Theme Events
+`login-layout` wraps the guest authentication pages. `logo` controls the
+application logo component used by the login layout and the sidebar fallback.
+The main Livewire pages use `aura::components.layout.app` directly.
 
-```php
-// Listen for theme changes
-Event::listen('theme.changed', function ($theme) {
-    // Clear caches, update assets, etc.
-    Cache::tags(['theme'])->flush();
-});
+For smaller additions, Aura's layout includes these extension points:
 
-// Dispatch theme change
-event('theme.changed', $newTheme);
+- `@stack('styles')` is rendered in the document head.
+- `@stack('scripts')` is rendered before the closing body tag.
+- `components.layouts.aura-head`, when present in the host app, is included
+  in the document head.
+- `resources/views/navigation/before.blade.php` and
+  `resources/views/navigation/after.blade.php` are included around the
+  navigation menu.
+
+Publish package views before replacing a whole Aura Blade file:
+
+```bash
+php artisan vendor:publish --tag=aura-views
 ```
 
-### Dynamic Theme Loading
+Published files go under `resources/views/vendor/aura` and override the
+package views.
 
-```php
-// In a middleware
-class LoadTheme
-{
-    public function handle($request, $next)
-    {
-        $theme = $this->resolveTheme($request);
-        
-        View::share('theme', $theme);
-        
-        return $next($request);
-    }
-    
-    protected function resolveTheme($request)
-    {
-        // Check for theme in query string (preview)
-        if ($request->has('theme')) {
-            return $this->loadTheme($request->theme);
-        }
-        
-        // Load user/team theme
-        return Aura::getOption('theme');
-    }
-}
+## Compiled assets and host frontend builds
+
+Aura's package CSS and JavaScript are compiled in the Aura package checkout.
+The package `vite.config.js` writes the normal build to `resources/dist` and
+the library build to `resources/libs`:
+
+```bash
+npm run build
+npm run build:lib
 ```
 
-## Theme Development
+Those files are separate from a host application's `resources/css/app.css`,
+`resources/js/app.js`, and `public/build` output. The host Vite build does not
+recompile Aura's package source.
 
-### Creating a Theme Package
+The `@auraStyles` and `@auraScripts` directives resolve the package entries
+from the `vendor/aura` Vite build directory. In a consuming Laravel
+application, publish the compiled package tree after installing or updating
+Aura:
 
-```php
-// src/MyThemeServiceProvider.php
-namespace Acme\MyTheme;
-
-use Spatie\LaravelPackageTools\Package;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
-
-class MyThemeServiceProvider extends PackageServiceProvider
-{
-    public function configurePackage(Package $package): void
-    {
-        $package
-            ->name('my-theme')
-            ->hasConfigFile()
-            ->hasViews();
-    }
-    
-    public function packageBooted()
-    {
-        // Register theme
-        $this->registerTheme();
-        
-        // Add to theme selector
-        $this->addToThemeSelector();
-    }
-    
-    protected function registerTheme()
-    {
-        config([
-            'aura.themes.my-theme' => [
-                'name' => 'My Custom Theme',
-                'colors' => $this->getColors(),
-                'sidebar' => $this->getSidebarConfig(),
-            ],
-        ]);
-    }
-}
+```bash
+php artisan aura:publish
 ```
 
-### Theme Assets
+The command copies the package `dist`, `libs`, and public files into
+`public/vendor/aura` and verifies the Vite manifest. The alternative publish
+tag is:
 
-```php
-// Publish theme assets
-public function boot()
-{
-    $this->publishes([
-        __DIR__.'/../dist/theme.css' => public_path('vendor/my-theme/theme.css'),
-    ], 'my-theme-assets');
-    
-    // Auto-inject theme CSS
-    Aura::macro('injectThemeAssets', function () {
-        return '<link href="/vendor/my-theme/theme.css" rel="stylesheet">';
-    });
-}
+```bash
+php artisan vendor:publish --tag=aura-assets --force
 ```
 
-### Theme Preview
+If a host view needs a Tailwind utility that Aura's package config does not
+generate, add that utility to the host's own Tailwind configuration. The
+shipped config maps `aura.*`, `sidebar.*`, and primary and gray shades
+`25` through `900`. It emits the `950` CSS variables, but it does not map
+`primary-950` or `gray-950` to Tailwind classes by default.
 
-```php
-// Preview component
-class ThemePreview extends Component
-{
-    public $theme;
-    
-    public function mount($theme)
-    {
-        $this->theme = $theme;
-    }
-    
-    public function render()
-    {
-        return view('my-theme::preview', [
-            'colors' => $this->generatePreviewColors(),
-        ]);
-    }
-    
-    protected function generatePreviewColors()
-    {
-        // Generate CSS for preview
-        $css = ":root {\n";
-        
-        foreach ($this->theme['colors'] as $shade => $color) {
-            $rgb = TransformColor::hexToRgb($color);
-            $css .= "    --primary-{$shade}: {$rgb};\n";
-        }
-        
-        $css .= "}";
-        
-        return $css;
-    }
-}
-```
+## Focused source references
 
+The implementation for this page is in `config/aura.php`,
+`src/ThemeTokens.php`, `src/Livewire/Settings.php`,
+`src/Livewire/Navigation.php`,
+`resources/views/components/layout/colors.blade.php`,
+`resources/views/components/layout/styles.blade.php`,
+`resources/views/components/layout/login.blade.php`,
+`resources/views/components/layout/favicon.blade.php`,
+`resources/views/navigation/logo.blade.php`, `tailwind.config.js`, and
+`vite.config.js`.
 
-### Pro Tips
+Related guides:
 
-1. **Use CSS Variables**: Always use CSS variables for theme colors
-2. **Test Dark Mode**: Ensure all elements work in both light and dark modes
-3. **Maintain Contrast**: Follow WCAG guidelines for color contrast
-4. **Cache Themes**: Cache generated CSS for performance
-5. **Preview Mode**: Implement theme preview before applying
-6. **Gradual Migration**: Use both old and new theme systems during transition
-7. **Document Colors**: Provide color documentation for designers
-8. **Accessibility**: Test themes with accessibility tools
-
-The theme system provides complete control over your application's appearance while maintaining consistency and ease of use across teams and installations.
+- [Settings](/docs/settings)
+- [Configuration](/docs/configuration)
+- [Customizing views](/docs/customizing-views)
+- [Teams](/docs/teams)
