@@ -1,12 +1,12 @@
 # Profile
 
-Aura's default profile page is a Livewire component for the authenticated user. It renders the profile fields declared by the configured User resource. The page includes personal details, password changes, two-factor authentication management, and account deletion.
+Aura's default profile page lets the signed-in user manage their account. A Livewire component displays the profile fields declared by the configured user resource. The page includes personal details, password changes, two-factor authentication management, and account deletion.
 
 ## Route and feature flag
 
-Aura registers the profile route inside the configured admin domain and `aura.path` prefix. The route name is `aura.profile`. With the default `AURA_PATH=admin`, the URL is `/admin/profile`.
+The profile page uses your configured admin domain and path prefix. Its named route is `aura.profile`, and its default URL is `/admin/profile`. Set the prefix through `aura.path`, which defaults to `admin` through the `AURA_PATH` environment variable.
 
-The component checks `aura.features.profile` during `mount()`. Set it to `false` to keep the route registered but return a 403 response:
+To disable access to the page, set `aura.features.profile` to `false`. The component checks this setting when it mounts and returns a 403 response. The route remains registered:
 
 ```php
 'features' => [
@@ -14,7 +14,7 @@ The component checks `aura.features.profile` during `mount()`. Set it to `false`
 ],
 ```
 
-The component is configurable:
+You can replace the page with your own Livewire component through the profile component setting:
 
 ```php
 'components' => [
@@ -22,15 +22,17 @@ The component is configurable:
 ],
 ```
 
-The route uses this component value, so an application component can replace `Aura\Base\Livewire\Profile`.
+The profile route uses the component you configure here.
 
 ## Profile component and view
 
-`Aura\Base\Livewire\Profile` uses the `InputFields` and `MediaFields` traits. On mount it checks the feature flag, loads `Auth::user()` into `model`, and copies the model attributes into `form`.
+The default component, `Aura\Base\Livewire\Profile`, loads the authenticated user when it mounts, after checking that the page is enabled. It stores the user in its `model` property and copies the user's attributes into `form`. The input and media behavior comes from the `InputFields` and `MediaFields` traits.
 
-The component's `getFields()` method returns `$this->model->getProfileFields()`. The profile field list therefore comes from the User resource. The component's `rules()` method uses those fields to build `form.fields.*` validation rules. `save()` validates the form and updates the user. The component renders `aura::livewire.user.profile` with the `aura::components.layout.app` layout.
+The user resource defines which fields appear through `getProfileFields()`. The component returns these definitions from `getFields()` and uses them to build validation rules for `form.fields.*` in its `rules()` method. Saving validates the form before updating the user.
 
-The package view is `resources/views/livewire/user/profile.blade.php`. It renders the breadcrumbs, page heading, Save button, validation errors, and the fields returned by `getProfileFields()`. It also exposes two injection points:
+The page renders the `aura::livewire.user.profile` view inside the `aura::components.layout.app` layout.
+
+The package view at `resources/views/livewire/user/profile.blade.php` displays the breadcrumbs, heading, Save button, validation errors, and profile fields. Use its two injection points to add content around the header:
 
 ```php
 use Aura\Base\Facades\Aura;
@@ -58,22 +60,22 @@ Edit `resources/views/vendor/aura/livewire/user/profile.blade.php` in the host a
 
 ## Default profile fields
 
-`Aura\Base\Traits\ProfileFields` supplies the default `getProfileFields()` method used by `Aura\Base\Resources\User`. It returns one flat field array grouped into these tabs:
+The default user resource gets its profile fields from the `Aura\Base\Traits\ProfileFields` trait. Its `getProfileFields()` method returns a flat array, with tab fields dividing the page into these sections:
 
 | Tab | Fields |
 | --- | --- |
-| Details | A `Text` field for `name` and a `Text` field for `email`. Their rules are `required` and `required|email`. |
-| Password | `current_password`, `password`, and `password_confirmation` Password fields. |
-| 2FA | A `LivewireComponent` field that renders `aura::two-factor-authentication-form`. |
-| Delete | A `View` field that renders `aura::profile.delete-user-form`. |
+| Details | Text inputs for the name and email address. Both are required, and the email must be valid. |
+| Password | Password inputs for the current password, new password, and confirmation. |
+| 2FA | A Livewire component for managing two-factor authentication, rendered by `aura::two-factor-authentication-form`. |
+| Delete | An account deletion form, rendered by the view field `aura::profile.delete-user-form`. |
 
-Each tab is an `Aura\Base\Fields\Tab` with `global => true`, followed by an `Aura\Base\Fields\Panel`. The profile field list is separate from the regular User resource field list. `aura.auth.2fa` does not remove the 2FA field from this list.
+Each tab uses a tab field with `global => true`, followed by a panel field. These profile definitions are separate from the user resource's regular fields. Disabling `aura.auth.2fa` does not remove the 2FA tab.
 
-The default User resource also defines an `avatar` Image field in `getFields()`. `ProfileFields` does not add that field to the profile tab, so the default profile page does not provide an avatar editor. The User resource edit form does show the avatar field. The `avatarUrl` accessor used by the default navigation currently returns a `ui-avatars.com` URL derived from the user's initials rather than the stored `avatar` value.
+The default user resource has an image field for the avatar on its regular edit form, but the profile page does not include an avatar editor. You can [add that field to the profile](#customize-profile-fields). The default navigation uses the `avatarUrl` accessor, which currently returns an image from ui-avatars.com based on the user's initials. It does not display the stored avatar.
 
 ## Saving profile data
 
-Clicking Save calls `Profile::save()`. It validates the profile field definitions and then calls:
+Clicking Save validates the form against the profile field definitions, then updates the user:
 
 ```php
 $this->model->update([
@@ -81,11 +83,11 @@ $this->model->update([
 ]);
 ```
 
-The User resource's regular `getFields()` definitions determine how each slug is saved. Core User attributes such as `name`, `email`, and `password` use the `users` table columns. Other declared input fields, including the default `avatar` Image field, use the User resource's meta storage because the default User resource has `$usesMeta = true`.
+The user resource's regular field definitions determine where values are stored. Core attributes such as the name, email, and password use columns in the `users` table. Other declared inputs, including the avatar image, use meta storage because the default resource enables it with `$usesMeta = true`.
 
-A field that appears only in `getProfileFields()` has no regular field class during the model save and is skipped unless the model supplies a matching `set{Slug}Field()` hook. Add a custom field to both `getProfileFields()` and `getFields()` when the value must persist through Aura's normal field pipeline. See [Fields](/docs/fields) for field definitions and storage profiles.
+Declare custom inputs in both `getProfileFields()` and the resource's regular `getFields()` method so Aura can save their values. A profile-only field has no field class available during the model save, so Aura skips it unless the model defines a matching `set{Slug}Field()` hook. See [Fields](/docs/fields) for field definitions and storage profiles.
 
-The `MediaFields` trait also handles media updates from the profile form. `reorderMedia()` converts the sortable media IDs and sends them through `updateField()`, which updates `form.fields` and dispatches the media update events used by media fields.
+Media fields also support updates in the profile form through the `MediaFields` trait. When media is reordered, `reorderMedia()` converts the sortable IDs and passes them to `updateField()`. This updates the form's field values and dispatches the events that media fields use to refresh their state.
 
 ## Password changes
 
@@ -99,17 +101,19 @@ The default Password tab defines these rules:
 
 The current password is required only when a new password is supplied. A new password must be at least 12 characters, use upper- and lowercase letters, contain a number and a symbol, and pass Laravel's `uncompromised` rule.
 
-When the password changes, `Profile::save()` updates the password separately, removes all three password values from the form data before saving the remaining fields, and calls `logoutOtherBrowserSessions()`. That method deletes the user's other rows from the configured sessions table when the table exists. It leaves the current session row in place. This revokes database-backed browser sessions when the application has a matching sessions table. The separate `PUT /password` authentication endpoint does not call this profile method.
+When the password changes, the profile component updates it separately and removes all three password inputs before saving the remaining fields. It then calls `logoutOtherBrowserSessions()` to revoke the user's other database-backed browser sessions. This deletes the user's other rows from the configured sessions table, if that table exists, and keeps the current session.
+
+This behavior depends on the application having a matching sessions table. The separate `PUT /password` authentication endpoint does not call the profile component's session cleanup method.
 
 ## Two-factor authentication management
 
-The default 2FA field renders `Aura\Base\Livewire\TwoFactorAuthenticationForm`. `Aura\Base\Resources\User` uses Fortify's `TwoFactorAuthenticatable` trait. The Livewire component calls Fortify's actions directly:
+The default user resource supports two-factor authentication through Fortify's `TwoFactorAuthenticatable` trait. On the profile page, `Aura\Base\Livewire\TwoFactorAuthenticationForm` calls Fortify's actions to manage setup and recovery codes:
 
-- `enableTwoFactorAuthentication()` confirms the password, creates the secret and recovery codes, and shows the QR code and confirmation input.
-- `confirmTwoFactorAuthentication()` confirms the submitted authenticator code and shows the recovery codes.
-- `regenerateRecoveryCodes()` creates a new set of recovery codes.
-- `showRecoveryCodes()` displays the current recovery codes after password confirmation.
-- `disableTwoFactorAuthentication()` confirms the password and clears the 2FA data.
+- Enabling two-factor authentication confirms the password, creates the secret and recovery codes, and displays the QR code and confirmation input.
+- Confirming setup checks the submitted authenticator code and displays the recovery codes.
+- Regenerating recovery codes replaces them with a new set.
+- Viewing recovery codes displays the current set after password confirmation.
+- Disabling two-factor authentication confirms the password and clears the setup data.
 
 The current package enables Fortify's `confirm` and `confirmPassword` options, so these management actions require password confirmation. When the component mounts, it clears an unconfirmed secret if `two_factor_confirmed_at` is null. A completed setup generates eight recovery codes. The view displays the QR code, decrypted setup key, authenticator-code input, and recovery codes.
 
@@ -121,11 +125,11 @@ The current package enables Fortify's `confirm` and `confirmPassword` options, s
 ],
 ```
 
-The management route names are `aura.two-factor.enable`, `aura.two-factor.confirm`, `aura.two-factor.disable`, `aura.two-factor.qr-code`, `aura.two-factor.secret-key`, and `aura.two-factor.recovery-codes`. Set the profile field aside or override `getProfileFields()` if the management UI must be hidden when the setting is false.
+The management route names are `aura.two-factor.enable`, `aura.two-factor.confirm`, `aura.two-factor.disable`, `aura.two-factor.qr-code`, `aura.two-factor.secret-key`, and `aura.two-factor.recovery-codes`. If disabling this setting should also hide the management UI, omit the field from your profile definitions by overriding `getProfileFields()`.
 
 ## Login-time two-factor challenge
 
-Login-time 2FA uses Fortify's pending-login state. The password login controller invokes Fortify's `RedirectsIfTwoFactorAuthenticatable` action before it authenticates the session. For a confirmed 2FA user, a valid password stores the user ID in the `login.id` session key, redirects to `/two-factor-challenge`, and leaves the web guard unauthenticated.
+Users who have confirmed their two-factor setup must complete a challenge after entering a valid password. Before authenticating the session, the password login controller calls Fortify's `RedirectsIfTwoFactorAuthenticatable` action. It stores the user ID in the `login.id` session key and redirects to `/two-factor-challenge`. The web guard remains unauthenticated until the challenge succeeds.
 
 The challenge routes are guest routes with the canonical Fortify names `two-factor.login` and `two-factor.login.store`. A missing pending-login state redirects back to `login`. A valid authenticator code or recovery code completes the login, consumes a recovery code when one was used, emits Aura's `LoggedIn` event after authentication, and redirects to the intended URL or `aura.auth.redirect`.
 
@@ -133,7 +137,7 @@ These challenge routes remain registered when `aura.auth.2fa` is `false`. Disabl
 
 ## Account deletion
 
-The Delete tab renders `aura::profile.delete-user-form`. The view opens a Livewire confirmation dialog and binds the password to the profile component. It does not submit to a separate account-deletion route.
+The Delete tab opens a Livewire confirmation dialog that asks for the user's password. Its view, `aura::profile.delete-user-form`, binds that password to the profile component instead of submitting to a separate account-deletion route.
 
 `Profile::deleteUser()` requires the current password, deletes the user resolved from `aura.resources.user`, invalidates the current session, regenerates the CSRF token, logs out the guard, and redirects to `/`:
 
@@ -152,11 +156,13 @@ Auth::logout();
 return Redirect::to('/');
 ```
 
+<a id="customize-profile-fields"></a>
+
 ## Customize profile fields
 
-Override `getProfileFields()` on the User resource configured for the application. Keep the parent fields when you want to retain the password, 2FA, and Delete tabs. Add the same custom field definition to `getFields()` so `Profile::save()` can resolve its field class and persist the value.
+Override `getProfileFields()` on your application's user resource to change the profile form. Include the parent fields to retain the password, 2FA, and Delete tabs. Declare custom inputs in the resource's regular `getFields()` method too, so Aura can resolve their field classes and save their values.
 
-This example adds a Preferences tab and stores its value as User meta on the default User storage profile:
+This example adds a Preferences tab with a theme selector. On the default user resource, the selection is saved in meta storage:
 
 ```php
 <?php
@@ -208,7 +214,7 @@ class User extends AuraUser
 }
 ```
 
-To add the existing avatar field to the profile, add an `Aura\Base\Fields\Image` definition with the `avatar` slug to the profile field array. The default User resource already declares that slug in `getFields()`.
+To add an avatar editor, include an image field with the `avatar` slug in your profile definitions. The default user resource already declares this field in its regular field list.
 
 To replace the whole profile component, point `aura.components.profile` to a compatible Livewire component. To change only the markup, publish and override `aura::livewire.user.profile` as described above.
 
@@ -216,5 +222,5 @@ To replace the whole profile component, point `aura.components.profile` to a com
 
 - [Authentication](/docs/authentication) for login, password reset, and Fortify configuration.
 - [Fields](/docs/fields) for field types, validation, and storage.
-- [Resources](/docs/resources) for extending the User resource.
+- [Resources](/docs/resources) for extending the user resource.
 - [Customizing views](/docs/customizing-views) for published Aura views and injection points.

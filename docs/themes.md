@@ -1,14 +1,13 @@
 # Themes
 
-Aura resolves theme values from the package defaults, the host application's
-`config/aura.php`, and the saved Settings option. The saved option controls the
-palette, sidebar, and uploaded logos. Semantic colors and fonts are configured
-in `config/aura.php`.
+Use the Settings page to choose color palettes, adjust the sidebar, and upload
+logos. Configure semantic colors and fonts in your application's
+`config/aura.php`. Aura combines these settings with the package defaults when
+it renders the theme.
 
 ## Configuration defaults
 
-The published `config/aura.php` contains the theme defaults. The current main
-defaults are:
+The published `config/aura.php` contains these theme defaults:
 
 ```php
 'theme' => [
@@ -34,10 +33,10 @@ The Settings page is enabled by default. Disable it with:
 ],
 ```
 
-The page is mounted at `/{config('aura.path')}/settings`, which is
-`/admin/settings` when the default path is used. `Aura\Base\Livewire\Settings`
-returns a 404 when the feature is disabled and a 403 unless the current user
-is a super admin.
+Open `/admin/settings` to change the theme. If you changed the admin path in
+`aura.path`, the Settings page uses that path instead. Only super admins can
+access the page. Other users receive a 403 response, and disabling the feature
+makes the page return a 404.
 
 ## The Settings screen
 
@@ -54,17 +53,15 @@ The form contains these fields:
 | Primary color palette | `color-palette` | 39 presets or `custom` |
 | Gray color palette | `gray-color-palette` | 14 presets or `custom` |
 
-The sidebar dark mode field is shown only when `darkmode-type` is `auto`.
-When either palette is `custom`, the form shows color fields for shades
-`25`, `50`, `100`, `200`, `300`, `400`, `500`, `600`, `700`, `800`, `900`, and
-`950`.
+The Sidebar dark mode field appears only when dark mode is set to auto.
+Choosing a custom palette reveals color fields for its 12 shades: 25, 50, 100,
+200, 300, 400, 500, 600, 700, 800, 900, and 950.
 
-On the first visit, the component creates one `Option` record with six values
-from `config/aura.php`: `darkmode-type`, `sidebar-type`, `color-palette`,
-`gray-color-palette`, `sidebar-size`, and `sidebar-darkmode-type`. After saving,
-the record contains the complete form field set, including uploaded image IDs
-and custom color values. `save()` clears the application cache after updating
-the record.
+On the first visit, Aura creates a settings record using your configured dark
+mode, sidebar appearance and size, and primary and gray palettes. It also
+includes the sidebar's dark mode appearance. Saving the form stores all its
+fields, including uploaded image IDs and custom colors, then clears the
+application cache.
 
 The record name depends on the teams setting:
 
@@ -81,18 +78,18 @@ $palette = $settings['color-palette'] ?? config('aura.theme.color-palette');
 $darkMode = $settings['darkmode-type'] ?? config('aura.theme.darkmode-type');
 ```
 
-`Aura::getOption('settings')` returns the current team's record when teams are
-enabled and returns an empty array when no record exists. It does not read a
-global record as a fallback for a team that has no settings. Reads are cached
-for one hour. The layout falls back to `config('aura.theme')` when it resolves
-the CSS values.
+When teams are enabled, this reads the current team's settings. It returns an
+empty array if no record exists, without falling back to global settings.
+Aura caches these reads for one hour. The layout uses the theme configuration
+as a fallback when it generates CSS.
 
-The Settings screen has no live preview. Reload the page after saving to make
-the new layout CSS and dark mode class apply.
+The Settings screen has no live preview. Reload after saving to apply the new
+styles and dark mode setting.
 
 ## Color palettes
 
-The primary palette select contains these 39 preset slugs:
+The primary palette offers 39 presets. Use these slugs when configuring a
+palette in code:
 
 ```text
 aura, red, orange, amber, yellow, lime, forest-green, green, emerald,
@@ -102,17 +99,16 @@ slate, dark-slate, blackout, obsidian, amethyst, opal, gray, zinc, neutral,
 stone, sandstone, rose-quartz, olive, smaragd
 ```
 
-The gray palette select contains these 14 preset slugs:
+The gray palette offers these 14 presets:
 
 ```text
 slate, dark-slate, blackout, obsidian, amethyst, opal, gray, zinc, neutral,
 stone, sandstone, rose-quartz, olive, smaragd
 ```
 
-Every preset defines RGB channel values for the 12 shades listed above. Aura
-emits those values as `--primary-*` and `--gray-*` CSS variables. The custom
-palette fields accept hex colors and the renderer converts them to the same
-space-separated RGB form:
+Each preset provides all 12 shades through the `--primary-*` and `--gray-*`
+CSS variables. For custom palettes, supply hex colors. Aura converts them to
+space-separated RGB values:
 
 ```php
 'theme' => [
@@ -136,14 +132,13 @@ TransformColor::hexToRgb('#3c73f2'); // "60 115 242"
 
 ## Semantic colors and fonts
 
-The `theme.colors` configuration controls semantic values shared by Aura's
-package CSS and a host stylesheet. Aura accepts either a space-separated RGB
-channel string or a single CSS variable reference such as
-`var(--primary-600)`. Do not include `rgb(...)` around the value.
+Semantic colors let you style elements by their purpose, such as a panel
+background or warning message. Define them under `theme.colors` to share the
+same colors between Aura's CSS and your application's stylesheet.
 
-The supported semantic names are `primary`, `background`, `panel`, `border`,
-`text`, `muted`, `success`, `warning`, and `danger`. Configure light and dark
-values separately:
+Use space-separated RGB values or a single CSS variable reference such as
+`var(--primary-600)`. Do not wrap values in `rgb(...)`. The following example
+shows every supported color name, with separate values for light and dark mode:
 
 ```php
 'theme' => [
@@ -183,7 +178,7 @@ values separately:
 ],
 ```
 
-`resources/views/components/layout/colors.blade.php` emits these variables:
+The layout exposes the font and semantic colors as CSS variables:
 
 ```css
 --aura-font-sans
@@ -220,24 +215,26 @@ directory and set a local path:
 ],
 ```
 
-Aura rejects remote URLs, data URLs, backslashes, control characters, and
-parent-directory segments in `font.stylesheet`. Invalid semantic color values
-fall back per token. Invalid font-family entries are dropped, and the package
-font stack is used when no valid family remains.
+The font stylesheet path cannot contain remote or data URLs, backslashes,
+control characters, or parent-directory segments. Aura ignores invalid font
+families and uses its default font stack if none remain. Each invalid semantic
+color falls back to its default independently.
 
 ## Dark mode
 
-`darkmode-type` accepts three values:
+Set `darkmode-type` to one of three values:
 
-- `dark` adds the `dark` class to the document root.
-- `light` removes the `dark` class.
-- `auto` checks `window.matchMedia('(prefers-color-scheme: dark)')`.
+- `dark` always uses dark mode.
+- `light` always uses light mode.
+- `auto` follows the operating system's color preference when the page loads.
 
-Aura's Tailwind 3 configuration uses `darkMode: 'selector'`, so `dark:*`
-utilities respond to the `dark` class on `<html>`. The inline script in the
-layout evaluates the setting when the page loads. It does not dispatch a
-`theme-changed` event or update the class when the setting changes in the
-Settings component. Reload after changing the setting.
+Aura applies dark mode by adding the `dark` class to the document root and
+removes it for light mode. Its Tailwind 3 configuration uses
+`darkMode: 'selector'`, so dark mode utilities respond to that class.
+
+The layout checks the setting on page load. Saving a new setting does not
+update the class or dispatch a `theme-changed` event. Reload the page to apply
+the change.
 
 Favicon switching is separate from the page dark mode setting. Its script
 listens to the operating system color-scheme media query and swaps the light
@@ -267,9 +264,9 @@ The fallback values are:
 --sidebar-icon-hover: var(--primary-200);
 ```
 
-Palettes can override those values. The `aura` palette uses primary shades
-`700`, `600`, `800`, `400`, `300`, and `200` for the six variables. A palette
-without an override uses the fallback values.
+Palettes can override these defaults. The aura palette uses primary shades
+700, 600, 800, 400, 300, and 200 for the six variables, in the order shown above.
+Other palettes use the fallback values unless they provide their own overrides.
 
 `sidebar-type` selects the light-mode CSS:
 
@@ -277,14 +274,14 @@ without an override uses the fallback values.
 - `light` uses `bg-gray-50` with dark text.
 - `dark` uses `#18181b` with light text.
 
-When `darkmode-type` is `auto`, `sidebar-darkmode-type` selects the matching
-dark-mode class. The navigation markup does not add that class for forced
-`light` or forced `dark` mode.
+The sidebar's dark mode appearance, configured with `sidebar-darkmode-type`,
+applies only when the main dark mode setting is auto. Forcing light or dark
+mode does not add the corresponding sidebar class.
 
-The Settings form labels `sidebar-size` as `standard` and `compact`. The
-current navigation template tests the value for truthiness, so both non-empty
-values choose the `md:w-56` width. The wider `md:w-72` branch is used only
-when the value is empty. See the review report for this source defect.
+The Size setting currently has a limitation. Both standard and compact use
+the same sidebar width, `md:w-56`, because the navigation template checks only
+whether the value is non-empty. It uses the wider `md:w-72` width only for an
+empty value.
 
 ## Logos, login backgrounds, and favicons
 
@@ -323,12 +320,12 @@ root-relative paths when customizing them:
 ],
 ```
 
-The shipped `false` favicon defaults pass through the null-coalescing lookup
-and produce an empty `href`. Set the keys to `null`, remove them, or provide
-paths to use the bundled or a custom icon.
+The default favicon settings are `false`, which currently produces an empty
+icon URL. Set them to `null` or remove them to use the bundled icons. To use
+custom icons, provide paths as shown above.
 
-The login layout falls back to `aura.theme` values when no `$appSettings`
-array is passed to it. Verify `/login` after configuring background overrides.
+If you render the login layout without passing an `$appSettings` array, it
+uses the theme configuration. Check `/login` after changing the backgrounds.
 
 ## View overrides and extension points
 
@@ -405,15 +402,15 @@ shipped config maps `aura.*`, `sidebar.*`, and primary and gray shades
 
 ## Focused source references
 
-The implementation for this page is in `config/aura.php`,
-`src/ThemeTokens.php`, `src/Livewire/Settings.php`,
-`src/Livewire/Navigation.php`,
-`resources/views/components/layout/colors.blade.php`,
-`resources/views/components/layout/styles.blade.php`,
-`resources/views/components/layout/login.blade.php`,
-`resources/views/components/layout/favicon.blade.php`,
-`resources/views/navigation/logo.blade.php`, `tailwind.config.js`, and
-`vite.config.js`.
+For implementation details, start with the files relevant to your change:
+
+| Area | Files |
+| --- | --- |
+| Defaults and validation | `config/aura.php`, `src/ThemeTokens.php` |
+| Settings and navigation | `src/Livewire/Settings.php`, `src/Livewire/Navigation.php` |
+| Theme styles | `resources/views/components/layout/colors.blade.php`, `resources/views/components/layout/styles.blade.php` |
+| Login and icons | `resources/views/components/layout/login.blade.php`, `resources/views/components/layout/favicon.blade.php`, `resources/views/navigation/logo.blade.php` |
+| Asset builds | `tailwind.config.js`, `vite.config.js` |
 
 Related guides:
 

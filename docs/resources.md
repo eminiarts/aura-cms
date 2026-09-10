@@ -1,8 +1,10 @@
 # Resources
 
-A resource is a PHP class that extends `Aura\Base\Resource`. It defines a content type through static configuration and a `getFields(): array` method. Aura uses that definition for the admin pages, routes, navigation entry, table, and policy checks. The class remains an Eloquent model, so normal casts, fillable attributes, relationships, scopes, and model events still apply.
+A resource defines a content type and how it appears in the admin. Aura uses it to build pages, routes, navigation, and tables, and to check permissions. Each resource extends `Aura\Base\Resource`, so it is also an Eloquent model. You can use Laravel's casts, fillable attributes, relationships, scopes, and model events as usual.
 
-This page covers the resource contract. See [Creating resources](/docs/creating-resources) for the first resource walkthrough and [Fields](/docs/fields) for field types and their options.
+Configure the resource with static properties and define its fields in `getFields()`.
+
+This page is a reference for configuring resources. See [Creating resources](/docs/creating-resources) for the first resource walkthrough and [Fields](/docs/fields) for field types and their options.
 
 <a id="creating-resources"></a>
 ## Creating a resource
@@ -14,7 +16,7 @@ php artisan aura:resource Article
 php artisan aura:resource Product --custom
 ~~~
 
-The command signature is `aura:resource {name} {--custom}`. With the default configuration, it writes the class to app/Aura/Resources in the `App\Aura\Resources` namespace.
+The command accepts a resource name and an optional `--custom` flag. By default, it writes the class to `app/Aura/Resources` in the `App\Aura\Resources` namespace.
 
 A posts-backed resource starts with these declarations:
 
@@ -47,16 +49,16 @@ class Article extends Resource
 }
 ~~~
 
-The generated class is enough for Aura to register the resource. The default field with the title slug is saved in the shared posts table. The generated slug becomes the route segment and the route-name segment.
+Aura automatically registers the generated class. The default title field is saved in the shared posts table. The resource slug determines its URL segment and route names.
 
-The --custom stub sets public static `$customTable` = true, public static bool `$usesMeta` = false, and a protected `$table` name. It does not create the database table. Add a migration and make every input field slug a column when meta storage is disabled.
+With `--custom`, the generated class uses a dedicated table and disables meta storage. It declares a public static `$customTable` property set to true, a public static boolean `$usesMeta` property set to false, and a protected `$table` name. The command does not create the table. Add a migration with a column for every input field slug.
 
 ![Resource index page](/images/docs/resources/resources-index.png)
 
 <a id="registration-and-discovery"></a>
 ## Registration and discovery
 
-Aura registers application resources by scanning `config('aura-settings.paths.resources.path')` and keeping classes that extend `Aura\Base\Resource`. The default paths are:
+Aura discovers resource classes in the configured application directory. It registers classes that extend the base resource. Set the directory with `aura-settings.paths.resources.path`. The default paths are:
 
 ~~~php
 // config/aura-settings.php
@@ -77,7 +79,7 @@ Aura registers application resources by scanning `config('aura-settings.paths.re
 ],
 ~~~
 
-Aura also registers the built-in resources from `config('aura.resources')`. Attachment, Option, Permission, Role, and User are registered by default. Team and TeamInvitation are registered only when `config('aura.teams')` is true.
+Aura also registers the built-in resources listed in `aura.resources`. These include attachments, options, permissions, roles, and users. Teams and team invitations are registered only when `aura.teams` is enabled.
 
 A package or service provider can add resources to the registry:
 
@@ -89,7 +91,7 @@ Aura::registerResources([
 ]);
 ~~~
 
-`Aura::getResources()` returns the registered class strings. `Aura::getAppResources()` scans the configured application directory and returns only subclasses of Resource.
+To retrieve all registered resource class names, call `Aura::getResources()`. To scan only the application directory for resource subclasses, use `Aura::getAppResources()`.
 
 <a id="configuration"></a>
 ## Resource configuration
@@ -113,7 +115,9 @@ public static string $type = 'Article';
 public static ?string $slug = 'article';
 ~~~
 
-`getSlug()` uses the explicit slug. If it is null, it slugifies `$name` or the class basename. `singularName()` uses the raw static `$slug` when no singular label is set. `pluralName()` pluralizes that singular label. The static `getPluralName()` method instead pluralizes `$type`, so use the instance `pluralName()` method for the navigation label.
+An explicit slug controls the route. If you leave it null, `getSlug()` derives a slug from the configured name or the class basename.
+
+Navigation labels follow a separate fallback. Without a singular label, `singularName()` uses the raw static slug. The instance method `pluralName()` pluralizes that label. Use it for navigation labels. The static `getPluralName()` method instead pluralizes the resource type.
 
 The generated stub makes `$slug` public. Keep that declaration even when you rely on a derived route slug, because the permission generator currently reads the static property directly.
 
@@ -128,7 +132,7 @@ The generated stub makes `$slug` public. Keep that declaration even when you rel
 | `$icon` | protected static ?string = null | SVG returned by `getIcon()`. |
 | `$contextMenu` | public static = true | Whether the table context menu is enabled. |
 
-`getIcon()` returns the configured `$icon` or Aura's default SVG. Override it when the icon must be computed at runtime. `getBadge()` and `getBadgeColor()` return empty values by default and can add a navigation badge.
+Aura uses the configured icon or its default SVG. Override `getIcon()` to compute an icon at runtime. To add a navigation badge, override `getBadge()` and `getBadgeColor()`, which return empty values by default.
 
 ### Storage and capabilities
 
@@ -175,7 +179,9 @@ public array $widgetSettings = [
 ];
 ~~~
 
-The inherited Eloquent properties `$table`, `$fillable`, `$casts`, `$hidden`, and `$appends` keep their normal Laravel meaning. A resource starts with posts as its table, the shared posts columns in its base fillable list, meta hidden from serialization, and fields appended to array and JSON output. When `$usesMeta` is true, the constructor eager loads meta.
+The inherited Eloquent properties for the table, fillable attributes, casts, hidden attributes, and appended attributes keep their normal Laravel meaning.
+
+By default, a resource uses the posts table and includes its shared columns in the fillable list. Meta is hidden from serialization, while the computed fields are appended to array and JSON output. When meta storage is enabled, the constructor eager loads the meta relation.
 
 Do not add a type when redeclaring an untyped inherited property:
 
@@ -187,12 +193,12 @@ public static $customTable = true;
 public static bool $customTable = true;
 ~~~
 
-The typed properties `$type`, `$slug`, `$name`, `$group`, `$sort`, `$showInNavigation`, `$icon`, `$usesMeta`, `$title`, and `$indexViewEnabled` must keep compatible types. The generated stub is the safe starting point.
+When overriding a typed property, keep the type declared on the base resource. Start with the generated stub and use the property reference above when adding overrides.
 
 <a id="fields"></a>
 ## Fields
 
-`getFields(): array` returns plain configuration arrays. The type value must be a fully qualified field class string because Aura resolves it through the container.
+Define each field as a configuration array returned by `getFields()`. The type must be a fully qualified field class name so Aura can resolve it through the container.
 
 ~~~php
 public static function getFields(): array
@@ -234,7 +240,7 @@ Common field keys are:
 | instructions | Help text shown under the field. |
 | conditional_logic | Rules or a closure that controls visibility. |
 
-Wrapper fields such as Tab and Panel can pass display flags to nested fields. Use [Fields](/docs/fields) for the complete field catalogue and per-type options.
+Wrapper fields such as tabs and panels can pass display flags to nested fields. Use [Fields](/docs/fields) for the complete field catalogue and per-type options.
 
 The resource field helpers are:
 
@@ -253,7 +259,7 @@ The resource field helpers are:
 <a id="storage"></a>
 ## Storage
 
-Aura combines two independent flags. `$customTable` selects the model table. `$usesMeta` selects whether overflow field values can use the meta table.
+You can choose the resource's table and meta storage independently. Set `$customTable` to use a dedicated table. Set `$usesMeta` to allow fields that are not stored in table columns to use the meta table.
 
 | `$customTable` | `$usesMeta` | Storage behavior |
 |---|---|---|
@@ -308,7 +314,7 @@ class Product extends Resource
 }
 ~~~
 
-For posts-backed resources, Aura fills the posts columns content, user_id, team_id when the relevant configuration and authenticated user are present, type from `$type`, and slug from the title when the row uses the posts table. `$title` initializes an empty title when the resource opts into title handling.
+For resources stored in posts, Aura initializes the content and, when the configuration and authenticated user allow it, the user and team IDs. It sets the type from the resource's `$type` property and derives the slug from the title. Enabling `$title` also initializes an empty title.
 
 The built-in meta scopes query the polymorphic meta relation:
 
@@ -327,15 +333,17 @@ These scopes use relation subqueries. Store frequently filtered or sorted values
 <a id="attributes"></a>
 ## Attribute resolution
 
-Resource property access is meta-aware. The resolution order is:
+Reading a property can return a normal Eloquent value or a value from the resource's fields. Aura resolves it in this order:
 
-1. Eloquent attributes, accessors, and loaded or lazy relations.
-2. A non-null result from that Eloquent lookup, including 0, false, and an empty string.
-3. A relation field's `getRelation()` result.
-4. The computed fields collection.
-5. null when no value exists.
+1. It checks Eloquent attributes, accessors, and loaded or lazy relations.
+2. It returns the Eloquent result if it is not null. Zero, false, and an empty string all count as values.
+3. Otherwise, it checks the relation field's `getRelation()` result.
+4. It then checks the computed fields collection.
+5. It returns null if no value exists.
 
-The fields accessor resolves input fields and caches the collection on the model instance. `clearFieldsAttributeCache()` clears it and refreshes the meta relation when needed. The default `aura.features.legacy_fields_append` setting is true, so fields is included in serialization. Set it to false when serialized resources do not need the computed map, then opt in for a model with `$model->append('fields')`.
+The fields accessor resolves input fields and caches the collection on the model instance. Call `clearFieldsAttributeCache()` to clear it and refresh the meta relation when needed.
+
+By default, serialized resources include the computed fields map. If you do not need it, set `aura.features.legacy_fields_append` to false. You can still include it for an individual model with `$model->append('fields')`.
 
 A resource can intercept one field during reads and saves:
 
@@ -351,7 +359,7 @@ A `get{Slug}Field($value)` method transforms the resolved value. A `set{Slug}Fie
 <a id="routes-and-pages"></a>
 ## Routes and page components
 
-Aura registers resource routes inside the web and auth middleware configured at `aura-settings.middleware.aura-admin`. The prefix is `config('aura.path')`, which defaults to admin. `config('aura.domain')` can restrict the routes to a domain.
+Resource routes use the admin middleware configured at `aura-settings.middleware.aura-admin`, including web and authentication middleware. The URL prefix defaults to admin and can be changed with `aura.path`. Set `aura.domain` to restrict the routes to a domain.
 
 For a resource with slug article, the generic route names and paths are:
 
@@ -422,7 +430,7 @@ The Resource Editor route is `aura.resource.editor`. It is available only in the
 <a id="navigation"></a>
 ## Navigation and icons
 
-`navigation()` returns the sidebar data built from `pluralName()`, `getSort()`, `getGroup()`, `getDropdown()`, `getShowInNavigation()`, `getIndexRoute()`, and `icon()`. A missing index route therefore breaks navigation generation for that resource.
+The `navigation()` method builds the sidebar entry from the resource's plural label, sort order, group, dropdown, visibility, index route, and icon. A missing index route breaks navigation generation for that resource.
 
 Override the navigation values with the static properties or these methods:
 
@@ -461,7 +469,7 @@ public function kanbanSettings(): array;
 public function indexTableSettings();          // []
 ~~~
 
-The default Kanban settings use status as group_field, title as card_title, no explicit order, and show empty columns. Set enabled, group_field, columns, card_title, card_subtitle, order_by, and show_empty_columns in `kanbanSettings()`.
+By default, the Kanban view groups cards by status, uses the title as the card heading, and shows empty columns without an explicit order. Configure it through `kanbanSettings()` using the enabled, group_field, columns, card_title, card_subtitle, order_by, and show_empty_columns options.
 
 The table uses input fields with on_index enabled for its headers and always prepends an ID column. It also prepends title when `usesTitle()` is true. Field classes provide filter behavior. Define an optional `indexQuery($query, $table = null)` method to constrain the index query before field filters run:
 
@@ -477,7 +485,7 @@ public function indexQuery($query, $table = null)
 <a id="widgets"></a>
 ## Widgets
 
-Return widget definitions from `getWidgets(): array`. Aura renders them above the resource table.
+Widgets appear above the resource table. Define them in `getWidgets()`:
 
 ~~~php
 public static function getWidgets(): array
@@ -499,7 +507,7 @@ The date range available to widgets comes from the resource's `$widgetSettings` 
 <a id="actions"></a>
 ## Actions
 
-A row action key is the method name Aura calls on the resource. Define row actions with an `actions()` method or the public `$actions` array. `getActions()` uses the method when it exists and otherwise falls back to the property.
+Row actions call methods on the resource. Each action's key must match the method to call. Define actions with an `actions()` method or the public `$actions` array. When both exist, `getActions()` uses the method.
 
 ~~~php
 public function actions(): array
@@ -529,7 +537,9 @@ public function publish(): void
 }
 ~~~
 
-Supported row-action options are label, description, icon for raw SVG, icon-view for an included Blade view, class, onclick, conditional_logic, confirm, confirm-title, confirm-content, confirm-button, and confirm-button-class. The ability option is used by table mutation authorization. Resource-page `singleAction()` authorizes update unless `allowedToPerformActions()` returns true, then checks that the action is declared and its conditional closure allows it.
+Actions can have a label, description, CSS class, click handler, visibility condition, and confirmation dialog. The supported options are label, description, icon, icon-view, class, onclick, conditional_logic, confirm, confirm-title, confirm-content, confirm-button, and confirm-button-class. Use icon for raw SVG or icon-view to include a Blade view.
+
+Table mutations use the ability option for authorization. On resource pages, `singleAction()` requires update authorization unless `allowedToPerformActions()` returns true. It then checks that the action is declared and allowed by its conditional closure.
 
 Bulk actions use `bulkActions()` or the public `$bulkActions` array. The method takes precedence over the property:
 
@@ -556,7 +566,7 @@ php artisan aura:create-resource-permissions
 php artisan aura:create-resource-permissions --team=3
 ~~~
 
-The optional --team value is a numeric team ID. Without it, the job uses the authenticated user's current team when teams are enabled. It creates these eight abilities for each eligible registered resource:
+The optional `--team` value is a numeric team ID. Without it, the job uses the authenticated user's current team when teams are enabled. It creates these eight abilities for each eligible registered resource:
 
 view-{slug}, viewAny-{slug}, create-{slug}, update-{slug}, restore-{slug}, delete-{slug}, forceDelete-{slug}, and scope-{slug}.
 
@@ -574,12 +584,12 @@ The all-resources job skips Team and its subclasses. Custom actions do not creat
 
 Setting `$createEnabled`, `$editEnabled`, `$viewEnabled`, or `$indexViewEnabled` to false denies the matching policy ability. Super Admins and Global Admins have blanket resource access, except that a team Super Admin cannot mutate a Global Role. A user with the scope-{slug} permission and the matching read or write ability is restricted to rows whose user_id is their own.
 
-When `config('aura.teams')` is true, TeamScope restricts most resource queries to the active team. User queries use team membership, the Team resource itself is left unscoped, and Role queries include the team's roles and global roles. When teams are disabled, Aura does not register team resources and does not apply team filtering.
+When teams are enabled through `aura.teams`, most resource queries are restricted to the active team. User queries use team membership. The team resource itself is unscoped, and role queries include both the team's roles and global roles. When teams are disabled, Aura does not register team resources or apply team filtering.
 
 <a id="relationships"></a>
 ## Relationships
 
-Every Resource provides these Eloquent relationships:
+Every resource provides these Eloquent relationships:
 
 ~~~php
 $article->meta();     // morphMany when $usesMeta is true
@@ -603,7 +613,9 @@ A relationship field can point to another resource:
 ]
 ~~~
 
-HasMany, Tags, and AdvancedSelect use relation field behavior, so `Resource::__call()` can expose their configured relation as a method. BelongsTo is an input field and stores the foreign key; it does not create a magic relation method. Use ordinary Eloquent relationships when you need a named belongsTo relation.
+Has-many, tags, and advanced select fields can expose their configured relation as a method through the resource's `__call()` handler.
+
+A belongs-to field stores the foreign key as an input value. It does not create a relation method. Define an ordinary Eloquent relationship when you need a named belongs-to relation.
 
 <a id="lifecycle"></a>
 ## Save lifecycle
@@ -632,7 +644,7 @@ The built-in resources use these storage profiles:
 | `Aura\Base\Resources\Attachment` | attachment | Shared posts table | Uses the dedicated media index route. |
 | `Aura\Base\Resources\Option` | option | Custom options table | Stores Aura options. |
 
-The base Resource does not use Laravel's SoftDeletes trait and has no `$softDeletes` flag. Add the trait to a resource when the table has a deleted_at column:
+Resources do not support soft deletes by default, and there is no `$softDeletes` flag. Add Laravel's `SoftDeletes` trait to the resource and make sure its table has a `deleted_at` column:
 
 ~~~php
 use Aura\Base\Resource;

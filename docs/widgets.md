@@ -1,6 +1,6 @@
 # Widgets
 
-Resource widgets are Livewire components that Aura renders above a resource's index table. Define them in the resource's static getWidgets() method. Aura passes the definitions to a shared date-range container, which renders one Livewire component for each definition.
+Resource widgets display values and charts above a resource's index table. Each widget is a Livewire component, and the row shares a date-range selector. Define the widgets in the resource's static `getWidgets()` method.
 
 The default dashboard is separate. It calculates its own resource counts and recent activity and does not read resource widget definitions.
 
@@ -36,7 +36,7 @@ class Order extends Resource
 }
 ~~~
 
-Aura provides an empty getWidgets() method through the resource configuration trait, so a resource with no widgets can leave the generated method unchanged:
+Resources have no widgets by default. If you do not need any, leave the generated method unchanged:
 
 ~~~php
 public static function getWidgets(): array
@@ -45,7 +45,7 @@ public static function getWidgets(): array
 }
 ~~~
 
-The resource index calls Resource::widgets(). It returns null when getWidgets() is empty, or a collection containing the definition arrays unchanged. The index view then mounts the aura::widgets container. No separate registration step is needed for resource-level widgets.
+No separate registration step is needed. The index reads the definitions through `Resource::widgets()` and renders them in the shared widget container. This method returns the definitions unchanged as a collection, or `null` when none are defined.
 
 Use these keys in a definition:
 
@@ -66,7 +66,7 @@ Unknown keys are ignored by the built-in components. Definitions are PHP arrays.
 
 ## Built-in widget classes
 
-All built-in classes are in the Aura\Base\Widgets namespace.
+All built-in widget classes use the `Aura\Base\Widgets` namespace.
 
 | Class | Output | Data |
 | --- | --- | --- |
@@ -78,11 +78,11 @@ All built-in classes are in the Aura\Base\Widgets namespace.
 | Pie | Pie chart | Values grouped by a field, or one Total value without a column |
 | Donut | Donut chart | Values grouped by a field, or one Total value without a column |
 
-SparklineArea, SparklineBar, and Bar extend Sparkline. They change the view while sharing its date grouping and calculation code.
+The area sparkline, bar sparkline, and bar chart extend `Sparkline`. They share its calculations and date grouping, but use different views.
 
 ### ValueWidget
 
-ValueWidget runs the selected calculation for the current period and for the preceding period of equal length. It displays the current value and the percentage change unless the definition sets previous to false.
+The value widget compares the selected period with the preceding period of equal length. It shows the current value and percentage change. Set `previous` to `false` to hide the comparison.
 
 ~~~php
 [
@@ -95,11 +95,11 @@ ValueWidget runs the selected calculation for the current period and for the pre
 ],
 ~~~
 
-count is the default method and ignores column. sum, avg, min, and max aggregate the selected column. The column may be a physical table field or a meta field. Numeric meta values are cast to signed integers before the aggregate is calculated.
+By default, the widget counts records and ignores the selected column. To calculate a sum, average, minimum, or maximum, set `method` to `sum`, `avg`, `min`, or `max` and choose a `column`. This can be a physical table field or a meta field. The widget casts numeric meta values to signed integers before calculating the result.
 
-queryScope is optional. When it names a scope that exists on the resource, ValueWidget applies that scope to the query. A missing scope is ignored by its legacy query path.
+To filter the records, set `queryScope` to the name of an Eloquent scope on the resource. The value widget applies the scope if it exists. Its legacy query path ignores a missing scope.
 
-Set a numeric goal to display progress toward a target:
+Set a numeric `goal` to display progress toward a target:
 
 ~~~php
 [
@@ -115,9 +115,9 @@ Set a numeric goal to display progress toward a target:
 
 ### Sparkline family
 
-Sparkline, SparklineArea, SparklineBar, and Bar group records by the resource's created_at column. They fill missing dates with zero values.
+All sparkline widgets and the bar chart group records by day using the resource's `created_at` column. Days without records have a value of zero.
 
-Sparkline, SparklineArea, and SparklineBar return current and previous series. Bar returns both series as data, but its view renders the previous series only when the definition contains a previous key:
+These widgets return data for both the current and previous periods. The bar chart only displays the previous period when its definition contains a `previous` key:
 
 ~~~php
 [
@@ -135,7 +135,7 @@ Sparkline, SparklineArea, and SparklineBar return current and previous series. B
 ],
 ~~~
 
-For count, or when no usable aggregate method and column are supplied, the components count rows per day. sum, avg, min, and max are used for numeric physical fields on registered resources and for meta fields through the legacy query path. A non-meta field that is not a supported numeric field falls back to a row count.
+By default, these widgets count records per day. They also support sums, averages, minimums, and maximums for numeric physical fields on registered resources. Meta fields support these calculations through the legacy query path. If the method or column cannot be used, the widgets fall back to counting records. This includes physical fields that are not supported numeric fields.
 
 ~~~php
 // Counts rows per day.
@@ -155,11 +155,11 @@ For count, or when no usable aggregate method and column are supplied, the compo
 ],
 ~~~
 
-Do not pass a date column to select the grouping field. The built-in sparkline queries always group by created_at.
+The grouping date cannot be changed by passing a date column. Built-in sparklines always group by `created_at`.
 
 ### Pie and Donut
 
-Pie and Donut group records by column. With no column, they return one Total count. With a column, count groups rows by its value. sum, avg, min, and max aggregate numeric values. Physical fields and meta fields are supported, subject to the resource field and storage configuration.
+Pie and donut charts group records by the selected `column` and count the records in each group. Without a column, they return a single count labelled Total. They also support sums, averages, minimums, and maximums of numeric values. You can use physical fields or meta fields, subject to the resource's field and storage configuration.
 
 ~~~php
 [
@@ -171,11 +171,11 @@ Pie and Donut group records by column. With no column, they return one Total cou
 ],
 ~~~
 
-The chart views use the current period's grouped values. The components also calculate the preceding period for their cached value payload.
+The charts display the current period's grouped values. They also calculate and cache values for the preceding period.
 
 ## Date ranges
 
-The Aura\Base\Widgets\Widgets container owns the date selection for a resource's widget row. On mount it reads the resource's public widgetSettings property. The default resource configuration uses 30d and includes these keys:
+The widget row shares one date selection. When it mounts, the container reads the resource's public `widgetSettings` property. The default range is the last 30 days, using `30d`. The default configuration includes these ranges:
 
 | Key | Range |
 | --- | --- |
@@ -206,9 +206,9 @@ public array $widgetSettings = [
 ];
 ~~~
 
-The container dispatches dateFilterUpdated with start and end when the selection changes. Built-in widgets listen for that event. The shipped select omits the all option from its choices, although all remains a valid default value in the component.
+When the selection changes, the container sends the start and end dates in a `dateFilterUpdated` event. Built-in widgets listen for this event. The date selector omits `all`, although the component accepts it as a default value.
 
-all is not currently a reliable all-time setting for the built-in widgets. Widgets sets both bounds to null, while ValueWidget, Pie, and Donut pass those null values through Carbon parsing and their date-bounded queries. Sparkline supplies a 30-day fallback when its bounds are null. Use a bounded range until null-bound handling is changed.
+Use a bounded date range with built-in widgets. The `all` setting is not currently reliable. It sets both dates to `null`, which the value, pie, and donut widgets pass through Carbon parsing and date-bounded queries. Sparklines instead fall back to 30 days when the dates are null.
 
 ## How widgets render on an index page
 
@@ -237,13 +237,23 @@ The container renders each definition with the definition array, the resource in
 ], key($widget['slug']))
 ~~~
 
-The widgets_before and widgets_after injection points let an application add markup around the widget row. They do not add widgets to the default dashboard.
+Use the `widgets_before` and `widgets_after` injection points to add markup around the widget row. These affect the resource index, not the default dashboard.
 
-The built-in Livewire aliases include aura::widgets, aura::widgets.value-widget, aura::widgets.sparkline-area, aura::widgets.sparkline-bar, aura::widgets.bar, aura::widgets.pie, and aura::widgets.donut. A custom definition can use its fully qualified component class directly.
+A custom definition can use its fully qualified component class directly. If you need a Livewire alias, the built-in container uses `aura::widgets`. Its widget aliases are `aura::widgets.value-widget`, `aura::widgets.sparkline-area`, `aura::widgets.sparkline-bar`, `aura::widgets.bar`, `aura::widgets.pie`, and `aura::widgets.donut`.
 
 ## Build a custom widget
 
-Extend Aura\Base\Widgets\Widget, compute the value for the dates you receive, return a view, and listen for dateFilterUpdated. The base class provides widget, model, start, end, loaded, isCached, format(), cacheKey, cacheDuration, loadWidget(), and mount().
+To build a custom widget, extend `Aura\Base\Widgets\Widget`. Calculate a value for the supplied dates, return a view, and listen for `dateFilterUpdated` to handle date changes.
+
+The base class provides the following properties and methods:
+
+| Purpose | Members |
+| --- | --- |
+| Widget definition and resource | `widget`, `model` |
+| Date range | `start`, `end` |
+| Loading state | `loaded`, `isCached` |
+| Cache settings | `cacheKey`, `cacheDuration` |
+| Formatting and lifecycle | `format()`, `loadWidget()`, `mount()` |
 
 ~~~php
 namespace App\Widgets;
@@ -315,11 +325,11 @@ Reference the class in the resource:
 ],
 ~~~
 
-The example uses the same cache properties as the built-in cached widgets. If the resource can use the all setting, handle null start and end in a custom widget before parsing them.
+The example uses the same cache properties as the built-in cached widgets. If the resource allows the `all` date range, handle null start and end dates before parsing them.
 
 ## Discovery and registration
 
-Aura publishes widget discovery settings in config/aura-settings.php:
+Configure widget discovery in `config/aura-settings.php`:
 
 ~~~php
 'widgets' => [
@@ -329,11 +339,13 @@ Aura publishes widget discovery settings in config/aura-settings.php:
 ],
 ~~~
 
-At boot, Aura scans the configured path, converts PHP file paths to the configured namespace, and registers the discovered class names in its global registry. Aura::getAppWidgets() performs the scan. Aura::registerWidgets() adds classes to the registry, and Aura::getWidgets() returns the registered list.
+When the application boots, Aura scans the configured directory and maps the PHP file paths to class names in the configured namespace. It adds these classes to a global widget registry.
 
-This registry is separate from a resource's getWidgets() definitions. The built-in resource index consumes the definitions returned by the resource. The default dashboard does not consume either registry.
+To work with this registry directly, use `Aura::getAppWidgets()` to scan for classes, `Aura::registerWidgets()` to add classes, and `Aura::getWidgets()` to retrieve the registered list.
 
-The published register array is present in the configuration file but is not read by the current discovery code. Register additional classes explicitly from a service provider:
+Resource index pages use the definitions returned by the resource's `getWidgets()` method, independently of this registry. The default dashboard uses neither source.
+
+The current discovery code does not read the configuration's `register` array. To add classes to the registry, register them explicitly in a service provider:
 
 ~~~php
 use Aura\Base\Facades\Aura;
@@ -343,29 +355,29 @@ Aura::registerWidgets([
 ]);
 ~~~
 
-A class referenced directly in a resource getWidgets() definition does not need global registration.
+Classes referenced directly in a resource's widget definitions do not need global registration.
 
 ## Resource widgets and the default dashboard
 
-Resource widgets belong to a resource index. The index view calls resource widgets(), mounts the shared container, and then mounts the resource table.
+Resource widgets appear on the resource index, in a shared container above its table.
 
-The default Aura\Base\Livewire\Dashboard component follows a different path. It filters accessible application resources, computes a total count and 30-day count for the first four resources, builds a small inline SVG sparkline, and loads recent resource items and media. It does not call getWidgets(), resource widgets(), or the aura::widgets container.
+The default dashboard calculates its own content. It takes the first four accessible application resources and displays their total counts, 30-day counts, and small SVG sparklines. It also loads recent records and media. It does not read resource widget definitions or render the shared widget container.
 
-config/aura.php selects the dashboard component with aura.components.dashboard. Replacing that component is the supported customization point, but the base package does not provide a dashboard widget registration API. A custom dashboard must define its own Livewire state, queries, and view.
+To customize the dashboard, replace its component through the `components.dashboard` setting in `config/aura.php`. The default is `Aura\Base\Livewire\Dashboard`. The package has no dashboard widget registration API, so a custom dashboard must define its own Livewire state, queries, and view.
 
 ## Caching
 
-ValueWidget, Pie, and Donut wrap their value payloads in cache()->remember(). Their default cache duration is 60, and cache.duration overrides it. The supplied duration is passed to Laravel's cache API as-is.
+Value, pie, and donut widgets cache their calculated values using Laravel's `cache()->remember()`. Set `cache.duration` to override the default duration of 60. Aura passes this value to Laravel's cache API unchanged.
 
 The base cache key is the MD5 hash of the current team ID, resource type, widget slug, start date, and end date. Including the resource type allows two resources to reuse a slug without sharing cached values.
 
-Sparkline, SparklineArea, SparklineBar, and Bar do not wrap their calculations in the base cache. A custom widget can use cacheKey and cacheDuration when it needs caching.
+Sparklines and bar charts do not use the base cache for their calculations. Custom widgets can use the `cacheKey` and `cacheDuration` properties to cache their own values.
 
 ## Focused source and tests
 
 The widget implementation is in src/Widgets. The resource integration is in src/Resource.php, src/Traits/Concerns/AuraResourceConfiguration.php, resources/views/livewire/resource/index.blade.php, and resources/views/components/widgets/index.blade.php. Dashboard behavior is in src/Livewire/Dashboard.php and resources/views/livewire/dashboard.blade.php. Discovery and Livewire aliases are registered in src/Aura.php and src/AuraServiceProvider.php.
 
-The focused tests for parent validation are:
+The focused widget tests are:
 
 - tests/Feature/Widgets/ValueWidgetTest.php
 - tests/Feature/Widgets/SparklineTest.php

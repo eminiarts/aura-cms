@@ -1,12 +1,12 @@
 # Table component
 
-`aura::table` is the Livewire component used by resource index pages. It provides list rendering, search, filters, sorting, selection, bulk actions, column preferences, pagination, and optional grid or Kanban views. Relationship fields such as `HasMany` and `BelongsToMany` use the same component for their nested tables.
+Resource index pages use the table component to display records. Users can search, filter, sort, select records, run bulk actions, and choose which columns to show. The table supports pagination and optional grid or Kanban views. Has-many and many-to-many relationship fields use the same component for their nested tables.
 
-The component class is `Aura\Base\Livewire\Table\Table`. Its behavior is split across the `Settings`, `Search`, `Filters`, `QueryFilters`, `Sorting`, `Select`, `BulkActions`, `PerPagePagination`, `SwitchView`, and `Kanban` traits.
+The Livewire component is registered as `aura::table`. Its class is `Aura\Base\Livewire\Table\Table`, with separate traits for settings, search, filters, sorting, selection, bulk actions, pagination, view switching, and Kanban behavior.
 
 ## Mounting a table
 
-The `model` property must be a resource instance. The built-in resource index creates that instance and mounts the component for you:
+Pass a resource instance to the table's `model` property. The built-in resource index creates the instance and mounts the component for you:
 
 ```blade
 <livewire:aura::table
@@ -21,11 +21,11 @@ For a custom page, resolve the resource from the container:
 <livewire:aura::table :model="app(App\Aura\Resources\Post::class)" />
 ```
 
-Passing a class string directly as `model` is not supported. The component calls instance methods such as `getTableHeaders()`, `defaultPerPage()`, and `tableComponentView()`.
+Do not pass a class name string as the model. The table needs an instance so it can read the resource's headers, page size, and view settings.
 
 ## Settings
 
-The component starts with `Settings::defaultSettings()` and recursively merges the `settings` property you pass to it. The resource index passes `indexTableSettings()` to that property.
+You can override the table's defaults through its `settings` property. Overrides merge recursively with the defaults returned by `Settings::defaultSettings()`. On resource index pages, define these overrides in the resource's `indexTableSettings()` method.
 
 | Key | Default | Effect |
 | --- | --- | --- |
@@ -77,7 +77,7 @@ For a list view, the outer `table` view includes the `list` view. Grid and Kanba
 
 ### Resource defaults
 
-`Resource` includes the `InteractsWithTable` methods below. Return a non-empty Blade view name to enable grid or the legacy Kanban entry point.
+Resources inherit the following defaults through the `InteractsWithTable` trait. Override the methods you need. Returning a non-empty Blade view name from the grid or legacy Kanban view method enables that view.
 
 ```php
 class Post extends Resource
@@ -127,11 +127,13 @@ class Post extends Resource
 }
 ```
 
-`tableView()` changes the list view. `rowView()` changes the row partial used by the standard list. `tableComponentView()` changes the outer Livewire view and is used by resources such as the media resource.
+To customize the list markup, override `tableView()`. To change only its rows, override `rowView()`. The `tableComponentView()` method replaces the outer Livewire view, as the media resource does.
 
 ## Columns
 
-The standard headers come from input fields. `getTableHeaders()` takes fields from `indexHeaderFields()`, removes fields hidden by `on_index => false` or conditional visibility, and returns a `slug => name` map. `getColumns()` returns that map as an array. `getDefaultColumns()` returns a `slug => true` visibility map.
+The table builds its headers from the resource's input fields. Fields with `on_index => false` or a failing visibility condition are excluded.
+
+For custom views, `getTableHeaders()` reads the fields from `indexHeaderFields()` and returns a map of field slugs to header names. The `getColumns()` method returns that map as an array, while `getDefaultColumns()` maps each slug to `true` for its initial visibility.
 
 ```php
 public static function getFields(): array
@@ -153,15 +155,15 @@ public static function getFields(): array
 }
 ```
 
-The `settings.columns` value is the header map. The component's `columns` property is the visibility map. The list and settings views render a header only when its visibility value is truthy.
+Header labels and visibility are separate. The `settings.columns` value maps slugs to labels, while the component's `columns` property tracks visibility. The list and settings views show a header only when its visibility value is truthy.
 
-Column visibility is stored in the user option `columns.{Type}` when a checkbox changes. Dragging the headers calls `reorder(array $slugs)`. With the default `columns_user_key`, the ordered header map is stored in the same user option. Set `columns_global_key` to store the ordered map through Aura for the current team.
+Changing a column checkbox saves its visibility in the user's `columns.{Type}` option. Dragging headers calls `reorder(array $slugs)` to save their order. By default, the ordered header map uses the same user option. You can change that key with `columns_user_key`, or set `columns_global_key` to save the order through Aura for the current team.
 
 ## Search
 
-The search input uses Livewire's debounced `search` property and `updatedSearch()` resets the paginator to page one.
+Search waits briefly after typing before updating the results, using Livewire's debounced `search` property. Each change resets pagination to page one through `updatedSearch()`.
 
-The default query searches only fields whose definition contains `'searchable' => true`. Regular fields use a `LIKE` condition. Meta-backed fields use an `EXISTS` query against the configured meta table.
+Only fields marked with `'searchable' => true` take part in the default search. Aura searches regular columns with a SQL LIKE condition. For fields stored as meta, it uses an EXISTS query against the configured meta table.
 
 ```php
 [
@@ -185,11 +187,11 @@ public function modifySearch($query, $search)
 }
 ```
 
-The default search does not discover relationship fields. Add relationship conditions in `modifySearch()` when they are needed.
+Relationship fields are not included automatically. Add the relationship conditions you need to your custom search method.
 
 ## Filters
 
-The query builder consumes grouped filters in `filters.custom`. A group contains a `filters` list. The first filter is applied with `AND`; later filters use their `main_operator`. Every group after the first uses its `operator` to join with the preceding groups.
+Filters are arranged in groups under `filters.custom`. Each group contains a `filters` list. Within a group, the query applies the first filter with AND and joins later filters using their `main_operator`. Each group after the first uses its own `operator` to join the preceding groups.
 
 ```php
 $filters = [
@@ -236,7 +238,7 @@ Use the grouped methods when building filter state:
 
 `addFilter()` still exists, but it creates a legacy flat entry without a `filters` wrapper. The query builder expects groups, so use `addFilterGroup()` and `addSubFilter()`.
 
-The filter UI gets its field list and operators from each field's `filterOptions()`. The query builder applies the matching condition to a physical table field, a meta field, or a relation-backed taxonomy field. Blank values are ignored for the empty operators and invalid filter payloads fail closed.
+Each field's `filterOptions()` method supplies the fields and operators available in the filter controls. Aura applies the chosen condition to the database column, meta field, or taxonomy relationship as appropriate. Empty-value operators ignore blank values. Invalid filter data fails closed rather than broadening the results.
 
 The operators exposed by the built-in field classes are:
 
@@ -249,13 +251,15 @@ The operators exposed by the built-in field classes are:
 | Tags | `contains`, `does_not_contain` |
 | AdvancedSelect | `contains` |
 
-Tags and relation-backed AdvancedSelect filters use the selected related IDs. The table adds the relation resource type to the filter options before applying the query.
+Tag filters and advanced selects backed by relationships filter by the selected related record IDs. Before applying the query, the table adds the related resource type to the filter options.
 
 ![Table filters](/images/docs/table/table-filters.png)
 
 ### Saved filters
 
-`saveFilter()` validates the filter name and stores the current filter state under a slug made from that name. With `filter.global = false`, it writes the option to the current user. With `filter.global = true` and teams enabled, it writes the option to the current team. `selectedFilter` is in the query string, so selecting a saved filter can survive a reload.
+Users can save the current filters under a name. The `saveFilter()` method validates that name and uses its slug as the storage key. Filters belong to the current user by default. Set `filter.global` to `true` to save them for the current team when teams are enabled.
+
+The selected filter is kept in the `selectedFilter` query parameter, so it can survive a page reload.
 
 ```php
 $this->set('filter.name', 'Popular posts');
@@ -263,21 +267,21 @@ $this->set('filter.global', false);
 $this->call('saveFilter');
 ```
 
-Saved filters are read from the user and current-team option namespaces and merged by slug. `deleteFilter($slug)` removes a saved filter from its owning namespace.
+Aura loads saved filters from both the current user's options and the current team's options, then merges them by slug. Use `deleteFilter($slug)` to remove a filter from the user or team that owns it.
 
-The save dialog also stores `filter.public`, but the current `userFilters()` implementation does not use that flag when loading filters. It does not make a user filter available to other users.
+The save dialog also stores `filter.public`, but Aura does not currently use that flag when loading filters through `userFilters()`. It does not share a user's filter with other users.
 
 ## Sorting
 
-Sorting is single-column. `sortBy($field)` removes any previous field, then cycles the selected field through ascending, descending, and unsorted. When `sorts` is empty, the query uses `defaultTableSort()` and `defaultTableSortDirection()`.
+Users can sort by one column at a time. Calling `sortBy($field)` clears the previous column and cycles the chosen column through ascending, descending, and unsorted. When no user sort is active, the query uses the resource's `defaultTableSort()` and `defaultTableSortDirection()` values.
 
 The built-in sorter handles:
 
-- physical table fields with `orderBy`;
-- meta fields with a join to `meta`, casting Number fields as `DECIMAL(10,2)` and other values as `CHAR`;
-- taxonomy fields with a join to `post_relations`, ordering by the minimum related resource ID.
+- Database columns use `orderBy`.
+- Meta fields join the `meta` table. Number fields are cast to `DECIMAL(10,2)` and other values to `CHAR`.
+- Taxonomy fields join `post_relations` and sort by the lowest related resource ID.
 
-A resource can provide `sort_{slug}($query, $direction)`. The method must change the builder in place. The table stops its default sorting path after it calls the custom method.
+To customize sorting for a column, define `sort_{slug}($query, $direction)` on the resource. Modify the supplied query builder in place. Once this method runs, the table skips its default sorting logic.
 
 ```php
 public function sort_popularity($query, $direction): void
@@ -288,19 +292,15 @@ public function sort_popularity($query, $direction): void
 
 ## Selection and actions
 
-Selection state is held in:
+The component tracks selected row IDs in `selected`. It also keeps the current-page checkbox state in `selectPage` and a flag for selection across all pages in `selectAll`.
 
-- `selected`, the selected row IDs;
-- `selectPage`, the current-page checkbox state;
-- `selectAll`, the flag used by the select-all flow.
-
-The standard view supports shift-click ranges in the browser. `selectPageRows()` adds the current page's IDs to the selection. `selectAll()` resolves all rows matching the active search and filters, across pages. The mutation authorizer caps a bulk selection at 500 rows and checks every selected row inside the table scope.
+Users can select a range of rows with Shift-click. Custom controls can call `selectPageRows()` to add the current page or `selectAll()` to select every record matching the active search and filters across pages. Bulk mutations are limited to 500 selected rows. The table checks every selected record within its current scope before authorizing a mutation.
 
 ### Row actions
 
-The `actions` setting controls the standard row-actions column and the context menu. The row partial renders View and Edit links when the corresponding policies and URL helpers permit them. `view_in_modal` and `edit_in_modal` switch those buttons to the resource modals.
+The `actions` setting controls the row-actions column and context menu. View and Edit links appear only when the resource's policies and URL helpers permit them. Enable `view_in_modal` or `edit_in_modal` to open the corresponding action in a resource modal.
 
-A context menu is rendered when the resource's `getContextMenu()` returns true. Its built-in View and Edit entries call the table's `action()` method. A custom row action must be declared by the resource and must declare an ability unless it is one of the built-in action names.
+The context menu appears when the resource's `getContextMenu()` method returns true. Its View and Edit entries call the table's `action()` method. Declare custom row actions on the resource, including the policy ability each action requires. Only built-in action names can omit the ability.
 
 ```php
 public array $actions = [
@@ -320,11 +320,11 @@ $this->call('action', [
 ]);
 ```
 
-The table checks the declaration, resolves the record through the current table scope, and authorizes the declared ability before invoking the model method.
+Before calling the model method, the table checks that the action is declared, finds the record within the current table scope, and authorizes the required ability.
 
 ### Bulk actions
 
-The resource can expose bulk actions through a `$bulkActions` property or a `bulkActions()` method. The table reads them through `getBulkActions()`.
+Define bulk actions on the resource using a `$bulkActions` property or a `bulkActions()` method. The table reads either definition through `getBulkActions()`.
 
 ```php
 public array $bulkActions = [
@@ -360,11 +360,11 @@ Every bulk action must be declared. Custom action names must include an `ability
 
 ## View modes
 
-List is always supported. Grid and Kanban are opt-in.
+Every table supports the list view. Enable grid or Kanban on the resource when you need them.
 
 ### List view
 
-The default list view renders a table header, one row partial per paginator item, and the table footer. Header cells call `sortBy($slug)`. The standard row partial uses `$row->display($slug)` for visible columns.
+The default list view renders a header, a row partial for each record on the current page, and a footer. Clicking a header sorts by that column through `sortBy($slug)`. Each visible cell gets its display value from `$row->display($slug)`.
 
 Override `tableView()` or pass `views.list` to use a custom list view. Override `rowView()` or pass `views.row` to change each row.
 
@@ -379,11 +379,11 @@ public function tableGridView()
 }
 ```
 
-The view is included when `currentView` is `grid`. It can use the paginated `$rows`, `$rowIds`, the resource model, and the component's `settings`. The component still applies the same base query, filters, search, sorting, and pagination.
+The table includes your view when the user switches to grid mode. It receives the paginated `$rows`, `$rowIds`, the resource model, and the component's `settings`. Grid mode uses the same base query, filters, search, sorting, and pagination as the list.
 
 ### Kanban view
 
-Kanban needs a valid configuration. The default `kanbanSettings()` enables it when `tableKanbanView()` returns a non-empty view name. A resource can declare the board directly:
+To enable Kanban, provide a valid board configuration and a view. By default, `kanbanSettings()` enables the board when `tableKanbanView()` returns a non-empty view name. Configure the board on your resource:
 
 ```php
 public function kanbanSettings(): array
@@ -418,11 +418,13 @@ The group field must be a resource field whose options can be normalized into ke
 ]
 ```
 
-`columns` restricts the board to declared option keys. An invalid column key disables the board. `card_title` and `card_subtitle` select the fields displayed on each card. `show_empty_columns` controls empty-column rendering.
+Use `columns` to restrict the board to particular option keys. An invalid key disables the board. Choose the fields shown on each card with `card_title` and `card_subtitle`, and use `show_empty_columns` to control whether columns with no cards appear.
 
-The built-in Kanban view renders the configured columns and filters the paginator's rows by `group_field`. It does not implement drag-and-drop. A custom board can call `updateCardStatus($cardId, $newStatus)`; the method checks that the destination is declared and authorizes the resource's `update` policy.
+The built-in board groups records from the current page into the configured columns using `group_field`. It does not support drag-and-drop. If you add that behavior in a custom board, call `updateCardStatus($cardId, $newStatus)` to move a card. This method checks that the destination is declared and authorizes the resource's update policy.
 
-The Kanban settings menu persists visibility and order in the user option `kanban_statuses.{Type}`. Use `reorderKanbanStatuses()` or its `reorderKanbanColumns()` alias from a custom control. The resource's `kanbanQuery($query)` hook can change query ordering or add constraints:
+The Kanban settings menu saves column visibility and order in the user's `kanban_statuses.{Type}` option. Custom controls can call `reorderKanbanStatuses()` or its alias, `reorderKanbanColumns()`.
+
+To change the board's query ordering or add constraints, define `kanbanQuery($query)` on the resource:
 
 ```php
 public function kanbanQuery($query)
@@ -431,13 +433,13 @@ public function kanbanQuery($query)
 }
 ```
 
-Returning `false` leaves the base query unchanged. If a resource defines `kanbanPagination()`, the table uses that value as `perPage` while Kanban is active. It is the total number of rows fetched for the table query, not a separate limit for each column.
+Returning `false` leaves the base query unchanged. To set the page size for Kanban, define `kanbanPagination()` on the resource. Its return value becomes the active page size for the whole board, not a separate limit for each column.
 
 The `order_by` key is normalized by the configuration class, but the current built-in query does not apply it. Use `kanbanQuery()` when ordering matters.
 
 ## Relationship tables
 
-The standard `HasMany` field view mounts the table with the related resource instance, the field definition, and the parent resource:
+The standard has-many field view mounts a nested table with the related resource instance, the field definition, and the parent resource:
 
 ```blade
 <livewire:aura::table
@@ -449,9 +451,9 @@ The standard `HasMany` field view mounts the table with the related resource ins
 />
 ```
 
-The field `type` must be the fully-qualified field class so the table can call its `queryFor()` method. `HasMany` scopes through the declared relationship. `BelongsToMany` scopes through the parent's many-to-many relationship.
+Set the field's `type` to its fully qualified class name so the table can call the field's `queryFor()` method. Has-many fields scope the query through the declared relationship. Many-to-many fields scope it through the parent's many-to-many relationship.
 
-Relationship tables start with these settings disabled: `filters`, `global_filters`, `header_before`, `header_after`, `settings`, `search`, and `selectable`. Override them with `table_settings` in the field definition:
+Relationship tables hide filters, table settings, search, and row selection by default. The header injection points are also disabled. The affected settings are `filters`, `global_filters`, `header_before`, `header_after`, `settings`, `search`, and `selectable`. Override them through `table_settings` in the field definition:
 
 ```php
 [
@@ -470,7 +472,7 @@ Relationship tables start with these settings disabled: `filters`, `global_filte
 ]
 ```
 
-The related table runs the same search, filter, sort, and pagination pipeline after `queryFor()` scopes it to the parent.
+After the field scopes the query to the parent, the nested table applies the same search, filtering, sorting, and pagination as a resource index table.
 
 ## Query and display pipeline
 
@@ -498,17 +500,17 @@ public function indexQuery($query, $table)
 }
 ```
 
-For the standard list, `tableEagerLoads()` limits relation eager loads to visible columns. Grid and Kanban can use fields outside the list columns, so they retain the broader field set. Table-display preloaders batch fields such as relation and image displays for the paginator's rows.
+The standard list eager-loads relationships only for visible columns, as determined by `tableEagerLoads()`. Grid and Kanban views can display fields outside those columns, so they retain the broader set of fields. Aura also batches the data needed to display relationships and images for records on the current page.
 
 ## Pagination
 
-The table uses Livewire's `WithPagination`. The initial `perPage` value is resolved in this order:
+The table uses Livewire pagination through the `WithPagination` trait. It chooses the initial page size in this order:
 
 1. The session value at `perPage`.
 2. `settings.per_page`.
 3. The resource's `defaultPerPage()`.
 
-Changing `perPage` writes the new value to the session. The standard settings menu offers 10, 25, 50, and 100 rows. Search resets to page one. The rows computed property calls `paginate($perPage)` and passes the paginator to the list, grid, or Kanban view.
+Changing the page size saves it in the session. The standard settings menu offers 10, 25, 50, and 100 rows, and changing the search returns to page one. The table fetches records with `paginate($perPage)` and passes the resulting paginator to whichever view is active.
 
 ## Persisted state
 

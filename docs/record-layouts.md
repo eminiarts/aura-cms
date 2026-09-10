@@ -1,26 +1,25 @@
 # Record layouts
 
-Record layout panels are optional Livewire components on the default record detail
-view. `Aura\Base\Livewire\Resource\View` resolves the panels for a full page and
-for the same view inside a modal. The default view still renders the resource
-header, actions, title, and fields.
+Record layout panels let you add Livewire components to a record's detail page.
+The same panels appear when you open the record in a modal. Aura continues to
+render the resource header, actions, title, and fields alongside your panels.
 
-If no panel remains visible, Aura renders the default record view and does not add
-the record-layout wrapper. If a resource overrides `viewView()`, Aura passes the
-resolved `$recordLayout` to that view, but the custom view must render the layout
-or its panels itself.
+When no panels are visible, Aura renders the default record view without a layout
+wrapper. If you provide a custom view through `viewView()`, Aura passes the
+resolved layout as `$recordLayout`. Your view must render the layout or its
+panels itself.
 
-This feature is for record detail pages. It does not arrange fields in create or
-edit forms. Use the `Panel` and `Tab` field classes for form field layout. It also
-does not configure the global application layout, navigation, theme, or sidebar.
-Those settings live in `config('aura.views.layout')`, `config('aura.theme.*')`,
-the Settings API, and the Navigation API. See
-[Creating fields](/docs/creating-fields), [Configuration](/docs/configuration),
-and [Themes](/docs/themes).
+Record layouts apply only to detail pages. To arrange fields in create and edit
+forms, use panel and tab fields as described in [Creating fields](/docs/creating-fields).
+
+The application layout, navigation, theme, and sidebar have separate settings.
+Use `config('aura.views.layout')` for the application layout and
+`config('aura.theme.*')` for theme options, along with the Settings and Navigation
+APIs. See [Configuration](/docs/configuration) and [Themes](/docs/themes).
 
 ## Regions
 
-Every panel belongs to one `RecordLayoutRegion` case:
+Choose a region for each panel using the `RecordLayoutRegion` enum:
 
 | Case | Value | Location in the default record view |
 | --- | --- | --- |
@@ -30,17 +29,20 @@ Every panel belongs to one `RecordLayoutRegion` case:
 | `RightSidebar` | `right-sidebar` | The right three-column aside when panels are present |
 | `ActivityTimeline` | `activity-timeline` | After main-content panels in the main column |
 
-The default record fields remain in `main-content`. The layout changes the main
-column to six columns when both side regions contain panels, or to nine columns
-when only one side region contains panels. Panels in one region are ordered by
-ascending `order`, then by their source string, then by their key.
+The record's fields stay in the main content region. The main area spans six
+columns when both side regions have panels, or nine columns when only one side
+has panels.
+
+Within each region, panels appear from lowest to highest `order`. Ties are
+resolved by the registration source string, then by the panel key.
 
 ## Register a plugin panel
 
-Register panels while service providers are booting. With Spatie's
-`PackageServiceProvider`, `packageBooted()` is the package hook to use. Do not put
-the registration in `$this->app->booted()`. Aura finalizes the registry from its
-application `booted` callback and rejects later registrations.
+Register panels during service provider boot. If your package uses Spatie's
+`PackageServiceProvider`, put the registration in `packageBooted()`.
+
+Do not register panels in `$this->app->booted()`. Aura finalizes the registry in
+its own application booted callback and rejects registrations after that point.
 
 The following provider registers a panel for a host resource whose slug is
 `contact`. The example also registers the boolean preference used by the panel.
@@ -96,9 +98,10 @@ final class ContactsServiceProvider extends PackageServiceProvider
 }
 ```
 
-The panel component must accept the canonical record as `model` and the page or
-modal state as `inModal`. It can use public properties, `mount()` parameters, or
-one of each. This component uses public properties and a package view:
+Aura passes the record to your component as `model` and indicates whether it is
+open in a modal with `inModal`. Accept each input through a public property or a
+`mount()` parameter. You can also use a property for one and a parameter for the
+other. This component uses public properties and a package view:
 
 ```php
 <?php
@@ -121,7 +124,7 @@ final class ContactHealthPanel extends Component
 }
 ```
 
-`resources/views/livewire/contact-health-panel.blade.php`:
+Create the panel's view at `resources/views/livewire/contact-health-panel.blade.php`:
 
 ```blade
 <aside>
@@ -133,8 +136,9 @@ final class ContactHealthPanel extends Component
 </aside>
 ```
 
-The `ability` in the example is a host application Gate ability. Define it in
-the host, or use an existing policy ability. For example:
+The example restricts access through a Gate ability defined in the host
+application. Define that ability as shown below, or use an existing policy
+ability:
 
 ```php
 <?php
@@ -157,15 +161,16 @@ final class AppServiceProvider extends ServiceProvider
 }
 ```
 
-If the host does not need an extra authorization rule, omit `ability`. A panel
-with an `ability` is rendered only when the authenticated Aura user is allowed
-to perform that ability on the record.
+Aura displays a panel with an `ability` only when the authenticated user may
+perform that ability on the record. Omit this option if the host application
+does not need an extra authorization rule.
 
 ## Register panels from a host resource
 
-A resource can own panels without a plugin registry. Implement
-`DefinesRecordLayoutPanels` and return `RecordLayoutPanel` objects. Aura scopes
-these declarations to that resource's class when it captures the boot baseline.
+You can define panels directly on a resource. Implement
+`DefinesRecordLayoutPanels` and return your panel definitions from
+`recordLayoutPanels()`. During boot, Aura registers these panels for that
+resource's class.
 
 ```php
 <?php
@@ -197,9 +202,9 @@ final class Contact extends Resource implements DefinesRecordLayoutPanels
 }
 ```
 
-The resource must be in Aura's registered resource list when the application
-boots. Resource-owned panels use the same component contract and validation as
-plugin panels. A minimal host component is:
+The resource must be registered with Aura when the application boots. Its panels
+accept the same inputs and pass the same validation as plugin panels. Here is a
+minimal component:
 
 ```php
 <?php
@@ -224,8 +229,8 @@ final class ContactSummaryPanel extends Component
 
 ## Define a panel
 
-`RecordLayoutPanel` is a readonly value object. Its constructor accepts these
-arguments:
+Create each panel definition with `RecordLayoutPanel`. This readonly object
+accepts the following constructor arguments:
 
 | Argument | Type and default | Meaning |
 | --- | --- | --- |
@@ -236,60 +241,72 @@ arguments:
 | `resources` | `list<string>`, `['*']` | Resource class, slug, or type values that may use the panel. `'*'` matches every resource. |
 | `ability` | `?string`, `null` | Gate or policy ability checked against the record before rendering. |
 | `visible` | `bool`, `true` | Static switch. `false` always hides the panel. |
-| `preferenceKey` | `?string`, `null` | Registered boolean User or Team preference. The panel is shown only when its resolved value is exactly `true`. |
+| `preferenceKey` | `?string`, `null` | Registered boolean user or team preference. The panel is shown only when its resolved value is exactly `true`. |
 | `eagerLoad` | `list<string>`, `[]` | Relationship names or dot paths to load before the panel components render. |
 
-`resources` can contain at most 32 entries. A resource matches when a value is
-its class name, `getSlug()` result, or `getType()` result. `eagerLoad` can contain
-at most 12 relationship paths per panel. Aura validates the names, skips a panel
-when its first relationship method does not exist on the record, deduplicates
-the remaining paths, and calls `loadMissing()` once before rendering the panels.
+You can limit a panel to at most 32 resource entries. Each entry can match a
+resource's class name, slug returned by `getSlug()`, or type returned by
+`getType()`.
 
-The registry accepts at most 100 panels. The `source` passed to
-`Aura::registerRecordLayoutPanels()` must be a lowercase Composer package name,
-such as `acme/contacts`. A panel identity is the pair of source and key. An
-identical duplicate is ignored before boot finalization. A duplicate with any
-different value throws an exception. A batch does not become active when one of
-its panel definitions fails validation.
+Each panel can request up to 12 relationship paths through `eagerLoad`. Aura
+validates the paths and skips a panel if the first relationship method in any
+path is missing from the record. Before rendering, it combines the remaining
+paths, removes duplicates, and loads them with a single call to `loadMissing()`.
+
+The registry accepts at most 100 panels. When calling
+`Aura::registerRecordLayoutPanels()`, use a lowercase Composer package name such
+as `acme/contacts` as the registration source.
+
+Aura identifies each panel by its source and key. Before boot finalization,
+registering an identical definition again has no effect. Reusing that identity
+with any different value throws an exception. If any definition in a batch fails
+validation, Aura does not activate the batch.
 
 ## Visibility and component validation
 
 Aura evaluates these conditions when it resolves a record layout:
 
 1. `visible` must be `true`.
-2. If `ability` is set, the authenticated Aura `User` must pass the Gate check
-   for that ability and record. Guests and authorization exceptions fail closed.
-3. If `preferenceKey` is set, the key must have been registered as a Boolean
-   preference supporting the User or Team scope. Aura resolves each repeated key
-   once for the record and keeps the panel only when the returned value is the
-   boolean `true`. An unset stored value follows the preference definition's
-   normal default rules. See [Preferences](/docs/preferences).
+2. If an ability is set, the authenticated Aura user must pass its Gate check
+   for the record. Aura hides the panel for guests or if authorization throws an
+   exception.
+3. If a preference key is set, it must refer to a registered boolean preference
+   that supports user or team scope. The panel appears only when the preference
+   resolves to the boolean `true`. Aura resolves a shared key once per record.
+   When no value is stored, the preference's normal default rules apply. See
+   [Preferences](/docs/preferences).
 4. Every declared relationship path must pass the panel's syntax validation. A
    panel with a missing first relationship method is skipped.
 
 At boot, Aura validates each component. It must be a concrete, canonical
-Livewire component with no required constructor arguments. Its `model` input and
-`inModal` input must each be accepted as a writable public property or as a
-`mount()` parameter. `model` accepts an Aura `Resource` type, `object`, `mixed`,
-or an untyped input. `inModal` accepts `bool`, `mixed`, or an untyped input.
-Required `mount()` parameters other than `model` and `inModal` are rejected.
+Livewire component with no required constructor arguments.
 
-The initial `ability` check does not authorize later Livewire requests. Any
-panel action that changes state must authorize that action again in the method
-that handles the request.
+The component must accept the record and modal flag as writable public properties
+or as `mount()` parameters:
+
+| Input | Accepted types |
+| --- | --- |
+| `model` | Aura `Resource`, `object`, `mixed`, or untyped |
+| `inModal` | `bool`, `mixed`, or untyped |
+
+Any other mount parameters must be optional.
+
+The initial ability check does not authorize later Livewire requests. Any panel
+action that changes state must check authorization again in the method that
+handles the request.
 
 ## Record page resolution
 
-The default resource view resolves the layout from the current record in
-`View::render()`. It passes the canonical record and modal flag to each dynamic
-panel component. `ViewModal` embeds the same resource view with `inModal` set to
-`true`, so the same panel declarations work in a page and a modal.
+The default record view resolves the layout for the current record during
+`View::render()` and passes that record and the modal flag to each panel.
+The modal embeds the same view with `inModal` set to `true`, so panels work in
+both contexts without separate declarations.
 
-Aura registers each panel component under an internal, source-specific Livewire
-transport name during boot. The registry checks those names for collisions and
-rejects a claim that points to a different component. Registrations captured in
-the Aura boot baseline are restored by `Aura::flushState()` between queue work
-and supported long-running worker boundaries.
+During boot, Aura gives each panel component an internal Livewire name based on
+its registration source. It rejects a name already assigned to a different
+component. Aura also saves the boot registrations and restores them through
+`Aura::flushState()` between queue jobs and at supported long-running worker
+boundaries.
 
 Focused package coverage for this contract is in
 `tests/Feature/Resource/RecordLayoutTest.php`. It covers default rendering,

@@ -1,6 +1,6 @@
 # Performance
 
-Aura's performance behavior comes from the query shape, model and process memoization, cache-store entries, and lazy loading in the admin UI. This guide documents those package behaviors and gives you small ways to measure them. Measure the route and workload that is slow before changing configuration.
+Database queries, caching, and when the admin UI loads data all affect Aura's performance. This guide explains how those parts work and how to measure them. Start with the route and workload that is slow before changing configuration.
 
 ## Measure one request
 
@@ -19,7 +19,7 @@ DB::listen(function (QueryExecuted $query): void {
 });
 ```
 
-For a table or report query, record the query count and the slowest statement before and after a change. A high count with repeated statements against the same related table usually means a relation is being lazy-loaded while rows render. A single slow statement usually needs an index or a different storage/query shape.
+For a table or report query, record the query count and the slowest statement before and after a change. A high count with repeated statements against the same related table usually means a relation is being lazy-loaded while rows render. A single slow statement usually needs an index, a different query, or a change to how the data is stored.
 
 For a database plan, inspect the SQL for the exact database engine you run. On MySQL, for example:
 
@@ -42,13 +42,13 @@ Aura keeps several small caches in PHP memory:
 | Table display values | One model instance during a table render | The table primes the current page and the values disappear with those model instances. |
 | A user's resolved roles | One `User` model instance, keyed by team and role-catalog version | Refresh or use a new model instance. `Aura::flushState()` also resets related process state. |
 
-`Aura::flushState()` restores the resource, field, widget, and injected-view registrations captured at boot. It clears conditional-logic state, field caches, scope state, and the configured user model. It does not clear Laravel's cache store or database rows.
+To reset Aura's state within a PHP process, use `Aura::flushState()`. It restores the resource, field, widget, and injected-view registrations captured at boot. It also clears conditional logic, field caches, scope state, and the configured user model. Laravel's cache store and database rows are unaffected.
 
-The package calls `Aura::flushState()` after queue jobs finish or fail. When Laravel Octane is installed, the service provider also listens for `RequestReceived`, `TaskReceived`, and `TickReceived`. Those hooks protect process-local field, registration, scope, and user-model state across requests. You do not need to add an application-specific reset callback for those Aura caches.
+Aura resets this state after queue jobs finish or fail. With Laravel Octane, it also resets when a request, task, or tick begins, through the `RequestReceived`, `TaskReceived`, and `TickReceived` events. These hooks prevent field definitions, registrations, scopes, and the user model from carrying over between requests. You do not need to add a reset callback for these caches.
 
 ## Cache-store entries and invalidation
 
-Aura uses Laravel's cache manager through the `Cache` facade. The package does not require a particular cache driver, cache tags, or a queue worker for ordinary page rendering.
+Aura uses Laravel's cache manager. Ordinary page rendering does not require a particular cache driver, cache tags, or a queue worker.
 
 | Data | Reader | Key and default lifetime |
 | --- | --- | --- |
@@ -60,7 +60,7 @@ Aura uses Laravel's cache manager through the `Cache` facade. The package does n
 | Current team ID | `TeamScope` | `user_{id}_current_team_id`. Stored forever only after a non-null team ID is found. |
 | Value, pie, and donut widget results | The `getValuesProperty()` methods | An MD5 key built from team ID, resource type, widget slug, start, and end. The default duration is 60 seconds, or `widget.cache.duration`. |
 
-Field definitions and resolved roles are model or process state, not entries in this table. `User::cachedRoles()` currently memoizes resolved roles on the model instance. It does not read the old cache key returned by `getCacheKeyForRoles()`.
+Field definitions and resolved roles stay in PHP memory rather than Laravel's cache store. Despite its name, `User::cachedRoles()` keeps resolved roles on the model instance. It does not read the old cache key returned by `getCacheKeyForRoles()`.
 
 Use the package writers when changing values that Aura reads through a cache:
 
@@ -87,9 +87,9 @@ Cache::forget('user.'.$user->id.'.columns.Order');
 Cache::forget(User::currentTeamCacheKey($user->id));
 ```
 
-`User::switchTeam()` persists the new `current_team_id`, and the model's `saved` hook clears the current-team cache. Team deletion also clears current-team and team-list entries for affected users. Those paths do not clear every user option entry.
+Switching teams through `User::switchTeam()` saves the new current team and clears its cached ID through the model's saved hook. Deleting a team also clears current-team and team-list entries for affected users. Neither operation clears every cached user option.
 
-`Aura::navigation()` has no permission-change invalidation hook. The resource list hash makes a newly registered resource use a new key, but a permission change can leave the previous navigation in cache until its one-hour lifetime ends. For the current authenticated user, the exact key can be forgotten with:
+Navigation can remain cached for up to an hour after a permission change. Registering a new resource changes the cache key, but changing permissions does not clear it. To refresh navigation for the authenticated user, forget its exact key:
 
 ```php
 Cache::forget(app('aura')->navigationCacheKey());
@@ -99,11 +99,13 @@ Cache::forget(app('aura')->navigationCacheKey());
 
 ### A teams-on user-option caveat
 
-In teams-on mode, `User::updateOption()` writes the current `team_id` to the `options` row, but the `User::getOption*()` cache keys above do not include that team ID. A warmed table-column or sidebar option can therefore be reused after a user switches teams until the entry expires or is forgotten. Clear the affected `user.{id}...` key after a team switch if that behavior matters to your application. This is a package defect to fix in the cache-key implementation, not a reason to flush the whole cache store.
+With teams enabled, Aura saves user options with the current team ID, but their cache keys omit that ID. A cached table-column or sidebar preference can therefore carry over after a user switches teams. It remains cached until the entry expires or is cleared.
+
+Clear the affected `user.{id}...` key after a team switch if your application needs separate preferences for each team. This is a defect in the package's cache keys. Clearing the whole cache store is unnecessary.
 
 ## Resource storage and database indexes
 
-The default `Resource` uses the shared `posts` table and `meta` rows:
+By default, resources store data in the shared posts table and its related meta rows. Two flags control this storage:
 
 | `customTable` | `usesMeta` | Field storage |
 | --- | --- | --- |
@@ -126,7 +128,7 @@ These indexes support identity and key lookups. They do not make arbitrary text 
 
 ### Meta query behavior
 
-The meta scopes use Eloquent relationship subqueries. These examples assume declared `category`, `subtitle`, `featured`, and JSON `topics` meta fields. Query core columns such as `posts.status` with `where()` instead:
+Meta filters use Eloquent relationship subqueries. The following examples assume you have declared category, subtitle, and featured meta fields, plus a topics field containing JSON. Use `where()` to query core columns such as `posts.status`:
 
 ```php
 Order::whereMeta('category', 'news')->get();
@@ -141,7 +143,7 @@ Order::whereNotInMeta('category', ['archived'])->get();
 Order::whereMetaContains('topics', 'laravel')->get();
 ```
 
-Each `whereMeta` condition becomes a `whereHas('meta')` subquery. Multiple conditions add multiple meta subqueries. `whereMetaContains` uses JSON containment against `meta.value`, so the stored value must be valid JSON for that operation.
+Each meta condition adds its own relationship subquery through `whereHas('meta')`. Adding more conditions adds more subqueries. JSON containment filters use `whereMetaContains`, which requires valid JSON in the stored meta value.
 
 Sorting a meta field uses a left join restricted by resource type and field key. Number fields are ordered with `CAST(meta.value AS DECIMAL(10,2))`; other fields use `CAST(meta.value AS CHAR)`. The cast and the long text value can dominate a large sort even when the relation indexes are present.
 
@@ -190,15 +192,17 @@ class Order extends Resource
 }
 ```
 
-The table limits package-managed relation loading to the fields that can appear in the current view. In list view, `ProvidesTableEagerLoad` fields are collected from visible columns. Grid and Kanban views can use more fields, so their eager-load set starts from all input fields. `Tags` and polymorphic `AdvancedSelect` fields opt into this path by returning their field slug as a relation name. A relation field that does not implement the contract is not inferred automatically.
+Aura loads relationships for fields that can appear in the current table view. List view uses visible columns, while grid and Kanban views start from all input fields.
 
-Some fields use a page-level display preloader instead of Eloquent eager loading. Visible `BelongsTo`, `Image`, and `Roles` columns collect the IDs for the paginated rows, run scoped lookups, and store the results on each row. This keeps team and other model scopes active. Custom display closures and custom views can issue their own queries, so inspect those paths separately.
+A field declares its relationships through `ProvidesTableEagerLoad`. Tags and polymorphic advanced select fields use this contract to return their field slug as the relationship name. Aura does not infer relationships for fields that do not implement it.
 
-Table display also has a field-level fast path. For a plain visible input field with no conditional logic, `Resource::display()` resolves that field without building the complete `fields` collection. Conditional fields, hidden fields, and nested field slugs use the full accessor. Keep expensive relationship fields out of the index when the table does not need them.
+Belongs-to, image, and role columns use a display preloader instead of Eloquent eager loading. Visible columns load their display values together for the current page. They collect IDs from the paginated rows, look them up with team and other model scopes still active, and store the results on each row. Custom display closures and views can issue their own queries, so inspect those separately.
+
+For a visible input field without conditional logic, `Resource::display()` resolves only the requested field. It does not build the complete field collection. Conditional fields, hidden fields, and nested field slugs still require the full collection. Keep expensive relationship fields out of the index when the table does not need them.
 
 ### Serialized fields
 
-Aura resources append the computed `fields` accessor to array and JSON serialization by default. Building that accessor resolves every input field, including field casts and relationships. For a large table response or export that does not need the computed map, disable the legacy append in `config/aura.php`:
+By default, converting a resource to an array or JSON includes its computed `fields` value. Building this value resolves every input field, including casts and relationships. If a large table response or export does not need it, disable the legacy append in `config/aura.php`:
 
 ```php
 'features' => [
@@ -207,17 +211,17 @@ Aura resources append the computed `fields` accessor to array and JSON serializa
 ],
 ```
 
-Call `$resource->append('fields')` at the specific boundary that needs the map. The setting does not change table display, which resolves its requested column separately when the fast path applies.
+You can still include the computed values where needed by calling `$resource->append('fields')`. This setting does not change table display. The table continues to resolve individual columns when they meet the conditions described above.
 
 ## AdvancedSelect fields
 
-`AdvancedSelect` uses its API path by default. The field class sets `$api = true`, and the Blade component uses that value unless the field definition includes an `api` key.
+Advanced select fields load options through the API by default. You can override this behavior with the `api` setting in the field definition.
 
-With the API path:
+With API loading enabled:
 
 - The edit form queries selected IDs only so existing selections render without loading the complete resource set.
 - The first options request runs when the listbox opens, not during the initial form render.
-- Each API page contains up to 10 options. `Load more` requests the next page.
+- Each API page contains up to 10 options. **Load more** requests the next page.
 - Search runs through the resource's searchable fields and starts a new page at 10 results.
 
 This field definition keeps the default lazy behavior:
@@ -244,7 +248,7 @@ Set `api` to `false` only when the complete option set is small enough to load d
 ],
 ```
 
-The non-API path calls `values()` and loads every target resource. The API path is the safer default for a relation with many options. The focused behavior is covered by `tests/Feature/Fields/AdvancedSelectLazyLoadingTest.php`.
+Disabling API loading calls `values()` and loads every target resource. Keep API loading enabled for relationships with many options. See `tests/Feature/Fields/AdvancedSelectLazyLoadingTest.php` for the focused tests.
 
 ## Media thumbnails
 
@@ -270,7 +274,7 @@ Media uploads use `aura.media.disk` and `aura.media.path`. The default configura
 
 The uploader applies `max_file_size` as Laravel's kilobyte validation limit and stores the file on the configured disk and path. It allows the package's documented file types and rejects executable extensions and SVG uploads.
 
-When an image `Attachment` is saved, its model hook dispatches `GenerateImageThumbnail`, a `ShouldQueue` job. The job reads the media settings, skips when `generate_thumbnails` is false, and asks `ThumbnailGenerator` to create each configured dimension. It does nothing in the testing environment. The job logs a failure for an individual dimension and continues with the remaining dimensions.
+Saving an image attachment dispatches the queued `GenerateImageThumbnail` job. It creates each configured size unless thumbnail generation is disabled with `generate_thumbnails`. It also skips generation in the testing environment. If one size fails, the job logs the failure and continues with the remaining sizes.
 
 Thumbnails are also generated on demand by the `aura.image` route. `Attachment::thumbnail('sm')` looks up the named configured dimension and returns that route URL. The generator:
 
@@ -280,7 +284,7 @@ Thumbnails are also generated on demand by the `aura.image` route. `Attachment::
 - scales width-only requests without upscaling; and
 - writes generated output as JPEG under `thumbnails/{source-folder}/` using the configured quality.
 
-The generator reads and writes through `Storage::disk(config('aura.media.disk'))`. A non-public disk must provide a working `url()` implementation for `Attachment::path()` and `thumbnail_path()`, and the image route still reads the bytes from that configured disk.
+The generator reads and writes files on the configured media disk. A non-public disk must provide a working `url()` implementation so the attachment's `path()` and `thumbnail_path()` methods can return URLs. The image route reads the file bytes from that same disk.
 
 Aura constructs Intervention Image 3 with its GD driver. Enable the PHP GD extension for thumbnail generation. Check the PHP runtime used by Laravel with `php -m`; it must list `gd`. Installing the optional Laravel image facade or enabling Imagick alone does not change the driver used by Aura.
 
@@ -290,7 +294,9 @@ If a thumbnail is missing, check the configured disk, the original attachment pa
 
 Resource widgets render before the resource table. Their Livewire views use `wire:init` so a widget without a cached result first renders its placeholder and loads its value after the component mounts.
 
-The built-in `ValueWidget`, `Pie`, and `Donut` cache their value payloads with `cache()->remember()`. Their default duration is 60 seconds. Set `cache.duration` in the widget definition to change it. The cache key includes the current team, resource type, widget slug, start date, and end date. `Sparkline`, `SparklineArea`, `SparklineBar`, and `Bar` use the shared loading view, but the current `Sparkline` implementation does not wrap its values in the base cache call.
+Value, pie, and donut widgets cache their results for 60 seconds by default. Set `cache.duration` in the widget definition to change this. The cache key includes the current team, resource type, widget slug, start date, and end date.
+
+Sparkline, sparkline area, sparkline bar, and bar widgets share the loading view. The current sparkline implementation does not use the base widget's result cache.
 
 ```php
 use Aura\Base\Resource;

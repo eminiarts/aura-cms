@@ -1,8 +1,8 @@
 # API reference
 
-This page documents the PHP APIs that host applications can use with Aura CMS:
-the `Aura` facade, resource models, field classes, query helpers, and the
-admin routes used by relationship fields.
+This page documents the PHP APIs available to applications built with Aura CMS.
+It covers the Aura facade, resource models, field classes, query helpers, and
+the admin routes used by relationship fields.
 
 Aura does not provide a public CRUD REST API or token-authentication
 endpoints. Its resource pages use session-authenticated web routes and
@@ -12,8 +12,8 @@ host-written example is included at the end of this page.
 
 ## The Aura facade
 
-`Aura\Base\Facades\Aura` proxies the `Aura\Base\Aura` singleton. Resolve it
-through the facade in application or package code:
+Use the Aura facade to access the package singleton from application or package
+code. The facade forwards calls to `Aura\Base\Aura`:
 
 ~~~php
 use Aura\Base\Facades\Aura;
@@ -41,9 +41,8 @@ $resource = Aura::findResourceBySlug('product'); // Resource instance or null
 $appResources = Aura::getAppResources();
 ~~~
 
-The default resource directory and namespace are
-`config('aura-settings.paths.resources.path')` and
-`config('aura-settings.paths.resources.namespace')`. Aura keeps only classes
+Set the resource directory and namespace in the `aura-settings.paths.resources`
+configuration, using its `path` and `namespace` keys. Aura discovers only classes
 that extend `Aura\Base\Resource`.
 
 The field and widget registries use the same pattern:
@@ -86,8 +85,9 @@ configured application directories.
 
 ### Configuration and stored options
 
-`options()` and `option($key)` read the package configuration array from
-`config('aura')`. `option()` performs a top-level lookup. It does not parse
+To read the package configuration, use `options()` for the full array or
+`option($key)` for a top-level value. Both read the `aura` configuration.
+Use Laravel's config helper for nested values, since the facade does not parse
 dot notation:
 
 ~~~php
@@ -277,9 +277,14 @@ helpers but does not resolve values from Aura's meta relation.
 
 ### Identity, storage, and relationships
 
-Common identity methods are `getName()`, `getPluralName()`, `getSlug()`,
-`getType()`, `singularName()`, `pluralName()`, and `title()`. The slug becomes
-the admin URL segment and route-name segment.
+A resource exposes its names, type, slug, and record title through the following
+methods. The slug becomes the admin URL segment and route-name segment.
+
+| Identity | Methods |
+| --- | --- |
+| Names | `getName()`, `getPluralName()`, `singularName()`, `pluralName()` |
+| Slug and type | `getSlug()`, `getType()` |
+| Record title | `title()` |
 
 The storage flags are independent:
 
@@ -300,12 +305,14 @@ store all input fields in its own columns with `$customTable = true` and
 [Meta fields](/docs/meta-fields) and [Custom tables](/docs/custom-tables) for
 the storage matrix and migrations.
 
-Resource models provide `user()`, `team()`, `parent()`, and `children()`
-relations where the corresponding configuration is available. Field classes
-can add dynamic relations when `isRelation()` returns true. A `BelongsTo` field
-keeps its stored foreign id as a scalar field value. It is not a dynamic
-Eloquent relation on the resource. `HasMany`, `HasOne`, `Tags`, `Roles`, and
-polymorphic `AdvancedSelect` fields provide relation behavior.
+Resource models provide user, team, parent, and children relations through
+methods with those names, where the corresponding configuration is available.
+Field classes can add dynamic Eloquent relations when `isRelation()` returns
+true. This includes has-many, has-one, tags, roles, and polymorphic advanced
+select fields.
+
+A belongs-to field stores its foreign id as a scalar field value. It does not
+add a dynamic Eloquent relation to the resource.
 
 ### Field access and validation
 
@@ -424,13 +431,20 @@ $post->rowView();
 $post->tableComponentView();
 ~~~
 
-Table configuration methods include `defaultPerPage()`,
-`defaultTableSort()`, `defaultTableSortDirection()`, `defaultTableView()`,
-`tableView()`, `tableGridView()`, `tableKanbanView()`, `kanbanQuery()`,
-`kanbanSettings()`, `showTableSettings()`, `getHeaders()`, and
-`indexTableSettings()`. `tableGridView()` and `tableKanbanView()` return a
-Blade view name or `false`. They do not return a boolean enable flag. See
-[Table](/docs/table).
+Use these methods to configure the resource table:
+
+| Setting | Methods |
+| --- | --- |
+| Pagination | `defaultPerPage()` |
+| Default sorting | `defaultTableSort()`, `defaultTableSortDirection()` |
+| Default view | `defaultTableView()` |
+| View templates | `tableView()`, `tableGridView()`, `tableKanbanView()` |
+| Kanban query and settings | `kanbanQuery()`, `kanbanSettings()` |
+| Settings visibility | `showTableSettings()` |
+| Headers and index settings | `getHeaders()`, `indexTableSettings()` |
+
+The grid and Kanban view methods return a Blade view name or `false`, rather
+than a boolean enable flag. See [Table](/docs/table).
 
 `getActions()` and `getBulkActions()` read an `actions` or `bulkActions`
 method when present, otherwise the corresponding public array. The default
@@ -487,12 +501,17 @@ The base class exposes properties that control field behavior:
 | `$taxonomy` | Whether the field is a taxonomy field. |
 | `$rawHtmlDisplay` | Whether the field intentionally returns trusted HTML. |
 
-The field class methods used by the resource and table layers include
-`get($class, $value, $field = null)`, `display($field, $value, $model)`,
-`value($value)`, `isInputField()`, `isRelation()`, `isTaxonomyField()`,
-`filterOptions()`, `getFilterValues($model, $field)`, `isDisabled($model,
-$field)`, `edit()`, and `view()`. See [Creating fields](/docs/creating-fields)
-for a complete custom field example.
+Resources and tables use the following field methods to resolve values and
+render the interface. See [Creating fields](/docs/creating-fields) for a complete
+custom field example.
+
+| Purpose | Methods |
+| --- | --- |
+| Read and format values | `get($class, $value, $field = null)`, `display($field, $value, $model)`, `value($value)` |
+| Identify field behavior | `isInputField()`, `isRelation()`, `isTaxonomyField()` |
+| Provide filters | `filterOptions()`, `getFilterValues($model, $field)` |
+| Check disabled state | `isDisabled($model, $field)` |
+| Resolve editing and viewing templates | `edit()`, `view()` |
 
 ### Field lifecycle hooks
 
@@ -527,11 +546,12 @@ not a regular Aura field.
 
 ### Relation fields and table loading
 
-`Field::isRelation()` returns true for a field whose `$type` is `relation`.
-`HasMany` and `HasOne` use that type. `Tags` and `Roles` override the method,
-and `AdvancedSelect` treats a field as a relation unless
-`polymorphic_relation` is `false`. `BelongsTo` intentionally remains an
-`input` field and stores a scalar foreign id.
+Aura identifies relation fields through `Field::isRelation()`. The default
+implementation checks whether the field's `$type` is `relation`, as it is for
+has-many and has-one fields. Tags and roles override this method.
+
+Advanced select fields count as relations unless `polymorphic_relation` is
+`false`. Belongs-to fields remain input fields and store a scalar foreign id.
 
 A relation field that supports table eager loading may implement
 `ProvidesTableEagerLoad`:
@@ -676,14 +696,16 @@ Route::middleware('auth:sanctum')->get('/posts', function (Request $request) {
 });
 ~~~
 
-This example authorizes the collection with `viewAny`, requires a current team
-when teams are enabled, and keeps the normal Eloquent scopes on `Post::query()`.
-`TeamScope`, `TypeScope`, and `ScopedScope` then apply according to the
-installation and the authenticated user's permissions. The package's default
-`ResourcePolicy` is registered for Aura resources, but a host application may
-replace it with its own policy.
+The example checks permission to view the collection and requires a current
+team when teams are enabled. It also preserves the normal Eloquent scopes,
+which filter by team, resource type, and access according to the installation
+and the authenticated user's permissions. Aura registers its default
+`ResourcePolicy` for resources, but your application may replace it with its
+own policy.
 
-The response lists its fields explicitly. Returning raw Aura resources can include the appended `fields` collection. `status` is a core `posts` column, so the example uses `where()` for it.
+List response fields explicitly, as the example does. Returning raw Aura
+resources can include the appended `fields` collection. The status filter uses
+an ordinary column query because `status` is a core column on the posts table.
 
 If an endpoint must read across teams, define that ability explicitly and
 authorize it before considering any `withoutGlobalScope()` call. Do not expose

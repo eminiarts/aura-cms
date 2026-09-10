@@ -2,10 +2,10 @@
 
 Aura CMS has two separate test targets:
 
-- A host application test loads your Laravel application, its published Aura migrations, and its configured User model.
+- A host application test loads your Laravel application, its published Aura migrations, and its configured user model.
 - The Aura package test runs under Orchestra Testbench and uses fixtures that live inside this repository.
 
-This page starts with host application tests. That is the test setup to use for Resources and Fields in an application that installs Aura through Composer. The package-only section at the end describes the maintainer setup so the two environments are not mixed.
+Use the host application setup below to test resources and fields in a Laravel application that installs Aura through Composer. The [package maintainer section](#package-maintainer-tests) describes how to test Aura itself.
 
 ## Set up host application tests
 
@@ -17,9 +17,9 @@ Install Pest and the Laravel plugin in the host application if they are not alre
 composer require --dev pestphp/pest pestphp/pest-plugin-laravel
 ```
 
-Livewire 4 provides the Livewire\Livewire test facade. The examples on this page use that facade, so they do not require pestphp/pest-plugin-livewire.
+The examples use Livewire 4's test facade, so you do not need the Pest Livewire plugin.
 
-If you prefer Pest's livewire() function, install the plugin in the host application and import Pest\Livewire\livewire in the test file:
+If you prefer Pest's `livewire()` function, install the plugin and import `Pest\Livewire\livewire` in your test file:
 
 ```bash
 composer require --dev pestphp/pest-plugin-livewire
@@ -29,7 +29,7 @@ The plugin is a convenience layer. It does not make the package's internal tests
 
 ### Use a test database
 
-Set test-only database and service values in the host application's .env.testing. SQLite in memory is suitable for ordinary feature tests:
+Configure a separate testing environment in your application's `.env.testing` file. An in-memory SQLite database is suitable for ordinary feature tests:
 
 ```dotenv
 APP_ENV=testing
@@ -41,7 +41,7 @@ SESSION_DRIVER=array
 AURA_TEAMS=true
 ```
 
-Publish and run Aura's migrations as part of the host application's normal installation. RefreshDatabase then migrates the test database and resets it between tests:
+Publish and run Aura's migrations during the normal installation. Laravel's `RefreshDatabase` trait then migrates the test database and resets it between tests:
 
 ```php
 <?php
@@ -51,22 +51,22 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 ```
 
-Use a dedicated test database when SQLite is not suitable. Never point tests at a development or production database. Do not use a generic destructive command such as migrate:fresh in a troubleshooting recipe for a real application database.
+Use a dedicated test database when SQLite is not suitable. Never point tests at a development or production database. Do not run destructive commands such as `migrate:fresh` against a real application database while troubleshooting tests.
 
 ### Test both teams modes
 
-The aura.teams setting comes from AURA_TEAMS and defaults to true. It changes the schema as well as role and membership resolution:
+The `AURA_TEAMS` environment variable controls the `aura.teams` setting and defaults to `true`. Enabling teams changes the database schema and how Aura resolves roles and memberships:
 
-- Teams on creates the teams table, team columns, and a team_id column on the user_role pivot.
-- Teams off omits those tables and columns and uses one flat role catalog.
+- With teams enabled, migrations create the teams table, team columns, and a `team_id` column on the `user_role` pivot table.
+- With teams disabled, migrations omit those tables and columns. Roles belong to one flat catalog.
 
-Choose the value before the test database is migrated. Run the same focused test file in a second process with AURA_TEAMS=false, or maintain a second PHPUnit configuration with that environment value. Do not toggle the setting inside a test after the schema has been migrated.
+Choose the value before the test database is migrated. Run the same focused test file in a second process with `AURA_TEAMS=false`, or maintain a second PHPUnit configuration with that environment value. Do not toggle the setting inside a test after the schema has been migrated.
 
-The package's own tests use RefreshDatabase for tests/Feature and DatabaseMigrations for tests/FeatureWithDatabaseMigrations. Use RefreshDatabase for normal host application tests. Use a migration-aware test setup when a test creates a table or otherwise changes the schema.
+Use `RefreshDatabase` for normal host application tests. If a test creates tables or changes the schema, use a setup that reruns migrations, such as `DatabaseMigrations`. The package follows this distinction in its feature tests, as described in the [maintainer setup](#package-maintainer-tests).
 
 ### Reset Aura's process state
 
-Aura::fake() and resource registration change process-level state. If a test file registers a fake Resource, clear that state after each test. This is the reset pattern used by the package suite:
+Faking Aura or registering resources changes state that persists for the rest of the process. Clear it after each test that registers a fake resource. The package suite uses this reset:
 
 ```php
 afterEach(function (): void {
@@ -77,13 +77,13 @@ afterEach(function (): void {
 });
 ```
 
-Keep this reset in the host application's tests/Pest.php when several test files use Aura::fake().
+Keep this reset in your application's `tests/Pest.php` when several test files use `Aura::fake()`.
 
 ## Build a self-contained Resource fixture
 
-The following test defines its Resource, creates an authenticated Aura user, and handles both teams modes. It does not use createSuperAdmin(), Aura\Base\Tests\Resources\Post, or any other package test helper.
+The following test defines an article resource and creates an authenticated Aura user. It works with teams enabled or disabled and defines everything it needs without relying on package test helpers.
 
-The fixture assumes the application uses Aura's built-in User model. If the application configures a custom User Resource, create that configured class and preserve its roles relationship.
+The fixture assumes your application uses Aura's built-in user model. If you use a custom user resource, create that class instead and preserve its `roles` relationship.
 
 ```php
 <?php
@@ -169,13 +169,15 @@ test('requires a title', function (): void {
 });
 ```
 
-The teams-on branch creates a Team while the test user is authenticated. Team creation attaches the user to the shared admin Global Role and sets the current team. The explicit cache clear keeps TeamScope reads aligned with the new current team. In teams-off mode, Role::firstOrCreateGlobalAdmin() creates or reuses the flat admin role, and the user receives it through the roles relationship.
+When teams are enabled, creating a team for the authenticated user assigns the shared global admin role and sets the current team. Clearing the cache makes subsequent team-scoped queries use that team.
 
-The Article field definition is an array. Aura does not provide a fluent field builder such as Text::make()->rules(...).
+With teams disabled, the fixture creates or reuses the admin role in the flat catalog and assigns it through the user's roles relationship.
+
+Define fields as arrays, as shown above. Aura does not provide a fluent field builder such as `Text::make()->rules(...)`.
 
 ## Assert Resource storage
 
-Resources use the shared posts table by default. A Resource with meta storage keeps declared field values in the meta table and uses posts.type to identify the Resource:
+Resources use the shared `posts` table by default. With meta storage, declared field values live in the `meta` table, while `posts.type` identifies the resource:
 
 ```php
 $this->assertDatabaseHas('posts', [
@@ -187,13 +189,13 @@ $article = Article::query()->latest('id')->firstOrFail();
 expect($article->fields['title'])->toBe('Hello World');
 ```
 
-Read a meta-backed field through the Resource's fields accessor or its field accessor. Do not assert that a declared field has its own physical column.
+Read fields stored as metadata through the resource's `fields` accessor or the individual field accessor. These values do not have their own physical columns.
 
-A custom-table Resource declares public static $customTable = true and normally sets public static bool $usesMeta = false. Its host migration must create the physical columns used by the Resource. Assert those columns in the custom table, and use a migration-aware test setup when the test owns that schema.
+For a resource that uses a custom table, set `public static $customTable = true`. These resources normally disable meta storage with `public static bool $usesMeta = false`, so your application migration must create columns for their fields. Assert values in those columns. If the test creates the table, use a setup that reruns migrations.
 
 ## Test fields and validation
 
-Fields are declared in getFields() as arrays with a type class and a slug. Test a field's validation through the Resource Livewire component:
+Declare each field in `getFields()` with its type class and slug, then test validation through the resource's Livewire component:
 
 ```php
 use Aura\Base\Livewire\Resource\Create;
@@ -207,7 +209,11 @@ test('rejects an invalid email', function (): void {
 });
 ```
 
-The Resource used in that test must declare an Email field with validation set to a rule such as required|email. Use withViewErrors([])->blade(...) when you need to assert a field view's rendered markup. Instantiate the field class through the container and call its edit() or view() method. Conditional visibility is represented by a conditional_logic array or closure, and can be checked through Aura\Base\ConditionalLogic.
+The resource used in this test must declare an email field with a validation rule such as `required|email`.
+
+To test rendered field markup, resolve the field class through the container and call its `edit()` or `view()` method. Render the view with `withViewErrors([])->blade(...)`.
+
+For conditional visibility, define an array or closure under `conditional_logic` and check it through `Aura\Base\ConditionalLogic`.
 
 ## Test Livewire resource pages
 
@@ -228,7 +234,7 @@ Livewire::test(Edit::class, [
     ->assertHasNoErrors();
 ```
 
-Create, Edit, Index, and View are the Resource page components. Create::save() redirects to the edit route when it is not running in a modal:
+Aura provides create, edit, index, and view page components. Saving a new record redirects to its edit page unless the create component is running in a modal:
 
 ```php
 Livewire::test(Create::class, ['slug' => 'article'])
@@ -245,16 +251,16 @@ $this->get(route('aura.article.index'))
     ->assertSeeLivewire(\Aura\Base\Livewire\Resource\Index::class);
 ```
 
-The route names are aura.{slug}.index, aura.{slug}.create, aura.{slug}.edit, and aura.{slug}.view. Aura does not add store or destroy routes for these pages. Saving and deletion happen in the Livewire components or Resource actions.
+Page routes use the names `aura.{slug}.index`, `aura.{slug}.create`, `aura.{slug}.edit`, and `aura.{slug}.view`. Saving and deletion happen through Livewire components or resource actions, so these pages have no store or destroy routes.
 
 ## Test permissions and memberships
 
 Aura uses several distinct concepts in permission tests:
 
-- A Super Admin is a role-level grant. Its super_admin flag grants every permission in the current team.
-- A Global Admin is an instance-level user flag in users.global_admin. It can cross the team boundary and is separate from the Super Admin role.
-- A Global Role has no team and belongs to the Role Catalog. A Team Role has a team_id and exists only in that team.
-- A Membership is a user-to-team pivot row with one role. A Global Admin entering a team without a pivot row is visiting that team, not becoming a member.
+- A super admin role grants every permission in the current team through its `super_admin` flag.
+- A global admin user can cross team boundaries. This access comes from `users.global_admin`, independently of the super admin role.
+- A global role has no team and belongs to the role catalog. A team role belongs to one team through its `team_id`.
+- Membership links a user to a team through a pivot row with one role. A global admin who enters a team without that row is visiting it and does not become a member.
 
 Test a normal role through the same relationship that the application uses:
 
@@ -292,7 +298,9 @@ $this->user->refresh();
 expect($this->user->hasPermission('viewAny-article'))->toBeTrue();
 ```
 
-syncWithPivotValues is required when teams are on because the user_role pivot stores team_id. Teams-off uses sync because that column does not exist. To exercise Global Admin behavior, set global_admin in a trusted fixture with forceFill(['global_admin' => true])->saveQuietly(). The field is intentionally not mass assignable.
+When teams are enabled, assign the role with `syncWithPivotValues()` to include the team ID on the pivot row. With teams disabled, use `sync()` because the pivot table has no team column.
+
+To test global admin access, set the flag in a trusted fixture with `forceFill(['global_admin' => true])->saveQuietly()`. This field is intentionally protected from mass assignment.
 
 ## Test uploads
 
@@ -322,7 +330,7 @@ test('uploads an image', function (): void {
 
 ## Test Artisan commands
 
-Assert the command signature and the generated artifact. For example, aura:resource accepts a name and an optional --custom flag:
+Test that the command accepts its documented arguments and produces the expected file. For example, `aura:resource` accepts a name and an optional `--custom` flag:
 
 ```php
 test('generates a Resource', function (): void {
@@ -333,15 +341,17 @@ test('generates a Resource', function (): void {
 });
 ```
 
-The package also registers aura:field, aura:user, aura:install-config, and aura:publish. Read the command signature before adding options to a test. A command test should use a test filesystem or a temporary application path when the command writes files.
+The package also registers `aura:field`, `aura:user`, `aura:install-config`, and `aura:publish`. Read the command signature before adding options to a test. A command test should use a test filesystem or a temporary application path when the command writes files.
+
+<a id="package-maintainer-tests"></a>
 
 ## Package maintainer tests
 
-The package repository has a separate Testbench application. Aura\Base\Tests\TestCase extends Orchestra\Testbench\TestCase, uses LazilyRefreshDatabase and InteractsWithViews, registers the package providers, and loads database/migrations/create_aura_tables.php.stub in its environment setup.
+The package repository runs tests in a separate Orchestra Testbench application. Its base test case, `Aura\Base\Tests\TestCase`, extends the Testbench case and uses the `LazilyRefreshDatabase` and `InteractsWithViews` traits. During setup, it registers the package providers and loads `database/migrations/create_aura_tables.php.stub`.
 
-The package tests/Pest.php binds that Testbench case to tests/Feature, tests/FeatureWithDatabaseMigrations, and tests/Unit. It applies RefreshDatabase to Feature and DatabaseMigrations to FeatureWithDatabaseMigrations.
+The package configures its test directories in `tests/Pest.php`. Feature, migration, and unit tests all use the Testbench case. Tests in `tests/Feature` also use `RefreshDatabase`, while those in `tests/FeatureWithDatabaseMigrations` use `DatabaseMigrations`.
 
-The package composer.json maps Aura\Base\Tests\\ through autoload-dev. The namespace, Aura\Base\Tests\TestCase, Aura\Base\Tests\Resources\Post, and the helper functions in tests/Pest.php are therefore package test code. Composer does not autoload them into an application that only requires eminiarts/aura-cms.
+The test namespace is registered through Composer's development autoloader. The base test case, resource fixtures, and helpers in `tests/Pest.php` are available only inside the package checkout. Composer does not autoload them into an application that requires `eminiarts/aura-cms`.
 
 The current main branch declares these test-related versions:
 
@@ -364,9 +374,16 @@ composer analyse
 composer format
 ```
 
-composer test is the package's default Pest command. It runs without coverage, uses parallel workers, and excludes the separate Browser testsuite. The coverage script is also defined by the package. These scripts are not installed in a customer application.
+The `composer test` script runs Pest in parallel without coverage and excludes the separate browser test suite. Use `composer test-coverage` for coverage. These scripts belong to the package checkout and are not installed in your application.
 
-The package helpers are implementation fixtures, not a public API. In the current suite, createSuperAdmin() creates an authenticated user and, when teams are enabled, a Team that attaches the shared Global Role with slug admin. With teams disabled it delegates to createSuperAdminWithoutTeam(), which reuses or creates that role and syncs it without a team pivot. createAdmin() creates an Editor role with an explicit permission map. createPost() returns the package's Aura\Base\Tests\Resources\Post fixture. Other helpers such as createGlobalAdmin(), foreignTeam(), and soleMemberOf() are also defined for package tests only.
+The package helpers are internal fixtures and are not a public API. Their current behavior is:
+
+- `createSuperAdmin()` authenticates a user. With teams enabled, it creates a team and attaches the shared global role whose slug is `admin`.
+- `createSuperAdminWithoutTeam()` creates or reuses that admin role and assigns it without a team pivot value. The super admin helper delegates to it when teams are disabled.
+- `createAdmin()` creates an editor role with an explicit permission map.
+- `createPost()` returns the package's `Aura\Base\Tests\Resources\Post` fixture.
+
+Other helpers, including `createGlobalAdmin()`, `foreignTeam()`, and `soleMemberOf()`, are also available only to package tests.
 
 ## Focused test commands
 
@@ -382,8 +399,8 @@ Run the same focused test with the teams-off environment in a separate process a
 
 ## Related guides
 
-- [Resources](/docs/resources) explains Resource definitions and storage.
+- [Resources](/docs/resources) explains resource definitions and storage.
 - [Fields](/docs/fields) lists the available field types and options.
-- [Custom tables](/docs/custom-tables) covers dedicated Resource tables.
+- [Custom tables](/docs/custom-tables) covers dedicated resource tables.
 - [Roles and permissions](/docs/roles-permissions) describes permission keys and role resolution.
 - [Teams](/docs/teams) covers team context and teams-off mode.

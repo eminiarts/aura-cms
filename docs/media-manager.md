@@ -1,10 +1,12 @@
 # Media Library
 
-Aura stores uploaded files as `Attachment` resources. The Media Library is both the media subsystem and the standalone admin page labelled "Media". These Livewire components provide its UI:
+The Media Library lets you upload files, choose existing files for a resource, and edit file metadata. You can open it from the **Media** page or from an image or file field.
 
-- `MediaUploader` is the drag-and-drop uploader and upload queue.
-- `MediaManager` is the Media Picker, opened from an Image or File field to choose existing attachments.
-- `AttachmentDetails` is the Details Panel, which previews one attachment and edits its metadata.
+Aura stores each uploaded file as an attachment resource. Three Livewire components provide the interface:
+
+- `MediaUploader` handles drag-and-drop uploads and the upload queue.
+- `MediaManager` opens a picker for choosing existing attachments.
+- `AttachmentDetails` previews an attachment and lets you edit its metadata.
 
 ![Media Library Overview](/images/docs/media-manager/media-manager-overview.png)
 
@@ -15,11 +17,11 @@ Uploads and thumbnails use the disk and base path configured under `media` in `c
 
 ## The attachment resource
 
-Attachments are a built-in resource (`Aura\Base\Resources\Attachment`) labelled Media in the admin. The default resource uses the shared `posts` table with `type = 'Attachment'`. Its input field values are stored as rows in the `meta` table, not as a JSON blob. The base `title`, `slug`, `type`, `user_id`, and `team_id` values remain columns on `posts`. See [Meta fields](/docs/meta-fields) for the storage rules.
+The built-in attachment resource, `Aura\Base\Resources\Attachment`, appears as **Media** in the admin. It uses the shared `posts` table, with its type set to `Attachment`. Field values are stored as individual rows in the `meta` table. The title, slug, type, user ID, and team ID remain columns on the record itself. See [Meta fields](/docs/meta-fields) for the storage rules.
 
-An upload writes `title` to the `posts` row. It writes `name`, `url`, `size`, and `mime_type` to meta, plus `width` and `height` when the uploaded file is an image. `alt_text` is a defined meta field that starts empty. `thumbnail_url` is also defined, but the upload and thumbnail code never fills it automatically.
+Uploads save the original filename as the record's title. The display filename, storage path, file size, and MIME type are saved as metadata. Images also store their width and height. Alt text starts empty. The resource defines a `thumbnail_url` field, but uploads and thumbnail generation do not fill it automatically.
 
-The media index is available at the `aura.attachment.index` route (`/{aura-path}/attachment`, default `/admin/attachment`), rendered in a grid view at 25 per page.
+The media index displays 25 attachments per page in a grid. Its named route is `aura.attachment.index`, and its URL is `/{aura-path}/attachment`, or `/admin/attachment` with the default configuration.
 
 Key methods and attributes on an attachment instance:
 
@@ -46,18 +48,20 @@ $attachment->thumbnail('md');      // aura.image URL at the "md" dimension
 $attachment->filePath();           // absolute path for the default public disk
 ```
 
-The Details Panel labels its first input "Title", but it saves that value to the `name` meta field. It does not update `posts.title`. `filePath()` is a legacy helper that assumes `storage/app/public`; it does not resolve the configured disk. Use `path()` for a public URL and `Storage::disk(config('aura.media.disk'))->path(...)` on disks that expose local paths.
+Editing **Title** in the details panel changes the display filename, stored in the `name` meta field. It does not change the record's `posts.title` column.
+
+Use `path()` to get a public URL. For a local filesystem path, use `Storage::disk(config('aura.media.disk'))->path(...)` on a disk that supports it. The legacy `filePath()` helper always assumes `storage/app/public`, regardless of the configured disk.
 
 <a id="file-management"></a>
 
 ## The Media Library index page
 
-The index page renders the `MediaUploader` in table mode plus the Details Panel:
+The index page combines the uploader, attachment grid, and details panel.
 
-- **Drag and drop** files anywhere on the page, or use the **Upload Files** button, to upload.
-- **Quick filters** (media-type pills and an upload-month dropdown) narrow the grid. See [Quick filters](#quick-filters).
-- **Clicking a card** opens the Details Panel for that attachment.
-- **Bulk delete** is available through row selection (the `deleteSelected` bulk action) and the per-row `deleteAttachment` action.
+- Drag files onto the page or click **Upload Files** to upload them.
+- Filter the grid by media type or upload month. See [Quick filters](#quick-filters).
+- Click an attachment card to open its details.
+- Delete selected attachments with the bulk action, or delete one attachment with its row action. The corresponding resource methods are `deleteSelected()` and `deleteAttachment()`.
 
 <a id="configuration"></a>
 
@@ -89,13 +93,15 @@ Media options live under `media` in `config/aura.php`:
 
 The `filePath()` helper still points at `storage/app/public`, even when `media.disk` is changed. `thumbnail_path()` uses the configured disk, but only for a value you set in the `thumbnail_url` field. Generated thumbnails are returned by `thumbnail()` through the `aura.image` route and do not populate `thumbnail_url`.
 
-The media routes use Aura's admin middleware. `Attachment\Index` authorizes `viewAny` before rendering the page. When teams are enabled, `TeamScope` limits default Attachment queries to the authenticated user's current Team. Teams-off mode removes that team predicate. `ScopedScope` can also limit a non-Super Admin with the `scope` permission to rows whose `user_id` matches the current user. Row and bulk mutations still authorize the requested resource ability.
+Media routes use Aura's admin middleware, and the index checks the resource's `viewAny` permission before rendering. When teams are enabled, attachment queries are limited to the signed-in user's current team. Disabling teams removes that restriction.
+
+Users with the `scope` permission who are not super admins may also be limited to attachments they own. Row actions and bulk actions still check the resource permission for the requested change.
 
 <a id="media-fields"></a>
 
 ## Image and File fields
 
-Both fields use `MediaUploader`. A typical resource definition is:
+Image and file fields let users upload files or choose attachments from the library. Both use the same uploader. Define them on a resource as follows:
 
 ```php
 public static function getFields(): array
@@ -122,14 +128,14 @@ public static function getFields(): array
 }
 ```
 
-The selected value is normally an array of attachment IDs. Image and File field setters JSON-encode array values for storage. The field views resolve the configured attachment resource when they render selected files.
+A field's value is normally an array of attachment IDs. Both field types encode arrays as JSON for storage and use the configured attachment resource to display selected files.
 
 ```php
 $ids = $post->gallery; // [123, 124, 125]
 $images = Attachment::whereKey($ids)->get();
 ```
 
-The Image field exposes these editor options:
+The image field exposes these editor options:
 
 | Option | Current behavior |
 | --- | --- |
@@ -138,13 +144,13 @@ The Image field exposes these editor options:
 | `min_files` | Defined in the field editor, but not enforced. |
 | `allowed_file_types` | Defined in the field editor, but not used by upload validation. The uploader uses its fixed MIME allow-list. |
 
-The File field adds no media-specific options. Both fields use the same uploader and upload allow-list.
+The file field adds no media-specific options. Both fields accept the same fixed list of upload types.
 
 <a id="file-upload"></a>
 
 ## Uploading files
 
-`MediaUploader` (`Aura\Base\Livewire\MediaUploader`) uses Livewire's `WithFileUploads` trait. Its Alpine queue uploads files in one batch one at a time, and reports progress and validation failures per file.
+The uploader sends files one at a time and shows progress and validation errors for each file. The `Aura\Base\Livewire\MediaUploader` component uses Livewire's `WithFileUploads` trait with an Alpine upload queue.
 
 ```blade
 <livewire:aura::media-uploader
@@ -160,11 +166,11 @@ The media index uses `table="true"` and renders the Upload Files button. Set `up
 
 ### The upload queue
 
-When files are added by drop or file picker, the Alpine queue in `media-uploader.blade.php`:
+When you drop files onto the uploader or choose them from a file picker, the queue checks each file in the browser first. Files that fail these checks stay in the queue with an error and are not uploaded.
 
-1. Runs client-side pre-checks on each file and records failures without uploading them.
-2. Uploads the remaining files sequentially through `@this.uploadMultiple('media', [file], ...)`, with one progress bar per file.
-3. Marks successful rows as Uploaded and removes them after four seconds. Failed rows keep the server message until the user dismisses them or chooses Clear finished.
+The remaining files upload one at a time, each with its own progress bar. Successful rows show **Uploaded** and disappear after four seconds. Failed rows keep the server's error message until you dismiss them or choose **Clear finished**.
+
+The queue is defined in `media-uploader.blade.php` and sends each file through Livewire's `uploadMultiple()` method.
 
 Client pre-checks are convenience checks. The server validates every file again. They use the values returned by `uploadPolicy()`:
 
@@ -172,7 +178,7 @@ Client pre-checks are convenience checks. The server validates every file again.
 - Files larger than the configured `max_file_size` are rejected.
 - No more than 20 files may be queued in one batch.
 
-**Server validation is authoritative.** `MediaUploader::updatedMedia()` re-validates every file and re-checks the blocked extensions before storing:
+The server makes the final validation decision. Before storing a file, `MediaUploader::updatedMedia()` validates it again and checks its extension against the blocked list:
 
 ```php
 $this->validate([
@@ -186,7 +192,7 @@ $this->validate([
 ]);
 ```
 
-Validation failures return to the queue as failed rows. Each accepted file is stored with `$media->store(config('aura.media.path', 'media'), config('aura.media.disk', 'public'))`. The stored filename is generated by Laravel. Aura then creates an attachment through `config('aura.resources.attachment')`:
+Validation failures appear as failed rows in the queue. Accepted files are stored on the configured media disk and path, with filenames generated by Laravel. Aura then creates a record using the configured attachment resource:
 
 ```php
 app(config('aura.resources.attachment'))::create([
@@ -204,10 +210,10 @@ app(config('aura.resources.attachment'))::create([
 
 How an upload updates a field's value depends on the mode:
 
-- **Inline (`table = false`)**: a successful upload commits directly. The uploader dispatches `updateField` with the new IDs merged into the current selection. This is the mode used when you drop files onto an Image or File field.
-- **Picker (`table = true`)**: an upload does not commit the parent field. It dispatches `media-uploaded`; the nested table refreshes, highlights the new cards, and auto-selects them. The parent field is written when the user confirms with Select.
+- In inline mode, dropping files onto an image or file field updates its selection as soon as the upload succeeds. With `table = false`, the uploader merges the new attachment IDs into the current selection and dispatches `updateField`.
+- In picker mode, uploaded files appear in the refreshed grid and are selected automatically. With `table = true`, the parent field is updated only after the user clicks **Select**.
 
-Every successful batch also dispatches `media-uploaded` and populates the public `uploadResult` property (`successful`, `message`, `ids`), which the queue reads to advance to the next file. Inline mode additionally dispatches `updateField`.
+Every successful batch dispatches `media-uploaded`. It also fills the public `uploadResult` property with the `successful`, `message`, and `ids` values that the queue needs before moving to the next file.
 
 ### Component properties
 
@@ -228,7 +234,7 @@ The hidden file input is only rendered when `upload` or `table` is true. In a fi
 
 ## Selecting existing media
 
-`MediaManager` (`Aura\Base\Livewire\MediaManager`) backs the **Media Picker**, the modal for choosing from already-uploaded files. The field's **Media Library** button opens it via the standard modal dispatch:
+Click **Media Library** on a field to choose files that have already been uploaded. This opens the picker, implemented by `Aura\Base\Livewire\MediaManager`, through the standard modal event:
 
 ```blade
 wire:click="$dispatch('openModal', {
@@ -241,9 +247,11 @@ wire:click="$dispatch('openModal', {
 })"
 ```
 
-`MediaManager::mount($slug, $selected, $modalAttributes)` resolves the field with `app($model)->fieldBySlug($slug)`, normalizes selected IDs to strings, and authorizes them through `MediaAuthorization`. The picker view nests `MediaUploader` in table mode. The nested Table component builds the Attachment query and paginates it using the resource's default per-page value, which is 25 for the built-in Attachment resource. Selection limits come from the resolved field's `max_files` and are enforced in the grid and table JavaScript.
+When the picker opens, it looks up the field on its parent resource, converts the selected IDs to strings, and checks access to those attachments through `MediaAuthorization`.
 
-Inside the picker, uploads **auto-select** the new files but do not write the field value. When you confirm, `MediaManager::select()` dispatches a single `updateField` event with the field slug and chosen IDs:
+The picker displays the uploader in table mode. Its attachment list uses the resource's default page size, which is 25 for the built-in resource. The browser enforces the field's `max_files` selection limit in both grid and table views.
+
+Uploads select the new files automatically, but the field value changes only when you confirm. At that point, `MediaManager::select()` dispatches one `updateField` event with the field slug and chosen IDs:
 
 ```php
 $this->dispatch('updateField', data: [
@@ -267,10 +275,10 @@ The Media Picker component is swappable. Plugins can override `aura.components.m
 
 ## The details panel
 
-`AttachmentDetails` (`Aura\Base\Livewire\AttachmentDetails`) renders the **Details Panel** for a single attachment. It appears in two surfaces, controlled by the locked `surface` property:
+The details panel previews one attachment and lets you edit its metadata. The `Aura\Base\Livewire\AttachmentDetails` component has two layouts, controlled by its locked `surface` property:
 
-- `surface="index"`: a slide-in drawer on the Media Library page, including destructive actions.
-- `surface="picker"`: a sidebar inside the Media Picker without the delete action.
+- `surface="index"` shows a slide-in drawer on the Media Library page, with a delete action.
+- `surface="picker"` shows a sidebar in the picker, without a delete action.
 
 It opens on the `open-attachment-details` event, which carries the clicked `id` and the ordered `ids` of the currently listed attachments (for prev/next):
 
@@ -278,31 +286,27 @@ It opens on the `open-attachment-details` event, which carries the clicked `id` 
 Livewire.dispatch('open-attachment-details', { id: 123, ids: rows.map(Number) })
 ```
 
-The panel provides:
+The panel shows an image, video, audio player, or file-type icon according to the attachment's MIME type. It also shows the upload date, readable file type and size, and image dimensions when both width and height are available.
 
-- **Preview**: image, `<video>`, `<audio>`, or a file-type icon depending on the MIME type.
-- **Title**: `wire:model.live.debounce.600ms`; `updatedTitle()` validates `required|string|max:255` and saves to the `name` meta field. A Saved badge flashes on success.
-- **Alt text**: `updatedAltText()` validates `nullable|string|max:500` and saves to `alt_text`.
-- **Facts**: uploaded date, type (`readable_mime_type`), size (`readable_filesize`), and dimensions when both `width` and `height` exist.
-- **File URL**: a read-only field with a Copy button.
-- **Download**: a link to the original file URL.
-- **Delete**: available only on the index surface. It authorizes `delete`, removes the Attachment record, refreshes the table, and opens the next or previous row. It closes when no row remains.
+Edits to **Title** save automatically after a 600 ms debounce, and a **Saved** badge confirms success. The value is required, must be a string, and may contain up to 255 characters. It updates the display filename in the `name` meta field. Alt text is optional and accepts up to 500 characters, saved to `alt_text`.
+
+You can copy the read-only file URL or download the original file. On the Media Library page, you can also delete the attachment. After checking permission and removing the record, the panel refreshes the table and opens the next or previous attachment. It closes if no attachments remain.
 
 Navigation between attachments:
 
 - Prev and Next buttons, plus `ArrowLeft` and `ArrowRight` while the panel is open and no input or textarea is focused.
 - Escape closes the panel on the index surface.
 
-Every read, update, and delete goes through the resource policy (`Gate::authorize('view' | 'update' | 'delete', $attachment)`), so the panel respects the same authorization as the rest of Aura.
+The panel checks the resource policy for every read, edit, and deletion, using the corresponding `view`, `update`, or `delete` ability.
 
 <a id="quick-filters"></a>
 
 ## Quick filters and metadata
 
-The Media Library grid ships two quick filters built on the generic table mechanism:
+The grid has two quick filters:
 
-- Media-type pills use `Attachment::MEDIA_TYPES`: `All`, `Images`, `Video`, `Audio`, and `Documents`. Documents means MIME types that are not images, video, or audio.
-- The upload-month dropdown uses distinct `YYYY-MM` values from `Attachment::uploadMonths()`, newest first.
+- Filter by All, Images, Video, Audio, or Documents. Documents includes any MIME type that is not an image, video, or audio. These choices are defined in `Attachment::MEDIA_TYPES`.
+- Filter by upload month, with the newest month first. The available months come from `Attachment::uploadMonths()` as distinct `YYYY-MM` values.
 
 Both are wired to the table's generic quick-filter API, so this is the pattern to reuse for any resource:
 
@@ -313,7 +317,7 @@ To add quick filters to your own resource, override `indexQuery()` to interpret 
 
 ## Attachment metadata and querying
 
-For the default Attachment resource, `mime_type`, `size`, `url`, `name`, `alt_text`, `width`, and `height` are meta fields. `where('mime_type', ...)` therefore targets no `posts` column. Use Aura's meta scopes:
+The default attachment resource stores file metadata in the meta table. This includes the MIME type, size, storage path, display filename, alt text, and image dimensions. These values are not columns on the `posts` table, so a query such as `where('mime_type', ...)` will not work. Use Aura's meta scopes:
 
 ```php
 use Aura\Base\Resources\Attachment;
@@ -331,7 +335,7 @@ Attachment::whereMetaContains('mime_type', 'application/pdf')->get();
 
 `whereMeta` accepts a SQL operator such as `LIKE`, which is how `indexQuery()` matches prefixes such as `image/%`. Use `isImage()` after loading a record. The built-in Tags field is commented out and is not active for attachments.
 
-When a resource policy implements `Aura\Base\Contracts\ScopesMediaVisibility`, Aura uses that scope while validating selected attachment IDs. The default TeamScope still protects ordinary queries. The current Table query does not call this custom visibility hook while listing rows, so custom policies should not assume that the Media Library grid applies their extra row filter. See the evidence report for the source locations and a focused reproduction.
+A policy can implement `Aura\Base\Contracts\ScopesMediaVisibility` to restrict which attachments may be selected. Aura applies this scope when it validates selected IDs, but the table does not apply it when listing attachments. The grid therefore does not inherit these custom visibility restrictions. Ordinary queries still use the default team scope.
 
 <a id="programmatic-usage"></a>
 <a id="performance-optimization"></a>
@@ -343,7 +347,9 @@ Aura generates thumbnails on demand through the `aura.image` route. Saving an im
 
 ### On-demand URLs
 
-`Attachment::thumbnail($size)` looks up `$size` in `config('aura.media.dimensions')` and returns an `aura.image` route URL. It does not read a stored thumbnail path. `thumbnail_url` is a defined field, but the upload and thumbnail code never fills it. `thumbnail_path()` builds a URL from that field, so it is only useful when your application sets the field itself.
+Call `thumbnail($size)` with a name from `aura.media.dimensions` to get a URL for the image route. Aura generates the thumbnail when that URL is requested.
+
+This method does not use the attachment's `thumbnail_url` field. The separate `thumbnail_path()` helper builds a URL from that field and is useful only if your application fills it itself.
 
 ```php
 $attachment->thumbnail('xs');        // width 200
@@ -360,11 +366,9 @@ For non-image attachments `thumbnail()` returns the original file URL.
 
 ### The image route
 
-`GET /{aura-path}/img/{path}` (`aura.image`, handled by `ImageController`) requires a matching Attachment record and `view` authorization. It reads `width` (default 200) and optional `height`, generates the thumbnail through `ThumbnailGenerator`, and streams it as `image/jpeg`.
+The image route, `GET /{aura-path}/img/{path}`, requires a matching attachment and permission to view it. Its route name is `aura.image`, and `ImageController` handles the request. It accepts a width, which defaults to 200, and an optional height, then generates and streams a JPEG thumbnail.
 
-`ThumbnailGenerator::generate(string $path, int $width, ?int $height = null): string` operates on the configured `config('aura.media.disk', 'public')` disk:
-
-The generator uses Intervention Image 3 with its GD driver. Enable PHP GD in the host application. Aura does not require the optional Laravel image facade package for this path.
+`ThumbnailGenerator::generate()` reads and writes files on the configured media disk. It uses Intervention Image 3 with the GD driver, so enable PHP GD in your application. The optional Laravel image facade package is not required.
 
 - Thumbnails are written to `thumbnails/{original-folder}/`, named `{width}_auto_{filename}` for width-only requests or `{width}_{height}_{filename}` for fixed dimensions.
 - A width-only request does not upscale. If the requested width exceeds the source width, the generator returns the original path.
@@ -383,7 +387,9 @@ static::saved(function (Attachment $attachment) {
 });
 ```
 
-The job skips the `testing` environment, reads the media configuration, returns without work when `generate_thumbnails` is false, and calls `ThumbnailGenerator::generate()` for each configured dimension. It writes thumbnail files and does not update `thumbnail_url`. Run a queue worker when you want the pre-generation job to run:
+The job generates a thumbnail for each configured dimension. It skips this work in the testing environment or when `generate_thumbnails` is false. It writes the files without updating the attachment's `thumbnail_url` field.
+
+Run a queue worker to process thumbnail jobs:
 
 ```bash
 php artisan queue:work
@@ -391,7 +397,7 @@ php artisan queue:work
 
 ## Deleting attachments
 
-Deletion removes the Attachment record and does not remove the underlying file from storage:
+Deleting an attachment removes its database record. The original file remains in storage.
 
 - The Details Panel Delete button is available on the index surface, authorizes `delete`, and removes the record.
 - The row action `Attachment::deleteAttachment()` authorizes `delete`, removes the record, and redirects to the index.
@@ -415,7 +421,9 @@ If the application needs orphaned files removed, delete them from the configured
 
 ## Overriding the attachment resource
 
-To add custom fields such as copyright or category, extend the base resource and point `aura.resources.attachment` at your class. The uploader uses the configured class when it creates a record. `AttachmentDetails`, the Image field, and `ImageController` also resolve that configured class. The table model in `MediaUploader` currently defaults to the base `Aura\Base\Resources\Attachment` during `mount()`, so a custom subclass is not a complete drop-in for the index or picker table. See the evidence report for this source defect.
+To add fields such as copyright or category, extend the base attachment resource and set `aura.resources.attachment` to your class. The uploader, details panel, image field, and image controller use this configured class.
+
+The index and picker tables currently default to the built-in attachment class when the uploader mounts. Setting a custom resource does not replace that table model, so a subclass alone does not fully customize these lists.
 
 ```php
 namespace App\Aura\Resources;

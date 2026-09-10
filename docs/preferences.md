@@ -1,8 +1,8 @@
 # Preferences
 
-A preference is an application-defined value with a key, a value type, a default, and one or more storage scopes. `PreferenceManager` validates values, reads the selected scope, and writes through Aura's existing option helpers.
+Preferences let your application declare values with a type, a default, and rules for where they can be stored. A preference can belong to a user, a team, or everyone. Aura validates each value and reads it from the first applicable scope, using the existing option helpers for storage.
 
-Aura does not register application preference definitions for you. Register each definition from your application or plugin service provider. The package binds one `PreferenceRegistry` and one `PreferenceManager` through `AuraServiceProvider`.
+Register your preferences in an application or plugin service provider. Aura has no built-in definitions. Its service provider binds a shared `PreferenceRegistry` for definitions and a shared `PreferenceManager` for reading and writing values.
 
 ## Choose the right store
 
@@ -11,11 +11,11 @@ Aura has several stores with different jobs:
 | Store | Use it for | Main entry point |
 | --- | --- | --- |
 | Configuration | Values that belong to the deployed application and are defined in code or environment variables | `config()` |
-| Settings | The built-in appearance form and its current Team or instance settings | `Aura::getOption('settings')` and `Aura::updateOption('settings', $value)` |
+| Settings | The built-in appearance form and its current team or instance settings | `Aura::getOption('settings')` and `Aura::updateOption('settings', $value)` |
 | Options | Existing untyped key/value data that does not need a declaration or scope precedence | `Aura`, `User`, and `Team` option helpers |
 | Preferences | Declared values that need type validation, scope resolution, and write authorization | `PreferenceManager` or the `Preferences` facade |
 
-Preferences use the existing `options` table. They do not add a preferences table or a migration. The Settings page and the `Option` Resource continue to use their existing option names. A preference definition does not change those APIs.
+Preferences use the existing `options` table, so they need no new table or migration. The Settings page and the option resource keep their existing option names and APIs.
 
 For the built-in Settings page, read and write the `settings` option:
 
@@ -31,7 +31,7 @@ Aura::updateOption('settings', array_replace($settings, [
 ]));
 ```
 
-See [Settings](/docs/settings) for the page fields, authorization, and the teams-on and teams-off option rows.
+See [Settings](/docs/settings) for the page fields, authorization, and how storage differs when teams are enabled or disabled.
 
 ## Register a definition
 
@@ -65,9 +65,9 @@ class AppServiceProvider extends ServiceProvider
 }
 ```
 
-`PreferenceRegistry::register()` returns the registry. Registering the same key twice throws `InvalidArgumentException`. The package has no built-in definitions, so keys such as `table.view` exist only when an application or plugin registers them.
+Each key must be unique. Registering the same key twice throws `InvalidArgumentException`. The registration method returns the registry, so calls can be chained. Keys such as `table.view` are available only after an application or plugin registers them.
 
-The key must start with a lowercase letter and then contain only lowercase letters, digits, dots, hyphens, and underscores. The definition validates its default when it is constructed. `scopes` must contain at least one `PreferenceScope` value. Its default is `User` and `Team`.
+The key must start with a lowercase letter and contain only lowercase letters, digits, dots, hyphens, and underscores. The definition validates its default value when constructed. It must also support at least one scope. By default, preferences support the user and team scopes.
 
 ## Definition options
 
@@ -86,7 +86,7 @@ The key must start with a lowercase letter and then contain only lowercase lette
 | `list` | Requires an array with consecutive integer keys. It can be used only with the `Array` type. |
 | `legacyKeys` | Raw user option names that the manager checks after the canonical key. It never writes them. |
 
-The value checks are strict. A Boolean accepts only `true` or `false`. An Integer does not accept a numeric string or a Boolean. A Float accepts only a finite PHP float. An Array accepts an array, with optional list and item-type checks.
+Types are checked strictly. Booleans accept only `true` or `false`, and integers reject numeric strings and booleans. Floats must be finite PHP floats. Arrays may also require consecutive integer keys or a specific type for each item.
 
 For example, an ordered list of string values can be declared as follows:
 
@@ -107,7 +107,7 @@ $definition = new PreferenceDefinition(
 
 ## Read and write at runtime
 
-Build a `PreferenceContext` for every read and write. Its constructor accepts an application string, an optional Aura `User`, an optional Aura `Team`, and an optional resource string. The application and resource strings must be non-empty and must not contain a null byte.
+Every read and write needs a context identifying the application and, where relevant, the user, team, and resource. Create it with `PreferenceContext`, passing Aura user and team models when needed. The application name and any supplied resource name must be non-empty strings without null bytes.
 
 ```php
 <?php
@@ -145,7 +145,7 @@ Preferences::reset(
 );
 ```
 
-The facade resolves the same `PreferenceManager` that the container returns. The equivalent service call is:
+You can also resolve the preference manager directly from the container. It is the same instance used by the facade:
 
 ```php
 <?php
@@ -168,52 +168,54 @@ $density = $preferences->get('contacts.density', $context);
 
 ## Scope resolution
 
-For one canonical option key, the manager checks supported scopes in this order:
+For each preference key, the manager checks the supported scopes in this order:
 
 1. User
 2. Team
 3. Everyone
 
-It skips scopes that the definition does not support. For a non-nullable definition, a missing or `null` value and a value that fails validation allow the manager to continue to the next scope. If no canonical value is accepted, the manager checks each `legacyKeys` entry in the User scope and then returns the declared default.
+The manager skips scopes the definition does not support. For a non-nullable preference, it continues to the next scope when a value is missing, null, or invalid. If no valid value is found under the canonical key, it checks the declared legacy keys in the user scope. If those checks also fail, it returns the default.
 
-When `resourceAware` is `true` and the context resource is `Contact`, the canonical key passed to the User or Team helper is `preference.contacts.density.Contact`. Without a resource, it is `preference.contacts.density`. The current manager does not fall back from the resource-specific key to the unsuffixed key. `PreferenceContext::forApplication()` creates a context with its resource removed, but `PreferenceManager` does not call it during resolution.
+A resource-aware preference stores a separate value for each resource. For the example above, a Contact resource context produces the option key `preference.contacts.density.Contact`. A context without a resource produces `preference.contacts.density`. These are the keys passed to the user or team option helper.
 
-`legacyKeys` are passed to `User::getOption()` as written. The manager does not expand `{resource}` or `{application}`, and it does not check legacy Team or Everyone rows. Use a literal old option name, such as `contacts.density.v0`, when a legacy read is required.
+The manager does not fall back from a resource-specific key to the key without a resource suffix. You can create a context without a resource using `PreferenceContext::forApplication()`, but the manager does not do this during resolution.
+
+Legacy keys are literal user option names, such as `contacts.density.v0`. The manager passes them unchanged to `User::getOption()`. It does not substitute `{resource}` or `{application}`, or check legacy values in the team or everyone scopes.
 
 ## Nullable values and reset
 
-Set `nullable: true` when `null` is a valid stored value. The manager accepts `null` for `set()` and `reset()` writes `null` through the selected option helper. `reset()` does not call the helper's delete method.
+Set `nullable: true` when null is a valid stored value. This allows you to pass `null` to `set()`. Resetting a preference with `reset()` writes null through the selected option helper rather than deleting the option.
 
-The current option helpers return `null` for both a missing row and a row whose value is `null`. The manager treats either result as a nullable value and stops at that scope. A nullable User scope can therefore prevent a Team or Everyone value from winning. Use a non-nullable definition when a missing row must continue through the fallback order.
+The option helpers return null both for missing rows and for rows that store null. For a nullable preference, the manager accepts either result and stops at that scope. A nullable user scope can therefore prevent the manager from reaching a team or everyone value. Use a non-nullable definition when missing values must fall back to the next scope.
 
 ## Write authorization
 
-`set()` and `reset()` require an explicit actor. The manager applies these checks before calling an option helper:
+Pass the user performing the write as an explicit actor to `set()` and `reset()`. Before saving, the manager checks that this user can write to the selected scope:
 
 | Scope | Required actor and context |
 | --- | --- |
 | User | `context->user` must exist and its key must equal the actor's key. |
-| Team | `context->team` must exist and the actor must pass Gate's `update` ability for that Team. The built-in Team policy allows a Global Admin or the Team owner when team editing is enabled. |
+| Team | `context->team` must exist and the actor must pass Gate's `update` ability for that team. The built-in team policy allows a global admin or the team owner when team editing is enabled. |
 | Everyone | The actor must pass `User::GLOBAL_ADMIN_GATE`. |
 
-An unsupported scope, a missing actor, or a failed check throws `InvalidArgumentException`. A missing User or Team context also fails a write before storage. Guest writes therefore fail because they cannot provide a `User` actor.
+The manager throws `InvalidArgumentException` if the scope is unsupported, the actor is missing, or authorization fails. Writes also fail before reaching storage if the selected scope lacks its required user or team context. Guests cannot write preferences because an Aura user is required as the actor.
 
-The manager authorizes the explicit `$actor`, then calls the existing helpers. Those helpers still use their normal current-authentication and current-Team routing. The manager does not switch authentication or make `context->team` an explicit argument to `User::updateOption()` or `Team::updateOption()`. Keep the authenticated actor and current Team aligned with the context when writing in a teams-enabled application.
+Keep the authenticated user and current team aligned with the preference context when writing in an application with teams enabled. The manager authorizes the actor you pass, but the option helpers still use the current authentication and team to route storage. It does not switch authentication or pass the context team as an explicit argument to the user or team update helper.
 
 ## Aura facade and storage limits
 
-The `Preferences` facade resolves `PreferenceManager`. The `Aura` facade remains the low-level option and Settings API. `PreferenceManager` uses `Aura::getOption()` and `Aura::updateOption()` only for the `Everyone` scope. User and Team scopes call the corresponding resource helpers.
+Use the `Preferences` facade to access the preference manager. The `Aura` facade remains the API for options and the built-in Settings page. The manager uses its option helpers only for the everyone scope. User and team scopes use the option helpers on their respective resources.
 
 The current implementation has three limits to account for:
 
-- `PreferenceContext::$application` is validated and carried through the API, but `PreferenceManager` does not include it in option keys. It does not isolate two applications that share the same options table.
-- `Everyone` reads and writes delegate to `Aura`, whose teams-enabled path uses the authenticated user's current Team. They are not resolved from the supplied context alone, so queue and CLI calls need an authenticated Aura context. The manager also passes an already prefixed canonical key to `Aura`, which currently produces a `preference.everyone.preference...` option name.
+- The application name in the context is validated but omitted from option keys. Two applications sharing an options table are therefore not isolated by their application names.
+- The everyone scope delegates reads and writes to the Aura facade. With teams enabled, this uses the authenticated user's current team, so the supplied preference context alone is not enough. Queue and CLI calls also need an authenticated Aura context. The manager passes an already prefixed key to the facade, which currently produces an option name beginning with `preference.everyone.preference...`.
 - There is no preference-specific cache or migration layer. Existing option helper persistence and cache behavior applies.
 
-These limits are part of the current lightweight implementation. Do not treat the `application` field as a storage namespace or assume that Everyone values are independent of the current authenticated Team.
+Do not use the application name as a storage namespace or assume that everyone values are independent of the authenticated user's current team.
 
 ## Related APIs
 
-- [Settings](/docs/settings) documents the built-in appearance option and the `Option` Resource.
-- [Teams](/docs/teams) documents Team context and the existing `User` and `Team` option helpers.
+- [Settings](/docs/settings) documents the built-in appearance option and the option resource.
+- [Teams](/docs/teams) documents team context and the user and team option helpers.
 - [Record layouts](/docs/record-layouts) documents the optional boolean preference used to show a registered panel.

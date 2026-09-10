@@ -1,10 +1,10 @@
 # Livewire components
 
-Aura CMS targets Livewire 4. The package uses Livewire components for the admin dashboard, resource pages, tables, forms, media picker, modals, and resource editor. This page documents the names and contracts that are present in the current package source.
+Aura CMS targets Livewire 4. Its admin pages, tables, forms, media picker, modals, and resource editor are Livewire components. You can embed these components in your own views or extend them to customize their behavior.
 
 ## Component registration
 
-`AuraServiceProvider::bootLivewireComponents()` registers a Livewire 4 missing-component resolver. The resolver maps Aura's component names to PHP classes. The package does not register its built-in components with a separate `Livewire::component()` call in the provider.
+Aura resolves its built-in component names through Livewire 4's missing-component resolver. The service provider sets up this mapping in `bootLivewireComponents()`, without separate calls to `Livewire::component()`.
 
 Use the short `aura::` names when embedding a component in a Blade view:
 
@@ -63,13 +63,13 @@ The provider registers these short names.
 | `aura::widgets.pie` | `Aura\Base\Widgets\Pie` |
 | `aura::widgets.bar` | `Aura\Base\Widgets\Bar` |
 
-The provider also registers explicit dot-notation aliases. They include `aura.base.livewire.resource`, the resource page aliases under `aura.base.livewire.resource.*`, `aura.base.livewire.table.table`, `aura.base.livewire.attachment` and `.attachment.index`, and dot-notation aliases for the top-level components and widgets listed in `AuraServiceProvider`. These aliases are resolver entries, not route names.
+The provider also accepts dot-notation aliases. These include `aura.base.livewire.resource`, resource pages under `aura.base.livewire.resource.*`, `aura.base.livewire.table.table`, and both `aura.base.livewire.attachment` and `aura.base.livewire.attachment.index`. The service provider lists additional aliases for top-level components and widgets. These names resolve components. They are not route names.
 
-The short names and the dot aliases are different from the Blade view names. For example, `resources/views/livewire/resource/view.blade.php` is the view rendered by the `View` class. It is not a second route component. The modal views in that directory are wrappers used by the modal classes. The routed full-page classes are `Index`, `Create`, `Edit`, and `View`.
+Component names also differ from Blade view names. For example, `resources/views/livewire/resource/view.blade.php` is the template rendered by the record view component, not another component you can route to. The modal templates in that directory wrap content for the modal classes. Use the index, create, edit, or view page class for a full-page route.
 
 ## Routed admin pages
 
-Aura registers admin routes inside the configured `aura.domain`, `aura.path`, and `aura-settings.middleware.aura-admin` group. The default path is `/admin`. Each registered resource supplies the component for each route through four static methods from the `AuraResourceComponents` concern.
+Aura places admin routes under `/admin` by default. You can change their domain, path, and middleware through `aura.domain`, `aura.path`, and `aura-settings.middleware.aura-admin`. Each resource chooses its page components through four static methods provided by the `AuraResourceComponents` concern.
 
 | URL | Route name | Default component |
 | --- | --- | --- |
@@ -78,34 +78,34 @@ Aura registers admin routes inside the configured `aura.domain`, `aura.path`, an
 | `/{slug}/{id}/edit` | `aura.{slug}.edit` | `Edit` |
 | `/{slug}/{id}` | `aura.{slug}.view` | `View` |
 
-The URL rows above are relative to `config('aura.path')`. The route action is `$resource::indexComponent()`, `$resource::createComponent()`, `$resource::editComponent()`, or `$resource::viewComponent()`. Overriding one of these methods changes the class served by the existing route and keeps the route name and generated resource URLs.
+The URLs above are relative to the configured admin path. To replace a page component, override the resource's `indexComponent()`, `createComponent()`, `editComponent()`, or `viewComponent()` method. The existing route name and generated resource URLs stay the same.
 
-The Attachment resource is special. It does not receive the generic create, edit, and view routes. The package registers `Attachment\Index` at `aura.attachment.index`.
+Attachments have a dedicated index component at `aura.attachment.index`. They do not receive the generic create, edit, and view routes.
 
 ### Resource page lifecycle
 
-`Index` resolves the resource from the slug, redirects to `aura.dashboard` when the resource is unknown or its `$indexViewEnabled` flag is false, and authorizes `viewAny`. Its `render()` method returns the resource's `indexView()` with the Aura application layout. The default view renders resource widgets and `aura::table`.
+The index page finds the resource by its slug and checks the `viewAny` permission. It redirects to the dashboard if the resource is unknown or its `$indexViewEnabled` flag is false. The page renders the resource's `indexView()` within the Aura application layout. By default, this shows the resource's widgets and table.
 
-`Create` resolves the slug from the mount argument or the current route, authorizes `create`, and initializes the public `$form` array. A custom-table resource starts with a `fields` array. A posts-table resource also receives its base post fields. Field defaults, URL query values, and modal `params` are then applied. `rules()` maps the resource's validation rules to `form.fields.<slug>`.
+The create page takes its resource slug from the mount argument or current route. It checks the `create` permission, then prepares the public `$form` array. Resources stored in a custom table start with a fields array. Resources stored in the posts table also receive their base post fields. Aura then applies field defaults, URL query values, and any modal parameters. Validation rules use the binding path `form.fields.<slug>`.
 
-`Create::save()` validates the form, keeps only declared input fields and explicitly supported setter fields, and assigns ownership and team values on the server. It creates the resource, dispatches `notify`, and then either closes and refreshes a modal or redirects to `aura.{slug}.edit`.
+Saving a new record validates the form and keeps only declared input fields and explicitly supported setter fields. The server assigns ownership and team values. After creating the record, Aura sends a notification. It then closes the modal and refreshes its contents, or redirects to the record's edit page.
 
-`Edit` mounts with an id and optional slug, resolves the resource record, authorizes `update`, copies the record attributes into `$form`, and hydrates field values. Its `save()` method validates, sanitizes the submitted field map, updates the resource, dispatches a success notification, refreshes the form, and dispatches `refreshComponent`. When `$inModal` is true it also dispatches `closeModal` and `refreshTable`.
+The edit page accepts a record id and optional resource slug. It loads the record, checks the `update` permission, and fills the form with the record's attributes and field values. Saving validates and sanitizes the submitted fields before updating the record. The page then sends a success notification, refreshes the form, and dispatches `refreshComponent`. In a modal, it also dispatches `closeModal` and `refreshTable`.
 
-`View` mounts with an id and optional slug, resolves the record, authorizes `view`, and copies the record attributes into `$form`. Its `render()` method returns the resource's `viewView()` and resolves the record layout before rendering. The component listens for `reload` and `refreshComponent` so a custom view can refresh the record after an action.
+The view page also accepts a record id and optional resource slug. It loads the record, checks the `view` permission, and copies the attributes into the form. It resolves the record layout and renders the resource's `viewView()` template. Custom views can refresh the record after an action by dispatching `reload` or `refreshComponent`.
 
 The page classes are full-page components when a route points at them. Do not point a resource route at `CreateModal`, `EditModal`, or `ViewModal`. Those classes exist for the modal container described below.
 
 ### Record view lifecycle and panels
 
-When a `View` render has a registered record-layout panel, it resolves `RecordLayoutResolver` with the current resource. The resolver filters panels by `visible`, the optional policy ability, the optional boolean preference, and the existence of declared relationships. It eager-loads the remaining relationships once, then the view mounts each panel with:
+When a record view has registered panels, Aura checks which ones it should display. The record layout resolver checks each panel's visibility, optional policy ability, optional boolean preference, and whether its declared relationships exist. It eager-loads the relationships needed by the remaining panels once, then mounts each panel with:
 
 - `model`, the canonical resource record
 - `inModal`, the current page or modal context
 
 Panel components must accept both values as public properties or `mount()` parameters. State-changing methods must authorize again on each Livewire request. A resource can declare panels by implementing `DefinesRecordLayoutPanels`, or a plugin can register them through `Aura::registerRecordLayoutPanels()`. See [Record layouts](/docs/record-layouts) for the complete panel contract.
 
-With no visible panels, `View` renders the default record view. With panels, Aura keeps the standard header and fields and adds the registered regions. The same resolver runs for a view shown in a modal, with `inModal` set to `true`.
+When no panels are visible, Aura renders the default record view. Otherwise, it adds the registered regions alongside the standard header and fields. Views shown in a modal use the same resolver, with `inModal` set to `true`.
 
 ## Form state, field bindings, and actions
 
@@ -119,11 +119,11 @@ Create and edit components expose a public `$form` array. Aura's field Blade vie
 >
 ```
 
-Use `wire:model.live` when the field must update the component immediately. Use plain `wire:model` when the value can be sent with the next action. A custom field view receives `$field`, `$form`, and `$mode` from the resource page. Keep its binding under `form.fields` so `rules()` and the save sanitizer can process it.
+Use `wire:model.live` when a field must update the component immediately, or plain `wire:model` to send the value with the next action. Custom field views receive the field definition, form state, and page mode as `$field`, `$form`, and `$mode`. Keep bindings under `form.fields` so Aura can validate and sanitize their values when saving.
 
-The optional title input in the package resource templates still contains a `post.title` binding. `Create`, `Edit`, and `View` expose `$form` and `$model`, not a public `$post` property. When writing a custom view, use the `form.fields.<slug>` contract and do not copy that binding.
+The optional title input in the package templates still uses the outdated `post.title` binding. Resource page components expose form and model properties, but no public post property. In a custom view, bind the title to `form.fields.<slug>` instead.
 
-Resource actions are declared by the resource's `actions()` method or `$actions` property. The built-in action view calls `singleAction($action)`. `HasActions::singleAction()` checks that the action is declared, evaluates conditional logic, authorizes the resource when required, invokes the resource method, and reports a successful action with `notify`.
+Declare resource actions in the `actions()` method or `$actions` property. The built-in action view runs them through `singleAction($action)`. Before calling the resource method, Aura checks that the action is declared, evaluates its conditions, and authorizes the resource when required. A successful action sends a notification.
 
 ```php
 // app/Aura/Resources/Post.php
@@ -255,7 +255,7 @@ The resource index view mounts the table with the resource instance and its sett
 />
 ```
 
-`Table` composes the `BulkActions`, `Filters`, `Kanban`, `PerPagePagination`, `QueryFilters`, `Search`, `Select`, `Settings`, `Sorting`, and `SwitchView` traits. A table for a relation or media field can also receive `field` and `parent`.
+The table supports bulk actions, field and query filters, Kanban, pagination, search, row selection, settings, sorting, and view switching through its traits. Tables embedded in a relationship or media field can also receive the field definition and parent record through `field` and `parent`.
 
 The default settings include:
 
@@ -291,9 +291,11 @@ $this->dispatch('openModal', 'aura::media-manager', [
 ]);
 ```
 
-Its `select()` method authorizes the selected attachments and dispatches `updateField` with `data['slug']` and `data['value']`. The picker does not close itself by dispatching `closeModal`; the surrounding dialog handles closing.
+When the user confirms a selection, the picker authorizes the attachments and sends their values to the form through `updateField`. The event includes the field slug and value in its data payload. The surrounding dialog handles closing, so the picker does not dispatch `closeModal` itself.
 
-`aura::media-uploader` uses Livewire file uploads. Its public options are `button`, `upload`, `table`, `disabled`, `field`, `for`, `model`, and `selected`. It listens for `selectedMediaUpdated`. After creating attachments it dispatches `media-uploaded` with their ids. An inline field uploader also dispatches `updateField` so the owning form can update `form.fields.<slug>`.
+The media uploader uses Livewire file uploads. You can configure it through the public options `button`, `upload`, `table`, `disabled`, `field`, `for`, `model`, and `selected`.
+
+The uploader listens for selection changes through `selectedMediaUpdated`. After creating attachments, it sends their ids through `media-uploaded`. An uploader embedded in a field also dispatches `updateField` to update the owning form.
 
 `aura::attachment-index` is the dedicated Media Library page at `aura.attachment.index`. It is not a generic resource index route.
 
@@ -320,7 +322,7 @@ Navigation::add([
 
 The optional second argument to `Navigation::add()` is an authorization callback evaluated when the entry is registered. Resource visibility and policy checks still apply when Aura builds the navigation.
 
-`aura::global-search` is included by the application layout when `aura.features.global_search` is enabled. The layout dispatches `search` for `/` and `Cmd-K`. The component searches allowed resources whose `getGlobalSearch()` returns true, includes searchable fields, limits the result set to 15, and groups the links by type.
+Enable `aura.features.global_search` to include global search in the application layout. Pressing / or Cmd-K dispatches the `search` event. Search includes fields marked searchable on resources the user can access, provided the resource's `getGlobalSearch()` method returns true. It returns up to 15 results, grouped by resource type.
 
 `aura::bookmark-page` accepts a required `site` array with at least a `url` value:
 
@@ -334,9 +336,9 @@ The optional second argument to `Navigation::add()` is an authorization callback
 
 ## Resource editor and widgets
 
-`aura::resource-editor` is available at `aura.resource.editor` for local or testing environments when `aura.features.resource_editor` is enabled. The route requires a Super Admin. The component also refuses vendor resources and resources whose field definitions contain closures. The editor opens `aura::edit-resource-field` through the `openSlideOver` contract.
+The resource editor is available in local and testing environments when `aura.features.resource_editor` is enabled. Its route, `aura.resource.editor`, requires a super admin. The editor refuses vendor resources and resources whose field definitions contain closures. It opens the field editor in a slide-over through the `openSlideOver` event.
 
-`aura::create-resource` is the local development modal for generating a resource. It requires a Super Admin and refuses production. `aura::choose-template` is the template-picker component used by the editor. `aura::plugins-page` and `aura::styleguide` are registered admin pages with their own routes.
+The resource generator modal, `aura::create-resource`, requires a super admin and cannot run in production. The editor uses `aura::choose-template` to let the user pick a template. The plugins page and styleguide are separate admin pages with their own routes.
 
 The `aura::widgets` container receives a resource's widget definitions and model:
 
@@ -401,7 +403,7 @@ See [Customizing views](/docs/customizing-views) for view-only overrides and the
 
 ### Override config-driven components
 
-The `dashboard`, `profile`, `settings`, and `media-manager` classes are read from `config/aura.php` when the provider builds the component map. Point a key to an application subclass:
+You can replace the dashboard, profile, settings, and media manager components through `config/aura.php`. Set the corresponding key to an application subclass. Aura reads these values when it builds the component map:
 
 ```php
 // config/aura.php
@@ -450,7 +452,7 @@ test('creates a resource', function () {
 });
 ```
 
-A page `Create` component redirects after save. A `CreateModal` component dispatches `closeModal` instead. Test those cases separately. For an index table, pass the resource and its settings:
+Test full-page and modal creation separately. The page redirects after saving, while the modal dispatches `closeModal`. To test an index table, pass the resource and its settings:
 
 ```php
 use Aura\Base\Livewire\Table\Table;

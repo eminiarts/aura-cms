@@ -31,7 +31,7 @@ php artisan view:clear
 php artisan config:clear
 ```
 
-`aura:publish` replaces `public/vendor/aura` with the package's verified `dist`, `libs`, and `public` assets. It does not publish configuration or views, and it does not run migrations.
+The publish command replaces `public/vendor/aura` with the package's verified compiled assets, libraries, and public files. It does not publish configuration or views, and it does not run migrations.
 
 The published Aura install migration records which tables it created and which Aura columns it added to an existing `users` table. On rollback it removes only those recorded tables and columns. It preserves host-owned tables such as an existing `users` or `sessions` table and their data. If an Aura-owned table already exists, the install migration stops before changing the host schema. Resolve that conflict deliberately instead of resetting the database.
 
@@ -39,30 +39,32 @@ Set `aura.teams` before the first migration. Teams-enabled and teams-disabled in
 
 ## Storage models
 
-The default Resource storage uses the shared `posts` table for its base columns and the shared `meta` table for input fields that are outside those columns. A custom-table Resource uses its `$table` value for the fields selected by its storage flags. `$customTable` and `$usesMeta` are independent. See [Custom tables](/docs/custom-tables) for the complete storage matrix.
+By default, resources store their base columns in the shared posts table and other input fields in the shared meta table. A resource with a custom table stores fields in the table named by its `$table` property, according to its storage settings. Using a custom table and using meta storage are separate choices. See [Custom tables](/docs/custom-tables) for how `$customTable` and `$usesMeta` work together.
 
 ## Consolidate legacy meta tables
 
-`aura:migrate-post-meta-to-meta` imports rows from any of the legacy tables that exist:
+To import rows from the legacy post, team, and user meta tables into the shared meta table, run:
 
 ```bash
 php artisan aura:migrate-post-meta-to-meta
 ```
 
-For `post_meta`, the command finds the referenced post and resolves its `type` with `Aura::findResourceBySlug()`. For `team_meta` and `user_meta`, it writes the built-in Team and User resource classes. It skips rows whose referenced record no longer exists. It also skips a post row when its type does not resolve to a registered Resource. If none of the three legacy tables exists, the command exits successfully without creating `meta`.
+For each row in `post_meta`, the command finds the referenced post and looks up its registered resource from the post's type using `Aura::findResourceBySlug()`. Rows from `team_meta` and `user_meta` use the built-in team and user resource classes. The command skips rows whose referenced record no longer exists, or whose post type does not resolve to a registered resource. If none of the three legacy tables exists, it exits successfully without creating the shared meta table.
 
-The command creates `meta` when needed and inserts each migrated row individually. It does not remove the legacy tables or rows, deduplicate existing records, or provide an all-or-nothing transaction. Run it once after a backup, then compare row counts and sample values before planning cleanup.
+The command creates the shared meta table when needed and inserts each migrated row individually. It does not remove the legacy tables or rows, deduplicate existing records, or provide an all-or-nothing transaction. Run it once after a backup, then compare row counts and sample values before planning cleanup.
 
 ## Generate a custom-table migration
 
-`aura:create-resource-migration` creates or rewrites a migration from a Resource's current input fields:
+To create or rewrite a custom-table migration from a resource's current input fields, run:
 
 ```bash
 php artisan aura:create-resource-migration "App\Aura\Resources\Product"
 php artisan aura:create-resource-migration "App\Aura\Resources\Product" --table=inventory_items
 ```
 
-The required argument is the fully qualified Resource class. The optional `--table` value overrides the Resource's loaded table name. The command uses `inputFields()`, so layout fields such as `Panel` and `Tab` do not produce columns. It writes an `id` column, one column per input field, `user_id`, `team_id` when teams are enabled, and nullable `created_at` and `updated_at` columns. Each field class supplies its column type and nullability.
+Pass the fully qualified resource class as the required argument. Use `--table` to override its loaded table name. The command generates columns from the resource's input fields, so panels, tabs, and other layout fields do not produce columns. Each field class supplies its column type and nullability.
+
+The migration also adds an `id` column, a `user_id` column, and nullable `created_at` and `updated_at` columns. It includes `team_id` when teams are enabled.
 
 The generated migration does not add indexes, defaults, foreign-key constraints, cascade rules, soft deletes, or the `$table->timestamps()` helper. It does not run `migrate`. Review the file, add the schema details the application needs, and then run:
 
@@ -72,46 +74,54 @@ php artisan migrate
 
 If the migration has already run, write a new versioned migration instead of rewriting the applied create migration. The command reuses a file whose name contains `create_{table}_table`, so inspect the file after every run.
 
-## Convert a posts-backed Resource
+## Convert a posts-backed resource
 
-`aura:migrate-from-posts-to-custom-table` changes a Resource class and prepares its custom-table migration:
+To change a resource that uses the shared posts table to use a custom table, run:
 
 ```bash
 php artisan aura:migrate-from-posts-to-custom-table "App\Aura\Resources\Product"
 ```
 
-The argument is optional. Without it, the command prompts for a registered Resource. With an argument, it validates that the class exists. It then:
+The resource class is optional. If you omit it, the command prompts for a registered resource. If you provide it, the command checks that the class exists. It then:
 
-1. Sets `$customTable = true` in the Resource file.
-2. Sets `$table` to the snake-case plural of the Resource class basename.
+1. Sets `$customTable = true` in the resource file.
+2. Sets `$table` to the snake-case plural of the resource class basename.
 3. Adds `$usesMeta = false` when the file has no `$customTable` declaration. If the file already declares `$customTable`, the command changes that declaration and leaves `$usesMeta` as it is.
 4. Calls `aura:create-resource-migration` with the chosen table name.
 5. Prompts to run the migration and then prompts to start the transfer command.
 
-The command edits the Resource file during the current Artisan process. Both confirmation prompts default to yes. The migration generation receives the table name explicitly, but the optional transfer prompt runs before a new PHP process reloads the edited class. For a reviewable conversion, answer no to both prompts, review the Resource file and generated migration, then run the migration and start the transfer as separate commands:
+Both confirmation prompts default to yes. Answer no to both so you can review the edited resource file and generated migration before proceeding.
+
+The command edits the resource file during the current Artisan process. It passes the table name directly to the migration generator, but the optional transfer runs before PHP reloads the edited class. Run the migration and transfer as separate commands so the transfer loads the updated class:
 
 ```bash
 php artisan migrate
 php artisan aura:transfer-from-posts-to-custom-table "App\Aura\Resources\Product"
 ```
 
-This separate process requirement also gives you a point to review source and target row counts, field values, casts, and relationship data before inserting records.
+Before starting the transfer, review source and target row counts, field values, casts, and relationship data.
 
 ## Transfer data to a custom table
 
-The transfer command accepts a Resource class or prompts for one:
+The transfer command accepts a resource class or prompts for one:
 
 ```bash
 php artisan aura:transfer-from-posts-to-custom-table "App\Aura\Resources\Product"
 ```
 
-It selects rows from `posts` whose `type` matches the Resource, loads `meta` rows whose `metable_type` is the Resource class and whose `metable_id` matches the post, then calls the Resource's `create()` method. The prepared attributes start with timestamps, `user_id`, `team_id` when present, and meta values. A standard Aura Resource inherits Eloquent's `fillable()` method, so the command then merges the full post row. The Resource's fillable rules and save hooks determine which attributes reach the insert. A generated custom table may lack shared columns such as `title`, `content`, `type`, or `status`, so review the payload and target schema before using this command. The command has no ID-preserving or upsert strategy. It inserts rows one at a time and does not wrap the transfer in a transaction, so repeated runs can duplicate data or fail on target constraints.
+The command selects posts whose type matches the resource and loads their meta values. It matches meta rows by the resource class in `metable_type` and the post ID in `metable_id`, then creates each target record through the resource's `create()` method.
 
-The command does not read `post_relations`. Relationship and taxonomy links stored there need a separate migration plan. It leaves the original `posts` and `meta` rows in place. The target table must contain every attribute that reaches `create()`. Generated custom-table migrations commonly need review before a transfer because shared post columns, application-specific casts, and relation data may not be represented in the generated table.
+It prepares the timestamps, user ID, team ID when present, and meta values. For standard Aura resources, it then merges the full post row because they inherit Eloquent's `fillable()` method. The resource's fillable rules and save hooks determine which attributes reach the insert.
+
+Review those attributes against the target schema before transferring data. A generated custom table may lack shared post columns such as `title`, `content`, `type`, or `status`. It may also need changes to account for application-specific casts and relationship data. The target must contain every attribute that reaches the insert.
+
+The command has no strategy for preserving IDs or updating existing records. It inserts rows one at a time without a transaction. Repeated runs can duplicate data or fail on target constraints.
+
+Relationship and taxonomy links in `post_relations` need a separate migration plan because the command does not read that table. It leaves the original posts and meta rows in place.
 
 ## Synchronize a table from a migration file
 
-`aura:schema-update` compares a table with a simple `Schema::create()` migration:
+To compare a table with a simple create-table migration and add missing columns, run:
 
 ```bash
 php artisan aura:schema-update database/migrations/2026_01_01_000000_create_products_table.php
@@ -119,7 +129,7 @@ php artisan aura:schema-update database/migrations/2026_01_01_000000_create_prod
 php artisan aura:schema-update database/migrations/2026_01_01_000000_create_products_table.php --drop --force
 ```
 
-Without a path, it prompts for a file from `database/migrations`. The parser reads the table name from `Schema::create()` and recognizes simple column declarations with one quoted column name. Both literal quote styles work, including hyphenated field names generated by the Resource Editor:
+If you omit the path, the command prompts for a file from `database/migrations`. It reads the table name from `Schema::create()` and accepts simple column declarations with one quoted column name. Single and double quotes both work, as do hyphenated field names generated by the Resource Editor:
 
 ```php
 $table->string('title')->nullable();
@@ -132,29 +142,40 @@ The command does not alter the type of an existing column. It does not parse `Sc
 
 If the target table does not exist, the command runs `php artisan migrate`. That runs the application's pending migrations, so review them before invoking the command.
 
-When `aura.features.custom_tables_for_resources` is `true` or `'single'`, the Resource Editor rewrites the create migration and invokes this command with `--drop --force`. Its generated schema includes `team_id` only when teams are enabled. The updater accepts the single- and double-quoted declarations produced by that listener and stops before changing the table when a declaration is ambiguous. A failed sync raises an error and restores the resource and migration files; a newly created migration is removed.
+When `aura.features.custom_tables_for_resources` is `true` or `'single'`, the Resource Editor rewrites the create migration and runs the schema update with `--drop --force`. This can drop columns without asking for confirmation. The generated schema includes a team ID column only when teams are enabled.
+
+The updater accepts the editor's single- and double-quoted column declarations. It stops before changing the table if a declaration is ambiguous. If synchronization fails, Aura raises an error and restores the resource and migration files. If the migration file was newly created, Aura removes it.
 
 ## Generate resources from existing tables
 
-`aura:transform-table-to-resource` creates one Resource from an existing table:
+To generate a resource from an existing table, run:
 
 ```bash
 php artisan aura:transform-table-to-resource articles
 ```
 
-It writes `App\Aura\Resources\Article` under `app/Aura/Resources`, refuses to overwrite an existing file, and maps `text` and `longtext` to `Textarea`, `integer`, `float`, and `double` to `Number`, `date` to `Date`, and other column types to `Text`. It generates fields for every column, including identifiers and timestamps. Review the class, storage flags, field definitions, and validation before registering it.
+This creates an Article resource in `app/Aura/Resources`. The command refuses to overwrite an existing file. It generates a field for every column, including identifiers and timestamps, using these mappings:
 
-`aura:database-to-resources` runs the same transformation for every database table except the built-in Laravel and Aura system-table list:
+| Database column type | Generated field |
+| --- | --- |
+| `text`, `longtext` | Textarea |
+| `integer`, `float`, `double` | Number |
+| `date` | Date |
+| Other types | Text |
+
+Review the class, storage settings, field definitions, and validation before registering it.
+
+To generate resources for every database table, excluding the built-in list of Laravel and Aura system tables, run:
 
 ```bash
 php artisan aura:database-to-resources
 ```
 
-Treat the generated files as starting points. Check each table name, field mapping, storage mode, and relationship before using the Resource.
+Treat the generated files as starting points. Check each table name, field mapping, storage mode, and relationship before using the resource.
 
 ## Related
 
 - [Custom tables](/docs/custom-tables) explains storage flags, generated schemas, and the Resource Editor listeners.
 - [Meta fields](/docs/meta-fields) explains the shared key/value table and field queries.
-- [Resources](/docs/resources) covers Resource classes and storage configuration.
+- [Resources](/docs/resources) covers resource classes and storage configuration.
 - [Teams](/docs/teams) documents the teams-enabled and teams-disabled schema.

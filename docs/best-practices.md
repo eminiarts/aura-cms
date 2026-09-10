@@ -2,14 +2,14 @@
 
 This guide collects conventions that are specific to Aura CMS. It assumes that
 you already know Laravel and Eloquent. Use the linked pages for complete field,
-Resource, table, team, and storage references.
+resource, table, team, and storage references.
 
 <a id="coding-standards"></a>
-## Keep Resource definitions explicit
+## Keep resource definitions explicit
 
-An Aura Resource is an Eloquent record class with a static definition. Extend
-<code>Aura\Base\Resource</code> and keep application Resources under the path
-configured in <code>config/aura-settings.php</code>:
+An Aura resource extends Eloquent with a static definition for its fields and
+admin pages. Extend <code>Aura\Base\Resource</code> and keep resource classes
+in the directory configured in <code>config/aura-settings.php</code>:
 
 ~~~bash
 php artisan aura:resource Product
@@ -51,9 +51,9 @@ class Product extends Resource
 Use the generated declarations as the type reference when overriding inherited
 static properties. Do not add a new type to an inherited untyped property such
 as <code>$customTable</code>. PHP rejects an incompatible property declaration
-before Aura can load the Resource.
+before Aura can load the resource.
 
-The settings that affect a Resource most often are:
+The settings that affect a resource most often are:
 
 | Setting | Effect |
 | --- | --- |
@@ -61,21 +61,21 @@ The settings that affect a Resource most often are:
 | <code>$slug</code> | URL and route-name segment. |
 | <code>$singularName</code> and <code>$pluralName</code> | Navigation and page labels. |
 | <code>$group</code> and <code>$sort</code> | Navigation group and order. Lower sort values appear first. |
-| <code>$globalSearch</code> | Includes the Resource in database-backed global search. |
-| <code>$customTable</code> | Uses the Resource's <code>$table</code> instead of <code>posts</code>. |
+| <code>$globalSearch</code> | Includes the resource in database-backed global search. |
+| <code>$customTable</code> | Uses the resource's <code>$table</code> instead of <code>posts</code>. |
 | <code>$usesMeta</code> | Allows fields without a table column to use the <code>meta</code> table. |
-| <code>$createEnabled</code>, <code>$editEnabled</code>, <code>$viewEnabled</code>, <code>$indexViewEnabled</code> | Gates the matching Resource policy ability. |
+| <code>$createEnabled</code>, <code>$editEnabled</code>, <code>$viewEnabled</code>, <code>$indexViewEnabled</code> | Gates the matching resource policy ability. |
 
-These flags configure Aura's Resource and policy pipeline. They do not replace
-the host application's Eloquent relationships, casts, scopes, or migrations.
+These settings control resource behavior and access through policies. Define
+Eloquent relationships, casts, scopes, and migrations in your application.
 See [Resources](/docs/resources) for the full configuration reference.
 
 <a id="field-development"></a>
 ## Define fields as arrays
 
-<code>getFields(): array</code> returns plain arrays. Aura resolves the class
-named by <code>type</code> through the container. Use a fully qualified field
-class string:
+Define each field as an array returned by <code>getFields()</code>. Set its
+type to the fully qualified field class name. Aura uses Laravel's container to
+resolve that class:
 
 ~~~php
 public static function getFields(): array
@@ -105,16 +105,16 @@ public static function getFields(): array
 }
 ~~~
 
-The field pipeline validates <code>type</code> and <code>slug</code> and then
-maps each definition to its field class. Include <code>name</code> for the
-label used by forms and tables. Use stable lower-case slugs, usually in
-<code>snake_case</code>. A slug is a storage key and a dynamic Resource
-attribute. Changing a meta slug changes the meta key. Changing a custom-table
-slug changes the column that Aura expects.
+Aura validates the type and slug before resolving each field. Include a
+<code>name</code> for its label in forms and tables.
 
-Use these keys for the common Resource concerns:
+Choose stable lowercase slugs, usually in snake_case. Each slug is both a
+storage key and a dynamic resource attribute. Renaming it changes the meta key
+or database column that Aura expects, depending on the field's storage.
 
-- <code>validation</code> supplies the form rules used by Aura's Resource form.
+Use these keys for the common resource concerns:
+
+- <code>validation</code> supplies the form rules used by Aura's resource form.
   It can be a Laravel rule string or an array.
 - <code>searchable</code> opts the field into table search and global search.
   Search is field-level. Aura does not use a separate static
@@ -125,7 +125,8 @@ Use these keys for the common Resource concerns:
 - <code>default</code> supplies an initial form value.
 - <code>conditional_logic</code> controls field visibility when the field
   supports it.
-- <code>Tab</code> and <code>Panel</code> group the fields that follow them.
+
+Tabs and panels group the fields that follow them.
 
 Presentation keys do not authorize a write. Keep validation and policy checks
 in place when a field is hidden from a form. See [Fields](/docs/fields) for
@@ -134,8 +135,8 @@ the built-in field catalogue and its options.
 <a id="database-design"></a>
 ## Choose storage deliberately
 
-<code>$customTable</code> and <code>$usesMeta</code> are independent flags. The
-four combinations have different write paths:
+Choose the resource's table and meta storage separately. The
+<code>$customTable</code> and <code>$usesMeta</code> settings combine as follows:
 
 | <code>$customTable</code> | <code>$usesMeta</code> | Field storage |
 | --- | --- | --- |
@@ -144,12 +145,10 @@ four combinations have different write paths:
 | <code>true</code> | <code>true</code> | Base fillable attributes use the custom table. Other input fields use <code>meta</code>. |
 | <code>true</code> | <code>false</code> | Every input field slug must be a column on the custom table. |
 
-The default is shared <code>posts</code> plus <code>meta</code>. Base fillable
-attributes include Aura's core columns such as <code>title</code>,
-<code>content</code>, <code>type</code>, <code>status</code>, <code>slug</code>,
-<code>user_id</code>, <code>parent_id</code>, <code>order</code>, team and
-timestamp columns. The exact fillable list belongs to the Resource class and
-its schema.
+By default, resources share the posts and meta tables. Core attributes such as
+the title, content, type, status, slug, owner, parent, order, team, and timestamps
+use columns in the posts table. The resource class and its schema determine
+the exact list of base fillable attributes.
 
 Use <code>isTableField($slug)</code> and <code>isMetaField($slug)</code> when
 code needs to know the selected destination. Do not infer the destination from
@@ -185,11 +184,12 @@ class Product extends Resource
 }
 ~~~
 
-The generated custom stub uses this column-backed mode. It does not create the
-database table. Create and review a migration before saving records. In
-custom-table plus meta mode, add the column-backed fields to the Resource's
-<code>$fillable</code> list. Aura captures that original list as its base
-fillable list before it merges input field slugs at runtime:
+The custom resource generator uses this mode but does not create the table.
+Create and review a migration before saving records.
+
+If a custom table also uses meta storage, add its column-backed fields to
+<code>$fillable</code>. Aura uses this original list to distinguish table
+columns from meta fields before adding input field slugs at runtime:
 
 ~~~php
 class Product extends Resource
@@ -209,9 +209,9 @@ class Product extends Resource
 }
 ~~~
 
-Changing a Resource's storage flags is a schema and data change. Plan the
+Changing a resource's storage flags is a schema and data change. Plan the
 columns, existing meta rows, team ownership, and rollback before changing an
-existing Resource. See [Custom tables](/docs/custom-tables) and
+existing resource. See [Custom tables](/docs/custom-tables) and
 [Meta fields](/docs/meta-fields).
 
 Meta scopes use relation subqueries:
@@ -232,15 +232,16 @@ justify a column.
 <a id="resource-development"></a>
 ## Use the generated commands as extension points
 
-The generators encode Aura's current paths and method names:
+Use the generators to create classes with the paths and method names Aura
+expects:
 
 | Command | Result |
 | --- | --- |
-| <code>aura:resource Product</code> | Resource class in the configured Resource path. |
-| <code>aura:resource Product --custom</code> | Resource class with <code>$customTable</code>, <code>$usesMeta = false</code>, and a table name. It does not create the table. |
+| <code>aura:resource Product</code> | Creates a resource class in the configured resource path. |
+| <code>aura:resource Product --custom</code> | Creates a resource class with <code>$customTable</code>, <code>$usesMeta = false</code>, and a table name. It does not create the table. |
 | <code>aura:field ColorPicker</code> | Field class plus edit and display Blade views in the configured field path. |
-| <code>aura:create-resource-migration "App\Aura\Resources\Product"</code> | Migration columns derived from the Resource's fields and table. It does not run the migration. |
-| <code>aura:create-resource-permissions</code> | Generates missing Resource permission rows. |
+| <code>aura:create-resource-migration "App\Aura\Resources\Product"</code> | Migration columns derived from the resource's fields and table. It does not run the migration. |
+| <code>aura:create-resource-permissions</code> | Generates missing resource permission rows. |
 | <code>aura:schema-update</code> | Compares a supported <code>Schema::create</code> migration with the existing table. |
 
 <code>aura:schema-update</code> fails before changing the table when it cannot
@@ -303,14 +304,14 @@ class ColorPicker extends Field
 }
 ~~~
 
-Aura calls these optional hooks from the Resource save pipeline:
+Aura calls these optional hooks from the resource save pipeline:
 
 | Hook | Use |
 | --- | --- |
 | <code>get($class, $value, $field = null)</code> | Decode or normalize a stored value for the form and display path. |
 | <code>set($post, $field, $value)</code> | Normalize submitted input before Aura stores it. |
-| <code>saving($post, $field, $value)</code> | Change the Resource during its saving event. |
-| <code>saved($post, $field, $value)</code> | Persist a relation or other value that needs the saved Resource. |
+| <code>saving($post, $field, $value)</code> | Change the resource during its saving event. |
+| <code>saved($post, $field, $value)</code> | Persist a relation or other value that needs the saved resource. |
 
 The edit view receives <code>$field</code> as an array. The field object is in
 <code>$field['field']</code>. Bind input to <code>form.fields.{slug}</code> and
@@ -334,7 +335,7 @@ and mark the field as raw only when the output is intentionally trusted.
 <a id="code-organization"></a>
 ## Register and customize in the application
 
-Aura discovers application Resources and fields from
+Aura discovers application resources and fields from
 <code>aura-settings.paths.resources</code> and
 <code>aura-settings.paths.fields</code>:
 
@@ -369,31 +370,28 @@ public function boot(): void
 }
 ~~~
 
-Use the actual methods <code>registerResources(array)</code> and
-<code>registerFields(array)</code>. Aura has no <code>resources()</code> or
-<code>fields()</code> registration shortcuts.
+The registration methods accept arrays of class names. There are no
+<code>resources()</code> or <code>fields()</code> registration shortcuts.
 
 To replace an admin page, run <code>aura:customize</code>. It can generate an
 application Livewire component, copy the corresponding Blade view, or both.
 The command writes a static <code>indexComponent()</code>,
 <code>createComponent()</code>, <code>editComponent()</code>, or
-<code>viewComponent()</code> hook into the Resource. The existing Aura route and
+<code>viewComponent()</code> hook into the resource. The existing Aura route and
 route name continue to serve the replacement. Keep application components
 under <code>App\Livewire</code>. Do not put application code in
 <code>Aura\Base\Livewire</code>.
 
-Aura Base does not generate a REST API for Resources. If an application
-exposes Resource data over HTTP, define its routes and controllers in the host
-application and authorize each operation with the Resource policy.
+Aura Base does not generate a REST API for resources. If an application
+exposes resource data over HTTP, define its routes and controllers in the host
+application and authorize each operation with the resource policy.
 
 <a id="performance-patterns"></a>
 ## Compose table queries with Aura's scopes
 
-The table starts with the Resource query and its normal global scopes. It then
-calls <code>indexQuery($query, $table)</code>, applies relationship constraints
-when the table belongs to a parent Resource, adds Kanban constraints when
-needed, eager loads meta and opted-in relationships, applies filters and
-search, sorts, and paginates. Keep a custom <code>indexQuery</code> composable:
+Add table query constraints through <code>indexQuery($query, $table)</code>.
+Aura calls this hook on the resource query with its normal global scopes.
+Return the query builder so Aura can continue building the table query:
 
 ~~~php
 public function indexQuery($query, $table = null)
@@ -404,8 +402,12 @@ public function indexQuery($query, $table = null)
 }
 ~~~
 
+After this hook, Aura applies parent relationship and Kanban constraints when
+needed. It then eager loads meta and opted-in relationships, applies filters
+and search, sorts the results, and paginates.
+
 Do not call <code>withoutGlobalScopes()</code> in a normal index hook. It removes
-type, team, ownership, and other Resource restrictions that the request depends
+type, team, ownership, and other resource restrictions that the request depends
 on. Cross-team maintenance queries need their own authorization and explicit
 constraints. See [Teams](/docs/teams#bypassing-team-scope).
 
@@ -429,13 +431,13 @@ public function modifySearch($query, $search)
 ~~~
 
 The same field-level searchable definitions feed Aura's database-backed global
-search. Global search applies the Resource's normal query and policy checks. It
+search. Global search applies the resource's normal query and policy checks. It
 does not resolve a related record's title or a display closure before matching.
 See [Global search](/docs/global-search) for its result and authorization
 rules.
 
 The table defaults are ten rows per page, ID descending. Override only the
-methods the Resource needs:
+methods the resource needs:
 
 ~~~php
 public function defaultPerPage()
@@ -454,14 +456,14 @@ public function defaultTableSortDirection()
 }
 ~~~
 
-Relation and media fields can opt into Aura's table eager-load and display
-preload contracts. Implement those contracts when a field needs related rows
-for visible table cells. The table limits eager loads to visible list columns
-and primes the current page before rendering. Measure the actual route and
-query shape before changing this code. See [Table component](/docs/table) and
+Relationship and media fields can ask the table to load related records before
+rendering. Use Aura's eager-loading and display-preloading contracts when a
+custom field needs this behavior. The table loads data for visible columns and
+prepares the current page before rendering. Measure the route and its queries
+before changing how it loads data. See [Table component](/docs/table) and
 [Performance](/docs/performance).
 
-Row and bulk actions must be declared by the Resource. Include the ability that
+Row and bulk actions must be declared by the resource. Include the ability that
 the action requires. Aura resolves records through the current table scope and
 authorizes each record before invoking a custom method. A custom Livewire
 control still needs an explicit policy check.
@@ -469,27 +471,27 @@ control still needs an explicit policy check.
 <a id="security-best-practices"></a>
 ## Keep authorization and ownership in the policy layer
 
-<code>Aura\Base\Policies\ResourcePolicy</code> handles <code>viewAny</code>,
-<code>view</code>, <code>create</code>, <code>update</code>,
-<code>delete</code>, <code>restore</code>, and <code>forceDelete</code>. The
-Resource capability flags disable the matching screen or ability. Otherwise
-the policy accepts a Global Admin, a Super Admin in the current team, or the
-matching generated permission.
+Aura's resource policy checks access to listing, viewing, creating, updating,
+deleting, restoring, and permanently deleting records. Disabling a resource
+capability also disables its matching screen or ability. Otherwise, the policy
+allows a Global Admin, a Super Admin in the current team, or a user with the
+matching generated permission. See <code>Aura\Base\Policies\ResourcePolicy</code>
+for these standard Laravel policy methods.
 
-Generate permission rows after adding a Resource:
+Generate permission rows after adding a resource:
 
 ~~~bash
 php artisan aura:create-resource-permissions
 php artisan aura:create-resource-permissions --team=42
 ~~~
 
-Assign those permissions through the Roles Resource. A
-<code>scope-{resource}</code> permission also narrows normal Resource queries
-to rows whose <code>user_id</code> is the current User. It does not replace team
-scoping, and a Resource that uses this permission needs a <code>user_id</code>
+Assign those permissions through the Roles resource. A
+<code>scope-{resource}</code> permission also narrows normal resource queries
+to rows whose <code>user_id</code> is the current user. It does not replace team
+scoping, and a resource that uses this permission needs a <code>user_id</code>
 column.
 
-Use Laravel abilities for Resource actions:
+Use Laravel abilities for resource actions:
 
 ~~~php
 Gate::authorize('update', $product);
@@ -507,44 +509,42 @@ jobs, and custom Livewire actions.
 <a id="team-ownership"></a>
 ## Preserve team ownership
 
-With Teams enabled, Aura adds <code>TeamScope</code> to Resources. Ordinary
-team-aware Resource queries use the authenticated user's current Team. An
-authenticated user without a current Team gets a fail-closed query for
-ordinary team-scoped Resources. A normal save receives its <code>team_id</code>
-from the active team context.
+With teams enabled, Aura scopes ordinary resource queries to the authenticated
+user's current team. These queries return no records if the user has no current
+team. Normal saves receive their <code>team_id</code> from the active team
+context.
 
-The built-in Resources have different ownership rules:
+The built-in resources have different ownership rules:
 
-- Ordinary Resources use their <code>team_id</code> column.
-- The User Resource filters membership through <code>user_role</code>. A Global
-  Admin can list Users across Teams.
-- The Team Resource is the context record and is not filtered by TeamScope.
-- The Role Resource combines Team Roles with the shared Global Role catalog and
-  resolves Shadowing by role slug.
-- Teams-off mode makes TeamScope a no-op and uses the schema without team
+- Ordinary resources use their <code>team_id</code> column.
+- The user resource filters membership through <code>user_role</code>. A Global
+  Admin can list users across teams.
+- The team resource represents the team itself and is not filtered by the team scope.
+- The role resource combines team roles with shared global roles. A team role
+  takes precedence over a global role with the same slug.
+- With teams disabled, the team scope does nothing and the schema has no team
   columns.
 
-Do not describe every Resource as permanently team-scoped. Inspect the Resource
-and its schema when adding a new query. Do not remove a global scope to make a
-row visible in a request unless the operation is an authorized administrative
-operation with an explicit Team filter.
+Check the resource and its schema when adding a query, since ownership rules
+vary. Remove a global scope only for an authorized administrative operation
+with an explicit team filter.
 
 Keep the role terms distinct:
 
 | Term | Meaning |
 | --- | --- |
-| Global Admin | Instance-level status. It can enter any Team without creating Membership. |
-| Super Admin | Role-level grant with full Resource permissions inside the Team where that role resolves. |
-| Global Role | Shared role definition in the Role Catalog. Only a Global Admin can define it. |
-| Team Role | Role owned by one Team. A same-slug Team Role shadows the Global Role in that Team. |
-| Membership | One user's role in one Team, stored in <code>user_role</code>. |
+| Global Admin | Instance-level status. It can enter any team without creating membership. |
+| Super Admin | Role-level grant with full resource permissions inside the team where that role resolves. |
+| Global role | A shared role definition in the role catalog. Only a Global Admin can define it. |
+| Team role | A role owned by one team. It takes precedence over a global role with the same slug in that team. |
+| Membership | One user's role in one team, stored in <code>user_role</code>. |
 
-Global Admin visitation does not turn into Membership. Resource data still
-follows the current Team context. See [Teams](/docs/teams) and
+A Global Admin visiting a team does not become a member. Resource data still
+follows the current team context. See [Teams](/docs/teams) and
 [Roles and permissions](/docs/roles-permissions).
 
 <a id="livewire-components"></a>
-## Customize Livewire pages through the Resource
+## Customize Livewire pages through the resource
 
 Use <code>aura:customize</code> for an Index, Create, Edit, or View page.
 Override the generated component's lifecycle methods and call
@@ -553,19 +553,19 @@ Override the generated component's lifecycle methods and call
 For a custom field or page view, preserve Aura's state paths:
 
 - Resource forms use <code>form.fields.{slug}</code>.
-- Edit and View components receive the Resource ID and slug through their
+- Edit and View components receive the resource ID and slug through their
   existing mount contract.
 - A custom page can return a view with
   <code>->layout('aura::components.layout.app')</code> when it replaces the
   generated view.
 
-Do not create a second table query that skips the Resource's global scopes. Use
-the table's Resource hook or the generated component seam so team and policy
-behavior remains in one place. See [Customizing views](/docs/customizing-views)
+Customize the table through its resource hook or generated component. This
+preserves its global scopes and keeps team and policy checks in one place.
+See [Customizing views](/docs/customizing-views)
 and [Livewire components](/docs/livewire-components).
 
 <a id="testing-practices"></a>
-## Test the Resource through its real paths
+## Test the resource through its real paths
 
 For a form test, drive the same Livewire component and state path that the
 admin page uses:
@@ -587,16 +587,16 @@ test('creates a product', function () {
 });
 ~~~
 
-The Aura package test suite provides helpers such as
-<code>createSuperAdmin()</code>, <code>createSuperAdminWithoutTeam()</code>,
-<code>createAdmin()</code>, and <code>createPost()</code> in
-<code>tests/Pest.php</code>. Those helpers belong to the package test
-environment. An application test suite should create its own authenticated
-Users and Teams through its factories.
+The package test suite provides helpers for creating admins with or without a
+team, and for creating posts in
+<code>tests/Pest.php</code>, including the <code>createSuperAdmin()</code>
+helper used above. These helpers belong to the package test environment. In
+application tests, use your own factories to create authenticated users and
+teams.
 
 Use focused coverage for the behavior you changed:
 
-- <code>tests/Feature/Resource</code> covers Resource configuration, storage,
+- <code>tests/Feature/Resource</code> covers resource configuration, storage,
   and actions.
 - <code>tests/Feature/Fields</code> covers field input and display behavior.
 - <code>tests/Feature/Table</code> covers search, filters, sorting, selection,
@@ -615,25 +615,24 @@ each browser test.
 ## Treat static state as process state
 
 Aura caches field definitions and mapped field classes in static arrays keyed by
-Resource class. A Resource instance also caches its resolved <code>fields</code>
+resource class. A resource instance also caches its resolved <code>fields</code>
 and normalized meta map. Those caches are different from the Laravel cache
 store.
 
-Register Resources and fields during application boot. Do not put the current
-User, Team, or request data in class-static caches. If code changes definitions
+Register resources and fields during application boot. Do not put the current
+user, team, or request data in class-static caches. If code changes definitions
 or registrations inside a long-lived process, clear the relevant state before
 the next request. <code>Aura::flushState()</code> restores boot registrations
 and clears field, conditional-logic, team-scope, and ownership caches.
 
-When Laravel Octane is installed, Aura wires <code>Aura::flushState()</code> to
-<code>RequestReceived</code>, <code>TaskReceived</code>, and
-<code>TickReceived</code>. Queue completion and queue failure also flush Aura
-state. This keeps process-local definitions and team/user state from crossing
-request boundaries. It does not clear database rows or Laravel's cache store.
+With Laravel Octane installed, Aura flushes this state when a request, task, or
+tick begins. It also flushes state after a queued job completes or fails. This
+prevents definitions and user or team state from leaking into another request.
+It does not clear database rows or Laravel's cache store.
 
-If code changes the meta relation on an existing Resource instance, call
+If code changes the meta relation on an existing resource instance, call
 <code>clearFieldsAttributeCache()</code> before reading the computed fields
-again. Do not reuse a Resource instance across users or Teams.
+again. Do not reuse a resource instance across users or teams.
 
 <a id="common-gotchas"></a>
 ## Keep these boundaries visible
@@ -643,10 +642,10 @@ again. Do not reuse a Resource instance across users or Teams.
 - The core thumbnail path uses Intervention Image 3 with the GD driver. Enable
   PHP GD. Do not make the optional Laravel image facade or Imagick the only
   requirement for core thumbnails. See [Media Library](/docs/media-manager).
-- Teams-on and Teams-off use different migration schemas. Choose
+- Enabling or disabling teams selects a different migration schema. Choose
   <code>AURA_TEAMS</code> before the first migration and plan a data migration
   before changing it. See [Teams](/docs/teams#schema-differences).
-- A custom-table Resource does not acquire columns from its field arrays. The
+- A custom-table resource does not acquire columns from its field arrays. The
   migration and physical table must match the field slugs.
 - A field hidden with <code>on_forms</code> or a disabled screen is not an
   authorization boundary.
@@ -656,7 +655,7 @@ again. Do not reuse a Resource instance across users or Teams.
 
 ## Related guides
 
-- [Resources](/docs/resources) for Resource configuration and lifecycle.
+- [Resources](/docs/resources) for resource configuration and lifecycle.
 - [Fields](/docs/fields) for built-in field options.
 - [Creating fields](/docs/creating-fields) for package and application field
   extensions.

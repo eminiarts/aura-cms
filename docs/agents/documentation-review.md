@@ -69,3 +69,24 @@ The following items came from source review unless a runtime check is stated. Th
 | N10 | Catalog and permission helpers | Check nullable global-slug uniqueness and permission generation for resources using inherited slug declarations. |
 
 The dashboard has been assessed, not redesigned in this wave. The next implementation pass can start with N1 while the remaining component work is prioritized from these findings.
+
+## Readability follow-up
+
+The next pass reviewed all 38 public pages with Astra. It revised 37 pages and retained the already concise Flows page. The main agent rewrote the introduction, reviewed the page edits together, and used a separate Astra review of the introduction.
+
+The prose now explains behavior before naming implementation details. Ordinary resource, field, and team references use plain text. Exact methods, settings, and values remain in code formatting where readers need them. The introduction uses four inline code spans, down from 56. Dense property and option lists use reference tables where a lookup is more useful than a paragraph.
+
+The website's documentation styling removes the pink text, borders, backgrounds, and extra padding from inline code. Reference tables can scroll within the page on narrow screens without breaking option names into fragments. Code blocks retain their syntax highlighting.
+
+The follow-up also corrected two stale statements. Failed Resource Editor writes stop before schema dispatch, and disabling two-factor management does not remove login challenges for enrolled accounts.
+
+Verification for this pass:
+
+- Both repositories contain matching copies of all 38 pages.
+- All 602 fenced examples match the previous revision exactly.
+- Local links, explicit anchors, and image paths resolve.
+- All 38 pages return 200 with one main heading through the application's renderer.
+- The website asset build passes.
+- Browser checks used `http://aura-cms.com.test` through Herd. The introduction, configuration, and fields pages show the revised prose and neutral inline code. Narrow-screen checks found no page-wide horizontal overflow.
+
+Only documentation and documentation typography changed in this follow-up. The PHP test results above belong to the earlier source-fix wave.

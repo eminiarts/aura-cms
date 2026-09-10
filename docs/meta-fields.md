@@ -1,6 +1,6 @@
 # Meta fields
 
-Aura stores a resource's field values in real table columns or in rows in a shared `meta` table. A posts-backed resource uses the shared `posts` table for its core columns. Declared fields whose slugs are not base-table columns use meta storage when `$usesMeta` is enabled.
+Aura stores field values in table columns or in a shared meta table. By default, resources use the shared posts table for core columns and meta storage for other declared fields. Meta storage must be enabled for those fields to persist.
 
 Meta storage does not add a column for every field. It lets a resource keep fields that are not part of its table schema without another migration. For fields that need database indexes, joins, or aggregate queries, use columns in a [custom table](/docs/custom-tables).
 
@@ -19,7 +19,7 @@ class Article extends Resource
 }
 ```
 
-`$customTable` chooses the resource table. It does not enable or disable meta. `$usesMeta` controls whether the resource has a meta relationship and whether non-column fields use meta. Aura exposes the same decisions through `usesCustomTable()` and `usesMeta()`.
+Choose the resource's table with `$customTable`, and enable meta storage separately with `$usesMeta`. When meta is enabled, the resource has a meta relationship and stores non-column fields there. To check these settings in code, call `usesCustomTable()` or `usesMeta()`.
 
 | `$customTable` | `$usesMeta` | Storage |
 |---|---|---|
@@ -28,9 +28,9 @@ class Article extends Resource
 | `true` | `true` | Original `$fillable` columns in the custom table; other declared input fields in `meta`. |
 | `true` | `false` | The custom table only. Every declared input field needs a physical column. |
 
-The defaults are `false` for `$customTable` and `true` for `$usesMeta`. A custom-table resource that should be column-only must set `$usesMeta = false` and create a column for every input field.
+The example above shows the defaults. To store a custom-table resource entirely in columns, set `$usesMeta = false` and create a column for every input field.
 
-These rules describe ordinary field persistence. A field class with a `saved()` hook can route a relation to `post_relations` or another store, as described below.
+These rules cover ordinary field storage. A field's `saved()` hook can store a relationship in a pivot table or elsewhere. See [Serialization and save hooks](#serialization-and-save-hooks) for the relationship fields that use this approach.
 
 ## Core columns and field placement
 
@@ -53,7 +53,7 @@ The package migration creates these columns on the shared `posts` table:
 
 Aura sets `type`, `content`, `user_id`, `team_id`, and `slug` during the save pipeline when the posts-backed resource needs them. A custom-table resource does not receive the posts `type` and `content` setup.
 
-At construction time, `Resource` stores the original `$fillable` array as `baseFillable`, then merges the declared input-field slugs into Eloquent's fillable list. The original `baseFillable` list decides whether a field is a table field when meta is enabled. The merge makes field input assignable. It does not create database columns.
+When meta is enabled, Aura uses the resource's original `$fillable` list to decide which fields belong in table columns. It captures that list as `baseFillable` when constructing the resource, then adds the declared input-field slugs to Eloquent's fillable list. This lets you assign field values without changing which fields use columns. It does not create database columns.
 
 Use these instance methods when you need to inspect the routing decision:
 
@@ -65,7 +65,7 @@ $article->isTableField('title');   // true when title is in baseFillable
 $article->getBaseFillable();       // the original fillable list captured by Resource
 ```
 
-`isMetaField()` and `isTableField()` classify declared field slugs. They do not inspect the database schema. In custom-table, no-meta mode, `isTableField()` returns true for every declared input slug, so the corresponding columns must exist.
+These methods classify declared field slugs without inspecting the database schema. For a custom-table resource with meta disabled, every declared input field counts as a table field. You must create the corresponding columns yourself.
 
 ## Define and save meta fields
 
@@ -108,7 +108,7 @@ class Article extends Resource
 }
 ```
 
-With the default posts-backed flags, `title` is a `posts` column. `subtitle` and `metadata` are meta fields because they are not in the base fillable list.
+With the default settings, the title uses a column in the posts table. The subtitle and metadata use meta storage because they are not in the original fillable list.
 
 ```php
 $article = Article::create([
@@ -133,11 +133,11 @@ $article->metadata = ['source' => 'api'];
 $article->save();
 ```
 
-The `fields` attribute is a computed collection. Aura uses a transient `fields` array while saving field input, then removes it before Eloquent writes SQL. There is no `fields` column in the package schema.
+The `fields` attribute returns a computed collection. During a save, Aura temporarily holds field input in an array under that attribute and removes it before Eloquent writes to the database. It is not a database column.
 
 ## Read and write the meta relation
 
-`getMeta()` reads only meta rows. It does not include values from table columns. With no argument it returns an `Illuminate\Support\Collection` keyed by meta key. With a key it returns that field's value or `null` when the key is absent.
+Use `getMeta()` to read meta values without including table columns. With no argument, it returns a Laravel collection keyed by meta key. Pass a key to read one field's value, or `null` if that key is absent.
 
 Aura passes each stored value through the declared field class's `get()` method before returning it. This is why JSON and checkbox fields return arrays even though their database value is a JSON string.
 
@@ -147,7 +147,9 @@ $subtitle = $article->getMeta('subtitle');
 $metadata = $article->getMeta('metadata'); // ['source' => 'api']
 ```
 
-When meta is disabled, `getMeta()` and `getMeta('any-key')` return an empty collection. `meta()` also returns no relationship in that mode. Call `getMetaTable()` and `getMetaForeignKey()` only on a meta-enabled resource. They return `meta` and `metable_id` for the package's default relation.
+When meta is disabled, reading meta returns an empty collection, even when you pass a key. The resource's `meta()` method also returns no relationship.
+
+To inspect the relationship's table and foreign key, use `getMetaTable()` and `getMetaForeignKey()` only on a resource with meta enabled. The defaults are `meta` and `metable_id`.
 
 For low-level access, `meta()` is a polymorphic `morphMany` relation:
 
@@ -167,7 +169,7 @@ $rawMetadata = $article->meta->metadata; // raw value from meta.value
 $metadata = $article->getMeta('metadata'); // value after Json::get()
 ```
 
-`Resource` eager-loads `meta` for meta-enabled resources and hides the relation from its default array and JSON output. A subclass that replaces `$hidden` controls that list itself.
+Resources with meta enabled eager-load the relationship and hide it from their default array and JSON output. If your resource replaces `$hidden`, that property determines which attributes and relationships are hidden.
 
 ## The meta table and morph identity
 
@@ -181,11 +183,15 @@ The package migration creates one shared `meta` table:
 | `key` | Nullable indexed string containing the field slug. |
 | `value` | Nullable `longText` containing the stored value. |
 
-`$table->morphs('metable')` creates and indexes `metable_type` and `metable_id`. The migration also adds a composite index on `metable_type`, `metable_id`, and `key`. On MySQL it adds the `idx_meta_metable_id_key_value` prefix index on `metable_id`, `key`, and the first 255 characters of `value`. The `Meta` model has timestamps disabled.
+The migration creates and indexes the two owner columns with Laravel's `morphs('metable')` method. It adds a composite index on those columns and the field key. On MySQL, it also creates the `idx_meta_metable_id_key_value` prefix index, covering the owner ID, field key, and first 255 characters of the value. The meta model does not use timestamps.
 
-The `metable()` relation on `Aura\Base\Models\Meta` is a `morphTo`. Aura's resource relation is `morphMany(Meta::class, 'metable')`, so the same numeric ID can be used by different resource classes without mixing their rows. The value in `metable_type` is the resource's morph class, returned by `$article->getMorphClass()`. It is normally the full class name. An application's morph map can replace it with an alias.
+Meta rows belong to their resource through a polymorphic relationship. The meta model, `Aura\Base\Models\Meta`, defines a `metable()` relationship using `morphTo`. Resources define the inverse with `morphMany(Meta::class, 'metable')`. This lets different resource classes use the same numeric ID without mixing their meta rows.
 
-The `Meta` model allows `key`, `value`, `metable_type`, and `metable_id` for mass assignment. It does not cast `value`. Serialization belongs to the field class or to code that writes the relation directly.
+The owner type is the resource's morph class, which you can read with `$article->getMorphClass()`. By default, this is the full class name. An application's morph map can replace it with an alias.
+
+The meta model allows mass assignment of the field key, value, and both owner columns. It stores the value without casting it. The field class, or code that writes the relationship directly, must serialize the value.
+
+<a id="serialization-and-save-hooks"></a>
 
 ## Serialization and save hooks
 
@@ -194,12 +200,12 @@ The save pipeline runs the field class hooks before it writes a value:
 1. `set()` transforms the submitted value.
 2. A field `saving()` hook can change the resource or skip further work.
 3. A base-fillable field is put back on the model as a table attribute. Other fields are queued for the saved phase when meta is enabled.
-4. After the resource row is saved, a field `saved()` hook can persist the value. If it has no `saved()` hook, Aura calls `meta()->updateOrCreate(['key' => $key], ['value' => $value])` for a meta-enabled resource.
+4. After the resource row is saved, a field's `saved()` hook can persist the value. If the field has no such hook and meta is enabled, Aura creates or updates the meta row for that key.
 5. Aura fires the raw Eloquent `metaSaved` model event after the queued values finish.
 
-The field class owns conversion. For example, `Json::set()` and `Checkbox::set()` JSON-encode arrays, and their `get()` methods decode JSON strings. `Boolean` converts values to booleans. The `Meta` model stores the resulting value as-is in its `longText` column.
+Each field class converts its own values. JSON and checkbox fields encode arrays when writing and decode JSON strings when reading. Boolean fields convert values to booleans. The meta model stores the result as-is in its long-text value column.
 
-Relation fields can use another storage path. `AdvancedSelect` and `Tags` use the `post_relations` pivot for their polymorphic relations. `AdvancedSelect` with `polymorphic_relation => false` stores its selected IDs as a JSON value in meta and reads that value back from meta.
+Relationship fields can store their values elsewhere. Advanced select and tags fields use the `post_relations` pivot table for polymorphic relationships. If you set `polymorphic_relation => false` on an advanced select field, it stores and reads the selected IDs as JSON in meta instead.
 
 To take over persistence for a declared field, add a `set{StudlySlug}Field()` method. A declared `price` field calls `setPriceField()` in the saved phase, after the resource row exists. The method must return the resource instance because the save pipeline keeps that return value.
 
@@ -230,7 +236,7 @@ Event::listen('eloquent.metaSaved: App\\Aura\\Resources\\Article', function (Art
 
 ## Query meta values
 
-Aura adds query scopes to resources through `AuraQueriesMeta`. The scopes compare the stored `meta.value` and use the `meta` relation. Query a real table column with Eloquent's normal `where()` instead.
+Use Aura's meta query scopes to filter resources by stored meta values. The `AuraQueriesMeta` trait provides these scopes through the meta relationship. To filter a table column, use Eloquent's normal `where()` method.
 
 ```php
 // Equality.
@@ -257,7 +263,9 @@ Article::whereInMeta('category', ['news', 'updates'])->get();
 Article::whereNotInMeta('category', ['internal', 'archived'])->get();
 ```
 
-`whereMeta()` and `orWhereMeta()` accept `key, value`, `key, operator, value`, or one associative array. `whereInMeta()` and `whereNotInMeta()` accept an array, a collection, or a scalar that Aura wraps in a one-item list. `whereNotInMeta()` uses `whereDoesntHave`, so a resource without a matching meta row also passes the scope.
+As shown above, `whereMeta()` and `orWhereMeta()` accept a key and value, an optional comparison operator between them, or an associative array.
+
+The inclusion and exclusion scopes accept an array, a collection, or a single value. Aura treats a single value as a one-item list. The exclusion scope, `whereNotInMeta()`, uses Laravel's `whereDoesntHave`, so it also includes resources with no matching meta row.
 
 For a JSON-encoded meta value, use `whereMetaContains()`:
 
@@ -277,6 +285,8 @@ php artisan aura:migrate-from-posts-to-custom-table "App\\Aura\\Resources\\Artic
 php artisan aura:transfer-from-posts-to-custom-table "App\\Aura\\Resources\\Article"
 ```
 
-`aura:migrate-post-meta-to-meta` imports rows from existing `post_meta`, `team_meta`, and `user_meta` tables when those tables exist. `aura:migrate-from-posts-to-custom-table` changes the resource class, generates a custom-table migration, and offers to run it and transfer data. `aura:transfer-from-posts-to-custom-table` copies rows for the selected resource from `posts` and `meta` into its custom table. Review the generated schema and the resource's `$usesMeta` value before switching a resource.
+The first command imports rows from the legacy `post_meta`, `team_meta`, and `user_meta` tables, if they exist. The second changes the resource class and generates a custom-table migration, then offers to run it and transfer data. The third copies the selected resource's posts and meta rows into its custom table.
+
+Before switching a resource, review the generated schema and check whether its `$usesMeta` setting matches the storage you want.
 
 See [Custom tables](/docs/custom-tables) for custom-table migrations and [Resources](/docs/resources) for the complete storage matrix.

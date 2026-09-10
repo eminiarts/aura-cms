@@ -2,7 +2,7 @@
 
 A resource is a PHP class that describes a content type. It declares the fields that appear in Aura's forms, tables, and detail pages, and it determines where those values are stored. Resources extend `Aura\Base\Resource`.
 
-This guide takes a resource from the generator to its first record. It also covers field definitions, custom tables, existing-table scaffolding, discovery, factories, permissions, and page customization. See [Resources](/docs/resources) for the complete property and method reference, and [Fields](/docs/fields) for field-specific options.
+This guide walks through generating a resource, defining its fields, and saving the first record. Later sections cover storage, existing tables, registration, factories, permissions, and page customization. See [Resources](/docs/resources) for the complete property and method reference, and [Fields](/docs/fields) for field-specific options.
 
 ## Generate a resource
 
@@ -12,9 +12,9 @@ Run the generator from the Laravel application that uses Aura:
 php artisan aura:resource Project
 ```
 
-The command is `aura:resource {name} {--custom}`. With the default configuration it writes `app/Aura/Resources/Project.php`. The directory and namespace come from `aura-settings.paths.resources`, so a customized path changes the generated location too.
+By default, this creates `app/Aura/Resources/Project.php`. You can change the directory and namespace through `aura-settings.paths.resources`. Add the `--custom` option to generate a resource that uses its own database table, as described below.
 
-The generated class contains the resource identity, a default SVG icon, an empty `getWidgets()` method, and an empty `getFields()` method. The part you normally replace is `getFields()`:
+The generated class defines the resource's names and icon, with empty methods for widgets and fields. Start by adding your fields to `getFields()`:
 
 ```php
 <?php
@@ -40,11 +40,11 @@ class Project extends Resource
 }
 ```
 
-The generated file also contains `getWidgets()` and `getIcon()`. Keep those generated methods when you do not need to change them.
+The example omits the generated `getWidgets()` and `getIcon()` methods. Leave them in your file unless you need to customize the widgets or icon.
 
 ### Names and generated values
 
-`MakeResource` derives the main values from the name passed to the command:
+The generator derives the following values from the resource name:
 
 | Value | Derivation | `Project` | `BlogPost` |
 |-------|------------|-----------|------------|
@@ -87,7 +87,7 @@ public static function getFields(): array
 }
 ```
 
-`type` must be the fully qualified field class. Aura resolves it through the container, so `'Text'` is not enough. Fields are shown on create, edit, and view pages unless an `on_*` option is set to `false`.
+Each field needs its fully qualified class name in the `type` option. A short name such as `'Text'` is not enough for Aura to resolve the class through Laravel's container. Fields appear on create, edit, and detail pages by default. Use the display options described below to hide them on specific pages.
 
 After saving the class, Aura discovers it on the next application boot. Sign in as a user who can create the resource and open the create route. With the default `aura.path` value, the route for the example above is:
 
@@ -95,13 +95,13 @@ After saving the class, Aura discovers it on the next application boot. Sign in 
 /admin/project/create
 ```
 
-The slug is singular because it comes from `$slug`, not `$pluralName`. Submit the form to create the record. Aura redirects to the new record's edit page. If the resource does not appear in the navigation, open the route directly and check the user's `viewAny` and `create` permissions. The route prefix changes when `aura.path` changes.
+The URL uses the resource's slug, which is singular in this example. Submitting the form creates the record and redirects to its edit page. If the resource is missing from the navigation, open the route directly and check the user's `viewAny` and `create` permissions. Changing `aura.path` changes the route prefix.
 
 With the default storage settings, the resource uses Aura's shared `posts` and `meta` tables. You do not need a new migration for each field in this mode. See [Meta fields](/docs/meta-fields) for the storage rules.
 
 ## Choose a storage model
 
-The default `Resource` values are `$customTable = false` and `$usesMeta = true`. Base resource columns such as `title` and `content` can live on `posts`; other input fields use `meta` unless the resource changes the storage settings.
+By default, resources share Aura's tables. Base attributes such as the title and content can use columns in `posts`, while other input fields use `meta`. These defaults correspond to `$customTable = false` and `$usesMeta = true`.
 
 ### Use a custom table
 
@@ -111,7 +111,7 @@ Pass `--custom` when generating the class:
 php artisan aura:resource Project --custom
 ```
 
-The custom stub sets all three values needed for column-backed fields:
+The generated class selects a dedicated table and disables meta storage:
 
 ```php
 public static $customTable = true;
@@ -121,7 +121,9 @@ public static bool $usesMeta = false;
 protected $table = 'projects';
 ```
 
-With `$customTable = true` and `$usesMeta = false`, every declared input field slug is treated as a column on `$table`. Aura adds the declared input slugs to the model's fillable attributes while it constructs the resource, so a separate `$fillable` list is not required for this generated class. `Panel` and `Tab` are layout fields and do not become columns. `Group` and `Repeater` are input fields, so the migration and factory commands include them. Their field classes control how their values are encoded.
+With these settings, each input field's slug names a column in the custom table. Aura makes those attributes fillable when it constructs the resource, so you do not need a separate `$fillable` list.
+
+Panels and tabs control layout and do not become columns. Groups and repeaters store input, so the migration and factory commands include them. Their field classes determine how to encode their values.
 
 Add fields to the resource, then generate and review the migration before running it:
 
@@ -130,15 +132,17 @@ php artisan aura:create-resource-migration 'App\Aura\Resources\Project'
 php artisan migrate
 ```
 
-`aura:create-resource-migration` reads the resource's current `$table`. Its optional `--table` value overrides that target when you need to point the generated migration at a different table name:
+The migration command uses the table named in the resource. To generate a migration for a different table, pass `--table`:
 
 ```bash
 php artisan aura:create-resource-migration 'App\Aura\Resources\Project' --table=projects
 ```
 
-The command builds the migration from `inputFields()`. It writes an `id` column, one column for each input field, `user_id`, `team_id` when teams are enabled, and `created_at` and `updated_at`. Layout fields are skipped. Each field class supplies its column type and nullability. The command reuses a migration whose name contains `create_{table}_table` when one already exists, so inspect the file after every run.
+The generated migration includes a primary key, a column for each input field, a user ID, and timestamps. It also includes a team ID when teams are enabled. Layout fields are skipped, and each input field class determines its column type and whether it allows null values.
 
-The generated migration does not run automatically. Review the columns, then run `php artisan migrate`. After the migration has run, open `/admin/project/create` and save the first record. The form writes `name` and `notes` to `projects`, and it does not create rows in `meta` while `$usesMeta` is `false`.
+The command reads these fields through `inputFields()`. It reuses an existing migration whose name contains `create_{table}_table`, so inspect the file after every run.
+
+The command does not run the migration automatically. Review the columns, then run `php artisan migrate`. Open `/admin/project/create` to save the first record. In this example, the form writes the name and notes to the projects table. With meta storage disabled, it creates no meta rows.
 
 If the table already exists and you edited the migration to describe its desired shape, sync it explicitly:
 
@@ -150,7 +154,7 @@ The command adds missing columns as nullable. It keeps columns that are absent f
 
 ### Mix table columns and meta fields
 
-Set `$usesMeta = true` only when the custom table should use both storage locations. With a custom table and meta enabled, fields in the resource's base fillable set use the custom table and other input fields use `meta`. The generated `--custom` stub chooses `$usesMeta = false`, which is the simpler all-columns configuration.
+To combine custom table columns with meta storage, set `$usesMeta = true`. Fields in the resource's base fillable set then use the custom table, while other input fields use the meta table. The custom resource generator disables meta storage by default, so all input fields use columns until you change this setting.
 
 ## Generate a resource from an existing table
 
@@ -160,7 +164,7 @@ Use the single-table command when the table already exists:
 php artisan aura:transform-table-to-resource blog_posts
 ```
 
-It creates `app/Aura/Resources/BlogPost.php` when that file does not already exist. The generated class imports `Aura\Base\Resource`, sets `$customTable = true`, sets `$usesMeta = false`, points `$table` at `blog_posts`, and derives the slug `blog-post`. It creates one field for every source column.
+This creates `app/Aura/Resources/BlogPost.php` unless the file already exists. The class extends Aura's base resource and uses the existing table, with meta storage disabled. Its route slug is `blog-post`, and it declares one field for every source column.
 
 The type mapping is:
 
@@ -179,7 +183,7 @@ To process all database tables, use:
 php artisan aura:database-to-resources
 ```
 
-This command reads the connection's table listing, skips Laravel and Aura system tables, and delegates each remaining table to `aura:transform-table-to-resource`. Existing resource files are left in place by the delegated command.
+This runs the single-table generator for every table on the connection except Laravel and Aura system tables. Existing resource files remain unchanged.
 
 ## Discovery and registration
 
@@ -195,9 +199,9 @@ Aura automatically discovers app resources under the configured resource path. T
 ],
 ```
 
-Discovery is recursive. Aura maps each PHP file's relative path to the configured namespace, loads classes that exist, and keeps only subclasses of `Aura\Base\Resource`. You do not add a registration entry for a normal app resource.
+Aura searches this directory and its subdirectories for resource classes. Class namespaces must match their paths relative to the configured directory, and each class must extend `Aura\Base\Resource`. You do not need to register these app resources manually.
 
-Aura's built-in resources come from `config('aura.resources')`. `User`, `Role`, `Permission`, `Option`, and `Attachment` are always registered. `Team` and `TeamInvitation` are registered when `config('aura.teams')` is true.
+Aura configures its built-in resources through `aura.resources`. Users, roles, permissions, options, and attachments are always registered. Teams and team invitations are registered when teams are enabled through `aura.teams`.
 
 For a resource supplied by a package or plugin, register the class from a service provider:
 
@@ -212,9 +216,9 @@ public function boot(): void
 }
 ```
 
-The `resources` path settings have no `register` list. Use `Aura::registerResources()` for classes outside the discovered app path.
+Use this service provider method for classes outside the configured app directory. The resource path settings do not accept a separate registration list.
 
-For a normal registered resource, Aura registers these route names under `config('aura.path')`:
+For each normal registered resource, Aura adds the following named routes under the configured `aura.path` prefix:
 
 ```text
 aura.{slug}.index
@@ -223,7 +227,7 @@ aura.{slug}.edit
 aura.{slug}.view
 ```
 
-The Attachment resource uses the dedicated media page instead of the generic resource page set. Navigation also filters resources by authorization and the resource's `showInNavigation` setting.
+Attachments use the dedicated media page instead of these generic resource pages. A resource appears in the navigation only when the user has access and its `showInNavigation` setting allows it.
 
 ![Resource index](/images/docs/creating-resources/resource-index.png)
 
@@ -248,7 +252,7 @@ The Attachment resource uses the dedicated media page instead of the generic res
 | `conditional_logic` | Show or hide the field based on conditions. |
 | `disabled` | A boolean or a closure receiving the resource. |
 
-`on_index`, `on_forms`, `on_create`, `on_edit`, and `on_view` are enabled unless you set the relevant key to `false`. A resource can opt out of global search with `public static $globalSearch = false`. Field-specific keys such as `options`, `resource`, and `enable_time` are documented in [Fields](/docs/fields).
+All display options in the table are enabled by default. Set the relevant option to `false` to hide a field. To exclude the entire resource from global search, add `public static $globalSearch = false`. See [Fields](/docs/fields) for options specific to each field type, such as choices, related resources, and time inputs.
 
 Here is a choice field with a default value:
 
@@ -268,7 +272,7 @@ Here is a choice field with a default value:
 
 ### Panels, tabs, groups, and repeaters
 
-`Panel` and `Tab` are layout fields. They are declared inline, and following fields belong to that panel or tab until the next wrapper. Their display flags can cascade to their child fields unless a child sets its own value.
+Panels and tabs organize the form without storing input. Declare them alongside other fields. The fields that follow belong to that panel or tab until the next layout wrapper. Child fields can inherit its display settings unless they define their own.
 
 ```php
 public static function getFields(): array
@@ -294,11 +298,11 @@ public static function getFields(): array
 
 ![Resource form with two panels](/images/docs/creating-resources/resource-form.png)
 
-`Group` and `Repeater` are input fields. They can contain child fields and their values are stored under their own slug. The migration and factory commands include them because `inputFields()` includes both types.
+Groups and repeaters contain child fields and store their values under the group's or repeater's slug. They count as input fields, so the migration and factory commands include them.
 
 ### Validation
 
-The `validation` value is passed to Laravel's validator under the field slug. Aura applies it to create and edit forms:
+Aura applies Laravel validation rules to both create and edit forms. Add rules to a field's `validation` option, and Aura validates the value under that field's slug:
 
 ```php
 'validation' => 'required|max:255',
@@ -306,11 +310,11 @@ The `validation` value is passed to Laravel's validator under the field slug. Au
 'validation' => ['required', 'unique:posts,slug'],
 ```
 
-Validation errors use the Livewire key `form.fields.{slug}`. Child fields in a `Repeater` or `Group` use a nested key such as `{group_slug}.*.{slug}`.
+Validation errors use the Livewire key `form.fields.{slug}`. For child fields in a repeater or group, the field key is nested, such as `{group_slug}.*.{slug}`.
 
 ### Conditional logic
 
-`conditional_logic` accepts an array of conditions. Aura must pass every condition before it renders the field:
+To show a field only when certain conditions are met, add a `conditional_logic` array. Aura renders the field only when every condition passes:
 
 ```php
 [
@@ -343,7 +347,9 @@ Pass a resource class to create a factory scaffold:
 php artisan aura:create-resource-factory 'App\Aura\Resources\Project'
 ```
 
-Without an argument, the command prompts you to search the registered resources. It creates `database/factories/ProjectFactory.php` and builds its `definition()` from the resource's input fields. Panels and tabs are excluded because they are not input fields. Faker values are selected by field type. A `BelongsTo` field with a `resource` key uses that resource's factory; a `BelongsTo` field without one gets a random number and may need manual adjustment. Select and radio fields use placeholder options and should be edited to match the field's real values.
+Without an argument, the command prompts you to search the registered resources. It creates `database/factories/ProjectFactory.php` with Faker values based on each input field's type. It excludes panels and tabs because they only control layout.
+
+Review the generated values before using the factory. A belongs-to field uses the related resource's factory when its `resource` option is set. Otherwise, it gets a random number that may need adjustment. Select and radio fields use placeholders that you should replace with the field's actual choices.
 
 The command prints a `newFactory()` method. Add an import for the generated factory, then add the method to the resource:
 
@@ -364,13 +370,15 @@ After the resource is discoverable, generate its standard permissions:
 php artisan aura:create-resource-permissions
 ```
 
-The command creates or updates `view`, `viewAny`, `create`, `update`, `restore`, `delete`, `forceDelete`, and `scope` permissions for eligible registered resources. Slugs use the form `view-project`, `viewAny-project`, and so on. In teams mode, permissions are written for the current user's current team by default. Pass `--team=ID` to choose a team explicitly. Teams-off mode omits the team column.
+For eligible registered resources, the command creates or updates permissions to view individual records, list records, create, update, restore, delete, permanently delete, and scope access. Their action names are `view`, `viewAny`, `create`, `update`, `restore`, `delete`, `forceDelete`, and `scope`. Permission slugs combine the action and resource slug, such as `view-project`.
 
-Assign the permissions to a role in the admin panel. A Super Admin can use the generated resource without a separate permission assignment.
+With teams enabled, the command uses the current user's current team by default. Pass `--team=ID` to choose a team explicitly. With teams disabled, it omits the team column.
+
+Assign the permissions to a role in the admin panel. A super admin can use the generated resource without a separate permission assignment.
 
 ## Customize resource pages
 
-Each normal resource resolves its index, create, edit, and view pages through static component hooks. Override a hook to use an application Livewire component while keeping Aura's route names and URLs:
+You can replace a resource's index, create, edit, or detail page with your own Livewire component. Override the corresponding static method on the resource to keep Aura's existing route names and URLs:
 
 ```php
 public static function indexComponent(): string
@@ -385,13 +393,17 @@ The other hooks are `createComponent()`, `editComponent()`, and `viewComponent()
 php artisan aura:customize project index --mode=full
 ```
 
-Its signature is `aura:customize {resource?} {type?*} {--mode=} {--force}`. `type` accepts `index`, `create`, `edit`, or `view`. `full` creates a component and view, `view` copies a Blade view and wires `{type}View()`, and `component` creates only the Livewire component. See [Customizing views](/docs/customizing-views).
+Choose a page with `index`, `create`, `edit`, or `view`. The command's full signature is `aura:customize {resource?} {type?*} {--mode=} {--force}`.
+
+The mode determines what it generates. Use `full` for a component and Blade view, `view` to copy only the Blade view and configure the resource's `{type}View()` method, or `component` for only the Livewire component. See [Customizing views](/docs/customizing-views).
 
 ## Create and edit resources from the admin panel
 
-The `aura.features.create_resource` setting adds a Create Resource entry to the settings navigation for Super Admins. It runs `aura:resource`, clears the cache, and redirects to the Resource Editor.
+Enable `aura.features.create_resource` to add a Create Resource entry to the settings navigation for super admins. Creating a resource there runs the generator, clears the cache, and opens the Resource Editor.
 
-The `aura.features.resource_editor` setting controls the editor route at `/resources/{slug}/editor` under `config('aura.path')`. The editor requires the `local` or `testing` environment, the feature setting, and a Super Admin. It only edits app resources, and it refuses resources whose field definitions contain closures. Use the CLI workflow for production resource definitions.
+Enable the editor separately with `aura.features.resource_editor`. Its route is `/resources/{slug}/editor` under the configured admin prefix. Access requires a super admin and a `local` or `testing` environment.
+
+The editor only supports app resources and cannot open field definitions that contain closures. Use the CLI workflow for production resource definitions.
 
 ## Related documentation
 

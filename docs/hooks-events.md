@@ -1,12 +1,14 @@
 # Hooks and events
 
-Aura provides extension points for navigation filters, markup injection, Eloquent resource events, field lifecycle methods, named application events, and Livewire component events. This page describes the names, arguments, and return values used by the current package.
+You can customize Aura by filtering navigation, adding markup to views, and responding to changes in resources and fields. Aura supports standard Eloquent events alongside its own application and Livewire events. This page explains when each extension point runs and what your callback should return.
 
 ## HookManager filters
 
-`Aura\Base\HookManager` is registered as the `hook_manager` container singleton. `addHook($name, $callback)` stores a callback and returns nothing. `applyHooks($name, $value)` passes one current value to each callback in registration order and returns the final value.
+Filters let you change a value before Aura uses it. Each callback receives the current value as its only argument and must return the value to pass to the next callback. Callbacks run in registration order.
 
-Each callback receives the current value as its only argument. It must return the value that the next callback receives. A registered name has no effect until code calls `applyHooks()` for that name. Aura calls the manager itself for the `navigation` name.
+The hook manager is available through the `hook_manager` container singleton, an instance of `Aura\Base\HookManager`. Register a callback with `addHook($name, $callback)`, which returns nothing. Run the callbacks with `applyHooks($name, $value)`, which returns their final value.
+
+Registering a filter does not run it. Your code must apply the filter by name. Aura already does this for the `navigation` filter.
 
 Register a filter from a service provider. The provider must be registered in the application:
 
@@ -39,11 +41,13 @@ class AppServiceProvider extends ServiceProvider
 }
 ~~~
 
-The callback returns a `Collection` because Aura passes a collection to the navigation hook. Returning `null` or another value changes what later callbacks and Aura receive.
+Navigation filters receive a collection and should return a collection. If you return `null` or a different type, later callbacks and Aura receive that value instead.
 
 ## Navigation hooks
 
-`Aura::navigation()` builds a collection of navigation item arrays, applies the `navigation` filters, sorts the result, evaluates conditional items, and groups it for the sidebar. Resource items use keys such as `name`, `icon`, `route`, `group`, `sort`, and `type`.
+Aura builds the sidebar navigation by collecting items and applying the navigation filters. It then sorts the result, evaluates conditional items, and groups the items for display. You can retrieve this navigation with `Aura::navigation()`.
+
+Each resource item is an array with keys such as `name`, `icon`, `route`, `group`, `sort`, and `type`.
 
 Use `Navigation::add()` to append items. Its optional authorization callback runs when you register the item. If it returns a falsy value, Aura does not add the item:
 
@@ -61,7 +65,7 @@ Navigation::add([
 ], fn (): bool => auth()->check() && auth()->user()->isSuperAdmin());
 ~~~
 
-Use `Navigation::clear()` to add a filter that starts the navigation collection empty. Later navigation filters can append items again:
+To clear the navigation, register a filter with `Navigation::clear()`. Filters registered after it can add items again:
 
 ~~~php
 Navigation::clear();
@@ -79,11 +83,11 @@ app('hook_manager')->addHook('navigation', function (Collection $navigation): Co
 });
 ~~~
 
-Aura caches the grouped navigation for 3,600 seconds. The cache key includes the authenticated user, current team, and registered resource list. Register filters from a provider's `boot()` method so they exist before the first navigation lookup.
+Aura caches the grouped navigation for one hour. The cache key includes the authenticated user, current team, and registered resource list. Register filters from a provider's `boot()` method so they exist before the first navigation lookup.
 
 ## View injection hooks
 
-Register an injection callback with the Aura facade:
+View injection hooks let you add markup at specific locations in Aura's pages. Register a callback with the Aura facade and return the markup to insert:
 
 ~~~php
 <?php
@@ -108,9 +112,9 @@ class AppServiceProvider extends ServiceProvider
 }
 ~~~
 
-Aura resolves each callback with `app()->call()` and concatenates the returned values in registration order. Return a string or another value that can be converted to a string. The callback may type-hint container dependencies.
+Aura joins the returned markup in registration order. Each callback must return a string or a value that can be converted to one. You may type-hint container dependencies because Aura invokes the callback through Laravel's `app()->call()` method.
 
-These injection names are emitted by the package:
+The package provides these injection locations:
 
 | Name | Location |
 | --- | --- |
@@ -128,7 +132,7 @@ The `{Type}` part uses the resource's `getType()` value.
 
 ## Eloquent events on resources
 
-A resource extends `Aura\Base\Resource`, which extends Laravel's Eloquent `Model`. Standard Eloquent model events therefore apply, including `retrieved`, `creating`, `created`, `updating`, `updated`, `saving`, `saved`, `deleting`, `deleted`, `restoring`, `restored`, and `replicating`.
+Aura resources are Eloquent models, so you can listen for the standard model events when a record is retrieved, created, updated, saved, deleted, restored, or replicated. Both the before and after events are available for creating, updating, saving, deleting, and restoring records.
 
 If a resource overrides `booted()`, call `parent::booted()` so Aura keeps its global scopes and saved listener:
 
@@ -157,13 +161,13 @@ class Article extends Resource
 }
 ~~~
 
-These callbacks receive the resource instance. They are Eloquent model events, not instances of an Aura event class.
+Each callback receives the resource instance. Eloquent does not pass an Aura event object to these callbacks.
 
 ### The `metaSaved` model event
 
-Aura also registers the `metaSaved` model event string. During the Eloquent `saved` event, Aura processes queued field values, calls any field `saved()` methods, writes meta values when applicable, and then fires `metaSaved`.
+Use the `metaSaved` model event when you need to run code after Aura has processed queued field values, called the fields' `saved()` methods, and written any meta values. This processing happens during Eloquent's saved event.
 
-`metaFields` is declared on every `Resource` as an array, so `metaSaved` runs for Resource saves even when no meta row is written. Register it as a model event:
+The event fires whenever a resource is saved, even when no meta row is written. Every resource declares the array of queued meta fields that this processing checks. Register a listener as a model event:
 
 ~~~php
 protected static function booted(): void
@@ -180,7 +184,7 @@ protected static function booted(): void
 
 ## Field lifecycle methods
 
-Field classes can define these methods. Aura checks the optional methods with `method_exists()`.
+A field class can customize how Aura reads, transforms, and saves its values. Define the methods you need. Aura checks whether each optional method exists before calling it.
 
 | Method | Signature | When Aura calls it | Return value |
 | --- | --- | --- | --- |
@@ -190,7 +194,7 @@ Field classes can define these methods. Aura checks the optional methods with `m
 | `shouldSkip` | `shouldSkip($post, $field)` | During `saving`, after `saving` | `true` skips storage for this field |
 | `saved` | `saved($post, $field, $value)` | During Aura's `saved` processing | Aura ignores this method's return value |
 
-The `get()` method is used while Aura resolves field and meta values. It does not intercept every Eloquent attribute read. A real Eloquent attribute or relation can win before field-meta resolution.
+The getter only runs when Aura resolves a field or meta value. An Eloquent attribute or relationship may take precedence, so the getter does not intercept every attribute read.
 
 For example, this field stores cents and exposes a decimal value:
 
@@ -249,9 +253,9 @@ use Illuminate\Support\Str;
 
 ## Resource field methods
 
-Aura derives the method name from a field slug with StudlyCase. For example, a `full_name` field maps to `getFullNameField($value)` and `setFullNameField($value)`.
+You can also define field getters and setters on the resource itself. Aura converts the field slug to StudlyCase to find the method. For example, the `full_name` field uses `getFullNameField($value)` and `setFullNameField($value)`.
 
-Aura checks `get{Slug}Field()` when it resolves a dynamic field value. The table display path also checks this method before a field's display callback. Return the value to display:
+Aura calls the getter when resolving a dynamic field value. Tables also check for it before using the field's display callback. Return the value you want to display:
 
 ~~~php
 public function getFullNameField($value): string
@@ -260,7 +264,11 @@ public function getFullNameField($value): string
 }
 ~~~
 
-A resource can define `set{Slug}Field($value)` for a submitted payload that it owns. Aura includes keys with one of these methods in the create and edit payload allowlist. In the posts and meta field pipeline, a declared field queues the value during `saving` and invokes the method during its `saved` field processing. An undeclared key that reaches the `fields` payload is passed to the method during `saving` and skips normal field storage. Custom-table resources without meta write their declared input fields directly to table columns and do not use this queue.
+Define a setter with `set{Slug}Field($value)` when the resource needs to handle a submitted value itself. Aura allows keys with these setters in submissions from the create and edit forms.
+
+For resources that store fields in posts and meta, the setter runs at a different point depending on whether the key has a field definition. A declared field queues its value during saving and calls the setter during saved-field processing. An undeclared key in the `fields` payload calls its setter during saving and skips normal field storage.
+
+Custom-table resources without meta write declared input fields directly to their table columns. They do not use this queue.
 
 The setter owns persistence for its value. Aura ignores its return value:
 
@@ -273,15 +281,17 @@ public function setTranslationsField($value): void
 
 ## Relation fields
 
-A field whose `isRelation()` method returns `true` must provide `relationship($model, $field)`. Aura delegates `$resource->{slug}()` calls to that method. `getRelation($model, $field)` supplies values when Aura reads the field, and `saved($post, $field, $value)` can persist submitted relation values. The built-in `Tags`, `AdvancedSelect`, and `Roles` fields use this contract.
+Relationship fields provide separate methods for defining the relationship, reading its values, and saving submitted values. The built-in tags, advanced select, and roles fields follow this contract.
+
+If your field returns `true` from `isRelation()`, it must define `relationship($model, $field)`. Aura calls this method when you access the relationship through `$resource->{slug}()`. Define `getRelation($model, $field)` to supply values when Aura reads the field. Use `saved($post, $field, $value)` to persist submitted relationship values.
 
 ## Aura application events
 
-Aura currently defines two application event classes. Listen for them through Laravel's event dispatcher. They are distinct from Eloquent model event names such as `saving`, `saved`, and `metaSaved`.
+Aura provides two application event classes that you can listen for through Laravel's event dispatcher. These listeners receive event objects, unlike the Eloquent model listeners described above.
 
 ### `SaveFields`
 
-`Aura\Base\Events\SaveFields` is emitted by the resource editor's `saveFields()` method after it writes the resource field definition. The constructor is:
+The resource editor emits `Aura\Base\Events\SaveFields` after saving changes to a resource's field definition through `saveFields()`. The event constructor accepts the new definitions, the previous definitions, and the resource:
 
 ~~~php
 public function __construct(array $fields, $oldFields, $model)
@@ -314,7 +324,7 @@ Aura registers its own database migration listener according to `config('aura.fe
 | `true` or `'single'` | `Aura\Base\Listeners\ModifyDatabaseMigration` |
 | Any other value | No package migration listener |
 
-Those listeners return without changing a schema when the resource does not use a custom table. `SaveFields` is a field-definition event from the resource editor, not a record-save event.
+The migration listeners only change the schema for resources that use a custom table. This event concerns changes to field definitions in the resource editor. It does not fire when you save a record.
 
 ### `LoggedIn`
 
@@ -332,18 +342,18 @@ Event::listen(LoggedIn::class, function (LoggedIn $event): void {
 });
 ~~~
 
-Aura emits `LoggedIn` in both completed authentication paths:
+Aura emits the login event after authentication completes:
 
 - After the normal password login succeeds and the session regenerates.
 - After Fortify completes a two-factor login with a valid one-time password or recovery code.
 
-A valid password that only opens the two-factor challenge does not emit `LoggedIn` yet. An invalid one-time password does not emit it.
+Opening the two-factor challenge with a valid password does not emit the event. Neither does submitting an invalid one-time password.
 
 The current package has no `LoginChanged` event class or method. Listen for `LoggedIn` when you need the successful Aura login signal.
 
 ## Livewire component events
 
-These are Livewire events emitted or consumed by Aura's built-in components. Event names are case-sensitive.
+Aura's built-in components use the following Livewire events. Event names are case-sensitive.
 
 | Event | Payload | Used by |
 | --- | --- | --- |
@@ -385,7 +395,7 @@ A resource save follows Laravel's Eloquent event order:
 4. `created` fires for a new resource, or `updated` fires for an existing resource.
 5. `saved` fires. Aura processes queued field values, calls field `saved()` methods, fires `metaSaved`, and clears the fields cache.
 
-The relative order of separate application listeners on the same Eloquent event is not a contract. Use the event boundary that matches your requirement.
+Do not rely on the order in which separate application listeners run for the same Eloquent event. Choose an event that fires after the processing your code depends on.
 
 ## Related
 

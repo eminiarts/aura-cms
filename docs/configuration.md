@@ -1,12 +1,12 @@
 # Configuration
 
-This page describes the configuration shipped on the current `main` branch. The public Composer package is `v1.0.0-beta.4`. Its installer has older behavior around environment-backed values. Follow [Installation](/docs/installation) for the beta-specific setup notes.
+This page describes configuration on the current main branch. The public Composer release, v1.0.0-beta.4, uses an older installer that handles environment variables differently. See [Installation](/docs/installation) for setup notes for that release.
 
 <a id="configuration-overview"></a>
 
 ## Configuration overview
 
-Aura reads two package files from the host application:
+Aura uses two configuration files in your Laravel application:
 
 - `config/aura.php` controls routes, teams, components, resources, theme, features, authentication, reporting and media.
 - `config/aura-settings.php` controls discovery paths and the middleware arrays used by Aura's routes.
@@ -17,7 +17,7 @@ The package defaults apply without publishing either file. Publish them when you
 php artisan vendor:publish --tag=aura-config
 ```
 
-`php artisan aura:install` publishes both files before it asks whether to run `aura:install-config`. See [Installation](/docs/installation) for the complete installer flow.
+The installer publishes both files, then offers to run the interactive configuration command. See [Installation](/docs/installation) for the complete installer flow.
 
 <a id="quick-configuration"></a>
 
@@ -29,7 +29,7 @@ After publishing `config/aura.php`, you can use the interactive command:
 php artisan aura:install-config
 ```
 
-The command changes teams, registration, feature flags and selected theme scalars. It does not configure every key in the file. See [the installer section](#configuration-command) for the exact behavior.
+The command lets you choose whether to enable teams, public registration and individual features. It also asks about selected theme preferences. Other settings require editing the file directly. See [the installer section](#configuration-command) for details.
 
 <a id="main-configuration"></a>
 
@@ -43,9 +43,11 @@ The command changes teams, registration, feature flags and selected theme scalar
 'domain' => env('AURA_DOMAIN'),
 ```
 
-`path` is the URL prefix for the authenticated admin group. The default routes include `/admin`, `/admin/profile`, `/admin/settings` and each registered resource route. `domain` restricts that group to one host. Leave it empty to accept every host.
+The admin area uses the configured path as its URL prefix. By default, it includes `/admin`, `/admin/profile`, `/admin/settings` and the routes for each registered resource. Set a domain to restrict these routes to one host, or leave it empty to accept every host.
 
-The authentication routes are outside this domain and prefix group. They use root paths such as `/login`, `/register` when registration is enabled, `/forgot-password`, `/reset-password` and the two-factor paths. The default `auth.redirect` is derived from `AURA_PATH`, so Aura's auth-controller redirects follow the admin path. If you replace `auth.redirect` with a literal, keep it aligned with your chosen path. Aura's two-factor response also honors `aura.auth.redirect` and the intended URL.
+Authentication routes do not use the admin domain or prefix. Login, registration, password recovery and two-factor authentication use paths at the root of the application, such as `/login`, `/forgot-password` and `/reset-password`. The `/register` route is available only when registration is enabled.
+
+After authentication, Aura redirects users to the admin path by default. The `auth.redirect` setting derives this destination from `AURA_PATH`. If you replace it with a fixed path, update it whenever the admin path changes. Two-factor authentication also respects this setting and the intended URL.
 
 ### Teams
 
@@ -53,7 +55,7 @@ The authentication routes are outside this domain and prefix group. They use roo
 'teams' => env('AURA_TEAMS', true),
 ```
 
-Teams are enabled by default. The value is read when Aura's migration runs. With teams enabled, the migration creates the team tables and team columns. With teams disabled, team-specific schema is omitted, `TeamScope` does nothing, and the team switcher and team registration routes are unavailable. Roles use the global Role Catalog in teams-off mode.
+Teams are enabled by default. Aura reads this setting during migration to decide whether to create the team tables and columns. Disabling teams also disables team scoping, the team switcher and team registration routes. Roles then use the global role catalog.
 
 Set the value before the first migration. Changing it on an existing installation requires a deliberate schema and data migration. Do not treat it as a runtime toggle for an already-migrated database. See [Teams](/docs/teams) and [Installation](/docs/installation#without-teams).
 
@@ -65,16 +67,16 @@ The keys below live under `auth` in `config/aura.php`.
 | --- | --- | --- |
 | `registration` | `env('AURA_REGISTRATION', true)` | Registers the public registration routes and controls the registration link. Disabled registration returns 404. |
 | `redirect` | `'/'.trim(env('AURA_PATH', 'admin'), '/')` | The destination used by Aura's login, registration, password confirmation, email verification and invitation-registration controllers. The default is `/admin`. |
-| `2fa` | `true` | Registers Aura's two-factor challenge, enable, confirm, disable, QR-code, secret-key and recovery-code routes. |
+| `2fa` | `true` | Registers two-factor setup and management routes. Enrolled accounts still require a login challenge when management is disabled. |
 | `user_invitations` | `true` | Allows invitation registration and shows invitation actions in the User and Team Invitation resources. The invitation registration routes also require `teams`. |
 | `invitation_expiry` | `7` | Number of days that the signed invitation link remains valid. |
 | `create_teams` | `env('AURA_CREATE_TEAMS', true)` | The `TeamPolicy::create()` check. Set it to `false` to prevent team creation, including for Global Admins. |
 
-`redirect` is a package setting. It does not change Laravel's unrelated application defaults. The package's auth routes use the value directly.
+The redirect setting applies to Aura's authentication routes. It does not change the defaults used elsewhere in your Laravel application.
 
 ### Feature flags
 
-The shipped `features` array contains these keys. Unknown keys have no package behavior.
+Use the following keys in the feature settings. Aura ignores additional keys.
 
 | Key | Default | What it controls |
 | --- | --- | --- |
@@ -90,11 +92,11 @@ The shipped `features` array contains these keys. Unknown keys have no package b
 | `custom_tables_for_resources` | `false` | The Resource Editor migration listener. See [Custom tables](#custom-tables). |
 | `legacy_fields_append` | `true` | Whether the `fields` accessor is appended during resource array and JSON serialization. Set it to `false` and call `$resource->append('fields')` only where serialized field values are needed. |
 
-The default `resource_editor` expression enables the flag only when the application environment is `local`. The environment check remains active even if you set the flag to `true` elsewhere.
+The Resource Editor is enabled by default only in the local environment. Enabling its flag in another environment does not bypass the environment restriction shown above.
 
 ### Components
 
-`components` maps the top-level Livewire pages and the media-manager modal to classes:
+To replace a top-level Livewire page or the media manager modal, change its class in the components array:
 
 ```php
 'components' => [
@@ -105,11 +107,11 @@ The default `resource_editor` expression enables the flag only when the applicat
 ],
 ```
 
-The first three entries are used by the `/admin`, `/admin/profile` and `/admin/settings` routes. `media-manager` is resolved by the `aura::media-manager` Livewire modal. Replace an entry with a subclass or a compatible component to customize that page.
+The dashboard, profile and settings routes use the first three components. The `aura::media-manager` Livewire modal uses the media manager entry. Each replacement should be a subclass or a compatible component.
 
 ### Built-in resources
 
-`resources` maps Aura's built-in resource keys to their classes:
+The resources array defines the classes Aura uses for its built-in resources:
 
 ```php
 'resources' => [
@@ -123,7 +125,7 @@ The first three entries are used by the `/admin`, `/admin/profile` and `/admin/s
 ],
 ```
 
-The `team` and `team-invitation` classes are registered only when teams are enabled. To replace a built-in resource, extend it and update the matching entry. Resource fields use the static array returned by `getFields()`:
+Aura registers teams and team invitations only when teams are enabled. To customize a built-in resource, extend its class and update the matching entry. Define its fields in the static `getFields()` method:
 
 ```php
 namespace App\Aura\Resources;
@@ -151,7 +153,7 @@ class User extends BaseUser
 
 ### Views
 
-The shipped `views` block contains three keys:
+You can configure these three views:
 
 ```php
 'views' => [
@@ -165,9 +167,9 @@ The shipped `views` block contains three keys:
 - `login-layout` wraps login, registration, password reset and forgot-password pages.
 - `logo` is rendered inside the login layout.
 
-The package does not read `views.dashboard`, `views.index`, `views.view`, `views.create`, `views.edit` or `views.navigation`. Publish and override the relevant Blade view when you need to change those pages.
+Dashboard, index, detail, create, edit and navigation views do not have configuration keys. To change them, publish and override the relevant Blade view.
 
-The `layout` value is a Blade component alias, `aura::layout.app`. Full-page Livewire components use the view name `aura::components.layout.app`. These names serve different consumers. See [Customizing views](/docs/customizing-views) for the matching override.
+The configured layout uses a Blade component alias, while full-page Livewire components use a view name. The defaults are `aura::layout.app` and `aura::components.layout.app`, respectively. See [Customizing views](/docs/customizing-views) to choose the correct override.
 
 <a id="theme-configuration"></a>
 
@@ -218,30 +220,36 @@ The theme defaults live under `theme` in `config/aura.php`:
 ],
 ```
 
-`ThemeTokens::resolve()` merges package defaults, the host's `config('aura.theme')`, then the settings stored in the `options` table. A Super Admin can edit settings at `/admin/settings` when `features.settings` is enabled. With teams enabled, the record name is `team.{id}.settings`. Without teams, it is `settings`.
+Aura applies theme values in order: package defaults, your application's theme configuration, then saved settings. Saved settings take precedence and live in the options table. A Super Admin can edit them at `/admin/settings` when the settings feature is enabled.
 
-The Settings page initializes and edits these theme preferences in the option record:
+With teams enabled, each team's settings use a record named `team.{id}.settings`. Without teams, the record is named `settings`.
 
-- `darkmode-type`
-- `sidebar-type`
-- `color-palette`
-- `gray-color-palette`
-- `sidebar-size`
-- `sidebar-darkmode-type`
+The Settings page initializes and edits the dark mode preference, primary and gray palettes, sidebar size, and sidebar appearance in both light and dark mode. It also saves logos and the shades for custom palettes. Logos and custom shades are stored as option data rather than theme configuration keys.
 
-It also stores logo values and the shade values used by a custom primary or gray palette. Those values are option data, not keys under `theme`.
+The theme settings accept these values:
 
-`darkmode-type` accepts `auto`, `light` or `dark`. `sidebar-size` accepts `standard` or `compact`. `sidebar-type` and `sidebar-darkmode-type` accept `primary`, `light` or `dark`.
+| Setting | Available values |
+| --- | --- |
+| `darkmode-type` | `auto`, `light`, `dark` |
+| `sidebar-size` | `standard`, `compact` |
+| `sidebar-type` and `sidebar-darkmode-type` | `primary`, `light`, `dark` |
 
-The `colors.light` and `colors.dark` maps define the nine semantic CSS variables `primary`, `background`, `panel`, `border`, `text`, `muted`, `success`, `warning` and `danger`. Each value must be an RGB channel string such as `24 24 27` or a variable reference such as `var(--primary-600)`. Invalid values fall back to the package default. The renderer emits these values as `--aura-color-*` variables.
+The light and dark color maps define colors for primary actions, backgrounds, panels, borders, text, muted content, success, warnings and danger. Use the keys shown in the example above. Each value must be an RGB channel string such as `24 24 27` or a variable reference such as `var(--primary-600)`. Invalid values fall back to the package default. Aura exposes these colors through CSS variables named `--aura-color-*`.
 
 `font.family` accepts an array or a comma-separated string. `font.stylesheet` accepts a host-local public path such as `fonts/brand.css`. External URLs, backslashes, control characters and `..` path segments are rejected. The default system stack makes no font request.
 
-The built-in primary palettes are `aura`, `red`, `orange`, `amber`, `yellow`, `lime`, `forest-green`, `green`, `emerald`, `mountain-meadow`, `teal`, `ocean-breeze`, `cyan`, `sky`, `blue`, `indigo`, `violet`, `purple`, `fuchsia`, `pink`, `rose`, `sandal`, `desert-sand`, `salmon`, `autumn-rust`, `slate`, `dark-slate`, `blackout`, `obsidian`, `amethyst`, `opal`, `gray`, `zinc`, `neutral`, `stone`, `sandstone`, `rose-quartz`, `olive`, `smaragd` and `custom`. Gray palettes are `slate`, `dark-slate`, `blackout`, `obsidian`, `amethyst`, `opal`, `gray`, `zinc`, `neutral`, `stone`, `sandstone`, `rose-quartz`, `olive`, `smaragd` and `custom`. The `custom` choice reads its shade values from the Settings option record.
+Primary and gray palettes accept the following names. The primary palette also supports the additional colors in the second row.
 
-`login-bg` and `login-bg-darkmode` are read by the login layout. Set one or both to a public image path. When both are set, the layout switches to the dark image when the document has the `dark` class. The published defaults are `false`.
+| Palette | Available names |
+| --- | --- |
+| Primary and gray | slate, dark-slate, blackout, obsidian, amethyst, opal, gray, zinc, neutral, stone, sandstone, rose-quartz, olive, smaragd, custom |
+| Additional primary colors | aura, red, orange, amber, yellow, lime, forest-green, green, emerald, mountain-meadow, teal, ocean-breeze, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose, sandal, desert-sand, salmon, autumn-rust |
 
-`app-favicon` and `app-favicon-darkmode` are read by the favicon component. Set them to public paths. The published `false` values render an empty favicon URL. If only the light favicon is set, it is used for both modes.
+Choose `custom` to use shades saved on the Settings page.
+
+Set `login-bg` and `login-bg-darkmode` to public image paths to add login backgrounds. Both default to `false`. When you provide both images, the layout switches to the dark image when the document has the `dark` class.
+
+Set `app-favicon` and `app-favicon-darkmode` to public paths for your favicons. Both default to `false`, which renders an empty favicon URL. If you provide only the light favicon, Aura uses it in both modes.
 
 <a id="media-configuration"></a>
 
@@ -259,7 +267,9 @@ The media settings are read from `config/aura.php`:
 | `generate_thumbnails` | `true` | Whether the queued image-thumbnail job pre-renders each configured size after an image is saved. The image route can still generate thumbnails on demand. |
 | `dimensions` | `xs` 200, `sm` 600, `md` 1200, `lg` 2000, `thumbnail` 600x600 | Named dimensions used by `Attachment::thumbnail()` and thumbnail generation. |
 
-The shipped `max_file_size` value is 10,000 KB, about 9.8 MiB. The uploader accepts at most 20 files per batch and uses a fixed extension allowlist: `jpg`, `jpeg`, `png`, `gif`, `webp`, `pdf`, `doc`, `docx`, `xls`, `xlsx`, `ppt`, `pptx`, `txt`, `csv`, `zip`, `mp4`, `mov`, `avi`, `mp3` and `wav`. SVG is blocked. Aura's thumbnail service uses Intervention Image 3 with the GD driver, so PHP GD must be enabled.
+The default upload limit is 10,000 KB per file, about 9.8 MiB, with at most 20 files per batch. The uploader accepts only these extensions: jpg, jpeg, png, gif, webp, pdf, doc, docx, xls, xlsx, ppt, pptx, txt, csv, zip, mp4, mov, avi, mp3 and wav. SVG files are blocked.
+
+Thumbnail generation requires PHP GD. Aura uses Intervention Image 3 with its GD driver.
 
 <a id="reporting-configuration"></a>
 
@@ -303,7 +313,7 @@ The default paths are:
 ],
 ```
 
-At boot, Aura scans each configured path and maps relative file names to the configured namespace. Resource discovery keeps only classes that extend `Aura\Base\Resource`. Field and widget discovery expects class files in the directory, so keep non-class files out of those paths.
+When the application boots, Aura scans these directories and uses each file's relative path to determine its class name within the configured namespace. Discovered resources must extend `Aura\Base\Resource`. Keep non-class files out of the field and widget directories, because discovery expects every file there to contain a class.
 
 The field path is `aura-settings.paths.fields.path`. It is not a key under `config('aura')`. The published `widgets.register` array is not consumed by the current discovery code. Register extra classes from a service provider with `Aura::registerResources()`, `Aura::registerFields()` or `Aura::registerWidgets()`.
 
@@ -326,7 +336,7 @@ The default stacks are:
 ],
 ```
 
-`aura-guest` is applied to Aura's authentication routes. `aura-admin` is applied to the impersonation route and the admin route group. Append host middleware to `aura-admin` when it must run on every authenticated Aura route. `aura-base` is defined for host use but is not attached to a package route by default.
+Aura applies the guest middleware stack to authentication routes and the admin stack to impersonation and admin routes. Add your application's middleware to `aura-admin` when it must run on every authenticated Aura route. The base stack is available for your application to use, but Aura does not attach it to any route by default.
 
 <a id="environment-variables"></a>
 
@@ -358,14 +368,9 @@ Run this command after publishing `config/aura.php`:
 php artisan aura:install-config
 ```
 
-In interactive mode it:
+The command asks whether to enable teams and public registration. You can also choose to configure each boolean feature flag and selected theme preferences: the primary and gray palettes, dark mode, sidebar size and sidebar appearance.
 
-- asks whether to use teams;
-- optionally asks about each boolean entry in `features`;
-- asks whether to allow public registration; and
-- optionally asks for `color-palette`, `gray-color-palette`, `darkmode-type`, `sidebar-size` and `sidebar-type`.
-
-It skips nested theme arrays (`font` and `colors`), both login background keys, both favicon keys and `sidebar-darkmode-type`. Edit those values directly in `config/aura.php` or use the Settings page where it applies.
+It skips fonts, semantic colors, login backgrounds, favicons and the sidebar's dark mode appearance. Edit those values directly in the configuration file, or use the Settings page for preferences available there.
 
 In non-interactive mode, only the two command options below are available:
 
@@ -376,7 +381,9 @@ php artisan aura:install-config \
     --registration=false
 ```
 
-For the current `main` implementation, the command preserves comments and `env()` expressions while it updates the published file. With the default config, the teams and registration choices are written to `.env` as `AURA_TEAMS` and `AURA_REGISTRATION`. It does not write `AURA_PATH`, `AURA_DOMAIN` or `AURA_CREATE_TEAMS`, and it does not change `redirect`, invitations, components, resources, views, reporting or media.
+On the current main branch, the command preserves comments and environment expressions when updating the published file. With the default configuration, it saves the teams and registration choices to `.env` as `AURA_TEAMS` and `AURA_REGISTRATION`.
+
+It leaves the admin path, domain and team creation environment variables unchanged. It also leaves redirect, invitation, component, resource, view, reporting and media settings unchanged.
 
 The command updates the running process configuration and clears both the configuration cache and application cache. The public beta can replace `env()` expressions with literal values during installation. See [Installation](/docs/installation) for the beta caveat before changing beta configuration.
 
@@ -401,7 +408,7 @@ class Product extends Resource
 }
 ```
 
-`$usesMeta` remains `true` by default. That means a custom-table resource can still store fields outside its base fillable columns in the shared `meta` table. Set `public static bool $usesMeta = false;` when every input field should be a column on the custom table.
+Using a custom table does not disable meta storage. By default, fields outside the resource's base fillable columns can still use the shared meta table. Set `public static bool $usesMeta = false;` when every input field should use a column on the custom table.
 
 `features.custom_tables_for_resources` only controls migration listeners used when the Resource Editor saves fields:
 
@@ -422,11 +429,11 @@ php artisan config:clear
 php artisan tinker
 ```
 
-Theme values selected in `/admin/settings` are stored in the `options` table and override the corresponding config defaults. Check the team-specific option when teams are enabled.
+Saved theme settings override the corresponding configuration defaults. Check the options table for values selected on the Settings page. When teams are enabled, check the record for the current team.
 
 If a newly discovered resource does not appear in navigation, verify its namespace and path in `aura-settings.paths.resources`, then clear the application cache. The navigation cache is separate from Laravel's config cache.
 
-Changing `teams` after the schema already exists is a migration task. Do not use a destructive reset against an application that contains data.
+Changing whether teams are enabled after migration requires a schema and data migration. Do not use a destructive reset on an application that contains data.
 
 ## Related guides
 

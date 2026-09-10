@@ -1,14 +1,14 @@
 # Authentication
 
-Aura owns the web authentication routes and Blade views used by the admin panel. It uses Laravel Fortify for two-factor authentication, email-verification primitives, and password-confirmation middleware. Registration, login, logout, password reset, team invitations, and the controllers that handle them are provided by Aura.
+Aura provides the admin panel's authentication routes, controllers, and Blade views. These handle registration, login, logout, password resets, and team invitations. Laravel Fortify supplies two-factor authentication, email verification support, and password-confirmation middleware.
 
-Aura does not ship social login providers or an API login endpoint. Sanctum's token trait is present on the default User resource, but a host application must add its own API routes and token policy if it needs them.
+Aura does not include social login providers or an API login endpoint. The default user resource includes Sanctum's token trait. To use API authentication, add the API routes and token policy in your application.
 
 ## Configure the user model
 
-The default resource is Aura\Base\Resources\User. It uses Laravel's authentication and password-reset contracts, the MustVerifyEmail trait, Fortify's TwoFactorAuthenticatable trait, Notifiable, and Sanctum's HasApiTokens.
+The default user resource, `Aura\Base\Resources\User`, supports Laravel authentication and password resets. It also includes traits for email verification, Fortify two-factor authentication, notifications, and Sanctum API tokens. Email verification requires an additional interface, as described below.
 
-A host application can extend the resource model:
+Extend this resource to use your own user model:
 
 ~~~php
 <?php
@@ -35,7 +35,7 @@ Point Laravel's Eloquent provider at that class:
 ],
 ~~~
 
-If Aura should create and resolve the host class everywhere, set the resource mapping too:
+Also set Aura's resource mapping so it uses your class when creating and resolving users:
 
 ~~~php
 // config/aura.php
@@ -44,11 +44,11 @@ If Aura should create and resolve the host class everywhere, set the resource ma
 ],
 ~~~
 
-The aura:extend-user-model command changes an existing Laravel User model to extend Aura's resource. It does not add the MustVerifyEmail interface. Add that interface when the application uses Laravel's verified middleware or wants automatic verification notifications.
+You can also run `aura:extend-user-model` to make an existing Laravel user model extend Aura's resource. The command does not add the `MustVerifyEmail` interface. Add it yourself if you use Laravel's `verified` middleware or want automatic verification notifications.
 
 ## Configuration
 
-Authentication settings live in config/aura.php:
+Authentication settings live in `config/aura.php`:
 
 ~~~php
 'teams' => env('AURA_TEAMS', true),
@@ -77,24 +77,22 @@ Teams-off mode is a supported single-tenant installation. Invitation registratio
 
 ### Runtime Fortify setup
 
-Aura\Base\Providers\AuthServiceProvider runs these Fortify registrations:
+Aura configures Fortify at runtime through its authentication service provider:
 
-- Fortify::ignoreRoutes() prevents Fortify from registering a second set of authentication routes.
-- Fortify::loginView() uses aura::auth.login.
-- Fortify::twoFactorChallengeView() uses aura::auth.two-factor-challenge.
-- fortify.features is replaced at runtime with email verification and two-factor authentication. Aura's own controllers handle registration and password reset.
-- ResetPassword::createUrlUsing() generates links for aura.password.reset.
-- Aura's two-factor response uses `aura.auth.redirect` or the intended URL, then dispatches `LoggedIn` after authentication.
-- `VerifyEmail::createUrlUsing()` generates signed links for `aura.verification.verify`.
+- Fortify's routes are disabled to avoid registering a second set of authentication routes.
+- Login and two-factor challenges use Aura's `aura::auth.login` and `aura::auth.two-factor-challenge` views.
+- Aura replaces `fortify.features` with email verification and two-factor authentication. Its own controllers handle registration and password resets.
+- Password reset notifications link to `aura.password.reset`. Verification notifications use signed links to `aura.verification.verify`.
+- After two-factor authentication, Aura dispatches `LoggedIn` and redirects to the intended URL or `aura.auth.redirect`.
 - The two-factor provider uses Google2FA and Laravel's cache repository.
 
 A host application's `config/fortify.php` can therefore contain feature entries that Aura replaces at runtime. Change the Aura settings and host application routes for the behavior you want.
 
-Login requests allow five failed attempts for each lowercased email and IP address during a 60-second window. Fortify's two-factor POST route uses the two-factor limiter, which allows five attempts per pending login session. Email-verification routes use the six-per-minute throttle declared in routes/auth.php.
+Login allows five failed attempts per lowercased email and IP address within 60 seconds. The two-factor challenge allows five attempts per pending login session. Email-verification routes allow six requests per minute, as defined in `routes/auth.php`.
 
 ## Route map
 
-Aura loads routes/auth.php through its web route file. Authentication routes are at the application root. The admin panel uses the path configured by aura.path, which defaults to /admin.
+Authentication routes start at the application root, even when the admin panel uses a prefix. The panel's path comes from `aura.path` and defaults to `/admin`. Aura loads the authentication routes from `routes/auth.php` through its web route file.
 
 | Method | URI | Name | Middleware or condition |
 | --- | --- | --- | --- |
@@ -128,19 +126,13 @@ Aura loads routes/auth.php through its web route file. Authentication routes are
 | GET | /user/two-factor-secret-key | aura.two-factor.secret-key | auth:web, password.confirm:aura.password.confirm, auth.2fa |
 | GET, POST | /user/two-factor-recovery-codes | aura.two-factor.recovery-codes, unnamed POST | auth:web, password.confirm:aura.password.confirm, auth.2fa |
 
-The GET login route deliberately has the plain Laravel name login. Laravel's authentication middleware redirects guests to that name. There is no /aura-login route, and Aura registers only POST /logout.
+The login page uses Laravel's standard route name, `login`, so authentication middleware can redirect guests to it. There is no `/aura-login` route. Logout accepts only `POST /logout`.
 
 ## Login and logout
 
-Aura's login form posts to POST /login. AuthenticatedSessionController uses LoginRequest, which:
+The login form submits to `POST /login`. Aura validates the email and password, then lowercases the email for the authentication lookup. The form supports remembering the user through the `remember` field. A successful attempt clears the five-attempt rate limit.
 
-1. Validates email and password.
-2. Lowercases the email for the authentication lookup.
-3. Supports the remember field.
-4. Applies the five-attempt rate limit.
-5. Clears the limit after a successful attempt.
-
-After authentication, Aura regenerates the session, dispatches Aura\Base\Events\LoggedIn, and redirects to the intended URL or aura.auth.redirect.
+After authentication, Aura regenerates the session and redirects to the intended URL or `aura.auth.redirect`. It also dispatches a login event that your application can listen for:
 
 ~~~php
 use Aura\Base\Events\LoggedIn;
@@ -151,7 +143,7 @@ Event::listen(LoggedIn::class, function (LoggedIn $event): void {
 });
 ~~~
 
-Logout accepts POST /logout. It logs out the web guard, invalidates the session, regenerates the CSRF token, and redirects to /.
+A request to `POST /logout` logs out the web guard, invalidates the session, regenerates the CSRF token, and redirects to `/`.
 
 ## Registration and admission policy
 
@@ -159,49 +151,48 @@ Aura has two admission paths for a new user.
 
 ### Public registration
 
-Set auth.registration to true and open /register. The controller validates the submitted name, email, and confirmed password. The team field is also required when teams are enabled.
+Set `auth.registration` to `true` and open `/register`. The controller validates the submitted name, email, and confirmed password. The team field is also required when teams are enabled.
 
 With teams enabled, Aura:
 
 1. Creates the user.
-2. Creates a Team owned by the user.
-3. Sets current_team_id.
-4. Attaches the shared Global Role with slug admin as a Membership in that team. That role is a Super Admin role.
+2. Creates a team owned by the user.
+3. Sets that team as the user's current team.
+4. Adds a membership with the shared global role whose slug is `admin`. This gives the user Super Admin permissions within that team.
 
-With teams disabled, Aura creates the user and assigns the catalog role with slug user. The role is created automatically if the catalog does not contain it.
+With teams disabled, Aura creates the user and assigns the catalog role whose slug is `user`. It creates this role if it does not already exist in the catalog.
 
-Both branches dispatch Illuminate\Auth\Events\Registered, log the user in, and redirect to aura.auth.redirect. Public registration does not allow the requester to choose a role.
+Both paths dispatch Laravel's `Registered` event, log the user in, and redirect to `aura.auth.redirect`. Users cannot choose their role during public registration.
 
 Aura validates email uniqueness case-insensitively but stores the submitted email string. Login and password-reset lookups lowercase their input. Normalize email addresses before registration until this casing mismatch is fixed in the source.
 
 ### Invitation registration for a new user
 
-A team administrator sends an invitation through Aura\Base\Livewire\InviteUser. The component:
+Team administrators send invitations through Aura's invitation form. The inviter must have the `invite-users` ability on the current team, be a Global Admin, or own the team.
 
-- requires the invite-users ability on the current team, a Global Admin, or the team owner;
-- validates the selected role against the current team's team roles and visible Global Roles;
-- refuses a super_admin role unless the inviter is a Super Admin or Global Admin;
-- sends Aura\Base\Mail\TeamInvitation.
+The form allows roles belonging to the current team and visible global roles. Only a Super Admin or Global Admin can invite someone to a role with `super_admin` enabled. Aura sends the invitation using its `TeamInvitation` mailable.
 
-The email contains a temporary signed registration URL and an existing-user acceptance URL. The registration URL is available only when teams and auth.user_invitations are enabled.
+The email contains a temporary signed registration URL and an existing-user acceptance URL. The registration URL is available only when teams and `auth.user_invitations` are enabled.
 
-InvitationRegisterUserController validates the name and confirmed password. It takes the email and role from the invitation, not from the request. The invitation role must still exist and belong to the team or be a Global Role. Aura rejects an email that already belongs to a user, case-insensitively. It then creates the user with the invited team's current_team_id and Membership inside a transaction, deletes the invitation, dispatches Registered, logs in the new user, and redirects to aura.auth.redirect.
+Invitation registration validates the name and confirmed password. The invitation determines the email and role. The role must still exist and either belong to the invited team or be a global role. Aura rejects emails that already belong to a user, using a case-insensitive comparison.
+
+Aura creates the user and membership inside a transaction, with the invited team set as the user's current team. It then deletes the invitation, dispatches `Registered`, logs in the new user, and redirects to `aura.auth.redirect`.
 
 ### Invitation acceptance for an existing user
 
-Existing users use GET /team-invitations/{invitation}. The request must be authenticated with the email that appears on the invitation, compared case-insensitively. The URL must be signed and unexpired. The invitation role must still be a team role for the invited team or a visible Global Role.
+Existing users accept invitations through `GET /team-invitations/{invitation}`. The request must be authenticated with the email that appears on the invitation, compared case-insensitively. The URL must be signed and unexpired. The invitation role must still be a team role for the invited team or a visible global role.
 
-Aura attaches the Membership, switches the user to the team, deletes the invitation, and redirects to aura.dashboard. This path does not use Jetstream or Laravel's AddsTeamMembers contract. The auth.user_invitations setting does not gate this existing-user acceptance path. The teams setting does.
+Aura adds the membership, switches the user to the team, deletes the invitation, and redirects to `aura.dashboard`. Existing-user acceptance requires teams to be enabled, but does not depend on `auth.user_invitations`. This path does not use Jetstream or Laravel's `AddsTeamMembers` contract.
 
-An invitation expires through its signed URL. The database row remains until it is accepted or revoked. auth.invitation_expiry controls the URL lifetime used when Aura sends or resends the message.
+An invitation expires through its signed URL. The database row remains until it is accepted or revoked. The `auth.invitation_expiry` setting controls the URL lifetime when Aura sends or resends the message.
 
 The invitation mailable currently decides whether an address belongs to an existing user with a case-sensitive database comparison. Acceptance and new-user registration use case-insensitive comparisons. Keep the invitation address casing equal to the stored address until this mismatch is fixed in the source.
 
 ### Team and membership boundaries
 
-A Super Admin is a role-level grant inside the current team. A Global Admin is an instance-level grant evaluated by the AuraGlobalAdmin gate. A Global Admin can enter any team without a Membership. A normal user must already hold a Membership to switch teams.
+A Super Admin has elevated permissions within the current team. A Global Admin has instance-wide access, evaluated by the `AuraGlobalAdmin` gate, and can enter any team without a membership. Other users must already belong to a team before they can switch to it.
 
-TeamPolicy allows team creation only when Team::$createEnabled is true, auth.create_teams is true, and the actor is a Global Admin. A team's Super Admin does not gain team-creation rights from the role alone.
+Creating a team requires Global Admin access, with both `Team::$createEnabled` and `auth.create_teams` set to `true`. A team's Super Admin role alone does not grant permission to create teams.
 
 ## Password reset and password updates
 
@@ -213,17 +204,19 @@ Aura uses its own password reset controllers and Laravel's Password broker.
 - POST /reset-password validates the token, email, and confirmed password, updates the password, rotates remember_token, dispatches PasswordReset, and redirects to login.
 - PUT /password is the authenticated password update endpoint. It requires current_password and a confirmed password and returns to the previous page with password-updated.
 
-The Profile Livewire component has a separate password update path. When current_password and password are provided, it updates the password and calls logoutOtherBrowserSessions(). That method removes other database-backed session rows only when the sessions table exists. The Aura migrations do not create that table. The direct PUT /password controller does not remove other sessions.
+Password changes through the profile form also remove the user's other database-backed sessions. This happens when both the current and new password are provided, and only if the `sessions` table exists. Aura's migrations do not create that table. The direct `PUT /password` endpoint does not remove other sessions.
 
 ## Email verification
 
-AuthServiceProvider enables Fortify's emailVerification feature, and Aura registers these routes:
+Aura enables Fortify's email verification feature and registers these routes:
 
 - GET /email/verify shows the notice unless the user is already verified.
 - GET /email/verify/{id}/{hash} requires a valid signed URL and marks the authenticated user as verified.
 - POST /email/verification-notification sends a new notification unless the user is already verified.
 
-Laravel's Registered listener sends the initial verification notification only when the registered model implements Illuminate\Contracts\Auth\MustVerifyEmail. Aura\Base\Resources\User uses the matching trait but currently does not implement that contract. A host User model should implement the interface, as shown earlier, and the application should protect routes that require verification with Laravel's verified middleware.
+Laravel sends the initial verification notification after registration only if the user model implements `Illuminate\Contracts\Auth\MustVerifyEmail`. Aura's default user resource includes the verification trait but does not implement this interface. Add it to your user model, as shown earlier.
+
+Protect any routes that require a verified email address with Laravel's `verified` middleware:
 
 ~~~php
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -231,21 +224,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 ~~~
 
-The verification routes themselves are authenticated, but Aura does not apply verified middleware to the admin routes automatically.
+The verification routes require authentication. Aura does not automatically apply `verified` middleware to the admin routes.
 
 ## Two-factor authentication
 
-Aura's User resource includes Fortify's TwoFactorAuthenticatable trait and the profile field that renders Aura\Base\Livewire\TwoFactorAuthenticationForm. The profile component can enable 2FA, show the QR code and secret, confirm the code, display or regenerate recovery codes, and disable 2FA. These management actions require password confirmation.
+Users can manage two-factor authentication from their profile. They can enable it, view the QR code and secret, confirm an authenticator code, display or regenerate recovery codes, and disable it. These actions require password confirmation.
+
+Aura's user resource provides this through Fortify's two-factor trait and the `TwoFactorAuthenticationForm` Livewire component.
 
 When `auth.2fa` is true, Aura registers the management endpoints behind authentication and `password.confirm:aura.password.confirm`. The profile component also requires password confirmation before changing two-factor settings.
 
-After a valid password, a user with confirmed 2FA stays unauthenticated while Fortify stores `login.id` and redirects to `/two-factor-challenge`. A valid authenticator code or recovery code completes login, regenerates the session, dispatches `LoggedIn`, and redirects to the intended URL or `aura.auth.redirect`. An unconfirmed secret does not require a challenge.
+After entering a valid password, a user with confirmed two-factor authentication remains unauthenticated until they complete the challenge at `/two-factor-challenge`. Fortify stores their pending login in the session as `login.id`. A valid authenticator code or recovery code completes login, regenerates the session, dispatches `LoggedIn`, and redirects to the intended URL or `aura.auth.redirect`. An unconfirmed secret does not require a challenge.
 
 The guest challenge remains available when `auth.2fa` is false. Disabling management does not bypass the second factor on an enrolled account. Aura defaults to five failed OTP attempts per pending user in a minute. Set `fortify.limiters.two-factor` to a custom named limiter to replace that policy.
 
 ## Customizing authentication views
 
-The package views are under resources/views/auth and are published under the aura namespace:
+The authentication views are in `resources/views/auth` and use the `aura` namespace:
 
 - aura::auth.login
 - aura::auth.register
@@ -256,11 +251,13 @@ The package views are under resources/views/auth and are published under the aur
 - aura::auth.two-factor-challenge
 - aura::auth.user_invitation
 
-Copy a view to resources/views/vendor/aura/auth in the host application to override it. Keep the route names and CSRF fields expected by the controllers when replacing a form.
+To override a view, copy it to `resources/views/vendor/aura/auth` in your application. Keep the route names and CSRF fields expected by the controllers when replacing a form.
 
 ## Local quick login
 
-Aura adds GET /login-as/{id} only when the application environment is local and the request host ends in .test. The route bypasses TeamScope to find the user by ID, logs the user in, and redirects to aura.dashboard. It returns 404 in every other environment or host. The login view shows the Admin shortcut under the same condition.
+For local development, `GET /login-as/{id}` logs in a user directly by ID and redirects to `aura.dashboard`. The lookup bypasses team scoping.
+
+This route is available only when the application environment is `local` and the request host ends in `.test`. It returns 404 in every other environment or host. The login page shows the **Admin** shortcut under the same condition.
 
 ## Related guides
 

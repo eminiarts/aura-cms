@@ -1,21 +1,21 @@
 # Custom tables
 
-A custom-table Resource stores its Eloquent rows in a dedicated database table. Set the resource's boolean `$customTable` flag to `true` and set the protected Eloquent `$table` property to the table name.
+A resource can store its records in a dedicated database table instead of the shared posts table. To use a custom table, set `$customTable` to `true` and set the protected `$table` property to your table name.
 
-These settings do not create a table, copy existing records, or change a schema. Editing `getFields()` in a PHP file also does not run a migration.
+You must create the table with a migration and transfer any existing records separately. Changing these settings or editing field definitions in PHP does not change the database schema.
 
 ## Storage modes
 
-The storage flags come from `AuraResourceMeta`:
+Two settings control where Aura stores field values. The storage trait, `AuraResourceMeta`, defines these defaults:
 
 ~~~php
 public static $customTable = false;
 public static bool $usesMeta = true;
 ~~~
 
-Aura exposes them through `usesCustomTable()` and `usesMeta()`. There is no `$usesCustomMeta` flag in the current package. A `$customMeta` property on an application resource is not read by the storage trait.
+You can read these settings with `usesCustomTable()` and `usesMeta()`. The package has no `$usesCustomMeta` setting and ignores a `$customMeta` property declared on your resource.
 
-The flags select these paths:
+The settings work together as follows:
 
 | `$customTable` | `$usesMeta` | Field storage |
 |---|---|---|
@@ -24,15 +24,15 @@ The flags select these paths:
 | `true` | `true` | The resource's `$table` stores its base fillable fields. Other input fields use `meta`. |
 | `true` | `false` | Every input field is treated as a column on `$table`. Aura does not write field values to `meta`. |
 
-`isMetaField($slug)` and `isTableField($slug)` report the selected path for an input slug. The storage matrix is covered by `tests/Feature/Resource/StorageMatrixTest.php`.
+To check where a particular input field will be stored, pass its slug to `isMetaField($slug)` or `isTableField($slug)`. The package tests these combinations in `tests/Feature/Resource/StorageMatrixTest.php`.
 
-For a `Resource`, the constructor records the class's original `$fillable` list as `baseFillable`, then merges input field slugs into Eloquent's runtime fillable list. In custom-table plus meta mode, only the original `baseFillable` entries are table fields. Merging a field slug into Eloquent's fillable list does not create a database column.
+When a custom table also uses meta storage, only the fields in the resource's original `$fillable` list are stored as table columns. Aura saves that list as `baseFillable` before adding input field slugs to Eloquent's runtime fillable list. Those later additions allow mass assignment, but do not make a field a table column or create a column in the database.
 
-In custom-table plus no-meta mode, every input slug is a table field. Each slug that you save must have a matching physical column. The generated custom resource stub uses this mode and does not add a `$fillable` property.
+When meta storage is disabled for a custom table, every input field you save needs a matching database column. Generated custom resources use this mode and do not declare a fillable list.
 
 ## Define a custom-table resource
 
-This example stores all three input fields in `products`:
+This resource stores its name, description, and status in the products table:
 
 ~~~php
 <?php
@@ -77,9 +77,9 @@ class Product extends Resource
 }
 ~~~
 
-The table must contain `name`, `description`, and `status`, along with the standard columns required by the migration you run. Add Eloquent `$casts` when a column needs a cast such as `boolean`, `array`, or `decimal:2`.
+Create a column for each field, along with the standard columns required by your migration. Use Eloquent's `$casts` property for values that need conversion, such as booleans, arrays, or decimals.
 
-To keep optional fields in `meta`, leave `$usesMeta` set to `true` and declare the column-backed fields in `$fillable`:
+To keep optional fields in the shared meta table, leave `$usesMeta` set to `true`. Declare the fields that belong in your custom table in `$fillable`:
 
 ~~~php
 class Product extends Resource
@@ -120,17 +120,17 @@ class Product extends Resource
 }
 ~~~
 
-Here `name` and `status` are table columns. `seo_description` is a `meta` value.
+In this example, the name and status are table columns. Aura stores the SEO description in the meta table.
 
 ## Generate a resource stub
 
-Use the `--custom` option:
+Generate a resource for a custom table with the `--custom` option:
 
 ~~~bash
 php artisan aura:resource Product --custom
 ~~~
 
-The current stub writes:
+The generated resource enables custom table storage and disables meta storage:
 
 ~~~php
 public static $customTable = true;
@@ -138,31 +138,31 @@ public static bool $usesMeta = false;
 protected $table = 'products';
 ~~~
 
-It leaves `getFields()` empty and does not create a migration or database table. Add the field definitions, review the table name, and generate a migration.
+The resource starts with no field definitions. The command does not create a migration or database table. Add your fields, review the table name, and generate a migration.
 
 ## Generate the table migration
 
-Run:
+Generate a migration from your resource's field definitions:
 
 ~~~bash
 php artisan aura:create-resource-migration "App\Aura\Resources\Product"
 ~~~
 
-The command uses the resource's loaded `getTable()` value. Use `--table=` when the table name must be supplied explicitly:
+The command reads the table name from the loaded resource through `getTable()`. You can supply a different name with `--table=`:
 
 ~~~bash
 php artisan aura:create-resource-migration "App\Aura\Resources\Product" --table=inventory_items
 ~~~
 
-The command creates or rewrites a `create_{table}_table` migration. It reads `inputFields()`, so grouping fields such as `Panel` and `Tab` are skipped. `Heading` keeps the base field type `input` and therefore produces a column. The command adds:
+The command creates or rewrites a `create_{table}_table` migration using the resource's input fields. It skips grouping fields such as panels and tabs. Headings still count as input fields and produce columns. The migration contains:
 
-- an `id` column;
-- one column for each input field;
-- `user_id`;
-- `team_id` when `config('aura.teams')` is enabled;
-- nullable `created_at` and `updated_at` timestamp columns.
+- A primary key named `id`.
+- One column for each input field.
+- A user reference named `user_id`.
+- A team reference named `team_id` when `config('aura.teams')` is enabled.
+- Nullable timestamps named `created_at` and `updated_at`.
 
-Each field class supplies its `tableColumnType` and `tableNullable` values:
+Each field class defines the generated column type and whether it accepts null through `tableColumnType` and `tableNullable`:
 
 | Field | Generated column | Nullable |
 |---|---|---|
@@ -191,17 +191,17 @@ Schema::create('products', function (Blueprint $table) {
 });
 ~~~
 
-The `team_id` line is present only when teams are enabled. The generator does not add indexes, defaults, foreign-key constraints, cascade rules, soft deletes, or the `$table->timestamps()` helper. Edit the migration when your schema needs them, then run:
+The team column appears only when teams are enabled. The generator does not add indexes, defaults, foreign key constraints, cascade rules, or soft deletes. It writes the timestamp columns separately instead of using `$table->timestamps()`. Review the migration and add anything your schema needs before running it:
 
 ~~~bash
 php artisan migrate
 ~~~
 
-The resource migration command does not run `migrate` for you. For an existing table, write a new versioned migration instead of rewriting a migration that has already run.
+Generating the migration does not apply it to the database. For an existing table, write a new versioned migration instead of rewriting one that has already run.
 
 ## Resource Editor schema helpers
 
-The `custom_tables_for_resources` feature is disabled by default:
+The Resource Editor can generate schema changes when you save fields. This feature is disabled by default:
 
 ~~~php
 // config/aura.php
@@ -210,7 +210,7 @@ The `custom_tables_for_resources` feature is disabled by default:
 ],
 ~~~
 
-These listeners react to the `SaveFields` event emitted by the local Resource Editor. They do not react to a plain edit of `getFields()` in source code:
+The `custom_tables_for_resources` setting controls how these changes are applied. Its listeners run when the local Resource Editor emits a `SaveFields` event. Editing field definitions directly in PHP does not trigger them.
 
 | Value | Behaviour |
 |---|---|
@@ -228,18 +228,18 @@ The conversion command accepts a resource class:
 php artisan aura:migrate-from-posts-to-custom-table "App\Aura\Resources\Product"
 ~~~
 
-Without the argument, it prompts for a resource. It then:
+If you omit the class, the command prompts you to choose a resource. It then:
 
-1. edits the resource class file;
-2. sets `$customTable = true`;
-3. sets `$table` to the snake-case plural of the resource class basename;
-4. calls `aura:create-resource-migration` with that table name;
-5. asks whether to run the migration;
-6. asks whether to start the data-transfer command.
+1. Edits the resource class file.
+2. Enables custom table storage by setting `$customTable = true`.
+3. Sets `$table` to the snake-case plural of the resource's class name, without its namespace.
+4. Generates a migration for that table using `aura:create-resource-migration`.
+5. Asks whether to run the migration.
+6. Asks whether to start the data transfer command.
 
-For a normal resource file that has no explicit `$customTable` declaration, the command also writes `$usesMeta = false`. If the file already declares `$customTable`, the command changes that declaration but does not choose a new `$usesMeta` value. Inspect the resulting class and migration.
+When the resource file has no explicit custom table declaration, the command also disables meta storage. If the file already declares `$customTable`, the command updates it but leaves `$usesMeta` unchanged. Inspect the resulting class and migration to confirm the intended storage mode.
 
-The command edits PHP source during the current Artisan process. Reload the application process before relying on its optional transfer prompt. The transfer is opt-in and is not a lossless, transactional conversion.
+The command changes the PHP source while Artisan is already running. Reload the application process before relying on the optional transfer prompt. Data transfer requires your confirmation. It does not guarantee that all data is preserved and does not run in a single transaction.
 
 ## Transfer existing data
 
@@ -249,11 +249,13 @@ The separate transfer command accepts a resource class:
 php artisan aura:transfer-from-posts-to-custom-table "App\Aura\Resources\Product"
 ~~~
 
-Without the argument, it prompts for a resource. It selects rows from `posts` whose `type` matches the resource, loads matching `meta` rows, and calls the resource's `create()` method with timestamps, user and team IDs, meta values, and the post row attributes exposed by the Eloquent model.
+If you omit the class, the command prompts you to choose a resource. It finds records in the posts table whose type matches the resource and loads their meta values. It then creates records through the resource's `create()` method, passing timestamps, user and team IDs, meta values, and the post attributes exposed by Eloquent.
 
-This command inserts new rows. It does not preserve the original post IDs, make repeated runs idempotent, or wrap the whole transfer in a transaction. The target table must contain every attribute that reaches `create()`. A generated custom-table migration commonly lacks shared post columns such as `title`, `content`, `type`, or `slug`, so inspect and adapt the migration or write an application-specific transfer before using this command. Back up the database and test on a copy first.
+The transfer inserts new rows with new IDs. Running it again can create duplicates, and a failure can leave a partial transfer because the command does not use a single transaction.
 
-Setting `$customTable` or changing field definitions never starts this transfer automatically.
+The destination table must have a column for every attribute passed to `create()`. Generated migrations commonly omit shared post columns such as title, content, type, or slug. Review and adapt the migration, or write a transfer specific to your application. Back up the database and test on a copy first.
+
+Enabling custom table storage or changing field definitions never starts a transfer automatically.
 
 ## Built-in resources
 
@@ -270,10 +272,10 @@ Aura's built-in resources show both storage modes:
 ## Limitations
 
 - Aura does not infer a database schema from a changed field definition at runtime.
-- A custom-table plus no-meta resource needs a physical column for every saved input slug.
-- A custom-table plus meta resource uses only its original `$fillable` entries as table fields. Other input slugs go to `meta`.
+- When meta storage is disabled, every input field you save needs a matching database column.
+- When a custom table also uses meta storage, only fields in the original fillable list use table columns. Other input fields go to the meta table.
 - Generated migrations contain basic nullable columns. Add the constraints, indexes, defaults, casts, and data transformations your application needs.
-- The posts-to-custom transfer commands need a reviewed target schema and a tested data plan. They do not remove the old `posts` or `meta` rows.
+- Review the destination schema and test your data transfer plan before running the conversion commands. They leave the original posts and meta rows in place.
 
 ## Related
 

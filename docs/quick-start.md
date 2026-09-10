@@ -1,6 +1,6 @@
 # Quick start
 
-Define a `Movie` resource, create a record in the admin panel, and see how Aura stores its field values.
+In this guide, you will build a resource for managing movies, create your first record in the admin panel, and learn how Aura stores the data.
 
 ## Before you start
 
@@ -8,7 +8,7 @@ Start with a working Aura installation and sign in as the administrator created 
 
 This guide uses the current development version. The [local-checkout installation](/docs/installation#local-checkout) matches the resource and generator behavior shown here. The public beta predates some of these changes.
 
-The examples use the default `/admin` path and teams enabled. See [Installation](/docs/installation#without-teams) for the public beta's teams-off setup.
+The examples use the default `/admin` path with teams enabled. See [Installation](/docs/installation#without-teams) for the public beta's teams-off setup.
 
 ## Generate a resource
 
@@ -18,7 +18,7 @@ Run the resource generator from the root of the Laravel application:
 php artisan aura:resource Movie
 ```
 
-The command writes `app/Aura/Resources/Movie.php` with the namespace configured in `aura-settings.paths.resources`. The generated class extends `Aura\Base\Resource`, declares `$type` and `$slug`, and contains `getFields()`, `getWidgets()`, and `getIcon()` methods.
+The command creates `app/Aura/Resources/Movie.php`, a class that extends Aura's base resource. It includes the resource type and URL slug, along with methods for defining fields, widgets, and an icon. The namespace follows the `aura-settings.paths.resources` setting.
 
 Keep the generated `getWidgets()` and `getIcon()` methods. Replace the empty `getFields()` method with the following definition:
 
@@ -82,11 +82,13 @@ public static function getFields(): array
 }
 ```
 
-Fields are plain associative arrays. Each field needs a `name`, `slug`, and fully qualified class name in `type`. The `on_index`, `on_forms`, and `on_view` flags default to `true`. Set one to `false` when the field should be hidden in that part of the admin UI. Set `searchable` to `true` for fields that should be included in global search.
+Each field is an associative array with a display name, a slug used to identify its value, and a field type. Supply these with the `name`, `slug`, and `type` keys. The type must be the field class's fully qualified name.
 
-The `Tags` field points at the package's `Aura\Base\Resources\Tag` resource. It lets an administrator select existing tags and, when `create` is true and the user has permission, create a tag from a new label.
+Fields appear in the index table, forms, and record view by default. To hide a field in one of these places, set the corresponding `on_index`, `on_forms`, or `on_view` option to `false`. Fields only participate in global search when you set `searchable` to `true`.
 
-Aura discovers resource classes in `app/Aura/Resources` automatically. No service provider entry is required. The generated `Movie` resource receives these routes under the configured admin prefix:
+The tags field uses Aura's built-in tag resource. Administrators can select existing tags or enter a new label to create one. Creating tags requires both the `create` option and the user's permission.
+
+Aura discovers resource classes in `app/Aura/Resources` automatically, so you do not need to register them in a service provider. The movie resource receives these routes under the configured admin prefix:
 
 | Route name | Default URL |
 | --- | --- |
@@ -95,11 +97,11 @@ Aura discovers resource classes in `app/Aura/Resources` automatically. No servic
 | `aura.movie.edit` | `/admin/movie/{id}/edit` |
 | `aura.movie.view` | `/admin/movie/{id}` |
 
-Open `/admin/movie`, choose **Create**, enter a title, and save the record. The index table shows the fields whose `on_index` value is not `false`.
+Open `/admin/movie`, choose **Create**, enter a title, and save the record. The index table shows your movie with the fields you left visible.
 
 ## Group fields with panels
 
-`Panel` is a layout field. It groups the fields that follow it until the next panel and does not store a value itself:
+A panel groups the fields that follow it until the next panel. It controls the layout without storing a value:
 
 ```php
 public static function getFields(): array
@@ -140,7 +142,7 @@ public static function getFields(): array
 }
 ```
 
-`Tab`, `Tabs`, `Group`, and `Repeater` use the same array field format. See [Fields](/docs/fields) for the field-specific options.
+Tabs, groups, and repeaters use the same array format. See [Fields](/docs/fields) for their options.
 
 ## Understand storage
 
@@ -151,7 +153,7 @@ public static $customTable = false;
 public static bool $usesMeta = true;
 ```
 
-In the shared-table profile, Aura writes core slugs such as `title`, `content`, `status`, and `slug` to columns in `posts`. Other ordinary input field slugs, such as `overview`, `release_date`, and `rating`, are stored as key/value rows in `meta`. You can still read them as model attributes:
+With shared storage, Aura saves core fields such as the title, content, status, and slug in columns on the posts table. Other input fields, including this movie's overview, release date, and rating, go into the meta table as key/value rows. You can read both kinds of values as model attributes:
 
 ```php
 use App\Aura\Resources\Movie;
@@ -181,7 +183,9 @@ $matching = Movie::whereMeta([
 
 Meta values are stored as text. Use a custom table when a field needs a native column type, database indexes, or normal `where()` queries.
 
-Relationship fields have their own storage behavior. `Tags` and polymorphic `AdvancedSelect` fields write links to Aura's `post_relations` table. They do not create a `tags` or `actors` column in `posts` and they do not become ordinary meta key/value rows. A relationship field needs a `resource` class. `AdvancedSelect` uses a polymorphic relation by default; set its `multiple` and `polymorphic_relation` options explicitly when you need a different mode. See [Fields](/docs/fields) for the supported relationship configurations.
+Relationship fields store links between records. Tags and polymorphic advanced select fields use Aura's `post_relations` table, rather than a column on the posts table or a meta value. Each relationship field needs a related class in its `resource` option.
+
+Advanced select fields use polymorphic relationships by default. To change how they select and relate records, set the `multiple` and `polymorphic_relation` options explicitly. See [Fields](/docs/fields) for supported configurations.
 
 ## Use a custom table
 
@@ -191,7 +195,7 @@ Use the generator's `--custom` flag when the resource should have its own table:
 php artisan aura:resource Product --custom
 ```
 
-The custom stub sets all three storage declarations:
+The generated resource uses its own table and disables meta storage:
 
 ```php
 public static $customTable = true;
@@ -199,7 +203,7 @@ public static bool $usesMeta = false;
 protected $table = 'products';
 ```
 
-Replace `Product`'s empty `getFields()` method with this ordinary-column example:
+In the product resource, replace the empty `getFields()` method with fields for a name and rating:
 
 ```php
 public static function getFields(): array
@@ -228,7 +232,9 @@ php artisan aura:create-resource-migration 'App\Aura\Resources\Product'
 php artisan migrate
 ```
 
-`aura:create-resource-migration` reads `getFields()`, the resource's loaded table name, and the current teams setting. It adds the field columns plus `id`, `user_id`, `team_id` when teams are enabled, and timestamps. Review the generated migration before running it. With `$usesMeta = false`, ordinary input field slugs must be columns in the custom table, so later field additions require another migration. Keep relation fields on the shared storage profile unless you define their custom persistence yourself.
+The migration generator uses your field definitions, the resource's loaded table name, and the current teams setting. Alongside the field columns, it adds an ID, a user ID, timestamps, and a team ID when teams are enabled. Review the generated migration before running it.
+
+Because meta storage is disabled, each ordinary input field needs a matching column in the custom table. Adding fields later requires another migration. Keep relationship fields on shared storage unless you implement their custom persistence yourself.
 
 Custom-table fields use ordinary Eloquent queries:
 
@@ -266,7 +272,7 @@ public function defaultTableView()
 }
 ```
 
-The sort value is qualified with the resource table name, so it must be a real column such as `id` or `created_at`. A meta field slug cannot be the default sort column. Grid and Kanban views need the corresponding resource methods as well. See [Table](/docs/table).
+The default sort must use a real column such as `id` or `created_at`, because Aura qualifies it with the resource table name. You cannot use a meta field as the default sort column. Grid and Kanban views also require their own resource methods. See [Table](/docs/table) for details.
 
 Set the navigation group and label with static resource properties:
 
@@ -278,23 +284,23 @@ public static $pluralName = 'Movies';
 public static $globalSearch = true;
 ```
 
-The default plural label comes from the resource type. A resource is included in global search by default, but a field only participates when its definition has `'searchable' => true`.
+Aura derives the plural label from the resource type unless you supply one. Resources are included in global search by default, with results drawn from the fields you marked as searchable.
 
 ## Grant permissions
 
-Global Admins and users with a Super Admin role have blanket access to resources. Other roles need resource permissions. Generate missing permissions after adding a resource, especially when the team already existed:
+Global Admins and users with a Super Admin role can access all resources. Other roles need permission for each resource. After adding a resource, generate any missing permissions, especially for teams that already existed:
 
 ```bash
 php artisan aura:create-resource-permissions
 ```
 
-The command uses the current authenticated user's team by default. Pass `--team=123` to target a specific team. It creates permissions such as `viewAny-movie`, `view-movie`, `create-movie`, `update-movie`, `delete-movie`, and `scope-movie`. Assign them through [Roles and permissions](/docs/roles-permissions).
+The command uses the current authenticated user's team by default. Pass `--team=123` to target a specific team. The generated permissions cover listing, viewing, creating, updating, deleting, and scoping records. Their names combine the action and resource, such as `create-movie`. Assign them through [Roles and permissions](/docs/roles-permissions).
 
 Aura provides the admin routes and resource UI. It does not generate a public REST API. Add Laravel routes and controllers in the host application when a public API is needed.
 
 ## Continue
 
-- [Installation](/docs/installation) for beta and development-checkout setup, scripted installs, and Teams-off mode
+- [Installation](/docs/installation) for beta and development-checkout setup, scripted installs, and setup without teams
 - [Resources](/docs/resources) for resource properties and lifecycle methods
 - [Fields](/docs/fields) for all field types and relationship options
 - [Custom tables](/docs/custom-tables) for dedicated schemas and migrations

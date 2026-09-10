@@ -20,12 +20,12 @@ If you omit the argument, the command asks for it. Use the `vendor/name` form. T
 | Resource plugin | `plugin-resource` | Service provider, resource class, and two field view stubs |
 | Field plugin | `plugin-field` | Service provider, field class, and two field view stubs |
 
-These are the three choices in `CreateAuraPlugin`. There is no widget-specific stub.
+The generator offers these three templates. There is no separate template for widgets.
 
 The generator performs these steps:
 
 1. It creates `plugins/{vendor}/{name}` and copies the selected directory from Aura's `stubs` directory.
-2. It runs `configure.php` inside that directory. The script replaces the `VendorName`, `Skeleton`, and other placeholders, renames generated classes and files, and deletes itself.
+2. It runs the generated `configure.php` script to replace placeholders and rename classes and files for your package. The script deletes itself when finished.
 3. The configure script asks for an author username. It uses the Git remote as its initial guess.
 4. The command offers to add the generated service provider to `config/app.php`.
 5. It adds a PSR-4 entry for the plugin source directory to the application's root `composer.json`.
@@ -33,13 +33,13 @@ The generator performs these steps:
 
 For the simple name `acme/blog`, the generated source namespace is `Acme\Blog\`, the source path is `plugins/acme/blog/src`, and the provider class is `Acme\Blog\BlogServiceProvider`.
 
-The command expects a vendor and package separated by one slash. Use a simple lowercase `vendor/name` while running the generator. It does not validate malformed names before calling `explode()` or before writing the Composer namespace entry.
+Use a lowercase vendor and package name separated by one slash, as in the example above. The generator does not validate malformed names before splitting them or writing the Composer namespace entry.
 
-The generated application is active only after its classes are autoloaded and its provider is registered. A local generated plugin uses the root PSR-4 mapping and the optional `config/app.php` entry. An installed Composer package can use Laravel package discovery through the `extra.laravel.providers` entry in its own `composer.json`, unless the host application disables discovery.
+The generated plugin becomes active once the application can autoload its classes and has registered its provider. For local development, the generator adds the autoload mapping to the application's Composer file and offers to register the provider in `config/app.php`. A distributed package can use Laravel package discovery instead, unless the host application disables it. See [Package a plugin](#package-a-plugin) for the Composer configuration.
 
 ## Generated files
 
-After generating `acme/blog`, the resource and field stubs contain the following relevant files. The `Skeleton` names below have already been renamed to `Blog`.
+The resource and field templates produce the following files for the example package. The generator has already replaced placeholder names with your package name.
 
 ~~~text
 plugins/acme/blog/
@@ -63,9 +63,13 @@ src/Commands/BlogCommand.php
 src/Facades/Blog.php
 ~~~
 
-The resource stub registers its resource in `configurePackage()`. The field stub does not register its field with Aura. Add that registration yourself. The resource and field Composer templates both retain a `Skeleton` facade alias in `extra.laravel`, but neither stub contains a facade class. Do not use that alias unless you add and rename a facade class.
+The resource template registers its resource automatically. With the field template, you need to add the registration yourself, as shown in [Field plugins](#field-plugins).
 
-The generated Composer templates currently declare `php: ^8.1`, `spatie/laravel-package-tools: ^1.14.0`, and `illuminate/contracts: ^10.0`. The current Aura source targets PHP 8.4, Laravel 13, Livewire 4, and package tools 1.16. Treat the generated Composer file as a starting point and update its constraints for the host application before distributing the plugin.
+Both templates retain an unused `Skeleton` facade alias under `extra.laravel` in their Composer files. Neither includes a facade class. Do not use the alias unless you add a facade class and update its name.
+
+The generated Composer constraints are older than Aura's current requirements. They allow PHP 8.1, package tools 1.14, and Laravel 10 contracts, while the current Aura source targets PHP 8.4, Laravel 13, Livewire 4, and package tools 1.16. Update the generated constraints for the host application before distributing your plugin.
+
+The template constraints are `php: ^8.1`, `spatie/laravel-package-tools: ^1.14.0`, and `illuminate/contracts: ^10.0`.
 
 ## Configure the service provider
 
@@ -95,7 +99,15 @@ class BlogServiceProvider extends PackageServiceProvider
 }
 ~~~
 
-`hasConfigFile()` loads `config/blog.php` and gives it the package name. `hasViews('acme-blog')` registers the `acme-blog::` view and anonymous component namespace. `hasRoutes('web')` loads the package's `routes/web.php`. `hasMigration()` publishes the named migration into the host application when the package is installed. It does not run the migration by itself. `hasCommand()` registers the command with Artisan.
+This provider loads the package's configuration, views, and routes, makes its migration available for publication, and registers its Artisan command. The methods configure each feature as follows:
+
+| Method | Behavior |
+| --- | --- |
+| `hasConfigFile()` | Loads `config/blog.php` under the package name. |
+| `hasViews('acme-blog')` | Registers `acme-blog::` as the namespace for views and anonymous components. |
+| `hasRoutes('web')` | Loads `routes/web.php` from the package. |
+| `hasMigration()` | Publishes the named migration into the host application when the package is installed. It does not run the migration. |
+| `hasCommand()` | Registers the command with Artisan. |
 
 The package-tools lifecycle is:
 
@@ -187,7 +199,7 @@ class Post extends Resource
 }
 ~~~
 
-The resource class must be registered with `Aura::registerResources()`. Its field definitions are arrays with a field class in `type`. The `slug` is the key used by the form, storage, and table layers. The default storage and custom-table choices remain the same as for an app resource. See [Resources](/docs/resources), [Meta Fields](/docs/meta-fields), and [Custom Tables](/docs/custom-tables).
+The provider registers the resource with Aura. Each field definition names its field class and uses a slug to identify the value in forms, storage, and tables. Plugin resources have the same default storage and custom-table options as application resources. See [Resources](/docs/resources), [Meta Fields](/docs/meta-fields), and [Custom Tables](/docs/custom-tables).
 
 When a resource redeclares an inherited static property, keep the type declared by `Aura\Base\Resource`. For example, `$group` and `$name` are nullable strings. Some inherited properties are intentionally untyped. Adding a conflicting type causes a PHP fatal error.
 
@@ -209,7 +221,7 @@ Aura::registerFields([\Acme\Blog\Fields\ColorPicker::class]);
 Aura::registerWidgets([\Acme\Blog\Widgets\ReadingTime::class]);
 ~~~
 
-`Aura::registerWidgets()` does not create a global dashboard widget. Resource widgets are arrays returned by `Resource::getWidgets()` and render above that resource's index table. See [Widgets](/docs/widgets).
+Registering a widget does not add it to the global dashboard. To display it above a resource's index table, include its definition in that resource's `getWidgets()` method. See [Widgets](/docs/widgets).
 
 ## Resource plugins
 
@@ -251,11 +263,13 @@ class Blog extends Resource
 }
 ~~~
 
-The resource provider calls `Aura::registerResources([Blog::class])` in `configurePackage()`. Add views, routes, migrations, and other package code only when the resource needs them.
+The generated provider registers this resource during package configuration. Add views, routes, migrations, and other package code only when the resource needs them.
+
+<a id="field-plugins"></a>
 
 ## Field plugins
 
-A custom field extends `Aura\Base\Fields\Field`. Aura calls `Field::edit()` for the form and `Field::view()` for the display view. Set `$edit` and `$view` to the package's anonymous component names:
+A custom field extends Aura's base field class and provides separate components for editing and displaying its value. Set `$edit` and `$view` to the package's anonymous component names. Aura resolves them through the field's `edit()` and `view()` methods:
 
 ~~~php
 namespace Acme\Blog\Fields;
@@ -282,7 +296,9 @@ class ColorPicker extends Field
 }
 ~~~
 
-The generated `plugin-field` class currently uses `$component` for the edit view. Aura's runtime reads `$edit`, so replace `$component` with `$edit` before using the field. This is a package stub defect, not a supported field property. The generated service provider calls only `name()` and `hasViews()`. Register the field explicitly:
+The field template currently has a defect. It declares the edit view as `$component`, but Aura expects `$edit`. Rename that property before using the generated field.
+
+The generated provider sets the package name and registers its views, but does not register the field. Add the registration yourself:
 
 ~~~php
 use Aura\Base\Facades\Aura;
@@ -323,7 +339,7 @@ The display view can delegate to the resource's display method:
 </x-aura::fields.wrapper>
 ~~~
 
-`getFields()` returns the settings shown when a user configures the field in the Resource Editor. Merge `parent::getFields()` to retain Aura's standard name, slug, validation, type, view, and conditional-logic settings.
+The Resource Editor uses `getFields()` to show the field's configuration settings. Merge the parent's definitions, as in the example, to retain the standard name, slug, validation, type, view, and conditional-logic settings.
 
 Implement `set($post, $field, $value)` only when the field transforms a value before saving. Aura calls it when the concrete field class defines it. The base `Field` class does not define `set()`, so do not call `parent::set()`.
 
@@ -353,13 +369,15 @@ public function packageBooted(): void
 }
 ~~~
 
-The source string must be a lowercase Composer package name. A panel key is unique within that source. The component must be a concrete Livewire component that accepts the record as a `model` property or `mount()` parameter and accepts the modal state as an `inModal` property or parameter. Aura checks `ability` before rendering, loads declared relationships together, and ignores hidden or unauthorized panels. A panel action must authorize its own state-changing request.
+Identify the plugin with its lowercase Composer package name and give each panel a key unique to that package. Use a concrete Livewire component that accepts the record through a `model` property or mount parameter. It must also accept the modal state through an `inModal` property or parameter.
+
+Aura checks the declared ability before rendering, loads declared relationships together, and skips hidden or unauthorized panels. Panel actions must still authorize their own state-changing requests.
 
 A resource can provide panels without a plugin registry by implementing `DefinesRecordLayoutPanels` and returning `RecordLayoutPanel` objects. See [Record Layouts](/docs/record-layouts) for the complete contract, preferences, ordering, and resource scoping.
 
 ## Navigation and hooks
 
-Aura resolves a `HookManager` from the `hook_manager` container binding:
+Use the hook manager to modify values at supported points in Aura. For example, the navigation hook lets you change the collection used to build the sidebar:
 
 ~~~php
 app('hook_manager')->addHook('navigation', function ($navigation) {
@@ -374,7 +392,7 @@ app('hook_manager')->addHook('navigation', function ($navigation) {
 });
 ~~~
 
-Hook callbacks receive one argument and must return the modified value. Aura applies the `navigation` hook to the resource collection while building the sidebar. The core source does not apply `resource.fields`, `dashboard.widgets`, `navigation.after`, or `aura.hooks` hooks.
+Each callback receives one argument and must return the modified value. The navigation callback receives the resource collection. Aura does not call hooks named `resource.fields`, `dashboard.widgets`, `navigation.after`, or `aura.hooks`.
 
 Use `Navigation::add()` for menu items:
 
@@ -395,11 +413,13 @@ public function packageBooted(): void
 }
 ~~~
 
-`Navigation::add()` accepts an optional second argument that returns a boolean. The callback runs when `add()` is called, so it is not a per-request authorization check. Protect the destination route or action with Laravel authorization. `Navigation::clear()` registers a hook that returns an empty collection.
+You can pass a callback as the second argument to conditionally add menu items. It must return a boolean and runs immediately when you add the items. It does not check authorization on each request. Protect the destination route or action with Laravel authorization.
+
+To remove all navigation items, call `Navigation::clear()`. This registers a hook that returns an empty collection.
 
 ## Inject view fragments
 
-`Aura::registerInjectView($slot, $callback)` appends the callback's rendered value wherever Aura calls `injectView($slot)`:
+You can insert a rendered view at one of Aura's named slots. Register a callback for the slot, and Aura appends its output wherever that slot appears:
 
 ~~~php
 use Aura\Base\Facades\Aura;
@@ -424,7 +444,7 @@ There is no core `head` or `dashboard.footer` slot. A plugin that needs those lo
 
 ## Config, routes, and migrations
 
-The package tools methods configure package resources. They do not wrap a plugin's route file in Aura's middleware or URL prefix. Add that contract in the route file when the route belongs in the Aura admin area:
+Package tools loads your routes without adding Aura's middleware or URL prefix. Apply them in the route file when a route belongs in the admin area:
 
 ~~~php
 // routes/web.php
@@ -449,7 +469,9 @@ Use `hasConfigFile()` for package-owned settings. Use Aura's `config/aura.php` a
 
 Aura does not scan `plugins/` and does not discover a provider from a directory name. The local generator updates the host Composer autoload map and can add a provider to `config/app.php`. A separately installed Composer package can use Laravel package discovery through its own `extra.laravel.providers` metadata.
 
-Aura also ships a plugin information page at `/{aura-path}/plugins`. With the default path, the URL is `/admin/plugins` and the route name is `aura.plugins`. `PluginsPage` allows only a Super Admin to open the page. It reads the host `composer.json` and `composer.lock`, then reads each installed package's `vendor/{package}/composer.json` to show its name, locked version, description, and keywords. It does not install packages, update packages, or query Packagist for newer versions.
+Super admins can view installed package information on the Plugins page. Its URL is `/admin/plugins` by default, or `/{aura-path}/plugins` if you changed the admin prefix. The route name is `aura.plugins`.
+
+The page reads the application's Composer file and lockfile, along with each installed package's Composer file. It shows the package name, locked version, description, and keywords. It does not install or update packages, or check Packagist for newer versions.
 
 The `aura.features.plugins` setting defaults to `true` and controls the Plugins quick action on the dashboard. The `/plugins` route is registered regardless of that setting, so disabling the flag does not disable the route or its authorization check.
 
@@ -511,7 +533,17 @@ test('normalises a color', function () {
 });
 ~~~
 
-Focused tests in Aura's source cover the generator in `tests/Feature/Aura/CreatePluginTest.php`, the Plugins page in `tests/Feature/Livewire/PluginsPageTest.php`, navigation in `tests/Feature/NavigationTest.php`, view slots in `tests/Feature/Table/SettingsTableTest.php`, and record layout panels in `tests/Feature/Resource/RecordLayoutTest.php`.
+For more examples, see Aura's focused tests:
+
+| Feature | Test file |
+| --- | --- |
+| Plugin generator | `tests/Feature/Aura/CreatePluginTest.php` |
+| Plugins page | `tests/Feature/Livewire/PluginsPageTest.php` |
+| Navigation | `tests/Feature/NavigationTest.php` |
+| View slots | `tests/Feature/Table/SettingsTableTest.php` |
+| Record layout panels | `tests/Feature/Resource/RecordLayoutTest.php` |
+
+<a id="package-a-plugin"></a>
 
 ## Package a plugin
 

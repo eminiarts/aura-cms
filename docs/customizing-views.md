@@ -1,6 +1,6 @@
 # Customizing views
 
-Aura's resource pages are full-page Livewire components. Each page component asks the resource for a Blade view name. Resource view methods select the markup. Static resource component hooks select the Livewire class. These are separate extension points.
+Aura's resource pages are full-page Livewire components. You can customize a resource page's markup by choosing a different Blade view. If you also need new actions or state, you can replace its Livewire component. Aura provides separate resource methods for choosing the view and the component class.
 
 ## Choose a customization point
 
@@ -33,7 +33,7 @@ The last row contains two different names for the same file. Blade's anonymous c
 
 ## Overriding resource views
 
-`AuraModelConfig` supplies these resource methods. Override only the method you need and return a view that exists in the host application or in the `aura::` namespace.
+To replace a page's markup, override the corresponding view method on your resource. Return the name of an existing application view or a package view in the `aura::` namespace. The resource inherits these methods from the AuraModelConfig trait.
 
 ```php
 namespace App\Aura\Resources;
@@ -64,9 +64,16 @@ class Product extends Resource
 }
 ```
 
-The corresponding host files are `resources/views/aura/products/index.blade.php`, `create.blade.php`, `edit.blade.php`, and `view.blade.php`.
+For this example, place your Blade files in `resources/views/aura/products`, with a file named for each page, such as `edit.blade.php`.
 
-The index view receives `$resource` and `$slug`. Create and edit views receive `$model`, `$form`, and `$mode`. The edit view also reads the computed `$this->editFields` property. The create view uses `$this->createFields`. The detail view receives `$model`, `$form`, and `$recordLayout`.
+Each page exposes the data its view needs:
+
+| Page | Available data |
+| --- | --- |
+| Index | `$resource` and `$slug` |
+| Create | `$model`, `$form`, and `$mode`, with fields available through `$this->createFields` |
+| Edit | `$model`, `$form`, and `$mode`, with fields available through the computed `$this->editFields` property |
+| Detail | `$model`, `$form`, and `$recordLayout` |
 
 Keep the field loop when you customize a form. It passes each field definition to the field's edit component and keeps the form bound to `form.fields.{slug}`:
 
@@ -117,7 +124,7 @@ The edit and detail header views are independent of the main page views. Overrid
 
 ## Customizing table views
 
-`indexTableSettings()` configures the `aura::table` Livewire component. The resource defaults come from `InteractsWithTable`:
+You can change the listing's page size, display mode, and views on the resource. The following methods provide its defaults through the InteractsWithTable trait. For other table settings, override `indexTableSettings()`.
 
 | Method | Default | Purpose |
 | --- | --- | --- |
@@ -134,7 +141,7 @@ The edit and detail header views are independent of the main page views. Overrid
 
 Kanban can also be enabled through the resource's `kanbanSettings()`. When it is enabled without a custom view, the table uses `aura::components.table.kanban-view`.
 
-For example:
+This resource opens in grid mode and provides custom grid and row views:
 
 ```php
 class Product extends Resource
@@ -156,7 +163,7 @@ class Product extends Resource
 }
 ```
 
-The table merges `indexTableSettings()` into its defaults. Return only the keys you want to change:
+To change several table settings together, return them from `indexTableSettings()`. The table merges your settings into its defaults, so you only need to include the keys you want to change:
 
 ```php
 public function indexTableSettings()
@@ -174,7 +181,7 @@ public function indexTableSettings()
 }
 ```
 
-Inside the table component, the `views` map uses these slots:
+The `views` setting lets you replace individual parts of the table. It accepts these slots:
 
 ```php
 'views' => [
@@ -192,9 +199,9 @@ Inside the table component, the `views` map uses these slots:
 ],
 ```
 
-The table resolves the Kanban entry through `kanbanSettings()`, so an enabled Kanban configuration can use the package default view even when `tableKanbanView()` returns `false`.
+An enabled Kanban configuration can still use the package's default view when the legacy view method returns false. The table checks the Kanban settings when resolving this entry.
 
-The list and grid views receive `$rows`, `$model`, and the table component as `$this`. A row view receives `$row` and the table component as `$this`. The outer `tableComponentView()` receives the table data, including `$rows`, `$rowIds`, `$parent`, and `$kanban`.
+Inside list, grid, and row views, `$this` refers to the table component. List and grid views also receive `$rows` and `$model`, while a row view receives `$row`. The outer view selected by `tableComponentView()` receives the table data, including `$rows`, `$rowIds`, `$parent`, and `$kanban`.
 
 ### Resource-specific table headers
 
@@ -208,7 +215,7 @@ The lookup lowercases `getType()`. The custom header receives `$model` and the t
 
 ## Custom field components
 
-Each field class declares an edit component in `$edit` and a display component in `$view`. Built-in `Text` uses `aura::fields.text` for editing and `aura::fields.view-value` for display.
+A field can use different Blade components for editing and display. Declare their names in the field class's `$edit` and `$view` properties. For example, the built-in text field uses `aura::fields.text` for its input and `aura::fields.view-value` to display the saved value.
 
 Generate an application field with:
 
@@ -216,7 +223,7 @@ Generate an application field with:
 php artisan aura:field Price
 ```
 
-The command creates `app/Aura/Fields/Price.php`, `resources/views/components/fields/price.blade.php`, and `resources/views/components/fields/price-view.blade.php`:
+The command creates the field class at `app/Aura/Fields/Price.php`. It also creates the edit and display views in `resources/views/components/fields`, named `price.blade.php` and `price-view.blade.php`:
 
 ```php
 namespace App\Aura\Fields;
@@ -253,11 +260,11 @@ The display view can delegate formatting to the resource:
 </x-aura::fields.wrapper>
 ```
 
-For field-specific conversion, use the field hooks provided by `Field`, including `display($field, $value, $model)` and `value($value)`. There is no `displayValue()` hook.
+To convert values within the field itself, use the base field class's `display($field, $value, $model)` or `value($value)` hooks. There is no `displayValue()` hook.
 
 ## View injection points
 
-Core views call `app('aura')::injectView('name')` at named points. Register a callback from a service provider with `Aura::registerInjectView()`:
+Injection points let you add content to an existing package view without replacing it. Register a callback for a named point in a service provider:
 
 ```php
 use Aura\Base\Facades\Aura;
@@ -271,7 +278,7 @@ public function boot(): void
 }
 ```
 
-The callback is called through Laravel's container. Return a rendered string or a view. Aura concatenates the registered callbacks for the same name.
+Aura calls the callback through Laravel's container. Return a rendered string or a view. When several callbacks use the same name, Aura combines their output.
 
 These are the injection points currently rendered by the package views:
 
@@ -301,7 +308,7 @@ php artisan vendor:publish --tag=aura-config
 php artisan vendor:publish --tag=aura-assets
 ```
 
-`aura-views` copies the package views to `resources/views/vendor/aura`. Those files override the matching `aura::` views. `aura-config` publishes both `config/aura.php` and `config/aura-settings.php`. `aura-assets` copies the package assets to `public/vendor/aura`.
+The views tag copies the package views to `resources/views/vendor/aura`, where they override the matching package views. The config tag publishes both `config/aura.php` and `config/aura-settings.php`. The assets tag copies package assets to `public/vendor/aura`.
 
 The `aura:publish` command updates the compiled Aura assets and its bundled libraries:
 
@@ -324,7 +331,7 @@ The top-level component settings live in `config/aura.php`:
 ],
 ```
 
-The first three entries back the `/admin`, `/admin/profile`, and `/admin/settings` routes. `media-manager` is used by the `aura::media-manager` modal component.
+The dashboard, profile, and settings entries choose the components for `/admin`, `/admin/profile`, and `/admin/settings`. The media manager entry chooses the component used by the `aura::media-manager` modal.
 
 Aura registers these Livewire aliases:
 
@@ -341,7 +348,7 @@ Aura registers these Livewire aliases:
 | `aura::global-search` | `Aura\\Base\\Livewire\\GlobalSearch` |
 | `aura::notifications` | `Aura\\Base\\Livewire\\Notifications` |
 
-Resource routes use four static hooks. Each hook returns the page component class for the existing route:
+To replace a resource page's Livewire component, override its static component method on the resource. Return the class you want the existing route to use:
 
 ```php
 namespace App\Aura\Resources;
@@ -378,7 +385,7 @@ For a package resource such as User or Team, the command creates an application 
 
 ## Layouts for full-page components
 
-The resource `Index`, `Create`, `Edit`, and `View` components call `->layout('aura::components.layout.app')` in their `render()` methods. The dashboard, profile, settings, attachment index, resource editor, and other routed package components use the same full-page layout pattern. Changing `config('aura.views.layout')` does not change these component-level layouts.
+Resource pages select Aura's application layout in their Livewire render methods. The dashboard, profile, settings, attachment index, resource editor, and other routed package components select their layouts the same way. Changing the `aura.views.layout` configuration setting does not change these pages' layouts.
 
 Livewire 4 supports both a `#[Layout]` attribute and the `->layout()` view method for full-page components. Aura's generated component uses the method because it also selects the custom page view:
 
@@ -416,9 +423,9 @@ Use `aura::components.layout.app` when referring to Aura's package layout from `
 </x-dynamic-component>
 ```
 
-The intended package value for `config('aura.views.layout')` is `aura::layout.app`. `aura::layouts.app` does not resolve to a package component. `aura::components.layout.app` is the Livewire view name and is not the dynamic component alias.
+Set `aura.views.layout` to `aura::layout.app` when using the package layout. The plural spelling `aura::layouts.app` does not resolve to a package component, and the Livewire view name cannot be used as the dynamic component alias.
 
-The config-driven Blade wrappers use `aura.views.layout`. The routed Livewire pages use their own `render()` methods. This distinction also applies to custom dashboard, profile, and settings components selected through `config/aura.php`.
+This distinction also applies to custom dashboard, profile, and settings components selected in `config/aura.php`. Their routed pages choose a layout in their render methods, while Blade wrappers read the layout configuration setting.
 
 ### Requirements for a replacement layout
 

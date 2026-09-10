@@ -1,12 +1,12 @@
 # Frontend integration
 
-Aura provides an authenticated admin panel and Eloquent Resource classes. It does not render a public site, generate public Resource routes, or ship a public REST API. Your Laravel application owns the public routes, authentication, publication rules, team selection, rate limiting, and media policy.
+Aura provides an authenticated admin panel and Eloquent resource classes. You build the public site or API in your Laravel application, including routes, authentication, publication rules, team selection, rate limiting, and media access.
 
-This guide explains how to read Aura data from a Blade view or a host application's API. The examples use a shared-table `BlogPost` Resource. Adjust the publication and team rules to match your application before exposing any record.
+This guide explains how to read Aura data in Blade views and API endpoints. The examples use a blog post resource stored in Aura's shared table. Adjust the publication and team rules to match your application before exposing any record.
 
 ## Define a Resource
 
-Resources extend `Aura\\Base\\Resource` and define fields as arrays returned by `getFields()`. The `type` value is a field class name. It is not a fluent builder.
+To define a resource, extend `Aura\\Base\\Resource` and return an array of fields from `getFields()`. Each field's `type` names its PHP class. Field definitions use arrays rather than a fluent builder.
 
 For example, save this as `app/Aura/Resources/BlogPost.php`:
 
@@ -67,20 +67,20 @@ class BlogPost extends Resource
 }
 ```
 
-This example assumes the default shared `posts` table and meta storage. The built-in `Tag` Resource is used for the `categories` field. A host application can replace it with its own Resource.
+This example uses the default shared `posts` table and meta storage. Categories use Aura's built-in tag resource, which you can replace with your own.
 
 ## Understand storage
 
-The storage profile determines which query method to use. For a default shared-table Resource, these are the fixed columns in the `posts` migration:
+The way a resource stores its fields determines how you query them. By default, resources share the `posts` table, whose migration defines these columns:
 
 ```text
 id, title, content, type, status, slug, user_id, parent_id, order,
 created_at, updated_at, deleted_at
 ```
 
-`team_id` is also a `posts` column when teams are enabled. It is absent from a teams-off installation. Do not reference it unconditionally in a query that must support both modes.
+When teams are enabled, the table also has a `team_id` column. Queries that support installations with and without teams must check this setting before referencing the column.
 
-Fields whose slugs match the base fillable columns use those columns. Other ordinary input fields use the polymorphic `meta` table when the Resource uses meta storage. In the example, `excerpt`, `featured_image`, `published_at`, `meta_title`, and `meta_description` are meta fields. `categories` is stored in the `post_relations` pivot because `Tags` is a relationship field.
+Fields whose slugs match the base model's fillable columns use those columns. Other input fields use the polymorphic `meta` table when meta storage is enabled. In this example, the excerpt, featured image, publication date, and SEO fields use meta storage. Categories use the `post_relations` pivot table because tags are a relationship field.
 
 You can inspect a field's storage at runtime:
 
@@ -93,15 +93,15 @@ $post->isMetaField('featured_image');  // true
 $post->isTableField('featured_image'); // false
 ```
 
-Custom-table Resources use a different profile. With `public static $customTable = true`, fields that are in the model's fillable columns use the custom table. Meta storage remains enabled by default, so other input fields can still use `meta`. Set `public static bool $usesMeta = false` only when every input field slug has a real column in the custom table migration.
+A resource can use its own table by setting `public static $customTable = true`. Fields listed in the model's fillable columns then use that table. Meta storage remains enabled by default for other input fields. Set `public static bool $usesMeta = false` only when the custom table migration defines a column for every input field slug.
 
 ## Protect public reads
 
-Aura's admin routes use the configured `aura-admin` middleware, which includes `web` and `auth`. Resource models also add their normal model scopes. A posts-backed Resource receives the Resource type scope, the team scope when teams are enabled, and the scoped-permission scope for authenticated Aura users.
+Aura protects admin routes with the configured `aura-admin` middleware, which includes `web` and `auth`. Resource queries also apply model scopes. For resources stored in the posts table, these filter by resource type, team when enabled, and scoped permissions for authenticated Aura users.
 
-Those scopes do not define public publication. In particular, the team scope does not add a team condition to an unauthenticated request. A public request such as `BlogPost::query()->where('status', 'publish')` can therefore see rows from every team unless the host application adds the site team's ID. Keep Aura's scopes and add the host application's explicit public filters. Do not call `withoutGlobalScopes()` for a public listing.
+These scopes do not decide which records are public. The team scope adds no team condition for unauthenticated requests, so filtering by published status alone can return records from every team. Your application must also filter by the site's team. Keep Aura's scopes and add these public filters to the query. Do not call `withoutGlobalScopes()` for a public listing.
 
-The host application should have middleware that maps the request host to a trusted site context. That middleware should reject an unknown or unpublished site and expose a server-controlled `public_team_id` request attribute when teams are enabled. Do not accept a team ID from a query string or request body. A separate host policy can add record-level visibility rules.
+Use application middleware to identify the site from the request host. It should reject unknown or unpublished sites and, when teams are enabled, set a server-controlled `public_team_id` request attribute. Do not accept a team ID from a query string or request body. Add a policy if individual records need further visibility checks.
 
 The following query is for the shared `posts` storage profile. `status = 'publish'` is the default posts status. If your application uses another status value or a meta publication field, replace that condition with the value declared by your application.
 
@@ -131,9 +131,9 @@ function publicBlogPosts(Request $request): Builder
 }
 ```
 
-The `config('aura.teams')` condition keeps `team_id` out of teams-off SQL. The query still gets Aura's Resource type scope. The host middleware and the `status` condition together define which records are public. Use a separate authenticated preview route and policy for drafts. Do not remove model scopes to implement preview.
+The query checks whether teams are enabled before filtering by team, and retains Aura's resource type scope. The site middleware and published-status filter determine which records are public. To preview drafts, use a separate authenticated route and policy without removing model scopes.
 
-For a related Resource, apply the same public team and publication policy. Eager loading is a performance feature, not an authorization check. For the built-in `Tag` Resource in this example, a public query can constrain the eager load as follows:
+Apply the same team and publication rules to related resources. Eager loading does not authorize access to them. For example, restrict the category query to the public site's team:
 
 ```php
 $posts = publicBlogPosts($request)
@@ -149,7 +149,7 @@ $posts = publicBlogPosts($request)
     ->paginate(12);
 ```
 
-If a related Resource uses a custom table, filter only columns that its migration declares. If its public visibility is more restrictive than team membership, put that rule in the host query or policy as well.
+For related resources with custom tables, filter only columns defined by their migrations. Add any visibility rules beyond team membership to your query or policy as well.
 
 ## Query base and meta fields
 
@@ -167,7 +167,7 @@ $matchingExcerpt = publicBlogPosts($request)
 
 `whereMeta()` supports a key and value, a key, operator, and value, or an array of key and value pairs. `whereMetaContains()` is for JSON values stored in a meta row. `whereNotInMeta()` and `whereInMeta()` cover set membership. Calling `whereMeta()` for `status` will not search the `posts.status` column.
 
-For search across fields declared with `'searchable' => true`, use the `searchIn` query-builder macro. It checks `isMetaField()` and sends each slug to a physical-column or meta subquery.
+To search fields declared with `'searchable' => true`, use the `searchIn` query-builder macro. It checks each field's storage and queries either its column or its meta value.
 
 ```php
 $model = new BlogPost;
@@ -180,11 +180,11 @@ $posts = publicBlogPosts($request)
     ->paginate(12);
 ```
 
-Pass only field slugs that the Resource declares as searchable. Keep the public publication and team conditions outside the search callback so a search term cannot bypass them.
+Pass only field slugs that the resource declares as searchable. Keep the public publication and team conditions outside the search callback so a search term cannot bypass them.
 
 ## Read resolved field values
 
-`$post->fields` is a collection keyed by field slug. Aura resolves each field through its field class, applies conditional visibility, and omits hidden fields. Direct property access uses the same resolved value for a meta-backed field.
+Read resolved field values from `$post->fields`, a collection keyed by field slug. Aura uses each field class to resolve its value, applies conditional visibility, and omits hidden fields. For meta fields, you can also read the same value as a property on the model.
 
 ```php
 $post = publicBlogPosts($request)->firstOrFail();
@@ -197,13 +197,13 @@ $post->fields['categories'];     // an array of related IDs
 $post->categories;               // an Eloquent collection of Tag models
 ```
 
-Use the `fields` collection when you need several resolved values. Do not expose the raw `meta` relation as an API contract. Its key/value layout is an internal storage detail.
+Use the collection when you need several resolved values. Keep the raw meta relation out of public API responses, since its key/value layout is an internal storage detail.
 
 ## Work with relationship fields
 
-The field type controls whether a field slug is a dynamic Eloquent relationship.
+Some relationship fields create Eloquent relationships that you can access by field slug.
 
-`Tags` is a real `morphToMany` relationship through `post_relations`. `HasMany` is a relationship field too. A `HasMany` field with a `column` uses a normal Eloquent `hasMany`; without a `column`, it uses the `post_relations` pivot. These relations can be eager-loaded by their field slug:
+Tags fields use a polymorphic many-to-many relationship through the `post_relations` pivot table. Has-many fields use that pivot too, unless you set the `column` option to use a normal Eloquent one-to-many relationship. You can eager load these relationships by field slug:
 
 ```php
 $posts = publicBlogPosts($request)
@@ -215,11 +215,11 @@ foreach ($posts->first()?->categories ?? [] as $category) {
 }
 ```
 
-`BelongsTo` stores a selected ID and does not create a dynamic Eloquent `belongsTo` relation. `Image` and `File` also store values, rather than exposing attachment relations. Do not write `with('author')` for a `BelongsTo` field named `author_id`. Resolve the ID through a query for the related Resource and apply that Resource's public team and visibility policy.
+Belongs-to fields store a selected ID without creating an Eloquent relationship. Image and file fields also store values without exposing attachment relationships. For example, a belongs-to field named `author_id` does not support `with('author')`. Query the related resource using the stored ID and apply its public team and visibility rules.
 
 ## Resolve images and files
 
-`Image` and `File` fields store JSON and return decoded values, normally attachment ID arrays. Resolve an ID through the configured Attachment Resource after applying the host's public media policy.
+Image and file fields store JSON and return decoded values, usually arrays of attachment IDs. Query the configured attachment resource using the stored ID and apply your application's public media policy.
 
 The following helper assumes that attachments in the selected team are public. Add any separate host publication condition before returning the attachment.
 
@@ -326,7 +326,7 @@ class BlogPostResource extends JsonResource
 }
 ```
 
-The resource resolves the attachment through the same trusted team context as the post. If your media policy has a publication flag or a separate media Resource, enforce it in `publicAttachment()` too. Do not return `toArray()` on an Aura Resource and assume that it is a stable public schema. The default model can append the resolved `fields` collection, and the raw meta layout is not an API contract.
+The API resource looks up the attachment using the same trusted team as the post. If your media policy uses a publication flag or a separate media resource, enforce that in `publicAttachment()` too. Avoid returning an Aura model's `toArray()` result directly. Its output can include the resolved fields collection and raw meta storage, which should not define your public response format.
 
 Save the controller as `app/Http/Controllers/Api/BlogPostController.php`:
 
@@ -413,9 +413,9 @@ Route::middleware(['resolve.public.site', 'throttle:api'])->group(function () {
 });
 ```
 
-`resolve.public.site` is host-application middleware. It must map the request host to the intended site, reject an unpublished site, authorize the public site, and set `public_team_id` when teams are enabled. If the API is for authenticated users instead, use the host's authentication and policy middleware and keep the publication condition in the query.
+Implement the `resolve.public.site` middleware in your application. It must identify the site from the request host, reject unpublished sites, authorize public access, and set `public_team_id` when teams are enabled. For an authenticated API, use your application's authentication and policy middleware and keep the publication condition in the query.
 
-The controller uses `posts.status`, `posts.slug`, and `posts.created_at`, plus `posts.team_id` when teams are enabled. These are valid columns for this shared-table example. A custom-table Resource needs a query written against the columns declared by its migration. Meta fields still require `whereMeta()` when meta storage is enabled.
+The controller filters and sorts by the status, slug, creation date, and optional team columns in the shared posts table. For a custom table, adapt the query to the columns defined by its migration. Continue to use `whereMeta()` for fields stored as meta.
 
 ## Render in Blade
 
@@ -444,13 +444,13 @@ Pass a post from the same public query to the view. Pass an attachment only afte
 </article>
 ```
 
-Blade escapes these values. If `content` contains intended HTML, sanitize it in the host application and render only the sanitized result with `{!! $html !!}`. Reading a Resource property does not call a field's admin display renderer. Aura's `Wysiwyg` field has its own sanitizing display method, but a public Blade view should make its HTML decision explicit.
+Blade escapes these values. If the content contains HTML you want to display, sanitize it in your application before rendering it with `{!! $html !!}`. Reading a resource property does not use the field's admin display renderer. Even though Aura's WYSIWYG field sanitizes HTML in its display method, your public view must handle sanitization itself.
 
-Aura has no SEO helper. `meta_title` and `meta_description` are ordinary fields, so read them and render the tags in the host view. A public page should use the same publication query for its `<title>`, body, related Resources, and media.
+Aura has no SEO helper. Read the ordinary `meta_title` and `meta_description` fields to render the corresponding HTML tags in your view. Apply the same publication rules to the page title, body, related resources, and media.
 
 ## Related documentation
 
 - [Meta fields](/docs/meta-fields) explains meta storage and its query scopes.
 - [Fields](/docs/fields) lists field classes and their options.
 - [Media library](/docs/media-manager) explains attachments, storage, and thumbnails.
-- [Resources](/docs/resources) explains Resource definitions and field configuration.
+- [Resources](/docs/resources) explains resource definitions and field configuration.

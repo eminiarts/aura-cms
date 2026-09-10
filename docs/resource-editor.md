@@ -1,8 +1,8 @@
 # Resource editor
 
-The Resource Editor is a local development tool for changing an App resource from the Aura admin UI. It edits the PHP class on disk. Adding, editing, reordering, duplicating, or deleting a field rewrites the array returned by `getFields()`. The top Save action also writes the resource's editable navigation properties.
+The resource editor lets you change an application resource through the Aura admin interface during local development. Each field change rewrites the field definitions in the resource's PHP class. The Save button at the top also writes its editable navigation properties.
 
-Review the working-tree diff after every change. The Delete action removes the resource class file. Keep the resource under version control before opening the editor.
+Keep the resource under version control before opening the editor, and review the diff after every change. Deleting a resource removes its PHP class file.
 
 ![Resource editor overview](/images/docs/resource-editor/resource-editor-overview.png)
 
@@ -11,13 +11,13 @@ Review the working-tree diff after every change. The Delete action removes the r
 The editor is available only when all of these conditions hold:
 
 - The application environment is `local` or `testing`.
-- `aura.features.resource_editor` is true. The default is true when `app.env` is `local` and false otherwise.
-- The authenticated user is Aura's `User` model and `isSuperAdmin()` returns true.
+- The resource editor feature is enabled through `aura.features.resource_editor`. It is enabled by default in the local environment and disabled elsewhere.
+- The signed-in user uses Aura's user model and is a super admin, as determined by `isSuperAdmin()`.
 - The resource class name starts with `App`.
 
-The editor has no separate policy check. The route middleware and the Livewire component enforce the environment, feature, and super-admin checks. A disabled feature or a non-local environment returns `404`. A non-super-admin user returns `403`.
+The route middleware and Livewire component enforce these access requirements. There is no separate policy check. Disabling the feature or using an environment other than local or testing returns a 404 response. Users who are not super admins receive a 403 response.
 
-The resource check is based on the class name, not the file path. Built-in Aura resources and resources provided by packages are treated as vendor resources and cannot be edited. An application class under the `App` prefix is eligible even when its file is discovered through a customised path.
+Aura checks the resource's class name to decide whether it can be edited. Built-in resources and those provided by packages cannot be edited. Application classes with the `App` prefix are eligible even when Aura discovers their files through a customised path.
 
 The route is:
 
@@ -25,9 +25,13 @@ The route is:
 /{aura.path}/resources/{slug}/editor
 ```
 
-`aura.path` defaults to `admin`, so the usual URL is `/admin/resources/{slug}/editor`. The route name is `aura.resource.editor`. The default `aura-admin` middleware group is `['web', 'auth']`; applications can customise that group in `config/aura-settings.php`.
+The default admin path is `admin`, so the usual URL is `/admin/resources/{slug}/editor`. You can change the path through `aura.path` or link to the named route, `aura.resource.editor`.
 
-Creating a new resource uses the Create Resource action. That Livewire component also requires a super admin and rejects the `production` environment. The resulting editor page still requires `local` or `testing`, so use the create flow in a local development environment.
+The route uses the `aura-admin` middleware group, which includes the web and authentication middleware by default. Customise this group in `config/aura-settings.php`.
+
+Use the Create Resource action to add a resource. This action also requires a super admin and rejects the production environment. The resulting editor page is only available in local or testing environments, so create resources during local development.
+
+<a id="prepare-the-resource"></a>
 
 ## Prepare the resource
 
@@ -60,9 +64,9 @@ class Product extends Resource
 }
 ```
 
-Do not build this array with a helper, a conditional branch, or a closure if you want to edit it in the UI. `SaveFields::saveFields()` looks for a `return [ ... ];` statement inside `getFields()`. If it cannot find the method or return statement, it shows a notification and does not rewrite the file. It still dispatches the `SaveFields` event, so inspect the file and any schema output after a failed save.
+Return the field array directly from `getFields()` if you want to use the editor. Arrays built with helpers, conditional branches, or closures cannot be rewritten. If the editor cannot find the method or a literal array return statement, it raises an error before writing the file or dispatching schema changes.
 
-The editor also refuses to mount when any field definition contains a closure. Maintain those resources in PHP instead.
+The editor also refuses to open if any field definition contains a closure. Maintain those resources in PHP.
 
 ## Edit fields
 
@@ -70,15 +74,15 @@ Open the editor from the resource index or visit the route directly. The field c
 
 | Action | Result |
 | --- | --- |
-| Add field | Opens the field slide-over after the selected field. New fields start with the type supplied by the add control, or `Aura\\Base\\Fields\\Text` when no type is supplied. |
+| Add field | Opens the field slide-over to insert a field after the selected one. It uses the type supplied by the add control, or a text field if none is supplied. |
 | Edit field | Opens the same slide-over for the selected field. |
 | Duplicate | Copies the field after the original, adds a random four-character suffix to its slug, and appends ` Copy` to its name. |
 | Reorder | Drag the handle. The new order is written when the drop completes. |
 | Delete | Removes the field from the PHP array immediately. |
 
-Field actions save the field array as soon as the action runs. The top Save button saves the current field array and the editable resource properties. It does not defer field changes until the top button.
+Field actions write their changes immediately. You do not need to click the Save button at the top to keep them. That button saves both the current field definitions and the editable resource properties.
 
-New fields receive these initial values before the field-specific editor adds its own options:
+New fields start with the following values. Each field type may add its own options:
 
 | Key | Initial value |
 | --- | --- |
@@ -92,13 +96,17 @@ New fields receive these initial values before the field-specific editor adds it
 | `searchable` | `false` |
 | `conditional_logic` | An empty string |
 
-The field editor applies the selected field class's own validation rules as well. Slugs must start with a letter or number, contain only letters, numbers, `_`, or `-`, and cannot contain only numbers. Keep slugs unique within the resource. `id` and `type` are real resource columns and should not be used as field slugs. The current field editor does not reliably reject those reserved names.
+Each field type applies its own validation rules. A slug must start with a letter or number and may contain only letters, numbers, underscores, or hyphens. It cannot consist entirely of numbers and must be unique within the resource.
 
-Deleting a definition does not perform a data migration. In the default shared `posts` and `meta` storage, old values remain until the application removes them, but the field no longer reads them. A custom-table schema listener can generate or apply a column drop. Review the generated migration before applying it.
+Do not use `id` or `type` as field slugs. They are existing resource columns, and the editor does not reliably reject these reserved names.
+
+Deleting a field definition does not migrate its data. With the default shared storage, old values remain in the posts and meta tables until the application removes them. The deleted field no longer reads those values.
+
+If a custom-table schema listener is enabled, deleting a field can generate or apply a column drop. Review the generated migration before applying it.
 
 ## Conditional logic
 
-Conditional logic is a flat list. Aura evaluates every rule and hides the field when the first rule fails, so multiple rules are combined with AND. The evaluator does not implement OR groups even though the component contains methods for editing grouped data.
+A field is visible only when all its conditional rules pass. Aura checks the rules in order and hides the field as soon as one fails. Rules therefore use AND logic. OR groups are not supported, even though the component has methods for editing grouped data.
 
 Use a field slug, one of the supported operators, and a comparison value:
 
@@ -128,17 +136,19 @@ The supported operators are `==`, `!=`, `>`, `>=`, `<`, and `<=`. Set `field` to
 
 An empty resource offers three templates:
 
-- `Plain` adds a text field.
-- `Tabs` adds global tabs and text fields.
-- `TabsWithPanels` adds global tabs, panels, and text fields.
+- Plain adds a text field.
+- Tabs adds global tabs and text fields.
+- TabsWithPanels adds global tabs, panels, and text fields.
 
-When a global tab has no fields, it offers `PanelWithSidebar` and `Plain` as presets. These presets are inserted after that tab. The preset insertion path adds a random suffix to each slug. The empty-resource template path keeps the template slugs unchanged, so review for collisions when using it on a resource that already has definitions.
+An empty global tab offers the PanelWithSidebar and Plain presets. Selecting a preset inserts its fields after the tab and adds a random suffix to each slug.
 
-`PanelWithTabs` exists in `src/Templates/` but the Resource Editor does not currently show it.
+Templates for an empty resource keep their original slugs. Check for duplicate slugs if you use one on a resource that already has field definitions.
+
+A PanelWithTabs template exists in `src/Templates/`, but the resource editor does not currently offer it.
 
 ## Resource properties
 
-The editor displays the resource type and slug as read-only values. The top Save action can write the following properties when the class uses the conventional declarations or `getIcon()` method that `saveProps()` expects:
+The resource type and slug are read-only in the editor. The Save button at the top can update the properties below, provided the class uses the conventional property declarations and `getIcon()` method expected by the editor:
 
 | Property | Effect |
 | --- | --- |
@@ -147,11 +157,11 @@ The editor displays the resource type and slug as read-only values. The top Save
 | `dropdown` | Sets the navigation dropdown value. |
 | `sort` | Sets the integer navigation order. |
 
-The type and slug remain class identity values. Change them in the resource class when the editor's read-only controls are not sufficient, then review every route and registration that depends on the slug.
+To change the resource's type or slug, edit its PHP class directly. Review every route and registration that depends on the slug.
 
 ## Schema listeners
 
-Changing a field definition normally changes only the PHP class. The `custom_tables_for_resources` feature controls optional listeners for the `SaveFields` event emitted by the editor:
+Field changes normally affect only the PHP class. You can also have the editor update a custom table's schema when it saves fields. The `custom_tables_for_resources` feature enables listeners for these changes:
 
 ```php
 // config/aura.php
@@ -160,7 +170,7 @@ Changing a field definition normally changes only the PHP class. The `custom_tab
 ],
 ```
 
-The listener returns without changing a schema when the resource has the base `$customTable = false` setting. Custom-table storage and the `$usesMeta` flag are separate decisions. Read [Custom tables](/docs/custom-tables) before enabling a listener.
+These listeners leave the schema unchanged unless the resource uses a custom table. The default is `$customTable = false`. Choosing a custom table is separate from deciding whether to store field values as meta data through `$usesMeta`. Read [Custom tables](/docs/custom-tables) before enabling a listener.
 
 | Value | Listener behavior |
 | --- | --- |
@@ -170,7 +180,9 @@ The listener returns without changing a schema when the resource has the base `$
 
 The single mode treats the regenerated create migration as the full desired schema. The multiple mode records each field change in a new update migration. Neither mode is a substitute for a reviewed application migration when a change needs data conversion, a production rollout, or a constraint that the field class does not describe.
 
-The Generate Migration action is separate from these listeners. It changes the resource class to set `public static $customTable = true;` and a protected `$table` based on the resource's plural name, then calls `aura:create-resource-migration`. Review the generated file and run the migration yourself. The action does not copy existing posts or meta rows into the custom table.
+The Generate Migration action works separately from these listeners. It enables custom-table storage in the resource class and sets a protected `$table` property based on the resource's plural name. It then runs `aura:create-resource-migration`.
+
+Review the generated file and run the migration yourself. This action does not copy existing posts or meta rows into the custom table.
 
 ### Single-mode parser limits
 
@@ -178,7 +190,7 @@ The Generate Migration action is separate from these listeners. It changes the r
 
 A failed schema sync reports an error and restores the resource definition and previous migration file. If the listener created a new migration, it removes that file. The editor does not report a successful save after that failure.
 
-The editor rewrites a `getFields(): array` method that returns an array literal. If it cannot rewrite the method, it stops before dispatching schema changes. Use code for dynamic field definitions.
+As described in [Prepare the resource](#prepare-the-resource), the editor requires a literal field array. If it cannot rewrite that array, it stops before dispatching schema changes. Maintain dynamic field definitions in PHP.
 
 Review the generated migration and command result. Use an application migration for constraints, conversions, or other changes outside this parser's supported declarations.
 
