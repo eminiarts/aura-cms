@@ -175,7 +175,7 @@ class Table extends Component
 
     public function allTableRows()
     {
-        return $this->query()->pluck('id')->all();
+        return $this->rowsQuery()->pluck('id')->all();
     }
 
     public function boot() {}
@@ -217,7 +217,7 @@ class Table extends Component
 
     public function getAllTableRows()
     {
-        return $this->query()->pluck('id')->all();
+        return $this->rowsQuery()->pluck('id')->all();
     }
 
     public function getParentModel()
@@ -351,7 +351,7 @@ class Table extends Component
     public function openBulkActionModal($action, $data)
     {
         $records = app(TableMutationAuthorizer::class)->authorizeBulk(
-            scope: clone $this->query(),
+            scope: clone $this->rowsQuery(),
             action: $action,
             declared: (array) $this->getBulkActionsProperty(),
             selected: $this->selected,

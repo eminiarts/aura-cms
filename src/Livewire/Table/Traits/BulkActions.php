@@ -18,7 +18,7 @@ trait BulkActions
     public function bulkAction(string $action)
     {
         $records = $this->tableMutationAuthorizer()->authorizeBulk(
-            scope: clone $this->query(),
+            scope: clone $this->rowsQuery(),
             action: $action,
             declared: (array) $this->getBulkActionsProperty(),
             selected: $this->selected,
@@ -46,7 +46,7 @@ trait BulkActions
     public function bulkCollectionAction($action)
     {
         $records = $this->tableMutationAuthorizer()->authorizeBulk(
-            scope: clone $this->query(),
+            scope: clone $this->rowsQuery(),
             action: $action,
             declared: (array) $this->getBulkActionsProperty(),
             selected: $this->selected,

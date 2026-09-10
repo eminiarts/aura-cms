@@ -5,8 +5,11 @@ namespace Tests\Feature\Fields;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Datetime;
 use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Livewire\Livewire;
+
+use function Pest\Livewire\livewire;
 
 class DatetimeFieldModel extends Resource
 {
@@ -69,7 +72,7 @@ describe('Datetime Field Configuration', function () {
         $options = (new Datetime)->filterOptions();
 
         expect($options)->toHaveKeys([
-            'is', 'is_not', 'before', 'after', 'on_or_before', 'on_or_after', 'is_empty', 'is_not_empty',
+            'date_is', 'date_is_not', 'date_before', 'date_after', 'date_on_or_before', 'date_on_or_after', 'date_is_empty', 'date_is_not_empty',
         ]);
     });
 });
@@ -123,5 +126,38 @@ describe('Datetime Field in Livewire', function () {
             ->assertHasNoErrors(['form.fields.datetime']);
 
         expect(DatetimeFieldModel::first()->fields['datetime'])->toBeNull();
+    });
+
+    test('uses date-prefixed UI operators and supports saved datetime range operators', function () {
+        $early = DatetimeFieldModel::create([
+            'fields' => ['datetime' => '2026-03-01 08:00:00'],
+            'title' => 'Early',
+        ]);
+        $middle = DatetimeFieldModel::create([
+            'fields' => ['datetime' => '2026-03-02 08:00:00'],
+            'title' => 'Middle',
+        ]);
+        $late = DatetimeFieldModel::create([
+            'fields' => ['datetime' => '2026-03-03 08:00:00'],
+            'title' => 'Late',
+        ]);
+
+        $component = livewire(Table::class, ['query' => null, 'model' => $early])
+            ->call('addFilterGroup')
+            ->set('filters.custom.0.filters.0.name', 'datetime');
+
+        foreach ([
+            ['date_before', '2026-03-02', [$early->id]],
+            ['before', '2026-03-02', [$early->id]],
+            ['after', '2026-03-02', [$late->id]],
+            ['on_or_before', '2026-03-02', [$early->id, $middle->id]],
+            ['on_or_after', '2026-03-02', [$middle->id, $late->id]],
+        ] as [$operator, $value, $expectedIds]) {
+            $component
+                ->set('filters.custom.0.filters.0.operator', $operator)
+                ->set('filters.custom.0.filters.0.value', $value)
+                ->assertViewHas('rows', fn ($rows) => $rows->total() === count($expectedIds)
+                    && $rows->getCollection()->pluck('id')->sort()->values()->all() === collect($expectedIds)->sort()->values()->all());
+        }
     });
 });
