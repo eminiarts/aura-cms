@@ -132,7 +132,8 @@ describe('Two-Factor Authentication Routes', function () {
     test('2FA routes are registered when feature is enabled', function () {
         config(['aura.auth.2fa' => true]);
 
-        expect(Route::has('aura.two-factor.login'))->toBeTrue()
+        expect(Route::has('two-factor.login'))->toBeTrue()
+            ->and(Route::has('two-factor.login.store'))->toBeTrue()
             ->and(Route::has('aura.two-factor.enable'))->toBeTrue()
             ->and(Route::has('aura.two-factor.confirm'))->toBeTrue()
             ->and(Route::has('aura.two-factor.disable'))->toBeTrue()
@@ -141,9 +142,9 @@ describe('Two-Factor Authentication Routes', function () {
             ->and(Route::has('aura.two-factor.recovery-codes'))->toBeTrue();
     });
 
-    test('2FA login redirects unauthenticated guests', function () {
-        $this->get(route('aura.two-factor.login'))
-            ->assertRedirect();
+    test('2FA challenge redirects guests without a pending login', function () {
+        $this->get(route('two-factor.login'))
+            ->assertRedirect(route('login'));
     });
 });
 

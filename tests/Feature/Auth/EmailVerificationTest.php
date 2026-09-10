@@ -5,9 +5,21 @@ namespace Tests\Feature\Auth;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
+
+test('verification notifications generate a signed Aura verification URL', function () {
+    $user = User::factory()->unverified()->create();
+    $message = (new VerifyEmail)->toMail($user);
+
+    expect($message->actionUrl)->toStartWith(route('aura.verification.verify', [
+        'id' => $user->getKey(),
+        'hash' => sha1($user->getEmailForVerification()),
+    ]))
+        ->and(URL::hasValidSignature(Request::create($message->actionUrl)))->toBeTrue();
+});
 
 describe('Email Verification Notice', function () {
     test('verification notice screen renders for unverified user', function () {

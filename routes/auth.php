@@ -33,6 +33,22 @@ Route::middleware('guest')->group(function () {
 
     Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
 
+    $twoFactorLimiter = config('fortify.limiters.two-factor') ?: 'two-factor';
+
+    // Keep the challenge available for users enrolled before Aura's 2FA
+    // management routes were disabled, so a configuration change cannot bypass
+    // their second factor.
+    Route::get(RoutePath::for('two-factor.login', '/two-factor-challenge'), [TwoFactorAuthenticatedSessionController::class, 'create'])
+        ->middleware(['guest:'.config('fortify.guard')])
+        ->name('two-factor.login');
+
+    Route::post(RoutePath::for('two-factor.login', '/two-factor-challenge'), [TwoFactorAuthenticatedSessionController::class, 'store'])
+        ->middleware(array_filter([
+            'guest:'.config('fortify.guard'),
+            $twoFactorLimiter ? 'throttle:'.$twoFactorLimiter : null,
+        ]))
+        ->name('two-factor.login.store');
+
     Route::name('aura.')->group(function () {
         Route::get('/login-as/{id}', function ($id) {
             // Keep this condition in sync with the "Local / Admin" button guard in
@@ -71,7 +87,6 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->name('aura.')->group(function () {
     $limiter = config('fortify.limiters.login');
-    $twoFactorLimiter = config('fortify.limiters.two-factor');
     $verificationLimiter = config('fortify.limiters.verification', '6,1');
 
     Route::get('email/verify', [EmailVerificationPromptController::class, '__invoke'])->name('verification.notice');
@@ -97,17 +112,7 @@ Route::middleware('auth')->name('aura.')->group(function () {
     }
 
     if (config('aura.auth.2fa')) {
-        $twoFactorMiddleware = ['auth:web', 'password.confirm'];
-
-        Route::get(RoutePath::for('two-factor.login', '/two-factor-challenge'), [TwoFactorAuthenticatedSessionController::class, 'create'])
-            ->middleware(['guest:'.config('fortify.guard')])
-            ->name('two-factor.login');
-
-        Route::post(RoutePath::for('two-factor.login', '/two-factor-challenge'), [TwoFactorAuthenticatedSessionController::class, 'store'])
-            ->middleware(array_filter([
-                'guest:'.config('fortify.guard'),
-                $twoFactorLimiter ? 'throttle:'.$twoFactorLimiter : null,
-            ]));
+        $twoFactorMiddleware = ['auth:web', 'password.confirm:aura.password.confirm'];
 
         Route::post(RoutePath::for('two-factor.enable', '/user/two-factor-authentication'), [TwoFactorAuthenticationController::class, 'store'])
             ->middleware($twoFactorMiddleware)
