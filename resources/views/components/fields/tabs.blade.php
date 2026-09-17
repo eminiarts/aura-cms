@@ -76,6 +76,9 @@
                     class="inline-flex px-4 pb-2.5 {{ $tabHasErrors ? '!text-red-500 border-red-500' : '' }}"
                     role="tab"
                 >
+                    @if(isset($tab['icon']) && View::exists('aura::components.icon.'.$tab['icon']))
+                        <x-aura::icon :icon="$tab['icon']" size="xs" class="mr-2" />
+                    @endif
                     <span class="tab">{{ __($tab['name']) }}</span>
                     @if($tabHasErrors)
                         <x-aura::icon icon="exclamation" size="sm" class="ml-2" />
@@ -95,6 +98,9 @@
                 role="tabpanel"
                 class="py-4 w-full"
             >
+                @if(filled($field['description'] ?? null))
+                    <p class="px-2 pb-4 text-sm text-gray-500 dark:text-gray-400">{{ __($field['description']) }}</p>
+                @endif
                 <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" />
             </section>
         </x-aura::fields.conditions>

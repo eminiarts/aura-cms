@@ -51,6 +51,46 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | AI Connector
+    |--------------------------------------------------------------------------
+    |
+    | Database settings entered by an administrator override these deployment
+    | defaults. API keys saved through Aura are encrypted with APP_KEY.
+    |
+    */
+
+    'ai' => [
+        'provider' => 'openai',
+        'endpoint' => null,
+        'model' => null,
+        'api_key' => null,
+        'timeout' => 30,
+        'providers' => [
+            'openai' => [
+                'endpoint' => 'https://api.openai.com/v1',
+                'model' => 'gpt-6-astra',
+            ],
+            'anthropic' => [
+                'endpoint' => 'https://api.anthropic.com/v1',
+                'model' => 'claude-sonnet-5',
+            ],
+            'gemini' => [
+                'endpoint' => 'https://generativelanguage.googleapis.com/v1beta',
+                'model' => 'gemini-3.8-flash',
+            ],
+            'glm' => [
+                'endpoint' => 'https://open.bigmodel.cn/api/paas/v4',
+                'model' => 'glm-5.3',
+            ],
+            'custom' => [
+                'endpoint' => null,
+                'model' => null,
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Components
     |--------------------------------------------------------------------------
     |

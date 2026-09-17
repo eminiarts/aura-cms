@@ -203,15 +203,16 @@ The provider registers the resource with Aura. Each field definition names its f
 
 When a resource redeclares an inherited static property, keep the type declared by `Aura\Base\Resource`. For example, `$group` and `$name` are nullable strings. Some inherited properties are intentionally untyped. Adding a conflicting type causes a PHP fatal error.
 
-## Register resources, fields, and widgets
+## Register resources, fields, widgets, and settings
 
-The Aura facade exposes three registration methods:
+The Aura facade exposes registration methods for common plugin extension points:
 
 | Method | Use |
 | --- | --- |
 | `Aura::registerResources([...])` | Add resource classes to Aura's resource registry. Registered resources receive navigation and admin routes when their class is valid. |
 | `Aura::registerFields([...])` | Add field classes to the Resource Editor's field list and option groups. |
 | `Aura::registerWidgets([...])` | Add widget classes to Aura's widget registry. A resource still needs a definition in `getWidgets()` for the index renderer to mount it. |
+| `Aura::registerSettingsPages($source, [...])` | Add ordered plugin tabs to `/admin/settings`. |
 
 ~~~php
 use Aura\Base\Facades\Aura;
@@ -222,6 +223,63 @@ Aura::registerWidgets([\Acme\Blog\Widgets\ReadingTime::class]);
 ~~~
 
 Registering a widget does not add it to the global dashboard. To display it above a resource's index table, include its definition in that resource's `getWidgets()` method. See [Widgets](/docs/widgets).
+
+### Register a settings page
+
+Plugins can add a settings tab without defining a resource, route, or storage model. Register immutable page definitions from the plugin service provider:
+
+~~~php
+use Aura\Base\Facades\Aura;
+use Aura\Base\Settings\SettingsPage;
+
+public function packageBooted(): void
+{
+    Aura::registerSettingsPages('acme/seo', [
+        new SettingsPage(
+            slug: 'seo',
+            title: 'SEO',
+            icon: 'search',
+            order: 25,
+            fields: [[
+                'name' => 'Title pattern',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'seo-title-pattern',
+                'validation' => 'required|string|max:255',
+            ]],
+            defaults: [
+                'seo-title-pattern' => '[Post Title] [Separator] [Site Name]',
+            ],
+        ),
+    ]);
+}
+~~~
+
+Use the plugin's lowercase Composer package name as the source. Page slugs use kebab-case, and field slugs must be unique across every registered settings page. Registration fails immediately on a page or field collision.
+
+Read a value through Aura so current-team context and encrypted secrets are handled consistently:
+
+~~~php
+$pattern = Aura::setting(
+    'seo-title-pattern',
+    '[Post Title] [Separator] [Site Name]',
+);
+~~~
+
+Declare write-only fields in `secretFields`. Aura encrypts new values with Laravel's encrypter, does not send stored secrets back to Livewire, and preserves the current secret when the form submits an empty value. Use `secretContexts` when a credential belongs to another field's selected value, such as a provider:
+
+~~~php
+new SettingsPage(
+    slug: 'integration',
+    title: 'Integration',
+    fields: [
+        // provider and API-key fields
+    ],
+    secretFields: ['integration-api-key'],
+    secretContexts: [
+        'integration-api-key' => 'integration-provider',
+    ],
+);
+~~~
 
 ## Resource plugins
 
