@@ -2,6 +2,8 @@
 
 namespace Aura\Base;
 
+use Aura\Base\Ai\AiConfigurationRepository;
+use Aura\Base\Ai\AiManager;
 use Aura\Base\Commands\AuraLayoutCommand;
 use Aura\Base\Commands\CreateAuraPlugin;
 use Aura\Base\Commands\CreateResourceFactory;
@@ -20,6 +22,7 @@ use Aura\Base\Commands\PublishCommand;
 use Aura\Base\Commands\TransferFromPostsToCustomTable;
 use Aura\Base\Commands\TransformTableToResource;
 use Aura\Base\Commands\UpdateSchemaFromMigration;
+use Aura\Base\Contracts\AiConnector;
 use Aura\Base\Database\Seeders\RoleCatalogSeeder;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
@@ -63,6 +66,9 @@ use Aura\Base\Reporting\AggregateEngine;
 use Aura\Base\Reporting\ResourceAggregateEngine;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Settings\CoreSettingsPages;
+use Aura\Base\Settings\SettingsRegistry;
+use Aura\Base\Settings\SettingsStore;
 use Aura\Base\Widgets\Bar;
 use Aura\Base\Widgets\Donut;
 use Aura\Base\Widgets\Pie;
@@ -549,6 +555,13 @@ class AuraServiceProvider extends PackageServiceProvider
         $this->app->singleton(RecordLayoutRegistry::class);
         $this->app->singleton(RecordLayoutResolver::class);
         $this->app->singleton(MediaAuthorization::class);
+        $this->app->singleton(SettingsRegistry::class);
+        $this->app->singleton(SettingsStore::class);
+        $this->app->singleton(AiConfigurationRepository::class);
+        $this->app->singleton(AiManager::class);
+        $this->app->alias(AiManager::class, AiConnector::class);
+
+        app(SettingsRegistry::class)->register('eminiarts/aura-cms', CoreSettingsPages::all());
 
         $this->app->scoped('aura', function (): Aura {
             return app(Aura::class);
