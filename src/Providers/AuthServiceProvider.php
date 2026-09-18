@@ -2,13 +2,17 @@
 
 namespace Aura\Base\Providers;
 
+use Aura\Base\Http\Responses\TwoFactorLoginResponse;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider as TwoFactorAuthenticationProviderContract;
+use Laravel\Fortify\Contracts\TwoFactorLoginResponse as TwoFactorLoginResponseContract;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 use Laravel\Fortify\TwoFactorAuthenticationProvider;
@@ -21,6 +25,8 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->app->singleton(TwoFactorLoginResponseContract::class, TwoFactorLoginResponse::class);
+
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->email;
 
@@ -46,6 +52,17 @@ class AuthServiceProvider extends ServiceProvider
             return route('aura.password.reset', $token);
         });
 
+        VerifyEmail::createUrlUsing(static function ($notifiable): string {
+            return URL::temporarySignedRoute(
+                'aura.verification.verify',
+                now()->addMinutes(config('auth.verification.expire', 60)),
+                [
+                    'id' => $notifiable->getKey(),
+                    'hash' => sha1($notifiable->getEmailForVerification()),
+                ]
+            );
+        });
+
         // Set Configuration of fortify.features to [registration, email-verification and two-factor-authentication]
         app('config')->set('fortify.features', [
             // Features::registration(),
@@ -58,8 +75,7 @@ class AuthServiceProvider extends ServiceProvider
             // Features::confirmsTwoFactorAuthentication(),
         ]);
 
-        // Set Configuration of fortify.redirects.login to /admin/dashboard
-        app('config')->set('fortify.redirects.login', '/admin/dashboard');
+        app('config')->set('fortify.redirects.login', config('aura.auth.redirect'));
         // app('config')->set('fortify.views', false);
     }
 

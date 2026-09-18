@@ -19,7 +19,7 @@ class CreateFieldsTestModel extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -61,7 +61,7 @@ class CreateFieldsAllVisibleModel extends Resource
 
     public static string $type = 'AllVisible';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -90,7 +90,7 @@ class CreateFieldsNestedPanelModel extends Resource
 
     public static string $type = 'NestedPanel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

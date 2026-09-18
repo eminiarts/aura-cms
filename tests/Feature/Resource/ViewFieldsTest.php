@@ -12,7 +12,7 @@ class ViewFieldsTestModel extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -53,7 +53,7 @@ class ViewFieldsTestModel2 extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -95,7 +95,7 @@ class ViewFieldsAllVisibleModel extends Resource
 
     public static string $type = 'ViewAllVisible';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

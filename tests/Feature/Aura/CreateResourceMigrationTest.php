@@ -9,7 +9,12 @@ uses(RefreshDatabase::class);
 afterEach(function () {
     // Clean up any created migration files
     collect(File::glob(database_path('migrations/*_create_users_table.php')))
+        ->merge(File::glob(database_path('migrations/*_create_blog_posts_table.php')))
         ->each(fn ($file) => File::delete($file));
+
+    if (File::exists(app_path('Aura/Resources/BlogPost.php'))) {
+        File::delete(app_path('Aura/Resources/BlogPost.php'));
+    }
 });
 
 it('creates a migration file for a resource', function () {
@@ -83,4 +88,24 @@ it('fails when resource has no getFields method', function () {
     ])
         ->expectsOutput("Method 'getFields' not found in the 'InvalidMigrationResource' class.")
         ->assertExitCode(1);
+});
+
+it('uses the table the resource actually reads from', function () {
+    $this->artisan('aura:resource', ['name' => 'BlogPost', '--custom' => true])
+        ->assertExitCode(0);
+
+    require_once app_path('Aura/Resources/BlogPost.php');
+
+    $this->artisan('aura:create-resource-migration', [
+        'resource' => 'App\\Aura\\Resources\\BlogPost',
+    ])
+        ->expectsOutputToContain("Migration 'create_blog_posts_table' created successfully.")
+        ->assertExitCode(0);
+
+    $migrationFile = collect(File::glob(database_path('migrations/*_create_blog_posts_table.php')))->first();
+
+    expect($migrationFile)->not->toBeNull();
+    expect(File::get($migrationFile))
+        ->toContain("Schema::create('blog_posts'")
+        ->toContain("Schema::dropIfExists('blog_posts');");
 });

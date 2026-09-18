@@ -14,7 +14,7 @@ class SaveRessourceFieldsTestModel extends Resource
 
     public static string $type = 'Model';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

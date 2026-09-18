@@ -178,15 +178,6 @@ class Resource extends Model implements DefinesFields, TableResource
     /**
      * @return HasMany
      */
-    public function attachment()
-    {
-        return $this->hasMany(self::class, 'post_parent')
-            ->where('post_type', 'attachment');
-    }
-
-    /**
-     * @return HasMany
-     */
     public function children()
     {
         return $this->hasMany(get_class($this), 'parent_id');
@@ -201,11 +192,6 @@ class Resource extends Model implements DefinesFields, TableResource
             $this->load('meta'); // This will refresh only the 'meta' relationship
         }
 
-    }
-
-    public function getBulkActions()
-    {
-        return $this->bulkActions;
     }
 
     public function getFieldsAttribute()
@@ -425,15 +411,6 @@ class Resource extends Model implements DefinesFields, TableResource
         }
 
         return $meta[$key] ?? $value;
-    }
-
-    /**
-     * @return HasMany
-     */
-    public function revision()
-    {
-        return $this->hasMany(self::class, 'parent_id')
-            ->where('post_type', 'revision');
     }
 
     public function setRelation($relation, $value)

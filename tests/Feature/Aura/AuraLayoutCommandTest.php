@@ -6,35 +6,25 @@ use Illuminate\Support\Facades\File;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->sourcePath = base_path('vendor/eminiarts/aura/resources/views/components/layout/app.blade.php');
+    $this->sourcePath = dirname(__DIR__, 3).'/resources/views/components/layout/app.blade.php';
     $this->destinationPath = resource_path('views/vendor/aura/components/layout/app.blade.php');
 
-    // Clean up destination
     if (File::exists($this->destinationPath)) {
         File::delete($this->destinationPath);
     }
 });
 
 afterEach(function () {
-    // Clean up test files
     if (File::exists($this->destinationPath)) {
         File::delete($this->destinationPath);
     }
 });
 
-describe('error handling', function () {
-    it('shows error when source file does not exist', function () {
-        // Ensure source doesn't exist
-        if (File::exists($this->sourcePath)) {
-            File::delete($this->sourcePath);
-        }
+it('copies the packaged layout into the application view overrides', function () {
+    $this->artisan('aura:layout')
+        ->expectsOutput('Aura layout file copied successfully.')
+        ->assertExitCode(0);
 
-        $this->artisan('aura:layout')
-            ->expectsOutput('Aura layout file not found. Make sure the Aura package is installed.')
-            ->assertExitCode(1);
-    });
+    expect(File::exists($this->destinationPath))->toBeTrue();
+    expect(File::get($this->destinationPath))->toBe(File::get($this->sourcePath));
 });
-
-// Note: The test for copying layout when source exists is skipped
-// because the vendor/eminiarts path doesn't exist in the test environment.
-// This functionality is tested manually during package development.

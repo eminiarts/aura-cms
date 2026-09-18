@@ -8,74 +8,87 @@ class ModelRecursive extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
                 'name' => 'Tab 1',
+                'slug' => 'tab-1',
                 'global' => true,
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'fields' => [],
             ],
             [
                 'name' => 'Panel 1',
+                'slug' => 'panel-1',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'fields' => [],
             ],
             [
                 'name' => 'Repeater 1',
+                'slug' => 'repeater-1',
                 'type' => 'Aura\\Base\\Fields\\Repeater',
                 'fields' => [],
             ],
             [
                 'name' => 'Repeater 2',
+                'slug' => 'repeater-2',
                 'type' => 'Aura\\Base\\Fields\\Repeater',
                 'fields' => [],
                 'exclude_level' => 1,
             ],
             [
                 'name' => 'Repeater 3',
+                'slug' => 'repeater-3',
                 'type' => 'Aura\\Base\\Fields\\Repeater',
                 'fields' => [],
                 'exclude_level' => 1,
             ],
             [
                 'name' => 'Field in Repeater 3',
+                'slug' => 'field-in-repeater-3',
                 'type' => 'Aura\\Base\\Fields\\Text',
             ],
             [
                 'name' => 'Field2 in Repeater 3',
+                'slug' => 'field2-in-repeater-3',
                 'type' => 'Aura\\Base\\Fields\\Text',
             ],
             [
                 'name' => 'Panel 2',
+                'slug' => 'panel-2',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'fields' => [],
                 'exclude_level' => 2,
             ],
             [
                 'name' => 'Repeater 4',
+                'slug' => 'repeater-4',
                 'type' => 'Aura\\Base\\Fields\\Repeater',
                 'fields' => [],
             ],
             [
                 'name' => 'Tab 2',
+                'slug' => 'tab-2',
                 'global' => true,
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'fields' => [],
             ],
             [
                 'name' => 'Field in Tab 2',
+                'slug' => 'field-in-tab-2',
                 'type' => 'Aura\\Base\\Fields\\Text',
             ],
             [
                 'name' => 'Tab 3',
+                'slug' => 'tab-3',
                 'global' => true,
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'fields' => [],
             ],
             [
                 'name' => 'Field in Tab 3',
+                'slug' => 'field-in-tab-3',
                 'type' => 'Aura\\Base\\Fields\\Text',
             ],
         ];

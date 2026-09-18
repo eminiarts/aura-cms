@@ -130,7 +130,7 @@ class Post extends Resource
         return $this->bulkActions;
     }
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

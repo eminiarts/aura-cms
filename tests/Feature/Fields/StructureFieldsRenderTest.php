@@ -28,7 +28,7 @@ class FlatRepeaterModel extends Resource
 
     public static string $type = 'FlatRepeater';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -67,7 +67,7 @@ class NestedRepeaterModel extends Resource
 
     public static string $type = 'NestedRepeater';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -92,7 +92,7 @@ class FlatGroupModel extends Resource
 
     public static string $type = 'FlatGroup';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -123,7 +123,7 @@ class NestedGroupModel extends Resource
 
     public static string $type = 'NestedGroup';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -244,7 +244,7 @@ class FlatPanelTabModel extends Resource
 
     public static string $type = 'FlatPanelTab';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Main', 'slug' => 'tab_main', 'type' => 'Aura\\Base\\Fields\\Tab', 'global' => true],
@@ -260,7 +260,7 @@ class NestedPanelModel extends Resource
 
     public static string $type = 'NestedPanel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

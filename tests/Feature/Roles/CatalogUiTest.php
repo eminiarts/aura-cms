@@ -10,6 +10,7 @@ use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -320,7 +321,7 @@ describe('role pickers offer the merged, shadow-resolved set', function () {
         $globalEditor = catalogGlobalRole('editor', ['name' => 'Global Editor']);
         $shadow = catalogTeamRole($teamId, 'editor', ['name' => 'Team Editor']);
 
-        $request = (object) [
+        $request = new Request([
             'model' => Role::class,
             'search' => '',
             'fullField' => [
@@ -331,7 +332,7 @@ describe('role pickers offer the merged, shadow-resolved set', function () {
                 'multiple' => false,
                 'polymorphic_relation' => true,
             ],
-        ];
+        ]);
 
         $ids = collect((new RolesField)->api($request))->pluck('id');
 

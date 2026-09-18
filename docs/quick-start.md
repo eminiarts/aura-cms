@@ -1,886 +1,307 @@
-# Quick Start Guide: Build a Blog in 15 Minutes
+# Quick start
 
+In this guide, you will build a resource for managing movies, create your first record in the admin panel, and learn how Aura stores the data.
 
-Welcome to Aura CMS! This guide will walk you through building a complete blog application with categories, tags, authors, and media management. By the end of this tutorial, you'll understand the core concepts and be ready to build your own applications.
+## Before you start
 
-## Table of Contents
+Start with a working Aura installation and sign in as the administrator created during setup. Follow [Installation](/docs/installation) if the admin panel is not ready yet.
 
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Creating the Blog Structure](#creating-the-blog-structure)
-- [Defining Fields and Relationships](#defining-fields-and-relationships)
-- [Customizing the Admin Interface](#customizing-the-admin-interface)
-- [Working with Content](#working-with-content)
-- [Advanced Features](#advanced-features)
-- [Next Steps](#next-steps)
+This guide uses the current development version. The [local-checkout installation](/docs/installation#local-checkout) matches the resource and generator behavior shown here. The public beta predates some of these changes.
 
-## What We're Building
+The examples use the default `/admin` path with teams enabled. See [Installation](/docs/installation#without-teams) for the public beta's teams-off setup.
 
-We'll create a modern blog with:
-- 📝 Blog posts with rich text editing
-- 📁 Categories for organization
-- 🏷️ Tags for flexible taxonomy
-- 👤 Author profiles
-- 🖼️ Featured images and media gallery
-- 🔍 Full-text search
-- 📊 Analytics widgets
+## Generate a resource
 
-## Prerequisites
-
-Before starting, ensure you have:
-- PHP 8.4+ with required extensions
-- Laravel 12 or 13 with Livewire 4
-- Composer installed
-- MySQL or PostgreSQL database
-- Basic Laravel knowledge
-
-## Installation
-
-### Step 1: Create a New Laravel Project
+Run the resource generator from the root of the Laravel application:
 
 ```bash
-# Create new Laravel application
-laravel new my-blog
-cd my-blog
-
-# Configure your database in .env
-DB_CONNECTION=mysql
-DB_DATABASE=my_blog
-DB_USERNAME=root
-DB_PASSWORD=
+php artisan aura:resource Movie
 ```
 
-### Step 2: Install Aura CMS
+The command creates `app/Aura/Resources/Movie.php`, a class that extends Aura's base resource. It includes the resource type and URL slug, along with methods for defining fields, widgets, and an icon. The namespace follows the `aura-settings.paths.resources` setting.
 
-```bash
-# Install Aura CMS
-composer require eminiarts/aura-cms
-
-# Publish, configure, and initialize Aura interactively
-php artisan aura:install
-```
-
-The installer guides you through the main options:
-
-1. **Teams**: Choose whether to enable multi-tenancy.
-2. **Features**: Enable or disable global search, bookmarks, notifications, and other optional features.
-3. **Registration and theme**: Choose the public registration and visual defaults.
-
-It also connects the application user model, migrates the database, publishes assets, and creates the first administrator as a Global Admin by default.
-
-### Step 3: Start the Development Server
-
-```bash
-php artisan serve
-```
-
-Visit `http://localhost:8000/admin` and log in with your admin credentials.
-
-
-## Creating the Blog Structure
-
-### Step 1: Create the Category Resource
-
-Categories will organize our blog posts. Let's create them first:
-
-```bash
-php artisan aura:resource Category
-```
-
-This creates `app/Aura/Resources/Category.php`. Let's customize it:
+Keep the generated `getWidgets()` and `getIcon()` methods. Replace the empty `getFields()` method with the following definition:
 
 ```php
-<?php
-
-namespace App\Aura\Resources;
-
-use Aura\Base\Resource;
-
-class Category extends Resource
-{
-    public static string $type = 'Category';
-
-    public static ?string $slug = 'categories';
-
-    protected static ?string $group = 'Blog';
-
-    public function getIcon()
-    {
-        return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>';
-    }
-
-    public static function getFields()
-    {
-        return [
-            [
-                'name' => 'Name',
-                'slug' => 'name',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'validation' => 'required|max:255',
-                'on_index' => true,
-                'on_forms' => true,
-                'on_view' => true,
-                'searchable' => true,
-            ],
-            [
-                'name' => 'Slug',
-                'slug' => 'slug',
-                'type' => 'Aura\\Base\\Fields\\Slug',
-                'validation' => 'required',
-                'on_forms' => true,
-                'on_view' => true,
-                'from' => 'name',
-            ],
-            [
-                'name' => 'Description',
-                'slug' => 'description',
-                'type' => 'Aura\\Base\\Fields\\Textarea',
-                'validation' => 'nullable',
-                'on_forms' => true,
-                'on_view' => true,
-            ],
-            [
-                'name' => 'Color',
-                'slug' => 'color',
-                'type' => 'Aura\\Base\\Fields\\Color',
-                'validation' => 'nullable',
-                'on_index' => true,
-                'on_forms' => true,
-                'default' => '#3B82F6',
-            ],
-        ];
-    }
-}
-```
-
-### Step 2: Create the Tag Resource
-
-Tags provide flexible content categorization:
-
-```bash
-php artisan aura:resource Tag
-```
-
-Customize `app/Aura/Resources/Tag.php`:
-
-```php
-<?php
-
-namespace App\Aura\Resources;
-
-use Aura\Base\Resource;
-
-class Tag extends Resource
-{
-    public static string $type = 'Tag';
-
-    public static ?string $slug = 'tags';
-
-    protected static ?string $group = 'Blog';
-
-    public function getIcon()
-    {
-        return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" /></svg>';
-    }
-
-    public static function getFields()
-    {
-        return [
-            [
-                'name' => 'Name',
-                'slug' => 'name',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'validation' => 'required|max:255',
-                'on_index' => true,
-                'on_forms' => true,
-                'on_view' => true,
-                'searchable' => true,
-            ],
-            [
-                'name' => 'Slug',
-                'slug' => 'slug',
-                'type' => 'Aura\\Base\\Fields\\Slug',
-                'validation' => 'required',
-                'on_forms' => true,
-                'on_view' => true,
-                'from' => 'name',
-            ],
-        ];
-    }
-}
-```
-
-### Step 3: Create the Article Resource
-
-Now for the main blog post resource:
-
-```bash
-php artisan aura:resource Article
-```
-
-This is where Aura CMS shines. Customize `app/Aura/Resources/Article.php`:
-
-```php
-<?php
-
-namespace App\Aura\Resources;
-
-use Aura\Base\Resource;
-
-class Article extends Resource
-{
-    public static string $type = 'Article';
-
-    public static ?string $slug = 'articles';
-
-    public static $globalSearch = true;
-
-    protected static ?string $group = 'Blog';
-
-    public function getIcon()
-    {
-        return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>';
-    }
-    
-    public static function getFields()
-    {
-        return [
-            // Main Content Tab
-            [
-                'name' => 'Content',
-                'slug' => 'content-tab',
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'fields' => [
-                    [
-                        'name' => 'ID',
-                        'slug' => 'id',
-                        'type' => 'Aura\\Base\\Fields\\ID',
-                        'on_index' => true,
-                    ],
-                    [
-                        'name' => 'Title',
-                        'slug' => 'title',
-                        'type' => 'Aura\\Base\\Fields\\Text',
-                        'validation' => 'required|max:255',
-                        'on_index' => true,
-                        'on_forms' => true,
-                        'on_view' => true,
-                        'searchable' => true,
-                        'style' => [
-                            'width' => '66.66',
-                        ],
-                    ],
-                    [
-                        'name' => 'Status',
-                        'slug' => 'status',
-                        'type' => 'Aura\\Base\\Fields\\Status',
-                        'validation' => 'required',
-                        'on_index' => true,
-                        'on_forms' => true,
-                        'options' => [
-                            'draft' => 'Draft',
-                            'published' => 'Published',
-                            'scheduled' => 'Scheduled',
-                            'archived' => 'Archived',
-                        ],
-                        'default' => 'draft',
-                        'style' => [
-                            'width' => '33.33',
-                        ],
-                    ],
-                    [
-                        'name' => 'Slug',
-                        'slug' => 'slug',
-                        'type' => 'Aura\\Base\\Fields\\Slug',
-                        'validation' => 'required|unique:posts,slug',
-                        'on_forms' => true,
-                        'on_view' => true,
-                        'from' => 'title',
-                    ],
-                    [
-                        'name' => 'Excerpt',
-                        'slug' => 'excerpt',
-                        'type' => 'Aura\\Base\\Fields\\Textarea',
-                        'validation' => 'nullable|max:500',
-                        'on_forms' => true,
-                        'on_view' => true,
-                        'rows' => 3,
-                        'helper' => 'A short summary of your article (max 500 characters)',
-                    ],
-                    [
-                        'name' => 'Content',
-                        'slug' => 'content',
-                        'type' => 'Aura\\Base\\Fields\\Wysiwyg',
-                        'validation' => 'required',
-                        'on_forms' => true,
-                        'on_view' => true,
-                        'searchable' => true,
-                    ],
-                ],
-            ],
-            
-            // Media & SEO Tab
-            [
-                'name' => 'Media & SEO',
-                'slug' => 'media-seo-tab',
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'fields' => [
-                    [
-                        'name' => 'Featured Image',
-                        'slug' => 'featured_image',
-                        'type' => 'Aura\\Base\\Fields\\Image',
-                        'validation' => 'nullable',
-                        'on_index' => true,
-                        'on_forms' => true,
-                        'on_view' => true,
-                    ],
-                    [
-                        'name' => 'SEO Title',
-                        'slug' => 'seo_title',
-                        'type' => 'Aura\\Base\\Fields\\Text',
-                        'validation' => 'nullable|max:60',
-                        'on_forms' => true,
-                        'helper' => 'SEO title (max 60 characters)',
-                    ],
-                    [
-                        'name' => 'SEO Description',
-                        'slug' => 'seo_description',
-                        'type' => 'Aura\\Base\\Fields\\Textarea',
-                        'validation' => 'nullable|max:160',
-                        'on_forms' => true,
-                        'rows' => 3,
-                        'helper' => 'SEO meta description (max 160 characters)',
-                    ],
-                ],
-            ],
-            
-            // Organization Tab
-            [
-                'name' => 'Organization',
-                'slug' => 'organization-tab',
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'fields' => [
-                    [
-                        'name' => 'Publishing Details',
-                        'slug' => 'publishing-panel',
-                        'type' => 'Aura\\Base\\Fields\\Panel',
-                        'fields' => [
-                            [
-                                'name' => 'Author',
-                                'slug' => 'author_id',
-                                'type' => 'Aura\\Base\\Fields\\BelongsTo',
-                                'validation' => 'required|exists:users,id',
-                                'on_index' => true,
-                                'on_forms' => true,
-                                'on_view' => true,
-                                'resource' => 'Aura\\Base\\Resources\\User',
-                                'display_field' => 'name',
-                                'default' => 'auth.user.id',
-                                'style' => [
-                                    'width' => '50',
-                                ],
-                            ],
-                            [
-                                'name' => 'Published At',
-                                'slug' => 'published_at',
-                                'type' => 'Aura\\Base\\Fields\\Datetime',
-                                'validation' => 'nullable|date',
-                                'on_index' => true,
-                                'on_forms' => true,
-                                'on_view' => true,
-                                'default' => 'now',
-                                'style' => [
-                                    'width' => '50',
-                                ],
-                            ],
-                        ],
-                    ],
-                    [
-                        'name' => 'Categorization',
-                        'slug' => 'categorization-panel',
-                        'type' => 'Aura\\Base\\Fields\\Panel',
-                        'fields' => [
-                            [
-                                'name' => 'Category',
-                                'slug' => 'category_id',
-                                'type' => 'Aura\\Base\\Fields\\BelongsTo',
-                                'validation' => 'nullable|exists:posts,id',
-                                'on_forms' => true,
-                                'on_view' => true,
-                                'resource' => 'App\\Aura\\Resources\\Category',
-                                'display_field' => 'name',
-                                'conditional_logic' => [
-                                    [
-                                        'field' => 'status',
-                                        'operator' => '!=',
-                                        'value' => 'draft',
-                                    ],
-                                ],
-                            ],
-                            [
-                                'name' => 'Tags',
-                                'slug' => 'tags',
-                                'type' => 'Aura\\Base\\Fields\\Tags',
-                                'validation' => 'nullable',
-                                'on_forms' => true,
-                                'on_view' => true,
-                                'resource' => 'App\\Aura\\Resources\\Tag',
-                                'create_new' => true,
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ];
-    }
-    
-    // Define bulk actions
-    public array $bulkActions = [
-        'publish' => 'Publish Selected',
-        'archive' => 'Archive Selected',
-        'delete' => 'Delete Selected',
-    ];
-}
-```
-
-
-## Working with Content
-
-### Creating Your First Article
-
-1. Navigate to the admin panel
-2. Click on "Articles" in the sidebar
-3. Click "Create Article"
-4. Fill in the fields:
-   - Title: "Welcome to My Blog"
-   - Content: Use the rich text editor
-   - Upload a featured image
-   - Select a category
-   - Add some tags
-5. Click "Save"
-
-### Using the Media Manager
-
-Aura CMS includes a powerful media manager:
-
-1. Click the media icon in the WYSIWYG editor
-2. Upload images by dragging and dropping
-3. Organize media with folders
-4. Use the built-in image editor for quick adjustments
-
-### Advanced Content Features
-
-#### Conditional Logic Example
-
-Notice how the Category field only appears when the status is not "draft"? This is conditional logic in action:
-
-```php
-'conditional_logic' => [
-    [
-        'field' => 'status',
-        'operator' => '!=',
-        'value' => 'draft',
-    ],
-],
-```
-
-#### Custom Validation
-
-Add complex validation rules:
-
-```php
-[
-    'name' => 'Title',
-    'slug' => 'title',
-    'type' => 'Aura\\Base\\Fields\\Text',
-    'validation' => [
-        'required',
-        'max:255',
-        'unique:posts,title',
-        function ($attribute, $value, $fail) {
-            if (str_contains(strtolower($value), 'clickbait')) {
-                $fail('Please avoid clickbait titles.');
-            }
-        },
-    ],
-],
-```
-
-## Customizing the Admin Interface
-
-### Adding Dashboard Widgets
-
-Add analytics to your Article resource:
-
-```php
-public static function getWidgets(): array
+public static function getFields(): array
 {
     return [
         [
-            'name' => 'Total Articles',
-            'slug' => 'total_articles',
-            'type' => 'Aura\\Base\\Widgets\\ValueWidget',
-            'width' => '25',
-            'method' => 'count',
-            'cache' => 300,
-        ],
-        [
-            'name' => 'Published Articles',
-            'slug' => 'published_articles',
-            'type' => 'Aura\\Base\\Widgets\\ValueWidget',
-            'width' => '25',
-            'method' => 'count',
-            'queryScope' => 'published', // Uses a scope on your model
-            'cache' => 300,
-        ],
-        [
-            'name' => 'Articles by Category',
-            'slug' => 'articles_by_category',
-            'type' => 'Aura\\Base\\Widgets\\Pie',
-            'width' => '50',
-            'cache' => 600,
-        ],
-    ];
-}
-```
-
-### Custom Table Columns
-
-Customize how articles appear in the index table:
-
-```php
-public static function indexTableColumns(): array
-{
-    return [
-        'featured_image' => [
-            'label' => '',
-            'sortable' => false,
-            'class' => 'w-16',
-            'view' => function($model) {
-                if ($model->featured_image) {
-                    return '<img src="'.$model->featured_image.'" class="w-12 h-12 rounded object-cover">';
-                }
-                return '';
-            },
-        ],
-        'title' => [
-            'label' => 'Title',
-            'sortable' => true,
+            'name' => 'Title',
+            'slug' => 'title',
+            'type' => 'Aura\\Base\\Fields\\Text',
+            'validation' => 'required|max:255',
             'searchable' => true,
-            'class' => 'font-medium',
         ],
-        'author.name' => [
-            'label' => 'Author',
-            'sortable' => true,
+        [
+            'name' => 'Overview',
+            'slug' => 'overview',
+            'type' => 'Aura\\Base\\Fields\\Textarea',
+            'on_index' => false,
         ],
-        'status' => [
-            'label' => 'Status',
-            'sortable' => true,
-            'view' => 'aura::fields.status-index',
+        [
+            'name' => 'Content',
+            'slug' => 'content',
+            'type' => 'Aura\\Base\\Fields\\Wysiwyg',
+            'on_index' => false,
+            'searchable' => true,
         ],
-        'published_at' => [
-            'label' => 'Published',
-            'sortable' => true,
-            'format' => 'M d, Y',
+        [
+            'name' => 'Release date',
+            'slug' => 'release_date',
+            'type' => 'Aura\\Base\\Fields\\Date',
+            'validation' => 'nullable|date',
+            'format' => 'Y-m-d',
+            'display_format' => 'd.m.Y',
+        ],
+        [
+            'name' => 'Rating',
+            'slug' => 'rating',
+            'type' => 'Aura\\Base\\Fields\\Number',
+            'validation' => 'nullable|numeric|min:0|max:10',
+        ],
+        [
+            'name' => 'Status',
+            'slug' => 'status',
+            'type' => 'Aura\\Base\\Fields\\Select',
+            'options' => [
+                'draft' => 'Draft',
+                'publish' => 'Published',
+            ],
+            'default' => 'draft',
+        ],
+        [
+            'name' => 'Tags',
+            'slug' => 'tags',
+            'type' => 'Aura\\Base\\Fields\\Tags',
+            'resource' => 'Aura\\Base\\Resources\\Tag',
+            'create' => true,
+            'on_index' => false,
         ],
     ];
 }
 ```
 
-## Advanced Features
+Each field is an associative array with a display name, a slug used to identify its value, and a field type. Supply these with the `name`, `slug`, and `type` keys. The type must be the field class's fully qualified name.
 
-### 1. Global Search Integration
+Fields appear in the index table, forms, and record view by default. To hide a field in one of these places, set the corresponding `on_index`, `on_forms`, or `on_view` option to `false`. Fields only participate in global search when you set `searchable` to `true`.
 
-Your articles are automatically searchable with `$globalSearch = true`. Users can press `Cmd+K` (Mac) or `Ctrl+K` (Windows) to search across all content.
+The tags field uses Aura's built-in tag resource. Administrators can select existing tags or enter a new label to create one. Creating tags requires both the `create` option and the user's permission.
 
-### 2. Permissions and Roles
+Aura discovers resource classes in `app/Aura/Resources` automatically, so you do not need to register them in a service provider. The movie resource receives these routes under the configured admin prefix:
 
-Create editor and writer roles:
+| Route name | Default URL |
+| --- | --- |
+| `aura.movie.index` | `/admin/movie` |
+| `aura.movie.create` | `/admin/movie/create` |
+| `aura.movie.edit` | `/admin/movie/{id}/edit` |
+| `aura.movie.view` | `/admin/movie/{id}` |
 
-```bash
-# In your seeder or tinker
-$editorRole = Role::create(['name' => 'editor']);
-$editorRole->givePermissionTo([
-    'view Article',
-    'create Article',
-    'update Article',
-    'delete Article',
-    'publish Article', // Custom permission
-]);
+Open `/admin/movie`, choose **Create**, enter a title, and save the record. The index table shows your movie with the fields you left visible.
 
-$writerRole = Role::create(['name' => 'writer']);
-$writerRole->givePermissionTo([
-    'view Article',
-    'create Article',
-    'update Article',
-]);
-```
+## Group fields with panels
 
-### 3. Querying Resources
-
-Access your resources using Eloquent:
+A panel groups the fields that follow it until the next panel. It controls the layout without storing a value:
 
 ```php
-use App\Models\Post;
-
-// Get all published articles
-$articles = Post::where('type', 'Article')
-    ->where('status', 'published')
-    ->with(['meta'])
-    ->latest('published_at')
-    ->get();
-
-// Get a single article by slug
-$article = Post::where('type', 'Article')
-    ->where('slug', 'my-article')
-    ->firstOrFail();
-
-// Access field values
-echo $article->title;
-echo $article->fields['content'];
-```
-
-> **Note**: Aura stores resources in the `posts` table with a `type` column for single-table inheritance. Custom meta fields are stored in the `meta` table.
-
-### 4. Custom Filters
-
-Add custom filters to the article index:
-
-```php
-public static function filters(): array
+public static function getFields(): array
 {
     return [
-        'status' => [
-            'label' => 'Status',
-            'type' => 'select',
+        [
+            'name' => 'Details',
+            'slug' => 'details',
+            'type' => 'Aura\\Base\\Fields\\Panel',
+            'style' => ['width' => '70'],
+        ],
+        [
+            'name' => 'Title',
+            'slug' => 'title',
+            'type' => 'Aura\\Base\\Fields\\Text',
+        ],
+        [
+            'name' => 'Overview',
+            'slug' => 'overview',
+            'type' => 'Aura\\Base\\Fields\\Textarea',
+        ],
+        [
+            'name' => 'Sidebar',
+            'slug' => 'sidebar',
+            'type' => 'Aura\\Base\\Fields\\Panel',
+            'style' => ['width' => '30'],
+        ],
+        [
+            'name' => 'Status',
+            'slug' => 'status',
+            'type' => 'Aura\\Base\\Fields\\Select',
             'options' => [
-                '' => 'All',
                 'draft' => 'Draft',
-                'published' => 'Published',
-                'archived' => 'Archived',
+                'publish' => 'Published',
             ],
-        ],
-        'category_id' => [
-            'label' => 'Category',
-            'type' => 'select',
-            'options' => \App\Aura\Resources\Category::pluck('name', 'id')->prepend('All Categories', ''),
-        ],
-        'date_range' => [
-            'label' => 'Date Range',
-            'type' => 'date_range',
         ],
     ];
 }
 ```
 
-### 5. Scheduled Publishing
+Tabs, groups, and repeaters use the same array format. See [Fields](/docs/fields) for their options.
 
-Implement scheduled publishing with a simple command:
+## Understand storage
 
-```php
-// app/Console/Commands/PublishScheduledArticles.php
-namespace App\Console\Commands;
-
-use App\Models\Post;
-use Carbon\Carbon;
-
-class PublishScheduledArticles extends Command
-{
-    protected $signature = 'articles:publish-scheduled';
-    
-    public function handle()
-    {
-        Post::where('type', 'Article')
-            ->where('status', 'scheduled')
-            ->where('published_at', '<=', Carbon::now())
-            ->update(['status' => 'published']);
-            
-        $this->info('Scheduled articles published successfully.');
-    }
-}
-
-// In Kernel.php
-$schedule->command('articles:publish-scheduled')->everyMinute();
-```
-
-## Common Customizations
-
-### 1. Adding a Blog Homepage
-
-Create a controller to display your blog:
+The generated resource uses the shared `posts` table and the `meta` table. The resource defaults are equivalent to:
 
 ```php
-// app/Http/Controllers/BlogController.php
-namespace App\Http\Controllers;
-
-use App\Models\Post;
-
-class BlogController extends Controller
-{
-    public function index()
-    {
-        $articles = Post::where('type', 'Article')
-            ->where('status', 'published')
-            ->with(['author', 'category', 'tags'])
-            ->latest('published_at')
-            ->paginate(10);
-            
-        return view('blog.index', compact('articles'));
-    }
-    
-    public function show($slug)
-    {
-        $article = Post::where('type', 'Article')
-            ->where('slug', $slug)
-            ->where('status', 'published')
-            ->with(['author', 'category', 'tags'])
-            ->firstOrFail();
-            
-        return view('blog.show', compact('article'));
-    }
-}
+public static $customTable = false;
+public static bool $usesMeta = true;
 ```
 
-### 2. RSS Feed
-
-Add an RSS feed for your blog:
+With shared storage, Aura saves core fields such as the title, content, status, and slug in columns on the posts table. Other input fields, including this movie's overview, release date, and rating, go into the meta table as key/value rows. You can read both kinds of values as model attributes:
 
 ```php
-// routes/web.php
-Route::get('/feed', function () {
-    $articles = Post::where('type', 'Article')
-        ->where('status', 'published')
-        ->latest('published_at')
-        ->take(20)
-        ->get();
-        
-    return response()->view('feed', compact('articles'))
-        ->header('Content-Type', 'application/rss+xml');
-});
+use App\Aura\Resources\Movie;
+
+$movie = Movie::firstOrFail();
+
+$movie->title;                  // posts.title
+$movie->overview;               // resolved from meta
+$movie->fields;                 // the computed field map
+$movie->tags;                   // a collection resolved through post_relations
 ```
 
-### 3. Comments System
-
-Create a Comment resource and add a relationship field to articles:
+Use normal Eloquent conditions for real table columns and Aura's meta scopes for meta values:
 
 ```php
-// First, create the Comment resource
-// php artisan aura:resource Comment
+$published = Movie::where('status', 'publish')->get();
 
-// Then add a HasMany field to your Article resource
-[
-    'name' => 'Comments',
-    'slug' => 'comments',
-    'type' => 'Aura\\Base\\Fields\\HasMany',
-    'validation' => 'nullable',
-    'on_forms' => true,
-    'on_view' => true,
-    'resource' => 'App\\Aura\\Resources\\Comment',
-],
+$ratedNine = Movie::whereMeta('rating', '9')->get();
+
+$releasedSince = Movie::whereMeta('release_date', '>=', '2026-01-01')->get();
+
+$matching = Movie::whereMeta([
+    'rating' => '9',
+    'release_date' => '2026-01-01',
+])->get();
 ```
 
-## Performance Tips
+Meta values are stored as text. Use a custom table when a field needs a native column type, database indexes, or normal `where()` queries.
 
-### 1. Eager Loading
+Relationship fields store links between records. Tags and polymorphic advanced select fields use Aura's `post_relations` table, rather than a column on the posts table or a meta value. Each relationship field needs a related class in its `resource` option.
 
-Eager load relationships in your queries:
+Advanced select fields use polymorphic relationships by default. To change how they select and relate records, set the `multiple` and `polymorphic_relation` options explicitly. See [Fields](/docs/fields) for supported configurations.
 
-```php
-// In your controller or query
-$articles = Post::where('type', 'Article')
-    ->with(['meta', 'user'])
-    ->get();
+## Use a custom table
 
-// Or define default eager loads in the resource constructor
-public function __construct(array $attributes = [])
-{
-    parent::__construct($attributes);
-    $this->with = array_merge($this->with, ['user']);
-}
-```
-
-### 2. Caching
-
-Use Aura's built-in caching:
-
-```php
-// Cache the article count for 5 minutes
-cache()->remember('articles.count', 300, function () {
-    return Post::where('type', 'Article')->count();
-});
-```
-
-### 3. Indexing
-
-Add database indexes for better performance:
-
-```php
-// In a migration
-Schema::table('posts', function (Blueprint $table) {
-    $table->index(['type', 'status', 'published_at']);
-    $table->index('slug');
-});
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Fields not showing**: Check `on_forms`, `on_index`, `on_view` settings
-2. **Validation errors**: Check your field `validation` rules
-3. **Missing relationships**: Ensure related resources exist and use fully qualified class names
-4. **Permissions issues**: Check role permissions in database
-
-### Debug Commands
+Use the generator's `--custom` flag when the resource should have its own table:
 
 ```bash
-# Clear Laravel caches
-php artisan cache:clear
-php artisan config:clear
-php artisan view:clear
-
-# Generate resource permissions
-php artisan aura:create-resource-permissions
-
-# Create a new resource
-php artisan aura:resource MyResource
-
-# Create a custom field
-php artisan aura:field MyCustomField
+php artisan aura:resource Product --custom
 ```
 
-## Next Steps
+The generated resource uses its own table and disables meta storage:
 
-Congratulations! You've built a fully functional blog with Aura CMS. Here's what to explore next:
+```php
+public static $customTable = true;
+public static bool $usesMeta = false;
+protected $table = 'products';
+```
 
-### 1. Advanced Resources
-- 📖 **[Creating Resources](creating-resources.md)** - Deep dive into resource configuration
-- 🎨 **[Fields Reference](fields.md)** - Explore all 40+ field types
-- 🔧 **[Custom Fields](creating-fields.md)** - Build your own field types
+In the product resource, replace the empty `getFields()` method with fields for a name and rating:
 
-### 2. Customization
-- 🎨 **[Themes](themes.md)** - Customize the look and feel
-- 🧩 **[Plugins](plugins.md)** - Extend functionality
-- 📊 **[Widgets](widgets.md)** - Create custom dashboard widgets
+```php
+public static function getFields(): array
+{
+    return [
+        [
+            'name' => 'Name',
+            'slug' => 'name',
+            'type' => 'Aura\\Base\\Fields\\Text',
+            'validation' => 'required|max:255',
+        ],
+        [
+            'name' => 'Rating',
+            'slug' => 'rating',
+            'type' => 'Aura\\Base\\Fields\\Number',
+            'validation' => 'nullable|numeric|min:0|max:10',
+        ],
+    ];
+}
+```
 
-### 3. Advanced Features
-- 👥 **[Teams & Multi-tenancy](teams.md)** - Build SaaS applications
-- 🔒 **[Roles & Permissions](roles-permissions.md)** - Fine-grained access control
+Generate a migration from the resource and run it:
 
-### 4. Production
-- 🚀 **[Deployment Guide](installation.md#deployment)** - Deploy to production
-- ⚡ **[Performance](configuration.md#performance)** - Optimization tips
-- 🔒 **[Security](configuration.md#security)** - Best practices
+```bash
+php artisan aura:create-resource-migration 'App\Aura\Resources\Product'
+php artisan migrate
+```
 
-## Community Resources
+The migration generator uses your field definitions, the resource's loaded table name, and the current teams setting. Alongside the field columns, it adds an ID, a user ID, timestamps, and a team ID when teams are enabled. Review the generated migration before running it.
 
-- **GitHub**: [github.com/eminiarts/aura-cms](https://github.com/eminiarts/aura-cms)
-- **Discord**: Join our community for support
-- **YouTube**: Video tutorials and tips
-- **Blog**: Latest updates and case studies
+Because meta storage is disabled, each ordinary input field needs a matching column in the custom table. Adding fields later requires another migration. Keep relationship fields on shared storage unless you implement their custom persistence yourself.
 
----
+Custom-table fields use ordinary Eloquent queries:
 
-**Happy building with Aura CMS!** 🚀
+```php
+use App\Aura\Resources\Product;
 
-Remember, this is just the beginning. Aura CMS is incredibly flexible and can be adapted to build any type of content-driven application. Experiment, explore, and enjoy the journey!
+$products = Product::where('rating', '>=', 8)->get();
+```
+
+Do not use `--custom-table`. The generator flag is `--custom`, and the custom stub already sets `$usesMeta = false`.
+
+## Customize the index table and navigation
+
+Override the table defaults on the resource:
+
+```php
+public function defaultPerPage()
+{
+    return 25;
+}
+
+public function defaultTableSort()
+{
+    return 'created_at';
+}
+
+public function defaultTableSortDirection()
+{
+    return 'desc';
+}
+
+public function defaultTableView()
+{
+    return 'list';
+}
+```
+
+The default sort must use a real column such as `id` or `created_at`, because Aura qualifies it with the resource table name. You cannot use a meta field as the default sort column. Grid and Kanban views also require their own resource methods. See [Table](/docs/table) for details.
+
+Set the navigation group and label with static resource properties:
+
+```php
+protected static ?string $group = 'Content';
+protected static ?int $sort = 10;
+protected static bool $showInNavigation = true;
+public static $pluralName = 'Movies';
+public static $globalSearch = true;
+```
+
+Aura derives the plural label from the resource type unless you supply one. Resources are included in global search by default, with results drawn from the fields you marked as searchable.
+
+## Grant permissions
+
+Global Admins and users with a Super Admin role can access all resources. Other roles need permission for each resource. After adding a resource, generate any missing permissions, especially for teams that already existed:
+
+```bash
+php artisan aura:create-resource-permissions
+```
+
+The command uses the current authenticated user's team by default. Pass `--team=123` to target a specific team. The generated permissions cover listing, viewing, creating, updating, deleting, and scoping records. Their names combine the action and resource, such as `create-movie`. Assign them through [Roles and permissions](/docs/roles-permissions).
+
+Aura provides the admin routes and resource UI. It does not generate a public REST API. Add Laravel routes and controllers in the host application when a public API is needed.
+
+## Continue
+
+- [Installation](/docs/installation) for beta and development-checkout setup, scripted installs, and setup without teams
+- [Resources](/docs/resources) for resource properties and lifecycle methods
+- [Fields](/docs/fields) for all field types and relationship options
+- [Custom tables](/docs/custom-tables) for dedicated schemas and migrations
+- [Roles and permissions](/docs/roles-permissions) for team access control

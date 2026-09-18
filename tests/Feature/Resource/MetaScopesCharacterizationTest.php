@@ -15,7 +15,7 @@ class MetaScopeModel extends Resource
 
     public static string $type = 'MetaScopeModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Level', 'slug' => 'level', 'type' => 'Aura\\Base\\Fields\\Text', 'conditional_logic' => []],

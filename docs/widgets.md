@@ -1,1257 +1,384 @@
-# Widgets & Dashboard
+# Widgets
 
-Aura CMS provides a powerful widget system for creating interactive dashboards and data visualizations. Built with Livewire and ApexCharts, widgets offer real-time updates, caching, and extensive customization options.
+Resource widgets display values and charts above a resource's index table. Each widget is a Livewire component, and the row shares a date-range selector. Define the widgets in the resource's static `getWidgets()` method.
 
-## Table of Contents
+The default dashboard is separate. It calculates its own resource counts and recent activity and does not read resource widget definitions.
 
-- [Overview](#overview)
-- [Widget Architecture](#widget-architecture)
-- [Built-in Widgets](#built-in-widgets)
-- [Dashboard System](#dashboard-system)
-- [Creating Custom Widgets](#creating-custom-widgets)
-- [Widget Configuration](#widget-configuration)
-- [Data Sources](#data-sources)
-- [Caching & Performance](#caching--performance)
-- [Widget Layouts](#widget-layouts)
-- [Advanced Features](#advanced-features)
-- [Best Practices](#best-practices)
+## Add widgets to a resource
 
-## Overview
+Use a fully qualified widget class name in each definition:
 
-The widget system provides:
-- **Real-time Visualizations**: Live data updates with Livewire
-- **Multiple Chart Types**: Value, Bar, Pie, Donut, Sparkline (Area/Bar)
-- **Date Range Filtering**: Flexible time period selection (day, week, month, quarter, year, custom)
-- **Automatic Caching**: Performance optimization with team-aware cache keys
-- **Responsive Design**: Mobile-friendly layouts with configurable widths
-- **Lazy Loading**: Widgets load on-demand with loading skeletons
-- **Meta Field Support**: Automatic handling of meta table joins
-- **Goal Tracking**: Progress bars for target-based metrics
-- **Custom Widgets**: Extend base classes for custom functionality
+~~~php
+use Aura\Base\Resource;
+use Aura\Base\Widgets\SparklineBar;
+use Aura\Base\Widgets\ValueWidget;
 
-
-## Widget Architecture
-
-### Component Structure
-
-```
-Widget System
-├── Base Widget Class (Livewire Component)
-│   └── src/Widgets/Widget.php
-├── Widget Implementations
-│   ├── ValueWidget (Single Metrics) - src/Widgets/ValueWidget.php
-│   ├── Bar (Bar Charts) - extends Sparkline
-│   ├── Pie (Pie Charts)
-│   ├── Donut (Donut Charts)
-│   ├── Sparkline (Area Trends) - base for trend charts
-│   ├── SparklineBar (Bar Trends) - extends Sparkline
-│   └── SparklineArea (Area Trends) - extends Sparkline
-├── Widgets Container (Date Filtering) - src/Widgets/Widgets.php
-└── Dashboard Component
-
-```
-
-### Base Widget Class
-
-```php
-namespace Aura\Base\Widgets;
-
-use Illuminate\Support\Facades\Auth;
-use Livewire\Component;
-
-class Widget extends Component
+class Order extends Resource
 {
-    public $widget;           // Widget configuration array
-    public $start;            // Start date for filtering
-    public $end;              // End date for filtering
-    public $loaded = false;   // Whether widget data is loaded
-    public $isCached = false; // Whether widget data is cached
-    
-    protected $cacheKey;
-    
-    public function getCacheKeyProperty()
+    public static function getWidgets(): array
     {
-        $user = Auth::user();
-        $teamId = $user->current_team_id ?? 0;
-        
-        return md5($teamId . $this->widget['slug'] . $this->start . $this->end);
-    }
-    
-    public function getCacheDurationProperty()
-    {
-        return $this->widget['cache']['duration'] ?? 60;
-    }
-    
-    public function format($value)
-    {
-        $formatted = number_format($value, 2, '.', "'");
-        
-        // Remove trailing .00
-        if (substr($formatted, -3) === '.00') {
-            $formatted = substr($formatted, 0, -3);
-        }
-        
-        return $formatted;
-    }
-    
-    public function loadWidget()
-    {
-        $this->loaded = true;
-    }
-    
-    public function mount()
-    {
-        // Check if the widget is cached
-        if (cache()->has($this->cacheKey)) {
-            $this->isCached = true;
-            $this->loaded = true;
-        }
+        return [
+            [
+                'name' => 'Total orders',
+                'slug' => 'total-orders',
+                'type' => ValueWidget::class,
+                'method' => 'count',
+                'style' => ['width' => '33.33'],
+            ],
+            [
+                'name' => 'Orders by day',
+                'slug' => 'orders-by-day',
+                'type' => SparklineBar::class,
+                'style' => ['width' => '66.66'],
+            ],
+        ];
     }
 }
-```
+~~~
 
-### Widgets Container (Date Filter Management)
+Resources have no widgets by default. If you do not need any, leave the generated method unchanged:
 
-The `Widgets` component manages date range filtering for all widgets:
-
-```php
-namespace Aura\Base\Widgets;
-
-use Illuminate\Support\Carbon;
-use Livewire\Component;
-
-class Widgets extends Component
+~~~php
+public static function getWidgets(): array
 {
-    public $widgets;
-    public $model;
-    public $selected = '30d';
-    public $start;
-    public $end;
-    
-    public function mount($widgets, $model)
-    {
-        $this->widgets = $widgets;
-        $this->model = $model;
-        $this->selected = $this->model->widgetSettings['default'] ?? 'all';
-        $this->updatedSelected();
-    }
-    
-    public function updatedSelected()
-    {
-        // Updates start/end dates and dispatches 'dateFilterUpdated' event
-        $this->dispatch('dateFilterUpdated', $this->start, $this->end);
-    }
+    return [];
 }
-```
+~~~
 
-**Available Date Range Options:**
+No separate registration step is needed. The index reads the definitions through `Resource::widgets()` and renders them in the shared widget container. This method returns the definitions unchanged as a collection, or `null` when none are defined.
 
-| Key | Description |
-|-----|-------------|
-| `1d`, `7d`, `30d`, `60d`, `90d`, `180d`, `365d` | Last N days |
-| `all` | All time (no date filter) |
-| `ytd` | Year to Date |
-| `qtd` | Quarter to Date |
-| `mtd` | Month to Date |
-| `wtd` | Week to Date |
-| `last-year` | Previous full year |
-| `last-quarter` | Previous full quarter |
-| `last-month` | Previous full month |
-| `last-week` | Previous full week |
-| `custom` | Custom date range |
+Use these keys in a definition:
 
-Configure default date range in your resource:
+| Key | Used by | Description |
+| --- | --- | --- |
+| name | All built-in widgets | Header text. |
+| slug | All built-in widgets | Identifier used for the Livewire key and the base cache key. Keep it unique within the resource. |
+| type | All widgets | The Livewire component class to mount. |
+| column | ValueWidget, Sparkline, Bar, Pie, Donut | A table field or meta field used by the calculation. |
+| method | ValueWidget, Sparkline, Bar, Pie, Donut | count, sum, avg, min, or max. The default is count for calculations. |
+| style.width | The container | Percentage width for the widget wrapper. The wrapper becomes full width below 768 pixels. |
+| previous | ValueWidget, Bar | On ValueWidget, false hides the comparison display. On Bar, the presence of the key adds the previous series to the chart. |
+| goal | ValueWidget | A numeric target. The view displays the current value as a percentage of the target and draws a progress bar. |
+| queryScope | Built-in aggregate widgets | The name of an Eloquent scope method on the resource query. |
+| cache.duration | ValueWidget, Pie, Donut, and custom widgets that use the base properties | The value passed to Laravel's cache remember call. The default is 60. |
 
-```php
+Unknown keys are ignored by the built-in components. Definitions are PHP arrays. The package does not provide a fluent widget builder.
+
+## Built-in widget classes
+
+All built-in widget classes use the `Aura\Base\Widgets` namespace.
+
+| Class | Output | Data |
+| --- | --- | --- |
+| ValueWidget | One value, a previous-period value, and a percentage change, or a goal progress bar | count, sum, avg, min, or max |
+| Sparkline | Compact area chart | Daily values for the current and previous periods |
+| SparklineArea | Area sparkline view | The Sparkline calculation |
+| SparklineBar | Bar sparkline view | The Sparkline calculation |
+| Bar | Bar chart with axes | The Sparkline calculation |
+| Pie | Pie chart | Values grouped by a field, or one Total value without a column |
+| Donut | Donut chart | Values grouped by a field, or one Total value without a column |
+
+The area sparkline, bar sparkline, and bar chart extend `Sparkline`. They share its calculations and date grouping, but use different views.
+
+### ValueWidget
+
+The value widget compares the selected period with the preceding period of equal length. It shows the current value and percentage change. Set `previous` to `false` to hide the comparison.
+
+~~~php
+[
+    'name' => 'Average rating',
+    'slug' => 'average-rating',
+    'type' => ValueWidget::class,
+    'method' => 'avg',
+    'column' => 'vote_average',
+    'style' => ['width' => '33.33'],
+],
+~~~
+
+By default, the widget counts records and ignores the selected column. To calculate a sum, average, minimum, or maximum, set `method` to `sum`, `avg`, `min`, or `max` and choose a `column`. This can be a physical table field or a meta field. The widget casts numeric meta values to signed integers before calculating the result.
+
+To filter the records, set `queryScope` to the name of an Eloquent scope on the resource. The value widget applies the scope if it exists. Its legacy query path ignores a missing scope.
+
+Set a numeric `goal` to display progress toward a target:
+
+~~~php
+[
+    'name' => 'Revenue target',
+    'slug' => 'revenue-target',
+    'type' => ValueWidget::class,
+    'method' => 'sum',
+    'column' => 'total',
+    'goal' => 50000,
+    'style' => ['width' => '33.33'],
+],
+~~~
+
+### Sparkline family
+
+All sparkline widgets and the bar chart group records by day using the resource's `created_at` column. Days without records have a value of zero.
+
+These widgets return data for both the current and previous periods. The bar chart only displays the previous period when its definition contains a `previous` key:
+
+~~~php
+[
+    'name' => 'Orders by day',
+    'slug' => 'orders-by-day',
+    'type' => SparklineBar::class,
+    'style' => ['width' => '50'],
+],
+[
+    'name' => 'Orders with comparison',
+    'slug' => 'orders-with-comparison',
+    'type' => Bar::class,
+    'previous' => true,
+    'style' => ['width' => '50'],
+],
+~~~
+
+By default, these widgets count records per day. They also support sums, averages, minimums, and maximums for numeric physical fields on registered resources. Meta fields support these calculations through the legacy query path. If the method or column cannot be used, the widgets fall back to counting records. This includes physical fields that are not supported numeric fields.
+
+~~~php
+// Counts rows per day.
+[
+    'name' => 'Signups by day',
+    'slug' => 'signups-by-day',
+    'type' => SparklineArea::class,
+],
+
+// Aggregates the numeric meta field named score.
+[
+    'name' => 'Score by day',
+    'slug' => 'score-by-day',
+    'type' => SparklineArea::class,
+    'method' => 'sum',
+    'column' => 'score',
+],
+~~~
+
+The grouping date cannot be changed by passing a date column. Built-in sparklines always group by `created_at`.
+
+### Pie and Donut
+
+Pie and donut charts group records by the selected `column` and count the records in each group. Without a column, they return a single count labelled Total. They also support sums, averages, minimums, and maximums of numeric values. You can use physical fields or meta fields, subject to the resource's field and storage configuration.
+
+~~~php
+[
+    'name' => 'Orders by status',
+    'slug' => 'orders-by-status',
+    'type' => Donut::class,
+    'column' => 'status',
+    'style' => ['width' => '50'],
+],
+~~~
+
+The charts display the current period's grouped values. They also calculate and cache values for the preceding period.
+
+## Date ranges
+
+The widget row shares one date selection. When it mounts, the container reads the resource's public `widgetSettings` property. The default range is the last 30 days, using `30d`. The default configuration includes these ranges:
+
+| Key | Range |
+| --- | --- |
+| 1d, 7d, 30d, 60d, 90d, 180d, 365d | The selected number of days ending today. |
+| ytd | Start of the current year through today. |
+| qtd | Start of the current quarter through today. |
+| mtd | Start of the current month through today. |
+| wtd | Start of the current week through today. |
+| last-year | The previous full year. |
+| last-quarter | The previous full quarter. |
+| last-month | The previous full month. |
+| last-week | The previous full week. |
+| custom | Initializes to the last 30 days, then shows date inputs in the container. |
+| all | Sets start and end to null. |
+
+Configure the default and the labels shown in the select:
+
+~~~php
 public array $widgetSettings = [
-    'default' => '30d',  // Default selection
+    'default' => '30d',
     'options' => [
         '7d' => '7 Days',
         '30d' => '30 Days',
-        'mtd' => 'Month to Date',
-        // ... customize available options
+        'mtd' => 'Month to date',
+        'ytd' => 'Year to date',
+        'custom' => 'Custom',
     ],
 ];
-```
+~~~
 
-## Built-in Widgets
+When the selection changes, the container sends the start and end dates in a `dateFilterUpdated` event. Built-in widgets listen for this event. The date selector omits `all`, although the component accepts it as a default value.
 
-### Value Widget
+Use a bounded date range with built-in widgets. The `all` setting is not currently reliable. It sets both dates to `null`, which the value, pie, and donut widgets pass through Carbon parsing and date-bounded queries. Sparklines instead fall back to 30 days when the dates are null.
 
-Displays a single metric with comparison to previous period:
+## How widgets render on an index page
 
-```php
-[
-    'type' => \Aura\Base\Widgets\ValueWidget::class,
-    'name' => 'Total Revenue',
-    'slug' => 'total-revenue',
-    'column' => 'amount',
-    'method' => 'sum',
-    'style' => ['width' => 25],
-]
-```
+The built-in resource index renders the widget row before the table:
 
-**Features:**
-- Aggregation methods: `count`, `sum`, `avg`, `min`, `max`
-- Percentage change calculation
-- Previous period comparison
-- Number formatting
-- Goal tracking with progress bar
+~~~blade
+{{ app('aura')::injectView('widgets_before') }}
 
-**Additional Options:**
+@if ($widgets = $resource->widgets())
+    @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $resource])
+@endif
 
-```php
-[
-    'type' => \Aura\Base\Widgets\ValueWidget::class,
-    'name' => 'Sales Target',
-    'slug' => 'sales-target',
-    'column' => 'amount',
-    'method' => 'sum',
-    'goal' => 10000,           // Show progress toward goal
-    'previous' => false,       // Hide previous period comparison
-    'queryScope' => 'active',  // Apply model scope
-    'style' => ['width' => 25],
-]
-```
+{{ app('aura')::injectView('widgets_after') }}
 
-When `goal` is set, the widget displays a progress bar showing percentage toward the goal instead of the period comparison.
+<livewire:aura::table :model="$resource" :settings="$resource->indexTableSettings()" />
+~~~
 
-### Bar Chart
+The container renders each definition with the definition array, the resource instance, and the selected dates:
 
-Visualizes data in vertical bars over time. Extends the Sparkline widget:
+~~~blade
+@livewire($widget['type'], [
+    'widget' => $widget,
+    'model' => $model,
+    'start' => $start,
+    'end' => $end,
+], key($widget['slug']))
+~~~
 
-```php
-[
-    'type' => \Aura\Base\Widgets\Bar::class,
-    'name' => 'Daily Orders',
-    'slug' => 'daily-orders',
-    'column' => 'created_at',
-    'method' => 'count',  // count, sum, avg, min, max
-    'previous' => true,   // Show previous period comparison
-    'style' => ['width' => 50],
-]
-```
+Use the `widgets_before` and `widgets_after` injection points to add markup around the widget row. These affect the resource index, not the default dashboard.
 
-**Features:**
-- Groups data by date automatically
-- Shows current vs previous period comparison
-- Uses ApexCharts for rendering
-- Supports meta fields via left join
+A custom definition can use its fully qualified component class directly. If you need a Livewire alias, the built-in container uses `aura::widgets`. Its widget aliases are `aura::widgets.value-widget`, `aura::widgets.sparkline-area`, `aura::widgets.sparkline-bar`, `aura::widgets.bar`, `aura::widgets.pie`, and `aura::widgets.donut`.
 
-### Pie Chart
+## Build a custom widget
 
-Shows data distribution:
+To build a custom widget, extend `Aura\Base\Widgets\Widget`. Calculate a value for the supplied dates, return a view, and listen for `dateFilterUpdated` to handle date changes.
 
-```php
-[
-    'type' => \Aura\Base\Widgets\Pie::class,
-    'name' => 'Category Distribution',
-    'slug' => 'category-distribution',
-    'taxonomy' => 'categories',
-    'style' => ['width' => 33],
-]
-```
+The base class provides the following properties and methods:
 
-**Features:**
-- Automatic color assignment
-- Legend display
-- Percentage labels
-- Hover effects
+| Purpose | Members |
+| --- | --- |
+| Widget definition and resource | `widget`, `model` |
+| Date range | `start`, `end` |
+| Loading state | `loaded`, `isCached` |
+| Cache settings | `cacheKey`, `cacheDuration` |
+| Formatting and lifecycle | `format()`, `loadWidget()`, `mount()` |
 
-### Donut Chart
-
-Similar to pie with hollow center:
-
-```php
-[
-    'type' => \Aura\Base\Widgets\Donut::class,
-    'name' => 'Status Overview',
-    'slug' => 'status-overview',
-    'column' => 'status',
-    'style' => ['width' => 33],
-]
-```
-
-### Sparkline Charts
-
-Compact trend visualizations showing data grouped by date:
-
-```php
-// Area sparkline (default Sparkline behavior)
-[
-    'type' => \Aura\Base\Widgets\Sparkline::class,
-    'name' => 'Daily Visitors',
-    'slug' => 'daily-visitors',
-    'column' => 'visits',
-    'method' => 'count',  // count, sum, avg, min, max
-    'style' => ['width' => 25],
-]
-
-// Explicit area sparkline
-[
-    'type' => \Aura\Base\Widgets\SparklineArea::class,
-    'name' => 'Revenue Trend',
-    'slug' => 'revenue-trend',
-    'column' => 'amount',
-    'method' => 'sum',
-    'style' => ['width' => 25],
-]
-
-// Bar sparkline
-[
-    'type' => \Aura\Base\Widgets\SparklineBar::class,
-    'name' => 'Weekly Orders',
-    'slug' => 'weekly-orders',
-    'column' => 'created_at',
-    'method' => 'count',
-    'style' => ['width' => 25],
-]
-```
-
-**Sparkline Inheritance:**
-- `Sparkline` - Base class, renders as area chart
-- `SparklineArea` - Extends Sparkline, renders as area chart
-- `SparklineBar` - Extends Sparkline, renders as bar chart
-- `Bar` - Extends Sparkline, renders as full bar chart with axes
-
-All sparkline widgets automatically:
-- Group data by `DATE(created_at)`
-- Fill missing dates with zero values
-- Show current and previous period comparison
-
-
-## Dashboard System
-
-### Default Dashboard
-
-The dashboard component provides a customizable landing page:
-
-```php
-namespace Aura\Base\Livewire;
-
-class Dashboard extends Component
-{
-    public function render()
-    {
-        return view('aura::livewire.dashboard')
-            ->layout('aura::components.layout.app');
-    }
-}
-```
-
-### Dashboard Components
-
-```blade
-{{-- resources/views/livewire/dashboard.blade.php --}}
-<div class="grid grid-cols-12 gap-6">
-    {{-- Breadcrumbs --}}
-    <x-aura::dashboard.breadcrumbs cols="full" />
-    
-    {{-- Welcome message --}}
-    <x-aura::dashboard.welcome cols="full" />
-    
-    {{-- Documentation links --}}
-    <x-aura::dashboard.docs cols="6"/>
-    
-    {{-- Quick actions --}}
-    <x-aura::dashboard.quick-actions cols="6"/>
-    
-    {{-- Custom widgets --}}
-    @foreach($widgets as $widget)
-        <div class="col-span-{{ $widget['cols'] ?? 12 }}">
-            @livewire($widget['component'], $widget['params'] ?? [])
-        </div>
-    @endforeach
-</div>
-```
-
-### Custom Dashboard
-
-Create a custom dashboard:
-
-```php
-namespace App\Livewire;
-
-use Livewire\Component;
-use Aura\Base\Facades\Aura;
-
-class CustomDashboard extends Component
-{
-    public function getWidgetsProperty()
-    {
-        return collect(Aura::getResources())
-            ->filter(fn($resource) => $resource::hasWidgets())
-            ->flatMap(fn($resource) => $resource::getWidgets())
-            ->take(8);
-    }
-    
-    public function getStatsProperty()
-    {
-        return [
-            'total_users' => User::count(),
-            'total_revenue' => Order::sum('total'),
-            'pending_orders' => Order::pending()->count(),
-            'active_products' => Product::active()->count(),
-        ];
-    }
-    
-    public function render()
-    {
-        return view('livewire.custom-dashboard', [
-            'widgets' => $this->widgets,
-            'stats' => $this->stats,
-        ]);
-    }
-}
-```
-
-Dashboard view:
-
-```blade
-{{-- resources/views/livewire/custom-dashboard.blade.php --}}
-<div>
-    {{-- Stats Grid --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-sm font-medium text-gray-500">Total Users</h3>
-            <p class="text-3xl font-bold text-gray-900">{{ number_format($stats['total_users']) }}</p>
-        </div>
-        
-        <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-sm font-medium text-gray-500">Total Revenue</h3>
-            <p class="text-3xl font-bold text-green-600">${{ number_format($stats['total_revenue'], 2) }}</p>
-        </div>
-        
-        <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-sm font-medium text-gray-500">Pending Orders</h3>
-            <p class="text-3xl font-bold text-yellow-600">{{ $stats['pending_orders'] }}</p>
-        </div>
-        
-        <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-sm font-medium text-gray-500">Active Products</h3>
-            <p class="text-3xl font-bold text-blue-600">{{ $stats['active_products'] }}</p>
-        </div>
-    </div>
-    
-    {{-- Widget Grid --}}
-    <div class="grid grid-cols-12 gap-6">
-        @foreach($widgets as $widget)
-            <div class="col-span-12 lg:col-span-{{ $widget['style']['width'] ?? 100 }}">
-                @livewire('aura::widget', [
-                    'widget' => $widget,
-                    'model' => app($widget['resource']),
-                ])
-            </div>
-        @endforeach
-    </div>
-</div>
-```
-
-## Creating Custom Widgets
-
-### Basic Custom Widget
-
-Custom widgets extend the base `Widget` class and implement the date filter listener:
-
-```php
+~~~php
 namespace App\Widgets;
 
 use Aura\Base\Widgets\Widget;
-use App\Models\Order;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\On;
 
-class RevenueWidget extends Widget
+class OpenTicketsWidget extends Widget
 {
-    public $model;
-    
-    public function getValue($start, $end)
+    public function getValue($start, $end): int
     {
-        return Order::whereBetween('created_at', [$start, $end])
-            ->where('status', 'completed')
-            ->sum('total');
+        return $this->model->query()
+            ->where('status', 'open')
+            ->whereBetween('created_at', [$start, $end])
+            ->count();
     }
-    
-    public function getValuesProperty()
+
+    public function getValuesProperty(): array
     {
-        $currentStart = $this->start instanceof Carbon 
-            ? $this->start 
-            : Carbon::parse($this->start);
-        $currentEnd = $this->end instanceof Carbon 
-            ? $this->end 
-            : Carbon::parse($this->end);
-            
-        // Calculate previous period
-        $duration = $currentStart->diffInDays($currentEnd);
-        $previousStart = $currentStart->copy()->subDays($duration);
-        $previousEnd = $currentStart;
-        
-        return cache()->remember(
-            $this->cacheKey, 
-            $this->cacheDuration, 
-            function () use ($currentStart, $currentEnd, $previousStart, $previousEnd) {
-                $current = $this->getValue($currentStart, $currentEnd);
-                $previous = $this->getValue($previousStart, $previousEnd);
-                $change = ($previous != 0) 
-                    ? (($current - $previous) / $previous) * 100 
-                    : 0;
-                    
-                return [
-                    'current' => $this->format($current),
-                    'previous' => $this->format($previous),
-                    'change' => $this->format($change),
-                ];
-            }
-        );
+        $start = $this->start instanceof Carbon ? $this->start : Carbon::parse($this->start);
+        $end = $this->end instanceof Carbon ? $this->end : Carbon::parse($this->end);
+
+        return cache()->remember($this->cacheKey, $this->cacheDuration, function () use ($start, $end) {
+            return ['current' => $this->format($this->getValue($start, $end))];
+        });
     }
-    
-    public function render()
+
+    public function render(): View
     {
-        return view('widgets.revenue');
+        return view('widgets.open-tickets');
     }
-    
+
     #[On('dateFilterUpdated')]
-    public function updateDateRange($start, $end)
+    public function updateDateRange($start, $end): void
     {
         $this->start = $start;
         $this->end = $end;
     }
 }
-```
+~~~
 
-Widget view with lazy loading support:
+The view can use the base loading state:
 
-```blade
-{{-- resources/views/widgets/revenue.blade.php --}}
-<div class="aura-card" @if (!$isCached) wire:init="loadWidget" @endif>
-    @if($loaded)
-    <div class="p-2">
-        <div class="flex justify-between items-baseline mb-4">
+~~~blade
+<div class="aura-card" @if (! $isCached) wire:init="loadWidget" @endif>
+    @if ($loaded)
+        <div class="p-2">
             <span class="text-sm font-semibold">{{ $widget['name'] }}</span>
+            <div class="text-4xl font-medium">{{ $this->values['current'] }}</div>
         </div>
-        
-        <div class="flex justify-between items-baseline mt-1 mb-2">
-            <div class="flex items-baseline text-4xl font-medium">
-                ${{ $this->values['current'] }}
-            </div>
-            
-            @if($this->values['change'] >= 0)
-            <div class="inline-flex items-baseline px-2.5 py-0.5 text-sm font-medium text-green-800 bg-green-100 rounded-full">
-                {{ $this->values['change'] }}%
-            </div>
-            @else
-            <div class="inline-flex items-baseline px-2.5 py-0.5 text-sm font-medium text-red-800 bg-red-100 rounded-full">
-                {{ $this->values['change'] }}%
-            </div>
-            @endif
-        </div>
-        
-        <div>
-            <span class="text-sm font-medium text-gray-500">
-                from ${{ $this->values['previous'] }}
-            </span>
-        </div>
-    </div>
     @else
-    {{-- Loading skeleton --}}
-    <div class="p-2 animate-pulse">
-        <div class="w-1/4 h-4 bg-gray-200 rounded mb-4"></div>
-        <div class="w-16 h-6 bg-gray-200 rounded mb-4"></div>
-        <div class="w-16 h-4 bg-gray-200 rounded"></div>
-    </div>
+        <div class="p-2" aria-hidden="true">
+            <div class="w-16 h-6 bg-gray-200 rounded"></div>
+        </div>
     @endif
 </div>
-```
+~~~
 
-**Key View Features:**
-- Use `wire:init="loadWidget"` for lazy loading (skip if cached)
-- Check `$loaded` to show content vs skeleton
-- Access computed values via `$this->values`
-- Use `aura-card` class for consistent styling
+Reference the class in the resource:
 
-### Advanced Widget with Filters
-
-```php
-namespace App\Widgets;
-
-use Aura\Base\Widgets\Widget;
-
-class ProductPerformance extends Widget
-{
-    public $category = 'all';
-    public $metric = 'revenue';
-    
-    protected $queryString = ['category', 'metric'];
-    
-    public function updatedCategory()
-    {
-        $this->emit('widgetUpdated');
-    }
-    
-    public function getDataProperty()
-    {
-        $query = Product::with(['orders' => function ($q) {
-            $q->whereBetween('created_at', [$this->start, $this->end]);
-        }]);
-        
-        if ($this->category !== 'all') {
-            $query->where('category_id', $this->category);
-        }
-        
-        return $query->get()->map(function ($product) {
-            return [
-                'name' => $product->name,
-                'value' => $this->calculateMetric($product),
-            ];
-        })->sortByDesc('value')->take(10);
-    }
-    
-    protected function calculateMetric($product)
-    {
-        return match($this->metric) {
-            'revenue' => $product->orders->sum('pivot.price'),
-            'quantity' => $product->orders->sum('pivot.quantity'),
-            'orders' => $product->orders->count(),
-            default => 0,
-        };
-    }
-    
-    public function render()
-    {
-        return view('widgets.product-performance', [
-            'data' => $this->data,
-            'categories' => Category::pluck('name', 'id'),
-        ]);
-    }
-}
-```
-
-## Widget Configuration
-
-### Resource Widget Registration
-
-Define widgets in your resource's `getWidgets()` method:
-
-```php
-namespace App\Aura\Resources;
-
-use Aura\Base\Resource;
-
-class Product extends Resource
-{
-    // Configure default date filter and available options
-    public array $widgetSettings = [
-        'default' => '30d',
-        'options' => [
-            '7d' => '7 Days',
-            '30d' => '30 Days',
-            '90d' => '90 Days',
-            'mtd' => 'Month to Date',
-            'ytd' => 'Year to Date',
-            'all' => 'All Time',
-        ],
-    ];
-    
-    public static function getWidgets(): array
-    {
-        return [
-            [
-                'type' => \Aura\Base\Widgets\ValueWidget::class,
-                'name' => 'Total Products',
-                'slug' => 'total-products',
-                'column' => 'id',
-                'method' => 'count',
-                'style' => ['width' => 25],
-                'cache' => ['duration' => 120],
-            ],
-            [
-                'type' => \Aura\Base\Widgets\ValueWidget::class,
-                'name' => 'Average Price',
-                'slug' => 'average-price',
-                'column' => 'price',
-                'method' => 'avg',
-                'style' => ['width' => 25],
-            ],
-            [
-                'type' => \Aura\Base\Widgets\ValueWidget::class,
-                'name' => 'Sales Target',
-                'slug' => 'sales-target',
-                'column' => 'total',
-                'method' => 'sum',
-                'goal' => 50000,  // Shows progress bar
-                'style' => ['width' => 25],
-            ],
-            [
-                'type' => \Aura\Base\Widgets\Bar::class,
-                'name' => 'Products Over Time',
-                'slug' => 'products-over-time',
-                'column' => 'created_at',
-                'method' => 'count',
-                'style' => ['width' => 50],
-            ],
-            [
-                'type' => \Aura\Base\Widgets\SparklineArea::class,
-                'name' => 'Daily Trend',
-                'slug' => 'daily-trend',
-                'column' => 'created_at',
-                'method' => 'count',
-                'style' => ['width' => 25],
-            ],
-        ];
-    }
-}
-```
-
-### Widget Options
-
-```php
+~~~php
 [
-    // Required
-    'type' => Widget::class,           // Widget class (fully qualified)
-    'name' => 'Widget Title',          // Display name
-    'slug' => 'unique-slug',           // Unique identifier (used for cache key)
-    
-    // Data Configuration
-    'column' => 'database_column',     // Column to aggregate
-    'method' => 'count',               // Aggregation: count, sum, avg, min, max
-    'queryScope' => 'published',       // Model scope to apply
-    
-    // ValueWidget Specific
-    'goal' => 10000,                   // Target value (shows progress bar)
-    'previous' => true,                // Show previous period (default: true)
-    
-    // Pie/Donut Specific
-    'taxonomy' => 'categories',        // For taxonomy distribution
-    
-    // Caching
-    'cache' => [
-        'duration' => 60,              // Cache duration in minutes
-    ],
-    
-    // Styling
-    'style' => [
-        'width' => 50,                 // Width as percentage (25, 33, 50, 100)
-    ],
-    
-    // Conditional Display
-    'conditional_logic' => [
-        [
-            'field' => 'user.role',
-            'operator' => '==',
-            'value' => 'admin',
-        ],
-    ],
-]
-```
+    'name' => 'Open tickets',
+    'slug' => 'open-tickets',
+    'type' => \App\Widgets\OpenTicketsWidget::class,
+    'style' => ['width' => '25'],
+],
+~~~
 
-**Widget Type Quick Reference:**
+The example uses the same cache properties as the built-in cached widgets. If the resource allows the `all` date range, handle null start and end dates before parsing them.
 
-| Widget Class | Purpose | Key Options |
-|--------------|---------|-------------|
-| `ValueWidget` | Single metric | `column`, `method`, `goal`, `previous`, `queryScope` |
-| `Bar` | Bar chart over time | `column`, `method`, `previous` |
-| `Sparkline` | Area trend | `column`, `method` |
-| `SparklineArea` | Area trend | `column`, `method` |
-| `SparklineBar` | Bar trend | `column`, `method` |
-| `Pie` | Distribution | `column`, `taxonomy` |
-| `Donut` | Distribution | `column`, `taxonomy` |
+## Discovery and registration
 
-### Conditional Display
+Configure widget discovery in `config/aura-settings.php`:
 
-```php
-public static function getWidgets()
-{
-    $widgets = [
-        [
-            'type' => ValueWidget::class,
-            'name' => 'Admin Only Widget',
-            'slug' => 'admin-widget',
-            'conditional_logic' => [
-                [
-                    'field' => 'user.hasRole',
-                    'operator' => '==',
-                    'value' => 'admin',
-                ],
-            ],
-        ],
-    ];
-    
-    // Filter based on user permissions
-    return collect($widgets)->filter(function ($widget) {
-        if (!isset($widget['conditional_logic'])) {
-            return true;
-        }
-        
-        return app(ConditionalLogic::class)
-            ->evaluate($widget['conditional_logic']);
-    })->toArray();
-}
-```
+~~~php
+'widgets' => [
+    'namespace' => 'App\\Aura\\Widgets',
+    'path' => app_path('Aura/Widgets'),
+    'register' => [],
+],
+~~~
 
-## Data Sources
+When the application boots, Aura scans the configured directory and maps the PHP file paths to class names in the configured namespace. It adds these classes to a global widget registry.
 
-### Database Queries
+To work with this registry directly, use `Aura::getAppWidgets()` to scan for classes, `Aura::registerWidgets()` to add classes, and `Aura::getWidgets()` to retrieve the registered list.
 
-The widget system automatically handles meta fields stored in the `meta` table:
+Resource index pages use the definitions returned by the resource's `getWidgets()` method, independently of this registry. The default dashboard uses neither source.
 
-```php
-public function getValue($start, $end)
-{
-    $column = optional($this->widget)['column'];
-    
-    $query = $this->model->query()
-        ->where('created_at', '>=', $start)
-        ->where('created_at', '<', $end);
-    
-    // Apply query scope if defined
-    if (optional($this->widget)['queryScope']) {
-        $query->{$this->widget['queryScope']}();
-    }
-    
-    // Meta fields are automatically joined
-    if ($column && $this->model->isMetaField($column)) {
-        $query->select('posts.*', DB::raw("CAST(meta.value as SIGNED) as $column"))
-            ->leftJoin('meta', function ($join) use ($column) {
-                $join->on('posts.id', '=', 'meta.metable_id')
-                    ->where('meta.key', '=', $column)
-                    ->where('meta.metable_type', '=', get_class($this->model));
-            });
-    }
-    
-    // Aggregation based on method
-    return match ($this->method) {
-        'avg' => $query->avg($column),
-        'sum' => $query->sum($column),
-        'min' => $query->min($column),
-        'max' => $query->max($column),
-        default => $query->count(),
-    };
-}
-```
+The current discovery code does not read the configuration's `register` array. To add classes to the registry, register them explicitly in a service provider:
 
-### External APIs
+~~~php
+use Aura\Base\Facades\Aura;
 
-```php
-public function getValue($start, $end)
-{
-    return Cache::remember($this->cacheKey, $this->cacheDuration, function () {
-        $response = Http::get('https://api.example.com/metrics', [
-            'start' => $this->start->toDateString(),
-            'end' => $this->end->toDateString(),
-            'metric' => $this->widget['metric'],
-        ]);
-        
-        return $response->json('value');
-    });
-}
-```
+Aura::registerWidgets([
+    \App\Widgets\OpenTicketsWidget::class,
+]);
+~~~
 
-### Computed Metrics
+Classes referenced directly in a resource's widget definitions do not need global registration.
 
-```php
-public function getValue($start, $end)
-{
-    $orders = Order::whereBetween('created_at', [$start, $end])->get();
-    
-    // Calculate conversion rate
-    $visitors = Analytics::whereBetween('created_at', [$start, $end])
-        ->distinct('session_id')
-        ->count();
-    
-    return $visitors > 0 ? ($orders->count() / $visitors) * 100 : 0;
-}
-```
+## Resource widgets and the default dashboard
 
-## Caching & Performance
+Resource widgets appear on the resource index, in a shared container above its table.
 
-### Cache Implementation
+The default dashboard calculates its own content. It takes the first four accessible application resources and displays their total counts, 30-day counts, and small SVG sparklines. It also loads recent records and media. It does not read resource widget definitions or render the shared widget container.
 
-```php
-class CustomWidget extends Widget
-{
-    public function getCacheKeyProperty()
-    {
-        // Include additional parameters in cache key
-        return parent::getCacheKeyProperty() . '-' . $this->extraParam;
-    }
-    
-    public function getCacheDurationProperty()
-    {
-        // Dynamic cache duration
-        if ($this->isHistoricalData()) {
-            return 60 * 24; // 24 hours for historical data
-        }
-        
-        return 5; // 5 minutes for real-time data
-    }
-    
-    public function getValue($start, $end)
-    {
-        return Cache::tags(['widgets', $this->widget['slug']])
-            ->remember($this->cacheKey, $this->cacheDuration, function () {
-                return $this->calculateExpensiveMetric();
-            });
-    }
-    
-    public function clearCache()
-    {
-        Cache::tags(['widgets', $this->widget['slug']])->flush();
-    }
-}
-```
+To customize the dashboard, replace its component through the `components.dashboard` setting in `config/aura.php`. The default is `Aura\Base\Livewire\Dashboard`. The package has no dashboard widget registration API, so a custom dashboard must define its own Livewire state, queries, and view.
 
-### Performance Optimization
+## Caching
 
-```php
-// Eager loading
-public function getDataProperty()
-{
-    return $this->model->with(['category', 'tags'])
-        ->whereBetween('created_at', [$this->start, $this->end])
-        ->get();
-}
+Value, pie, and donut widgets cache their calculated values using Laravel's `cache()->remember()`. Set `cache.duration` to override the default duration of 60. Aura passes this value to Laravel's cache API unchanged.
 
-// Query optimization
-public function getValue($start, $end)
-{
-    return DB::table('orders')
-        ->selectRaw('DATE(created_at) as date, SUM(total) as daily_total')
-        ->whereBetween('created_at', [$start, $end])
-        ->groupBy('date')
-        ->orderBy('date')
-        ->get();
-}
+The base cache key is the MD5 hash of the current team ID, resource type, widget slug, start date, and end date. Including the resource type allows two resources to reuse a slug without sharing cached values.
 
-// Chunking large datasets
-public function processLargeDataset()
-{
-    $this->model->whereBetween('created_at', [$this->start, $this->end])
-        ->chunk(1000, function ($records) {
-            // Process chunk
-        });
-}
-```
+Sparklines and bar charts do not use the base cache for their calculations. Custom widgets can use the `cacheKey` and `cacheDuration` properties to cache their own values.
 
-## Widget Layouts
+## Focused source and tests
 
-### Grid Layout
+The widget implementation is in src/Widgets. The resource integration is in src/Resource.php, src/Traits/Concerns/AuraResourceConfiguration.php, resources/views/livewire/resource/index.blade.php, and resources/views/components/widgets/index.blade.php. Dashboard behavior is in src/Livewire/Dashboard.php and resources/views/livewire/dashboard.blade.php. Discovery and Livewire aliases are registered in src/Aura.php and src/AuraServiceProvider.php.
 
-```blade
-{{-- Widget container with responsive grid --}}
-<div class="grid grid-cols-12 gap-6">
-    @foreach($widgets as $widget)
-        <div class="col-span-12 
-            sm:col-span-{{ $widget['style']['sm'] ?? 12 }}
-            md:col-span-{{ $widget['style']['md'] ?? 6 }}
-            lg:col-span-{{ $widget['style']['lg'] ?? $widget['style']['width'] ?? 4 }}">
-            @livewire('widget', ['widget' => $widget])
-        </div>
-    @endforeach
-</div>
-```
+The focused widget tests are:
 
-### Custom Widget Template
-
-```blade
-{{-- resources/views/components/widget-card.blade.php --}}
-<div {{ $attributes->merge(['class' => 'bg-white rounded-lg shadow']) }}>
-    @if($header ?? false)
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-900">
-                {{ $header }}
-            </h3>
-        </div>
-    @endif
-    
-    <div class="p-6">
-        {{ $slot }}
-    </div>
-    
-    @if($footer ?? false)
-        <div class="px-6 py-4 border-t border-gray-200">
-            {{ $footer }}
-        </div>
-    @endif
-</div>
-```
-
-### Widget Groups
-
-```php
-// Group related widgets
-public static function getWidgetGroups()
-{
-    return [
-        'sales' => [
-            'name' => 'Sales Metrics',
-            'widgets' => [
-                ['type' => ValueWidget::class, 'name' => 'Total Sales', ...],
-                ['type' => Bar::class, 'name' => 'Sales by Month', ...],
-                ['type' => Pie::class, 'name' => 'Sales by Category', ...],
-            ],
-        ],
-        'inventory' => [
-            'name' => 'Inventory Status',
-            'widgets' => [
-                ['type' => ValueWidget::class, 'name' => 'Stock Value', ...],
-                ['type' => Donut::class, 'name' => 'Stock Levels', ...],
-            ],
-        ],
-    ];
-}
-```
-
-## Advanced Features
-
-### Real-time Updates
-
-```php
-class LiveWidget extends Widget
-{
-    public $refreshInterval = 30; // seconds
-    
-    public function mount()
-    {
-        parent::mount();
-        $this->pollWidget();
-    }
-    
-    public function pollWidget()
-    {
-        $this->emit('$refresh');
-        $this->dispatchBrowserEvent('widget-updated', [
-            'widget' => $this->widget['slug'],
-            'value' => $this->getValue($this->start, $this->end),
-        ]);
-    }
-    
-    public function render()
-    {
-        return view('widgets.live')->with([
-            'polling' => "wire:poll.{$this->refreshInterval}s=\"pollWidget\"",
-        ]);
-    }
-}
-```
-
-### Interactive Widgets
-
-```php
-class InteractiveChart extends Widget
-{
-    public $selectedPoint = null;
-    
-    protected $listeners = [
-        'chartPointClicked' => 'handleChartClick',
-    ];
-    
-    public function handleChartClick($data)
-    {
-        $this->selectedPoint = $data;
-        
-        // Load detailed data for selected point
-        $this->emit('showDetails', $this->getPointDetails($data));
-    }
-    
-    public function getPointDetails($data)
-    {
-        return Order::whereDate('created_at', $data['date'])
-            ->with(['customer', 'items'])
-            ->get();
-    }
-}
-```
-
-### Export Functionality
-
-```php
-trait ExportableWidget
-{
-    public function exportData()
-    {
-        $data = $this->getData();
-        
-        return response()->streamDownload(function () use ($data) {
-            $csv = fopen('php://output', 'w');
-            
-            // Headers
-            fputcsv($csv, ['Date', 'Value', 'Change']);
-            
-            // Data rows
-            foreach ($data as $row) {
-                fputcsv($csv, [
-                    $row['date'],
-                    $row['value'],
-                    $row['change'] . '%',
-                ]);
-            }
-            
-            fclose($csv);
-        }, $this->widget['slug'] . '-' . now()->format('Y-m-d') . '.csv');
-    }
-}
-```
-
-### Widget Permissions
-
-```php
-class SecureWidget extends Widget
-{
-    public function mount()
-    {
-        $this->authorize('view', $this->widget);
-        parent::mount();
-    }
-    
-    public function authorize($ability, $widget)
-    {
-        if (!auth()->user()->can($ability . '-widget', $widget['slug'])) {
-            abort(403, 'Unauthorized to view this widget');
-        }
-    }
-}
-```
-
-
-## Best Practices
-
-### 1. Performance
-
-```php
-// Use database indexes
-Schema::table('orders', function ($table) {
-    $table->index(['created_at', 'status']);
-    $table->index(['customer_id', 'created_at']);
-});
-
-// Optimize queries
-public function getValue($start, $end)
-{
-    return DB::table('orders')
-        ->whereBetween('created_at', [$start, $end])
-        ->where('status', 'completed')
-        ->sum('total');
-}
-
-// Cache expensive calculations
-public function getComplexMetric()
-{
-    return Cache::remember($this->cacheKey . '-complex', 3600, function () {
-        // Expensive calculation
-    });
-}
-```
-
-### 2. User Experience
-
-```php
-// Loading states (use $loaded property from base Widget class)
-public function render()
-{
-    return view('widgets.custom', [
-        'loaded' => $this->loaded,
-        'data' => $this->loaded ? $this->getData() : [],
-    ]);
-}
-
-// Error handling
-public function getValue($start, $end)
-{
-    try {
-        return $this->calculateValue($start, $end);
-    } catch (\Exception $e) {
-        logger()->error('Widget error: ' . $e->getMessage());
-        return 0;
-    }
-}
-
-// Meaningful empty states
-@if($data->isEmpty())
-    <div class="text-center py-8 text-gray-500">
-        <x-aura::icon name="chart-bar" class="w-12 h-12 mx-auto mb-2" />
-        <p>No data available for selected period</p>
-    </div>
-@endif
-```
-
-### 3. Maintainability
-
-```php
-// Use constants
-class SalesWidget extends Widget
-{
-    const CACHE_DURATION = 60;
-    const DEFAULT_PERIOD = 30;
-    const MAX_ITEMS = 10;
-    
-    public function getCacheDurationProperty()
-    {
-        return static::CACHE_DURATION;
-    }
-}
-
-// Document complex logic
-/**
- * Calculate the conversion rate based on unique visitors
- * and completed orders within the date range.
- */
-public function getConversionRate($start, $end)
-{
-    // Implementation
-}
-
-// Separate concerns
-trait WidgetCalculations
-{
-    public function calculateGrowthRate($current, $previous)
-    {
-        if ($previous == 0) return 0;
-        return (($current - $previous) / $previous) * 100;
-    }
-}
-```
-
-### 4. Testing
-
-```php
-namespace Tests\Feature;
-
-use Tests\TestCase;
-use App\Widgets\RevenueWidget;
-use Livewire\Livewire;
-
-class RevenueWidgetTest extends TestCase
-{
-    public function test_widget_displays_correct_revenue()
-    {
-        // Create test data
-        Order::factory()->count(5)->create([
-            'total' => 100,
-            'created_at' => now(),
-        ]);
-        
-        Livewire::test(RevenueWidget::class, [
-            'widget' => [
-                'name' => 'Test Revenue',
-                'slug' => 'test-revenue',
-            ],
-            'start' => now()->startOfMonth(),
-            'end' => now()->endOfMonth(),
-        ])
-        ->assertSee('$500.00');
-    }
-}
-```
-
-### Pro Tips
-
-1. **Cache Strategically**: Use longer cache durations for historical data
-2. **Lazy Load**: Load widget data only when visible
-3. **Responsive Design**: Test widgets on mobile devices
-4. **Accessibility**: Add ARIA labels to charts
-5. **Error Boundaries**: Handle API failures gracefully
-6. **Progressive Enhancement**: Show basic data while loading complex charts
-7. **Documentation**: Document widget configuration options
-8. **Modularity**: Create reusable widget traits
-
-The widget system provides a powerful foundation for building interactive dashboards and data visualizations that help users understand their data at a glance.
+- tests/Feature/Widgets/ValueWidgetTest.php
+- tests/Feature/Widgets/SparklineTest.php
+- tests/Feature/Widgets/CustomTableWidgetTest.php

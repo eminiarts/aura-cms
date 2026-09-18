@@ -1,409 +1,393 @@
-# Teams in Aura CMS
+# Teams
 
-Teams in Aura CMS provide a powerful multi-tenancy solution that allows you to organize users and resources within isolated workspaces. This feature can be enabled or disabled based on your application's needs.
+Teams keep each team's data separate and are enabled by default. A user works in one current team at a time. Their membership determines the role they hold in each team.
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Configuration](#configuration)
-- [Team Management](#team-management)
-- [Team Invitations](#team-invitations)
-- [Resource Isolation](#resource-isolation)
-- [Team Scope](#team-scope)
-- [Bypassing Team Scope](#bypassing-team-scope)
-- [Team Settings](#team-settings)
-- [Team Lifecycle](#team-lifecycle)
-- [API Reference](#api-reference)
-
-<a name="overview"></a>
+<a id="overview"></a>
 ## Overview
 
-Teams functionality in Aura CMS enables:
+Teams affect four related parts of Aura:
 
-- Multi-tenant architecture with complete resource isolation
-- Automatic scoping of all resources to the current team
-- Team-specific settings and configurations via the Options system
-- User management within teams with role-based access
-- Team invitations with email notifications
-- Automatic Super Admin role creation for new teams
-- Soft delete support for teams
+- Resource queries return data for the current team when the resource has a `team_id` column.
+- Memberships connect users to teams through the `user_role` pivot table.
+- Teams share a role catalog, but each team can override shared roles with its own.
+- Global admin status applies across the installation and is separate from memberships and roles.
 
-<a name="configuration"></a>
-## Configuration
+You can also install Aura without teams. This mode omits the team schema and interface while keeping resources, roles, and permissions available.
 
-### Enabling Teams
+![Teams index](/images/docs/teams/teams-index.png)
 
-Teams can be enabled or disabled in your `config/aura.php` or via environment variable:
+<a id="configuration"></a>
+## Configure teams
+
+Set the feature in the published `config/aura.php` file, or through the environment:
 
 ```php
-return [
-    'teams' => env('AURA_TEAMS', true), // Set to false to disable teams functionality
-    // ...
-];
+'teams' => env('AURA_TEAMS', true),
 ```
 
-You can also set this via your `.env` file:
-
-```env
+```dotenv
 AURA_TEAMS=true
 ```
 
-> **Note**: If you change the teams setting after initial setup, you will need to run `php artisan migrate:fresh` to update the database schema.
+Choose whether to enable teams before the first migration. The setting determines which tables and columns Aura creates. Changing it on an existing installation requires a planned schema and data migration. It is not a runtime switch.
 
-### Team Authentication Settings
+The installer on the current `main` branch applies `--teams=true` or `--teams=false` before running the migration. The public beta requires a separate installation sequence to disable teams. Its unified installer does not make the updated setting available to the migration in the same PHP process. Follow [the installation guide](/docs/installation#without-teams) for that release-specific sequence.
 
-Configure team-related authentication settings:
+The team-related authentication settings are in the `auth` block:
 
 ```php
-return [
-    'auth' => [
-        'registration' => env('AURA_REGISTRATION', true), // Allow user registration
-        'create_teams' => true,     // Allow users to create new teams
-        'user_invitations' => true, // Enable team invitations
-        '2fa' => true,              // Enable two-factor authentication
-    ],
-    // ...
-];
+'auth' => [
+    'registration'      => env('AURA_REGISTRATION', true),
+    'user_invitations'  => true,
+    'invitation_expiry' => 7,
+    'create_teams'      => env('AURA_CREATE_TEAMS', true),
+],
 ```
 
-### Customizing Team Resources
+Creating a team in the admin panel requires both global admin status and `create_teams` set to true. The team policy enforces these requirements. Enabling the setting does not give team super admins permission to create teams. Disabling it does not prevent public registration from creating a user's first team.
 
-You can customize the Team and TeamInvitation resources used by Aura:
+Set `user_invitations` to false to disable registration through invitations. Those endpoints then return 404. Existing users can still accept a signed invitation while teams are enabled. Invitation links expire after seven days by default. Change `invitation_expiry` to use a different number of days.
+
+<a id="schema-differences"></a>
+
+### Schema differences
+
+The package migration creates these team columns when teams are enabled:
+
+| Area | Teams-on schema | Teams-off schema |
+| --- | --- | --- |
+| Users | `users.current_team_id` and `users.global_admin` | `users.global_admin` only |
+| Teams | `teams` table | No `teams` table |
+| Resources | `posts.team_id` | No `posts.team_id` |
+| Roles and permissions | `team_id` on `roles` and `permissions` | No `team_id` columns |
+| Options | `options.team_id` | No `team_id` column |
+| Memberships | `user_role.team_id`, unique per `(team_id, user_id)` | No `team_id`, unique per `user_id` |
+
+Teams have a dedicated database table. Invitations use the shared `posts` table with the `teaminvitation` resource type. Aura does not create a separate `team_invitations` table.
+
+Aura registers the team and invitation resources only when teams are enabled. The `global_admin` column exists in both modes because this status applies across the installation.
+
+### Replace the built-in resources
+
+The built-in classes are resolved from configuration and can be extended or replaced:
 
 ```php
-return [
-    'resources' => [
-        'team' => Aura\Base\Resources\Team::class,
-        'team-invitation' => Aura\Base\Resources\TeamInvitation::class,
-        // ...
-    ],
-];
+'resources' => [
+    'team'            => Aura\Base\Resources\Team::class,
+    'team-invitation' => Aura\Base\Resources\TeamInvitation::class,
+],
 ```
 
-<a name="team-management"></a>
-## Team Management
+<a id="team-management"></a>
+## The team resource
 
-### Creating Teams
+The built-in team resource, `Aura\Base\Resources\Team`, stores records in the `teams` table and supports meta fields. It uses soft deletes and is excluded from global search. It provides these fields and tabs:
 
-When teams are enabled, users with the `create-team` permission can create new teams. When a team is created:
+- A required Name field.
+- A Description field.
+- A Users tab listing members.
+- An Invitations tab listing pending invitations.
 
-1. The creating user is automatically set as the team owner (`user_id`)
-2. A "Super Admin" role is automatically created for the team
-3. The creating user is attached to the team with the Super Admin role
-4. The user's `current_team_id` is switched to the new team
-5. All resource permissions are automatically generated for the team
+The team's `user_id` column identifies its owner. Members are available through the `users()` many-to-many relationship. The relationship uses the `user_role` pivot table, which also stores each member's role in `role_id`. Membership does not use a team column on the users table.
 
 ```php
-// Team fields include:
-[
-    'name' => 'required',       // Team name
-    'description' => '',        // Optional description
-]
+$team->users();           // Memberships through user_role
+$team->roles();           // Team Roles owned by this Team
+$team->teamInvitations(); // TeamInvitation Resources for this Team
+$team->meta();            // Team meta rows
 ```
 
-### Switching Teams
+<a id="what-happens-when-a-team-is-created"></a>
+## What happens when a team is created
 
-Users can switch between teams they belong to:
+Creating a team also sets up its permissions and the creator's membership. When a user is authenticated, `Team::create()` runs a model hook that:
+
+1. Uses the authenticated user as the owner when no `user_id` was supplied.
+2. Makes the new team the authenticated user's current team.
+3. Finds or creates the shared `admin` role through `Role::firstOrCreateGlobalAdmin()`. This role has `team_id = null` and `super_admin = true`. Aura does not create a separate admin role for each team.
+4. Creates the creator's membership in `user_role`, using the shared role and the new team.
+5. Clears the creator's team-list cache and the global admin team-switcher cache.
+6. Dispatches `GenerateAllResourcePermissions` for the new team.
 
 ```php
-// Check if user belongs to a team
-if ($user->belongsToTeam($team)) {
-    $user->switchTeam($team);
+use Aura\Base\Resources\Team;
+
+$team = Team::create([
+    'name'    => 'Marketing',
+    'user_id' => auth()->id(),
+]);
+```
+
+Without an authenticated user, Aura still creates the team, finds or creates the shared global role, and dispatches the permission job. It skips membership creation and the current-team update.
+
+Public registration creates the user and their first team before login, then assigns the shared `admin` role through the Roles field. This happens when teams are enabled, regardless of the `auth.create_teams` setting.
+
+<a id="switching-teams"></a>
+## Switch teams
+
+Pass a team object to `switchTeam()` to change the user's current team. The method updates `current_team_id` and returns whether the switch succeeded:
+
+```php
+if ($user->switchTeam($team)) {
+    // Queries now use the visited Team as their context.
 }
-
-// Get user's current team
-$currentTeam = $user->currentTeam;
-
-// Check if a team is the current team
-if ($user->isCurrentTeam($team)) {
-    // ...
-}
 ```
 
-<a name="team-invitations"></a>
-## Team Invitations
+An ordinary user can switch only to a team they belong to. A global admin can visit any existing team without becoming a member. Switching changes the current team but does not create a membership.
 
-Team invitations are handled through the `TeamInvitation` resource. Users with the `invite-users` permission on the Team resource can send invitations.
+The `aura.current-team.update` route accepts `PUT /current-team`. It looks up the team and calls the switching method, returning 403 when an ordinary user is not a member. When teams are disabled, switching is unavailable and `switchTeam()` returns false.
 
-### Invitation Flow
-
-1. Team admin sends an invitation to an email address with a role assignment
-2. User receives an email with a signed URL
-3. If the user already exists, they can accept the invitation directly
-4. If the user doesn't exist, they are redirected to a registration page
-5. Upon acceptance, the user is added to the team with the specified role
-
-### TeamInvitation Resource
+![Team switcher](/images/docs/teams/team-switcher.png)
 
 ```php
-// TeamInvitation fields
-[
-    'email' => 'required',  // Email address to invite
-    'role' => 'required',   // Role ID to assign
-]
+$user->currentTeam;          // The Team in current_team_id, or null
+$user->current_team_id;      // int|null
+$user->teams;                // Membership Teams
+$user->getTeams();           // Cached Team list, or every Team for a Global Admin
+$user->belongsToTeam($team); // Membership check
+$user->isCurrentTeam($team); // Current-team check
+$user->ownsTeam($team);      // Owner check using teams.user_id
 ```
 
-The invitation email is sent using the `Aura\Base\Mail\TeamInvitation` mailable, which uses the `aura::emails.team-invitation` view.
+Aura caches the current team ID for scoped queries under `user_{id}_current_team_id`. Updating the current team through the user model clears this cache, including during normal switching and team deletion. If you update the database column directly, call `User::clearCurrentTeamCache($userId)` afterward.
 
-<a name="resource-isolation"></a>
-## Resource Isolation
+<a id="memberships"></a>
+## Memberships and the role catalog
 
-All resources in Aura CMS are automatically scoped to the current team when teams are enabled. This ensures complete data isolation between teams.
+A membership connects a user, a role, and a team in one row of the `user_role` pivot table. A database constraint allows at most one membership per user in each team. Users can therefore hold different roles in different teams. With teams disabled, the pivot allows one role row per user.
 
-### How It Works
+The role referenced by a membership has a slug. Aura uses that slug to find the effective role for the target team through `Role::resolveForTeam($slug, $teamId)`:
 
-Resources are automatically filtered by the `team_id` column, which is set when creating new resources:
+- A global role is shared by every team and has `team_id = null`.
+- A team role belongs to one team.
+- A team role with the same slug as a global role overrides it within that team. This override is called a shadow.
+- Creating or deleting a shadow changes the effective role without changing membership rows.
+
+See [Roles and Permissions](/docs/roles-permissions) for the role catalog, permission slugs, and role editing rules.
+
+### Global admin and team super admin
+
+Global admin status comes from the `users.global_admin` flag and the `AuraGlobalAdmin` gate. It is independent of team membership and the super admin flag on a role.
+
+A team super admin has an effective role with `super_admin = true` in the current team. That role grants blanket access through resource policies within that team. It grants no access to other teams.
+
+Global admins can also be team members. Creating a team gives its creator a membership there, but global admin status does not create memberships in every team. Entering a team without a membership is a visit:
 
 ```php
-// When creating a resource, team_id is automatically set
-$post = Post::create(['title' => 'My Post']);
-// $post->team_id is automatically set to auth()->user()->current_team_id
+$globalAdmin->switchTeam($team); // true, with no new user_role row
 ```
 
-### Accessing Team Resources
+During a visit, `isSuperAdmin()` can return false and `cachedRoles()` can be empty. Resource policies still grant access through the global admin gate. Global admins see all users in the Users index, including those without memberships, and `getTeams()` returns every team. They can also view the visited team when its resource view is enabled. None of these actions creates a membership.
 
-Resources belonging to a team can be accessed through:
+<a id="managing-memberships"></a>
+## Manage memberships
+
+The Teams tab on a user's View page lets administrators manage memberships. It uses the `Aura\Base\Livewire\UserTeams` component through the matching `Aura\Base\Fields\UserTeams` field. The tab and component are available only when teams are enabled.
+
+The editor lists each membership with its team and effective role, including any team override. An authorized user can:
+
+- Add the user to a team they do not already belong to.
+- Change the role of an existing membership.
+- Remove a membership.
+
+The editor checks permission for each change against the target team:
+
+| Actor | Membership editor access |
+| --- | --- |
+| Global admin | Any team |
+| Team super admin | Teams where the acting user has an effective super admin role |
+| Everyone else | Read-only; mutations return 403 |
+
+You can assign only roles available for assignment in the target team, after team overrides have been applied. The editor rejects roles owned by another team. Assigning or removing a super admin role also requires global admin status or super admin status in that target team.
+
+Removing a user from their current team switches them to another team they belong to. If no membership remains, their current team becomes `null`.
+
+<a id="team-scope"></a>
+## TeamScope
+
+Aura applies `Aura\Base\Models\Scopes\TeamScope` to its resources to limit queries to the current team. The filter depends on the model:
+
+- Ordinary resources filter their `team_id` column by the current team ID. An authenticated user with no current team receives no results, enforced by a `1 = 0` condition.
+- User queries return members of the current team through the membership table. Global admins can see every user. An ordinary authenticated user with no current team sees only their own record.
+- Teams are not filtered by this scope because they provide the team context.
+- Role queries include shared roles and roles owned by the current team. The Roles index and role pickers apply team overrides by slug so each effective role appears once.
+- Options are scoped to the current team when teams are enabled.
+- With teams disabled, the scope does not filter queries.
+
+When an authenticated user creates a resource in the shared posts table, Aura fills `team_id` with the current team. Subsequent queries return that team's records:
 
 ```php
-// Via current team context (automatically applied)
-$posts = Post::all(); // Only returns posts for the current team
-
-// Via team relationship on the resource
-$post->team; // Returns the team this resource belongs to
-
-// Via user's current team
-$team = auth()->user()->currentTeam;
+$post = Post::create(['title' => 'Team note']);
+$posts = Post::query()->get(); // Rows for the current Team
 ```
 
-<a name="team-scope"></a>
-## Team Scope
+This requires a `team_id` column in the resource's table, including for custom resources that use teams. Teams, users, and roles follow the special query behavior described above.
 
-The `TeamScope` (`Aura\Base\Models\Scopes\TeamScope`) is a global scope that is automatically applied to all resources extending `Aura\Base\Resource`.
+<a id="bypassing-team-scope"></a>
+## Query across teams
 
-### How TeamScope Works
-
-1. **For regular resources**: Filters by `team_id = current_team_id`
-2. **For the User model**: Filters users who belong to the current team via the `user_role` pivot table
-3. **For the Team model**: No team filtering is applied (teams are not scoped to themselves)
-4. **When teams are disabled**: No filtering is applied
-
-```php
-// TeamScope automatically adds this to queries:
-$builder->where($model->getTable().'.team_id', $currentTeamId);
-```
-
-### Cache Mechanism
-
-The current team ID is cached per user to avoid repeated database queries:
-
-```php
-// Cache key format
-"user_{$userId}_current_team_id"
-```
-
-> **Important**: When changing a user's `current_team_id`, you should clear this cache to ensure the TeamScope uses the updated value.
-
-<a name="bypassing-team-scope"></a>
-## Bypassing Team Scope
-
-Sometimes you need to query resources across all teams, such as in admin tools or background jobs.
-
-### Using withoutGlobalScope
+Use Eloquent's standard scope removal only in trusted administrative or background code:
 
 ```php
 use Aura\Base\Models\Scopes\TeamScope;
 
-// Bypass TeamScope for a single query
 $allPosts = Post::withoutGlobalScope(TeamScope::class)->get();
-
-// Bypass all global scopes
-$allPosts = Post::withoutGlobalScopes()->get();
-
-// Bypass specific scopes
-$posts = Post::withoutGlobalScopes([TeamScope::class])->get();
+$allRows = Post::withoutGlobalScopes()->get();
 ```
 
-### In Tests
+Removing scopes can also remove type, authorization, or other query restrictions. Add the filters your operation requires before returning data across teams.
 
-When writing tests, you often need to bypass TeamScope:
+<a id="authorization"></a>
+## Team policies
+
+The team resource uses `Aura\Base\Policies\TeamPolicy`. Its permissions and resource flags work as follows:
+
+| Ability | Current policy condition |
+| --- | --- |
+| `create` | `Team::$createEnabled` and `auth.create_teams` are true, and the acting user is a global admin |
+| `viewAny` | `Team::$indexViewEnabled` is true and the acting user is a global admin or owns the team |
+| `view` | `Team::$viewEnabled` is true and the acting user is a global admin or belongs to the team |
+| `update` | `Team::$editEnabled` is true and the acting user is a global admin or owns the team |
+| `delete` | The acting user is a global admin or owns the team |
+| `inviteUsers` | The acting user is a global admin, owns the team, or has a role in the target team that grants `invite-users-team` |
+| `addTeamMember` | The acting user is a global admin, owns the team, or passes `isSuperAdmin()` in the target team |
+| `removeTeamMember` | The acting user is a global admin or owns the team |
+| `updateTeamMember` | The acting user is a global admin or owns the team |
+
+The checks for inviting users and adding members resolve the acting user's permissions in the target team without switching their current team. The admin panel shows the team delete action only to global admins, even though the policy also allows the owner to delete it.
+
+Resource actions use `ResourcePolicy`. Team super admins and global admins pass its blanket permission checks, subject to the resource's own enabled flags. Only global admins can change shared global roles. Team super admin status does not grant that permission.
+
+<a id="team-invitations"></a>
+## Invite users
+
+The invitation form invites users to your current team. It asks for an email address and a role available in that team, including any team overrides. Validation rejects existing members, duplicate pending invitations, and roles owned by another team. You can invite someone as a super admin only if you have permission to grant that role. The form uses the `Aura\Base\Livewire\InviteUser` component.
+
+The `Aura\Base\Resources\TeamInvitation` resource stores the email and selected role ID in the shared posts table under the invitation resource type. Its team relationship limits invitations to their team. Generic resource creation is disabled.
+
+Invitation emails contain temporary signed links. New users receive a registration link, while existing users receive an acceptance link. To customize the email, use the `aura::emails.team-invitation` view rendered by `Aura\Base\Mail\TeamInvitation`.
+
+| Route name | Method and path | Purpose |
+| --- | --- | --- |
+| `aura.invitation.register` | `GET /register/{team}/{teamInvitation}` | Show registration for a new address |
+| `aura.invitation.register.post` | `POST /register/{team}/{teamInvitation}` | Create the invited user and membership |
+| `aura.team-invitations.accept` | `GET /team-invitations/{invitation}` | Let an existing authenticated user accept |
+| `aura.team-invitations.destroy` | `DELETE /teams/{team}/team-invitations/{invitation}` | Cancel a pending invitation |
+| `aura.team-invitations.resend` | `POST /teams/{team}/team-invitations/{invitation}/resend` | Send it again |
+
+The registration and acceptance links are signed and temporary. The cancel and resend routes require the `invite-users` team ability.
+
+### New-user registration
+
+Invitation registration checks that `auth.user_invitations` is enabled and validates the user's name and password. It also verifies that the invited role is shared or owned by the inviting team. A role owned by another team returns 404.
+
+In one transaction, registration creates the user with the invited email, makes the inviting team their current team, assigns the role through the Roles field, and deletes the invitation.
+
+Existing users must use the acceptance link. Registration rejects an email that matches an existing account, including a match with different capitalization.
+
+### Existing-user acceptance
+
+Accepting an invitation requires a signed-in user and a valid signature. The account email must match the invited email, ignoring capitalization. If the user is not already a member, Aura validates the invited role and creates their membership in the inviting team. It then switches the user to that team and consumes the invitation. Consumed or revoked invitations cannot be reused.
+
+Acceptance allows shared roles and roles owned by the inviting team. It rejects roles owned by another team. If the user already belongs to the inviting team, accepting does not create a duplicate membership.
+
+<a id="team-settings"></a>
+## Team settings
+
+Team settings use the option resource. Aura prefixes each option name with `team.{id}.` and stores the team ID in `options.team_id`:
 
 ```php
-use Aura\Base\Models\Scopes\TeamScope;
-
-// In tests, bypass TeamScope to get actual counts
-$count = User::withoutGlobalScopes()->count();
-
-// Or to find specific records
-$role = Role::withoutGlobalScope(TeamScope::class)
-    ->where('slug', 'super_admin')
-    ->where('team_id', $team->id)
-    ->first();
+$team->getOption('settings');
+$team->getOption('theme.*');
+$team->updateOption('settings', ['dark_mode' => true]);
+$team->deleteOption('settings');
+$team->clearCachedOption('settings');
 ```
 
-<a name="team-settings"></a>
-## Team Settings
+Use a trailing `*` to retrieve a keyed collection of matching options. The `getOption()` method reads directly from the database. Calling `clearCachedOption()` only removes a cache entry if other code cached the same key separately. When teams are enabled, option queries are also filtered by the team scope.
 
-### Team-Specific Options
+<a id="deleting-teams"></a>
+## Delete and restore teams
 
-Teams can have their own settings and configurations stored in the Options table:
+Teams use soft deletes. Deleting a team runs a cleanup hook that:
+
+1. Switches users currently in that team to their first remaining membership, or clears their current team if none remains.
+2. Deletes all memberships for the team.
+3. Deletes the team's own roles, including overrides. Shared global roles remain.
+4. Increments the role catalog version to invalidate cached effective roles.
+5. Calls deletion for the team's meta rows, invitations, and options whose names start with `team.{id}.`.
+6. Clears current-team and team-list caches for affected users, along with the global admin switcher cache.
 
 ```php
-// Get team-specific option
-$option = $team->getOption('setting_name');
-
-// Get multiple options using wildcard
-$options = $team->getOption('theme.*'); // Returns collection of all theme.* options
-
-// Update team-specific option
-$team->updateOption('setting_name', $value);
-
-// Delete a team option
-$team->deleteOption('setting_name');
-
-// Clear cached option (useful after external updates)
-$team->clearCachedOption('setting_name');
+$team->delete();      // Soft delete and cleanup
+$team->restore();     // Restore the Team row
+$team->forceDelete(); // Permanently delete the Team row
 ```
 
-Options are stored with the naming convention: `team.{team_id}.{option_name}`
+Restoring a team does not restore the memberships, team roles, invitations, meta rows, or options removed during deletion.
 
-### Team Preferences
+Cleanup targets the deleted team explicitly. Its invitations and options are removed even after affected users switch to another team.
 
-Each team can maintain its own:
+<a id="api-reference"></a>
+## API reference
 
-1. Theme preferences (colors, dark mode, sidebar style)
-2. Navigation settings
-3. Custom configurations
-4. Feature toggles
+| Class or method | Use |
+| --- | --- |
+| `Team::users()` | Read team members through `user_role` |
+| `Team::roles()` | Read roles owned by a team |
+| `Team::teamInvitations()` | Read invitations stored for a team |
+| `Team::getOption($key)` | Read a team option or wildcard collection |
+| `Team::updateOption($key, $value)` | Create or update a team option |
+| `Team::deleteOption($key)` | Delete a team option |
+| `User::switchTeam($team)` | Change the current team or visit one as a global admin |
+| `User::belongsToTeam($team)` | Check whether a user belongs to a team |
+| `User::getTeams()` | Get a user's cached teams, or all teams for a global admin |
+| `User::isSuperAdmin()` | Check the effective role in the current team |
+| `User::isAuraGlobalAdmin()` | Check the global admin gate for the installation |
+| `Role::resolveForTeam($slug, $teamId)` | Resolve a team override or shared global role |
+| `Role::shadowResolvedForCurrentTeam()` | Get the merged role set used by role pickers |
 
-<a name="team-lifecycle"></a>
-## Team Lifecycle
+<a id="teams-off"></a>
+## Teams-off mode
 
-### Team Creation
+With `aura.teams` set to false before installation:
 
-When a new team is created, the following happens automatically:
+- Aura does not create the `teams` table or team-specific columns.
+- The team and invitation resources are not registered. The Teams tab, switcher, and invitation components are unavailable.
+- The team scope does not filter queries.
+- Roles form one flat catalog. There are no shared versus team roles, team overrides, membership team IDs, or `is_global` distinction.
+- Public registration does not ask for a team and assigns the seeded `user` role.
+- `php artisan aura:user` assigns the seeded `admin` role.
+- The `global_admin` flag remains independent of roles. It does not allow team visits because no teams exist.
 
-1. The `user_id` is set to the authenticated user (team owner)
-2. A "Super Admin" role is created with full permissions
-3. The creating user is attached to the team with the Super Admin role
-4. The user's `current_team_id` is updated to the new team
-5. User team cache is cleared
-6. `GenerateAllResourcePermissions` job is dispatched to create all permissions
+Use the [Teams-off installation steps](/docs/installation#without-teams) when the public beta requires the split setup. Do not change the setting after the schema exists without a deliberate migration and data plan.
 
-### Team Deletion
+<a id="testing"></a>
+## Test team behavior
 
-Teams support soft deletes. When a team is deleted:
-
-1. Users with this team as their `current_team_id` are switched to their first available team
-2. All team meta data is deleted
-3. All team invitations are deleted
-4. All team-specific options are deleted
-5. User team caches are cleared
-6. Users are redirected to the dashboard
-
-```php
-// Team uses SoftDeletes trait
-$team->delete();      // Soft delete
-$team->forceDelete(); // Permanent delete
-$team->restore();     // Restore soft-deleted team
-```
-
-<a name="api-reference"></a>
-## API Reference
-
-### Team Model Properties
-
-```php
-// Team uses a custom table (not the posts table)
-public static $customTable = true;
-
-// Team uses meta fields for additional data
-public static bool $usesMeta = true;
-
-// Teams are not included in global search
-public static $globalSearch = false;
-```
-
-### Team Model Methods
-
-```php
-// Options management
-$team->getOption($key);           // Get a team option (supports wildcards with *)
-$team->updateOption($key, $value); // Create or update an option
-$team->deleteOption($key);         // Delete an option
-$team->clearCachedOption($key);    // Clear option cache
-
-// Relationships
-$team->users;           // BelongsToMany - all users in the team
-$team->roles;           // HasMany - all roles belonging to the team
-$team->teamInvitations; // HasMany - pending invitations
-$team->meta;            // Team meta data
-
-// Team info
-$team->title();  // Returns team name
-$team->getIcon(); // Returns team icon SVG
-
-// Custom permissions
-$team->customPermissions(); // Returns ['invite-users' => 'Invite users to team']
-```
-
-### User Team Methods
-
-```php
-// Current team
-$user->currentTeam;       // BelongsTo - current team relation
-$user->current_team_id;   // Current team ID
-
-// Team membership
-$user->teams;             // BelongsToMany - all teams user belongs to
-$user->getTeams();        // Cached teams with meta loaded
-$user->belongsToTeam($team); // Check if user belongs to a team
-$user->isCurrentTeam($team); // Check if team is the current team
-$user->ownsTeam($team);   // Check if user owns the team (user_id matches)
-
-// Switching teams
-$user->switchTeam($team); // Switch to another team (returns bool)
-
-// Roles (team-aware)
-$user->roles;         // BelongsToMany - includes team_id pivot
-$user->cachedRoles(); // Cached roles for performance
-$user->isSuperAdmin(); // Check if user has a super_admin role
-$user->hasRole('admin'); // Check for specific role
-$user->hasPermission('view-post'); // Check for specific permission
-```
-
-### Resource Team Methods
-
-All resources extending `Aura\Base\Resource` have:
-
-```php
-// Team relationship
-$resource->team; // BelongsTo - the team this resource belongs to
-
-// Team ID is automatically set on creation
-$resource->team_id; // The team ID
-```
-
-## Testing with Teams
-
-When writing tests, the `createSuperAdmin()` helper creates a user with a team:
+The package test helpers create an authenticated user with a current team:
 
 ```php
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 });
-
-test('team functionality', function () {
-    // User has a team
-    expect($this->user->currentTeam)->not->toBeNull();
-    
-    // Resources are scoped to the team
-    $post = Post::create(['title' => 'Test']);
-    expect($post->team_id)->toBe($this->user->current_team_id);
-});
 ```
 
-To test without teams, use `createSuperAdminWithoutTeam()` or run tests with:
+Useful focused coverage includes:
 
-```bash
-vendor/bin/pest -c phpunit-without-teams.xml
-```
+- `tests/Feature/Team/TeamTest.php` for fields, creation, memberships, and cleanup.
+- `tests/Feature/GlobalAdmin/GlobalAdminVisitationTest.php` and `tests/Feature/GlobalAdmin/GlobalAdminVisibilityTest.php` for team visits and user visibility across teams.
+- `tests/Feature/Users/MembershipEditorTest.php` for membership authorization in the target team.
+- `tests/Feature/Hardening/InvitationLifecycleTest.php` and `tests/Feature/Team/InvitationGlobalRoleTest.php` for signed invitations, expiry, role validation, and reuse.
+- `tests/Feature/Team/CurrentTeamCacheTest.php` and `tests/Feature/Security/FailClosedQueryFiltersAndTeamScopeTest.php` for TeamScope and cache behavior.
+- `tests/Feature/Team/CreateTeamsConfigTest.php` for `auth.create_teams`.
+- `tests/FeatureWithDatabaseMigrations/WithoutTeamsSchemaTest.php` and `tests/FeatureWithDatabaseMigrations/RoleAssignmentWithoutTeamsTest.php` for the schema and role assignment with teams disabled.
+
+See [Testing](/docs/testing) for the package test setup.
+
+## Related guides
+
+- [Roles and Permissions](/docs/roles-permissions)
+- [Installation](/docs/installation)
+- [Configuration](/docs/configuration)
+- [Testing](/docs/testing)

@@ -61,7 +61,7 @@ class PreloadAuthor extends Resource
 
     protected $table = 'preload_authors';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Name', 'type' => 'Aura\\Base\\Fields\\Text', 'slug' => 'name', 'validation' => '', 'conditional_logic' => []],
@@ -83,7 +83,7 @@ class PreloadBelongsToPost extends Resource
 
     public static string $type = 'PreloadBelongsToPost';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Author', 'slug' => 'author_id', 'type' => 'Aura\\Base\\Fields\\BelongsTo', 'resource' => PreloadAuthor::class, 'validation' => '', 'conditional_logic' => [], 'on_index' => true],
@@ -108,7 +108,7 @@ class PreloadBelongsToProject extends Resource
 
     protected $table = 'preload_projects';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Name', 'type' => 'Aura\\Base\\Fields\\Text', 'slug' => 'name', 'validation' => '', 'conditional_logic' => [], 'on_index' => true],
@@ -126,11 +126,27 @@ class PreloadTagPost extends Resource
 
     public static string $type = 'PreloadTagPost';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Tags', 'slug' => 'tags', 'type' => 'Aura\\Base\\Fields\\Tags', 'resource' => 'Aura\\Base\\Resources\\Tag', 'create' => true, 'validation' => '', 'conditional_logic' => [], 'on_index' => true],
         ];
+    }
+}
+
+class PreloadHiddenTagPost extends PreloadTagPost
+{
+    public static string $type = 'PreloadHiddenTagPost';
+
+    public static function getFields(): array
+    {
+        $fields = parent::getFields();
+        $fields[0]['on_index'] = false;
+        $fields[] = ['name' => 'Poster', 'slug' => 'poster', 'type' => 'Aura\\Base\\Fields\\Image', 'on_index' => true];
+        $fields[] = ['name' => 'Release date', 'slug' => 'release_date', 'type' => 'Aura\\Base\\Fields\\Date', 'on_index' => true, 'display_format' => 'd.m.Y'];
+        $fields[] = ['name' => 'Status', 'slug' => 'status', 'type' => 'Aura\\Base\\Fields\\Select', 'on_index' => true, 'options' => ['released' => 'Released']];
+
+        return $fields;
     }
 }
 
@@ -143,7 +159,7 @@ class PreloadImagePost extends Resource
 
     public static string $type = 'PreloadImagePost';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Image', 'slug' => 'image', 'type' => 'Aura\\Base\\Fields\\Image', 'validation' => '', 'conditional_logic' => [], 'on_index' => true],
@@ -160,7 +176,7 @@ class PreloadMetaPost extends Resource
 
     public static string $type = 'PreloadMetaPost';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Subtitle', 'slug' => 'subtitle', 'type' => 'Aura\\Base\\Fields\\Text', 'validation' => '', 'conditional_logic' => []],
@@ -336,6 +352,58 @@ test('Tags column eager-loads the relation once instead of per row', function ()
     // Rendered HTML is unchanged: tag names still appear.
     $component->assertSee('RedTag');
     $component->assertSee('BlueTag');
+});
+
+test('initial table load skips relations excluded from the index', function () {
+    $model = new PreloadHiddenTagPost;
+    Aura::fake();
+    Aura::setModel($model);
+
+    $tag = Tag::create(['title' => 'HiddenTag', 'slug' => 'hidden-tag']);
+    $poster = Attachment::create(['name' => 'poster', 'url' => 'poster.jpg', 'mime_type' => 'image/jpeg']);
+    PreloadHiddenTagPost::create(['tags' => [$tag->id], 'poster' => [$poster->id], 'release_date' => '2007-11-21', 'status' => 'released']);
+
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    $component = livewire(Table::class, ['model' => $model]);
+
+    $queries = DB::getQueryLog();
+    DB::disableQueryLog();
+
+    expect(preloadSelectsContaining($queries, 'post_relations'))->toBe(0);
+    $component->assertDontSee('HiddenTag');
+    $component->assertSee('21.11.2007');
+    $component->assertSee('Released');
+});
+
+test('table only eager-loads a relation while its column is visible', function () {
+    $model = new PreloadTagPost;
+    Aura::fake();
+    Aura::setModel($model);
+
+    $tag = Tag::create(['title' => 'ToggleTag', 'slug' => 'toggle-tag']);
+    collect(range(1, 10))->each(fn () => PreloadTagPost::create(['tags' => [$tag->id]]));
+
+    $component = livewire(Table::class, ['model' => $model, 'columns' => ['tags' => false]]);
+
+    foreach ([false, true, false] as $visible) {
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+
+        $component->set('columns.tags', $visible);
+
+        $queries = DB::getQueryLog();
+        DB::disableQueryLog();
+
+        expect(preloadSelectsContaining($queries, 'post_relations'))->toBe($visible ? 1 : 0);
+
+        if ($visible) {
+            $component->assertSee('ToggleTag');
+        } else {
+            $component->assertDontSee('ToggleTag');
+        }
+    }
 });
 
 /*

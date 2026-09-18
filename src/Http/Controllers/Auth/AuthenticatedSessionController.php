@@ -8,7 +8,9 @@ use Aura\Base\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\View\View;
+use Laravel\Fortify\Contracts\RedirectsIfTwoFactorAuthenticatable;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -46,15 +48,21 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request)
     {
-        // Here we need to handle 2FA from Laravel Fortify
+        $request->normalizeEmail();
+        $request->ensureIsNotRateLimited();
 
-        $request->authenticate();
+        $response = app(RedirectsIfTwoFactorAuthenticatable::class)->handle($request, function (LoginRequest $request) {
+            $request->authenticate();
 
-        $request->session()->regenerate();
+            $request->session()->regenerate();
 
-        // Event LoggedIn
-        event(new LoggedIn($request->user()));
+            event(new LoggedIn($request->user()));
 
-        return redirect()->intended(config('aura.auth.redirect'));
+            return redirect()->intended(config('aura.auth.redirect'));
+        });
+
+        RateLimiter::clear($request->throttleKey());
+
+        return $response;
     }
 }

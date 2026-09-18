@@ -19,6 +19,7 @@ class MediaUploader extends Component
 
     private const BLOCKED_EXTENSIONS = ['php', 'phtml', 'php3', 'php4', 'php5', 'phar', 'sh', 'exe', 'bat', 'cmd', 'com', 'scr', 'vbs', 'js', 'jar', 'svg'];
 
+    /** Fallback when `aura.media.max_file_size` is absent. */
     private const MAX_FILE_SIZE_KILOBYTES = 102400;
 
     private const MAX_FILES = 20;
@@ -102,7 +103,7 @@ class MediaUploader extends Component
             $this->validate([
                 'media.*' => [
                     'required',
-                    'max:'.self::MAX_FILE_SIZE_KILOBYTES,
+                    'max:'.$this->maxFileSizeKilobytes(),
                     // SVG intentionally excluded: SVGs can embed <script> and are served
                     // inline from the public disk, enabling stored XSS.
                     'mimes:'.self::ALLOWED_EXTENSIONS,
@@ -201,8 +202,18 @@ class MediaUploader extends Component
     {
         return [
             'max_files' => self::MAX_FILES,
-            'max_size_bytes' => self::MAX_FILE_SIZE_KILOBYTES * 1024,
+            'max_size_bytes' => $this->maxFileSizeKilobytes() * 1024,
             'blocked_extensions' => self::BLOCKED_EXTENSIONS,
         ];
+    }
+
+    /**
+     * Configured upload ceiling in kilobytes. The client-side hint in
+     * uploadPolicy() and the server-side `max:` rule must read the same source,
+     * or the browser lets through files the request then rejects.
+     */
+    private function maxFileSizeKilobytes(): int
+    {
+        return (int) config('aura.media.max_file_size', self::MAX_FILE_SIZE_KILOBYTES);
     }
 }

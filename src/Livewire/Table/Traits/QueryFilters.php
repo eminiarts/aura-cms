@@ -166,9 +166,11 @@ trait QueryFilters
     {
         switch ($filter['operator']) {
             case 'is_empty':
+            case 'date_is_empty':
                 $this->applyIsEmptyMetaFilter($query, $filter);
                 break;
             case 'is_not_empty':
+            case 'date_is_not_empty':
                 $this->applyIsNotEmptyMetaFilter($query, $filter);
                 break;
             default:
@@ -180,6 +182,8 @@ trait QueryFilters
 
     protected function applyOperatorCondition(Builder $query, array $filter): void
     {
+        // Older Datetime saved filters use bare range names. Keep them as
+        // aliases while new filters use the shared date_* contract.
         switch ($filter['operator']) {
             case 'contains':
                 $query->where('value', 'like', '%'.$filter['value'].'%');
@@ -237,15 +241,19 @@ trait QueryFilters
             case 'date_is_not':
                 $query->whereDate('value', '!=', $filter['value']);
                 break;
+            case 'before':
             case 'date_before':
                 $query->whereDate('value', '<', $filter['value']);
                 break;
+            case 'after':
             case 'date_after':
                 $query->whereDate('value', '>', $filter['value']);
                 break;
+            case 'on_or_before':
             case 'date_on_or_before':
                 $query->whereDate('value', '<=', $filter['value']);
                 break;
+            case 'on_or_after':
             case 'date_on_or_after':
                 $query->whereDate('value', '>=', $filter['value']);
                 break;
@@ -323,6 +331,9 @@ trait QueryFilters
         if (is_array($filter['value'])) {
             $filter['value'] = implode(',', $filter['value']);
         }
+
+        // Older Datetime saved filters use bare range names. Keep them as
+        // aliases while new filters use the shared date_* contract.
         switch ($filter['operator']) {
             case 'contains':
                 $query->where($filter['name'], 'like', '%'.$filter['value'].'%');
@@ -390,15 +401,19 @@ trait QueryFilters
             case 'date_is_not':
                 $query->whereDate($filter['name'], '!=', $filter['value']);
                 break;
+            case 'before':
             case 'date_before':
                 $query->whereDate($filter['name'], '<', $filter['value']);
                 break;
+            case 'after':
             case 'date_after':
                 $query->whereDate($filter['name'], '>', $filter['value']);
                 break;
+            case 'on_or_before':
             case 'date_on_or_before':
                 $query->whereDate($filter['name'], '<=', $filter['value']);
                 break;
+            case 'on_or_after':
             case 'date_on_or_after':
                 $query->whereDate($filter['name'], '>=', $filter['value']);
                 break;
@@ -445,7 +460,7 @@ trait QueryFilters
             return false;
         }
 
-        if (in_array($operator, ['is_empty', 'is_not_empty'], true)) {
+        if (in_array($operator, ['is_empty', 'is_not_empty', 'date_is_empty', 'date_is_not_empty'], true)) {
             return false;
         }
 
@@ -478,6 +493,6 @@ trait QueryFilters
         }
 
         return ! empty($filter['name']) &&
-               (! empty($filter['value']) || in_array($operator, ['is_empty', 'is_not_empty'], true));
+               (! empty($filter['value']) || in_array($operator, ['is_empty', 'is_not_empty', 'date_is_empty', 'date_is_not_empty'], true));
     }
 }

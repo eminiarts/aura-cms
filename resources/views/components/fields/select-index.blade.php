@@ -1,6 +1,4 @@
 @php
-    $value = $row->{$field['slug']};
-
     if (is_string($value) && str_starts_with($value, '[')) {
         $decoded = json_decode($value, true);
         if (is_array($decoded)) {

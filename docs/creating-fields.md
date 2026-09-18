@@ -1,40 +1,26 @@
-# Creating Fields
+# Creating fields
 
-Fields are the building blocks of resources in Aura CMS. While Aura provides a comprehensive set of built-in fields, you can create custom fields to meet specific requirements. This guide will walk you through the process of creating custom fields.
+A custom field controls how a value is edited, stored, read, and displayed. Create one by extending `Aura\Base\Fields\Field`, then add it to a resource's field definitions using its fully qualified class name.
 
-## Table of Contents
+## Generate a field
 
-- [Basic Field Creation](#basic-field-creation)
-- [Field Structure](#field-structure)
-- [Field Properties](#field-properties)
-- [Field Methods](#field-methods)
-- [Field Views](#field-views)
-- [Creating a Field as a Package](#creating-a-field-as-a-package)
-- [Examples](#examples)
-
-## Basic Field Creation
-
-To create a new field, use the Aura CLI command:
-
-```bash
-php artisan aura:field {name}
-```
-
-For example, to create a custom rating field:
+Run the field generator from a Laravel application that has Aura installed:
 
 ```bash
 php artisan aura:field Rating
 ```
 
-This command generates three files:
+With the default field path configuration, the command creates these files:
 
-1. **Field Class**: `app/Aura/Fields/Rating.php`
-2. **Edit View**: `resources/views/components/fields/rating.blade.php`
-3. **Display View**: `resources/views/components/fields/rating-view.blade.php`
+```text
+app/Aura/Fields/Rating.php
+resources/views/components/fields/rating.blade.php
+resources/views/components/fields/rating-view.blade.php
+```
 
-## Field Structure
+The command uses the name you provide for the class and a lowercase slug for the views. It does not overwrite existing class or view files.
 
-A custom field class extends the base `Field` class and defines its behavior:
+The generated class points to the edit and display views and provides a method for adding field settings:
 
 ```php
 <?php
@@ -45,177 +31,282 @@ use Aura\Base\Fields\Field;
 
 class Rating extends Field
 {
-    // View templates (required)
-    public $edit = 'fields.rating';       // Form view
-    public $view = 'fields.rating-view';  // Display view
+    public $edit = 'fields.rating';
 
-    // Optional configurations
-    public $optionGroup = 'Custom Fields';  // Group in field selector
-    public $tableColumnType = 'integer';    // Database column type
-    public bool $group = false;             // Can contain child fields
-    public string $type = 'input';          // Field type category
+    public $view = 'fields.rating-view';
 
     public function getFields()
     {
         return array_merge(parent::getFields(), [
-            [
-                'name' => 'Max Rating',
-                'type' => 'Aura\\Base\\Fields\\Number',
-                'slug' => 'max_rating',
-                'validation' => 'numeric|min:1|max:10',
-                'default' => 5,
-            ],
-            [
-                'name' => 'Step Size',
-                'type' => 'Aura\\Base\\Fields\\Number',
-                'slug' => 'step_size',
-                'validation' => 'numeric|min:0.1|max:1',
-                'default' => 1,
-            ],
+            // Add settings for this field here.
         ]);
-    }
-
-    // Transform the value before saving to database
-    public function set($post, $field, $value)
-    {
-        return (float) $value;
-    }
-
-    // Transform the value when retrieving from database
-    public function get($class, $value, $field = null)
-    {
-        return (float) $value;
-    }
-
-    // Format value for display (view pages, tables)
-    public function display($field, $value, $model)
-    {
-        return sprintf('%.1f / %d', $value, $field['max_rating'] ?? 5);
     }
 }
 ```
 
-## Field Properties
+The class namespace and path come from `config/aura-settings.php`:
 
-All properties available on the base `Field` class:
+```php
+'paths' => [
+    'fields' => [
+        'namespace' => 'App\\Aura\\Fields',
+        'path' => app_path('Aura/Fields'),
+    ],
+],
+```
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `$edit` | `string` | `null` | Blade view for the edit/create form (required) |
-| `$view` | `string` | `null` | Blade view for display mode (required) |
-| `$index` | `string` | `null` | Blade view for table/index display |
-| `$optionGroup` | `string` | `'Fields'` | Group name in the field type selector |
-| `$tableColumnType` | `string` | `'string'` | Database column type for custom tables |
-| `$tableNullable` | `bool` | `true` | Whether database column is nullable |
-| `$type` | `string` | `'input'` | Field category: `input`, `relation`, or `structure` |
-| `$group` | `bool` | `false` | Whether field can contain child fields |
-| `$on_forms` | `bool` | `true` | Whether field appears on create/edit forms |
-| `$taxonomy` | `bool` | `false` | Whether field is a taxonomy field |
-| `$sameLevelGrouping` | `bool` | `false` | Enable same-level field grouping |
-| `$wrap` | `bool` | `false` | Enable view wrapping |
-| `$wrapper` | `string` | `null` | Custom wrapper view |
+Aura discovers and registers fields under the configured path when its service provider boots. Discovery uses both the path and namespace settings. The current generator still writes the default namespace into the class, so update the generated file manually if you change the namespace setting.
 
-### Field Types
+For a field outside that path, register the class in your service provider to make it available in the Resource Editor's Type list:
 
-The `$type` property categorizes field behavior:
+```php
+use App\Aura\Fields\Rating;
+use Aura\Base\Facades\Aura;
 
-- **`input`**: Standard data fields (Text, Number, Boolean, etc.)
-- **`relation`**: Relationship fields (BelongsTo, HasMany, Tags, etc.)
-- **`structure`**: Layout fields that don't store data (Panel, Tab, etc.)
+public function boot(): void
+{
+    Aura::registerFields([Rating::class]);
+}
+```
 
-### Database Column Types
+Registration adds the field to the picker and its option group. Resources can also use any autoloadable field class directly, without registration.
 
-Common values for `$tableColumnType`:
+## Reference a custom field
 
-- `string` - VARCHAR (default)
-- `text` - TEXT for longer content
-- `integer` - INT
-- `boolean` - BOOLEAN
-- `json` - JSON column
-- `datetime` - DATETIME
-- `date` - DATE
+Add the field to the resource's static `getFields()` method. Each definition needs a `type` containing the field class and a `slug` identifying its value. You can also provide a label, validation rules, and other settings for forms and tables:
 
-## Field Methods
+```php
+<?php
 
-### Core Methods
+namespace App\Aura\Resources;
 
-#### `getFields()`
+use App\Aura\Fields\Rating;
+use Aura\Base\Resource;
 
-Define configuration options for your field in the Resource Editor:
+class Product extends Resource
+{
+    public static string $type = 'Product';
+
+    public static ?string $slug = 'product';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Rating',
+                'type' => Rating::class,
+                'slug' => 'rating',
+                'validation' => 'nullable|integer|min:0|max:5',
+            ],
+        ];
+    }
+}
+```
+
+## Define field settings
+
+Your field can expose its own settings in the Resource Editor through `getFields()`. Merge the result of `parent::getFields()` with your additions to keep the standard settings available.
+
+The field's base method has no declared PHP return type. The field hooks in this guide follow those untyped signatures. On a resource, however, the static `getFields()` method must declare an array return type.
+
+Define each setting as a field array. The base settings and common built-in fields use these keys:
+
+| Key | Purpose |
+| --- | --- |
+| `type` | Fully qualified field class name. Required. |
+| `slug` | Key used in the resource field data. Required. |
+| `name` | Label shown in the editor and field wrapper. |
+| `validation` | Laravel validation rules for the setting or resource field. |
+| `default` | Value placed in the create form when the setting has no value. |
+| `instructions` | Help text shown by the field wrapper. |
+| `options` | Field-specific choices, such as the items in a select field. |
+| `on_index`, `on_forms`, `on_view` | Per-field visibility switches. |
+| `disabled` | A boolean or a closure evaluated by `isDisabled()`. |
+| `style.width` | Width percentage used by the field wrapper. |
+| `conditional_logic` | Conditions that control whether the field is shown. |
+
+For example, this adds a maximum value setting to `Rating`:
 
 ```php
 public function getFields()
 {
     return array_merge(parent::getFields(), [
         [
-            'name' => 'Max Rating',
+            'name' => 'Maximum rating',
             'type' => 'Aura\\Base\\Fields\\Number',
-            'slug' => 'max_rating',
-            'validation' => 'numeric|min:1|max:10',
+            'slug' => 'maximum',
+            'validation' => 'required|integer|min:1|max:10',
             'default' => 5,
-            'instructions' => 'Maximum rating value (1-10)',
+            'instructions' => 'Highest value allowed by the field.',
         ],
     ]);
 }
 ```
 
-#### `set($post, $field, $value)`
+Read the setting through `$field['maximum']` in your field views and methods. You can arrange settings with built-in fields such as tabs and repeaters.
 
-Transform the value before saving to the database:
+## Field properties
+
+The base field class defines the following properties. Several are untyped for compatibility with existing field classes.
+
+| Property | Default | Use |
+| --- | --- | --- |
+| `$edit` | `null` | View name used for create and edit forms. |
+| `$view` | `null` | View name used on the resource view page. `view()` falls back to `$edit`. |
+| `$index` | `null` | Blade component name used for table display after `display_view` is checked. |
+| `$optionGroup` | `'Fields'` | Group label in the Resource Editor's Type picker. |
+| `$tableColumnType` | `'string'` | Laravel schema-builder method used for a field column in a generated custom-table migration. |
+| `$tableNullable` | `true` | Whether the generated custom-table column is nullable. |
+| `$type` | `'input'` | Behaviour category used by field pipelines. |
+| `$group` | `false` | Whether the field contains child fields. |
+| `$on_forms` | `true` | Default form visibility for the field type. A field definition can override it with `on_forms`. |
+| `$taxonomy` | `false` | Marks the field as a taxonomy field. |
+| `$sameLevelGrouping` | `false` | Controls grouping for structure fields. |
+| `$wrapper` | `null` | Field class that Aura inserts around fields while building the field tree. |
+| `$rawHtmlDisplay` | `false` | Allows the base `display()` implementation to return trusted HTML without escaping. |
+
+Aura uses the type property to identify input and relationship fields. The base `isInputField()` method accepts the `input`, `repeater`, and `group` types. The base `isRelation()` method only accepts `relation`. Some built-in relationships use a different type and override that method, so your custom relationship field may need to do the same.
+
+The column type property only affects resources that use a custom table. Fields stored as shared metadata do not create a column. See [Custom tables](/docs/custom-tables) and [Meta fields](/docs/meta-fields) before choosing a storage mode.
+
+## Field value lifecycle
+
+Forms bind each field's value to `form.fields.{slug}`. You can use the following hooks to prepare that value for editing, storage, or display. None are abstract methods, so implement only the hooks you need.
+
+### Form initialization
+
+The create form initializes each declared field with its configured default value. Without a default, boolean fields start as false and tag fields start as an empty array.
+
+When the edit form loads a record, it calls your field's `hydrate($value, $field)` method if you define one. Use this hook to prepare stored data for the edit control.
+
+```php
+public function hydrate($value, $field)
+{
+    return is_array($value) ? $value : [];
+}
+```
+
+### Save hooks
+
+For a normal field class, Aura applies the hooks in this order while the resource is being saved:
+
+1. A resource method named `set{StudlySlug}Field($value)` takes precedence. Aura queues the raw value and calls that method after the resource row has been saved. The resource method owns persistence for that slug.
+2. A `set` closure in the field definition runs as `$set($post, $field, $value)`.
+3. The field class's `set($post, $field, $value)` method transforms the value.
+4. An optional `saving($post, $field, $value)` method runs. If it returns a model instance, Aura continues with that model.
+5. An optional `shouldSkip($post, $field)` method can return `true` to skip Aura's normal storage for the value.
+6. Aura writes the result to a base-table column or a meta row according to the resource's storage configuration.
+
+The base class does not declare `set`, `saving`, or `shouldSkip`. These signatures mirror the calls in the save pipeline:
 
 ```php
 public function set($post, $field, $value)
 {
-    // $post - The model instance being saved
-    // $field - The field configuration array
-    // $value - The raw value from the form
-    return (float) $value;
+    return $value === null ? null : (int) $value;
+}
+
+public function saving($post, $field, $value)
+{
+    return $post;
+}
+
+public function shouldSkip($post, $field)
+{
+    return false;
 }
 ```
 
-#### `get($class, $value, $field = null)`
+After saving the resource row, Aura calls `saved($post, $field, $value)` if you define it. Use this hook for work that requires the resource's ID, such as saving relationships. Aura does not store the method's return value.
 
-Transform the value when retrieving from the database:
+```php
+public function saved($post, $field, $value)
+{
+    $post->tags()->sync((array) $value);
+}
+```
+
+### Read and display hooks
+
+Use `get($class, $value, $field = null)` to convert a stored value when Aura reads a field. Despite its historical name, the first parameter contains the field instance, not the resource model.
 
 ```php
 public function get($class, $value, $field = null)
 {
-    // $class - The model class
-    // $value - The raw value from database
-    // $field - The field configuration array
-    return (float) $value;
+    return $value === null ? null : (int) $value;
 }
 ```
 
-#### `display($field, $value, $model)`
-
-Format the value for display in views and tables:
+Use `display($field, $value, $model)` to format a value for a resource view or table. By default, Aura uses the field definition's `display_view` component, then falls back to the class's `$index` component. If neither is set, it escapes scalar values. When you override this method to return HTML, you must escape any data you insert into the markup.
 
 ```php
 public function display($field, $value, $model)
 {
-    // $field - The field configuration array
-    // $value - The transformed value
-    // $model - The model instance
-    
-    // You can also use a custom view
-    if (optional($field)['display_view']) {
-        return view($field['display_view'], [
-            'row' => $model,
-            'field' => $field,
-            'value' => $value
-        ])->render();
-    }
-    
-    return sprintf('%.1f', $value);
+    return $value === null ? '' : (string) $value;
 }
 ```
 
-### Filter Methods
+Set `$rawHtmlDisplay = true` only when your field intentionally returns trusted markup through the base implementation. Do not mark user-provided text as raw HTML.
 
-#### `filterOptions()`
+## Build the Blade views
 
-Define available filter operators for table filtering:
+The generated application views live under `resources/views/components/fields`. Aura includes them as dynamic components. On the resource create, edit, and view pages, the views receive:
+
+| Variable | Value |
+| --- | --- |
+| `$field` | The field configuration array, including `slug`, `name`, settings, and the instantiated field under `$field['field']`. |
+| `$form` | The current form data array. Field input values are under `$form['fields']`. |
+| `$mode` | The current rendering mode passed by the Livewire resource component. |
+| `$this` | The Livewire component rendering the field. In the generated display view, `$this->model` is the current resource. |
+
+### Edit view
+
+The generator writes this binding. Keep the `form.fields.{slug}` path when creating a custom control:
+
+```blade
+<x-aura::fields.wrapper :field="$field">
+    <x-aura::input.text
+        :disabled="optional($field)['disabled']"
+        wire:model="form.fields.{{ optional($field)['slug'] }}"
+        error="form.fields.{{ optional($field)['slug'] }}"
+        placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"
+        id="resource-field-{{ optional($field)['slug'] }}"
+    />
+</x-aura::fields.wrapper>
+```
+
+The field wrapper renders the label, instructions, field width, and validation error. Use Aura input components where they fit. A custom HTML control must bind to the same Livewire property and should show its validation error.
+
+### Display view
+
+The generated view asks the resource to format the value through your field's display hook:
+
+```blade
+<x-aura::fields.wrapper :field="$field">
+    {!! $this->model->display($field['slug']) !!}
+</x-aura::fields.wrapper>
+```
+
+The view uses Blade's unescaped output syntax because built-in fields can return markup. The base display method escapes ordinary scalar values. If your override returns markup, escape values read from the database before inserting them.
+
+### Index components
+
+Set `$index` when a field needs a separate Blade component for table cells:
+
+```php
+public $index = 'fields.rating-index';
+```
+
+Create `resources/views/components/fields/rating-index.blade.php` with the markup for a table cell:
+
+```blade
+<span>{{ $value }}</span>
+```
+
+The component receives the current row, field configuration, and resolved value as `$row`, `$field`, and `$value`. A field definition can override the component with `display_view`. That component receives the same variables.
+
+## Filtering and field-specific options
+
+Table filters offer the complete list of operators by default. Override `filterOptions()` to offer only the operators that apply to your field:
 
 ```php
 public function filterOptions()
@@ -223,588 +314,58 @@ public function filterOptions()
     return [
         'is' => __('is'),
         'is_not' => __('is not'),
-        'greater_than' => __('greater than'),
-        'less_than' => __('less than'),
         'is_empty' => __('is empty'),
         'is_not_empty' => __('is not empty'),
     ];
 }
 ```
 
-#### `getFilterValues($model, $field)`
+To provide a list of values for a filter, implement `getFilterValues($model, $field)`. The base method returns an empty array. Some built-in fields, such as select fields, also have an `options()` method. You only need that method if your view or table integration calls it.
 
-Provide predefined values for filter dropdowns:
+## Structure fields and wrappers
 
-```php
-public function getFilterValues($model, $field)
-{
-    return [
-        1 => '1 Star',
-        2 => '2 Stars',
-        3 => '3 Stars',
-        4 => '4 Stars',
-        5 => '5 Stars',
-    ];
-}
-```
+Structure fields group other fields instead of storing a scalar value. Built-in panels, tabs, tab containers, and groups set `$group = true` and each define their own type. Repeaters also group child fields, but Aura still treats them as input fields.
 
-### Helper Methods
+To wrap a field in another field, set its `$wrapper` property to the wrapper's class name. Aura inserts the wrapper when it builds the field tree. Set `wrap` to true in a field definition when it needs an additional wrapper instance. Build a custom structure field only when the built-in grouping fields cannot represent your layout.
 
-#### `isDisabled($model, $field)`
+## Package a field
 
-Control when the field is disabled (supports closures):
-
-```php
-public function isDisabled($model, $field)
-{
-    // Field config can have a closure
-    if (optional($field)['disabled'] instanceof \Closure) {
-        return $field['disabled']($model);
-    }
-    
-    return $field['disabled'] ?? false;
-}
-```
-
-#### `isInputField()`
-
-Check if the field stores data:
-
-```php
-public function isInputField()
-{
-    return in_array($this->type, ['input', 'repeater', 'group']);
-}
-```
-
-#### `isRelation()`
-
-Check if the field is a relationship:
-
-```php
-public function isRelation()
-{
-    return in_array($this->type, ['relation']);
-}
-```
-
-### Relationship Methods
-
-For relationship fields, override these methods:
-
-#### `queryFor($query, $component)`
-
-Modify the query for relationship data:
-
-```php
-public function queryFor($query, $component)
-{
-    return $query->where('status', 'active');
-}
-```
-
-#### `options($model, $field)`
-
-Provide dynamic options (for Select-type fields):
-
-```php
-public function options($model, $field)
-{
-    // Check for model-specific options method
-    $methodName = 'get' . ucfirst($field['slug']) . 'Options';
-    if (method_exists($model, $methodName)) {
-        return $model->{$methodName}();
-    }
-    
-    return $field['options'] ?? [];
-}
-```
-
-## Field Views
-
-Fields require Blade views for rendering in different contexts.
-
-### View Paths
-
-For application fields (created with `aura:field`):
-- Edit view: `resources/views/components/fields/{slug}.blade.php`
-- Display view: `resources/views/components/fields/{slug}-view.blade.php`
-
-For package fields:
-- Use namespaced paths: `'vendor-name::fields.my-field'`
-
-### Available Variables in Views
-
-| Variable | Description |
-|----------|-------------|
-| `$field` | Field configuration array (name, slug, validation, custom options, etc.) |
-| `$form` | The model instance (on edit) or form data |
-| `$this->model` | The Livewire component's model instance |
-
-### Edit View
-
-The edit view (`rating.blade.php`) defines how the field appears in forms:
-
-```blade
-<x-aura::fields.wrapper :field="$field">
-    <div
-        x-data="{
-            rating: $wire.entangle('form.fields.{{ $field['slug'] }}'),
-            maxRating: {{ $field['max_rating'] ?? 5 }},
-            hoverRating: 0
-        }"
-        class="flex gap-1"
-    >
-        <template x-for="star in maxRating" :key="star">
-            <button
-                type="button"
-                @click="rating = star"
-                @mouseenter="hoverRating = star"
-                @mouseleave="hoverRating = 0"
-                :class="(hoverRating || rating) >= star ? 'text-yellow-400' : 'text-gray-300'"
-                class="text-2xl focus:outline-none"
-                :disabled="{{ $field['field']->isDisabled($form, $field) ? 'true' : 'false' }}"
-            >
-                ★
-            </button>
-        </template>
-    </div>
-    
-    {{-- Alternative: Use Aura's input component --}}
-    {{-- 
-    <x-aura::input.text
-        :disabled="$field['field']->isDisabled($form, $field)"
-        wire:model="form.fields.{{ $field['slug'] }}"
-        error="form.fields.{{ $field['slug'] }}"
-        type="number"
-        min="0"
-        max="{{ $field['max_rating'] ?? 5 }}"
-        step="{{ $field['step_size'] ?? 1 }}"
-    />
-    --}}
-</x-aura::fields.wrapper>
-```
-
-### Display View
-
-The display view (`rating-view.blade.php`) defines how the field appears when viewing a resource:
-
-```blade
-<x-aura::fields.wrapper :field="$field">
-    @php
-        $value = $this->model->display($field['slug']);
-        $maxRating = $field['max_rating'] ?? 5;
-    @endphp
-    
-    @if(empty($value))
-        <span class="text-gray-400">–</span>
-    @else
-        <div class="flex gap-1">
-            @for($i = 1; $i <= $maxRating; $i++)
-                <span class="{{ $i <= $value ? 'text-yellow-400' : 'text-gray-300' }}">★</span>
-            @endfor
-        </div>
-    @endif
-</x-aura::fields.wrapper>
-```
-
-### Index/Table View
-
-For custom table column rendering, set the `$index` property and create a view:
-
-```php
-public $index = 'fields.rating-index';
-```
-
-```blade
-{{-- resources/views/components/fields/rating-index.blade.php --}}
-<div class="flex gap-0.5">
-    @for($i = 1; $i <= ($field['max_rating'] ?? 5); $i++)
-        <span class="text-sm {{ $i <= $value ? 'text-yellow-400' : 'text-gray-200' }}">★</span>
-    @endfor
-</div>
-```
-
-## Creating a Field as a Package
-
-For reusable fields across projects, create a Laravel package:
+Aura's plugin generator can create a field-plugin skeleton:
 
 ```bash
-php artisan aura:field-plugin MyField
+php artisan aura:plugin acme/rating
 ```
 
-This generates a package structure in `packages/`:
+Choose **Field plugin** when prompted. The command creates `plugins/acme/rating`, runs the plugin configuration script, updates the application's Composer autoload mapping, and optionally adds the generated service provider to `config/app.php`.
 
-### Package Structure
-
-```
-packages/my-field/
-├── src/
-│   ├── MyField.php
-│   └── MyFieldServiceProvider.php
-├── resources/
-│   └── views/
-│       └── components/
-│           └── fields/
-│               ├── my-field.blade.php
-│               └── my-field-view.blade.php
-├── composer.json
-└── README.md
-```
-
-### Field Class (Package)
+The field-plugin stub uses a namespaced view directory and a service provider similar to this:
 
 ```php
-<?php
-
-namespace YourVendor\MyField;
-
-use Aura\Base\Fields\Field;
-
-class MyField extends Field
+public function configurePackage(Package $package): void
 {
-    // Use namespaced view paths
-    public $edit = 'my-field::fields.my-field';
-    public $view = 'my-field::fields.my-field-view';
-    
-    public $optionGroup = 'Custom Fields';
-
-    public function getFields()
-    {
-        return array_merge(parent::getFields(), [
-            // Your field configuration options
-        ]);
-    }
+    $package
+        ->name('rating')
+        ->hasViews('acme-rating');
 }
 ```
 
-### Service Provider
+Point the field class at the namespaced views:
 
 ```php
-<?php
-
-namespace YourVendor\MyField;
-
-use Spatie\LaravelPackageTools\Package;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
-
-class MyFieldServiceProvider extends PackageServiceProvider
+class Rating extends Field
 {
-    public function configurePackage(Package $package): void
-    {
-        $package
-            ->name('my-field')
-            ->hasViews('my-field');
-    }
+    public $edit = 'acme-rating::fields.rating';
+
+    public $view = 'acme-rating::fields.rating-view';
 }
 ```
 
-### Register the Package
+The current plugin generator names the edit view property `$component`. Rename it to `$edit`, as shown above, so Aura can find the view when rendering forms. Register the field with `Aura::registerFields([Rating::class])` if it should appear in the Resource Editor's Type list.
 
-Add to your `composer.json`:
+## Related documentation
 
-```json
-{
-    "require": {
-        "your-vendor/my-field": "*"
-    },
-    "repositories": [
-        {
-            "type": "path",
-            "url": "./packages/my-field"
-        }
-    ]
-}
-```
-
-Then register the service provider in `config/app.php` or use Laravel's auto-discovery.
-
-## Examples
-
-### Simple Text Field with Prefix/Suffix
-
-```php
-<?php
-
-namespace App\Aura\Fields;
-
-use Aura\Base\Fields\Field;
-
-class PrefixedText extends Field
-{
-    public $edit = 'fields.prefixed-text';
-    public $view = 'fields.prefixed-text-view';
-    public $optionGroup = 'Input Fields';
-
-    public function getFields()
-    {
-        return array_merge(parent::getFields(), [
-            [
-                'name' => 'Prefix',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'slug' => 'prefix',
-                'style' => ['width' => '50'],
-            ],
-            [
-                'name' => 'Suffix',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'slug' => 'suffix',
-                'style' => ['width' => '50'],
-            ],
-        ]);
-    }
-
-    public function display($field, $value, $model)
-    {
-        if (empty($value)) {
-            return '';
-        }
-        $prefix = $field['prefix'] ?? '';
-        $suffix = $field['suffix'] ?? '';
-        return $prefix . $value . $suffix;
-    }
-}
-```
-
-### Phone Number Field with Formatting
-
-```php
-<?php
-
-namespace App\Aura\Fields;
-
-use Aura\Base\Fields\Field;
-
-class PhoneNumber extends Field
-{
-    public $edit = 'fields.phone-number';
-    public $view = 'fields.phone-number-view';
-    public $tableColumnType = 'string';
-    public $optionGroup = 'Input Fields';
-
-    public function getFields()
-    {
-        return array_merge(parent::getFields(), [
-            [
-                'name' => 'Phone',
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'slug' => 'phone-settings',
-            ],
-            [
-                'name' => 'Country Code',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'slug' => 'country_code',
-                'validation' => 'required|regex:/^\+\d{1,3}$/',
-                'default' => '+1',
-                'instructions' => 'Default country code (e.g., +1, +44)',
-            ],
-            [
-                'name' => 'Format',
-                'type' => 'Aura\\Base\\Fields\\Select',
-                'slug' => 'format',
-                'options' => [
-                    'us' => 'US: +1 (234) 567-8900',
-                    'international' => 'International: +1 234 567 8900',
-                    'compact' => 'Compact: +12345678900',
-                ],
-                'default' => 'us',
-            ],
-        ]);
-    }
-
-    public function set($post, $field, $value)
-    {
-        // Store only digits and + sign
-        return preg_replace('/[^\d+]/', '', $value);
-    }
-
-    public function display($field, $value, $model)
-    {
-        if (empty($value)) {
-            return '';
-        }
-        
-        $format = $field['format'] ?? 'us';
-        $digits = preg_replace('/[^\d]/', '', $value);
-        
-        return match($format) {
-            'us' => preg_replace('/(\d{1,3})(\d{3})(\d{3})(\d{4})/', '+$1 ($2) $3-$4', $digits),
-            'international' => preg_replace('/(\d{1,3})(\d{3})(\d{3})(\d{4})/', '+$1 $2 $3 $4', $digits),
-            default => $value,
-        };
-    }
-
-    public function filterOptions()
-    {
-        return [
-            'contains' => __('contains'),
-            'starts_with' => __('starts with'),
-            'is_empty' => __('is empty'),
-            'is_not_empty' => __('is not empty'),
-        ];
-    }
-}
-```
-
-### Select Field with Dynamic Options
-
-```php
-<?php
-
-namespace App\Aura\Fields;
-
-use Aura\Base\Fields\Field;
-
-class CountrySelect extends Field
-{
-    public $edit = 'fields.country-select';
-    public $view = 'aura::fields.view-value';  // Reuse Aura's default view
-    public $optionGroup = 'Choice Fields';
-
-    public function getFields()
-    {
-        return array_merge(parent::getFields(), [
-            [
-                'name' => 'Country',
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'slug' => 'country-settings',
-            ],
-            [
-                'name' => 'Show Flag',
-                'type' => 'Aura\\Base\\Fields\\Boolean',
-                'slug' => 'show_flag',
-                'default' => true,
-            ],
-            [
-                'name' => 'Region Filter',
-                'type' => 'Aura\\Base\\Fields\\Select',
-                'slug' => 'region',
-                'options' => [
-                    '' => 'All Regions',
-                    'europe' => 'Europe',
-                    'americas' => 'Americas',
-                    'asia' => 'Asia Pacific',
-                ],
-            ],
-        ]);
-    }
-
-    public function options($model, $field)
-    {
-        // Check for model-specific method first
-        $methodName = 'get' . ucfirst($field['slug']) . 'Options';
-        if (method_exists($model, $methodName)) {
-            return $model->{$methodName}();
-        }
-
-        // Default countries list
-        return [
-            'US' => 'United States',
-            'GB' => 'United Kingdom',
-            'CA' => 'Canada',
-            'DE' => 'Germany',
-            'FR' => 'France',
-            // Add more as needed
-        ];
-    }
-
-    public function getFilterValues($model, $field)
-    {
-        return $this->options($model, $field);
-    }
-
-    public function filterOptions()
-    {
-        return [
-            'is' => __('is'),
-            'is_not' => __('is not'),
-            'is_empty' => __('is empty'),
-            'is_not_empty' => __('is not empty'),
-        ];
-    }
-
-    public function display($field, $value, $model)
-    {
-        $options = $this->options($model, $field);
-        $name = $options[$value] ?? $value;
-        
-        if ($field['show_flag'] ?? true) {
-            // Convert country code to flag emoji
-            $flag = $this->getFlag($value);
-            return "{$flag} {$name}";
-        }
-        
-        return $name;
-    }
-
-    private function getFlag(string $countryCode): string
-    {
-        $code = strtoupper($countryCode);
-        return mb_chr(0x1F1E6 + ord($code[0]) - ord('A'))
-             . mb_chr(0x1F1E6 + ord($code[1]) - ord('A'));
-    }
-}
-```
-
-### JSON/Array Field
-
-```php
-<?php
-
-namespace App\Aura\Fields;
-
-use Aura\Base\Fields\Field;
-
-class Metadata extends Field
-{
-    public $edit = 'fields.metadata';
-    public $view = 'fields.metadata-view';
-    public $tableColumnType = 'json';
-    public $optionGroup = 'Advanced Fields';
-
-    public function get($class, $value, $field = null)
-    {
-        if (is_string($value)) {
-            return json_decode($value, true) ?? [];
-        }
-        return $value ?? [];
-    }
-
-    public function set($post, $field, $value)
-    {
-        if (is_array($value)) {
-            return json_encode($value);
-        }
-        return $value;
-    }
-
-    public function display($field, $value, $model)
-    {
-        if (empty($value)) {
-            return '<span class="text-gray-400">No metadata</span>';
-        }
-        
-        $items = is_string($value) ? json_decode($value, true) : $value;
-        
-        return collect($items)
-            ->map(fn($v, $k) => "<strong>{$k}:</strong> {$v}")
-            ->implode('<br>');
-    }
-}
-```
-
-## Best Practices
-
-1. **Always extend parent::getFields()**: This preserves core field settings like name, slug, and validation.
-
-2. **Use Aura's input components**: Leverage `<x-aura::input.text>`, `<x-aura::input.select>`, etc. for consistent styling.
-
-3. **Wrap views properly**: Always use `<x-aura::fields.wrapper>` to ensure labels, instructions, and errors display correctly.
-
-4. **Handle empty values**: Check for null/empty values in `display()` and return appropriate fallbacks.
-
-5. **Validate transformations**: Ensure `set()` and `get()` handle all possible input types gracefully.
-
-6. **Group related options**: Use Tabs in `getFields()` to organize complex field configurations.
-
-7. **Document field options**: Add `instructions` to each configuration field to help users understand the options.
+- [Fields](/docs/fields) lists the built-in field classes and their configuration.
+- [Meta fields](/docs/meta-fields) explains shared meta-table storage.
+- [Custom tables](/docs/custom-tables) explains column-backed resource storage.
+- [Resource Editor](/docs/resource-editor) explains field configuration in the browser.
+- [Plugins](/docs/plugins) covers the complete plugin workflow.

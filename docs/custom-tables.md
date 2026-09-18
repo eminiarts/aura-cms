@@ -1,48 +1,40 @@
-# Custom Tables in Aura CMS
+# Custom tables
 
-Custom tables in Aura CMS provide a way to store resource data in dedicated database tables instead of using the default posts and meta tables. This approach offers better performance, more direct database relationships, and improved query capabilities for resources with specific data structures.
+A resource can store its records in a dedicated database table instead of the shared posts table. To use a custom table, set `$customTable` to `true` and set the protected `$table` property to your table name.
 
-## Table of Contents
+You must create the table with a migration and transfer any existing records separately. Changing these settings or editing field definitions in PHP does not change the database schema.
 
-- [Overview](#overview)
-- [Storage Strategies](#storage-strategies)
-- [Configuration](#configuration)
-- [Migration Process](#migration-process)
-- [Converting Existing Resources](#converting-existing-resources)
-- [Hybrid Approach](#hybrid-approach)
-- [Performance Considerations](#performance-considerations)
+## Storage modes
 
-## Overview
+Two settings control where Aura stores field values. The storage trait, `AuraResourceMeta`, defines these defaults:
 
-By default, Aura CMS stores resource data in two tables:
-- `posts`: Stores basic resource information (id, type, title, content, status, etc.)
-- `meta`: Stores additional field data as key-value pairs (polymorphic relationship)
+~~~php
+public static $customTable = false;
+public static bool $usesMeta = true;
+~~~
 
-Custom tables allow you to:
-- Create dedicated tables for specific resources
-- Define precise database schemas with proper column types
-- Optimize database queries (no JOINs to meta table)
-- Establish direct foreign key relationships
-- Improve performance for large datasets
-- Use database-level constraints and indexes
+You can read these settings with `usesCustomTable()` and `usesMeta()`. The package has no `$usesCustomMeta` setting and ignores a `$customMeta` property declared on your resource.
 
-## Storage Strategies
+The settings work together as follows:
 
-Aura CMS supports three storage strategies:
+| `$customTable` | `$usesMeta` | Field storage |
+|---|---|---|
+| `false` | `true` | Base fillable fields use the shared `posts` columns. Other input fields use `meta`. This is the default. |
+| `false` | `false` | Base fillable fields use `posts` columns. Other input fields have no meta destination. |
+| `true` | `true` | The resource's `$table` stores its base fillable fields. Other input fields use `meta`. |
+| `true` | `false` | Every input field is treated as a column on `$table`. Aura does not write field values to `meta`. |
 
-| Strategy | $customTable | $usesMeta | Description |
-|----------|--------------|-----------|-------------|
-| Default | `false` | `true` | Uses `posts` table with `meta` for fields |
-| Custom Table Only | `true` | `false` | Dedicated table, no meta storage |
-| Hybrid | `true` | `true` | Dedicated table + meta for overflow fields |
+To check where a particular input field will be stored, pass its slug to `isMetaField($slug)` or `isTableField($slug)`. The package tests these combinations in `tests/Feature/Resource/StorageMatrixTest.php`.
 
-## Configuration
+When a custom table also uses meta storage, only the fields in the resource's original `$fillable` list are stored as table columns. Aura saves that list as `baseFillable` before adding input field slugs to Eloquent's runtime fillable list. Those later additions allow mass assignment, but do not make a field a table column or create a column in the database.
 
-### Enabling Custom Tables
+When meta storage is disabled for a custom table, every input field you save needs a matching database column. Generated custom resources use this mode and do not declare a fillable list.
 
-To use a custom table for a resource, configure these properties:
+## Define a custom-table resource
 
-```php
+This resource stores its name, description, and status in the products table:
+
+~~~php
 <?php
 
 namespace App\Aura\Resources;
@@ -51,35 +43,15 @@ use Aura\Base\Resource;
 
 class Product extends Resource
 {
-    // Enable custom table storage
-    public static bool $customTable = true;
-
-    // Disable meta table usage (optional, default is true)
-    public static bool $usesMeta = false;
-
-    // Define the table name (must match your migration)
-    protected $table = 'products';
-
-    // Define fillable fields (required for custom tables)
-    protected $fillable = [
-        'name',
-        'price',
-        'description',
-        'status',
-        'user_id',
-        'team_id',
-    ];
-
-    // Define casts for proper type handling
-    protected $casts = [
-        'price' => 'decimal:2',
-        'options' => 'array',
-        'is_active' => 'boolean',
-    ];
-
     public static string $type = 'Product';
 
     public static ?string $slug = 'product';
+
+    public static $customTable = true;
+
+    public static bool $usesMeta = false;
+
+    protected $table = 'products';
 
     public static function getFields(): array
     {
@@ -91,223 +63,35 @@ class Product extends Resource
                 'validation' => 'required|max:255',
             ],
             [
-                'name' => 'Price',
-                'slug' => 'price',
-                'type' => 'Aura\\Base\\Fields\\Number',
-                'validation' => 'required|numeric|min:0',
+                'name' => 'Description',
+                'slug' => 'description',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
             ],
-            // ... more fields
+            [
+                'name' => 'Status',
+                'slug' => 'status',
+                'type' => 'Aura\\Base\\Fields\\Select',
+            ],
         ];
     }
 }
-```
+~~~
 
-### Key Properties
+Create a column for each field, along with the standard columns required by your migration. Use Eloquent's `$casts` property for values that need conversion, such as booleans, arrays, or decimals.
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `$customTable` | `bool` | `false` | Enable dedicated table storage |
-| `$usesMeta` | `bool` | `true` | Store overflow fields in meta table |
-| `$table` | `string` | `'posts'` | Database table name |
-| `$fillable` | `array` | `[]` | Fields that can be mass assigned |
-| `$casts` | `array` | `[]` | Attribute type casting |
+To keep optional fields in the shared meta table, leave `$usesMeta` set to `true`. Declare the fields that belong in your custom table in `$fillable`:
 
-### Global Configuration
-
-You can configure the auto-migration behavior for custom tables in `config/aura.php`:
-
-```php
-return [
-    'features' => [
-        // Options: false, true, 'single', 'multiple'
-        'custom_tables_for_resources' => false,
-    ],
-];
-```
-
-Configuration values:
-- `false` (default): No automatic migration generation
-- `true` or `'single'`: Generate a single migration file that gets updated
-- `'multiple'`: Generate separate migration files for each change
-
-## Migration Process
-
-### 1. Generate Migration
-
-Use the built-in command to generate a migration for your resource:
-
-```bash
-# Use the full class name
-php artisan aura:create-resource-migration "App\Aura\Resources\Product"
-```
-
-This command will:
-- Create a migration file based on your resource's `getFields()` definition
-- Generate appropriate column types based on field types
-- Include standard columns (id, user_id, team_id, timestamps)
-
-### 2. Review Migration
-
-The generated migration will include columns based on your field definitions. Each field type maps to a specific column type:
-
-| Field Type | Column Type |
-|------------|-------------|
-| `Text`, `Email`, `Slug`, `Select`, `Radio` | `string` |
-| `Textarea`, `Wysiwyg` | `text` |
-| `Number` | `integer` |
-| `Boolean`, `Toggle` | `string` (default) |
-| `Date` | `date` |
-| `DateTime` | `timestamp` |
-| `BelongsTo` | `bigInteger` |
-| `ID` | `bigIncrements` |
-
-> **Note**: Most fields default to `string` column type. You can customize the migration after generation to use more specific types like `decimal` for prices.
-
-Example generated migration:
-
-```php
-<?php
-
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-
-return new class extends Migration
-{
-    public function up(): void
-    {
-        Schema::create('products', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->nullable();
-            $table->string('price')->nullable();
-            $table->text('description')->nullable();
-            $table->string('status')->nullable();
-            $table->foreignId('user_id');
-            $table->foreignId('team_id');
-            $table->timestamps();
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::dropIfExists('products');
-    }
-};
-```
-
-### 3. Customize and Run Migration
-
-Before running the migration, you may want to customize it:
-
-```php
-Schema::create('products', function (Blueprint $table) {
-    $table->id();
-    $table->string('name');  // Remove nullable if required
-    $table->decimal('price', 10, 2)->default(0);  // Use decimal for money
-    $table->text('description')->nullable();
-    $table->string('status')->default('draft');
-    $table->boolean('is_active')->default(true);
-    $table->json('options')->nullable();
-
-    // Foreign keys
-    $table->foreignId('user_id')->constrained()->onDelete('cascade');
-    $table->foreignId('team_id')->nullable()->constrained()->onDelete('cascade');
-
-    // Indexes for performance
-    $table->index('status');
-    $table->index(['team_id', 'status']);
-
-    $table->timestamps();
-    $table->softDeletes();
-});
-```
-
-Then run the migration:
-
-```bash
-php artisan migrate
-```
-
-## Converting Existing Resources
-
-### From Posts/Meta to Custom Table
-
-Use the interactive migration command to convert an existing resource:
-
-```bash
-php artisan aura:migrate-from-posts-to-custom-table
-```
-
-This command will:
-1. Present a list of available resources to choose from
-2. Modify the resource class to add `$customTable = true`
-3. Add the `$table` property with the appropriate table name
-4. Generate the migration file
-5. Optionally run the migration
-6. Optionally transfer existing data
-
-You can also specify the resource directly:
-
-```bash
-php artisan aura:migrate-from-posts-to-custom-table "App\Aura\Resources\Product"
-```
-
-### Data Transfer Process
-
-After the table is created, transfer data using:
-
-```bash
-php artisan aura:transfer-from-posts-to-custom-table "App\Aura\Resources\Product"
-```
-
-The transfer process:
-1. Fetches all posts matching the resource type
-2. Retrieves associated meta data for each post
-3. Combines post fields and meta fields
-4. Creates new records in the custom table
-5. Preserves timestamps and team associations
-6. Shows progress during transfer
-
-### Best Practices
-
-1. **Before Migration**
-   - Back up your database completely
-   - Test in development/staging environment first
-   - Review resource configuration and field mappings
-   - Ensure all field slugs match intended column names
-   - Verify fillable array includes all necessary fields
-
-2. **During Migration**
-   - Monitor the transfer process
-   - Check for any error messages
-   - Verify data integrity with spot checks
-
-3. **After Migration**
-   - Verify all CRUD operations work correctly
-   - Check relationships load properly
-   - Test search and filtering functionality
-   - Verify table sorting works
-   - Monitor query performance
-   - Consider cleaning up old posts/meta data after verification
-
-## Hybrid Approach
-
-You can use custom tables while still leveraging the meta system for additional fields. This is useful when you want:
-- Core fields in dedicated columns for performance
-- Flexible meta storage for optional/dynamic fields
-
-```php
+~~~php
 class Product extends Resource
 {
-    public static bool $customTable = true;
-    public static bool $usesMeta = true;  // Enable meta alongside custom table
+    public static $customTable = true;
+
+    public static bool $usesMeta = true;
 
     protected $table = 'products';
 
-    // Only core fields in the table
     protected $fillable = [
         'name',
-        'price',
         'status',
         'user_id',
         'team_id',
@@ -316,93 +100,185 @@ class Product extends Resource
     public static function getFields(): array
     {
         return [
-            // These are stored in the products table
             [
                 'name' => 'Name',
                 'slug' => 'name',
                 'type' => 'Aura\\Base\\Fields\\Text',
             ],
             [
-                'name' => 'Price',
-                'slug' => 'price',
-                'type' => 'Aura\\Base\\Fields\\Number',
+                'name' => 'Status',
+                'slug' => 'status',
+                'type' => 'Aura\\Base\\Fields\\Text',
             ],
-            // These are stored in the meta table (not in $fillable)
             [
-                'name' => 'SEO Description',
+                'name' => 'SEO description',
                 'slug' => 'seo_description',
                 'type' => 'Aura\\Base\\Fields\\Textarea',
-            ],
-            [
-                'name' => 'Custom Attributes',
-                'slug' => 'custom_attributes',
-                'type' => 'Aura\\Base\\Fields\\Repeater',
             ],
         ];
     }
 }
-```
+~~~
 
-Fields in `$fillable` are stored in the custom table; other fields go to the meta table.
+In this example, the name and status are table columns. Aura stores the SEO description in the meta table.
 
-## Performance Considerations
+## Generate a resource stub
 
-### When to Use Custom Tables
+Generate a resource for a custom table with the `--custom` option:
 
-| Scenario | Recommendation |
-|----------|----------------|
-| < 1,000 records, simple fields | Default posts/meta is fine |
-| > 10,000 records | Consider custom tables |
-| Complex queries with filters | Use custom tables |
-| Reporting/analytics needs | Use custom tables |
-| Direct database access needed | Use custom tables |
-| Rapid prototyping | Start with posts/meta |
+~~~bash
+php artisan aura:resource Product --custom
+~~~
 
-### Query Performance Benefits
+The generated resource enables custom table storage and disables meta storage:
 
-Custom tables provide significant performance improvements:
+~~~php
+public static $customTable = true;
+public static bool $usesMeta = false;
+protected $table = 'products';
+~~~
 
-```php
-// With posts/meta (requires JOINs)
-// Slower for complex queries
+The resource starts with no field definitions. The command does not create a migration or database table. Add your fields, review the table name, and generate a migration.
 
-// With custom tables (direct queries)
-Product::where('status', 'active')
-    ->where('price', '>', 100)
-    ->orderBy('created_at', 'desc')
-    ->get();
-```
+## Generate the table migration
 
-### Indexing Recommendations
+Generate a migration from your resource's field definitions:
 
-Add indexes for frequently queried columns:
+~~~bash
+php artisan aura:create-resource-migration "App\Aura\Resources\Product"
+~~~
 
-```php
+The command reads the table name from the loaded resource through `getTable()`. You can supply a different name with `--table=`:
+
+~~~bash
+php artisan aura:create-resource-migration "App\Aura\Resources\Product" --table=inventory_items
+~~~
+
+The command creates or rewrites a `create_{table}_table` migration using the resource's input fields. It skips grouping fields such as panels and tabs. Headings still count as input fields and produce columns. The migration contains:
+
+- A primary key named `id`.
+- One column for each input field.
+- A user reference named `user_id`.
+- A team reference named `team_id` when `config('aura.teams')` is enabled.
+- Nullable timestamps named `created_at` and `updated_at`.
+
+Each field class defines the generated column type and whether it accepts null through `tableColumnType` and `tableNullable`:
+
+| Field | Generated column | Nullable |
+|---|---|---|
+| `ID` | `bigIncrements` | no |
+| `Number` | `integer` | yes |
+| `Text`, `Select`, `Slug`, and fields without an override | `string` | yes |
+| `Textarea`, `Wysiwyg` | `text` | yes |
+| `Date` | `date` | yes |
+| `Datetime` | `timestamp` | yes |
+| `BelongsTo` | `bigInteger` | yes |
+
+The field class name is `Aura\Base\Fields\Datetime`. The package does not define a `DateTime` field class.
+
+For the first example, the generated schema is equivalent to:
+
+~~~php
 Schema::create('products', function (Blueprint $table) {
-    // ... columns ...
-
-    // Single column indexes
-    $table->index('status');
-    $table->index('price');
-
-    // Composite indexes for common queries
-    $table->index(['team_id', 'status']);
-    $table->index(['status', 'created_at']);
+    $table->bigIncrements('id');
+    $table->string('name')->nullable();
+    $table->text('description')->nullable();
+    $table->string('status')->nullable();
+    $table->bigInteger('user_id')->nullable();
+    $table->bigInteger('team_id')->nullable();
+    $table->timestamp('created_at')->nullable();
+    $table->timestamp('updated_at')->nullable();
 });
-```
+~~~
 
-### Built-in Resources Using Custom Tables
+The team column appears only when teams are enabled. The generator does not add indexes, defaults, foreign key constraints, cascade rules, or soft deletes. It writes the timestamp columns separately instead of using `$table->timestamps()`. Review the migration and add anything your schema needs before running it:
 
-Aura CMS uses custom tables for core resources as a reference:
+~~~bash
+php artisan migrate
+~~~
 
-| Resource | Table | Uses Meta |
-|----------|-------|-----------|
-| `User` | `users` | Yes |
-| `Team` | `teams` | Yes |
-| `Role` | `roles` | No |
-| `Permission` | `permissions` | No |
-| `Option` | `options` | No |
+Generating the migration does not apply it to the database. For an existing table, write a new versioned migration instead of rewriting one that has already run.
 
-Examine these resources in `src/Resources/` for implementation patterns.
+## Resource Editor schema helpers
 
-Remember to always test migrations in a development environment before applying them to production, and maintain proper backups throughout the process.
+The Resource Editor can generate schema changes when you save fields. This feature is disabled by default:
+
+~~~php
+// config/aura.php
+'features' => [
+    'custom_tables_for_resources' => false,
+],
+~~~
+
+The `custom_tables_for_resources` setting controls how these changes are applied. Its listeners run when the local Resource Editor emits a `SaveFields` event. Editing field definitions directly in PHP does not trigger them.
+
+| Value | Behaviour |
+|---|---|
+| `false` | No custom-table migration listener runs. |
+| `'multiple'` | A field change writes an `update_{table}_table_*` migration and attempts to run `migrate`. |
+| `true` or `'single'` | The listener rewrites the `create_{table}_table` migration and calls `aura:schema-update`. The command adds missing columns and, with the listener's options, drops columns removed from the generated schema. It does not change the type of an existing column. |
+
+Review generated migrations before applying them. Use a normal, hand-written migration when a field change needs data conversion, a type change, a rename with data preservation, or a production rollout.
+
+## Convert an existing posts resource
+
+The conversion command accepts a resource class:
+
+~~~bash
+php artisan aura:migrate-from-posts-to-custom-table "App\Aura\Resources\Product"
+~~~
+
+If you omit the class, the command prompts you to choose a resource. It then:
+
+1. Edits the resource class file.
+2. Enables custom table storage by setting `$customTable = true`.
+3. Sets `$table` to the snake-case plural of the resource's class name, without its namespace.
+4. Generates a migration for that table using `aura:create-resource-migration`.
+5. Asks whether to run the migration.
+6. Asks whether to start the data transfer command.
+
+When the resource file has no explicit custom table declaration, the command also disables meta storage. If the file already declares `$customTable`, the command updates it but leaves `$usesMeta` unchanged. Inspect the resulting class and migration to confirm the intended storage mode.
+
+The command changes the PHP source while Artisan is already running. Reload the application process before relying on the optional transfer prompt. Data transfer requires your confirmation. It does not guarantee that all data is preserved and does not run in a single transaction.
+
+## Transfer existing data
+
+The separate transfer command accepts a resource class:
+
+~~~bash
+php artisan aura:transfer-from-posts-to-custom-table "App\Aura\Resources\Product"
+~~~
+
+If you omit the class, the command prompts you to choose a resource. It finds records in the posts table whose type matches the resource and loads their meta values. It then creates records through the resource's `create()` method, passing timestamps, user and team IDs, meta values, and the post attributes exposed by Eloquent.
+
+The transfer inserts new rows with new IDs. Running it again can create duplicates, and a failure can leave a partial transfer because the command does not use a single transaction.
+
+The destination table must have a column for every attribute passed to `create()`. Generated migrations commonly omit shared post columns such as title, content, type, or slug. Review and adapt the migration, or write a transfer specific to your application. Back up the database and test on a copy first.
+
+Enabling custom table storage or changing field definitions never starts a transfer automatically.
+
+## Built-in resources
+
+Aura's built-in resources show both storage modes:
+
+| Resource | Table | `$customTable` | `$usesMeta` |
+|---|---|---:|---:|
+| `User` | `users` | `true` | `true` |
+| `Team` | `teams` | `true` | `true` |
+| `Role` | `roles` | `true` | `false` |
+| `Permission` | `permissions` | `true` | `false` |
+| `Option` | `options` | `true` | inherited `true` |
+
+## Limitations
+
+- Aura does not infer a database schema from a changed field definition at runtime.
+- When meta storage is disabled, every input field you save needs a matching database column.
+- When a custom table also uses meta storage, only fields in the original fillable list use table columns. Other input fields go to the meta table.
+- Generated migrations contain basic nullable columns. Add the constraints, indexes, defaults, casts, and data transformations your application needs.
+- Review the destination schema and test your data transfer plan before running the conversion commands. They leave the original posts and meta rows in place.
+
+## Related
+
+- [Meta fields](/docs/meta-fields) explains the shared key/value table.
+- [Resources](/docs/resources) covers resource and field definitions.
+- [Fields](/docs/fields) lists field classes and their behaviour.

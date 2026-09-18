@@ -42,9 +42,8 @@ return [
     | Teams
     |--------------------------------------------------------------------------
     |
-    | If you change this to false, you will not be able to create teams.
-    | You will need to rerun your migrations to remove the teams table.
-    | Run `php artisan migrate:fresh`.
+    | Choose this before installation. Changing it on an existing application
+    | requires a migration for its team columns and memberships.
     |
     */
 
@@ -171,14 +170,8 @@ return [
     */
 
     'views' => [
-        'layout' => 'aura::layouts.app',
+        'layout' => 'aura::layout.app',
         'login-layout' => 'aura::layout.login',
-        'dashboard' => 'aura::dashboard',
-        'index' => 'aura::index',
-        'view' => 'aura::view',
-        'create' => 'aura::create',
-        'edit' => 'aura::edit',
-        'navigation' => 'aura::components.navigation',
         'logo' => 'aura::application-logo',
     ],
 
@@ -192,16 +185,14 @@ return [
     */
 
     'features' => [
+        'dashboard' => true,
         'global_search' => true,
         'bookmarks' => true,
-        'last_visited_pages' => true,
         'notifications' => true,
         'plugins' => true,
         'settings' => true,
         'profile' => true,
         'create_resource' => true,
-        'resource_view' => true,
-        'resource_edit' => true,
         'resource_editor' => config('app.env') == 'local' ? true : false,
         'custom_tables_for_resources' => false, // default = false
         // By default, resources are using the posts and meta table.
@@ -230,7 +221,7 @@ return [
 
     'auth' => [
         'registration' => env('AURA_REGISTRATION', true),
-        'redirect' => '/admin',
+        'redirect' => '/'.trim(env('AURA_PATH', 'admin'), '/'),
         '2fa' => true,
         'user_invitations' => true,
         'invitation_expiry' => 7,
@@ -249,7 +240,6 @@ return [
 
     'reporting' => [
         'projection' => [
-            'enabled' => false,
             'reads_enabled' => false,
         ],
     ],

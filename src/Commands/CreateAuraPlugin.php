@@ -13,7 +13,7 @@ class CreateAuraPlugin extends Command
 {
     protected $description = 'Create a new Aura plugin';
 
-    protected $signature = 'aura:plugin {name?}';
+    protected $signature = 'aura:plugin {name? : The vendor and name of the plugin, e.g. acme/blog}';
 
     public function getStubsDirectory($path)
     {

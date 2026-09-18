@@ -4,6 +4,7 @@ namespace Aura\Base\Livewire;
 
 use Aura\Base\Mail\TeamInvitation;
 use Aura\Base\Resources\Role;
+use Aura\Base\Resources\User;
 use Aura\Base\Traits\InputFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
@@ -102,6 +103,27 @@ class InviteUser extends Component
             },
         ];
 
+        // `required` alone accepts any role id the client sends, including a
+        // role owned by another team or one carrying super_admin. Resolve the
+        // submitted id against the same shadow-resolved catalog the select
+        // offers, and mirror the Roles field's escalation guard on top.
+        $rules['form.fields.role'] = [
+            'required',
+            function ($attribute, $value, $fail) {
+                $role = Role::shadowResolvedForCurrentTeam()->whereKey($value)->first();
+
+                if (! $role) {
+                    $fail(__('The selected role is invalid.'));
+
+                    return;
+                }
+
+                if ($role->super_admin && ! $this->actorMayGrantSuperAdmin()) {
+                    $fail(__('You are not allowed to invite a super admin.'));
+                }
+            },
+        ];
+
         return $rules;
     }
 
@@ -128,6 +150,32 @@ class InviteUser extends Component
 
         $this->dispatch('closeModal');
         $this->dispatch('refreshTable');
+    }
+
+    /**
+     * Whether the inviter may hand out a super_admin role — a Super Admin of
+     * the current team, or a Global Admin. Mirrors Roles::saved()'s guard so
+     * an invitation cannot become the cheaper escalation path.
+     */
+    protected function actorMayGrantSuperAdmin(): bool
+    {
+        $actor = auth()->user();
+
+        if (! $actor) {
+            return false;
+        }
+
+        // The authenticated guard may hand back a bare Authenticatable; the
+        // super_admin question is only answerable on the Aura User model.
+        if (! $actor instanceof User) {
+            $actor = User::withoutGlobalScopes()->find($actor->getAuthIdentifier());
+        }
+
+        if (! $actor instanceof User) {
+            return false;
+        }
+
+        return $actor->isSuperAdmin() || $actor->isAuraGlobalAdmin();
     }
 
     protected function validationAttributes(): array

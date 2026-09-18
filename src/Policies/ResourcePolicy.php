@@ -142,7 +142,6 @@ class ResourcePolicy implements ScopesMediaVisibility
     {
         if (! $actor instanceof User
             || ! $this->usesSameConnection($actor, $resource)
-            || config('aura.resource-view-enabled') === false
             || $resource::$viewEnabled === false) {
             return $query->whereRaw('1 = 0');
         }
@@ -211,11 +210,6 @@ class ResourcePolicy implements ScopesMediaVisibility
     public function view($user, $resource)
     {
         if ($resource instanceof Model && ! $this->usesSameConnection($user, $resource)) {
-            return false;
-        }
-
-        // Check if the config resource view is enabled
-        if (config('aura.resource-view-enabled') === false) {
             return false;
         }
 

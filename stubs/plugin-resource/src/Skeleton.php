@@ -12,7 +12,7 @@ class Skeleton extends Resource
 
     protected static ?string $group = 'VendorName';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

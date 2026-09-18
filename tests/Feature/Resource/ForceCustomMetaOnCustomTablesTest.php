@@ -50,7 +50,7 @@ class ForceCustomMetaOnCustomTablesModel extends Resource
 
     protected $table = 'custom_projects';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

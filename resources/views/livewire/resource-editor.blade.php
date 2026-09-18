@@ -1,5 +1,5 @@
 <div>
-    @section('title', 'Edit ' . $model::getType() . ' Fields • ')
+    @section('title', 'Edit ' . $model::getType() . ' Fields')
 
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />

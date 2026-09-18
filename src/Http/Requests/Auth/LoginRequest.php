@@ -69,6 +69,16 @@ class LoginRequest extends FormRequest
     }
 
     /**
+     * Normalize the username before Fortify validates the credentials.
+     */
+    public function normalizeEmail(): void
+    {
+        $this->merge([
+            'email' => Str::lower($this->input('email')),
+        ]);
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array

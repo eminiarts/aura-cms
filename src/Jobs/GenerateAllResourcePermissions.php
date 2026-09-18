@@ -63,12 +63,16 @@ class GenerateAllResourcePermissions
         ];
 
         foreach ($permissions as $action => $name) {
+            $identity = ['slug' => "{$action}-{$resource::$slug}"];
+
+            // The permissions table only has a team_id column when teams are on.
+            if (config('aura.teams')) {
+                $identity['team_id'] = $this->teamId;
+            }
+
             try {
                 Permission::withoutGlobalScopes()->updateOrCreate(
-                    [
-                        'slug' => "{$action}-{$resource::$slug}",
-                        'team_id' => $this->teamId,
-                    ],
+                    $identity,
                     [
                         'name' => $name,
                         'group' => $resource->pluralName(),

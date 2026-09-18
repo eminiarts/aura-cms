@@ -3,6 +3,7 @@
 namespace Aura\Base\Traits\Concerns;
 
 use Aura\Base\Models\Meta;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 trait AuraResourceMeta
 {
@@ -85,16 +86,10 @@ trait AuraResourceMeta
     }
 
     /**
-     * Get the Meta Relation
-     *
-     * @return mixed
+     * @return MorphMany<Meta, $this>
      */
     public function meta()
     {
-        if (! $this->usesMeta()) {
-            return;
-        }
-
         return $this->morphMany(Meta::class, 'metable');
     }
 

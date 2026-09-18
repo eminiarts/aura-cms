@@ -21,7 +21,7 @@ class TeamPolicy
             return true;
         }
 
-        if ($user->isSuperAdmin()) {
+        if ($this->userForTeam($user, $team)->isSuperAdmin()) {
             return true;
         }
 
@@ -70,7 +70,7 @@ class TeamPolicy
             return true;
         }
 
-        if ($user->hasPermissionTo('invite-users', $team)) {
+        if ($this->userForTeam($user, $team)->hasPermissionTo('invite-users', $team)) {
             return true;
         }
 
@@ -140,6 +140,10 @@ class TeamPolicy
             return false;
         }
 
+        if ($user->isAuraGlobalAdmin()) {
+            return true;
+        }
+
         return $user->belongsToTeam($team);
     }
 
@@ -159,5 +163,15 @@ class TeamPolicy
         }
 
         return $user->ownsTeam($team);
+    }
+
+    private function userForTeam(User $user, Team $team): User
+    {
+        // Role helpers resolve from current_team_id. Keep the actor's request
+        // context intact while evaluating the policy target.
+        $user = clone $user;
+        $user->setAttribute('current_team_id', $team->getKey());
+
+        return $user;
     }
 }

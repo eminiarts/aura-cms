@@ -8,6 +8,7 @@ use Aura\Base\Traits\InteractsWithFields;
 use Aura\Base\Traits\MediaFields;
 use Aura\Base\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -34,43 +35,6 @@ class Create extends Component
     public $slug;
 
     public $tax;
-
-    public function callMethod($method, $params = [], $captureReturnValueCallback = null)
-    {
-        // dd($method, $params, $captureReturnValueCallback);
-        // If the method exists in this component, call it directly.
-        if (method_exists($this, $method) || ! optional($params)[0]) {
-            return parent::callMethod($method, $params, $captureReturnValueCallback);
-        }
-
-        // Assuming the first parameter is always the slug to identify the field.
-        $slug = $params[0];
-
-        // Get the corresponding field instance based on the slug.
-        $field = $this->model->fieldBySlug($slug);
-
-        // Forward the call to the field's method.
-        if ($field) {
-
-            $fieldTypeInstance = app($field['type']);
-
-            // If the method exists in the field type, call it directly.
-            if (method_exists($fieldTypeInstance, $method)) {
-                $post = call_user_func_array([$fieldTypeInstance, $method], array_merge([$this->model, $this->form], $params));
-
-                // If the field type method returns a post, update the post.
-                if ($post) {
-                    $this->form = $post;
-                }
-
-                // Make sure to return here, otherwise the parent callMethod will be called.
-                return;
-            }
-        }
-
-        // Run parent callMethod
-        return parent::callMethod($method, $params, $captureReturnValueCallback);
-    }
 
     public function mount($slug = null)
     {
@@ -178,9 +142,10 @@ class Create extends Component
     {
         $this->validate();
 
-        $attributes = collect($this->form['fields'])
-            ->except(['team_id', 'user_id', 'type', 'current_team_id'])
-            ->all();
+        // `form` is client-mutable, so the payload is rebuilt from the
+        // resource's declared input fields instead of trusting whatever the
+        // browser sent back.
+        $attributes = $this->sanitizedFormFields();
 
         $userClass = config('aura.resources.user');
         if (config('aura.teams') && $this->model instanceof $userClass) {
@@ -257,5 +222,29 @@ class Create extends Component
                 $this->form['fields'][$slug] = $field['default'];
             }
         }
+    }
+
+    /**
+     * The persistable payload for a save.
+     *
+     * `form` round-trips through the browser, so anything in it is attacker
+     * controlled. Only slugs the resource declares as input fields (plus the
+     * custom `set{Slug}Field` payloads a resource explicitly opts into) are
+     * kept, and ownership/tenancy columns are dropped unconditionally — they
+     * are assigned server-side (see InitialPostFields).
+     */
+    protected function sanitizedFormFields(): array
+    {
+        $fields = collect($this->form['fields'] ?? []);
+
+        $allowed = collect($this->model->inputFieldsSlugs())
+            ->merge($fields->keys()->filter(
+                fn ($key) => method_exists($this->model, 'set'.Str::studly((string) $key).'Field')
+            ));
+
+        return $fields
+            ->only($allowed->all())
+            ->except(['id', 'type', 'team_id', 'user_id', 'current_team_id'])
+            ->all();
     }
 }

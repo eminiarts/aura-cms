@@ -14,7 +14,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | This is the namespace and directory that Aura will automatically
-    | register resources from. You may also register resources here.
+    | register resources and fields from.
     |
     */
 
@@ -22,13 +22,11 @@ return [
         'resources' => [
             'namespace' => 'App\\Aura\\Resources',
             'path' => app_path('Aura/Resources'),
-            'register' => [],
         ],
 
         'fields' => [
             'namespace' => 'App\\Aura\\Fields',
             'path' => app_path('Aura/Fields'),
-            'register' => [],
         ],
     ],
 

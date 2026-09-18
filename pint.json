@@ -1,7 +1,8 @@
 {
     "preset": "laravel",
     "exclude": [
-        "build"
+        "build",
+        "plugins"
     ],
     "rules": {
         "simplified_null_return": true,

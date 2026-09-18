@@ -6,10 +6,8 @@ use Aura\Base\Resource;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use Symfony\Component\Process\ExecutableFinder;
 
 class CreateResourceMigration extends Command
 {
@@ -17,7 +15,9 @@ class CreateResourceMigration extends Command
 
     protected $files;
 
-    protected $signature = 'aura:create-resource-migration {resource}';
+    protected $signature = 'aura:create-resource-migration
+        {resource : The fully qualified resource class, e.g. "App\\Aura\\Resources\\Article"}
+        {--table= : Table name to migrate, when it differs from the resource\'s currently loaded $table}';
 
     public function __construct(Filesystem $files)
     {
@@ -44,7 +44,9 @@ class CreateResourceMigration extends Command
             return 1;
         }
 
-        $tableName = Str::plural(Str::lower(class_basename($resourceClass)));
+        // Use the resource's own table so the migration matches what the model
+        // reads/writes (custom-table resources define $table explicitly).
+        $tableName = $this->option('table') ?: $resource->getTable();
 
         $migrationName = "create_{$tableName}_table";
 
@@ -58,17 +60,17 @@ class CreateResourceMigration extends Command
 
         $fields = method_exists($resource, 'inputFields') ? $resource->inputFields() : [];
 
-        $combined = $baseFields->merge($fields)->merge(collect([
+        $combined = $baseFields->merge($fields)->merge(collect(array_filter([
             [
                 'name' => 'User Id',
                 'type' => 'Aura\\Base\\Fields\\BelongsTo',
                 'slug' => 'user_id',
             ],
-            [
+            config('aura.teams') ? [
                 'name' => 'Team Id',
                 'type' => 'Aura\\Base\\Fields\\BelongsTo',
                 'slug' => 'team_id',
-            ],
+            ] : null,
             [
                 'name' => 'created_at',
                 'type' => 'Aura\\Base\\Fields\\Datetime',
@@ -79,7 +81,7 @@ class CreateResourceMigration extends Command
                 'type' => 'Aura\\Base\\Fields\\Datetime',
                 'slug' => 'updated_at',
             ],
-        ]));
+        ])));
 
         $combined = $combined->unique('slug');
 
@@ -118,9 +120,6 @@ class CreateResourceMigration extends Command
         $this->files->put($migrationFile, $replacedContent2);
 
         $this->info("Migration '{$migrationName}' created successfully.");
-
-        // Run "pint" on the migration file
-        $this->runPint($migrationFile);
     }
 
     protected function generateColumn($field)
@@ -148,7 +147,11 @@ class CreateResourceMigration extends Command
             $schema .= $this->generateColumn($field);
         }
 
-        return $schema;
+        // Lay the columns out like a hand-written migration: one per line,
+        // indented inside the Schema::create closure.
+        $lines = array_filter(array_map('trim', preg_split('/\r?\n/', $schema)));
+
+        return PHP_EOL.implode(PHP_EOL, array_map(fn ($line) => '            '.$line, $lines)).PHP_EOL.'        ';
     }
 
     protected function getMigrationPath($name)
@@ -175,20 +178,5 @@ class CreateResourceMigration extends Command
         }
 
         return false;
-    }
-
-    protected function runPint($migrationFile)
-    {
-        return;
-        $command = [
-            (new ExecutableFinder)->find('php', 'php', [
-                '/usr/local/bin',
-                '/opt/homebrew/bin',
-            ]),
-
-            'vendor/bin/pint', $migrationFile,
-        ];
-
-        $result = Process::path(base_path())->run($command);
     }
 }

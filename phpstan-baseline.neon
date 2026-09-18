@@ -3,7 +3,7 @@ parameters:
 		-
 			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
 			identifier: larastan.noEnvCallsOutsideOfConfig
-			count: 5
+			count: 6
 			path: config/aura.php
 
 		-
@@ -55,12 +55,6 @@ parameters:
 			path: database/factories/UserFactory.php
 
 		-
-			message: '#^Access to an undefined property Aura\\Base\\Resources\\Attachment\|Illuminate\\Database\\Eloquent\\Collection\<int, Aura\\Base\\Resources\\Attachment\>\:\:\$url\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Aura.php
-
-		-
 			message: '#^Access to an undefined property Aura\\Base\\Resources\\Option\:\:\$value\.$#'
 			identifier: property.notFound
 			count: 1
@@ -75,25 +69,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
 			identifier: property.notFound
-			count: 3
-			path: src/Aura.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Support\\Stringable\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Aura.php
-
-		-
-			message: '#^Class Aura\\Base\\Resource referenced with incorrect case\: Aura\\Base\\resource\.$#'
-			identifier: class.nameCase
-			count: 1
-			path: src/Aura.php
-
-		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$resources$#'
-			identifier: parameter.notFound
-			count: 1
+			count: 2
 			path: src/Aura.php
 
 		-
@@ -109,30 +85,6 @@ parameters:
 			path: src/AuraServiceProvider.php
 
 		-
-			message: '#^Access to an undefined property Aura\\Base\\BaseResource\:\:\$fields\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/BaseResource.php
-
-		-
-			message: '#^Access to an undefined property Aura\\Base\\BaseResource\:\:\$meta\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/BaseResource.php
-
-		-
-			message: '#^Call to an undefined method Aura\\Base\\BaseResource\:\:getMeta\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/BaseResource.php
-
-		-
-			message: '#^Call to an undefined method Aura\\Base\\BaseResource\:\:resolveFieldValue\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/BaseResource.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$key\.$#'
 			identifier: property.notFound
 			count: 1
@@ -143,24 +95,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: src/Collection/MetaCollection.php
-
-		-
-			message: '#^Access to an undefined property Aura\\Base\\Resources\\User\:\:\$current_team_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Commands/Installation.php
-
-		-
-			message: '#^Method Aura\\Base\\Commands\\MakeField\:\:handle\(\) should return bool\|null but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Commands/MakeField.php
-
-		-
-			message: '#^Call to an undefined method ArrayAccess\:\:toArray\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/ConditionalLogic.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:hasRole\(\)\.$#'
@@ -189,7 +123,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Fields\\Field\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: src/Fields/Field.php
 
 		-
@@ -301,12 +235,6 @@ parameters:
 			path: src/Http/Kernel.php
 
 		-
-			message: '#^Method Aura\\Base\\Http\\Middleware\\Authenticate\:\:redirectTo\(\) should return string\|null but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Http/Middleware/Authenticate.php
-
-		-
 			message: '''
 				#^Class Aura\\Base\\Http\\Middleware\\VerifyCsrfToken extends deprecated class Illuminate\\Foundation\\Http\\Middleware\\VerifyCsrfToken\:
 				Use PreventRequestForgery instead\.$#
@@ -342,7 +270,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\CreateResource\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 4
+			count: 2
 			path: src/Livewire/CreateResource.php
 
 		-
@@ -378,7 +306,7 @@ parameters:
 		-
 			message: '#^Call to an undefined method Aura\\Base\\Livewire\\EditResourceField\:\:notify\(\)\.$#'
 			identifier: method.notFound
-			count: 3
+			count: 1
 			path: src/Livewire/EditResourceField.php
 
 		-
@@ -390,7 +318,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\InviteUser\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: src/Livewire/InviteUser.php
 
 		-
@@ -450,7 +378,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Notifications\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: src/Livewire/Notifications.php
 
 		-
@@ -492,7 +420,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Profile\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: src/Livewire/Profile.php
 
 		-
@@ -520,24 +448,6 @@ parameters:
 			path: src/Livewire/Resource/Create.php
 
 		-
-			message: '#^Call to an undefined static method Livewire\\Component\:\:callMethod\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 2
-			path: src/Livewire/Resource/Create.php
-
-		-
-			message: '#^Call to an undefined static method Livewire\\Component\:\:callMethod\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 3
-			path: src/Livewire/Resource/Edit.php
-
-		-
-			message: '#^Class Aura\\Base\\Livewire\\Resource\\Closure not found\.$#'
-			identifier: class.notFound
-			count: 2
-			path: src/Livewire/Resource/Edit.php
-
-		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\ResourceEditor\:\:\$mappedFields\.$#'
 			identifier: property.notFound
 			count: 6
@@ -546,13 +456,13 @@ parameters:
 		-
 			message: '#^Call to an undefined method Aura\\Base\\Livewire\\ResourceEditor\:\:notify\(\)\.$#'
 			identifier: method.notFound
-			count: 5
+			count: 3
 			path: src/Livewire/ResourceEditor.php
 
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Settings\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: src/Livewire/Settings.php
 
 		-
@@ -756,7 +666,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Livewire\\UserSettings\:\:\$meta\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: src/Livewire/UserSettings.php
 
 		-
@@ -826,94 +736,10 @@ parameters:
 			path: src/Models/Scopes/TypeScope.php
 
 		-
-			message: '#^Anonymous function has an unused use \$groupedFields\.$#'
-			identifier: closure.unusedUse
-			count: 1
-			path: src/Pipeline/ApplyGroupedInputs.php
-
-		-
 			message: '#^Binary operation "\+" between string and 1 results in an error\.$#'
 			identifier: binaryOp.invalid
 			count: 3
 			path: src/Pipeline/ApplyGroupedInputs.php
-
-		-
-			message: '#^Method Aura\\Base\\Policies\\MetaPolicy\:\:create\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Policies/MetaPolicy.php
-
-		-
-			message: '#^Method Aura\\Base\\Policies\\MetaPolicy\:\:delete\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Policies/MetaPolicy.php
-
-		-
-			message: '#^Method Aura\\Base\\Policies\\MetaPolicy\:\:forceDelete\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Policies/MetaPolicy.php
-
-		-
-			message: '#^Method Aura\\Base\\Policies\\MetaPolicy\:\:restore\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Policies/MetaPolicy.php
-
-		-
-			message: '#^Method Aura\\Base\\Policies\\MetaPolicy\:\:update\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Policies/MetaPolicy.php
-
-		-
-			message: '#^Method Aura\\Base\\Policies\\MetaPolicy\:\:view\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Policies/MetaPolicy.php
-
-		-
-			message: '#^Method Aura\\Base\\Policies\\MetaPolicy\:\:viewAny\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Policies/MetaPolicy.php
-
-		-
-			message: '#^PHPDoc tag @param for parameter \$meta with type App\\Models\\Meta is not subtype of native type Aura\\Base\\Models\\Meta\.$#'
-			identifier: parameter.phpDocType
-			count: 5
-			path: src/Policies/MetaPolicy.php
-
-		-
-			message: '#^Parameter \$meta of method Aura\\Base\\Policies\\MetaPolicy\:\:delete\(\) has invalid type App\\Models\\Meta\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/MetaPolicy.php
-
-		-
-			message: '#^Parameter \$meta of method Aura\\Base\\Policies\\MetaPolicy\:\:forceDelete\(\) has invalid type App\\Models\\Meta\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/MetaPolicy.php
-
-		-
-			message: '#^Parameter \$meta of method Aura\\Base\\Policies\\MetaPolicy\:\:restore\(\) has invalid type App\\Models\\Meta\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/MetaPolicy.php
-
-		-
-			message: '#^Parameter \$meta of method Aura\\Base\\Policies\\MetaPolicy\:\:update\(\) has invalid type App\\Models\\Meta\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/MetaPolicy.php
-
-		-
-			message: '#^Parameter \$meta of method Aura\\Base\\Policies\\MetaPolicy\:\:view\(\) has invalid type App\\Models\\Meta\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/MetaPolicy.php
 
 		-
 			message: '#^Access to property \$user_id on an unknown class App\\Models\\Post\.$#'
@@ -962,78 +788,6 @@ parameters:
 			identifier: class.notFound
 			count: 1
 			path: src/Policies/ResourcePolicy.php
-
-		-
-			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:create\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Policies/TaxonomyPolicy.php
-
-		-
-			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:delete\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Policies/TaxonomyPolicy.php
-
-		-
-			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:forceDelete\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Policies/TaxonomyPolicy.php
-
-		-
-			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:restore\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Policies/TaxonomyPolicy.php
-
-		-
-			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:update\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Policies/TaxonomyPolicy.php
-
-		-
-			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:view\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Policies/TaxonomyPolicy.php
-
-		-
-			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:viewAny\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
-			identifier: return.missing
-			count: 1
-			path: src/Policies/TaxonomyPolicy.php
-
-		-
-			message: '#^Parameter \$taxonomy of method Aura\\Base\\Policies\\TaxonomyPolicy\:\:delete\(\) has invalid type Aura\\Base\\Models\\Taxonomy\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/TaxonomyPolicy.php
-
-		-
-			message: '#^Parameter \$taxonomy of method Aura\\Base\\Policies\\TaxonomyPolicy\:\:forceDelete\(\) has invalid type Aura\\Base\\Models\\Taxonomy\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/TaxonomyPolicy.php
-
-		-
-			message: '#^Parameter \$taxonomy of method Aura\\Base\\Policies\\TaxonomyPolicy\:\:restore\(\) has invalid type Aura\\Base\\Models\\Taxonomy\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/TaxonomyPolicy.php
-
-		-
-			message: '#^Parameter \$taxonomy of method Aura\\Base\\Policies\\TaxonomyPolicy\:\:update\(\) has invalid type Aura\\Base\\Models\\Taxonomy\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/TaxonomyPolicy.php
-
-		-
-			message: '#^Parameter \$taxonomy of method Aura\\Base\\Policies\\TaxonomyPolicy\:\:view\(\) has invalid type Aura\\Base\\Models\\Taxonomy\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Policies/TaxonomyPolicy.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:isSuperAdmin\(\)\.$#'
@@ -1208,9 +962,3 @@ parameters:
 			identifier: property.phpDocType
 			count: 1
 			path: src/Resources/User.php
-
-		-
-			message: '#^Method Illuminate\\Filesystem\\FilesystemAdapter\:\:makeDirectory\(\) invoked with 3 parameters, 1 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: src/Services/ThumbnailGenerator.php

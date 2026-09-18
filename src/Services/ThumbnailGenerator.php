@@ -108,7 +108,7 @@ class ThumbnailGenerator
 
         // Ensure the thumbnail directory exists
         if (! Storage::disk($disk)->exists($thumbnailFolder)) {
-            Storage::disk($disk)->makeDirectory($thumbnailFolder, 0755, true);
+            Storage::disk($disk)->makeDirectory($thumbnailFolder);
         }
 
         // Save the thumbnail image with quality from config

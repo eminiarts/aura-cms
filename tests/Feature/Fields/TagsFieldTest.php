@@ -6,6 +6,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Tags;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
+use Aura\Base\Resources\Tag;
 use Livewire\Livewire;
 
 // Before each test, create a Superadmin and login
@@ -22,7 +23,7 @@ class TagsFieldModel extends Resource
 
     public static string $type = 'TagsModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -107,7 +108,11 @@ test('Text Field - Prefix rendered', function () {
 });
 
 test('TagsFieldModel - Saving Tags', function () {
-    $model = TagsFieldModel::create(['tags' => ['123', '456', 'Enes']]);
+    // Numeric strings are ids of existing tags; plain strings are new labels.
+    $first = Tag::create(['title' => 'Tag 123', 'slug' => 'tag-123']);
+    $second = Tag::create(['title' => 'Tag 456', 'slug' => 'tag-456']);
+
+    $model = TagsFieldModel::create(['tags' => [(string) $first->id, (string) $second->id, 'Enes']]);
 
     expect($model->tags)->toHaveCount(3);
     expect($model->tags)->toBeCollection();

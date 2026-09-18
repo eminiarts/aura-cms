@@ -211,7 +211,7 @@ class Role extends Resource
         return static::firstOrCreateCatalogRole('admin');
     }
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

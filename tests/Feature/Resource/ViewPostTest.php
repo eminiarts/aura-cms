@@ -63,7 +63,7 @@ test('resource view - can be customized via viewView method', function () {
 
         protected static ?string $slug = 'custom-resource';
 
-        public static function getFields()
+        public static function getFields(): array
         {
             return [
                 [

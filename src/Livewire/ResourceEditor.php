@@ -560,6 +560,10 @@ class ResourceEditor extends Component
 
     public function singleAction($action)
     {
+        // Only declared actions may be invoked; otherwise any public component
+        // method could be called from the browser.
+        abort_unless(array_key_exists($action, $this->getActionsProperty()), 404);
+
         $this->{$action}();
 
         $this->notify('Successfully ran: '.$action);

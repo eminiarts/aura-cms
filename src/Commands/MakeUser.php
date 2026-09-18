@@ -7,6 +7,8 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\password;
@@ -19,7 +21,8 @@ class MakeUser extends Command
     protected $signature = 'aura:user
                             {--name= : The name of the user}
                             {--email= : A valid email address}
-                            {--password= : The password for the user}
+                            {--password= : The password for the user, at least 8 characters}
+                            {--team-name= : The name of the first team, defaults to the name of the user}
                             {--global-admin : Grant the user instance-level Global Admin status}
                             {--no-global-admin : Do not grant the user instance-level Global Admin status}';
 
@@ -28,6 +31,24 @@ class MakeUser extends Command
         $name = $this->option('name') ?? text('What is your name?');
         $email = $this->option('email') ?? text('What is your email?');
         $password = $this->option('password') ?? password('What is your password?');
+
+        $validator = Validator::make([
+            'name' => $name,
+            'email' => $email,
+            'password' => $password,
+        ], [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', Rule::unique($this->usersTable(), 'email')],
+            'password' => ['required', 'string', 'min:8'],
+        ]);
+
+        if ($validator->fails()) {
+            foreach ($validator->errors()->all() as $error) {
+                $this->error($error);
+            }
+
+            return static::FAILURE;
+        }
 
         $globalAdmin = ! $this->option('no-global-admin');
 
@@ -53,7 +74,7 @@ class MakeUser extends Command
         if (config('aura.teams')) {
             /** @var Team $team */
             $team = app(config('aura.resources.team'))->create([
-                'name' => $name,
+                'name' => $this->option('team-name') ?: $name,
                 'user_id' => $user->id,
             ]);
 
@@ -78,5 +99,14 @@ class MakeUser extends Command
         $this->info('User created successfully.');
 
         return static::SUCCESS;
+    }
+
+    /**
+     * The table of the configured user resource, so the uniqueness check keeps
+     * working for applications that swap out Aura's User resource.
+     */
+    protected function usersTable(): string
+    {
+        return app(config('aura.resources.user', User::class))->getTable();
     }
 }

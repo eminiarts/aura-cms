@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\Pipeline\MapFields;
 use Illuminate\Pipeline\Pipeline;
 
 trait InputFieldsHelpers
@@ -110,11 +111,6 @@ trait InputFieldsHelpers
         return $this->fieldsCollection()->pluck('slug');
     }
 
-    public function getFieldValue($key)
-    {
-        return $this->fieldClassBySlug($key)->get($this->fieldBySlug($key), $this->meta->$key);
-    }
-
     public function groupedFieldBySlug($slug)
     {
         $fields = $this->getGroupedFields();
@@ -172,10 +168,15 @@ trait InputFieldsHelpers
 
     public function sendThroughPipeline($fields, $pipes)
     {
-        // dump('sendThroughPipeline');
         return app(Pipeline::class)
             ->send(clone $fields)
-            ->through($pipes)
+            // MapFields is the first pipe to touch raw definitions, so it is
+            // where a malformed one is reported. Hand it the owning class so
+            // the error names the resource, not just the field index.
+            ->through(array_map(
+                fn ($pipe) => $pipe === MapFields::class ? new MapFields(get_class($this)) : $pipe,
+                $pipes
+            ))
             ->thenReturn();
     }
 }

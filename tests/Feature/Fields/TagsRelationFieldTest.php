@@ -15,7 +15,7 @@ class TagsRelationFieldModel extends Resource
 {
     public static string $type = 'TagsRelationModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

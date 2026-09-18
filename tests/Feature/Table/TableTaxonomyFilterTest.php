@@ -25,7 +25,7 @@ class TableTaxonomyFilterModel extends Resource
 
     protected $table = 'posts';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

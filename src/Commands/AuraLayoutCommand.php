@@ -13,8 +13,10 @@ class AuraLayoutCommand extends Command
 
     public function handle()
     {
-        $sourcePath = 'vendor/eminiarts/aura/resources/views/components/layout/app.blade.php';
-        $destinationPath = 'resources/views/vendor/aura/components/layout/app.blade.php';
+        // Resolved from the package itself so the command works no matter where
+        // composer installed it, or which directory artisan is run from.
+        $sourcePath = dirname(__DIR__, 2).'/resources/views/components/layout/app.blade.php';
+        $destinationPath = resource_path('views/vendor/aura/components/layout/app.blade.php');
 
         if (! File::exists($sourcePath)) {
             $this->error('Aura layout file not found. Make sure the Aura package is installed.');

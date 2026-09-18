@@ -24,6 +24,7 @@ class DateFieldModel extends Resource
                 'type' => 'Aura\\Base\\Fields\\Date',
                 'validation' => '',
                 'format' => 'd.m.Y',
+                'display_format' => 'd.m.Y',
                 'conditional_logic' => [],
                 'slug' => 'date',
             ],
@@ -109,6 +110,16 @@ describe('Date Field Rendering', function () {
         Livewire::test(Create::class, ['slug' => 'datemodel'])
             ->assertSeeHtml('<svg class="w-5 h-5 text-gray-400"');
     });
+
+    test('displays an empty value instead of inventing a date', function ($value, $expected) {
+        $model = DateFieldModel::create(['fields' => ['date' => $value]]);
+
+        expect(trim(strip_tags($model->display('date'))))->toBe($expected);
+    })->with([
+        'missing date' => [null, '–'],
+        'empty date' => ['', '–'],
+        'stored date' => ['2026-10-01', '01.10.2026'],
+    ]);
 });
 
 describe('Date Field in Livewire', function () {

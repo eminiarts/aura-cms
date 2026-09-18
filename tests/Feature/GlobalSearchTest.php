@@ -29,7 +29,7 @@ class GlobalSearchModel extends Resource
 
     public static string $type = 'SearchPost';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -81,7 +81,7 @@ class GlobalSearchCustomTableModel extends Resource
 
     protected $table = 'global_search_projects';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

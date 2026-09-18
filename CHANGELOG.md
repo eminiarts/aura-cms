@@ -12,13 +12,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Per-resource page component hooks (`indexComponent()`, `createComponent()`, `editComponent()`, `viewComponent()`): a resource can swap in a custom Livewire component for any of its admin pages while keeping the default URI and `aura.{slug}.*` route name, so all generated links keep working.
 - `aura:customize` command: customize a resource page by copying its Blade view into `resources/views/aura/{slug}/`, generating a custom Livewire component in `app/Livewire/`, or both (`--mode=view|component|full`). Wires the resource to the generated files automatically and scaffolds an app-level subclass for package resources (User, Team, …).
 
+- `aura:user --team-name`, `aura:create-resource-permissions --team=`, `aura:create-resource-migration --table=`, `aura:schema-update --drop|--force`.
+- `features.dashboard` config flag (the Dashboard navigation entry never rendered because the flag was missing).
+- `media.max_file_size` (KB) is honoured by the media uploader.
+
+### Changed
+
+- Support matrix narrowed to Laravel 13 only (Laravel 12 dropped). PHP 8.4+, Livewire 4 unchanged.
+- `DefinesFields::getFields()` declares `: array`; every resource must too. Malformed field definitions (missing `type`/`slug`, unknown field class) throw an exception naming the resource and field index.
+- `aura:install` is visible in `php artisan list`, validates all options before any side effect, runs `storage:link` and prints next steps. `aura:install-config` edits the published config in place: env-backed keys go to `.env`, comments and `env()` calls survive.
+- `aura:resource BlogPost` generates slug `blog-post`, explicit `Blog Post`/`Blog Posts` names and, with `--custom`, table `blog_posts` with `$usesMeta = false` so fields are stored in columns. `getSlug()` falls back to the class basename; `$icon` is honoured by `getIcon()`.
+- `aura:user` validates name, email (unique) and password length. `aura:create-resource-permissions` delegates to the team-aware job (it silently created no permissions with teams disabled).
+- `aura:schema-update` prints a plan, aborts on an empty parse, never alters existing columns and drops columns only with `--drop`.
+- Bulk actions follow one convention: `bulkActions()` method wins, `$bulkActions` property is the fallback.
+- `/admin` redirects straight to `/login`; the GET login route is named `login` (`aura.login` is gone). `auth.redirect` follows `AURA_PATH`.
+- The navigation cache key includes the registered resource set, so new resources appear without `cache:clear`. `updateOption()` invalidates `getOption()`.
+- App-level custom fields are discovered from `aura-settings.paths.fields` (discovery read a missing key and found nothing).
+- Every `aura:*` command documents its arguments and options.
+
 ### Removed
 
 - The broken `aura:customize-component` command (superseded by `aura:customize`; it never copied views and generated routes outside the admin middleware group).
+- Unread config keys: `features.last_visited_pages`, `features.resource_view`, `features.resource_edit`, `views.dashboard|index|view|create|edit|navigation`, `reporting.projection.enabled`, `aura-settings.paths.*.register`.
+- `Attachment::import()`, the `HasFields` trait, `Resource::attachment()`/`revision()`, `MetaPolicy`/`TaxonomyPolicy`, the `SyncDatabase` listener, the `password_resets` table and the `ApplyLayoutFields` pipeline step.
 
-## [1.0.0](https://github.com/eminiarts/aura-cms/compare/v0.2.0...v1.0.0) - 2026-07-18
+### Security
 
-First stable release (pre-released as `v1.0.0-beta.1` on 2026-07-17).
+- Resource forms only persist declared input fields and never ownership columns (`team_id`, `user_id`, `current_team_id`); a custom-table update could move a user into another team.
+- Invitations validate the role against the team's catalog and refuse `super_admin` unless the inviter is a super or global admin.
+- Tags, BelongsTo, Roles and Json display output and breadcrumb titles are escaped.
+- The membership editor locks its target user and authorizes it on mount; the image component resolves attachments through the team scope and the view policy.
+- Only declared resource actions can be invoked; the Livewire `callMethod` overrides that allowed arbitrary method dispatch are gone.
+- Tags only create records when the field allows it and the actor may create the target resource; submitted ids are checked against the current scope.
+
+## [1.0.0-beta.4](https://github.com/eminiarts/aura-cms/compare/v0.2.0...v1.0.0-beta.4) - 2026-08-20
+
+Latest 1.0 pre-release. Beta series started with `v1.0.0-beta.1` on 2026-07-17 (`v1.0.0-beta.2`, `v1.0.0-beta.3`, then this tag). No stable `v1.0.0` tag yet.
 
 ### Changed
 
@@ -51,7 +80,7 @@ First stable release (pre-released as `v1.0.0-beta.1` on 2026-07-17).
 
 ### Upgrade notes
 
-Aura 1.0 is a fresh baseline and does not provide an automated 0.x data migration. See [UPGRADING.md](UPGRADING.md).
+The 1.0 line (still in beta) is a fresh baseline and does not provide an automated 0.x data migration. See [UPGRADING.md](UPGRADING.md).
 
 ## [0.2.0](https://github.com/eminiarts/aura-cms/compare/v0.1.0...v0.2.0) - 2026-06-03
 
@@ -242,7 +271,7 @@ Version 1.0.0 will include:
 ## Versioning Strategy
 
 - **0.1.x**: Current stable state, bug fixes and minor improvements only
-- **1.0.0**: PHP 8.4+, Laravel 12/13, Livewire 4, and the supported V1 baseline
+- **1.0.0**: PHP 8.4+, Laravel 13, Livewire 4, and the supported V1 baseline
 - **Breaking changes**: Expected between 0.x and 1.0, plan accordingly
 
 ## Support

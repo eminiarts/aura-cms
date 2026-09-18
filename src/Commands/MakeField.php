@@ -18,7 +18,7 @@ class MakeField extends GeneratorCommand
      *
      * @var string
      */
-    protected $signature = 'aura:field {name}';
+    protected $signature = 'aura:field {name : The name of the field class, e.g. ColorPicker}';
 
     /**
      * The type of class being generated.
@@ -29,12 +29,12 @@ class MakeField extends GeneratorCommand
 
     public function handle()
     {
-        parent::handle();
+        $result = parent::handle();
 
         $this->createViewFile();
         $this->createEditFile();
 
-        $this->info('Field created successfully.');
+        return $result;
     }
 
     protected function buildEditFileContents()
@@ -94,7 +94,8 @@ class MakeField extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace.'\Aura\Fields';
+        // Generate where Aura::getAppFields() discovers (config/aura-settings.php).
+        return trim(config('aura-settings.paths.fields.namespace', $rootNamespace.'\Aura\Fields'), '\\');
     }
 
     /**

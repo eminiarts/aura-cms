@@ -39,7 +39,7 @@ class CompositionResourceModel extends Resource
 
     public static string $type = 'CompositionResource';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Headline', 'slug' => 'headline', 'type' => 'Aura\\Base\\Fields\\Text', 'conditional_logic' => []],
@@ -53,7 +53,7 @@ class CompositionBaseModel extends BaseResource
 
     public static string $type = 'CompositionBase';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Headline', 'slug' => 'headline', 'type' => 'Aura\\Base\\Fields\\Text', 'conditional_logic' => []],

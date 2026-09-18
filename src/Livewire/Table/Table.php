@@ -175,7 +175,7 @@ class Table extends Component
 
     public function allTableRows()
     {
-        return $this->query()->pluck('id')->all();
+        return $this->rowsQuery()->pluck('id')->all();
     }
 
     public function boot() {}
@@ -217,7 +217,7 @@ class Table extends Component
 
     public function getAllTableRows()
     {
-        return $this->query()->pluck('id')->all();
+        return $this->rowsQuery()->pluck('id')->all();
     }
 
     public function getParentModel()
@@ -351,7 +351,7 @@ class Table extends Component
     public function openBulkActionModal($action, $data)
     {
         $records = app(TableMutationAuthorizer::class)->authorizeBulk(
-            scope: clone $this->query(),
+            scope: clone $this->rowsQuery(),
             action: $action,
             declared: (array) $this->getBulkActionsProperty(),
             selected: $this->selected,
@@ -712,8 +712,16 @@ class Table extends Component
     {
         $model = $this->model();
         $relations = [];
+        $slugs = $model->inputFieldsSlugs();
 
-        foreach ($model->inputFieldsSlugs() as $slug) {
+        // Grid and Kanban cards can use fields outside the list columns.
+        if ($this->currentView === 'list') {
+            $slugs = collect($this->headers())->keys()
+                ->filter(fn ($slug) => ! empty($this->columns[$slug]))
+                ->intersect($slugs);
+        }
+
+        foreach ($slugs as $slug) {
             $fieldClass = $model->fieldClassBySlug($slug);
 
             if (! $fieldClass instanceof ProvidesTableEagerLoad) {

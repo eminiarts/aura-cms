@@ -98,6 +98,13 @@ class Aura
     {
         $this->clearRoutes();
 
+        // Deliberately a full flush: Aura's cache keys are not enumerable. The
+        // navigation key is per user x team x resource-set hash
+        // (navigationCacheKey()) and option keys are `aura.{arbitrary name}` /
+        // `{team}.aura.{arbitrary name}`, so there is no finite list to forget
+        // and the default file/database stores support neither tags nor prefix
+        // scans. Scoped invalidation lives on the individual writers
+        // (updateOption(), Team/User::updateOption()).
         Cache::clear();
     }
 
@@ -139,7 +146,7 @@ class Aura
 
     public static function findTemplateBySlug($slug)
     {
-        return app('Aura\Base\Templates\\'.str($slug)->title);
+        return app('Aura\Base\Templates\\'.Str::studly($slug));
     }
 
     /**
@@ -167,15 +174,21 @@ class Aura
         }
     }
 
+    /**
+     * Discover the app's own field classes, the counterpart to
+     * getAppResources(). Both read the canonical `aura-settings.paths.*` keys.
+     *
+     * @return array<int,class-string>
+     */
     public function getAppFields()
     {
-        $path = config('aura.fields.path');
+        $path = config('aura-settings.paths.fields.path');
 
-        if (! file_exists($path)) {
+        if (! $path || ! file_exists($path)) {
             return [];
         }
 
-        return $this->getAppFiles($path, $filter = 'Field', $namespace = config('aura.fields.namespace'));
+        return $this->getAppFiles($path, 'Field', config('aura-settings.paths.fields.namespace'));
     }
 
     public function getAppFiles($path, $filter, $namespace)
@@ -194,8 +207,7 @@ class Aura
     /**
      * Register the App resources
      *
-     * @param  array  $resources
-     * @return array<class-string<resource>>
+     * @return array<class-string<\Aura\Base\Resource>>
      */
     public function getAppResources()
     {
@@ -302,7 +314,7 @@ class Aura
 
     public static function getPath($id)
     {
-        $attachment = Attachment::find($id);
+        $attachment = app(config('aura.resources.attachment', Attachment::class))::find($id);
 
         return $attachment ? $attachment->url : null;
     }
@@ -337,7 +349,9 @@ class Aura
         // hardening default), Collection payloads become __PHP_Incomplete_Class
         // and the sidebar foreach treats property values as group lists — strings
         // then blow up with "foreach() argument must be of type array|object".
-        $payload = Cache::remember('user-'.auth()->id().'-'.auth()->user()->current_team_id.'-navigation', 3600, function () {
+        $cacheKey = $this->navigationCacheKey();
+
+        $payload = Cache::remember($cacheKey, 3600, function () {
 
             $resources = collect($this->getResources());
 
@@ -402,12 +416,24 @@ class Aura
 
         // Revive incomplete/legacy Collection payloads written before this fix.
         if (! is_array($payload)) {
-            Cache::forget('user-'.auth()->id().'-'.auth()->user()->current_team_id.'-navigation');
+            Cache::forget($cacheKey);
 
             return $this->navigation();
         }
 
         return collect($payload);
+    }
+
+    /**
+     * The registered resource list is part of the key so that registering a
+     * resource (e.g. a freshly generated one) invalidates the cached sidebar
+     * instead of staying invisible until the TTL expires.
+     */
+    public function navigationCacheKey(): string
+    {
+        return 'user-'.auth()->id()
+            .'-'.auth()->user()->current_team_id
+            .'-navigation-'.md5(implode(',', $this->getResources()));
     }
 
     public function option($key)
@@ -499,6 +525,16 @@ class Aura
             auth()->user()->currentTeam->updateOption($key, $value);
         } else {
             Option::withoutGlobalScopes([app(TeamScope::class)])->updateOrCreate(['name' => $key], ['value' => $value]);
+        }
+
+        // Invalidate the exact keys getOption() reads. Team::updateOption()
+        // forgets its own `team.{id}.{key}` cache entry, which is a different
+        // key from the one getOption() writes — without this a write stays
+        // invisible for the rest of the hour-long TTL.
+        Cache::forget('aura.'.$key);
+
+        if ($teamId = optional(auth()->user())->current_team_id) {
+            Cache::forget($teamId.'.aura.'.$key);
         }
     }
 

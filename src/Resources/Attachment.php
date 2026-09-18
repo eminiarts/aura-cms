@@ -104,7 +104,7 @@ class Attachment extends Resource
         return $basePath.'/'.$this->url;
     }
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -332,35 +332,6 @@ class Attachment extends Resource
     public static function getWidgets(): array
     {
         return [];
-    }
-
-    public static function import($url, $folder = 'attachments')
-    {
-        // Download the image
-        $imageContent = file_get_contents($url);
-
-        // Generate a unique file name
-        $fileName = uniqid().'.jpg';
-
-        // Save the image to the desired storage
-        $disk = config('aura.media.disk', 'public');
-        $storagePath = "{$folder}/{$fileName}";
-        Storage::disk($disk)->put($storagePath, $imageContent);
-
-        // Get the image size and mime type
-        $imageSize = Storage::disk($disk)->size($storagePath);
-        $imageMimeType = Storage::disk($disk)->mimeType($storagePath);
-
-        // Create a new Attachment instance
-        $attachment = self::create([
-            'url' => $storagePath,
-            'name' => $fileName,
-            'title' => $fileName,
-            'size' => $imageSize,
-            'mime_type' => $imageMimeType,
-        ]);
-
-        return $attachment;
     }
 
     /**

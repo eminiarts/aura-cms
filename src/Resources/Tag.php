@@ -20,7 +20,7 @@ class Tag extends Resource
         return 'fields.tags';
     }
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             'name' => [

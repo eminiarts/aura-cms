@@ -171,7 +171,15 @@ class Image extends Field implements PreloadsTableDisplay
 
     protected function tableDisplayImageIds(Resource $row, string $slug): array
     {
-        $value = $row->fields[$slug] ?? null;
+        $field = $row->fieldBySlug($slug);
+
+        // Match the table display fast path: building all fields also resolves
+        // unrelated, hidden relationship columns for every row.
+        $value = $field && empty($field['conditional_logic'])
+            && ! in_array($slug, $row->getHidden(), true)
+            && ! str_contains($slug, '.')
+                ? $row->resolveFieldValue($slug)
+                : ($row->fields[$slug] ?? null);
 
         if ($value === null) {
             return [];

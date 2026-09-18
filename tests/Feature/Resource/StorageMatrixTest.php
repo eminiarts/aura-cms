@@ -21,7 +21,7 @@ class MatrixPostsMetaResource extends Resource
 
     public static string $type = 'MatrixPostsMeta';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Title', 'slug' => 'title', 'type' => 'Aura\\Base\\Fields\\Text', 'conditional_logic' => []],
@@ -43,7 +43,7 @@ class MatrixCustomMetaResource extends Resource
 
     protected $table = 'matrix_custom_meta';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Name', 'slug' => 'name', 'type' => 'Aura\\Base\\Fields\\Text', 'conditional_logic' => []],
@@ -67,7 +67,7 @@ class MatrixCustomNoMetaResource extends Resource
 
     protected $table = 'matrix_custom_nometa';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Name', 'slug' => 'name', 'type' => 'Aura\\Base\\Fields\\Text', 'conditional_logic' => []],

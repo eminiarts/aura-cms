@@ -23,7 +23,7 @@ class HasManyFieldModel extends Resource
 
     protected $fillable = ['type'];
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -130,7 +130,7 @@ test('HasMany query with custom tables', function () {
 
         protected $table = 'custom_parents';
 
-        public static function getFields()
+        public static function getFields(): array
         {
             return [
                 [

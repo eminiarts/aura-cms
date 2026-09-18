@@ -45,25 +45,25 @@ function runDatabaseToResourcesCommandForTest(array $tables): array
 
 describe('resource generation', function () {
     it('executes database to resources command successfully', function () {
-        $result = runDatabaseToResourcesCommandForTest(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'sessions']);
+        $result = runDatabaseToResourcesCommandForTest(['articles', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'sessions']);
 
         expect($result['exitCode'])->toBe(0);
-        expect($result['processedTables'])->toHaveCount(3)
-            ->toContain('users', 'posts', 'comments')
+        expect($result['processedTables'])->toHaveCount(2)
+            ->toContain('articles', 'comments')
             ->not->toContain('migrations', 'failed_jobs', 'password_resets', 'sessions');
     });
 
     it('processes all non-system tables', function () {
-        $expectedTables = ['users', 'posts', 'comments'];
-        $result = runDatabaseToResourcesCommandForTest(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'sessions']);
+        $expectedTables = ['articles', 'comments'];
+        $result = runDatabaseToResourcesCommandForTest(['articles', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'sessions']);
 
         expect($result['processedTables'])
-            ->toHaveCount(3)
+            ->toHaveCount(2)
             ->toEqual($expectedTables);
     });
 
     it('shows success message after completion', function () {
-        $result = runDatabaseToResourcesCommandForTest(['users', 'posts', 'comments']);
+        $result = runDatabaseToResourcesCommandForTest(['articles', 'comments']);
 
         expect($result['exitCode'])->toBe(0);
         expect($result['output'])->toContain('Resources generated successfully');
@@ -71,13 +71,34 @@ describe('resource generation', function () {
 });
 
 describe('system tables filtering', function () {
-    it('skips system tables', function () {
-        $result = runDatabaseToResourcesCommandForTest(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'sessions']);
+    it('skips Laravel and Aura tables', function () {
+        $systemTables = [
+            'cache',
+            'cache_locks',
+            'failed_jobs',
+            'job_batches',
+            'jobs',
+            'migrations',
+            'notifications',
+            'password_reset_tokens',
+            'password_resets',
+            'personal_access_tokens',
+            'sessions',
+            'aura_migration_ownership',
+            'meta',
+            'options',
+            'permissions',
+            'post_relations',
+            'posts',
+            'roles',
+            'teams',
+            'user_role',
+            'users',
+        ];
 
-        $systemTables = ['migrations', 'failed_jobs', 'password_resets', 'sessions'];
-        foreach ($systemTables as $table) {
-            expect($result['processedTables'])->not->toContain($table);
-        }
+        $result = runDatabaseToResourcesCommandForTest([...$systemTables, 'articles']);
+
+        expect($result['processedTables'])->toEqual(['articles']);
     });
 });
 
@@ -91,7 +112,7 @@ describe('edge cases', function () {
     });
 
     it('handles database with only system tables', function () {
-        $result = runDatabaseToResourcesCommandForTest(['migrations', 'failed_jobs', 'password_resets', 'sessions']);
+        $result = runDatabaseToResourcesCommandForTest(['migrations', 'failed_jobs', 'password_resets', 'sessions', 'users', 'posts']);
 
         expect($result['exitCode'])->toBe(0);
         expect($result['processedTables'])->toBeEmpty();

@@ -18,7 +18,7 @@ class AppendConfigPost extends Resource
 
     public static string $type = 'AppendConfigPost';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             ['name' => 'Headline', 'slug' => 'headline', 'type' => 'Aura\\Base\\Fields\\Text', 'validation' => '', 'conditional_logic' => [], 'on_index' => true],

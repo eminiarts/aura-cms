@@ -28,7 +28,8 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
             return '';
         }
 
-        return $roles->pluck('name')->implode(', ');
+        // Role names are database-backed and view-value renders this raw.
+        return $roles->pluck('name')->map(fn ($name) => e($name))->implode(', ');
     }
 
     public function getRelation($model, $field)
@@ -122,6 +123,10 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
             // by another team stay unassignable, so cross-team injection is still
             // refused. (The super_admin escalation guard below is unchanged.)
             $assignableRoles->visibleToTeam($teamId);
+
+            if ($teamId !== null) {
+                $assignableRoles->shadowResolved($teamId);
+            }
         }
 
         $requestedRoles = $assignableRoles->whereKey($roleIds)->get();

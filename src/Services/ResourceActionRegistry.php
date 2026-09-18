@@ -53,13 +53,7 @@ class ResourceActionRegistry implements ResourceActionRegistryContract
             throw new AuthorizationException('You are not authorized to perform this action.');
         }
 
-        $handler = $definition['handler'] ?? null;
-
-        if (! is_callable($handler)) {
-            throw new InvalidArgumentException("Resource action [{$name}] has no callable handler.");
-        }
-
-        return $handler($resource, $actor);
+        return $definition['handler']($resource, $actor);
     }
 
     public function flushState(): void
@@ -79,6 +73,13 @@ class ResourceActionRegistry implements ResourceActionRegistryContract
 
         if (! isset($definition['label']) || trim((string) $definition['label']) === '') {
             throw new InvalidArgumentException("Resource action [{$name}] requires a label.");
+        }
+
+        // A missing check must not mean "everyone may run this".
+        foreach (['authorize', 'handler'] as $key) {
+            if (! is_callable($definition[$key] ?? null)) {
+                throw new InvalidArgumentException("Resource action [{$name}] requires a callable [{$key}].");
+            }
         }
 
         $this->actions[$name] = $definition;

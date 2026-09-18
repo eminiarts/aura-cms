@@ -285,7 +285,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
     }
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

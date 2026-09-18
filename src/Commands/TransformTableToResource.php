@@ -11,7 +11,7 @@ class TransformTableToResource extends Command
 {
     protected $description = 'Create a resource based on a specific database table';
 
-    protected $signature = 'aura:transform-table-to-resource {table}';
+    protected $signature = 'aura:transform-table-to-resource {table : The name of the existing database table, e.g. articles}';
 
     public function handle()
     {
@@ -21,7 +21,7 @@ class TransformTableToResource extends Command
 
         $fields = $this->generateFields($columns);
 
-        $resourceContent = $this->generateResourceContent($resourceName, $fields);
+        $resourceContent = $this->generateResourceContent($resourceName, $fields, $table);
         $this->saveResourceFile($resourceName, $resourceContent);
 
         $this->info("Resource {$resourceName} generated successfully");
@@ -47,8 +47,9 @@ class TransformTableToResource extends Command
         return $fields;
     }
 
-    private function generateResourceContent(string $resourceName, array $fields): string
+    private function generateResourceContent(string $resourceName, array $fields, string $table): string
     {
+        $slug = Str::kebab($resourceName);
         $fieldsContent = '';
 
         foreach ($fields as $field) {
@@ -65,11 +66,19 @@ class TransformTableToResource extends Command
 
 namespace App\Aura\Resources;
 
+use Aura\Base\Resource;
+
 class {$resourceName} extends Resource
 {
+    public static \$customTable = true;
+
+    public static bool \$usesMeta = false;
+
+    public static ?string \$slug = '{$slug}';
+
     public static string \$type = '{$resourceName}';
 
-    public static ?string \$slug = '{$resourceName}';
+    protected \$table = '{$table}';
 
     public static function getWidgets(): array
     {
@@ -81,7 +90,7 @@ class {$resourceName} extends Resource
         return '<svg class="w-5 h-5" viewBox="0 0 18 18" fill="none" stroke="currentColor" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15.75 9a6.75 6.75 0 1 1-13.5 0 6.75 6.75 0 0 1 13.5 0Z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     }
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
 {$fieldsContent}

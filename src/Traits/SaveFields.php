@@ -5,6 +5,9 @@ namespace Aura\Base\Traits;
 use Aura\Base\Events\SaveFields as SaveFieldsEvent;
 use Aura\Base\Facades\Aura;
 use Illuminate\Support\Str;
+use ReflectionClass;
+use RuntimeException;
+use Throwable;
 
 trait SaveFields
 {
@@ -12,71 +15,60 @@ trait SaveFields
     {
         $fieldsWithIds = $fields;
 
-        // Unset Mapping of Fields
         foreach ($fields as &$field) {
-            unset($field['field']);
-            unset($field['field_type']);
-            unset($field['_id']);
-            unset($field['_parent_id']);
+            unset($field['field'], $field['field_type'], $field['_id'], $field['_parent_id']);
+        }
+        unset($field);
+
+        $filePath = (new ReflectionClass($this->model::class))->getFileName();
+
+        if ($filePath === false || ! is_file($filePath)) {
+            throw new RuntimeException('The resource definition file could not be found.');
         }
 
-        $a = new \ReflectionClass($this->model::class);
+        $file = file_get_contents($filePath);
 
-        $filePath = $a->getFileName();
+        if ($file === false) {
+            throw new RuntimeException('The resource definition file could not be read.');
+        }
 
-        if (file_exists($filePath)) {
-            $file = file_get_contents($filePath);
+        preg_match('/function\s+getFields\s*\((?:[^()]*?)\s*\)\s*(?::\s*array\s*)?(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches, PREG_OFFSET_CAPTURE);
 
-            $replacement = Aura::varexport($this->setKeysToFields($fields), true);
+        if (! isset($matches['functionBody'])) {
+            throw new RuntimeException('The Resource Editor could not locate getFields().');
+        }
 
-            preg_match('/function\s+getFields\s*\((?:[^()]*?)\s*\)\s*(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches, PREG_OFFSET_CAPTURE);
+        [$functionBody, $functionBodyOffset] = $matches['functionBody'];
+        preg_match('/return\s+(\[.*\]);/ms', $functionBody, $return);
 
-            if (isset($matches['functionBody'])) {
-                $functionBody = $matches['functionBody'][0];
-                $functionBodyOffset = $matches['functionBody'][1];
+        if (! isset($return[1])) {
+            throw new RuntimeException('getFields() must return an array literal for Resource Editor changes.');
+        }
 
-                preg_match('/return\s+(\[.*\]);/ms', $functionBody, $matches2);
+        $replacement = Aura::varexport($this->setKeysToFields($fields), true);
+        $newFunctionBody = Str::replace($return[1], $replacement, $functionBody);
+        $newFile = substr_replace($file, $newFunctionBody, $functionBodyOffset, strlen($functionBody));
+        token_get_all($newFile, TOKEN_PARSE);
 
-                if (isset($matches2[1])) {
-
-                    $newFunctionBody = Str::replace(
-                        $matches2[1],
-                        $replacement,
-                        $functionBody
-                    );
-
-                    $newFile = substr_replace(
-                        $file,
-                        $newFunctionBody,
-                        $functionBodyOffset,
-                        strlen($functionBody)
-                    );
-
-                    file_put_contents($filePath, $newFile);
-
-                } else {
-                    // Handle the case where the return statement is not found
-                    // You may want to add the return statement if it's missing
-                    // For now, we'll notify that the return statement was not found
-                    $this->notify('Return statement not found in getFields().');
-                }
-            } else {
-                // Handle the case where getFields() function is not found
-                $this->notify('Function getFields() not found.');
+        try {
+            if (file_put_contents($filePath, $newFile) === false) {
+                throw new RuntimeException('The resource definition file could not be saved.');
             }
+
+            event(new SaveFieldsEvent($fieldsWithIds, $this->mappedFields, $this->model));
+        } catch (Throwable $exception) {
+            // A rejected schema change must not leave the class expecting new columns.
+            file_put_contents($filePath, $file);
+
+            throw $exception;
         }
-
-        // Trigger the event to change the database schema
-        event(new SaveFieldsEvent($fieldsWithIds, $this->mappedFields, $this->model));
-
-        // $this->dispatch('refreshComponent');
 
         $this->notify('Saved successfully.');
     }
 
     public function saveProps($props)
     {
-        $a = new \ReflectionClass($this->model::class);
+        $a = new ReflectionClass($this->model::class);
 
         $file = file_get_contents($a->getFileName());
 

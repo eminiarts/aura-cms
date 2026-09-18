@@ -1,393 +1,158 @@
-# Notifications in Aura CMS
+# Notifications
 
-Aura CMS provides two notification systems: **toast notifications** for instant user feedback and a **notification center** for persistent database notifications. These are built on Laravel's notification system and enhanced with Livewire and Alpine.js.
+Aura supports two kinds of notifications:
 
-## Table of Contents
+- Toasts are short, in-page messages sent through a Livewire event. They are not stored.
+- The notification center reads Laravel database notifications from the authenticated user.
 
-- [Overview](#overview)
-- [Toast Notifications](#toast-notifications)
-- [Notification Center](#notification-center)
-- [Configuration](#configuration)
-- [Creating Custom Notifications](#creating-custom-notifications)
-- [Team Invitations](#team-invitations)
-- [Best Practices](#best-practices)
+Configure push, broadcast, SMS, and other channels in your application, and install any packages they require. Aura does not include these packages. Only notifications stored by Laravel's `database` channel appear in the notification center.
 
-## Overview
+## Toast notifications
 
-Aura CMS includes two types of notifications:
+The default app layout displays toasts through Alpine whenever it receives a Livewire `notify` event. Toasts work even when the notification center is disabled.
 
-1. **Toast Notifications**: Temporary popup messages that appear in the top-right corner and auto-dismiss after 3 seconds. Used for instant feedback like "Saved successfully" or "Error occurred".
-
-2. **Notification Center**: A slide-over panel accessible from the navigation that displays persistent database notifications with read/unread status.
-
-## Toast Notifications
-
-Toast notifications provide instant feedback to users. They're implemented using Alpine.js and are triggered via Livewire events.
-
-### Using Toast Notifications in Livewire Components
-
-Livewire components that use the `WithLivewireHelpers` trait have access to the `notify()` method:
+Call `notify()` from any Livewire component to display a toast:
 
 ```php
 namespace App\Livewire;
 
 use Livewire\Component;
-use Aura\Base\Traits\WithLivewireHelpers;
 
-class MyComponent extends Component
+class SavePost extends Component
 {
-    use WithLivewireHelpers;
-
-    public function save()
+    public function save(): void
     {
-        // Save logic...
-        
-        // Show success notification
-        $this->notify('Successfully saved!');
-        
-        // Show error notification
-        $this->notify('Something went wrong.', 'error');
+        // Persist the post.
+
+        $this->notify('Post saved.');
+        $this->notify('Could not save the post.', 'error');
     }
 }
 ```
 
-### Notification Types
+Pass the message as the first argument and an optional type as the second. The default type is `success`, which displays a check icon. Use `error` for a warning icon. Other values display a toast without a type-specific icon.
 
-The `notify()` method accepts two parameters:
-
-```php
-public function notify($message, $type = 'success')
-```
-
-| Type | Description | Icon |
-|------|-------------|------|
-| `success` | Success messages (default) | Green checkmark |
-| `error` | Error messages | Red warning triangle |
-
-### How It Works
-
-The `notify()` method dispatches a browser event:
+The method dispatches the following Livewire event:
 
 ```php
-$this->dispatchBrowserEvent('notify', [
-    'message' => $message,
-    'type' => $type,
-]);
+$this->dispatch('notify', message: $message, type: $type);
 ```
 
-The `<x-aura::notification>` component listens for this event and displays the toast:
-
-```blade
-{{-- Automatically included in the main layout --}}
-<x-aura::notification/>
-```
-
-### Toast Features
-
-- **Auto-dismiss**: Toasts disappear after 3 seconds
-- **Pause on hover**: Timer pauses when you hover over the notification
-- **Progress indicator**: Visual progress bar shows remaining time
-- **Manual dismiss**: Click the X button to dismiss immediately
-- **Stacking**: Multiple notifications stack vertically
-
-### Triggering Toasts from JavaScript
-
-You can also trigger toast notifications directly from JavaScript/Alpine.js:
+You can send the same payload from Alpine or JavaScript:
 
 ```javascript
-// Dispatch the notify event
 window.dispatchEvent(new CustomEvent('notify', {
     detail: {
-        message: 'Operation completed!',
-        type: 'success'
-    }
+        message: 'Copied to clipboard.',
+        type: 'success',
+    },
 }));
 ```
 
-## Notification Center
+Aura registers this helper globally through a macro in `AuraServiceProvider`. The `Aura\Base\Traits\WithLivewireHelpers` trait provides the same method, but you do not need to add the trait to show a toast.
 
-The notification center displays persistent database notifications using Laravel's built-in notification system.
+Each toast closes after three seconds. Hovering over it pauses the timer, and the close button dismisses it immediately. Toasts show a progress bar and stack when there are multiple messages. These timings and behaviors are fixed and have no Aura configuration options.
 
-### Accessing the Notification Center
+If you use a custom layout, include `<x-aura::notification />` to display toasts.
 
-When enabled, a bell icon appears in the sidebar navigation. Clicking it opens a slide-over panel with two tabs:
+## Laravel database notifications
 
-- **Unread**: New notifications that haven't been read
-- **Read**: Previously viewed notifications
-
-### The Notifications Component
-
-The notification center is powered by the `Aura\Base\Livewire\Notifications` component:
-
-```php
-// Registered as: aura::notifications
-Livewire::component('aura::notifications', Notifications::class);
-```
-
-Key features:
-- Displays unread and read notifications in separate tabs
-- Shows notification icon based on resource type
-- Links to the related resource
-- "Mark all as read" functionality
-
-### Notification Data Structure
-
-For notifications to display correctly in the notification center, they should include:
-
-```php
-public function toDatabase($notifiable)
-{
-    return [
-        'type' => 'App\\Resources\\Post',  // Resource class for icon
-        'id' => $this->resource->id,        // Resource ID for linking
-        'message' => 'Your post was published',
-    ];
-}
-```
-
-### Marking Notifications as Read
-
-Users can mark all notifications as read with one click:
-
-```php
-// In Notifications.php
-public function markAllAsRead()
-{
-    auth()->user()->unreadNotifications()->update(['read_at' => now()]);
-}
-```
-
-## Configuration
-
-Enable or disable the notification center in `config/aura.php`:
+The notification center opens in a slide-over with Unread and Read tabs. It is enabled in the default app layout. You can control it through the notifications feature flag in your Aura configuration:
 
 ```php
 'features' => [
-    'notifications' => true,  // Enable/disable notification center
-    // ... other features
+    'notifications' => true,
 ],
 ```
 
-When disabled:
-- The bell icon is hidden from the navigation
-- The notifications slide-over component is not loaded
-- Toast notifications still work (they're always enabled)
+Set `aura.features.notifications` to `false` to remove the center from the layout. Toasts remain available. For custom layouts, the component class is `Aura\Base\Livewire\Notifications`, registered under both `aura::notifications` and `aura.base.livewire.notifications`.
 
-## Creating Custom Notifications
+Aura's generated migration creates Laravel's standard notifications table if it does not exist. Each row stores a UUID, the notification class, a polymorphic recipient reference, JSON data, an optional read timestamp, and creation and update timestamps.
 
-### Using Laravel Notifications
+Aura's default user resource already uses Laravel's notification trait. If you use a different user model, extend `Aura\Base\Resources\User` or add the `Illuminate\Notifications\Notifiable` trait.
 
-Aura CMS users have the `Notifiable` trait, so you can use Laravel's notification system:
+Send a database notification with Laravel's normal notification class:
 
 ```php
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 
-class ArticlePublished extends Notification implements ShouldQueue
+class ArticlePublished extends Notification
 {
-    use Queueable;
-
-    protected $article;
-
-    public function __construct($article)
+    public function __construct(private readonly int $articleId)
     {
-        $this->article = $article;
     }
 
-    public function via($notifiable)
+    public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['database'];
     }
 
-    public function toMail($notifiable)
-    {
-        return (new MailMessage)
-            ->subject('Your article has been published!')
-            ->line('Congratulations! Your article "' . $this->article->title . '" is now live.')
-            ->action('View Article', url('/articles/' . $this->article->slug))
-            ->line('Thank you for contributing!');
-    }
-
-    public function toDatabase($notifiable)
+    public function toDatabase(object $notifiable): array
     {
         return [
-            'type' => get_class($this->article),
-            'id' => $this->article->id,
-            'message' => 'Your article "' . $this->article->title . '" was published',
+            'title' => 'Article published',
+            'body' => "Article {$this->articleId} is ready to review.",
         ];
     }
 }
+
+$user->notify(new ArticlePublished($article->getKey()));
 ```
 
-### Sending Notifications
+The center shows the authenticated user's read and unread notifications through Laravel's standard relationships. It does not poll for new notifications or listen for push events.
+
+If you customize the component, its `getUnreadNotificationsProperty()` method returns the user's unread notifications. The `getNotificationsProperty()` method returns read notifications, exposed to the Read tab through the `notifications` property.
+
+The built-in `markAllAsRead()` action marks every unread notification as read:
 
 ```php
-use App\Notifications\ArticlePublished;
-
-// Send to a single user
-$user->notify(new ArticlePublished($article));
-
-// Send to multiple users
-Notification::send($users, new ArticlePublished($article));
+auth()->user()->unreadNotifications()->update(['read_at' => now()]);
 ```
 
-### Creating Notifications via Artisan
+Aura does not include an action to mark a single notification as read. Marking all as read does not dispatch a follow-up event. Laravel's read and unread relationships use the `read_at` timestamp to determine which tab shows each notification.
 
-```bash
-php artisan make:notification OrderShipped
+### Opening the notification center
+
+Dispatch an `openSlideOver` event with the target set to `notifications` to open the center:
+
+```javascript
+$wire.dispatch('openSlideOver', {
+    target: 'notifications',
+    parameters: {},
+});
 ```
 
-## Team Invitations
+The event requires the `target` key, not `component`.
 
-Aura CMS includes a built-in team invitation email (`Aura\Base\Mail\TeamInvitation`):
+The current navigation template only shows a notifications button when the user has no current team. The button for users with a current team is commented out. Add a custom navigation button that dispatches this event if you need the center to be accessible in both cases.
 
-```php
-use Aura\Base\Mail\TeamInvitation;
-use Illuminate\Support\Facades\Mail;
+### Database notification payload
 
-Mail::to($email)->send(new TeamInvitation($invitation));
-```
+Use the notification's data array to supply its heading, body, and optional resource link. These values are separate from the table's `type` column, which stores the notification class.
 
-The invitation email:
-- Uses a markdown template (`aura::emails.team-invitation`)
-- Includes a signed URL for secure registration/acceptance
-- Handles both new users and existing users
+The two tabs currently interpret the data's resource type differently:
 
-## Best Practices
+| Data key | Read tab | Unread tab |
+| --- | --- | --- |
+| `type` | Treated as a resource slug for the icon and edit route. | Treated as a resource class name. Aura checks `class_exists()`, resolves the class, and uses its icon and `getType()` route name. |
+| `id` | Used as the resource ID for the edit link when a resource resolves. | Used as the resource ID for the edit link when the class and other fields resolve. |
+| `message` | Used as the linked row title and as a fallback title. | Used as the linked row title when `type` and `id` resolve. |
+| `title` | Fallback heading when the linked resource is unavailable. | Fallback heading when the linked resource is unavailable. |
+| `body` | Secondary text, falling back to the notification class. | Secondary text when the fallback branch renders. |
 
-### 1. Use Appropriate Notification Types
+Because the Read tab expects a resource slug and the Unread tab expects a class name, resource links may behave differently between tabs. Always provide `title` and `body` when a notification needs to remain readable without a link. If you also provide `type`, `id`, and `message` to link a resource, check both tabs with your application's resource registration.
 
-```php
-// For instant feedback (form saves, quick actions)
-$this->notify('Settings saved!');
+## Optional Laravel channels
 
-// For errors that need attention
-$this->notify('Failed to save. Please try again.', 'error');
+You can send notifications through mail, broadcast, or any other channel configured in your application. Choose the channels in the notification's `via()` method, as you would in Laravel. Include `database` if the notification should also appear in Aura's center.
 
-// For persistent notifications the user needs to see later
-$user->notify(new ImportantSystemNotification($data));
-```
+Sending a Laravel notification does not display a toast. Aura also does not provide a client for receiving push or broadcast notifications.
 
-### 2. Keep Toast Messages Concise
+## Related documentation
 
-Toast messages should be short and clear since they auto-dismiss:
-
-```php
-// Good
-$this->notify('Saved successfully!');
-
-// Too long - user may not read it in time
-$this->notify('Your changes have been saved successfully to the database and all related records have been updated.');
-```
-
-### 3. Queue Heavy Notifications
-
-For notifications that send emails or perform complex operations:
-
-```php
-class HeavyNotification extends Notification implements ShouldQueue
-{
-    use Queueable;
-
-    public $queue = 'notifications';
-    public $tries = 3;
-}
-```
-
-### 4. Include Action Links in Database Notifications
-
-Always provide a way for users to navigate to the relevant resource:
-
-```php
-public function toDatabase($notifiable)
-{
-    return [
-        'type' => get_class($this->resource),
-        'id' => $this->resource->id,  // Used to generate edit link
-        'message' => 'Notification message here',
-    ];
-}
-```
-
-### 5. Test Notifications
-
-```php
-use Illuminate\Support\Facades\Notification;
-
-public function test_user_receives_notification()
-{
-    Notification::fake();
-
-    $user = User::factory()->create();
-    $article = Article::factory()->create();
-
-    $article->publish();
-
-    Notification::assertSentTo(
-        $user,
-        ArticlePublished::class,
-        function ($notification) use ($article) {
-            return $notification->article->id === $article->id;
-        }
-    );
-}
-```
-
-## Troubleshooting
-
-### Toast Notifications Not Showing
-
-1. Ensure the component is included in your layout:
-   ```blade
-   <x-aura::notification/>
-   ```
-
-2. Check that Alpine.js is loaded properly
-
-3. Verify the event is being dispatched:
-   ```php
-   $this->dispatchBrowserEvent('notify', [...]);
-   ```
-
-### Notification Center Not Visible
-
-1. Check the feature is enabled:
-   ```php
-   // config/aura.php
-   'features' => [
-       'notifications' => true,
-   ],
-   ```
-
-2. Ensure the component is loaded:
-   ```blade
-   @if(config('aura.features.notifications'))
-       <livewire:aura::notifications/>
-   @endif
-   ```
-
-### Database Notifications Not Appearing
-
-1. Ensure the notifications table exists:
-   ```bash
-   php artisan notifications:table
-   php artisan migrate
-   ```
-
-2. Verify the User model uses the Notifiable trait:
-   ```php
-   use Illuminate\Notifications\Notifiable;
-   
-   class User extends Authenticatable
-   {
-       use Notifiable;
-   }
-   ```
-
----
-
-For more information on Laravel's notification system, see the [Laravel documentation](https://laravel.com/docs/notifications).
+- [Livewire components](/docs/livewire-components)
+- [Configuration](/docs/configuration)
+- [Authentication](/docs/authentication)
+- [Laravel notifications](https://laravel.com/docs/notifications)

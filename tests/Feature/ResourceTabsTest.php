@@ -8,7 +8,7 @@ class ResourceTabsModel1 extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -64,7 +64,7 @@ class ResourceTabsModel2 extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

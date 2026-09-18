@@ -31,7 +31,7 @@ class PipelinePlainModel extends Resource
 {
     public static string $type = 'PipelinePlainModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -52,7 +52,7 @@ class PipelineReusesTraitModel extends Resource
 
     public static string $type = 'PipelineReusesTraitModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [

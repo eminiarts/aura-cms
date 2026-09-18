@@ -10,9 +10,8 @@ class ApplyGroupedInputs implements Pipe
     {
         $group = 0;
         $groupLevel = '0';
-        $groupedFields = false;
 
-        $fields = $fields->map(function ($item, $key) use (&$group, &$groupLevel, &$groupedFields) {
+        $fields = $fields->map(function ($item, $key) use (&$group, &$groupLevel) {
             if ($item['field']->type == 'tab') {
                 $group++;
                 $groupLevel = strval($group);

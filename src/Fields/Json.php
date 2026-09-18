@@ -10,7 +10,11 @@ class Json extends Field
 
     public function display($field, $value, $model)
     {
-        return json_encode($value);
+        // The encoded payload is database-backed and view-value renders this
+        // raw, so neutralise stored markup. ENT_NOQUOTES: the JSON quotes are
+        // text content here, not an attribute value, and escaping them would
+        // only make the rendered payload unreadable.
+        return htmlspecialchars((string) json_encode($value), ENT_NOQUOTES, 'UTF-8', false);
     }
 
     public function get($class, $value, $field = null)

@@ -1,275 +1,203 @@
-# Global Search
+# Global search
 
-Global Search in Aura CMS provides a powerful and intuitive way to search across all your resources from anywhere in the admin interface. This feature helps users quickly find content across different resource types.
+Global search lets users find records across registered resources and users. When the search box is empty, it shows recent pages and bookmarks. Aura includes it in the default layout when `aura.features.global_search` is enabled.
 
-## Table of Contents
+Search runs directly against your database using the searchable fields on each resource. It uses SQL `LIKE` queries and needs no separate search index or external search engine. Aura does not provide an Artisan command to build a search index.
 
-- [Overview](#overview)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Searchable Fields](#searchable-fields)
-- [Search Results](#search-results)
-- [Keyboard Shortcuts](#keyboard-shortcuts)
-- [Customization](#customization)
-- [Best Practices](#best-practices)
+![Global search modal](/images/docs/global-search/global-search-modal.png)
 
-## Overview
+## Enable and mount global search
 
-Global Search is a Livewire component (`Aura\Base\Livewire\GlobalSearch`) that allows users to:
-- Search across multiple resource types simultaneously
-- Search users by name or email
-- Access recently visited pages (stored in browser localStorage)
-- Use keyboard shortcuts for quick navigation
-- View and access bookmarked pages (up to 9 with keyboard shortcuts)
-
-## Configuration
-
-### Enabling/Disabling Global Search
-
-Global Search can be enabled or disabled in your `config/aura.php`:
+Global search is enabled by default:
 
 ```php
+// config/aura.php
 return [
     'features' => [
-        'global_search' => true, // Set to false to disable
+        'global_search' => true,
     ],
 ];
 ```
 
-When disabled, the GlobalSearch component returns a 403 error and the search interface is not rendered.
+The default app layout mounts the component when the flag is true:
 
-### Resource-Level Configuration
+```blade
+@if (config('aura.features.global_search'))
+    <livewire:aura::global-search />
+@endif
+```
 
-Control whether a resource appears in global search results using the static `$globalSearch` property:
+Set the flag to `false` to remove search and its navigation button. A separately mounted instance also returns HTTP 403 while the feature is disabled.
+
+## Open search
+
+Open search with the sidebar Search button, the `/` key, or Command+K. These controls dispatch a `search` event from the default app layout. The sidebar button appears only while global search is enabled.
+
+The current layout registers the Command+K binding. It does not register a separate Ctrl+K binding.
+
+The event toggles the modal and focuses the search input. Search updates after a 300 millisecond debounce and accepts at most 64 characters. Use the arrow keys to move through the list and Enter to open the selected link.
+
+## Exclude a resource
+
+Resources participate in global search by default. Set their `$globalSearch` property to `false` to exclude them:
 
 ```php
+use Aura\Base\Resource;
+
+class InternalNote extends Resource
+{
+    public static $globalSearch = false;
+}
+```
+
+Read the effective value with `InternalNote::getGlobalSearch()`.
+
+The component also excludes these slugs before it searches, even if the resource property is true:
+
+```text
+resource, flow, flowlog, operation, flowoperation,
+operationlog, option, team, user, product
+```
+
+The built-in permission and role resources disable global search through their resource property. Options and teams are excluded by both the property and the slug list. Aura searches users separately, so the user slug is also excluded from the resource queries.
+
+## Mark fields as searchable
+
+Set `searchable` to `true` on each input field you want to search. Define the option alongside the field's name, slug, and type:
+
+```php
+use Aura\Base\Resource;
+
 class Post extends Resource
 {
-    public static $globalSearch = true; // Set to false to exclude from search
+    public static string $type = 'Post';
+
+    protected static ?string $slug = 'post';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'name' => 'Title',
+                'slug' => 'title',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'searchable' => true,
+            ],
+            [
+                'name' => 'Summary',
+                'slug' => 'summary',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
+                'searchable' => true,
+            ],
+            [
+                'name' => 'Internal note',
+                'slug' => 'internal_note',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
+                'searchable' => false,
+            ],
+        ];
+    }
 }
 ```
 
-You can also access this setting programmatically:
+To retrieve the searchable input fields, call `getSearchableFields()`. It includes fields with any truthy value for the option:
 
 ```php
-// Check if a resource is included in global search
-$includeInSearch = Post::getGlobalSearch(); // Returns true or false
+$slugs = (new Post)->getSearchableFields()->pluck('slug')->all();
 ```
 
-**Default excluded resources**: The following built-in resources are excluded from global search by default:
-- `resource`, `flow`, `flowlog`, `operation`, `flowoperation`, `operationlog`, `option`, `team`, `user`, `product`
+If a resource has no searchable input fields, the global-search component skips it. The `on_index` option controls table columns. It does not make a field searchable.
 
-Note: While regular User resources are filtered from the resource loop, users are still searchable separately by name and email.
+## How matching works
 
-## Usage
+Search starts with each resource's normal Eloquent query and matches the search term anywhere in a searchable field's stored value, using `LIKE '%term%'`.
 
-### Accessing Global Search
+Table fields are searched on the resource table. For meta fields, Aura uses an `EXISTS` subquery against the meta table. That subquery checks the resource key, morph type, and meta key so it matches values belonging to the correct record and field.
 
-There are multiple ways to access Global Search:
+The resource's storage settings determine where Aura searches. Default resources can search both fillable columns on the posts table and meta fields. Custom-table resources can also search both table columns and meta fields when `$usesMeta` is true. When it is false, every searchable input field must be a column on the resource table.
 
-1. Click the search icon in the navigation bar
-2. Use the keyboard shortcut `⌘ + K` (Mac) or `Ctrl + K` (Windows/Linux)
-3. Press the `/` (forward slash) key anywhere in the interface
-4. Click the search field in the admin interface
+The query reads stored values. It does not resolve a related record's title, a computed field value, or a field's display output before matching. Use a searchable field whose stored table or meta value contains the text users need to find.
 
-Note: The `/` and `⌘ + K` shortcuts are disabled when focus is on input fields or textareas to prevent interference with typing.
+Search loads all matching rows without adding query ordering, ranking, pagination, or a per-resource limit. It combines resources in their registration order, adds matching users at the end, and keeps the first 15 rows. The modal groups these rows by resource type.
 
-### Search Interface Features
+## Permissions and team scoping
 
-The search interface provides:
-- Real-time search results with 300ms debounce
-- Resource type grouping
-- Recently visited pages (stored in browser localStorage)
-- Bookmarked pages with quick access shortcuts
-- Keyboard navigation with arrow keys
+Aura searches only resource types that the current user is allowed to browse. It checks each resource's `viewAny` ability through Laravel's gate before running the query. The same check applies to user searches, which match names and email addresses.
 
-## Searchable Fields
+Each query also keeps the resource's normal global scopes. With teams enabled, ordinary resource results are limited to the current team. The resource's `scope` permission can further limit results to the current user's records. Disabling teams removes the team scope. Global admins follow the normal user and team-scope rules.
 
-### Defining Searchable Fields
+The search permission check applies to the resource type. When a user opens a result, the resource view component separately checks the `view` ability for that record.
 
-Make fields searchable by adding the `searchable` property in your field definitions:
+## Result display and limits
 
-```php
-public static function getFields()
-{
-    return [
-        [
-            'name' => 'Title',
-            'slug' => 'title',
-            'type' => 'Aura\\Base\\Fields\\Text',
-            'validation' => 'required|max:255',
-            'searchable' => true,
-            'on_index' => true,
-        ],
-        [
-            'name' => 'Content',
-            'slug' => 'content',
-            'type' => 'Aura\\Base\\Fields\\Textarea',
-            'searchable' => true,
-        ],
-        [
-            'name' => 'Description',
-            'slug' => 'description',
-            'type' => 'Aura\\Base\\Fields\\Text',
-            'searchable' => false, // This field won't appear in search results
-        ]
-    ];
-}
-```
+The component returns no search results for an empty query. When it has matches, the modal shows up to 15 rows across all resources and users. There is no per-type quota and no relevance ranking.
 
-### Getting Searchable Fields
+Each resource result shows its icon, record ID prefixed with #, title, and resource type. It links to the resource's `aura.<slug>.view` route. Custom components must provide the same result data, as described below.
 
-You can retrieve the searchable fields for a resource programmatically:
+User matches come from the user resource's name and email columns. These results have no assigned type, so the returned collection places them in a separate group with an empty key.
 
-```php
-$resource = new Post();
-$searchableFields = $resource->getSearchableFields(); // Returns collection of fields with searchable => true
-```
-
-### Meta Fields Support
-
-Global Search automatically includes meta fields marked as searchable in your field definitions. The search performs a LEFT JOIN with the `meta` table and searches both:
-
-1. The `posts.title` column (always searched)
-2. Meta field values where the field is marked as `searchable => true`
-
-Both regular table fields and meta fields are supported as long as they have the `searchable` property set to `true`.
-
-### User Search
-
-Global Search also searches the User model separately, matching against:
-- `name` field
-- `email` field
-
-## Search Results
-
-### Result Structure
-
-Search results are:
-- Limited to 15 results total (across all resource types)
-- Grouped by resource type after limiting
-- Displayed with relevant icons and metadata
-- Linked directly to the resource view page
-
-### Result Display
-
-Each search result shows:
-- Resource ID and title in format: `#123 Resource Title`
-- Resource type label
-- Resource icon (from `getIcon()` method)
-- Direct link to view the resource
-
-### Empty Results
-
-When no matches are found, the interface displays "No results" message.
-
-## Keyboard Shortcuts
-
-Global Search supports keyboard navigation:
+## Keyboard controls
 
 | Shortcut | Action |
-|----------|--------|
-| `⌘ + K` | Open search (Mac) |
-| `Ctrl + K` | Open search (Windows/Linux) |
-| `/` | Open search (all platforms) |
-| `ESC` | Clear input first, then close search on second press |
-| `↑` | Previous result |
-| `↓` | Next result |
-| `Enter` | Go to selected result |
-| `⌘ + 1` through `⌘ + 9` | Quick access to bookmarks 1-9 |
+| --- | --- |
+| Command+K | Toggle the search modal. |
+| `/` | Toggle the search modal. |
+| Escape | Clear the query when it is non-empty. Press it again to close the modal. |
+| Up and Down | Move through search results, recent pages, or bookmarks. |
+| Enter | Open the selected link. |
+| Command+1 through Command+9 | Open bookmark 1 through bookmark 9 when that bookmark exists. |
 
-Note: The `/` and `⌘ + K` shortcuts only work when not focused on an input field or textarea.
+The modal ignores a `search` event whose target is an input or textarea. The default keyboard shortcuts dispatch from the layout root, however, so this does not prevent them from opening search while another input has focus.
 
-## Customization
+## Recent pages and bookmarks
 
-### Custom Search Logic
+Recent pages are stored in the browser. On each `DOMContentLoaded` event, Aura saves the page title and URL at the start of the history, removes any older entry for that URL, and keeps the five most recent pages. Search reads this history when it initializes. The entries live in `localStorage` under `visitedPages`, so clearing browser storage removes them.
 
-You can customize the search behavior by extending the GlobalSearch component:
+Bookmarks belong to the current user and, with teams enabled, the current team. Aura stores their URLs and titles in the `user.{id}.bookmarks` option. The `User::getOptionBookmarks()` method reads them and caches the value for one hour.
+
+The bookmark button appears only when both `aura.features.bookmarks` and `aura.features.global_search` are enabled. Toggling it updates the saved URLs and titles. The search modal displays saved bookmarks whenever the query is empty, even if the bookmarks feature is disabled. Disabling that feature hides the button but leaves existing bookmarks visible in search.
+
+The first nine saved bookmarks have Command+number handlers. The stored bookmark order controls their numbers.
+
+## Customize the component
+
+To change the search query or result mapping, extend `Aura\Base\Livewire\GlobalSearch`. Register your replacement under the same Livewire name in an application service provider:
 
 ```php
 use Aura\Base\Livewire\GlobalSearch;
+use Livewire\Livewire;
 
 class CustomGlobalSearch extends GlobalSearch
 {
     public function getSearchResultsProperty()
     {
-        // Custom search implementation
-        // Must return a collection grouped by type
-        
-        if (!$this->search || $this->search === '') {
+        if (! $this->search) {
             return [];
         }
-        
-        // Your custom search logic here
-        $results = collect([]);
-        
-        // Limit and group results
-        return $results->take(15)->groupBy('type');
+
+        return collect([])->take(15)->groupBy('type');
     }
 }
-```
-
-Then register your custom component in a service provider:
-
-```php
-use Livewire\Livewire;
 
 Livewire::component('aura::global-search', CustomGlobalSearch::class);
 ```
 
-### Custom Result Display
+To use the default view, return results grouped by resource type. Each result must have an `id` and the methods the view calls: `getIcon()`, `getSlug()`, `getType()`, and `title()`.
 
-Customize how search results are displayed by publishing and modifying the view:
+## Source files and focused tests
 
-```bash
-php artisan vendor:publish --tag=aura-views --force
-```
+The implementation is in:
 
-Then modify `resources/views/vendor/aura/livewire/global-search.blade.php`
+- `src/Livewire/GlobalSearch.php`
+- `resources/views/livewire/global-search.blade.php`
+- `resources/views/components/layout/app.blade.php`
+- `resources/views/livewire/navigation.blade.php`
+- `resources/js/app.js`
+- `src/Resource.php` and `src/Traits/Concerns/AuraResourceMeta.php`
 
-### Custom Resource Title
+Focused coverage is in:
 
-Override the `title()` method in your resource to customize what appears in search results:
-
-```php
-class Post extends Resource
-{
-    public function title()
-    {
-        return $this->name ?? "Post #{$this->id}";
-    }
-}
-```
-
-## Best Practices
-
-1. **Performance**
-   - Index searchable fields in your database for faster queries
-   - Limit the number of searchable fields to essential ones
-   - Consider that meta fields require JOIN operations which can be slower
-   - The search uses `LIKE '%term%'` queries which don't use indexes efficiently
-
-2. **User Experience**
-   - Choose searchable fields wisely - only fields users would search for
-   - Provide meaningful `title()` method implementations for resources
-   - Use descriptive resource icons via the `getIcon()` method
-   - Keep resource names concise for better display in results
-
-3. **Resource Configuration**
-   - Set `public static $globalSearch = false;` for internal/admin resources
-   - Consider which resources users actually need to find via search
-   - Use the `searchable => true` property sparingly on fields
-
-4. **Bookmarks**
-   - Encourage users to bookmark frequently accessed pages
-   - First 9 bookmarks have keyboard shortcuts (`⌘ + 1` through `⌘ + 9`)
-
-## Source Files
-
-- Component: `src/Livewire/GlobalSearch.php`
-- View: `resources/views/livewire/global-search.blade.php`
-- Config: `config/aura.php` (`features.global_search`)
-
----
-
-Global Search is a powerful feature that enhances the usability of your Aura CMS installation. By following these guidelines and best practices, you can ensure your users have a smooth and efficient experience finding the content they need.
+- `tests/Feature/GlobalSearchTest.php`
+- `tests/Feature/Security/GlobalSearchAuthorizationTest.php`
+- `tests/Feature/Security/RemainingSecurityGapsTest.php`
+- `tests/Feature/Aura/FeaturesSettingsConfigTest.php`

@@ -61,6 +61,7 @@ test('resource-owned actions retain precedence over package-contributed keys', f
     $registry = app(ResourceActionRegistryContract::class);
     $registry->register('vendor.legacy', [
         'label' => 'Package action',
+        'authorize' => fn (): bool => true,
         'handler' => fn (): null => null,
     ]);
     $harness = new ResourceActionHarness;
@@ -71,10 +72,10 @@ test('resource-owned actions retain precedence over package-contributed keys', f
 
 test('duplicate names fail deterministically and worker flush restores boot baseline', function () {
     $registry = new ResourceActionRegistry;
-    $definition = ['label' => 'One', 'handler' => fn (): null => null];
+    $definition = ['label' => 'One', 'authorize' => fn (): bool => true, 'handler' => fn (): null => null];
     $registry->register('vendor.one', $definition);
     $registry->captureBaselineState();
-    $registry->register('vendor.two', ['label' => 'Two', 'handler' => fn (): null => null]);
+    $registry->register('vendor.two', [...$definition, 'label' => 'Two']);
     $registry->flushState();
 
     expect($registry->actionsFor(new ContributedActionResource, null))
@@ -83,3 +84,10 @@ test('duplicate names fail deterministically and worker flush restores boot base
 
     $registry->register('vendor.one', $definition);
 })->throws(ResourceActionConflict::class, 'already registered');
+
+test('an action without an authorization check cannot be registered', function () {
+    (new ResourceActionRegistry)->register('vendor.open', [
+        'label' => 'Open action',
+        'handler' => fn (): null => null,
+    ]);
+})->throws(InvalidArgumentException::class, 'requires a callable [authorize]');
