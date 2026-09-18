@@ -1,6 +1,6 @@
 # AI Connector
 
-Aura provides a provider-neutral AI connector for core features and plugins. Administrators configure it in `/admin/settings` under the **AI** tab and can test the active connection from the same page.
+Aura provides a provider-neutral AI connector for core features and plugins. Administrators configure it at `/admin/settings/ai` and can test the active connection from the same page.
 
 ## Supported providers
 

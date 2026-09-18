@@ -36,27 +36,6 @@ final class SettingsRegistry
         return $defaults;
     }
 
-    /** @return list<array<string, mixed>> */
-    public function fields(): array
-    {
-        $fields = [];
-
-        foreach ($this->pages() as $page) {
-            $fields[] = array_filter([
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => $page->title,
-                'slug' => 'settings-'.$page->slug,
-                'global' => true,
-                'icon' => $page->icon,
-                'description' => $page->description,
-            ], static fn (mixed $value): bool => $value !== null);
-
-            array_push($fields, ...$page->fields);
-        }
-
-        return $fields;
-    }
-
     public function flushState(): void
     {
         $this->pages = $this->baselinePages;
@@ -66,6 +45,11 @@ final class SettingsRegistry
     public function has(string $slug): bool
     {
         return isset($this->pages[$slug]);
+    }
+
+    public function page(string $slug): ?SettingsPage
+    {
+        return $this->pages[$slug]['page'] ?? null;
     }
 
     /** @return list<SettingsPage> */

@@ -212,7 +212,7 @@ The Aura facade exposes registration methods for common plugin extension points:
 | `Aura::registerResources([...])` | Add resource classes to Aura's resource registry. Registered resources receive navigation and admin routes when their class is valid. |
 | `Aura::registerFields([...])` | Add field classes to the Resource Editor's field list and option groups. |
 | `Aura::registerWidgets([...])` | Add widget classes to Aura's widget registry. A resource still needs a definition in `getWidgets()` for the index renderer to mount it. |
-| `Aura::registerSettingsPages($source, [...])` | Add ordered plugin tabs to `/admin/settings`. |
+| `Aura::registerSettingsPages($source, [...])` | Add plugin settings pages at `/admin/settings/{slug}` with a sidebar entry. |
 
 ~~~php
 use Aura\Base\Facades\Aura;
@@ -226,7 +226,7 @@ Registering a widget does not add it to the global dashboard. To display it abov
 
 ### Register a settings page
 
-Plugins can add a settings tab without defining a resource, route, or storage model. Register immutable page definitions from the plugin service provider:
+Plugins can add a settings page without defining a resource, route, or storage model. Each page gets a sidebar entry in the settings group and the URL `/admin/settings/{slug}` (`route('aura.settings.page', $slug)`). Register immutable page definitions from the plugin service provider:
 
 ~~~php
 use Aura\Base\Facades\Aura;
@@ -264,6 +264,8 @@ $pattern = Aura::setting(
     '[Post Title] [Separator] [Site Name]',
 );
 ~~~
+
+`Aura::setting()` reads the current team's settings. Public routes, console commands, and queued jobs have no authenticated team, so pass the team id explicitly: `Aura::setting('seo-site-name', teamId: $teamId)`. To find which team a public request belongs to, `app(SettingsStore::class)->all()` returns the non-secret settings of every team.
 
 Declare write-only fields in `secretFields`. Aura encrypts new values with Laravel's encrypter, does not send stored secrets back to Livewire, and preserves the current secret when the form submits an empty value. Use `secretContexts` when a credential belongs to another field's selected value, such as a provider:
 

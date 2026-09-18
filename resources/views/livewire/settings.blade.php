@@ -4,13 +4,21 @@
     <div class="mb-6">
         <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
-            <x-aura::breadcrumbs.li title="Settings" />
+            @if($page === 'general')
+                <x-aura::breadcrumbs.li title="Settings" />
+            @else
+                <x-aura::breadcrumbs.li :href="route('aura.settings')" title="Settings" />
+                <x-aura::breadcrumbs.li :title="$this->settingsPage()->title" />
+            @endif
         </x-aura::breadcrumbs>
     </div>
 
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="mb-2 text-2xl font-semibold">Settings</h1>
+            <h1 class="mb-2 text-2xl font-semibold">{{ $page === 'general' ? __('Settings') : __($this->settingsPage()->title) }}</h1>
+            @if(filled($this->settingsPage()->description))
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ __($this->settingsPage()->description) }}</p>
+            @endif
         </div>
 
         <div>
