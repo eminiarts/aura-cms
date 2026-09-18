@@ -53,37 +53,37 @@ trait HasActions
         $actions = (array) $this->model->getActions();
 
         // Package-contributed actions bring their own authorization instead of `update`.
-        if (! array_key_exists($action, $actions) && app()->bound(ResourceActionRegistry::class)) {
-            $contributed = app(ResourceActionRegistry::class)->actionsFor($this->model, auth()->user());
+        $contributed = array_key_exists($action, $actions) || ! app()->bound(ResourceActionRegistry::class)
+            ? []
+            : app(ResourceActionRegistry::class)->actionsFor($this->model, auth()->user());
 
-            if (array_key_exists($action, $contributed)) {
-                return $this->contributedAction($action, $contributed[$action]);
+        if (! array_key_exists($action, $contributed)) {
+            // Authorize
+            if (! $this->model->allowedToPerformActions()) {
+                $this->authorize('update', $this->model);
+            }
+
+            // Only declared actions may be invoked. Without this, any public model
+            // method (delete, forceDelete, ...) could be called through the `update`
+            // authorization, bypassing its own policy. 404 mirrors an unknown route:
+            // an undeclared action simply does not exist for this resource.
+            abort_unless(array_key_exists($action, $actions), 404);
+
+            if (isset($actions[$action]['conditional_logic']) && ! $actions[$action]['conditional_logic']()) {
+                abort(403, 'You are not authorized to perform this action.');
             }
         }
 
-        // Authorize
-        if (! $this->model->allowedToPerformActions()) {
-            $this->authorize('update', $this->model);
-        }
-
-        // Only declared actions may be invoked. Without this, any public model
-        // method (delete, forceDelete, ...) could be called through the `update`
-        // authorization, bypassing its own policy. 404 mirrors an unknown route:
-        // an undeclared action simply does not exist for this resource.
-        abort_unless(array_key_exists($action, $actions), 404);
-
-        if (isset($actions[$action]['conditional_logic']) && ! $actions[$action]['conditional_logic']()) {
-            abort(403, 'You are not authorized to perform this action.');
-        }
-
         try {
-            $response = $this->model->{$action}();
+            $response = array_key_exists($action, $contributed)
+                ? app(ResourceActionRegistry::class)->execute($action, $this->model, auth()->user())
+                : $this->model->{$action}();
 
             if ($response instanceof RedirectResponse) {
                 return $response; // Perform the redirect.
             }
 
-            $this->notify(__('Successfully ran: :action', ['action' => __($this->actionLabel($actions[$action], $action))]));
+            $this->notify(__('Successfully ran: :action', ['action' => __($this->actionLabel($contributed[$action] ?? $actions[$action], $action))]));
         } catch (AuthorizationException $e) {
             abort(403, $e->getMessage());
         }
@@ -104,20 +104,5 @@ trait HasActions
         }
 
         return $action;
-    }
-
-    protected function contributedAction(string $action, array $definition)
-    {
-        try {
-            $response = app(ResourceActionRegistry::class)->execute($action, $this->model, auth()->user());
-        } catch (AuthorizationException $e) {
-            abort(403, $e->getMessage());
-        }
-
-        if (! $response instanceof RedirectResponse) {
-            $this->notify(__('Successfully ran: :action', ['action' => __($this->actionLabel($definition, $action))]));
-        }
-
-        return $response;
     }
 }

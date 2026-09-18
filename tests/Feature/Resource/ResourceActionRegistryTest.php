@@ -6,6 +6,7 @@ use Aura\Base\Resource;
 use Aura\Base\Services\ResourceActionRegistry;
 use Aura\Base\Traits\HasActions;
 use Illuminate\Auth\Access\AuthorizationException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ContributedActionResource extends Resource
 {
@@ -19,6 +20,18 @@ class ResourceActionHarness
     use HasActions;
 
     public Resource $model;
+
+    public array $notifications = [];
+
+    public function authorize(string $ability, mixed $arguments = []): void
+    {
+        abort_unless(auth()->user()->can($ability, $arguments), 403);
+    }
+
+    public function notify(string $message): void
+    {
+        $this->notifications[] = $message;
+    }
 }
 
 beforeEach(function () {
@@ -91,3 +104,23 @@ test('an action without an authorization check cannot be registered', function (
         'handler' => fn (): null => null,
     ]);
 })->throws(InvalidArgumentException::class, 'requires a callable [authorize]');
+
+test('the component runs contributed actions by label and keeps unknown actions a 404', function () {
+    $ran = false;
+    app(ResourceActionRegistryContract::class)->register('vendor.export', [
+        'label' => 'Export',
+        'authorize' => fn (): bool => true,
+        'handler' => function () use (&$ran): void {
+            $ran = true;
+        },
+    ]);
+    $harness = new ResourceActionHarness;
+    $harness->model = new ContributedActionResource;
+
+    $harness->singleAction('vendor.export');
+
+    expect($ran)->toBeTrue()
+        ->and($harness->notifications)->toBe(['Successfully ran: Export']);
+
+    $harness->singleAction('delete');
+})->throws(NotFoundHttpException::class);
