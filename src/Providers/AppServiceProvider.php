@@ -7,8 +7,10 @@ use Aura\Base\Facades\DynamicFunctions;
 use Aura\Base\Listeners\CreateDatabaseMigration;
 use Aura\Base\Listeners\ModifyDatabaseMigration;
 use Aura\Base\Navigation\Navigation;
+use Aura\Base\Settings\SettingsRegistry;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -18,6 +20,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        $isSuperAdmin = DynamicFunctions::add(fn () => auth()->user()->isSuperAdmin());
+
         Navigation::add(array_filter([
             config('aura.features.dashboard') ? [
                 'icon' => "<x-aura::icon icon='dashboard' />",
@@ -46,11 +50,32 @@ class AppServiceProvider extends ServiceProvider
                 'group' => 'settings',
                 'sort' => 300,
                 'route' => 'aura.settings',
-                'conditional_logic' => DynamicFunctions::add(function () {
-                    return auth()->user()->isSuperAdmin();
-                }),
+                'conditional_logic' => $isSuperAdmin,
             ] : null,
         ]));
+
+        // Plugins register their pages after this provider boots, so resolve them when the sidebar renders.
+        if (config('aura.features.settings')) {
+            app('hook_manager')->addHook('navigation', function ($navigation) use ($isSuperAdmin) {
+                foreach (app(SettingsRegistry::class)->pages() as $page) {
+                    if ($page->slug === 'general') {
+                        continue;
+                    }
+
+                    $navigation->push([
+                        'icon' => View::exists('aura::components.icon.'.$page->icon) ? "<x-aura::icon icon='{$page->icon}' />" : '',
+                        'name' => $page->title,
+                        'slug' => 'settings-'.$page->slug,
+                        'group' => 'settings',
+                        'sort' => 301 + $page->order,
+                        'route' => route('aura.settings.page', $page->slug),
+                        'conditional_logic' => $isSuperAdmin,
+                    ]);
+                }
+
+                return $navigation;
+            });
+        }
 
         // Validator::extend('json', function ($attribute, $value, $parameters, $validator) {
         //     json_decode($value);

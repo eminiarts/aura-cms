@@ -14,6 +14,9 @@ use Aura\Base\RecordLayout\RecordLayoutRegistry;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Option;
 use Aura\Base\Resources\User;
+use Aura\Base\Settings\SettingsPage;
+use Aura\Base\Settings\SettingsRegistry;
+use Aura\Base\Settings\SettingsStore;
 use Aura\Base\Traits\DefaultFields;
 use Closure;
 use Illuminate\Contracts\Support\Htmlable;
@@ -86,6 +89,10 @@ class Aura
 
         if (app()->bound(RecordLayoutRegistry::class)) {
             app(RecordLayoutRegistry::class)->captureBaselineState($this->getResources());
+        }
+
+        if (app()->bound(SettingsRegistry::class)) {
+            app(SettingsRegistry::class)->captureBaselineState();
         }
     }
 
@@ -161,6 +168,10 @@ class Aura
 
         if (app()->bound(RecordLayoutRegistry::class)) {
             app(RecordLayoutRegistry::class)->flushState();
+        }
+
+        if (app()->bound(SettingsRegistry::class)) {
+            app(SettingsRegistry::class)->flushState();
         }
 
         ConditionalLogic::clearConditionsCache();
@@ -433,7 +444,7 @@ class Aura
     {
         return 'user-'.auth()->id()
             .'-'.auth()->user()->current_team_id
-            .'-navigation-'.md5(implode(',', $this->getResources()));
+            .'-navigation-'.md5(implode(',', $this->getResources()).'|'.implode(',', $this->settingsPageSlugs()));
     }
 
     public function option($key)
@@ -489,6 +500,16 @@ class Aura
             });
     }
 
+    /** @param  list<SettingsPage>  $pages */
+    public function registerSettingsPages(string $source, array $pages): void
+    {
+        if (! app()->bound(SettingsRegistry::class)) {
+            throw new LogicException('Settings pages require Aura to be resolved through the application container.');
+        }
+
+        app(SettingsRegistry::class)->register($source, $pages);
+    }
+
     public function registerWidgets(array $widgets): void
     {
         $this->widgets = array_merge($this->widgets, $widgets);
@@ -497,6 +518,11 @@ class Aura
     public function scripts()
     {
         return view('aura::components.layout.scripts');
+    }
+
+    public function setting(string $key, mixed $default = null, ?int $teamId = null): mixed
+    {
+        return app(SettingsStore::class)->get($key, $default, $teamId);
     }
 
     public function styles()
@@ -589,5 +615,15 @@ class Aura
             ->useBuildDirectory('vendor/aura')->withEntryPoints([
                 'resources/css/app.css',
             ]);
+    }
+
+    /** @return list<string> */
+    private function settingsPageSlugs(): array
+    {
+        if (! app()->bound(SettingsRegistry::class)) {
+            return [];
+        }
+
+        return array_map(fn (SettingsPage $page): string => $page->slug, app(SettingsRegistry::class)->pages());
     }
 }

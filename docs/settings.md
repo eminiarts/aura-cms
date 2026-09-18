@@ -1,6 +1,6 @@
 # Settings
 
-The Settings page lets administrators change the theme and appearance of the admin interface. Aura saves these choices in a database option record, separately from configuration files and user preferences.
+The Settings page lets administrators configure the admin theme, shared AI connection, and installed plugins. Aura saves these choices in a database option record, separately from configuration files and user preferences.
 
 ![Settings page](/images/docs/settings/settings-general.png)
 
@@ -43,7 +43,15 @@ The separate option resource follows the normal resource policy. Super admins an
 
 ## Fields on the page
 
-The built-in form contains the fields below. To customize them, define field arrays in `Settings::getFields()`.
+Every registered settings page has its own sidebar entry and URL:
+
+1. **Settings** (`/admin/settings`, route `aura.settings`) contains the theme and appearance fields below.
+2. **AI** (`/admin/settings/ai`) contains the shared provider, endpoint, model, encrypted API key, and connection test.
+3. Installed plugins add their own pages with `Aura::registerSettingsPages()`. A page with the slug `seo` is served at `/admin/settings/seo`. Link to it with `route('aura.settings.page', 'seo')`.
+
+All pages save into the same settings record. Saving one page leaves the values of the other pages untouched.
+
+See [Plugins](/docs/plugins#register-a-settings-page) for the plugin registration interface.
 
 | Field | Slug | Type | Values or behavior |
 | --- | --- | --- | --- |
@@ -107,7 +115,7 @@ class Option extends Resource
 }
 ~~~
 
-The settings are stored as JSON in the value column. Eloquent casts them to a PHP array when you read the record.
+The settings are stored as JSON in the value column. Eloquent casts them to a PHP array when you read the record. `SettingsStore` owns settings persistence, current-team resolution, secret encryption, and cache invalidation.
 
 ### Teams enabled
 
@@ -135,7 +143,7 @@ With teams disabled, option queries have no team scope. Reading settings through
 
 ## Defaults and precedence
 
-When it first creates the settings row, Aura copies six appearance settings from the application's theme configuration:
+When it first creates the settings row, Aura combines defaults from every registered page. The General page contributes six appearance settings from the application's theme configuration:
 
 ~~~json
 {
@@ -160,35 +168,32 @@ Runtime theme resolution uses three sources in this order:
 
 Later sources override earlier ones. Theme token resolution uses this order for fonts and semantic colors. Navigation uses saved sidebar settings, falling back to the theme configuration when a key is missing. The color renderer uses the saved palette names and custom shade values.
 
-Take care when choosing a helper to read settings. Both `Aura::option('theme')` and `Aura::options()` read application configuration, not saved database values. To read the Settings page's saved values, use the option name `settings` with the database helpers shown below.
+Take care when choosing a helper to read settings. Both `Aura::option('theme')` and `Aura::options()` read application configuration, not saved database values. Use `Aura::setting()` for values managed by the Settings page.
 
 ## Reading and updating settings
 
-Read the current settings through the Aura facade:
+Read a current setting through the Aura facade:
 
 ~~~php
 use Aura\Base\Facades\Aura;
 
-$settings = Aura::getOption('settings') ?: [];
-
-$palette = $settings['color-palette']
-    ?? config('aura.theme.color-palette');
+$palette = Aura::setting(
+    'color-palette',
+    config('aura.theme.color-palette'),
+);
 ~~~
 
-The read helper selects the current team's settings when teams are enabled. It returns an empty array if no matching row exists and caches the result for up to one hour.
+The helper selects the current team's settings when teams are enabled. For fields declared in `secretFields`, it decrypts the value on the server. Never expose a returned secret to a browser response or client-side component.
 
-Use the matching facade method to update the current context:
+Use `SettingsStore` to update the current context programmatically:
 
 ~~~php
-use Aura\Base\Facades\Aura;
+use Aura\Base\Settings\SettingsStore;
 
-$settings = Aura::getOption('settings') ?: [];
-$settings['color-palette'] = 'emerald';
-
-Aura::updateOption('settings', $settings);
+app(SettingsStore::class)->put('color-palette', 'emerald');
 ~~~
 
-The update helper writes to the current team's settings row when teams are enabled, or the shared settings row when they are disabled. It does not check permissions, so authorize the caller before invoking it.
+The store writes to the current team's settings row when teams are enabled, or the shared settings row when they are disabled. It does not check permissions, so authorize the caller before invoking it.
 
 Aura does not generate a REST endpoint for settings or options. If your application needs an HTTP API, define a route and controller and apply your own authorization.
 
@@ -228,9 +233,11 @@ Aura's navigation uses user preferences for sidebar collapse and expanded groups
 
 The team model has the same methods for team-specific application options. Its option methods prefix names with `team.{teamId}.`.
 
-## Extending the Settings component
+## Extending Settings
 
-To add settings, extend the built-in component and add field arrays as you would for a resource. Then register your component under `aura.components.settings`:
+Composer plugins should register a `SettingsPage`; this keeps storage, ordering, field collision checks, and secret handling inside Aura. See [Register a settings page](/docs/plugins#register-a-settings-page).
+
+Applications can still replace the whole Livewire component when they need custom behavior that a registered page cannot provide. Extend the built-in component and register it under `aura.components.settings`:
 
 ~~~php
 namespace App\Livewire;
@@ -267,14 +274,14 @@ class CustomSettings extends BaseSettings
 Aura saves the added support email field alongside the other settings. Read it through the facade:
 
 ~~~php
-$email = (Aura::getOption('settings') ?: [])['support-email'] ?? null;
+$email = Aura::setting('support-email');
 ~~~
 
 ## Cache invalidation
 
-Saving the built-in Settings page clears the application cache through `Cache::clear()` after updating the option record.
+Saving the built-in Settings page invalidates only the cache entries for the shared or current-team settings record. Programmatic changes should use `SettingsStore::put()` or `SettingsStore::store()` for the same scoped invalidation and secret handling.
 
-For programmatic changes, prefer `Aura::updateOption()`. It clears the matching facade cache entries. Updating the option model directly leaves those entries in place, so readers may continue to see the old value until the one-hour cache expires.
+Updating the option model directly bypasses these guarantees.
 
 The user model's update and delete methods clear the cache entry for the preference they change. Team option writes also clear their prefixed entry. The facade cache key includes the current team ID, so switching teams selects a different cached value.
 
@@ -284,6 +291,9 @@ These are the supported PHP entry points for this data:
 
 | API | Reads or writes | Context |
 | --- | --- | --- |
+| `Aura::setting($key, $default, $teamId)` | Reads a saved setting and decrypts registered secrets | Current team when teams are enabled. Pass `$teamId` when there is no authenticated user, for example on public routes |
+| `SettingsStore::put($key, $value)` | Writes one setting and encrypts registered secrets | Current team when teams are enabled |
+| `SettingsStore::store($option, $values, $secretFields)` | Writes a form payload and preserves blank registered secrets | The supplied settings option |
 | `Aura::getOption($name)` | Reads a cached option value | Current team when teams are enabled |
 | `Aura::updateOption($name, $value)` | Writes an option value and clears facade cache | Current team when teams are enabled |
 | `Aura::option($key)` | Reads a top-level value from `config('aura')` | Application configuration |
@@ -291,7 +301,8 @@ These are the supported PHP entry points for this data:
 | `Option::byName($name)` | Reads an option model | Current query scope |
 | `Team::getOption()` / `updateOption()` / `deleteOption()` | Reads or writes team-prefixed options | One team |
 | `User::getOption()` / `updateOption()` / `deleteOption()` | Reads or writes user-prefixed options | One user and current team |
-| `Settings::getFields()` | Defines the Settings form | The configured Settings component |
+| `Aura::registerSettingsPages($source, $pages)` | Registers settings pages, fields, defaults, and secrets | Application boot process |
+| `Settings::getFields()` | Resolves the fields from the settings registry | The configured Settings component |
 
 Authorize programmatic writes in your application. The Settings page and the resource interface check access, but the model and facade helpers do not.
 

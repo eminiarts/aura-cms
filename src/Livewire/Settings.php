@@ -2,11 +2,13 @@
 
 namespace Aura\Base\Livewire;
 
-use Aura\Base\Resources\Option;
+use Aura\Base\Contracts\AiConnector;
+use Aura\Base\Settings\SettingsPage;
+use Aura\Base\Settings\SettingsRegistry;
+use Aura\Base\Settings\SettingsStore;
 use Aura\Base\Traits\InputFields;
 use Aura\Base\Traits\MediaFields;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
 
 class Settings extends Component
@@ -14,21 +16,32 @@ class Settings extends Component
     use InputFields;
     use MediaFields;
 
+    public ?array $aiConnectionStatus = null;
+
     public $form = [
         'fields' => [],
     ];
 
     public $model;
 
-    public static function getFields()
+    public string $page = 'general';
+
+    public array $secretConfigured = [];
+
+    public function boot(): void
+    {
+        // The field caches are keyed by class, but this component renders a different page per URL.
+        static::flushFieldCache();
+    }
+
+    public function fieldsCollection()
+    {
+        return collect($this->settingsPage()->fields);
+    }
+
+    public static function generalFields()
     {
         return [
-            [
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => 'General',
-                'slug' => 'tab-general',
-                'global' => true,
-            ],
             [
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'name' => 'Appearance',
@@ -465,6 +478,11 @@ class Settings extends Component
         ];
     }
 
+    public static function getFields()
+    {
+        return static::generalFields();
+    }
+
     public function getFieldsForViewProperty()
     {
         $fields = collect($this->mappedFields());
@@ -479,11 +497,13 @@ class Settings extends Component
         });
     }
 
-    public function mount()
+    public function mount(SettingsRegistry $registry, SettingsStore $store, string $page = 'general')
     {
-        abort_unless(config('aura.features.settings'), 404);
+        abort_unless(config('aura.features.settings') && $registry->has($page), 404);
 
-        abort_unless(auth()->user()->isSuperAdmin(), 403);
+        $this->page = $page;
+
+        $this->authorizeAccess();
 
         $valueString = [
             'darkmode-type' => config('aura.theme.darkmode-type'),
@@ -494,33 +514,31 @@ class Settings extends Component
             'sidebar-darkmode-type' => config('aura.theme.sidebar-darkmode-type'),
         ];
 
-        if (config('aura.teams')) {
-            $teamId = auth()->user()->currentTeam ? auth()->user()->currentTeam->id : auth()->user()->current_team_id;
-            $this->model = Option::firstOrCreate([
-                'name' => 'team.'.$teamId.'.settings',
-            ], [
-                'value' => $valueString,
-            ]);
-        } else {
-            $this->model = Option::firstOrCreate([
-                'name' => 'settings',
-            ], [
-                'value' => $valueString,
-            ]);
-        }
+        $this->model = $store->findOrCreate($valueString);
 
-        if (is_string($this->model->value)) {
-            $this->form['fields'] = json_decode($this->model->value, true);
-            // set default values of fields if not set to null
-            $this->form['fields'] = $this->inputFields()->mapWithKeys(function ($field) {
-                return [$field['slug'] => $this->form['fields'][$field['slug']] ?? null];
-            })->toArray();
-        } else {
-            $this->form['fields'] = $this->inputFields()->mapWithKeys(function ($field) {
-                return [$field['slug'] => $this->model->value[$field['slug']] ?? ''];
-            })->toArray();
+        $stored = $store->values($this->model);
+        $defaults = $registry->defaults();
+        $secretFields = $this->settingsPage()->secretFields;
 
-        }
+        $this->secretConfigured = array_fill_keys(
+            array_values(array_filter(
+                $secretFields,
+                static fn (string $slug): bool => $store->secret($slug, $stored) !== null,
+            )),
+            true,
+        );
+
+        $this->form['fields'] = $this->inputFields()->mapWithKeys(function ($field) use ($defaults, $secretFields, $stored) {
+            $slug = $field['slug'];
+
+            if (in_array($slug, $secretFields, true)) {
+                return [$slug => ''];
+            }
+
+            return [$slug => $stored[$slug] ?? $defaults[$slug] ?? ''];
+        })->toArray();
+
+        $this->model->setAttribute('value', Arr::except($stored, [...$registry->secretFields(), '_secret_contexts']));
     }
 
     public function render()
@@ -535,14 +553,45 @@ class Settings extends Component
         ]);
     }
 
-    public function save()
+    public function save(SettingsRegistry $registry, SettingsStore $store): void
     {
-        $this->model->update([
-            'value' => $this->form['fields'],
-        ]);
+        $this->validate();
 
-        Cache::clear();
+        $secretFields = $this->settingsPage()->secretFields;
 
-        return $this->notify(__('Successfully updated'));
+        $this->model = $store->store($this->model, $this->form['fields'], $secretFields);
+        $stored = $store->values($this->model);
+
+        foreach ($secretFields as $slug) {
+            $this->secretConfigured[$slug] = $store->secret($slug, $stored) !== null;
+
+            $this->form['fields'][$slug] = '';
+        }
+
+        $this->model->setAttribute('value', Arr::except($stored, [...$registry->secretFields(), '_secret_contexts']));
+
+        $this->dispatch('notify', message: __('Successfully updated'), type: 'success');
+    }
+
+    public function settingsPage(): SettingsPage
+    {
+        return app(SettingsRegistry::class)->page($this->page) ?? abort(404);
+    }
+
+    public function testAiConnection(AiConnector $connector): void
+    {
+        $this->authorizeAccess();
+
+        $result = $connector->testConnection();
+        $this->aiConnectionStatus = $result->toArray();
+
+        $this->dispatch('notify', message: $result->message, type: $result->successful ? 'success' : 'error');
+    }
+
+    private function authorizeAccess(): void
+    {
+        $user = auth()->user();
+
+        abort_unless($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin(), 403);
     }
 }

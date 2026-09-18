@@ -466,43 +466,13 @@ parameters:
 			path: src/Livewire/Settings.php
 
 		-
-			message: '#^Access to an undefined property Aura\\Base\\Resources\\Option\:\:\$value\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Livewire/Settings.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$currentTeam\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Livewire/Settings.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Livewire/Settings.php
-
-		-
 			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Settings\:\:getMeta\(\)\.$#'
 			identifier: method.notFound
 			count: 1
 			path: src/Livewire/Settings.php
 
 		-
-			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Settings\:\:notify\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Livewire/Settings.php
-
-		-
 			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Settings\:\:usesCustomTable\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Livewire/Settings.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:isSuperAdmin\(\)\.$#'
 			identifier: method.notFound
 			count: 1
 			path: src/Livewire/Settings.php
