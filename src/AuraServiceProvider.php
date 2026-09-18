@@ -23,6 +23,7 @@ use Aura\Base\Commands\TransferFromPostsToCustomTable;
 use Aura\Base\Commands\TransformTableToResource;
 use Aura\Base\Commands\UpdateSchemaFromMigration;
 use Aura\Base\Contracts\AiConnector;
+use Aura\Base\Contracts\ResourceActionRegistry as ResourceActionRegistryContract;
 use Aura\Base\Database\Seeders\RoleCatalogSeeder;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
@@ -66,6 +67,7 @@ use Aura\Base\Reporting\AggregateEngine;
 use Aura\Base\Reporting\ResourceAggregateEngine;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Services\ResourceActionRegistry;
 use Aura\Base\Settings\CoreSettingsPages;
 use Aura\Base\Settings\SettingsRegistry;
 use Aura\Base\Settings\SettingsStore;
@@ -100,7 +102,10 @@ class AuraServiceProvider extends PackageServiceProvider
     {
         parent::boot();
 
-        $this->app->booted(fn () => Aura::captureBaselineState());
+        $this->app->booted(function (): void {
+            Aura::captureBaselineState();
+            app(ResourceActionRegistryContract::class)->captureBaselineState();
+        });
     }
 
     public function bootGate()
@@ -521,6 +526,9 @@ class AuraServiceProvider extends PackageServiceProvider
     public function packageRegistered()
     {
         parent::packageRegistered();
+
+        $this->app->singleton(ResourceActionRegistry::class);
+        $this->app->alias(ResourceActionRegistry::class, ResourceActionRegistryContract::class);
 
         $this->app->singleton('hook_manager', function ($app) {
             return new HookManager;

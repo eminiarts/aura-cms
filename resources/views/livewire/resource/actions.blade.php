@@ -1,5 +1,4 @@
 <div class="flex flex-wrap gap-2">
-@if($this->model->allowedToPerformActions() || auth()->user()->can('update', $this->model))
 @if(count($this->actions))
     @if($this->model::$showActionsAsButtons)
         {{-- Render actions as buttons --}}
@@ -150,7 +149,6 @@
             </x-slot>
         </x-aura::dropdown>
     @endif
-@endif
 @endif
 
 </div>
