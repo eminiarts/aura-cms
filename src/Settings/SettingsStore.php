@@ -3,8 +3,10 @@
 namespace Aura\Base\Settings;
 
 use Aura\Base\Resources\Option;
+use Aura\Base\Support\TeamExecutionContext;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use LogicException;
@@ -18,6 +20,26 @@ final class SettingsStore
 
     public function __construct(private readonly SettingsRegistry $registry) {}
 
+    /**
+     * Non-secret settings of every team, for lookups that run without a team
+     * context (e.g. resolving which team owns a public hostname).
+     *
+     * @return list<array{team_id: ?int, values: array<string, mixed>}>
+     */
+    public function all(): array
+    {
+        $hidden = [...$this->registry->secretFields(), self::SECRET_CONTEXTS_KEY];
+
+        return Option::withoutGlobalScopes()
+            ->where('name', 'like', config('aura.teams') ? 'team.%.settings' : 'settings')
+            ->get()
+            ->map(fn (Option $option): array => [
+                'team_id' => config('aura.teams') ? (int) $option->getAttribute('team_id') : null,
+                'values' => Arr::except($this->values($option), $hidden),
+            ])
+            ->all();
+    }
+
     /** @param  array<string, mixed>  $defaults */
     public function findOrCreate(array $defaults = []): Option
     {
@@ -27,9 +49,10 @@ final class SettingsStore
         );
     }
 
-    public function get(string $key, mixed $default = null): mixed
+    /** Pass $teamId to read a team's settings without an authenticated user (public requests, jobs). */
+    public function get(string $key, mixed $default = null, ?int $teamId = null): mixed
     {
-        $values = $this->values();
+        $values = $this->values(teamId: $teamId);
 
         if (! array_key_exists($key, $values)) {
             return $default;
@@ -44,23 +67,7 @@ final class SettingsStore
 
     public function put(string $key, mixed $value): Option
     {
-        $option = $this->findOrCreate();
-        $values = $this->values($option);
-        $secretFields = $this->registry->secretFields();
-
-        if (in_array($key, $secretFields, true)) {
-            foreach ($secretFields as $secretField) {
-                unset($values[$secretField]);
-            }
-        }
-
-        $values[$key] = $value;
-
-        return $this->store(
-            $option,
-            $values,
-            in_array($key, $secretFields, true) ? $secretFields : [],
-        );
+        return $this->store($this->findOrCreate(), [$key => $value], $this->registry->secretFields());
     }
 
     /** @param  array<string, mixed>|null  $values */
@@ -93,6 +100,8 @@ final class SettingsStore
     }
 
     /**
+     * Merges $values into the stored settings. A blank secret keeps the stored one.
+     *
      * @param  array<string, mixed>  $values
      * @param  list<string>  $secretFields
      */
@@ -109,11 +118,7 @@ final class SettingsStore
             $secret = $values[$slug] ?? null;
 
             if (! is_string($secret) || $secret === '') {
-                if (array_key_exists($slug, $stored)) {
-                    $values[$slug] = $stored[$slug];
-                } else {
-                    unset($values[$slug]);
-                }
+                unset($values[$slug]);
 
                 continue;
             }
@@ -121,7 +126,7 @@ final class SettingsStore
             $values[$slug] = self::ENCRYPTED_PREFIX.Crypt::encryptString($secret);
 
             if ($context = $this->registry->secretContexts()[$slug] ?? null) {
-                $secretContexts[$slug] = $values[$context] ?? null;
+                $secretContexts[$slug] = $values[$context] ?? $stored[$context] ?? null;
             }
         }
 
@@ -129,20 +134,24 @@ final class SettingsStore
             $values[self::SECRET_CONTEXTS_KEY] = $secretContexts;
         }
 
-        $option->update(['value' => $values]);
+        // Each settings page submits only its own fields.
+        $option->update(['value' => array_replace($stored, $values)]);
         $this->forgetCache();
 
         return $option;
     }
 
     /** @return array<string, mixed> */
-    public function values(?Option $option = null): array
+    public function values(?Option $option = null, ?int $teamId = null): array
     {
-        if (config('aura.teams') && $this->currentTeamId() === null) {
+        $teamId ??= $this->currentTeamId();
+
+        if (! $option && config('aura.teams') && $teamId === null) {
             return [];
         }
 
-        $option ??= Option::where('name', $this->optionName())->first();
+        // The option name carries the team id, so the lookup must not depend on TeamScope.
+        $option ??= Option::withoutGlobalScopes()->where('name', $this->optionName($teamId))->first();
 
         if (! $option) {
             return [];
@@ -163,6 +172,10 @@ final class SettingsStore
 
     private function currentTeamId(): mixed
     {
+        if (TeamExecutionContext::active()) {
+            return TeamExecutionContext::currentTeamId();
+        }
+
         $user = auth()->user();
 
         if (! $user instanceof Model) {
@@ -188,13 +201,13 @@ final class SettingsStore
         }
     }
 
-    private function optionName(): string
+    private function optionName(mixed $teamId = null): string
     {
         if (! config('aura.teams')) {
             return 'settings';
         }
 
-        $teamId = $this->currentTeamId();
+        $teamId ??= $this->currentTeamId();
 
         if ($teamId === null) {
             throw new LogicException('Team settings require an authenticated current team.');

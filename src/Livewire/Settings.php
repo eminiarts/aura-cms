@@ -3,6 +3,7 @@
 namespace Aura\Base\Livewire;
 
 use Aura\Base\Contracts\AiConnector;
+use Aura\Base\Settings\SettingsPage;
 use Aura\Base\Settings\SettingsRegistry;
 use Aura\Base\Settings\SettingsStore;
 use Aura\Base\Traits\InputFields;
@@ -23,7 +24,20 @@ class Settings extends Component
 
     public $model;
 
+    public string $page = 'general';
+
     public array $secretConfigured = [];
+
+    public function boot(): void
+    {
+        // The field caches are keyed by class, but this component renders a different page per URL.
+        static::flushFieldCache();
+    }
+
+    public function fieldsCollection()
+    {
+        return collect($this->settingsPage()->fields);
+    }
 
     public static function generalFields()
     {
@@ -466,7 +480,7 @@ class Settings extends Component
 
     public static function getFields()
     {
-        return app(SettingsRegistry::class)->fields();
+        return static::generalFields();
     }
 
     public function getFieldsForViewProperty()
@@ -483,9 +497,11 @@ class Settings extends Component
         });
     }
 
-    public function mount(SettingsRegistry $registry, SettingsStore $store)
+    public function mount(SettingsRegistry $registry, SettingsStore $store, string $page = 'general')
     {
-        abort_unless(config('aura.features.settings'), 404);
+        abort_unless(config('aura.features.settings') && $registry->has($page), 404);
+
+        $this->page = $page;
 
         $this->authorizeAccess();
 
@@ -502,7 +518,7 @@ class Settings extends Component
 
         $stored = $store->values($this->model);
         $defaults = $registry->defaults();
-        $secretFields = $registry->secretFields();
+        $secretFields = $this->settingsPage()->secretFields;
 
         $this->secretConfigured = array_fill_keys(
             array_values(array_filter(
@@ -522,7 +538,7 @@ class Settings extends Component
             return [$slug => $stored[$slug] ?? $defaults[$slug] ?? ''];
         })->toArray();
 
-        $this->model->setAttribute('value', Arr::except($stored, [...$secretFields, '_secret_contexts']));
+        $this->model->setAttribute('value', Arr::except($stored, [...$registry->secretFields(), '_secret_contexts']));
     }
 
     public function render()
@@ -541,10 +557,12 @@ class Settings extends Component
     {
         $this->validate();
 
-        $this->model = $store->store($this->model, $this->form['fields'], $registry->secretFields());
+        $secretFields = $this->settingsPage()->secretFields;
+
+        $this->model = $store->store($this->model, $this->form['fields'], $secretFields);
         $stored = $store->values($this->model);
 
-        foreach ($registry->secretFields() as $slug) {
+        foreach ($secretFields as $slug) {
             $this->secretConfigured[$slug] = $store->secret($slug, $stored) !== null;
 
             $this->form['fields'][$slug] = '';
@@ -553,6 +571,11 @@ class Settings extends Component
         $this->model->setAttribute('value', Arr::except($stored, [...$registry->secretFields(), '_secret_contexts']));
 
         $this->dispatch('notify', message: __('Successfully updated'), type: 'success');
+    }
+
+    public function settingsPage(): SettingsPage
+    {
+        return app(SettingsRegistry::class)->page($this->page) ?? abort(404);
     }
 
     public function testAiConnection(AiConnector $connector): void

@@ -439,7 +439,7 @@ class Aura
     {
         return 'user-'.auth()->id()
             .'-'.auth()->user()->current_team_id
-            .'-navigation-'.md5(implode(',', $this->getResources()));
+            .'-navigation-'.md5(implode(',', $this->getResources()).'|'.implode(',', $this->settingsPageSlugs()));
     }
 
     public function option($key)
@@ -515,9 +515,9 @@ class Aura
         return view('aura::components.layout.scripts');
     }
 
-    public function setting(string $key, mixed $default = null): mixed
+    public function setting(string $key, mixed $default = null, ?int $teamId = null): mixed
     {
-        return app(SettingsStore::class)->get($key, $default);
+        return app(SettingsStore::class)->get($key, $default, $teamId);
     }
 
     public function styles()
@@ -610,5 +610,15 @@ class Aura
             ->useBuildDirectory('vendor/aura')->withEntryPoints([
                 'resources/css/app.css',
             ]);
+    }
+
+    /** @return list<string> */
+    private function settingsPageSlugs(): array
+    {
+        if (! app()->bound(SettingsRegistry::class)) {
+            return [];
+        }
+
+        return array_map(fn (SettingsPage $page): string => $page->slug, app(SettingsRegistry::class)->pages());
     }
 }
