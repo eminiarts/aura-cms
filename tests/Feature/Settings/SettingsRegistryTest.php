@@ -78,10 +78,11 @@ test('settings are readable by team id without an authenticated user', function 
 
     auth()->logout();
 
-    expect(Aura::setting('seo-site-name'))->toBeNull()
+    // Without teams there is one global settings row, which needs no team to be read.
+    expect(Aura::setting('seo-site-name'))->toBe(config('aura.teams') ? null : 'Aura Site')
         ->and(Aura::setting('seo-site-name', teamId: $teamId))->toBe('Aura Site')
         ->and($store->all())->toHaveCount(1)
-        ->and($store->all()[0]['team_id'])->toBe($teamId)
+        ->and($store->all()[0]['team_id'])->toBe(config('aura.teams') ? $teamId : null)
         ->and($store->all()[0]['values'])->toHaveKey('seo-site-name')->not->toHaveKey('ai-api-key');
 });
 
