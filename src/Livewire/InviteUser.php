@@ -3,12 +3,18 @@
 namespace Aura\Base\Livewire;
 
 use Aura\Base\Mail\TeamInvitation;
+use Aura\Base\Mail\UserInvitation as UserInvitationMail;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
+use Aura\Base\Resources\UserInvitation;
+use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
 use Aura\Base\Traits\InputFields;
+use Closure;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class InviteUser extends Component
@@ -23,7 +29,7 @@ class InviteUser extends Component
         ],
     ];
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -44,9 +50,7 @@ class InviteUser extends Component
                 // Offer the merged, shadow-resolved catalog — each slug once,
                 // the team's Shadow winning over the Global Role it shadows —
                 // the same set the Roles index and the user-form picker show.
-                'options' => config('aura.teams')
-                    ? Role::shadowResolvedForCurrentTeam()->get()->pluck('name', 'id')->toArray()
-                    : [],
+                'options' => static::availableRoles()->pluck('name', 'id')->toArray(),
                 'style' => [
                     'width' => '50',
                 ],
@@ -56,26 +60,43 @@ class InviteUser extends Component
 
     public function getFieldsProperty()
     {
-        $fields = collect($this->mappedFields());
-
-        return $this->fieldsForView($fields);
+        // Role choices depend on the current actor and must not use static field caches.
+        return $this->fieldsForView(collect(static::getFields()));
     }
 
     public function mount(): void
     {
-        abort_unless(config('aura.teams'), 404);
+        $this->authorizeInvitation();
     }
 
     public function render()
     {
-        abort_unless(config('aura.teams'), 404);
+        $this->authorizeInvitation();
 
         return view('aura::livewire.user.invite-user');
     }
 
-    public function rules()
+    public function rules(): array
     {
-        abort_unless(config('aura.teams'), 404);
+        $this->authorizeInvitation();
+
+        if (! config('aura.teams')) {
+            return [
+                'form.fields.email' => [
+                    'bail', 'required', 'string', 'email', 'max:255', new CaseInsensitiveUniqueEmail,
+                    function (string $attribute, string $value, Closure $fail): void {
+                        if (UserInvitation::whereHas('meta', fn (Builder $query) => $query
+                            ->where('key', 'email')
+                            ->whereRaw('lower(value) = ?', [mb_strtolower($value)]))
+                            ->where('created_at', '>=', now()->subDays((int) config('aura.auth.invitation_expiry', 7)))
+                            ->exists()) {
+                            $fail(__('User already invited.'));
+                        }
+                    },
+                ],
+                'form.fields.role' => ['required', Rule::in(static::availableRoles()->pluck('id')->all())],
+            ];
+        }
 
         $rules = Arr::dot([
             'form.fields' => $this->validationRules(),
@@ -127,24 +148,33 @@ class InviteUser extends Component
         return $rules;
     }
 
-    public function save()
+    public function save(): void
     {
-        abort_unless(config('aura.teams'), 404);
+        $this->authorizeInvitation();
 
         $this->validate();
 
-        $team = auth()->user()->currentTeam;
+        if (! config('aura.teams')) {
+            $invitation = UserInvitation::create([
+                'email' => $this->form['fields']['email'],
+                'role' => $this->form['fields']['role'],
+            ]);
 
-        abort_unless($team, 404);
+            Mail::to($invitation->email)->send(new UserInvitationMail($invitation));
+        } else {
+            $team = auth()->user()->currentTeam;
 
-        $this->authorize('invite-users', $team);
+            abort_unless($team, 404);
 
-        $invitation = $team->teamInvitations()->create([
-            'email' => $email = $this->form['fields']['email'],
-            'role' => $this->form['fields']['role'],
-        ]);
+            $this->authorize('invite-users', $team);
 
-        Mail::to($email)->send(new TeamInvitation($invitation));
+            $invitation = $team->teamInvitations()->create([
+                'email' => $email = $this->form['fields']['email'],
+                'role' => $this->form['fields']['role'],
+            ]);
+
+            Mail::to($email)->send(new TeamInvitation($invitation));
+        }
 
         $this->notify('Invitation sent successfully.');
 
@@ -176,6 +206,30 @@ class InviteUser extends Component
         }
 
         return $actor->isSuperAdmin() || $actor->isAuraGlobalAdmin();
+    }
+
+    protected function authorizeInvitation(): void
+    {
+        abort_unless(config('aura.auth.user_invitations'), 404);
+
+        if (! config('aura.teams')) {
+            $this->authorize('create', app(config('aura.resources.user')));
+        }
+    }
+
+    protected static function availableRoles(): Builder
+    {
+        if (config('aura.teams')) {
+            return Role::shadowResolvedForCurrentTeam();
+        }
+
+        $user = auth()->user();
+
+        if ($user && ! $user instanceof User) {
+            $user = app(config('aura.resources.user'))->find($user->getAuthIdentifier());
+        }
+
+        return Role::query()->when(! $user?->isSuperAdmin(), fn (Builder $query) => $query->where('super_admin', false));
     }
 
     protected function validationAttributes(): array

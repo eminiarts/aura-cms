@@ -1,7 +1,7 @@
 <x-aura::layout.guest>
 
     <div class="mb-8">
-        <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __('Join') }} {{ $team->name }}</h1>
+        <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ $team ? __('Join').' '.$team->name : __('Create your account') }}</h1>
         <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('You have been invited. Create your account below to get started.') }}</p>
     </div>
 
@@ -9,12 +9,13 @@
     <form method="POST" action="{{ url()->full() }}" class="space-y-5">
         @csrf
 
-        <!-- Team -->
+        @if($team)
         <div>
             <x-aura::input-label class="!mt-0" for="team" :value="__('Team')" />
             <x-aura::input.text id="team" class="block w-full opacity-60 cursor-not-allowed" type="text" name="team" :value="$team->name" disabled />
             <x-aura::input-error :for="$errors->get('team')" class="mt-2" />
         </div>
+        @endif
 
         <!-- Email Address -->
         <div>
