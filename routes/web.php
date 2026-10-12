@@ -3,6 +3,7 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Http\Controllers\Api\FieldsController;
 use Aura\Base\Http\Controllers\ImageController;
+use Aura\Base\Http\Controllers\PublishAssetsController;
 use Aura\Base\Http\Middleware\EnsureResourceEditorEnabled;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\PluginsPage;
@@ -29,6 +30,8 @@ Route::domain(config('aura.domain'))
         Route::prefix(config('aura.path'))->group(function () {
 
             Route::get('/', config('aura.components.dashboard'))->name('dashboard');
+
+            Route::post('/assets/publish', PublishAssetsController::class)->name('assets.publish');
 
             // route for api/fields/values which calls Api\FieldsController@values
             Route::post('/api/fields/values', [FieldsController::class, 'values'])->name('api.fields.values');
