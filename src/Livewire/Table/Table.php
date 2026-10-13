@@ -333,6 +333,12 @@ class Table extends Component
     {
         $this->dispatch('tableMounted');
 
+        // Embedded field definitions become Livewire state; closures from the
+        // source definition (e.g. gate-checked `disabled`) are not serializable.
+        if (is_array($this->field)) {
+            $this->field = array_filter($this->field, fn ($value) => ! $value instanceof \Closure);
+        }
+
         if ($this->selectedFilter) {
             if (array_key_exists($this->selectedFilter, $this->userFilters)) {
                 $this->filters = $this->userFilters[$this->selectedFilter];

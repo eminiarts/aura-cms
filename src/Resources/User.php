@@ -294,6 +294,14 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         ])->render();
     }
 
+    // Field definitions cross into Livewire component state, so `display`
+    // must stay serializable — a [class, method] callable instead of a
+    // closure, which Livewire cannot dehydrate.
+    public static function displayAvatarField($value, self $model): mixed
+    {
+        return $model->displayAvatar($value);
+    }
+
     public function getAvatarUrlAttribute()
     {
         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
@@ -324,7 +332,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'conditional_logic' => [],
                 'slug' => 'avatar',
                 'on_create' => false,
-                'display' => fn ($value, $model) => $model->displayAvatar($value),
+                'max_files' => 1,
+                'display' => [self::class, 'displayAvatarField'],
                 'style' => [
                     'width' => '100',
                 ],

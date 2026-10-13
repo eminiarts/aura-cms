@@ -217,104 +217,101 @@
 
         <div class="mt-4">
 
-            <div class="flex flex-col justify-between w-full md:items-center md:flex-row">
+            <div class="flex flex-wrap gap-3 items-center justify-between">
 
-                @if ($this->settings['search'])
-                    <div class="mb-4 w-full md:mb-0 max-w-64">
-                        <label for="table-search" class="sr-only">Search</label>
-                        <div class="relative mt-1">
-                            <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor"
-                                    viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd"
-                                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                        clip-rule="evenodd"></path>
-                                </svg>
+                {{-- Left cluster: search + media type / upload month quick filters.
+                     Wraps as a unit so a narrow viewport keeps search and filters
+                     together instead of scattering them across rows. --}}
+                <div class="flex flex-wrap gap-3 items-center min-w-0">
+
+                    @if ($this->settings['search'])
+                        <div class="w-56 max-w-full">
+                            <label for="table-search" class="sr-only">Search</label>
+                            <div class="relative">
+                                <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor"
+                                        viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd"
+                                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                            clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <input type="text" id="table-search"
+                                    class="block p-2.5 pl-10 w-56 max-w-full rounded-lg shadow-xs transition transition-300 border border-gray-500/30 appearance-none px-3 py-2 focus:outline-none ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:opacity-60 disabled:dark:bg-gray-800 bg-white dark:bg-transparent border border-gray-500/30 dark:border-gray-700 dark:focus:border-gray-500 z-[1]"
+                                    placeholder="{{ __('Search for items') }}" wire:model.live.debounce="search">
+
                             </div>
-                            <input type="text" id="table-search"
-                                class="block p-2.5 pl-10 w-64 max-w-full rounded-lg shadow-xs transition transition-300 border border-gray-500/30 appearance-none px-3 py-2 focus:outline-none ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:opacity-60 disabled:dark:bg-gray-800 bg-white dark:bg-transparent border border-gray-500/30 dark:border-gray-700 dark:focus:border-gray-500 z-[1]"
-                                placeholder="{{ __('Search for items') }}" wire:model.live.debounce="search">
-
                         </div>
-                    </div>
-                @endif
+                    @endif
 
-                {{-- Media type + upload month quick filters --}}
-                <div class="flex flex-wrap items-center mb-4 ml-0 space-x-1 w-full md:ml-4 md:mb-0" data-media-quick-filters>
-                    @php
-                        $activeType = $this->quickFilters['type'] ?? null;
-                        $activeMonth = $this->quickFilters['month'] ?? null;
-                        $uploadMonths = $model::uploadMonths();
-                    @endphp
+                    {{-- Media type + upload month quick filters --}}
+                    <div class="flex flex-wrap gap-1 items-center" data-media-quick-filters>
+                        @php
+                            $activeType = $this->quickFilters['type'] ?? null;
+                            $activeMonth = $this->quickFilters['month'] ?? null;
+                            $uploadMonths = $model::uploadMonths();
+                        @endphp
 
-                    <button
-                        type="button"
-                        wire:click="setQuickFilter('type', null)"
-                        data-type-filter="all"
-                        @class([
-                            'px-3 py-1.5 text-sm font-medium rounded-full transition',
-                            'bg-primary-600 text-white shadow-sm' => $activeType === null,
-                            'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800' => $activeType !== null,
-                        ])
-                    >
-                        {{ __('All') }}
-                    </button>
-
-                    @foreach ($model::MEDIA_TYPES as $typeKey => $typeLabel)
                         <button
                             type="button"
-                            wire:click="setQuickFilter('type', @js($activeType === $typeKey ? null : $typeKey))"
-                            data-type-filter="{{ $typeKey }}"
+                            wire:click="setQuickFilter('type', null)"
+                            data-type-filter="all"
                             @class([
                                 'px-3 py-1.5 text-sm font-medium rounded-full transition',
-                                'bg-primary-600 text-white shadow-sm' => $activeType === $typeKey,
-                                'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800' => $activeType !== $typeKey,
+                                'bg-primary-600 text-white shadow-sm' => $activeType === null,
+                                'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800' => $activeType !== null,
                             ])
                         >
-                            {{ __($typeLabel) }}
+                            {{ __('All') }}
                         </button>
-                    @endforeach
 
-                    @if (count($uploadMonths))
-                        <select
-                            wire:change="setQuickFilter('month', $event.target.value)"
-                            data-month-filter
-                            class="px-3 py-1.5 ml-2 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
-                        >
-                            <option value="" @selected($activeMonth === null)>{{ __('All dates') }}</option>
-                            @foreach ($uploadMonths as $month)
-                                <option value="{{ $month }}" @selected($activeMonth === $month)>
-                                    {{ \Illuminate\Support\Carbon::createFromFormat('Y-m', $month)->translatedFormat('F Y') }}
-                                </option>
-                            @endforeach
-                        </select>
-                    @endif
+                        @foreach ($model::MEDIA_TYPES as $typeKey => $typeLabel)
+                            <button
+                                type="button"
+                                wire:click="setQuickFilter('type', @js($activeType === $typeKey ? null : $typeKey))"
+                                data-type-filter="{{ $typeKey }}"
+                                @class([
+                                    'px-3 py-1.5 text-sm font-medium rounded-full transition',
+                                    'bg-primary-600 text-white shadow-sm' => $activeType === $typeKey,
+                                    'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800' => $activeType !== $typeKey,
+                                ])
+                            >
+                                {{ __($typeLabel) }}
+                            </button>
+                        @endforeach
+
+                        @if (count($uploadMonths))
+                            <select
+                                wire:change="setQuickFilter('month', $event.target.value)"
+                                data-month-filter
+                                class="px-3 py-1.5 ml-1 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
+                            >
+                                <option value="" @selected($activeMonth === null)>{{ __('All dates') }}</option>
+                                @foreach ($uploadMonths as $month)
+                                    <option value="{{ $month }}" @selected($activeMonth === $month)>
+                                        {{ \Illuminate\Support\Carbon::createFromFormat('Y-m', $month)->translatedFormat('F Y') }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endif
+
+                        @if($this->settings['table_before'] && !empty($this->userFilters))
+                            <x-aura::input.select
+                                wire:model.live="selectedFilter"
+                                class="w-40"
+                                :options="collect($this->userFilters)->mapWithKeys(function ($filter, $key) {
+                                    return [$key => $filter['name']];
+                                })->prepend(__('All'), '')"
+                            />
+                        @endif
+                    </div>
                 </div>
 
-                <div class="mb-4 ml-4 w-full max-w-64 md:mb-0">
-                  @if($this->settings['table_before'])
-                      @if (!empty($this->userFilters))
-                        <div class="my-4 w-full">
-                          <x-aura::input.select
-                              wire:model.live="selectedFilter"
-                              :options="collect($this->userFilters)->mapWithKeys(function ($filter, $key) {
-                                  return [$key => $filter['name']];
-                              })->prepend('Alle', '')"
-                          >
-                          </x-aura::input.select>
-                      </div>
-                  @else
-                      <div class="mb-4 w-full"></div>
-                  @endif
+                {{-- Right cluster: view switch, table settings, filters, bulk actions --}}
+                <div class="flex gap-2 justify-end items-center ml-auto">
 
-                  @endif
-                </div>
-
-                <div class="flex justify-end items-center space-x-4 w-full">
-
-                    {{-- Columns --}}
                     @if ($this->settings['settings'] || $this->settings['filters'])
-                        <div class="flex space-x-2">
+                        <div class="flex gap-2">
 
                             @include('aura::components.table.switch-view')
 
@@ -344,9 +341,13 @@
 
             <div class="aura-table">
                 @if($this->settings['selectable'])
-                    <div wire:key="table-bulk-select">
-                        @include('aura::components.table.bulk-select-row')
-                    </div>
+                    {{-- A single-value field (e.g. an avatar) never shows selection
+                         bars or counts — the one active pick is its own feedback. --}}
+                    @if (! ($field && (int) ($field['max_files'] ?? 0) === 1))
+                        <div wire:key="table-bulk-select">
+                            @include('aura::components.table.bulk-select-row')
+                        </div>
+                    @endif
                 @endif
 
                 @if ($currentView == 'grid')

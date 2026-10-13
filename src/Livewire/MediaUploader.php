@@ -52,6 +52,16 @@ class MediaUploader extends Component
 
     public function mount(): void
     {
+        // Field definitions may carry closures (gate-checked `disabled`, `set`
+        // hooks) that Livewire cannot serialize into component state. The
+        // source definition still drives form rendering and saving — this copy
+        // only steers the picker UI, so closures are resolved or dropped.
+        if ($this->disabled instanceof \Closure) {
+            $this->disabled = (bool) ($this->disabled)();
+        }
+
+        $this->field = $this->fieldWithoutClosures($this->field);
+
         $this->model = app($this->namespace);
 
         $user = Auth::user();
@@ -205,6 +215,19 @@ class MediaUploader extends Component
             'max_size_bytes' => $this->maxFileSizeKilobytes() * 1024,
             'blocked_extensions' => self::BLOCKED_EXTENSIONS,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $field
+     * @return array<string, mixed>|null
+     */
+    private function fieldWithoutClosures(?array $field): ?array
+    {
+        if (! is_array($field)) {
+            return $field;
+        }
+
+        return array_filter($field, fn ($value) => ! $value instanceof \Closure);
     }
 
     /**
