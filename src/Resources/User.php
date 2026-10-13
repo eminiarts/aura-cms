@@ -3,6 +3,7 @@
 namespace Aura\Base\Resources;
 
 use Aura\Base\Database\Factories\UserFactory;
+use Aura\Base\Fields\Image;
 use Aura\Base\Resource;
 use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
 use Aura\Base\Traits\ProfileFields;
@@ -23,6 +24,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Lab404\Impersonate\Models\Impersonate;
 use Lab404\Impersonate\Services\ImpersonateManager;
@@ -280,6 +282,18 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         Cache::forget($option);
     }
 
+    public function displayAvatar($value): mixed
+    {
+        if (! empty($value)) {
+            return (new Image)->display($this->fieldBySlug('avatar'), $value, $this);
+        }
+
+        return view('aura::components.user-avatar-fallback', [
+            'initials' => $this->getInitials(),
+            'name' => $this->getAttribute('name'),
+        ])->render();
+    }
+
     public function getAvatarUrlAttribute()
     {
         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
@@ -310,6 +324,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'conditional_logic' => [],
                 'slug' => 'avatar',
                 'on_create' => false,
+                'display' => fn ($value, $model) => $model->displayAvatar($value),
                 'style' => [
                     'width' => '100',
                 ],
@@ -452,21 +467,20 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return view('aura::components.icon.user')->render();
     }
 
-    public function getInitials()
+    public function getInitials(): string
     {
-        $name = $this->name;
-        $words = explode(' ', $name);
-        $initials = '';
+        $words = preg_split('/\s+/u', trim((string) $this->name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
-        foreach ($words as $word) {
-            if (strlen($initials) < 2) {
-                $initials .= strtoupper(substr($word, 0, 1));
-            } else {
-                break;
-            }
+        if ($words === []) {
+            return '?';
         }
 
-        return $initials;
+        $firstInitial = Str::substr($words[0], 0, 1);
+        $lastInitial = count($words) > 1
+            ? Str::substr($words[array_key_last($words)], 0, 1)
+            : '';
+
+        return Str::upper($firstInitial.$lastInitial);
     }
 
     public function getOption($option)
