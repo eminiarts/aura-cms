@@ -220,9 +220,34 @@
             <div class="flex flex-wrap gap-3 items-center justify-between">
 
                 {{-- Left cluster: search + media type / upload month quick filters.
-                     Wraps as a unit so a narrow viewport keeps search and filters
-                     together instead of scattering them across rows. --}}
-                <div class="flex flex-wrap gap-3 items-center min-w-0">
+                     The type set stays on one line: when the segmented control
+                     no longer fits next to search and dates, it collapses into
+                     a dropdown instead of wrapping. --}}
+                <div
+                    class="flex flex-wrap gap-3 items-center min-w-0"
+                    x-ref="cluster"
+                    x-data="{
+                        compact: false,
+                        wrapped(el) { return !!el && el.offsetHeight > 52 },
+                        check() {
+                            if (! this.compact) {
+                                if (this.wrapped(this.$refs.segment) || this.wrapped(this.$refs.cluster)) {
+                                    this.compact = true
+                                }
+                            } else {
+                                // Let the segment re-render and settle, then re-test.
+                                this.compact = false
+                                setTimeout(() => {
+                                    if (this.wrapped(this.$refs.segment) || this.wrapped(this.$refs.cluster)) {
+                                        this.compact = true
+                                    }
+                                }, 60)
+                            }
+                        },
+                    }"
+                    x-init="check()"
+                    @resize.window.debounce.150ms="check()"
+                >
 
                     @if ($this->settings['search'])
                         <div class="w-56 max-w-full">
@@ -237,54 +262,76 @@
                                     </svg>
                                 </div>
                                 <input type="text" id="table-search"
-                                    class="block p-2.5 pl-10 w-56 max-w-full rounded-lg shadow-xs transition transition-300 border border-gray-500/30 appearance-none px-3 py-2 focus:outline-none ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:opacity-60 disabled:dark:bg-gray-800 bg-white dark:bg-transparent border border-gray-500/30 dark:border-gray-700 dark:focus:border-gray-500 z-[1]"
+                                    class="block w-56 max-w-full text-sm bg-white rounded-lg shadow-xs transition appearance-none border border-gray-500/30 pl-10 pr-3 py-1.5 focus:outline-none ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:dark:bg-gray-800 dark:bg-transparent dark:border-gray-700 dark:focus:border-gray-500 z-[1]"
                                     placeholder="{{ __('Search for items') }}" wire:model.live.debounce="search">
 
                             </div>
                         </div>
                     @endif
 
-                    {{-- Media type + upload month quick filters --}}
-                    <div class="flex flex-wrap gap-1 items-center" data-media-quick-filters>
+                    {{-- Media type + upload month quick filters.
+                         The type set uses the same segmented treatment as the
+                         grid/list switch-view control, so the active file type
+                         reads as a tab, not a standalone pill. --}}
+                    <div class="flex flex-wrap gap-3 items-center min-w-0" data-media-quick-filters>
                         @php
                             $activeType = $this->quickFilters['type'] ?? null;
                             $activeMonth = $this->quickFilters['month'] ?? null;
                             $uploadMonths = $model::uploadMonths();
+
+                            $segmentBase = 'px-3 py-1 text-sm font-medium rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
+                            $segmentActive = 'bg-white text-gray-900 shadow-xs ring-1 ring-gray-950/[0.07] dark:bg-gray-700 dark:text-white dark:ring-white/10';
+                            $segmentIdle = 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200';
                         @endphp
 
-                        <button
-                            type="button"
-                            wire:click="setQuickFilter('type', null)"
-                            data-type-filter="all"
-                            @class([
-                                'px-3 py-1.5 text-sm font-medium rounded-full transition',
-                                'bg-primary-600 text-white shadow-sm' => $activeType === null,
-                                'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800' => $activeType !== null,
-                            ])
+                        <div
+                            x-ref="segment"
+                            x-show="!compact"
+                            class="inline-flex gap-0.5 isolate items-center p-0.5 rounded-lg bg-gray-950/[0.04] dark:bg-white/5"
                         >
-                            {{ __('All') }}
-                        </button>
-
-                        @foreach ($model::MEDIA_TYPES as $typeKey => $typeLabel)
                             <button
                                 type="button"
-                                wire:click="setQuickFilter('type', @js($activeType === $typeKey ? null : $typeKey))"
-                                data-type-filter="{{ $typeKey }}"
-                                @class([
-                                    'px-3 py-1.5 text-sm font-medium rounded-full transition',
-                                    'bg-primary-600 text-white shadow-sm' => $activeType === $typeKey,
-                                    'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800' => $activeType !== $typeKey,
-                                ])
+                                wire:click="setQuickFilter('type', null)"
+                                data-type-filter="all"
+                                aria-pressed="{{ $activeType === null ? 'true' : 'false' }}"
+                                class="{{ $segmentBase }} {{ $activeType === null ? $segmentActive : $segmentIdle }}"
                             >
-                                {{ __($typeLabel) }}
+                                {{ __('All') }}
                             </button>
-                        @endforeach
+
+                            @foreach ($model::MEDIA_TYPES as $typeKey => $typeLabel)
+                                <button
+                                    type="button"
+                                    wire:click="setQuickFilter('type', @js($activeType === $typeKey ? null : $typeKey))"
+                                    data-type-filter="{{ $typeKey }}"
+                                    aria-pressed="{{ $activeType === $typeKey ? 'true' : 'false' }}"
+                                    class="{{ $segmentBase }} {{ $activeType === $typeKey ? $segmentActive : $segmentIdle }}"
+                                >
+                                    {{ __($typeLabel) }}
+                                </button>
+                            @endforeach
+                        </div>
+
+                        {{-- Compact fallback for narrow toolbars: same filter as a select. --}}
+                        <select
+                            x-cloak
+                            x-show="compact"
+                            wire:change="setQuickFilter('type', $event.target.value)"
+                            data-type-dropdown
+                            aria-label="{{ __('Media type') }}"
+                            class="px-3 py-1.5 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
+                        >
+                            <option value="" @selected($activeType === null)>{{ __('All types') }}</option>
+                            @foreach ($model::MEDIA_TYPES as $typeKey => $typeLabel)
+                                <option value="{{ $typeKey }}" @selected($activeType === $typeKey)>{{ __($typeLabel) }}</option>
+                            @endforeach
+                        </select>
 
                         @if (count($uploadMonths))
                             <select
                                 wire:change="setQuickFilter('month', $event.target.value)"
                                 data-month-filter
-                                class="px-3 py-1.5 ml-1 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
+                                class="px-3 py-1.5 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
                             >
                                 <option value="" @selected($activeMonth === null)>{{ __('All dates') }}</option>
                                 @foreach ($uploadMonths as $month)

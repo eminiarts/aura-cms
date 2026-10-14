@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
@@ -135,6 +136,14 @@ class Table extends Component
      * @var array
      */
     public $settings;
+
+    /**
+     * Active media type mirrored into the URL query string, so a filtered
+     * library view is shareable and survives a refresh. Only maintained for
+     * standalone tables — picker dialogs keep their filters transient.
+     */
+    #[Url(as: 'type')]
+    public ?string $urlType = null;
 
     protected $queryString = ['selectedFilter'];
 
@@ -339,6 +348,16 @@ class Table extends Component
             $this->field = array_filter($this->field, fn ($value) => ! $value instanceof \Closure);
         }
 
+        // Standalone library: adopt a valid ?type= from the URL. Invalid values
+        // are dropped, and the URL is cleaned of them.
+        if ($this->supportsMediaTypeUrlState()) {
+            if ($this->urlType !== null && $this->isValidMediaType($this->urlType)) {
+                $this->quickFilters['type'] = $this->urlType;
+            } elseif ($this->urlType !== null) {
+                $this->urlType = null;
+            }
+        }
+
         if ($this->selectedFilter) {
             if (array_key_exists($this->selectedFilter, $this->userFilters)) {
                 $this->filters = $this->userFilters[$this->selectedFilter];
@@ -510,6 +529,13 @@ class Table extends Component
             unset($this->quickFilters[$key]);
         } else {
             $this->quickFilters[$key] = $value;
+        }
+
+        // Keep the standalone library's URL in lock-step with the active type,
+        // so "All" drops only ?type= and leaves every unrelated param intact.
+        if ($key === 'type' && $this->supportsMediaTypeUrlState()) {
+            $type = $this->quickFilters['type'] ?? null;
+            $this->urlType = (is_string($type) && $this->isValidMediaType($type)) ? $type : null;
         }
 
         $this->resetPage();
@@ -746,5 +772,28 @@ class Table extends Component
         }
 
         return array_values(array_unique($relations));
+    }
+
+    private function isValidMediaType(string $type): bool
+    {
+        $modelClass = is_string($this->model) ? $this->model : get_class($this->model);
+
+        return array_key_exists($type, $modelClass::MEDIA_TYPES);
+    }
+
+    /**
+     * URL-backed type state applies only to standalone tables rendering a
+     * resource with MEDIA_TYPES (the media library). Picker dialogs embed the
+     * same table behind a field and keep their filters as dialog state.
+     */
+    private function supportsMediaTypeUrlState(): bool
+    {
+        if ($this->field !== null && $this->field !== [] && $this->field !== false) {
+            return false;
+        }
+
+        $modelClass = is_string($this->model) ? $this->model : get_class($this->model);
+
+        return defined($modelClass.'::MEDIA_TYPES');
     }
 }

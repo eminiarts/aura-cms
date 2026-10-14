@@ -6,7 +6,7 @@
         <x-slot name="trigger">
             <span class="inline-flex rounded-lg">
                 <button type="button"
-                class="inline-flex gap-1.5 items-center px-3 py-2 text-sm font-medium leading-4 text-gray-700 bg-white rounded-lg ring-1 shadow-xs transition-colors duration-150 ring-gray-950/10 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:ring-white/10 dark:hover:bg-gray-700/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                class="inline-flex gap-1.5 items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white rounded-lg ring-1 shadow-xs transition-colors duration-150 ring-gray-950/10 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:ring-white/10 dark:hover:bg-gray-700/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                 {{ __('Actions') }}
 
 

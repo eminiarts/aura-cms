@@ -108,10 +108,11 @@
 
     {{ $rows->links() }}
 
-    {{-- Selection count: never shown for single-value fields (the pick itself is
-         the feedback), and hidden for everyone while nothing is selected. --}}
+    {{-- Selection count: a picker-only affordance. Standalone library pages
+         never show it (selection there feeds bulk actions, not a field), and
+         single-value fields never show it either. --}}
     @php($maxFiles = (int) (optional($field)['max_files'] ?? 0))
-    @if (count($selected) > 0 && $maxFiles !== 1)
+    @if ($field && count($selected) > 0 && $maxFiles !== 1)
         <div>
             <p class="text-sm text-gray-600 dark:text-gray-400">
                 {{ count($selected) }} {{ __('selected') }}
