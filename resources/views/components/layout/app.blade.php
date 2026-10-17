@@ -17,7 +17,8 @@
 
     @php($pageTitle = trim(strip_tags($__env->yieldContent('title'))))
 
-    <title>{{ $pageTitle !== '' ? $pageTitle.' • ' : '' }}{{ $appSettings['app_name'] ?? 'Aura CMS' }}</title>
+    {{-- Section content is escaped when it is filled (@section('title', $x), {{ }}), so keep its entities as they are. --}}
+    <title>@if ($pageTitle !== ''){!! e($pageTitle, false) !!} • @endif{{ $appSettings['app_name'] ?? 'Aura CMS' }}</title>
 
     @include('aura::components.layout.favicon')
 
