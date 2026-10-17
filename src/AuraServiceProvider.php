@@ -251,7 +251,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasRoutes('web')
             // Migrations are published, then run (ADR 0002: ownership-aware
             // rollback). runsMigrations() cannot load .php.stub files anyway.
-            ->hasMigrations(['create_aura_tables', 'consolidate_per_team_admin_roles', 'add_global_admin_to_users'])
+            ->hasMigrations(['create_aura_tables', 'consolidate_per_team_admin_roles', 'add_global_admin_to_users', 'forget_remember_tokens_of_two_factor_users'])
             ->hasCommands([
                 InstallConfigCommand::class,
                 MakeResource::class,
