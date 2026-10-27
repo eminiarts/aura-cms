@@ -439,12 +439,16 @@ class Aura
      * The registered resource list is part of the key so that registering a
      * resource (e.g. a freshly generated one) invalidates the cached sidebar
      * instead of staying invisible until the TTL expires.
+     *
+     * The cached entries hold absolute route URLs, so the request root is part
+     * of the key too: a sidebar built from the console (http://localhost) or
+     * another domain must not leak those hosts into later page renders.
      */
     public function navigationCacheKey(): string
     {
         return 'user-'.auth()->id()
             .'-'.auth()->user()->current_team_id
-            .'-navigation-'.md5(implode(',', $this->getResources()).'|'.implode(',', $this->settingsPageSlugs()));
+            .'-navigation-'.md5(implode(',', $this->getResources()).'|'.implode(',', $this->settingsPageSlugs()).'|'.url('/'));
     }
 
     public function option($key)
