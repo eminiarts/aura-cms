@@ -21,12 +21,12 @@ The route uses the middleware configured as `aura-settings.middleware.aura-admin
 
 ## Access and authorization
 
-When the page opens, the component checks that the settings feature is enabled and that the user is a super admin:
+When the page opens, the component checks that the settings feature is enabled and that the user may view the page:
 
 | Check | Result when it fails |
 | --- | --- |
 | `config('aura.features.settings')` | 404 |
-| `auth()->user()->isSuperAdmin()` | 403 |
+| The page's view access (below) | 403 |
 
 Set the feature flag to `false` to remove the page:
 
@@ -37,7 +37,14 @@ Set the feature flag to `false` to remove the page:
 ],
 ~~~
 
-The General page requires a super admin role in the current team. Registered plugin pages may declare their own view and update abilities. The read-only AI status page is the exception: it requires the instance-level Global Admin gate and is not available to a team Super Admin.
+The General page requires a super admin role in the current team. Registered plugin pages may declare their own `viewAbility` and `updateAbility` gates:
+
+- A page without declared abilities is available only to super admins.
+- When a page declares an ability, that gate alone decides. Super admins are not let in automatically, so define the gate so that it allows them, for example by checking a role permission that super admins hold.
+- Users who pass the update gate may also view the page.
+- Saving stores only the fields of the page being saved.
+
+The read-only AI status page declares the instance-level Global Admin gate as its view ability, so it is not available to a team Super Admin.
 
 The separate option resource follows the normal resource policy. Super admins and global admins have blanket access through that policy, while other users need the relevant resource permissions. Access to the option resource does not grant access to the Settings page.
 

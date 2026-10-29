@@ -152,3 +152,31 @@ function globalAdminWithTeam(): User
 
     return $user->refresh();
 }
+
+test('a global admin without a current team can open the AI status page', function () {
+    $admin = User::factory()->create(config('aura.teams') ? ['current_team_id' => null] : []);
+    $admin->forceFill(['global_admin' => true])->saveQuietly();
+
+    $this->actingAs($admin->refresh());
+
+    // Read-only status pages load no team settings, so no current team is needed.
+    Livewire::test(Settings::class, ['page' => 'ai'])
+        ->assertOk()
+        ->assertSee('None configured');
+});
+
+test('provider availability follows what the SDK needs to prompt', function (array $provider, bool $isDefault, bool $configured) {
+    config([
+        'ai.default' => $isDefault ? 'candidate' : 'openai',
+        'ai.providers.candidate' => $provider,
+    ]);
+
+    expect(collect(app(AiStatus::class)->providers())->firstWhere('name', 'candidate')['configured'])->toBe($configured);
+})->with([
+    'openai-compatible without a default model' => [['driver' => 'openai-compatible', 'url' => 'https://llm.test/v1', 'key' => 'k'], true, false],
+    'openai-compatible with a default model' => [['driver' => 'openai-compatible', 'url' => 'https://llm.test/v1', 'models' => ['text' => ['default' => 'llama3']]], true, true],
+    'local ollama selected as default' => [['driver' => 'ollama', 'key' => '', 'url' => 'http://localhost:11434'], true, true],
+    'bedrock credential chain selected as default' => [['driver' => 'bedrock', 'use_default_credential_provider' => true], true, true],
+    'bedrock credential chain not selected' => [['driver' => 'bedrock', 'use_default_credential_provider' => true], false, false],
+    'bedrock assumed role' => [['driver' => 'bedrock', 'use_default_credential_provider' => false, 'assume_role' => ['arn' => 'arn:aws:iam::1:role/ai']], false, true],
+]);

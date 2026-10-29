@@ -157,22 +157,29 @@ final class AiStatus
         bool $credentials,
         array $provider,
     ): bool {
+        // Keyless setups (AWS credential chain, local Ollama) ship in the SDK's
+        // default config, so they only count when the host selects them as default.
+        $isDefault = $name === $this->defaultProvider();
+
         if ($driver === 'bedrock') {
             return filled($provider['key'] ?? null)
                 || (filled($provider['access_key_id'] ?? null)
-                    && filled($provider['secret_access_key'] ?? null));
+                    && filled($provider['secret_access_key'] ?? null))
+                || filled($provider['assume_role']['arn'] ?? null)
+                || ($isDefault && (bool) ($provider['use_default_credential_provider'] ?? true));
+        }
+
+        // The SDK cannot prompt this driver without a default text model.
+        if ($driver === 'openai-compatible') {
+            return filled($endpoint) && filled($provider['models']['text']['default'] ?? null);
         }
 
         if ($credentials) {
             return true;
         }
 
-        if ($driver === 'openai-compatible') {
-            return filled($endpoint);
-        }
-
         if ($driver === 'ollama') {
-            return $name !== 'ollama'
+            return $name !== 'ollama' || $isDefault
                 ? filled($endpoint)
                 : filled($endpoint) && $endpoint !== 'http://localhost:11434';
         }

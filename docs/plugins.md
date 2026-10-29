@@ -254,6 +254,23 @@ public function packageBooted(): void
 }
 ~~~
 
+To open a page to users other than super admins, pass `viewAbility` and `updateAbility` gate names. A declared gate decides alone and does not let super admins in by itself, so define it to allow them too:
+
+~~~php
+Gate::define('aura-seo.view', fn ($user) => $user->hasPermission('view-seo-settings'));
+Gate::define('aura-seo.manage', fn ($user) => $user->hasPermission('manage-seo-settings'));
+
+new SettingsPage(
+    slug: 'seo',
+    title: 'SEO',
+    fields: [/* ... */],
+    viewAbility: 'aura-seo.view',
+    updateAbility: 'aura-seo.manage',
+);
+~~~
+
+`hasPermission()` grants every permission to super admins. Users with only the view ability see the fields read-only and get no Save button, and the server rejects their saves.
+
 Use the plugin's lowercase Composer package name as the source. Page slugs use kebab-case, and field slugs must be unique across every registered settings page. Registration fails immediately on a page or field collision.
 
 Read a value through Aura so current-team context is handled consistently:
