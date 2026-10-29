@@ -13,14 +13,23 @@
                 @empty
                     <tr>
                         <td colspan="{{ count($this->headers) + 2 }}">
-                            <div class="py-8 text-center bg-white dark:bg-gray-900">
-                                <svg class="mx-auto w-12 h-12 text-gray-300" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636">
-                                    </path>
-                                </svg>
-                                <h3 class="mt-2 text-sm font-medium text-gray-900">{{ __('No entries available') }}</h3>
+                            <div class="py-12 text-center bg-white dark:bg-gray-900">
+                                <div class="flex justify-center items-center w-12 h-12 mx-auto bg-gray-100 rounded-full dark:bg-gray-800">
+                                    <x-aura::icon icon="media" class="w-6 h-6 text-gray-400 dark:text-gray-500" />
+                                </div>
+                                <h3 class="mt-3 text-sm font-medium text-gray-900 dark:text-gray-100">{{ __('No media yet') }}</h3>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    {{ __('Drag and drop your first file anywhere in this window, or upload one directly.') }}
+                                </p>
+                                <div class="mt-4" x-data="{ canUpload: !!document.getElementById('file-upload') }">
+                                    <x-aura::button.primary
+                                        x-cloak
+                                        x-show="canUpload"
+                                        type="button"
+                                        x-on:click="document.getElementById('file-upload').click()">
+                                        {{ __('Upload Files') }}
+                                    </x-aura::button.primary>
+                                </div>
                             </div>
                         </td>
                     </tr>
