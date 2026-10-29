@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Livewire;
 
+use Aura\Base\Resources\Option;
 use Aura\Base\Settings\SettingsPage;
 use Aura\Base\Settings\SettingsPageAuthorizer;
 use Aura\Base\Settings\SettingsRegistry;
@@ -9,6 +10,7 @@ use Aura\Base\Settings\SettingsStore;
 use Aura\Base\Traits\InputFields;
 use Aura\Base\Traits\MediaFields;
 use Illuminate\Support\Arr;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class Settings extends Component
@@ -16,6 +18,7 @@ class Settings extends Component
     use InputFields;
     use MediaFields;
 
+    #[Locked]
     public bool $canUpdate = false;
 
     public $form = [
@@ -24,12 +27,14 @@ class Settings extends Component
 
     public $model;
 
+    #[Locked]
     public string $page = 'general';
 
     public function boot(): void
     {
         // The field caches are keyed by class, but this component renders a different page per URL.
         static::flushFieldCache();
+        app()->offsetUnset(static::class.'-getFieldsBeforeTree');
     }
 
     public function fieldsCollection()
@@ -510,8 +515,16 @@ class Settings extends Component
 
         abort_unless($authorizer->canView($this->settingsPage(), auth()->user()), 403);
 
-        $this->canUpdate = $authorizer->canUpdate($this->settingsPage(), auth()->user())
-            && $this->inputFields()->isNotEmpty();
+        // Set before the fields are read: they carry `disabled` from it and are cached for the request.
+        $this->canUpdate = $authorizer->canUpdate($this->settingsPage(), auth()->user());
+        $this->canUpdate = $this->canUpdate && $this->inputFields()->isNotEmpty();
+
+        // Read-only status pages store nothing. Global Admins may open them without a current team.
+        if ($this->inputFields()->isEmpty()) {
+            $this->model = new Option;
+
+            return;
+        }
 
         $valueString = [
             'darkmode-type' => config('aura.theme.darkmode-type'),
@@ -559,7 +572,10 @@ class Settings extends Component
 
         $this->validate();
 
-        $this->model = $store->store($this->model, $this->form['fields']);
+        // Only this page's fields: a plugin editor must not write other pages' settings through the shared row.
+        $values = Arr::only($this->form['fields'], $this->inputFields()->pluck('slug')->all());
+
+        $this->model = $store->store($this->model, $values);
         $stored = $store->values($this->model);
 
         $this->model->setAttribute('value', $stored);

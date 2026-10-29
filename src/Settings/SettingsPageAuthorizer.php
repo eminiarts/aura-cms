@@ -18,11 +18,13 @@ final readonly class SettingsPageAuthorizer
 
     public function canView(SettingsPage $page, ?Authenticatable $user): bool
     {
-        if ($page->viewAbility !== null) {
-            return $user !== null && Gate::forUser($user)->allows($page->viewAbility);
+        if ($page->viewAbility === null && $page->updateAbility === null) {
+            return $this->isSuperAdmin($user);
         }
 
-        return $this->isSuperAdmin($user);
+        // Declared abilities decide alone; whoever may update a page may also view it.
+        return ($page->viewAbility !== null && $user !== null && Gate::forUser($user)->allows($page->viewAbility))
+            || ($page->updateAbility !== null && $this->canUpdate($page, $user));
     }
 
     private function isSuperAdmin(?Authenticatable $user): bool

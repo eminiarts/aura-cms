@@ -1,0 +1,29 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * Before Aura enforced the two-factor challenge on password logins, a user with
+ * confirmed two-factor authentication could get a "remember me" cookie without
+ * the challenge, and the session guard keeps restoring it without one. Clearing
+ * the remember token of those users ends such cookies: they log in once more,
+ * through the challenge. Confirming or turning off two-factor authentication
+ * rotates the token from now on (RotateRememberToken).
+ *
+ * Rollback restores nothing: the cleared tokens are not kept.
+ */
+return new class extends Migration
+{
+    public function up(): void
+    {
+        if (! Schema::hasTable('users') || ! Schema::hasColumns('users', ['remember_token', 'two_factor_confirmed_at'])) {
+            return;
+        }
+
+        DB::table('users')->whereNotNull('two_factor_confirmed_at')->update(['remember_token' => null]);
+    }
+
+    public function down(): void {}
+};
