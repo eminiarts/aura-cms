@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The membership editor locks its target user and authorizes it on mount; the image component resolves attachments through the team scope and the view policy.
 - Only declared resource actions can be invoked; the Livewire `callMethod` overrides that allowed arbitrary method dispatch are gone.
 - Tags only create records when the field allows it and the actor may create the target resource; submitted ids are checked against the current scope.
+- Password logins of users with confirmed two-factor authentication complete only after the challenge. Confirming or turning off two-factor authentication rotates the remember token, and the migration `forget_remember_tokens_of_two_factor_users` ends "remember me" cookies that enrolled users got without the challenge.
 
 ## [1.0.0-beta.4](https://github.com/eminiarts/aura-cms/compare/v0.2.0...v1.0.0-beta.4) - 2026-08-20
 

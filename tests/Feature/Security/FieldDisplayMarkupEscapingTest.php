@@ -153,3 +153,16 @@ test('the breadcrumb renders a database-backed title escaped', function () {
         ->not->toContain(XSS_PAYLOAD)
         ->toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
 });
+
+test('the breadcrumb escapes a title exactly once, bound or from an echoed attribute', function (string $template) {
+    $html = Blade::render($template, ['title' => 'Q&A '.XSS_PAYLOAD]);
+
+    expect($html)
+        ->toContain('Q&amp;A &lt;script&gt;alert(1)&lt;/script&gt;')
+        ->not->toContain('&amp;amp;')
+        ->not->toContain('&amp;lt;');
+})->with([
+    'bound' => '<x-aura::breadcrumbs.li :title="$title" />',
+    'echoed attribute' => '<x-aura::breadcrumbs.li title="{{ $title }}" />',
+    'link' => '<x-aura::breadcrumbs.li href="/admin" title="{{ $title }}" />',
+]);

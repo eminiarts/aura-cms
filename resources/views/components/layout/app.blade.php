@@ -17,7 +17,8 @@
 
     @php($pageTitle = trim(strip_tags($__env->yieldContent('title'))))
 
-    <title>{{ $pageTitle !== '' ? $pageTitle.' • ' : '' }}{{ $appSettings['app_name'] ?? 'Aura CMS' }}</title>
+    {{-- Section content is escaped when it is filled (@section('title', $x), {{ }}), so keep its entities as they are. --}}
+    <title>@if ($pageTitle !== ''){!! e($pageTitle, false) !!} • @endif{{ $appSettings['app_name'] ?? 'Aura CMS' }}</title>
 
     @include('aura::components.layout.favicon')
 
@@ -46,10 +47,23 @@
 
     <div class="flex flex-col flex-grow w-screen h-screen aura-content">
 
-        @if (! app('aura')::assetsAreCurrent() && env('APP_ENV') === 'local')
-            <div class="p-4 text-xs text-red-800 bg-red-100">
-                The published assets are not up-to-date with the installed version. To update, run:<br/><code
-                        class="font-bold">php artisan aura:publish</code>
+        @if (app()->environment('local') && ! app('aura')::assetsAreCurrent())
+            <div class="p-4 text-xs text-red-800 bg-red-100" role="alert">
+                <p>{{ __('The published assets are not up-to-date with the installed version. To update, run:') }}</p>
+                <div class="flex flex-wrap gap-3 items-center mt-2">
+                    <code class="font-bold">php artisan aura:publish</code>
+                    @auth
+                        <form method="POST" action="{{ route('aura.assets.publish') }}">
+                            @csrf
+                            <x-aura::button.border type="submit" size="xs">
+                                {{ __('Publish assets') }}
+                            </x-aura::button.border>
+                        </form>
+                    @endauth
+                </div>
+                @if (session('aura.assets-publish-error'))
+                    <p class="mt-2">{{ session('aura.assets-publish-error') }}</p>
+                @endif
             </div>
         @endif
 

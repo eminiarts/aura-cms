@@ -10,6 +10,7 @@ use Aura\Base\Http\Controllers\Auth\PasswordController;
 use Aura\Base\Http\Controllers\Auth\PasswordResetLinkController;
 use Aura\Base\Http\Controllers\Auth\RegisteredUserController;
 use Aura\Base\Http\Controllers\Auth\TeamInvitationController;
+use Aura\Base\Http\Controllers\Auth\UserInvitationController;
 use Aura\Base\Http\Controllers\Auth\VerifyEmailController;
 use Aura\Base\Http\Controllers\SwitchTeamController;
 use Illuminate\Support\Facades\Auth;
@@ -77,6 +78,9 @@ Route::middleware('guest')->group(function () {
             Route::get('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'create'])->name('invitation.register')->middleware(['signed']);
             Route::post('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'store'])->middleware(['signed'])->name('invitation.register.post');
         }
+
+        Route::get('user-invitations/{invitation}', [UserInvitationController::class, 'create'])->middleware('signed')->name('user-invitations.register');
+        Route::post('user-invitations/{invitation}', [UserInvitationController::class, 'store'])->middleware('signed')->name('user-invitations.register.post');
 
         Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
         Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
