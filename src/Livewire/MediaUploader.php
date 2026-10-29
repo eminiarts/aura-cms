@@ -52,14 +52,11 @@ class MediaUploader extends Component
 
     public function mount(): void
     {
-        // Field definitions may carry closures (gate-checked `disabled`, `set`
-        // hooks) that Livewire cannot serialize into component state. The
-        // source definition still drives form rendering and saving — this copy
-        // only steers the picker UI, so closures are resolved or dropped.
-        if ($this->disabled instanceof \Closure) {
-            $this->disabled = (bool) ($this->disabled)();
-        }
-
+        // Field definitions may carry closures (`set`, `display` hooks) that
+        // Livewire cannot serialize into component state. The source definition
+        // still drives form rendering and saving — this copy only steers the
+        // picker UI, so closures are dropped. The image field resolves
+        // `disabled` before passing it here.
         $this->field = $this->fieldWithoutClosures($this->field);
 
         $this->model = app($this->namespace);

@@ -61,7 +61,7 @@ class Table extends Component
     /**
      * The field of the parent.
      *
-     * @var string
+     * @var array<string, mixed>|null
      */
     public $field;
 
