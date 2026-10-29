@@ -180,3 +180,12 @@ test('provider availability follows what the SDK needs to prompt', function (arr
     'bedrock credential chain not selected' => [['driver' => 'bedrock', 'use_default_credential_provider' => true], false, false],
     'bedrock assumed role' => [['driver' => 'bedrock', 'use_default_credential_provider' => false, 'assume_role' => ['arn' => 'arn:aws:iam::1:role/ai']], false, true],
 ]);
+
+test('the SDK default ollama entry counts only when ollama is the default provider', function (string $default, bool $configured) {
+    config(['ai.default' => $default]);
+
+    expect(collect(app(AiStatus::class)->providers())->firstWhere('name', 'ollama')['configured'])->toBe($configured);
+})->with([
+    'ollama is the default' => ['ollama', true],
+    'another provider is the default' => ['openai', false],
+]);

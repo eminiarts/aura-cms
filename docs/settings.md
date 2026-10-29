@@ -41,6 +41,7 @@ The General page requires a super admin role in the current team. Registered plu
 
 - A page without declared abilities is available only to super admins.
 - When a page declares an ability, that gate alone decides. Super admins are not let in automatically, so define the gate so that it allows them, for example by checking a role permission that super admins hold.
+- A page that declares only `viewAbility` can be edited only by super admins.
 - Users who pass the update gate may also view the page.
 - Saving stores only the fields of the page being saved.
 
