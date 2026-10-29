@@ -9,6 +9,7 @@ use Aura\Base\Livewire\Resource\Index;
 use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Permissions\PermissionRegistry;
 use Aura\Base\RecordLayout\RecordLayoutPanel;
 use Aura\Base\RecordLayout\RecordLayoutRegistry;
 use Aura\Base\Resources\Attachment;
@@ -461,6 +462,12 @@ class Aura
         return config('aura');
     }
 
+    /** @return array<string, array{name: string, group: string, description: string|null}> */
+    public function permissions(): array
+    {
+        return app(PermissionRegistry::class)->all();
+    }
+
     public function registerFields(array $fields): void
     {
         $this->fields = array_merge($this->fields, $fields);
@@ -469,6 +476,12 @@ class Aura
     public function registerInjectView(string $name, Closure $callback): void
     {
         $this->injectViews[$name][] = $callback;
+    }
+
+    /** @param array<string, array{name: string, group: string, description?: string|null}> $permissions */
+    public function registerPermissions(array $permissions): void
+    {
+        app(PermissionRegistry::class)->register($permissions);
     }
 
     /**

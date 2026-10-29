@@ -184,25 +184,7 @@ php artisan aura:create-resource-permissions --team=42
 
 Without `--team`, the command uses the authenticated user's current team when one exists. Authentication is not required to run the command. With teams disabled, it writes rows without a team column.
 
-Team invitations use the custom permission `invite-users-team`, which the team policy checks before allowing an invitation. The team resource declares it through `customPermissions()` as `invite-users`. Because the generator skips this resource, it does not create the permission row.
-
-To make this permission available in the role form, create its row and grant it to a role:
-
-~~~php
-use Aura\Base\Resources\Permission;
-
-Permission::create([
-    'name' => 'Invite users to team',
-    'slug' => 'invite-users-team',
-    'group' => 'Team',
-]);
-
-$role->update([
-    'permissions' => array_replace($role->permissions ?? [], [
-        'invite-users-team' => true,
-    ]),
-]);
-~~~
+With teams enabled, Aura registers the custom permission `invite-users-team` in code. It appears under **Team** in the role form's **Features** section without a permission row. Grant it to a role to allow team invitations. The team policy checks this grant in the target team.
 
 Generated permissions are grouped under the resource's plural name. These rows populate the checkbox matrix in the role form. Authorization reads the grants stored on the role, so creating a permission row alone does not grant access.
 
@@ -252,7 +234,7 @@ Use Laravel abilities to authorize resource actions:
 @endsuperadmin
 ~~~
 
-Aura does not register permission slugs as Gate abilities, so `Gate::denies('create-post')` does not check the resource policy. Use `$user->can('create', Post::class)` for the policy check or `$user->hasPermission('create-post')` to check the permission directly.
+Aura does not register generated resource permission slugs as Gate abilities, so `Gate::denies('create-post')` does not check the resource policy. Use `$user->can('create', Post::class)` for the policy check or `$user->hasPermission('create-post')` to check the permission directly.
 
 <a id="resource-policy"></a>
 ## ResourcePolicy and TeamPolicy
@@ -431,37 +413,68 @@ The role form contains these fields:
 | Description | `Textarea` | Optional description |
 | Admin | `Boolean`, `super_admin` | Grants administrative resource access in the current team |
 | Global Role | `Boolean`, `is_global` | Changes the role scope, shown only to Global Admins with teams enabled |
-| Permissions | `Aura\Base\Fields\Permissions` | Checkbox matrix backed by permission rows |
+| Permissions | `Aura\Base\Fields\Permissions` | Registered custom permissions and a resource permission matrix |
 
-Enabling the **Admin** toggle hides the permissions matrix because Super Admins do not need individual permission grants.
+Enabling the **Admin** toggle hides the whole permissions field, including Features and the resource matrix, because Super Admins do not need individual permission grants.
 
 The permission form contains name, slug, description, and group fields. The group organizes the checkbox matrix and does not affect authorization.
 
 ## Custom permissions
 
-Store custom permissions on the role alongside generated permissions. Create a permission row to make it available in the role form, then grant it to a role and check it in your application:
+Applications and plugins define custom permissions in code for capabilities outside resource CRUD. Register them in a service provider's `boot()` method:
 
 ~~~php
-use Aura\Base\Resources\Permission;
+use Aura\Base\Facades\Aura;
 
-Permission::create([
-    'name' => 'Publish posts',
-    'slug' => 'publish-post',
-    'group' => 'Posts',
+Aura::registerPermissions([
+    'box.evals.view' => ['name' => 'View evals', 'group' => 'Evals'],
+    'box.evals.run' => [
+        'name' => 'Run evals',
+        'group' => 'Evals',
+        'description' => 'Start a new eval run',
+    ],
 ]);
+~~~
 
+`Aura::permissions()` returns the registered definitions keyed by permission key. Missing descriptions become null. Names, groups, and descriptions are stored untranslated and translated when the role form renders.
+
+Use lowercase dotted keys and prefix plugin permissions with the plugin name, such as `box.evals.view` or `flows.run`. This is a naming convention, not a validation rule. Keys are exact strings. Empty keys, whitespace, wildcards, missing names or groups, duplicate registrations, and keys with an existing Gate are rejected.
+
+Registered permissions appear above the resource matrix in the role form's **Features** section, grouped by their registered group. Each checkbox shows the translated name and exact key, with the description as a tooltip. Group toggles, **Select all permissions**, and **Clear all** also cover these permissions. Admins grant them to roles. They do not create them.
+
+Aura defines one Laravel Gate per registered key and writes no permission row. If an existing permission row has the same slug, the registered definition takes precedence in the role form. Grants are stored in the role's permissions JSON alongside generated resource grants:
+
+~~~php
 $role->update([
     'permissions' => array_replace($role->permissions ?? [], [
-        'publish-post' => true,
+        'box.evals.view' => true,
     ]),
 ]);
+~~~
 
-if (auth()->user()->hasPermission('publish-post')) {
-    $post->publish();
+Check custom permissions through Laravel's authorization API:
+
+~~~php
+$this->authorize('box.evals.run');
+
+if ($user->can('box.evals.view')) {
+    // Show eval results.
 }
 ~~~
 
-The generator always produces the same eight action slugs. It has no dynamic registration method for additional resource actions.
+~~~blade
+@can('box.evals.run')
+    <button type="submit">Run eval</button>
+@endcan
+~~~
+
+The Gate allows an effective role's grant, a Super Admin, or a Global Admin. Guests are denied. Global Roles, Team Roles, shadowing, and teams-off mode resolve grants the same way as resource permissions.
+
+Unregistered keys have no Gate and deny access through `can()`, even if a role still stores the grant. Removing a registration leaves stored grants untouched. Renaming a key requires an explicit data migration. `hasPermission()` still checks any stored grant directly, so application code should use the Gate for custom permissions.
+
+Instance administration pages check the `AuraGlobalAdmin` gate instead of a custom permission. Access to a user's own data uses ownership checks.
+
+The resource permission generator still produces the same eight action slugs. Additional resource actions can use a custom policy, as shown above.
 
 ## Related guides
 

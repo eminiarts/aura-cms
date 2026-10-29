@@ -55,6 +55,7 @@ use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Livewire\TwoFactorAuthenticationForm;
 use Aura\Base\Livewire\UserTeams;
 use Aura\Base\Navigation\Navigation as AuraNavigation;
+use Aura\Base\Permissions\PermissionRegistry;
 use Aura\Base\Policies\ResourcePolicy;
 use Aura\Base\Policies\TeamPolicy;
 use Aura\Base\Policies\UserPolicy;
@@ -233,6 +234,17 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::resolveMissingComponent(function ($name) use ($componentMap) {
             return $componentMap[$name] ?? null;
         });
+
+        return $this;
+    }
+
+    public function bootPermissions(): static
+    {
+        if (config('aura.teams')) {
+            Aura::registerPermissions([
+                'invite-users-team' => ['name' => 'Invite users to team', 'group' => 'Team'],
+            ]);
+        }
 
         return $this;
     }
@@ -526,6 +538,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
         $this
             ->bootGate()
+            ->bootPermissions()
             ->bootLivewireComponents();
     }
 
@@ -567,6 +580,7 @@ class AuraServiceProvider extends PackageServiceProvider
         $this->app->singleton(PreferenceManager::class);
         $this->app->singleton(LivewireCollisionInspector::class, ArrayLivewireCollisionInspector::class);
         $this->app->singleton(RecordLayoutRegistry::class);
+        $this->app->singleton(PermissionRegistry::class);
         $this->app->singleton(RecordLayoutResolver::class);
         $this->app->singleton(MediaAuthorization::class);
         $this->app->singleton(SettingsRegistry::class);

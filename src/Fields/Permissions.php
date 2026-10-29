@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Facades\Aura;
 use Illuminate\Support\Str;
 
 class Permissions extends Field
@@ -58,7 +59,7 @@ class Permissions extends Field
     /**
      * Arrange permissions into one row per group with one cell per standard
      * ability, keyed by the slug prefix ("delete-post" fills "delete").
-     * Custom permissions that fit no free cell land in "other" so they stay
+     * Permission rows that fit no free cell land in "other" so they stay
      * assignable.
      *
      * @param  iterable<array{name: string, description: ?string, slug: string, group: ?string}>  $permissions
@@ -67,8 +68,13 @@ class Permissions extends Field
     public static function matrix(iterable $permissions): array
     {
         $rows = [];
+        $registered = Aura::permissions();
 
         foreach ($permissions as $permission) {
+            if (array_key_exists($permission['slug'], $registered)) {
+                continue;
+            }
+
             $group = (string) ($permission['group'] ?? '');
             $rows[$group] ??= ['cells' => array_fill_keys(array_keys(self::ABILITIES), null), 'other' => []];
 

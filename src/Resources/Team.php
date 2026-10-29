@@ -58,13 +58,6 @@ class Team extends Resource
         Cache::forget($option);
     }
 
-    public function customPermissions()
-    {
-        return [
-            'invite-users' => 'Invite users to team',
-        ];
-    }
-
     public function deleteAction()
     {
         if (! auth()->user()->can('delete', $this)) {

@@ -281,11 +281,11 @@ describe('Team Static Properties', function () {
 });
 
 describe('Team Custom Permissions', function () {
-    it('defines invite-users custom permission', function () {
-        $team = new Team;
-        $permissions = $team->customPermissions();
-
-        expect($permissions)->toHaveKey('invite-users');
-        expect($permissions['invite-users'])->toBe('Invite users to team');
+    it('registers the team invitation permission in code', function () {
+        expect(Aura::permissions()['invite-users-team'])->toBe([
+            'name' => 'Invite users to team',
+            'group' => 'Team',
+            'description' => null,
+        ]);
     });
 });

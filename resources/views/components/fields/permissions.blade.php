@@ -4,6 +4,10 @@
 
     $abilities = \Aura\Base\Fields\Permissions::ABILITIES;
 
+    $features = collect(\Aura\Base\Facades\Aura::permissions())
+        ->map(fn ($permission, $key) => [...$permission, 'slug' => $key])
+        ->groupBy('group');
+
     $rows = \Aura\Base\Fields\Permissions::matrix(app($field['resource'])->get()->map(fn ($item) => [
         'name' => $item->fields['name'],
         'description' => $item->fields['description'],
@@ -17,8 +21,9 @@
 
     // Slug lists for the Alpine toggles: every permission per group, the ones
     // bulk selection may switch on (all but "scope"), and each ability column.
-    $groups = collect($rows)->map(fn ($row) => $slugs([...array_values($row['cells']), ...$row['other']]));
-    $bulk = collect($rows)->map(fn ($row) => $slugs([...array_values(array_diff_key($row['cells'], ['scope' => null])), ...$row['other']]));
+    $featureGroups = $features->mapWithKeys(fn ($items, $group) => ['feature:'.$group => $slugs($items)]);
+    $groups = collect($rows)->mapWithKeys(fn ($row, $group) => ['resource:'.$group => $slugs([...array_values($row['cells']), ...$row['other']])])->merge($featureGroups);
+    $bulk = collect($rows)->mapWithKeys(fn ($row, $group) => ['resource:'.$group => $slugs([...array_values(array_diff_key($row['cells'], ['scope' => null])), ...$row['other']])])->merge($featureGroups);
     $columns = collect($abilities)->map(fn ($label, $ability) => $slugs(array_column(array_column($rows, 'cells'), $ability)));
 
     $checkboxClass = 'form-checkbox block size-4 shrink-0 rounded border-0 bg-white text-primary-600 shadow-xs ring-1 ring-gray-950/15 transition duration-150 cursor-pointer hover:ring-gray-950/25 checked:bg-primary-600 checked:ring-primary-600 checked:hover:bg-primary-700 checked:hover:ring-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:bg-gray-800 dark:ring-white/20 dark:hover:ring-white/30 dark:checked:bg-primary-600 dark:checked:ring-primary-600 dark:focus-visible:ring-offset-gray-900';
@@ -78,6 +83,45 @@
         </button>
     </div>
 
+    @if($features->isNotEmpty())
+        <div class="mb-4 overflow-x-auto rounded-lg border border-gray-500/20 dark:border-gray-700">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50/80 dark:bg-white/[0.03] border-b border-gray-200/80 dark:border-white/10">
+                        <th scope="col" colspan="2" class="px-4 py-2.5 text-left">
+                            <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ __('Features') }}</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                    @foreach($features as $group => $items)
+                        <tr class="transition-colors hover:bg-gray-50/80 dark:hover:bg-white/[0.04]">
+                            <th scope="row" class="px-4 py-1 text-left font-normal">
+                                <button type="button" @click="toggleGroup(@js('feature:'.$group))" title="{{ __('Toggle all :group permissions', ['group' => __($group)]) }}" aria-label="{{ __('Toggle all :group permissions', ['group' => __($group)]) }}" class="flex items-baseline gap-2 py-1 text-left whitespace-nowrap rounded-md transition-colors text-gray-900 hover:text-primary-600 dark:text-gray-100 dark:hover:text-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                                    <span class="font-medium">{{ __($group) }}</span>
+                                    <span class="text-[11px] font-medium text-gray-400 dark:text-gray-500">
+                                        <span x-text="selectedCount(@js('feature:'.$group))"></span>/{{ count($items) }}
+                                    </span>
+                                </button>
+                            </th>
+                            <td class="px-4 py-1.5">
+                                <div class="flex flex-wrap gap-x-4 gap-y-2">
+                                    @foreach($items as $item)
+                                        <label for="permissions_{{ $item['slug'] }}" title="{{ __($item['description'] ?? '') }}" class="inline-flex items-center gap-2 py-1 cursor-pointer text-gray-700 dark:text-gray-300">
+                                            <input x-model="field[@js($item['slug'])]" type="checkbox" id="permissions_{{ $item['slug'] }}" class="{{ $checkboxClass }}">
+                                            <span>{{ __($item['name']) }}</span>
+                                            <span class="text-xs font-mono text-gray-400 dark:text-gray-500">{{ $item['slug'] }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+
     <div class="overflow-x-auto rounded-lg border border-gray-500/20 dark:border-gray-700">
         <table class="w-full text-sm">
             <thead>
@@ -103,10 +147,10 @@
                 @foreach($rows as $group => $row)
                     <tr class="transition-colors hover:bg-gray-50/80 dark:hover:bg-white/[0.04]">
                         <th scope="row" class="px-4 py-1 text-left font-normal">
-                            <button type="button" @click="toggleGroup(@js($group))" title="{{ __('Toggle all :group permissions', ['group' => $group]) }}" aria-label="{{ __('Toggle all :group permissions', ['group' => $group]) }}" class="flex items-baseline gap-2 py-1 text-left whitespace-nowrap rounded-md transition-colors text-gray-900 hover:text-primary-600 dark:text-gray-100 dark:hover:text-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                            <button type="button" @click="toggleGroup(@js('resource:'.$group))" title="{{ __('Toggle all :group permissions', ['group' => $group]) }}" aria-label="{{ __('Toggle all :group permissions', ['group' => $group]) }}" class="flex items-baseline gap-2 py-1 text-left whitespace-nowrap rounded-md transition-colors text-gray-900 hover:text-primary-600 dark:text-gray-100 dark:hover:text-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                                 <span class="font-medium">{{ $group }}</span>
                                 <span class="text-[11px] font-medium text-gray-400 dark:text-gray-500">
-                                    <span x-text="selectedCount(@js($group))"></span>/{{ count($bulk[$group]) }}
+                                    <span x-text="selectedCount(@js('resource:'.$group))"></span>/{{ count($bulk['resource:'.$group]) }}
                                 </span>
                             </button>
                         </th>
