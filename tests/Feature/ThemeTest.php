@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
+use Aura\Base\Livewire\Navigation;
 use Aura\Base\Livewire\Settings;
 use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Role;
@@ -62,7 +63,7 @@ test('Default Team Settings are created', function () {
     $this->assertIsArray($option->value);
 
     // assertJSON option value darkmode-type is auto
-    $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"darkmode-type":"auto","sidebar-type":"dark","color-palette":"aura","gray-color-palette":"slate","sidebar-size":"standard","sidebar-darkmode-type":"dark"}');
+    $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"darkmode-type":"auto","sidebar-type":"dark","color-palette":"aura","gray-color-palette":"slate","sidebar-size":"standard","sidebar-darkmode-type":"dark","interface-density":"comfortable","corner-radius":"rounded","appearance-expert-mode":false}');
 });
 
 test('Team Settings can be saved', function () {
@@ -191,16 +192,18 @@ test('different options apply correct classes', function ($settings) {
     [[
         'darkmode-type' => 'light',
         'sidebar-type' => 'light',
+        'sidebar-darkmode-type' => 'primary',
         'color-palette' => 'red',
         'result-sidebar' => 'aura-sidebar-type-light',
-        'result-content' => '',
+        'result-content' => 'aura-sidebar-darkmode-type-primary',
     ]],
     [[
         'darkmode-type' => 'dark',
         'sidebar-type' => 'primary',
+        'sidebar-darkmode-type' => 'light',
         'color-palette' => 'red',
         'result-sidebar' => 'aura-sidebar-type-primary',
-        'result-content' => '',
+        'result-content' => 'aura-sidebar-darkmode-type-light',
     ]],
     [[
         'darkmode-type' => 'auto',
@@ -219,4 +222,18 @@ test('different options apply correct classes', function ($settings) {
         'result-content' => 'aura-sidebar-darkmode-type-dark',
     ]],
 
+]);
+
+test('the navigation renders the sidebar size it is set to', function (string $size, string $width) {
+    Livewire::test(Settings::class)
+        ->set('form.fields.sidebar-size', $size)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    Livewire::test(Navigation::class)
+        ->assertSeeHtml('aura-sidebar-size-'.$size)
+        ->assertSeeHtml($width);
+})->with([
+    'standard' => ['standard', 'md:w-72'],
+    'compact' => ['compact', 'md:w-56'],
 ]);

@@ -15,8 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `aura:user --team-name`, `aura:create-resource-permissions --team=`, `aura:create-resource-migration --table=`, `aura:schema-update --drop|--force`.
 - `features.dashboard` config flag (the Dashboard navigation entry never rendered because the flag was missing).
 - `media.max_file_size` (KB) is honoured by the media uploader.
+- Live appearance settings: interface density, corner radius, a `dense` sidebar size, and an opt-in expert mode for spacing, radius, sidebar size and sidebar colors. Changes preview on the Settings page and can be discarded until saved.
 
 ### Changed
+
+- The `standard` sidebar size renders at its intended width (18rem, 36px items). Every size used to render compact, so default installs get a wider sidebar. Set `sidebar-size` to `compact` to keep the previous look.
+- `sidebar-darkmode-type` applies whenever the admin renders dark, including forced dark mode. Installs that force dark mode with a light or primary sidebar now get the configured sidebar dark style.
 
 - Support matrix narrowed to Laravel 13 only (Laravel 12 dropped). PHP 8.4+, Livewire 4 unchanged.
 - `DefinesFields::getFields()` declares `: array`; every resource must too. Malformed field definitions (missing `type`/`slug`, unknown field class) throw an exception naming the resource and field index.

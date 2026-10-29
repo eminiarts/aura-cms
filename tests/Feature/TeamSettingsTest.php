@@ -29,6 +29,58 @@ test('Team Settings Component can be rendered', function () {
     $component->assertStatus(200);
 });
 
+test('appearance sections have consistent spacing', function () {
+    Livewire::test(Settings::class)
+        ->assertSeeHtml('margin-bottom: var(--aura-layout-gap, 1rem);');
+});
+
+test('appearance choices preview on the full page and can be discarded', function () {
+    Livewire::test(Settings::class)
+        ->assertDontSee('Live appearance preview')
+        ->assertSeeHtml('data-preview-sidebar-size="standard"')
+        ->set('form.fields.color-palette', 'red')
+        ->set('form.fields.sidebar-size', 'dense')
+        ->set('form.fields.interface-density', 'compact')
+        ->set('form.fields.corner-radius', 'square')
+        ->assertSeeHtml('data-preview-sidebar-size="dense"')
+        ->assertSeeHtml('data-preview-interface-density="compact"')
+        ->assertSeeHtml('data-preview-corner-radius="square"')
+        ->assertSee('--primary-600: 220 38 38;')
+        ->assertSee('Unsaved changes')
+        ->call('discardAppearanceChanges')
+        ->assertSet('form.fields.color-palette', 'aura')
+        ->assertSet('form.fields.sidebar-size', 'standard')
+        ->assertSet('form.fields.interface-density', 'comfortable')
+        ->assertSet('form.fields.corner-radius', 'rounded')
+        ->assertDontSee('Unsaved changes');
+});
+
+test('sidebar darkmode choices stay available for every page color scheme', function () {
+    Livewire::test(Settings::class)
+        ->assertSee('Sidebar Darkmode')
+        ->set('form.fields.darkmode-type', 'dark')
+        ->assertSee('Sidebar Darkmode')
+        ->set('form.fields.sidebar-darkmode-type', 'primary')
+        ->assertSeeHtml('data-preview-sidebar-darkmode-type="primary"')
+        ->set('form.fields.darkmode-type', 'light')
+        ->assertSee('Sidebar Darkmode');
+});
+
+test('saved appearance choices persist', function () {
+    Livewire::test(Settings::class)
+        ->set('form.fields.sidebar-size', 'dense')
+        ->set('form.fields.interface-density', 'compact')
+        ->set('form.fields.corner-radius', 'square')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $settings = Option::firstOrFail()->value;
+
+    expect($settings['sidebar-size'])->toBe('dense')
+        ->and($settings['interface-density'])->toBe('compact')
+        ->and($settings['corner-radius'])->toBe('square');
+});
+
 test('Default Team Settings are created', function () {
     if (! Schema::hasTable('teams')) {
         $this->markTestSkipped('Team tests require the teams schema.');
@@ -64,7 +116,148 @@ test('Default Team Settings are created', function () {
     $this->assertIsArray($option->value);
 
     // assertJSON option value matches expected JSON structure
-    $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"darkmode-type":"auto","sidebar-type":"dark","color-palette":"aura","gray-color-palette":"slate","sidebar-size":"standard","sidebar-darkmode-type":"dark"}');
+    $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"darkmode-type":"auto","sidebar-type":"dark","color-palette":"aura","gray-color-palette":"slate","sidebar-size":"standard","sidebar-darkmode-type":"dark","interface-density":"comfortable","corner-radius":"rounded","appearance-expert-mode":false}');
+});
+
+test('custom palettes and expert appearance changes can be discarded or persisted', function () {
+    $component = Livewire::test(Settings::class)
+        ->set('form.fields.color-palette', 'custom')
+        ->set('form.fields.primary-50', '#fefefe')
+        ->set('form.fields.gray-color-palette', 'custom')
+        ->set('form.fields.gray-50', '#ededed')
+        ->assertSee('Unsaved changes')
+        ->call('discardAppearanceChanges')
+        ->assertSet('form.fields.color-palette', 'aura')
+        ->assertSet('form.fields.primary-50', '')
+        ->assertSet('form.fields.gray-color-palette', 'slate')
+        ->assertSet('form.fields.gray-50', '')
+        ->assertDontSee('Unsaved changes')
+        ->set('form.fields.appearance-expert-mode', true)
+        ->set('form.fields.expert-panel-radius', 0)
+        ->set('form.fields.expert-section-gap', 7)
+        ->set('form.fields.expert-light-sidebar-hover', '#fefdfc')
+        ->set('form.fields.expert-dark-sidebar-icon-hover', '#abcdef')
+        ->assertSee('Unsaved changes')
+        ->assertSee('--aura-panel-radius: 0px;')
+        ->assertSee('--aura-section-gap: 7px;')
+        ->assertSee('--sidebar-bg-hover: 254 253 252;')
+        ->assertSee('--sidebar-icon-hover: 171 205 239;')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertDontSee('Unsaved changes');
+
+    $settings = Option::firstOrFail()->value;
+
+    expect($settings['appearance-expert-mode'])->toBeTrue()
+        ->and($settings['expert-panel-radius'])->toBe(0)
+        ->and($settings['expert-section-gap'])->toBe(7)
+        ->and($settings['expert-light-sidebar-hover'])->toBe('#fefdfc')
+        ->and($settings['expert-dark-sidebar-icon-hover'])->toBe('#abcdef');
+
+    Livewire::test(Settings::class)
+        ->assertSet('form.fields.appearance-expert-mode', true)
+        ->assertSet('form.fields.expert-panel-radius', 0)
+        ->assertSet('form.fields.expert-section-gap', 7)
+        ->assertSet('form.fields.expert-light-sidebar-hover', '#fefdfc')
+        ->assertSet('form.fields.expert-dark-sidebar-icon-hover', '#abcdef')
+        ->set('form.fields.expert-section-gap', 13)
+        ->call('discardAppearanceChanges')
+        ->assertSet('form.fields.expert-section-gap', 7)
+        ->assertDontSee('Unsaved changes');
+});
+
+test('expert appearance validates colors and restores defaults', function () {
+    Livewire::test(Settings::class)
+        ->set('form.fields.appearance-expert-mode', true)
+        ->set('form.fields.expert-light-sidebar-background', 'not-a-color')
+        ->call('save')
+        ->assertHasErrors(['form.fields.expert-light-sidebar-background' => 'regex'])
+        ->set('form.fields.expert-light-sidebar-background', '#112233')
+        ->set('form.fields.expert-panel-radius', 0)
+        ->call('restoreExpertDefaults')
+        ->assertSet('form.fields.expert-light-sidebar-background', '#1643d7')
+        ->assertSet('form.fields.expert-panel-radius', 12);
+});
+
+test('expert appearance inherits the selected presets when it is enabled', function () {
+    Livewire::test(Settings::class)
+        ->set('form.fields.color-palette', 'red')
+        ->set('form.fields.interface-density', 'compact')
+        ->set('form.fields.corner-radius', 'square')
+        ->set('form.fields.sidebar-size', 'dense')
+        ->set('form.fields.appearance-expert-mode', true)
+        ->assertSet('form.fields.expert-light-sidebar-background', '#dc2626')
+        ->assertSet('form.fields.expert-light-sidebar-hover', '#ef4444')
+        ->assertSet('form.fields.expert-light-sidebar-dropdown', '#b91c1c')
+        ->assertSet('form.fields.expert-panel-padding', 16)
+        ->assertSet('form.fields.expert-section-gap', 12)
+        ->assertSet('form.fields.expert-panel-radius', 0)
+        ->assertSet('form.fields.expert-control-radius', 0)
+        ->assertSet('form.fields.expert-sidebar-item-height', 28)
+        ->assertSet('form.fields.expert-sidebar-icon-size', 16);
+});
+
+test('changing a preset in expert mode only refreshes its related expert controls', function () {
+    Livewire::test(Settings::class)
+        ->set('form.fields.appearance-expert-mode', true)
+        ->set('form.fields.expert-panel-radius', 3)
+        ->set('form.fields.color-palette', 'emerald')
+        ->assertSet('form.fields.expert-light-sidebar-background', '#059669')
+        ->assertSet('form.fields.expert-dark-sidebar-background', '#059669')
+        ->assertSet('form.fields.expert-panel-radius', 3);
+});
+
+test('custom primary colors are promoted into expert mode', function () {
+    Livewire::test(Settings::class)
+        ->set('form.fields.color-palette', 'custom')
+        ->set('form.fields.primary-200', '#fecaca')
+        ->set('form.fields.primary-300', '#fca5a5')
+        ->set('form.fields.primary-400', '#f87171')
+        ->set('form.fields.primary-500', '#ef4444')
+        ->set('form.fields.primary-600', '#dc2626')
+        ->set('form.fields.primary-700', '#b91c1c')
+        ->set('form.fields.appearance-expert-mode', true)
+        ->assertSet('form.fields.expert-light-sidebar-background', '#dc2626')
+        ->assertSet('form.fields.expert-light-sidebar-icon-hover', '#fecaca');
+});
+
+test('turning expert mode off and on keeps saved expert values', function () {
+    Livewire::test(Settings::class)
+        ->set('form.fields.appearance-expert-mode', true)
+        ->set('form.fields.expert-panel-radius', 3)
+        ->call('save')
+        ->set('form.fields.appearance-expert-mode', false)
+        ->call('save')
+        ->set('form.fields.appearance-expert-mode', true)
+        ->assertSet('form.fields.expert-panel-radius', 3);
+});
+
+test('expert values that were never saved start from the active presets', function () {
+    config([
+        'aura.theme.color-palette' => 'red',
+        'aura.theme.appearance-expert-mode' => true,
+    ]);
+
+    Livewire::test(Settings::class)
+        ->assertSet('form.fields.expert-light-sidebar-background', '#dc2626');
+});
+
+test('a palette change keeps custom sidebar dimensions', function () {
+    Livewire::test(Settings::class)
+        ->set('form.fields.appearance-expert-mode', true)
+        ->set('form.fields.expert-sidebar-item-height', 45)
+        ->set('form.fields.color-palette', 'red')
+        ->assertSet('form.fields.expert-sidebar-item-height', 45)
+        ->assertSet('form.fields.expert-light-sidebar-background', '#dc2626');
+});
+
+test('hidden expert fields do not block saving', function () {
+    Livewire::test(Settings::class)
+        ->set('form.fields.appearance-expert-mode', true)
+        ->set('form.fields.expert-panel-padding', '')
+        ->set('form.fields.appearance-expert-mode', false)
+        ->call('save')
+        ->assertHasNoErrors();
 });
 
 test('Team Settings can be saved2', function () {

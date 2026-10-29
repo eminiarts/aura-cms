@@ -149,6 +149,8 @@ return [
                 'success' => '22 163 74',
                 'warning' => '217 119 6',
                 'danger' => '220 38 38',
+                'white' => '255 255 255',
+                'black' => '0 0 0',
             ],
             'dark' => [
                 'primary' => 'var(--primary-600)',
@@ -160,12 +162,17 @@ return [
                 'success' => '22 163 74',
                 'warning' => '217 119 6',
                 'danger' => '220 38 38',
+                'white' => '255 255 255',
+                'black' => '0 0 0',
             ],
         ],
 
         'sidebar-size' => 'standard',
         'sidebar-type' => 'dark',
         'sidebar-darkmode-type' => 'dark',
+        'interface-density' => 'comfortable',
+        'corner-radius' => 'rounded',
+        'appearance-expert-mode' => false,
 
         'login-bg' => false,
         'login-bg-darkmode' => false,

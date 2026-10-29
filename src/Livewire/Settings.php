@@ -7,9 +7,11 @@ use Aura\Base\Settings\SettingsPage;
 use Aura\Base\Settings\SettingsPageAuthorizer;
 use Aura\Base\Settings\SettingsRegistry;
 use Aura\Base\Settings\SettingsStore;
+use Aura\Base\ThemeTokens;
 use Aura\Base\Traits\InputFields;
 use Aura\Base\Traits\MediaFields;
 use Illuminate\Support\Arr;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
@@ -17,6 +19,19 @@ class Settings extends Component
 {
     use InputFields;
     use MediaFields;
+
+    /** @var list<string> */
+    private const APPEARANCE_PRESET_FIELDS = [
+        'color-palette',
+        'gray-color-palette',
+        'sidebar-size',
+        'sidebar-type',
+        'darkmode-type',
+        'sidebar-darkmode-type',
+        'interface-density',
+        'corner-radius',
+        'appearance-expert-mode',
+    ];
 
     #[Locked]
     public bool $canUpdate = false;
@@ -30,11 +45,44 @@ class Settings extends Component
     #[Locked]
     public string $page = 'general';
 
+    #[Locked]
+    public array $savedAppearance = [];
+
+    /** @return list<string> */
+    public static function appearanceFieldSlugs(): array
+    {
+        $expertSlugs = collect(self::expertAppearanceFields())
+            ->pluck('slug')
+            ->filter(fn (string $slug): bool => ! str_starts_with($slug, 'panel-') && ! str_starts_with($slug, 'group-'))
+            ->values()
+            ->all();
+        $paletteSlugs = collect(self::generalFields())
+            ->pluck('slug')
+            ->filter(fn (string $slug): bool => preg_match('/^(primary|gray)-\d+$/', $slug) === 1)
+            ->values()
+            ->all();
+
+        return array_values(array_unique([
+            ...self::APPEARANCE_PRESET_FIELDS,
+            ...$paletteSlugs,
+            ...$expertSlugs,
+        ]));
+    }
+
     public function boot(): void
     {
         // The field caches are keyed by class, but this component renders a different page per URL.
         static::flushFieldCache();
         app()->offsetUnset(static::class.'-getFieldsBeforeTree');
+    }
+
+    public function discardAppearanceChanges(): void
+    {
+        abort_unless($this->canUpdate, 403);
+
+        foreach ($this->savedAppearance as $slug => $value) {
+            $this->form['fields'][$slug] = $value;
+        }
     }
 
     public function fieldsCollection()
@@ -47,7 +95,7 @@ class Settings extends Component
 
     public static function generalFields()
     {
-        return [
+        $fields = [
             [
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'name' => 'Appearance',
@@ -86,6 +134,7 @@ class Settings extends Component
             [
                 'name' => 'Size',
                 'type' => 'Aura\\Base\\Fields\\Radio',
+                'live' => true,
                 'options' => [
                     [
                         'key' => 'standard',
@@ -94,6 +143,10 @@ class Settings extends Component
                     [
                         'key' => 'compact',
                         'value' => 'Compact',
+                    ],
+                    [
+                        'key' => 'dense',
+                        'value' => 'Dense',
                     ],
                 ],
                 'slug' => 'sidebar-size',
@@ -104,6 +157,7 @@ class Settings extends Component
             [
                 'name' => 'Sidebar',
                 'type' => 'Aura\\Base\\Fields\\Radio',
+                'live' => true,
                 'options' => [
                     [
                         'key' => 'primary',
@@ -150,6 +204,7 @@ class Settings extends Component
             [
                 'name' => 'Sidebar Darkmode',
                 'type' => 'Aura\\Base\\Fields\\Radio',
+                'live' => true,
                 'options' => [
                     [
                         'key' => 'primary',
@@ -168,11 +223,58 @@ class Settings extends Component
                 'style' => [
                     'width' => '25',
                 ],
-                'conditional_logic' => function ($model, $form) {
-                    if ($form && $form['fields'] && $form['fields']['darkmode-type']) {
-                        return $form['fields']['darkmode-type'] == 'auto';
-                    }
-                },
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Panel',
+                'name' => 'Advanced Appearance',
+                'slug' => 'panel-theme-advanced',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'name' => 'Interface Density',
+                'type' => 'Aura\\Base\\Fields\\Radio',
+                'live' => true,
+                'options' => [
+                    [
+                        'key' => 'comfortable',
+                        'value' => 'Comfortable',
+                    ],
+                    [
+                        'key' => 'compact',
+                        'value' => 'Compact',
+                    ],
+                ],
+                'slug' => 'interface-density',
+                'default' => 'comfortable',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'Corner Radius',
+                'type' => 'Aura\\Base\\Fields\\Radio',
+                'live' => true,
+                'options' => [
+                    [
+                        'key' => 'rounded',
+                        'value' => 'Rounded',
+                    ],
+                    [
+                        'key' => 'subtle',
+                        'value' => 'Subtle',
+                    ],
+                    [
+                        'key' => 'square',
+                        'value' => 'Square',
+                    ],
+                ],
+                'slug' => 'corner-radius',
+                'default' => 'rounded',
+                'style' => [
+                    'width' => '50',
+                ],
             ],
             [
                 'type' => 'Aura\\Base\\Fields\\Panel',
@@ -482,6 +584,16 @@ class Settings extends Component
             ],
 
         ];
+
+        $fields = collect($fields)->map(function (array $field): array {
+            if (preg_match('/^(primary|gray)-\d+$/', $field['slug'] ?? '') === 1) {
+                $field['live'] = true;
+            }
+
+            return $field;
+        })->all();
+
+        return [...$fields, ...self::expertAppearanceFields()];
     }
 
     public static function getFields()
@@ -501,6 +613,18 @@ class Settings extends Component
         return $this->inputFields()->mapWithKeys(function ($field) {
             return [$field['slug'] => $this->form['fields'][$field['slug']] ?? null];
         });
+    }
+
+    #[Computed]
+    public function hasAppearanceChanges(): bool
+    {
+        foreach ($this->savedAppearance as $slug => $value) {
+            if (($this->form['fields'][$slug] ?? null) !== $value) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function mount(
@@ -533,6 +657,9 @@ class Settings extends Component
             'gray-color-palette' => config('aura.theme.gray-color-palette'),
             'sidebar-size' => config('aura.theme.sidebar-size'),
             'sidebar-darkmode-type' => config('aura.theme.sidebar-darkmode-type'),
+            'interface-density' => config('aura.theme.interface-density'),
+            'corner-radius' => config('aura.theme.corner-radius'),
+            'appearance-expert-mode' => config('aura.theme.appearance-expert-mode', false),
         ];
 
         $this->model = $store->findOrCreate($valueString);
@@ -545,6 +672,17 @@ class Settings extends Component
             return [$slug => $stored[$slug] ?? $defaults[$slug] ?? ''];
         })->toArray();
 
+        if ($this->page === 'general') {
+            // Expert values that were never saved follow the active presets, not the package defaults.
+            foreach ($this->expertPresetValues() as $slug => $value) {
+                if (! array_key_exists($slug, $stored)) {
+                    $this->form['fields'][$slug] = $value;
+                }
+            }
+        }
+
+        $this->rememberSavedAppearance();
+
         $this->model->setAttribute('value', $stored);
     }
 
@@ -553,11 +691,27 @@ class Settings extends Component
         return view('aura::livewire.settings')->layout('aura::components.layout.app');
     }
 
+    public function restoreExpertDefaults(): void
+    {
+        abort_unless($this->canUpdate && $this->page === 'general', 403);
+
+        foreach ($this->expertPresetValues() as $slug => $value) {
+            $this->form['fields'][$slug] = $value;
+        }
+    }
+
     public function rules()
     {
-        return Arr::dot([
+        $rules = Arr::dot([
             'form.fields' => $this->validationRules(),
         ]);
+
+        // General's expert fields are hidden while expert mode is off, so their errors could not be seen or fixed.
+        if ($this->page === 'general' && ! filter_var($this->form['fields']['appearance-expert-mode'] ?? false, FILTER_VALIDATE_BOOL)) {
+            $rules = array_filter($rules, fn (string $key): bool => ! str_starts_with($key, 'form.fields.expert-'), ARRAY_FILTER_USE_KEY);
+        }
+
+        return $rules;
     }
 
     public function save(
@@ -580,11 +734,251 @@ class Settings extends Component
 
         $this->model->setAttribute('value', $stored);
 
+        $this->rememberSavedAppearance();
+
         $this->dispatch('notify', message: __('Successfully updated'), type: 'success');
     }
 
     public function settingsPage(): SettingsPage
     {
         return app(SettingsRegistry::class)->page($this->page) ?? abort(404);
+    }
+
+    public function updated(string $property, mixed $value): void
+    {
+        if ($this->page !== 'general') {
+            return;
+        }
+
+        // A preset change updates the expert values it governs, also while expert mode is off,
+        // so turning expert mode on never resets saved values. "Restore expert defaults" does that.
+        $slugs = match ($property) {
+            'form.fields.color-palette',
+            'form.fields.primary-200',
+            'form.fields.primary-300',
+            'form.fields.primary-400',
+            'form.fields.primary-500',
+            'form.fields.primary-600',
+            'form.fields.primary-700' => self::expertColorSlugs(),
+            'form.fields.interface-density' => self::expertDensitySlugs(),
+            'form.fields.corner-radius' => self::expertRadiusSlugs(),
+            'form.fields.sidebar-size' => self::expertSidebarSizeSlugs(),
+            default => [],
+        };
+
+        if ($slugs !== []) {
+            $this->applyExpertPresetValues($slugs);
+        }
+    }
+
+    /** @param list<string>|null $only */
+    private function applyExpertPresetValues(?array $only = null): void
+    {
+        foreach ($this->expertPresetValues() as $slug => $value) {
+            if ($only === null || in_array($slug, $only, true)) {
+                $this->form['fields'][$slug] = $value;
+            }
+        }
+    }
+
+    /** @return list<array<string, mixed>> */
+    private static function expertAppearanceFields(): array
+    {
+        $condition = static fn ($model, $form): bool => (bool) ($form['fields']['appearance-expert-mode'] ?? false);
+        $fields = [
+            [
+                'type' => 'Aura\\Base\\Fields\\Panel',
+                'name' => 'Expert Appearance',
+                'slug' => 'panel-theme-expert',
+                'style' => ['width' => '100'],
+            ],
+            [
+                'name' => 'Expert mode',
+                'instructions' => 'Fine-tune shared design tokens. Disable this to use the selected presets unchanged.',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
+                'slug' => 'appearance-expert-mode',
+                'default' => false,
+                'live' => true,
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Group',
+                'name' => 'Layout and spacing',
+                'slug' => 'group-theme-expert-sizing',
+                'description' => 'Fine-tune panel, control, layout, and sidebar dimensions. All measurements use pixels.',
+                'variant' => 'section',
+                'conditional_logic' => $condition,
+            ],
+        ];
+
+        $numericLabels = [
+            'expert-panel-radius' => 'Panel radius',
+            'expert-control-radius' => 'Button and control radius',
+            'expert-panel-padding' => 'Panel padding',
+            'expert-panel-small-padding' => 'Small panel padding',
+            'expert-layout-gap' => 'Layout gap',
+            'expert-section-gap' => 'Section gap',
+            'expert-sidebar-item-height' => 'Sidebar item height',
+            'expert-sidebar-item-padding-x' => 'Sidebar horizontal padding',
+            'expert-sidebar-group-gap' => 'Sidebar group gap',
+            'expert-sidebar-heading-gap' => 'Sidebar heading gap',
+            'expert-sidebar-icon-size' => 'Sidebar icon size',
+        ];
+        $defaults = self::expertDefaults();
+
+        foreach ($numericLabels as $slug => $name) {
+            $fields[] = [
+                'name' => $name,
+                'type' => 'Aura\\Base\\Fields\\Number',
+                'slug' => $slug,
+                'suffix' => 'px',
+                'default' => $defaults[$slug],
+                'validation' => 'required|integer|min:0|max:96',
+                'live' => true,
+                'conditional_logic' => $condition,
+                'style' => ['width' => '25'],
+            ];
+        }
+
+        $colorGroups = [
+            'light-sidebar' => ['Light sidebar colors', 'Background, interaction, label, and icon colors for the light sidebar.', ['background', 'hover', 'dropdown', 'text', 'icon', 'icon-hover']],
+            'dark-sidebar' => ['Dark sidebar colors', 'Background, interaction, label, and icon colors for the dark sidebar.', ['background', 'hover', 'dropdown', 'text', 'icon', 'icon-hover']],
+        ];
+
+        foreach ($colorGroups as $prefix => [$label, $description, $names]) {
+            $fields[] = [
+                'type' => 'Aura\\Base\\Fields\\Group',
+                'name' => $label,
+                'slug' => 'group-theme-expert-'.$prefix,
+                'description' => $description,
+                'variant' => 'section',
+                'exclude_level' => 1,
+                'conditional_logic' => $condition,
+            ];
+
+            foreach ($names as $name) {
+                $slug = 'expert-'.$prefix.'-'.$name;
+                $fields[] = [
+                    'name' => str($name)->replace('-', ' ')->headline()->toString(),
+                    'type' => 'Aura\\Base\\Fields\\Color',
+                    'slug' => $slug,
+                    'default' => $defaults[$slug],
+                    'validation' => 'required|regex:/^#[0-9a-fA-F]{6}$/',
+                    'live' => true,
+                    'conditional_logic' => $condition,
+                    'options' => ['native' => true],
+                    'style' => ['width' => '25'],
+                ];
+            }
+        }
+
+        return $fields;
+    }
+
+    /** @return list<string> */
+    private static function expertColorSlugs(): array
+    {
+        return array_values(array_filter(
+            array_keys(self::expertDefaults()),
+            static fn (string $slug): bool => preg_match('/^expert-(light|dark)-sidebar-/', $slug) === 1,
+        ));
+    }
+
+    /** @return array<string, string|int> */
+    private static function expertDefaults(): array
+    {
+        return [
+            'expert-panel-radius' => 12,
+            'expert-control-radius' => 8,
+            'expert-panel-padding' => 20,
+            'expert-panel-small-padding' => 8,
+            'expert-layout-gap' => 24,
+            'expert-section-gap' => 16,
+            'expert-sidebar-item-height' => 36,
+            'expert-sidebar-item-padding-x' => 12,
+            'expert-sidebar-group-gap' => 4,
+            'expert-sidebar-heading-gap' => 20,
+            'expert-sidebar-icon-size' => 20,
+            'expert-light-sidebar-background' => '#1643d7',
+            'expert-light-sidebar-hover' => '#1f55e9',
+            'expert-light-sidebar-dropdown' => '#1236b9',
+            'expert-light-sidebar-text' => '#6894f6',
+            'expert-light-sidebar-icon' => '#95b5f9',
+            'expert-light-sidebar-icon-hover' => '#c2d5fb',
+            'expert-dark-sidebar-background' => '#1643d7',
+            'expert-dark-sidebar-hover' => '#1f55e9',
+            'expert-dark-sidebar-dropdown' => '#1236b9',
+            'expert-dark-sidebar-text' => '#6894f6',
+            'expert-dark-sidebar-icon' => '#95b5f9',
+            'expert-dark-sidebar-icon-hover' => '#c2d5fb',
+        ];
+    }
+
+    /** @return list<string> */
+    private static function expertDensitySlugs(): array
+    {
+        return [
+            'expert-panel-padding',
+            'expert-panel-small-padding',
+            'expert-layout-gap',
+            'expert-section-gap',
+        ];
+    }
+
+    /** @return array<string, string|int> */
+    private function expertPresetValues(): array
+    {
+        $values = self::expertDefaults();
+        $palette = ThemeTokens::expertPaletteColors($this->form['fields']);
+
+        $density = match ($this->form['fields']['interface-density'] ?? 'comfortable') {
+            'compact' => [16, 6, 16, 12],
+            default => [20, 8, 24, 16],
+        };
+        [$values['expert-panel-padding'], $values['expert-panel-small-padding'], $values['expert-layout-gap'], $values['expert-section-gap']] = $density;
+
+        $radius = match ($this->form['fields']['corner-radius'] ?? 'rounded') {
+            'square' => [0, 0],
+            'subtle' => [6, 4],
+            default => [12, 8],
+        };
+        [$values['expert-panel-radius'], $values['expert-control-radius']] = $radius;
+
+        $sidebar = match ($this->form['fields']['sidebar-size'] ?? 'standard') {
+            'dense' => [28, 6, 2, 10, 16],
+            'compact' => [32, 8, 4, 14, 18],
+            default => [36, 12, 4, 20, 20],
+        };
+        [$values['expert-sidebar-item-height'], $values['expert-sidebar-item-padding-x'], $values['expert-sidebar-group-gap'], $values['expert-sidebar-heading-gap'], $values['expert-sidebar-icon-size']] = $sidebar;
+
+        foreach (['light', 'dark'] as $mode) {
+            foreach (['background', 'hover', 'dropdown', 'text', 'icon', 'icon-hover'] as $name) {
+                $values["expert-{$mode}-sidebar-{$name}"] = $palette[$name];
+            }
+        }
+
+        return $values;
+    }
+
+    /** @return list<string> */
+    private static function expertRadiusSlugs(): array
+    {
+        return ['expert-panel-radius', 'expert-control-radius'];
+    }
+
+    /** @return list<string> */
+    private static function expertSidebarSizeSlugs(): array
+    {
+        return [
+            'expert-sidebar-item-height',
+            'expert-sidebar-item-padding-x',
+            'expert-sidebar-group-gap',
+            'expert-sidebar-heading-gap',
+            'expert-sidebar-icon-size',
+        ];
+    }
+
+    private function rememberSavedAppearance(): void
+    {
+        $this->savedAppearance = Arr::only($this->form['fields'], self::appearanceFieldSlugs());
     }
 }

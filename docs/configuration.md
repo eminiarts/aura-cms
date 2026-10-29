@@ -231,10 +231,13 @@ The theme settings accept these values:
 | Setting | Available values |
 | --- | --- |
 | `darkmode-type` | `auto`, `light`, `dark` |
-| `sidebar-size` | `standard`, `compact` |
+| `sidebar-size` | `standard`, `compact`, `dense` |
 | `sidebar-type` and `sidebar-darkmode-type` | `primary`, `light`, `dark` |
+| `interface-density` | `comfortable`, `compact` |
+| `corner-radius` | `rounded`, `subtle`, `square` |
+| `appearance-expert-mode` | `true`, `false` |
 
-The light and dark color maps define colors for primary actions, backgrounds, panels, borders, text, muted content, success, warnings and danger. Use the keys shown in the example above. Each value must be an RGB channel string such as `24 24 27` or a variable reference such as `var(--primary-600)`. Invalid values fall back to the package default. Aura exposes these colors through CSS variables named `--aura-color-*`.
+The light and dark color maps define colors for primary actions, backgrounds, panels, borders, text, muted content, success, warnings, danger, white and black. Use the keys shown in the example above. Each value must be an RGB channel string such as `24 24 27` or a variable reference such as `var(--primary-600)`. Invalid values fall back to the package default. Aura exposes these colors through CSS variables named `--aura-color-*`.
 
 `font.family` accepts an array or a comma-separated string. `font.stylesheet` accepts a host-local public path such as `fonts/brand.css`. External URLs, backslashes, control characters and `..` path segments are rejected. The default system stack makes no font request.
 

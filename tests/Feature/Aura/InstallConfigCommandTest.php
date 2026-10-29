@@ -159,6 +159,9 @@ PHP, function (string $path) {
                 ->expectsQuestion("Select value for 'darkmode-type':", 'auto')
                 ->expectsQuestion("Select value for 'sidebar-size':", 'standard')
                 ->expectsQuestion("Select value for 'sidebar-type':", 'dark')
+                ->expectsQuestion("Select value for 'interface-density':", 'comfortable')
+                ->expectsQuestion("Select value for 'corner-radius':", 'rounded')
+                ->expectsConfirmation("Enable 'appearance-expert-mode'?", 'no')
                 ->assertSuccessful();
 
             $after = File::get($path.'/aura.php');

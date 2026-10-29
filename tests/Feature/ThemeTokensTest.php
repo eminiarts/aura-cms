@@ -26,6 +26,8 @@ test('theme token defaults expose the stable light and dark contract', function 
         'success' => '22 163 74',
         'warning' => '217 119 6',
         'danger' => '220 38 38',
+        'white' => '255 255 255',
+        'black' => '0 0 0',
     ])->and(config('aura.theme.colors.dark'))->toBe([
         'primary' => 'var(--primary-600)',
         'background' => '9 9 11',
@@ -36,7 +38,39 @@ test('theme token defaults expose the stable light and dark contract', function 
         'success' => '22 163 74',
         'warning' => '217 119 6',
         'danger' => '220 38 38',
+        'white' => '255 255 255',
+        'black' => '0 0 0',
     ]);
+});
+
+test('expert tokens override presets only while expert mode is enabled', function () {
+    $settings = [
+        'appearance-expert-mode' => true,
+        'interface-density' => 'comfortable',
+        'corner-radius' => 'rounded',
+        'sidebar-size' => 'standard',
+        'expert-panel-radius' => 0,
+        'expert-section-gap' => 7,
+        // Saved before semantic colors left expert mode; they must not apply.
+        'expert-light-color-background' => '#fefdfc',
+        'expert-light-sidebar-background' => '#112233',
+        'expert-dark-sidebar-icon-hover' => '#445566',
+    ];
+
+    expect(ThemeTokens::design($settings))
+        ->toMatchArray([
+            '--aura-panel-radius' => '0px',
+            '--aura-section-gap' => '7px',
+        ])
+        ->and(ThemeTokens::colors($settings, 'light')['background'])->toBe('255 255 255')
+        ->and(ThemeTokens::sidebarColors($settings, 'light')['--sidebar-bg'])->toBe('17 34 51')
+        ->and(ThemeTokens::sidebarColors($settings, 'dark')['--sidebar-icon-hover'])->toBe('68 85 102');
+
+    $settings['appearance-expert-mode'] = false;
+
+    expect(ThemeTokens::design($settings)['--aura-panel-radius'])->toBe('0.75rem')
+        ->and(ThemeTokens::colors($settings, 'light')['background'])->toBe('255 255 255')
+        ->and(ThemeTokens::sidebarColors($settings, 'light'))->toBe([]);
 });
 
 test('renderer emits the semantic variables for both color schemes', function () {
@@ -61,6 +95,42 @@ test('renderer emits the semantic variables for both color schemes', function ()
         ->toContain('--aura-color-border: 63 63 70;')
         ->toContain('--aura-color-text: 244 244 245;')
         ->toContain('--aura-color-muted: 161 161 170;');
+});
+
+test('design presets emit stable density radius and sidebar variables', function () {
+    expect(ThemeTokens::design([
+        'interface-density' => 'compact',
+        'corner-radius' => 'square',
+        'sidebar-size' => 'dense',
+    ]))->toMatchArray([
+        '--aura-panel-padding' => '1rem',
+        '--aura-layout-gap' => '1rem',
+        '--aura-panel-radius' => '0rem',
+        '--aura-control-radius' => '0rem',
+        '--aura-sidebar-item-height' => '1.75rem',
+        '--aura-sidebar-icon-size' => '1rem',
+    ]);
+});
+
+test('scoped renderer isolates temporary preview variables and scripts', function () {
+    $html = view('aura::components.layout.colors', [
+        'settings' => [
+            'color-palette' => 'red',
+            'interface-density' => 'compact',
+            'corner-radius' => 'subtle',
+        ],
+        'colorScope' => '#settings-preview',
+        'darkColorScope' => '#settings-preview.dark',
+        'includeColorHelpers' => false,
+    ])->render();
+
+    expect($html)
+        ->toContain('#settings-preview {')
+        ->toContain('#settings-preview.dark {')
+        ->toContain('--primary-600: 220 38 38;')
+        ->toContain('--aura-panel-padding: 1rem;')
+        ->toContain('--aura-control-radius: 0.25rem;')
+        ->not->toContain('document.documentElement.classList');
 });
 
 test('font family serializer removes only matching outer quote pairs', function (array|string $families, string $expected) {
