@@ -4,10 +4,12 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Settings;
 use Aura\Base\Providers\AppServiceProvider;
 use Aura\Base\Resources\Option;
+use Aura\Base\Resources\User;
 use Aura\Base\Settings\SettingsPage;
 use Aura\Base\Settings\SettingsRegistry;
 use Aura\Base\Settings\SettingsStore;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -60,6 +62,132 @@ test('plugins register ordered settings pages through Aura', function () {
 
     expect(collect(Aura::navigation()->get('settings'))->pluck('route'))
         ->toContain(route('aura.settings.page', 'seo'));
+});
+
+test('plugin settings pages enforce separate view and update abilities', function () {
+    Aura::registerSettingsPages('acme/seo', [
+        new SettingsPage(
+            slug: 'seo',
+            title: 'SEO',
+            fields: [[
+                'name' => 'Site Name',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'seo-site-name',
+            ]],
+            viewAbility: 'settings.seo.view',
+            updateAbility: 'settings.seo.update',
+        ),
+    ]);
+
+    $viewer = createAdmin();
+    $teamAttributes = config('aura.teams') ? ['current_team_id' => $viewer->current_team_id] : [];
+    $editor = User::factory()->create($teamAttributes);
+    $denied = User::factory()->create($teamAttributes);
+
+    Gate::define('settings.seo.view', fn ($user): bool => in_array($user->id, [$viewer->id, $editor->id], true));
+    Gate::define('settings.seo.update', fn ($user): bool => $user->id === $editor->id);
+
+    $this->actingAs($viewer);
+
+    $this->get(route('aura.settings.page', 'seo'))->assertOk();
+
+    Livewire::test(Settings::class, ['page' => 'seo'])
+        ->assertSet('canUpdate', false)
+        ->assertDontSee('Save')
+        ->set('form.fields.seo-site-name', 'Not allowed')
+        ->call('save')
+        ->assertForbidden();
+
+    expect(Aura::setting('seo-site-name'))->not->toBe('Not allowed');
+
+    $this->actingAs($editor);
+
+    Livewire::test(Settings::class, ['page' => 'seo'])
+        ->assertSet('canUpdate', true)
+        ->assertSee('Save')
+        ->set('form.fields.seo-site-name', 'Aura Site')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Aura::setting('seo-site-name'))->toBe('Aura Site');
+
+    $this->actingAs($denied);
+
+    $this->get(route('aura.settings.page', 'seo'))->assertForbidden();
+    Livewire::test(Settings::class, ['page' => 'seo'])->assertForbidden();
+});
+
+test('a settings page editor saves only that page fields', function () {
+    Aura::registerSettingsPages('acme/seo', [
+        new SettingsPage(
+            slug: 'seo',
+            title: 'SEO',
+            fields: [[
+                'name' => 'Site Name',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'seo-site-name',
+            ]],
+            updateAbility: 'settings.seo.update',
+        ),
+    ]);
+
+    $editor = createAdmin();
+    Gate::define('settings.seo.update', fn ($user): bool => $user->id === $editor->id);
+
+    $this->actingAs($editor);
+
+    Livewire::test(Settings::class, ['page' => 'seo'])
+        ->set('form.fields.seo-site-name', 'Aura Site')
+        ->set('form.fields.color-palette', 'red')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Aura::setting('seo-site-name'))->toBe('Aura Site')
+        ->and(Aura::setting('color-palette'))->not->toBe('red');
+});
+
+test('the sidebar checks each settings page with its own view ability', function () {
+    // The package TestCase does not load the auto-discovered provider that owns the sidebar items.
+    app()->register(AppServiceProvider::class);
+
+    // Ordered after the core AI page, so a shared visibility check would hide it.
+    Aura::registerSettingsPages('acme/seo', [
+        new SettingsPage(
+            slug: 'seo',
+            title: 'SEO',
+            fields: [[
+                'name' => 'Site Name',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'seo-site-name',
+            ]],
+            order: 60,
+            viewAbility: 'settings.seo.view',
+        ),
+    ]);
+
+    $viewer = createAdmin();
+    Gate::define('settings.seo.view', fn ($user): bool => $user->id === $viewer->id);
+
+    $this->actingAs($viewer);
+
+    expect(collect(Aura::navigation()->get('settings'))->pluck('route'))
+        ->toContain(route('aura.settings.page', 'seo'))
+        ->not->toContain(route('aura.settings.page', 'ai'));
+});
+
+test('settings pages without declared abilities remain restricted to super admins', function () {
+    Aura::registerSettingsPages('acme/private', [
+        new SettingsPage('private', 'Private', [[
+            'name' => 'Private value',
+            'type' => 'Aura\\Base\\Fields\\Text',
+            'slug' => 'private-value',
+        ]]),
+    ]);
+
+    $this->actingAs(createAdmin());
+
+    $this->get(route('aura.settings.page', 'private'))->assertForbidden();
+    Livewire::test(Settings::class, ['page' => 'private'])->assertForbidden();
 });
 
 test('settings are readable by team id without an authenticated user', function () {
