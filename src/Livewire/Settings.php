@@ -10,6 +10,7 @@ use Aura\Base\Settings\SettingsStore;
 use Aura\Base\Traits\InputFields;
 use Aura\Base\Traits\MediaFields;
 use Illuminate\Support\Arr;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class Settings extends Component
@@ -19,6 +20,7 @@ class Settings extends Component
 
     public ?array $aiConnectionStatus = null;
 
+    #[Locked]
     public bool $canUpdate = false;
 
     public $form = [
@@ -27,6 +29,7 @@ class Settings extends Component
 
     public $model;
 
+    #[Locked]
     public string $page = 'general';
 
     public array $secretConfigured = [];
@@ -35,6 +38,7 @@ class Settings extends Component
     {
         // The field caches are keyed by class, but this component renders a different page per URL.
         static::flushFieldCache();
+        app()->offsetUnset(static::class.'-getFieldsBeforeTree');
     }
 
     public function fieldsCollection()
@@ -576,7 +580,10 @@ class Settings extends Component
 
         $secretFields = $this->settingsPage()->secretFields;
 
-        $this->model = $store->store($this->model, $this->form['fields'], $secretFields);
+        // Only this page's fields: a plugin editor must not write other pages' settings through the shared row.
+        $values = Arr::only($this->form['fields'], $this->inputFields()->pluck('slug')->all());
+
+        $this->model = $store->store($this->model, $values, $secretFields);
         $stored = $store->values($this->model);
 
         foreach ($secretFields as $slug) {
@@ -597,7 +604,7 @@ class Settings extends Component
 
     public function testAiConnection(AiConnector $connector, SettingsPageAuthorizer $authorizer): void
     {
-        abort_unless($authorizer->canUpdate($this->settingsPage(), auth()->user()), 403);
+        abort_unless($this->page === 'ai' && $authorizer->canUpdate($this->settingsPage(), auth()->user()), 403);
 
         $result = $connector->testConnection();
         $this->aiConnectionStatus = $result->toArray();

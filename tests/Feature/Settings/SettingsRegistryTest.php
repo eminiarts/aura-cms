@@ -117,6 +117,64 @@ test('plugin settings pages enforce separate view and update abilities', functio
     Livewire::test(Settings::class, ['page' => 'seo'])->assertForbidden();
 });
 
+test('a settings page editor saves only that page fields', function () {
+    Aura::registerSettingsPages('acme/seo', [
+        new SettingsPage(
+            slug: 'seo',
+            title: 'SEO',
+            fields: [[
+                'name' => 'Site Name',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'seo-site-name',
+            ]],
+            updateAbility: 'settings.seo.update',
+        ),
+    ]);
+
+    $editor = createAdmin();
+    Gate::define('settings.seo.update', fn ($user): bool => $user->id === $editor->id);
+
+    $this->actingAs($editor);
+
+    Livewire::test(Settings::class, ['page' => 'seo'])
+        ->set('form.fields.seo-site-name', 'Aura Site')
+        ->set('form.fields.color-palette', 'red')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Aura::setting('seo-site-name'))->toBe('Aura Site')
+        ->and(Aura::setting('color-palette'))->not->toBe('red');
+});
+
+test('the sidebar checks each settings page with its own view ability', function () {
+    // The package TestCase does not load the auto-discovered provider that owns the sidebar items.
+    app()->register(AppServiceProvider::class);
+
+    // Ordered after the core AI page, so a shared visibility check would hide it.
+    Aura::registerSettingsPages('acme/seo', [
+        new SettingsPage(
+            slug: 'seo',
+            title: 'SEO',
+            fields: [[
+                'name' => 'Site Name',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'seo-site-name',
+            ]],
+            order: 60,
+            viewAbility: 'settings.seo.view',
+        ),
+    ]);
+
+    $viewer = createAdmin();
+    Gate::define('settings.seo.view', fn ($user): bool => $user->id === $viewer->id);
+
+    $this->actingAs($viewer);
+
+    expect(collect(Aura::navigation()->get('settings'))->pluck('route'))
+        ->toContain(route('aura.settings.page', 'seo'))
+        ->not->toContain(route('aura.settings.page', 'ai'));
+});
+
 test('settings pages without declared abilities remain restricted to super admins', function () {
     Aura::registerSettingsPages('acme/private', [
         new SettingsPage('private', 'Private', [[

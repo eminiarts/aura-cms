@@ -20,7 +20,7 @@ final readonly class SettingsPageAuthorizer
 
     public function canView(SettingsPage $page, ?Authenticatable $user): bool
     {
-        if ($this->isSuperAdmin($user)) {
+        if ($this->canUpdate($page, $user)) {
             return true;
         }
 
