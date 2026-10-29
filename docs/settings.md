@@ -65,10 +65,13 @@ See [Plugins](/docs/plugins#register-a-settings-page) for the plugin registratio
 | --- | --- | --- | --- |
 | Logo | `logo` | `Image` | Selects an attachment for the admin navigation |
 | Logo Darkmode | `logo-darkmode` | `Image` | Selects the dark-mode navigation logo |
-| Size | `sidebar-size` | `Radio` | `standard`, `compact` |
+| Size | `sidebar-size` | `Radio` | `standard`, `compact`, `dense` |
 | Sidebar | `sidebar-type` | `Radio` | `primary`, `light`, `dark` |
 | Darkmode | `darkmode-type` | `Radio` | `auto`, `light`, `dark` |
-| Sidebar Darkmode | `sidebar-darkmode-type` | `Radio` | `primary`, `light`, `dark`, shown when `darkmode-type` is `auto` |
+| Sidebar Darkmode | `sidebar-darkmode-type` | `Radio` | `primary`, `light`, `dark`, applied whenever the admin renders dark |
+| Interface Density | `interface-density` | `Radio` | `comfortable`, `compact` |
+| Corner Radius | `corner-radius` | `Radio` | `rounded`, `subtle`, `square` |
+| Expert mode | `appearance-expert-mode` | `Boolean` | Shows the expert spacing, radius and sidebar values (see [Themes](/docs/themes#advanced-appearance)) |
 | Primary Color Palette | `color-palette` | `Select` | Preset palette or `custom` |
 | Gray Color Palette | `gray-color-palette` | `Select` | Preset palette or `custom` |
 

@@ -840,8 +840,6 @@ class Settings extends Component
         }
 
         $colorGroups = [
-            'light-color' => ['Light semantic colors', 'Colors used by content, controls, feedback, and surfaces in light mode.', ['primary', 'background', 'panel', 'border', 'text', 'muted', 'success', 'warning', 'danger', 'white', 'black']],
-            'dark-color' => ['Dark semantic colors', 'The matching semantic color set applied when the admin is in dark mode.', ['primary', 'background', 'panel', 'border', 'text', 'muted', 'success', 'warning', 'danger', 'white', 'black']],
             'light-sidebar' => ['Light sidebar colors', 'Background, interaction, label, and icon colors for the light sidebar.', ['background', 'hover', 'dropdown', 'text', 'icon', 'icon-hover']],
             'dark-sidebar' => ['Dark sidebar colors', 'Background, interaction, label, and icon colors for the dark sidebar.', ['background', 'hover', 'dropdown', 'text', 'icon', 'icon-hover']],
         ];
@@ -881,7 +879,7 @@ class Settings extends Component
     {
         return array_values(array_filter(
             array_keys(self::expertDefaults()),
-            static fn (string $slug): bool => str_contains($slug, '-color-primary') || str_contains($slug, '-sidebar-'),
+            static fn (string $slug): bool => str_contains($slug, '-sidebar-'),
         ));
     }
 
@@ -900,28 +898,6 @@ class Settings extends Component
             'expert-sidebar-group-gap' => 4,
             'expert-sidebar-heading-gap' => 20,
             'expert-sidebar-icon-size' => 20,
-            'expert-light-color-primary' => '#1f55e9',
-            'expert-light-color-background' => '#ffffff',
-            'expert-light-color-panel' => '#fafafa',
-            'expert-light-color-border' => '#e4e4e7',
-            'expert-light-color-text' => '#18181b',
-            'expert-light-color-muted' => '#52525b',
-            'expert-light-color-success' => '#16a34a',
-            'expert-light-color-warning' => '#d97706',
-            'expert-light-color-danger' => '#dc2626',
-            'expert-light-color-white' => '#ffffff',
-            'expert-light-color-black' => '#000000',
-            'expert-dark-color-primary' => '#1f55e9',
-            'expert-dark-color-background' => '#09090b',
-            'expert-dark-color-panel' => '#18181b',
-            'expert-dark-color-border' => '#3f3f46',
-            'expert-dark-color-text' => '#f4f4f5',
-            'expert-dark-color-muted' => '#a1a1aa',
-            'expert-dark-color-success' => '#16a34a',
-            'expert-dark-color-warning' => '#d97706',
-            'expert-dark-color-danger' => '#dc2626',
-            'expert-dark-color-white' => '#ffffff',
-            'expert-dark-color-black' => '#000000',
             'expert-light-sidebar-background' => '#1643d7',
             'expert-light-sidebar-hover' => '#1f55e9',
             'expert-light-sidebar-dropdown' => '#1236b9',
@@ -975,8 +951,6 @@ class Settings extends Component
         [$values['expert-sidebar-item-height'], $values['expert-sidebar-item-padding-x'], $values['expert-sidebar-group-gap'], $values['expert-sidebar-heading-gap'], $values['expert-sidebar-icon-size']] = $sidebar;
 
         foreach (['light', 'dark'] as $mode) {
-            $values["expert-{$mode}-color-primary"] = $palette['primary'];
-
             foreach (['background', 'hover', 'dropdown', 'text', 'icon', 'icon-hover'] as $name) {
                 $values["expert-{$mode}-sidebar-{$name}"] = $palette[$name];
             }

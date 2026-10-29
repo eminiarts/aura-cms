@@ -135,12 +135,12 @@ test('custom palettes and expert appearance changes can be discarded or persiste
         ->set('form.fields.appearance-expert-mode', true)
         ->set('form.fields.expert-panel-radius', 0)
         ->set('form.fields.expert-section-gap', 7)
-        ->set('form.fields.expert-light-color-background', '#fefdfc')
+        ->set('form.fields.expert-light-sidebar-hover', '#fefdfc')
         ->set('form.fields.expert-dark-sidebar-icon-hover', '#abcdef')
         ->assertSee('Unsaved changes')
         ->assertSee('--aura-panel-radius: 0px;')
         ->assertSee('--aura-section-gap: 7px;')
-        ->assertSee('--aura-color-background: 254 253 252;')
+        ->assertSee('--sidebar-bg-hover: 254 253 252;')
         ->assertSee('--sidebar-icon-hover: 171 205 239;')
         ->call('save')
         ->assertHasNoErrors()
@@ -151,14 +151,14 @@ test('custom palettes and expert appearance changes can be discarded or persiste
     expect($settings['appearance-expert-mode'])->toBeTrue()
         ->and($settings['expert-panel-radius'])->toBe(0)
         ->and($settings['expert-section-gap'])->toBe(7)
-        ->and($settings['expert-light-color-background'])->toBe('#fefdfc')
+        ->and($settings['expert-light-sidebar-hover'])->toBe('#fefdfc')
         ->and($settings['expert-dark-sidebar-icon-hover'])->toBe('#abcdef');
 
     Livewire::test(Settings::class)
         ->assertSet('form.fields.appearance-expert-mode', true)
         ->assertSet('form.fields.expert-panel-radius', 0)
         ->assertSet('form.fields.expert-section-gap', 7)
-        ->assertSet('form.fields.expert-light-color-background', '#fefdfc')
+        ->assertSet('form.fields.expert-light-sidebar-hover', '#fefdfc')
         ->assertSet('form.fields.expert-dark-sidebar-icon-hover', '#abcdef')
         ->set('form.fields.expert-section-gap', 13)
         ->call('discardAppearanceChanges')
@@ -169,13 +169,13 @@ test('custom palettes and expert appearance changes can be discarded or persiste
 test('expert appearance validates colors and restores defaults', function () {
     Livewire::test(Settings::class)
         ->set('form.fields.appearance-expert-mode', true)
-        ->set('form.fields.expert-light-color-primary', 'not-a-color')
+        ->set('form.fields.expert-light-sidebar-background', 'not-a-color')
         ->call('save')
-        ->assertHasErrors(['form.fields.expert-light-color-primary' => 'regex'])
-        ->set('form.fields.expert-light-color-primary', '#112233')
+        ->assertHasErrors(['form.fields.expert-light-sidebar-background' => 'regex'])
+        ->set('form.fields.expert-light-sidebar-background', '#112233')
         ->set('form.fields.expert-panel-radius', 0)
         ->call('restoreExpertDefaults')
-        ->assertSet('form.fields.expert-light-color-primary', '#1f55e9')
+        ->assertSet('form.fields.expert-light-sidebar-background', '#1643d7')
         ->assertSet('form.fields.expert-panel-radius', 12);
 });
 
@@ -186,8 +186,6 @@ test('expert appearance inherits the selected presets when it is enabled', funct
         ->set('form.fields.corner-radius', 'square')
         ->set('form.fields.sidebar-size', 'dense')
         ->set('form.fields.appearance-expert-mode', true)
-        ->assertSet('form.fields.expert-light-color-primary', '#dc2626')
-        ->assertSet('form.fields.expert-dark-color-primary', '#dc2626')
         ->assertSet('form.fields.expert-light-sidebar-background', '#dc2626')
         ->assertSet('form.fields.expert-light-sidebar-hover', '#ef4444')
         ->assertSet('form.fields.expert-light-sidebar-dropdown', '#b91c1c')
@@ -202,13 +200,10 @@ test('expert appearance inherits the selected presets when it is enabled', funct
 test('changing a preset in expert mode only refreshes its related expert controls', function () {
     Livewire::test(Settings::class)
         ->set('form.fields.appearance-expert-mode', true)
-        ->set('form.fields.expert-light-color-background', '#fefdfc')
         ->set('form.fields.expert-panel-radius', 3)
         ->set('form.fields.color-palette', 'emerald')
-        ->assertSet('form.fields.expert-light-color-primary', '#059669')
-        ->assertSet('form.fields.expert-dark-color-primary', '#059669')
         ->assertSet('form.fields.expert-light-sidebar-background', '#059669')
-        ->assertSet('form.fields.expert-light-color-background', '#fefdfc')
+        ->assertSet('form.fields.expert-dark-sidebar-background', '#059669')
         ->assertSet('form.fields.expert-panel-radius', 3);
 });
 
@@ -222,7 +217,6 @@ test('custom primary colors are promoted into expert mode', function () {
         ->set('form.fields.primary-600', '#dc2626')
         ->set('form.fields.primary-700', '#b91c1c')
         ->set('form.fields.appearance-expert-mode', true)
-        ->assertSet('form.fields.expert-light-color-primary', '#dc2626')
         ->assertSet('form.fields.expert-light-sidebar-background', '#dc2626')
         ->assertSet('form.fields.expert-light-sidebar-icon-hover', '#fecaca');
 });
@@ -245,7 +239,6 @@ test('expert values that were never saved start from the active presets', functi
     ]);
 
     Livewire::test(Settings::class)
-        ->assertSet('form.fields.expert-light-color-primary', '#dc2626')
         ->assertSet('form.fields.expert-light-sidebar-background', '#dc2626');
 });
 

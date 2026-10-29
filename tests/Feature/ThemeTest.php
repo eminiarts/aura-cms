@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
+use Aura\Base\Livewire\Navigation;
 use Aura\Base\Livewire\Settings;
 use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Role;
@@ -221,4 +222,18 @@ test('different options apply correct classes', function ($settings) {
         'result-content' => 'aura-sidebar-darkmode-type-dark',
     ]],
 
+]);
+
+test('the navigation renders the sidebar size it is set to', function (string $size, string $width) {
+    Livewire::test(Settings::class)
+        ->set('form.fields.sidebar-size', $size)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    Livewire::test(Navigation::class)
+        ->assertSeeHtml('aura-sidebar-size-'.$size)
+        ->assertSeeHtml($width);
+})->with([
+    'standard' => ['standard', 'md:w-72'],
+    'compact' => ['compact', 'md:w-56'],
 ]);

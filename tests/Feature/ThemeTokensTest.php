@@ -51,8 +51,8 @@ test('expert tokens override presets only while expert mode is enabled', functio
         'sidebar-size' => 'standard',
         'expert-panel-radius' => 0,
         'expert-section-gap' => 7,
+        // Saved before semantic colors left expert mode; they must not apply.
         'expert-light-color-background' => '#fefdfc',
-        'expert-dark-color-text' => '#abcdef',
         'expert-light-sidebar-background' => '#112233',
         'expert-dark-sidebar-icon-hover' => '#445566',
     ];
@@ -62,8 +62,7 @@ test('expert tokens override presets only while expert mode is enabled', functio
             '--aura-panel-radius' => '0px',
             '--aura-section-gap' => '7px',
         ])
-        ->and(ThemeTokens::colors($settings, 'light')['background'])->toBe('254 253 252')
-        ->and(ThemeTokens::colors($settings, 'dark')['text'])->toBe('171 205 239')
+        ->and(ThemeTokens::colors($settings, 'light')['background'])->toBe('255 255 255')
         ->and(ThemeTokens::sidebarColors($settings, 'light')['--sidebar-bg'])->toBe('17 34 51')
         ->and(ThemeTokens::sidebarColors($settings, 'dark')['--sidebar-icon-hover'])->toBe('68 85 102');
 

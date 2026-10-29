@@ -275,13 +275,29 @@ Other palettes use the fallback values unless they provide their own overrides.
 - `dark` uses `#18181b` with light text.
 
 The sidebar's dark mode appearance, configured with `sidebar-darkmode-type`,
-applies only when the main dark mode setting is auto. Forcing light or dark
-mode does not add the corresponding sidebar class.
+applies whenever the admin renders in dark mode, including when dark mode is
+forced.
 
-The Size setting currently has a limitation. Both standard and compact use
-the same sidebar width, `md:w-56`, because the navigation template checks only
-whether the value is non-empty. It uses the wider `md:w-72` width only for an
-empty value.
+The Size setting controls the sidebar width and item size. `standard` renders
+an 18rem sidebar (`md:w-72`) with 36px items. `compact` and `dense` render a
+14rem sidebar (`md:w-56`) with 32px and 28px items.
+
+## Advanced appearance
+
+The Settings page also sets the interface density and corner radius:
+
+- `interface-density`: `comfortable` or `compact` panel padding and gaps.
+- `corner-radius`: `rounded`, `subtle` or `square` panels and controls.
+
+Both are emitted as CSS variables such as `--aura-panel-padding` and
+`--aura-panel-radius`. Appearance changes preview live on the Settings page
+and can be discarded until they are saved.
+
+Expert mode (`appearance-expert-mode`) exposes the individual spacing, radius,
+sidebar size and sidebar color values in pixels and hex colors. They start
+from the selected presets, and changing a preset updates the values it
+governs. "Restore expert defaults" resets them to the presets. Turning expert
+mode off renders the presets unchanged and keeps the expert values for later.
 
 ## Logos, login backgrounds, and favicons
 

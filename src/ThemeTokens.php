@@ -130,11 +130,7 @@ final class ThemeTokens
         $colors = [];
 
         foreach (self::COLOR_NAMES as $name) {
-            $expertValue = self::expertEnabled($theme)
-                ? ($theme["expert-{$mode}-color-{$name}"] ?? null)
-                : null;
-            $colors[$name] = self::normalizeColor($expertValue)
-                ?? self::normalizeColor($configuredColors[$name] ?? null)
+            $colors[$name] = self::normalizeColor($configuredColors[$name] ?? null)
                 ?? $packageColors[$name];
         }
 
