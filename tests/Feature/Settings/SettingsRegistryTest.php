@@ -174,6 +174,22 @@ test('the sidebar checks each settings page with its own view ability', function
         ->not->toContain(route('aura.settings.page', 'ai'));
 });
 
+test('plugin fields named like expert fields keep their validation', function () {
+    Aura::registerSettingsPages('acme/contact', [
+        new SettingsPage('contact', 'Contact', [[
+            'name' => 'Contact email',
+            'type' => 'Aura\\Base\\Fields\\Text',
+            'slug' => 'expert-contact-email',
+            'validation' => 'required|email',
+        ]]),
+    ]);
+
+    Livewire::test(Settings::class, ['page' => 'contact'])
+        ->set('form.fields.expert-contact-email', 'not-an-email')
+        ->call('save')
+        ->assertHasErrors(['form.fields.expert-contact-email' => 'email']);
+});
+
 test('read-only users cannot run appearance actions', function () {
     Aura::registerSettingsPages('acme/seo', [
         new SettingsPage(

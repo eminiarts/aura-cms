@@ -242,6 +242,15 @@ test('expert values that were never saved start from the active presets', functi
         ->assertSet('form.fields.expert-light-sidebar-background', '#dc2626');
 });
 
+test('a palette change keeps custom sidebar dimensions', function () {
+    Livewire::test(Settings::class)
+        ->set('form.fields.appearance-expert-mode', true)
+        ->set('form.fields.expert-sidebar-item-height', 45)
+        ->set('form.fields.color-palette', 'red')
+        ->assertSet('form.fields.expert-sidebar-item-height', 45)
+        ->assertSet('form.fields.expert-light-sidebar-background', '#dc2626');
+});
+
 test('hidden expert fields do not block saving', function () {
     Livewire::test(Settings::class)
         ->set('form.fields.appearance-expert-mode', true)

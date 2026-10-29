@@ -706,8 +706,8 @@ class Settings extends Component
             'form.fields' => $this->validationRules(),
         ]);
 
-        // Expert fields are hidden while expert mode is off, so their errors could not be seen or fixed.
-        if (! filter_var($this->form['fields']['appearance-expert-mode'] ?? false, FILTER_VALIDATE_BOOL)) {
+        // General's expert fields are hidden while expert mode is off, so their errors could not be seen or fixed.
+        if ($this->page === 'general' && ! filter_var($this->form['fields']['appearance-expert-mode'] ?? false, FILTER_VALIDATE_BOOL)) {
             $rules = array_filter($rules, fn (string $key): bool => ! str_starts_with($key, 'form.fields.expert-'), ARRAY_FILTER_USE_KEY);
         }
 
@@ -879,7 +879,7 @@ class Settings extends Component
     {
         return array_values(array_filter(
             array_keys(self::expertDefaults()),
-            static fn (string $slug): bool => str_contains($slug, '-sidebar-'),
+            static fn (string $slug): bool => preg_match('/^expert-(light|dark)-sidebar-/', $slug) === 1,
         ));
     }
 
