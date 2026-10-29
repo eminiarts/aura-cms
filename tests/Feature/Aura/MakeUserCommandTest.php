@@ -12,6 +12,13 @@ use Illuminate\Support\Facades\Schema;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    $directory = storage_path('command-env');
+    if (! is_dir($directory)) {
+        mkdir($directory, 0755, true);
+    }
+    app()->useEnvironmentPath($directory);
+    file_put_contents(app()->environmentFilePath(), '');
+
     if (! Schema::hasTable('teams')) {
         $this->markTestSkipped('Team tests require the teams schema.');
     }
@@ -34,7 +41,6 @@ describe('with teams enabled', function () {
         $this->assertDatabaseHas('users', [
             'name' => 'John Doe',
             'email' => 'johndoe@example.com',
-            'global_admin' => false,
         ]);
     });
 
@@ -86,7 +92,6 @@ describe('with teams enabled', function () {
         $this->assertDatabaseHas('users', [
             'name' => 'CLI User',
             'email' => 'cli@example.com',
-            'global_admin' => false,
         ]);
     });
 
@@ -113,7 +118,7 @@ describe('with teams enabled', function () {
 
         $user = User::where('email', 'ops@example.com')->first();
 
-        expect($user->global_admin)->toBeTrue();
+        expect($user->isAuraGlobalAdmin())->toBeTrue();
     });
 
     it('creates a Global Admin via the interactive confirmation', function () {
@@ -126,7 +131,7 @@ describe('with teams enabled', function () {
 
         $user = User::where('email', 'interactive-ga@example.com')->first();
 
-        expect($user->global_admin)->toBeTrue();
+        expect($user->isAuraGlobalAdmin())->toBeTrue();
     });
 
     it('creates the first administrator as a Global Admin by default in automation', function () {
@@ -139,7 +144,7 @@ describe('with teams enabled', function () {
 
         $user = User::where('email', 'default-global-admin@example.com')->firstOrFail();
 
-        expect($user->global_admin)->toBeTrue();
+        expect($user->isAuraGlobalAdmin())->toBeTrue();
     });
 
     it('allows automation to opt out of Global Admin', function () {
@@ -153,7 +158,7 @@ describe('with teams enabled', function () {
 
         $user = User::where('email', 'scoped-admin@example.com')->firstOrFail();
 
-        expect($user->global_admin)->toBeFalse();
+        expect($user->isAuraGlobalAdmin())->toBeFalse();
     });
 
     it('names the first team with the --team-name option', function () {
@@ -242,7 +247,7 @@ describe('with teams enabled', function () {
 
         $user = User::where('email', 'plain@example.com')->first();
 
-        expect($user->global_admin)->toBeFalse();
+        expect($user->isAuraGlobalAdmin())->toBeFalse();
     });
 });
 

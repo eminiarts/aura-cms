@@ -162,7 +162,7 @@
                     </div>
                     @endImpersonating
 
-                    @if(config('aura.teams') && Auth::user()->currentTeam)
+                    @if(\Aura\Base\Facades\Aura::area() !== 'global' && config('aura.teams') && Auth::user()->currentTeam)
                         <div class="flex justify-between items-center pb-20 w-full md:pb-0">
                             <x-aura::navigation.team-switcher>
                                 <x-slot:title>

@@ -10,12 +10,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class Team extends Resource
 {
     use SoftDeletes;
+
+    public static array $areas = ['team', 'global'];
 
     public static $customTable = true;
 
@@ -31,7 +35,7 @@ class Team extends Resource
         'name', 'user_id', 'fields',
     ];
 
-    protected static ?string $group = 'Global';
+    protected static ?string $group = 'Admin';
 
     protected $table = 'teams';
 
@@ -40,6 +44,12 @@ class Team extends Resource
     public function actions()
     {
         return [
+            'visitAction' => [
+                'label' => 'Visit',
+                'ability' => User::GLOBAL_ADMIN_GATE,
+                'icon-view' => 'aura::components.icon.team',
+                'conditional_logic' => fn (): bool => Gate::allows(User::GLOBAL_ADMIN_GATE),
+            ],
             'deleteAction' => [
                 'label' => 'Delete',
                 'icon-view' => 'aura::components.actions.trash',
@@ -215,6 +225,16 @@ class Team extends Resource
         return [];
     }
 
+    public function navigation()
+    {
+        $item = parent::navigation();
+        // Teams are listed in the Global Area only; the team area keeps the
+        // routes for the footer's Team Settings and Create New Team links.
+        $item['area'] = 'global';
+
+        return $item;
+    }
+
     public function roles(): HasMany
     {
         return $this->hasMany(Role::class);
@@ -256,16 +276,18 @@ class Team extends Resource
             ->withTimestamps();
     }
 
+    public function visitAction(): RedirectResponse
+    {
+        Gate::authorize(User::GLOBAL_ADMIN_GATE);
+        $user = auth()->user();
+        abort_unless($user instanceof User && $user->switchTeam($this), 403);
+
+        return redirect()->route('aura.dashboard');
+    }
+
     protected static function booted()
     {
         parent::booted();
-
-        // Any team write (create, rename, restore) can change what a Global
-        // Admin's switcher should show — drop the shared cache. created/deleted
-        // also forget it explicitly, but a plain rename only fires saved.
-        static::saved(function ($team) {
-            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
-        });
 
         static::saving(function ($team) {
             // unset title attribute
@@ -305,10 +327,6 @@ class Team extends Resource
                 // Clear cache of Cache('user.'.$user->id.'.teams')
                 Cache::forget('user.'.$user->id.'.teams');
             }
-
-            // A Global Admin's switcher lists every team from one shared cache
-            // key — invalidate it so a newly created team appears immediately.
-            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
 
             // Create all permissions for the team
             GenerateAllResourcePermissions::dispatch($team->id);
@@ -374,9 +392,6 @@ class Team extends Resource
                     Cache::forget('user.'.$userId.'.teams');
                 });
 
-            // Drop the shared Global Admin switcher cache so the deleted team
-            // no longer shows up for Global Admins.
-            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
         });
 
     }

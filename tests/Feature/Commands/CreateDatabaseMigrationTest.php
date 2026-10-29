@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 
 beforeEach(function () {
-    $this->user = createSuperAdmin();
+    $this->user = createGlobalAdmin();
 
     $this->actingAs($this->user);
 
@@ -72,7 +72,7 @@ it('resource editor is accessible', function () {
 
     Aura::clearRoutes();
 
-    $this->get(route('aura.resource.editor', ['slug' => 'Project']))
+    $this->get(route('aura.global.resource.editor', ['slug' => 'Project']))
         ->assertStatus(200)
         ->assertSeeLivewire(ResourceEditor::class);
 });

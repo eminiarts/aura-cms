@@ -38,7 +38,7 @@ php artisan aura:install
 
 Follow the prompts to update Laravel's standard user model, configure Aura, run the migrations, and create the first administrator. For beta4, answer **Yes** when asked whether to use teams. If you do not need teams, use the [separate installation sequence](#without-teams) below.
 
-The administrator creation prompt grants Global Admin status by default. Disable public registration if only administrators should create accounts.
+The administrator creation prompt grants Global Admin status by default by appending the email to `AURA_GLOBAL_ADMINS` in `.env`. Production must set `AURA_GLOBAL_ADMINS` in its environment. Disable public registration if only administrators should create accounts.
 
 Beta4 does not create the public storage link. Run this after the installer:
 

@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Models\Scopes;
 
+use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Aura\Base\Support\TeamExecutionContext;
@@ -57,21 +58,21 @@ class TeamScope implements Scope
 
             // Handle User model specially
             if ($model->getTable() === 'users') {
-                // A Global Admin transcends the team boundary: their user
-                // queries are never restricted to current-team members. The
-                // bypass is gated strictly on the authenticated user being a
-                // Global Admin, so it never leaks into ordinary requests.
-                // (Auth::user() is already resolved here; the $applying guard
-                // above prevents any re-entry while it is read.) The gate is
-                // consulted directly so the check is host-overridable and safe
-                // for any authenticatable, not only the Aura User model.
+                // Match User::indexQuery: Global Admins only bypass the users
+                // boundary in the global area or outside HTTP.
                 $authUser = Auth::user();
-                $isGlobalAdmin = $authUser && Gate::forUser($authUser)->allows(User::GLOBAL_ADMIN_GATE);
+                $isGlobalAdmin = Aura::area() !== 'team'
+                    && $authUser && Gate::forUser($authUser)->allows(User::GLOBAL_ADMIN_GATE);
 
                 if ($currentTeamId) {
                     if (! $isGlobalAdmin) {
-                        $builder->whereHas('teams', function ($query) use ($currentTeamId) {
-                            $query->where('teams.id', $currentTeamId);
+                        // The own row always stays visible: the session guard
+                        // resolves the signed-in user through this scope, and a
+                        // visiting Global Admin is not a member of the team.
+                        $builder->where(function (Builder $query) use ($currentTeamId, $userId) {
+                            $query->whereHas('teams', function ($query) use ($currentTeamId) {
+                                $query->where('teams.id', $currentTeamId);
+                            })->orWhere($query->getModel()->getQualifiedKeyName(), $userId);
                         });
                     }
                 } elseif (! $isGlobalAdmin) {

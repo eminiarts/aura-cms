@@ -26,7 +26,7 @@ Aura stores role definitions, permission labels, and team memberships separately
 
 With teams enabled, the role migration creates a composite unique index on `(slug, team_id)`. Aura treats one row with a null team ID per global role slug as its catalog definition. Without teams, the unique index covers only the slug.
 
-Global Admin status is stored separately on the user as `global_admin`. This boolean is not mass assignable.
+Global Admin status comes from `aura.global_admin.emails`, populated by the comma-separated `AURA_GLOBAL_ADMINS` environment variable.
 
 With teams disabled, these tables have no team columns and all roles share one catalog. The same role and permission checks still run.
 
@@ -363,16 +363,7 @@ The team policy checks memberships and permissions in the target team. A Global 
 <a id="global-admin"></a>
 ## Global Admin
 
-Aura determines Global Admin status through the `AuraGlobalAdmin` gate. By default, this gate reads the user's `global_admin` boolean. Aura defines it in `AuraServiceProvider`:
-
-~~~php
-use Aura\Base\Resources\User;
-use Illuminate\Support\Facades\Gate;
-
-Gate::define(User::GLOBAL_ADMIN_GATE, function ($user) {
-    return (bool) ($user->global_admin ?? false);
-});
-~~~
+Aura determines Global Admin status through the `AuraGlobalAdmin` gate. By default, it compares the user's email with `aura.global_admin.emails`, ignoring case and surrounding whitespace. Configure the comma-separated list with `AURA_GLOBAL_ADMINS`. Existing `users.global_admin` values are ignored.
 
 An application provider can redefine the gate after Aura's provider boots. The gate receives a user argument, so guests fail it.
 
@@ -385,9 +376,9 @@ php artisan aura:user --no-global-admin
 
 The command starts with Global Admin enabled. An interactive run without either flag asks whether to keep it enabled. A non-interactive run keeps it enabled unless `--no-global-admin` is passed.
 
-Only Global Admins can see the Global Admin field on the user form and grant or revoke this status. The field uses `Aura\Base\Fields\GlobalAdmin`, and the flag is excluded from the user's mass-assignable attributes.
+The command appends the user's email to `AURA_GLOBAL_ADMINS` in `.env` without duplicates. Production must set that variable in its environment. No user form grants or revokes Global Admin status. Registration, invitation registration, and email changes cannot claim a configured address unless the acting user is already a Global Admin.
 
-The field's save hook silently ignores changes from guests and team Super Admins. It also ignores changes submitted through registration, invitation registration, mass assignment, or form tampering.
+The Global Admin link opens `/admin/global` by default. Its sidebar contains Teams, Users, Create Resource, and Plugins. The Resource Editor also lives there and remains local-only. Settings remains in the team area. Global Admins see only current-team members in the team Users index and all users in the global Users index.
 
 Global Admin capabilities include:
 
@@ -407,7 +398,7 @@ These are independent checks.
 
 | | Super Admin | Global Admin |
 | --- | --- | --- |
-| Defined by | `super_admin` on a role | `users.global_admin` and the `AuraGlobalAdmin` gate |
+| Defined by | `super_admin` on a role | `aura.global_admin.emails` and the `AuraGlobalAdmin` gate |
 | Effective scope | The team where the role is resolved | The whole instance |
 | Resource policy permission bypass | Yes, after applicable resource toggles | Yes, after applicable resource toggles |
 | TeamScope bypass | No | No for resource data |
