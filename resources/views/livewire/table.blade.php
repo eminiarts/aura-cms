@@ -188,12 +188,12 @@
 
         <div class="mt-4">
 
-            <div class="flex flex-col justify-between w-full md:items-center md:flex-row">
+            <div class="flex w-full flex-col gap-3 md:flex-row md:items-center md:justify-between">
 
                 @if ($this->settings['search'])
-                    <div class="mb-4 md:mb-0">
+                    <div class="w-full md:w-64 md:shrink-0">
                         <label for="table-search" class="sr-only">{{ __('Search') }}</label>
-                        <div class="relative mt-1">
+                        <div class="relative">
                             <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
                                 <svg class="w-4 h-4 text-gray-400" fill="currentColor"
                                     viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -203,14 +203,14 @@
                                 </svg>
                             </div>
                             <input type="text" id="table-search"
-                                class="block py-2 pl-9 pr-3 w-64 max-w-full text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 dark:placeholder:text-gray-500 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"
+                                class="block h-10 w-full py-2 pl-9 pr-3 text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 dark:placeholder:text-gray-500 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"
                                 placeholder="{{ __('Search for items') }}" wire:model.live.debounce="search">
 
                         </div>
                     </div>
                 @endif
 
-                <div class="flex justify-end items-center space-x-4 w-full">
+                <div class="flex w-full items-center justify-end space-x-4 md:w-auto">
 
                     {{-- Columns --}}
                     @if ($this->settings['settings'] || $this->settings['filters'])
