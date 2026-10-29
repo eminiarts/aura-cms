@@ -2,6 +2,7 @@
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resource;
+use Illuminate\Support\Facades\URL;
 
 class NavigationCacheLateResource extends Resource
 {
@@ -23,4 +24,14 @@ test('registering a resource invalidates the cached navigation', function () {
     Aura::registerResources([NavigationCacheLateResource::class]);
 
     expect($slugs())->toContain('navigation-cache-late');
+});
+
+test('navigation cached for one host does not leak its urls to another host', function () {
+    $optionRoute = fn () => Aura::navigation()->flatten(1)->firstWhere('slug', 'option')['route'];
+
+    URL::forceRootUrl('http://localhost');
+    expect($optionRoute())->toStartWith('http://localhost/');
+
+    URL::forceRootUrl('http://127.0.0.1:8000');
+    expect($optionRoute())->toStartWith('http://127.0.0.1:8000/');
 });
