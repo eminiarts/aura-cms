@@ -174,6 +174,35 @@ test('the sidebar checks each settings page with its own view ability', function
         ->not->toContain(route('aura.settings.page', 'ai'));
 });
 
+test('read-only users cannot run appearance actions', function () {
+    Aura::registerSettingsPages('acme/seo', [
+        new SettingsPage(
+            slug: 'seo',
+            title: 'SEO',
+            fields: [[
+                'name' => 'Site Name',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'seo-site-name',
+            ]],
+            viewAbility: 'settings.seo.view',
+        ),
+    ]);
+
+    $viewer = createAdmin();
+    Gate::define('settings.seo.view', fn ($user): bool => $user->id === $viewer->id);
+
+    $this->actingAs($viewer);
+
+    Livewire::test(Settings::class, ['page' => 'seo'])
+        ->assertDontSee('Save')
+        ->call('discardAppearanceChanges')
+        ->assertForbidden();
+
+    Livewire::test(Settings::class, ['page' => 'seo'])
+        ->call('restoreExpertDefaults')
+        ->assertForbidden();
+});
+
 test('settings pages without declared abilities remain restricted to super admins', function () {
     Aura::registerSettingsPages('acme/private', [
         new SettingsPage('private', 'Private', [[

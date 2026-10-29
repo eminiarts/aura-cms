@@ -84,8 +84,17 @@
             x-data="{
                 preview: @js($appearanceState),
                 saved: @js($savedAppearanceState),
-                init() { this.apply(this.preview) },
-                destroy() { this.apply(this.saved) },
+                init() {
+                    this.apply(this.preview)
+                    // Navigation re-renders its root classes from saved settings; keep the preview on top.
+                    this.unhook = Livewire.hook('morphed', ({ el }) => {
+                        if (el.classList?.contains('aura-sidebar')) this.apply(this.preview)
+                    })
+                },
+                destroy() {
+                    this.unhook?.()
+                    this.apply(this.saved)
+                },
                 apply(settings) {
                     const root = document.documentElement
                     const sidebar = document.querySelector('.aura-sidebar')

@@ -227,6 +227,37 @@ test('custom primary colors are promoted into expert mode', function () {
         ->assertSet('form.fields.expert-light-sidebar-icon-hover', '#fecaca');
 });
 
+test('turning expert mode off and on keeps saved expert values', function () {
+    Livewire::test(Settings::class)
+        ->set('form.fields.appearance-expert-mode', true)
+        ->set('form.fields.expert-panel-radius', 3)
+        ->call('save')
+        ->set('form.fields.appearance-expert-mode', false)
+        ->call('save')
+        ->set('form.fields.appearance-expert-mode', true)
+        ->assertSet('form.fields.expert-panel-radius', 3);
+});
+
+test('expert values that were never saved start from the active presets', function () {
+    config([
+        'aura.theme.color-palette' => 'red',
+        'aura.theme.appearance-expert-mode' => true,
+    ]);
+
+    Livewire::test(Settings::class)
+        ->assertSet('form.fields.expert-light-color-primary', '#dc2626')
+        ->assertSet('form.fields.expert-light-sidebar-background', '#dc2626');
+});
+
+test('hidden expert fields do not block saving', function () {
+    Livewire::test(Settings::class)
+        ->set('form.fields.appearance-expert-mode', true)
+        ->set('form.fields.expert-panel-padding', '')
+        ->set('form.fields.appearance-expert-mode', false)
+        ->call('save')
+        ->assertHasNoErrors();
+});
+
 test('Team Settings can be saved2', function () {
     if (! Schema::hasTable('teams')) {
         $this->markTestSkipped('Team tests require the teams schema.');

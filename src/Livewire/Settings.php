@@ -45,6 +45,7 @@ class Settings extends Component
     #[Locked]
     public string $page = 'general';
 
+    #[Locked]
     public array $savedAppearance = [];
 
     /** @return list<string> */
@@ -77,6 +78,8 @@ class Settings extends Component
 
     public function discardAppearanceChanges(): void
     {
+        abort_unless($this->canUpdate, 403);
+
         foreach ($this->savedAppearance as $slug => $value) {
             $this->form['fields'][$slug] = $value;
         }
@@ -669,6 +672,15 @@ class Settings extends Component
             return [$slug => $stored[$slug] ?? $defaults[$slug] ?? ''];
         })->toArray();
 
+        if ($this->page === 'general') {
+            // Expert values that were never saved follow the active presets, not the package defaults.
+            foreach ($this->expertPresetValues() as $slug => $value) {
+                if (! array_key_exists($slug, $stored)) {
+                    $this->form['fields'][$slug] = $value;
+                }
+            }
+        }
+
         $this->rememberSavedAppearance();
 
         $this->model->setAttribute('value', $stored);
@@ -681,6 +693,8 @@ class Settings extends Component
 
     public function restoreExpertDefaults(): void
     {
+        abort_unless($this->canUpdate && $this->page === 'general', 403);
+
         foreach ($this->expertPresetValues() as $slug => $value) {
             $this->form['fields'][$slug] = $value;
         }
@@ -688,9 +702,16 @@ class Settings extends Component
 
     public function rules()
     {
-        return Arr::dot([
+        $rules = Arr::dot([
             'form.fields' => $this->validationRules(),
         ]);
+
+        // Expert fields are hidden while expert mode is off, so their errors could not be seen or fixed.
+        if (! filter_var($this->form['fields']['appearance-expert-mode'] ?? false, FILTER_VALIDATE_BOOL)) {
+            $rules = array_filter($rules, fn (string $key): bool => ! str_starts_with($key, 'form.fields.expert-'), ARRAY_FILTER_USE_KEY);
+        }
+
+        return $rules;
     }
 
     public function save(
@@ -723,23 +744,14 @@ class Settings extends Component
         return app(SettingsRegistry::class)->page($this->page) ?? abort(404);
     }
 
-
     public function updated(string $property, mixed $value): void
     {
         if ($this->page !== 'general') {
             return;
         }
 
-        if ($property === 'form.fields.appearance-expert-mode' && filter_var($value, FILTER_VALIDATE_BOOL)) {
-            $this->applyExpertPresetValues();
-
-            return;
-        }
-
-        if (! filter_var($this->form['fields']['appearance-expert-mode'] ?? false, FILTER_VALIDATE_BOOL)) {
-            return;
-        }
-
+        // A preset change updates the expert values it governs, also while expert mode is off,
+        // so turning expert mode on never resets saved values. "Restore expert defaults" does that.
         $slugs = match ($property) {
             'form.fields.color-palette',
             'form.fields.primary-200',
@@ -768,7 +780,6 @@ class Settings extends Component
             }
         }
     }
-
 
     /** @return list<array<string, mixed>> */
     private static function expertAppearanceFields(): array
