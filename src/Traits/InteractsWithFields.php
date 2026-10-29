@@ -54,6 +54,11 @@ trait InteractsWithFields
         foreach ($this->model->inputFields() as $field) {
             $slug = $field['slug'];
 
+            // Uncast columns get the editor text unchanged: INSERT bindings do not encode arrays.
+            if (! $this->model->hasCast($slug) && ! $this->model->hasSetMutator($slug)) {
+                continue;
+            }
+
             if (array_key_exists($slug, $attributes) && method_exists($field['field'], 'dehydrate')) {
                 $attributes[$slug] = $field['field']->dehydrate($attributes[$slug], $field);
             }

@@ -1,6 +1,7 @@
 <?php
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resource;
 use Illuminate\Database\Schema\Blueprint;
@@ -74,4 +75,24 @@ it('does not fail on undecodable text when the field has no json rule', function
         ->assertHasNoErrors();
 
     expect(DB::table('json_custom_tables')->value('payload'))->toBe('{"enabled": tru');
+});
+
+it('creates a record with editor JSON in an uncast custom-table column', function () {
+    Livewire::test(Create::class, ['slug' => 'json-custom-table'])
+        ->set('form.fields.payload', '{"enabled": true}')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(json_decode(DB::table('json_custom_tables')->value('payload'), true))->toBe(['enabled' => true]);
+});
+
+it('keeps a JSON string value intact in an uncast custom-table column', function () {
+    $record = JsonCustomTableModel::create(['payload' => '{"enabled":false}']);
+
+    Livewire::test(Edit::class, ['slug' => 'json-custom-table', 'id' => $record->id])
+        ->set('form.fields.payload', '"dark"')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(json_decode(DB::table('json_custom_tables')->value('payload'), true))->toBe('dark');
 });

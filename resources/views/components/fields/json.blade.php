@@ -1,7 +1,7 @@
 <x-aura::fields.wrapper :field="$field">
     @php
         $fieldSlug = $field['slug'];
-        $fieldContent = $form['fields'][$fieldSlug] ?? '';
+        $fieldContent = $form['fields'][$fieldSlug] ?? null;
         $content = match (true) {
             $fieldContent === null => '',
             is_string($fieldContent) && json_validate($fieldContent) => $fieldContent,
