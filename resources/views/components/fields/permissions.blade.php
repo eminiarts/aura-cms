@@ -19,6 +19,10 @@
 
     $slugs = fn ($items) => collect($items)->filter()->pluck('slug')->values()->all();
 
+    // __() returns a whole lang file as an array when the text names one
+    // (a group called "validation"), so keep the registered text then.
+    $translate = fn (?string $text) => is_string($translated = __($text ?? '')) ? $translated : $text;
+
     // Slug lists for the Alpine toggles: every permission per group, the ones
     // bulk selection may switch on (all but "scope"), and each ability column.
     $featureGroups = $features->mapWithKeys(fn ($items, $group) => ['feature:'.$group => $slugs($items)]);
@@ -97,8 +101,8 @@
                     @foreach($features as $group => $items)
                         <tr class="transition-colors hover:bg-gray-50/80 dark:hover:bg-white/[0.04]">
                             <th scope="row" class="px-4 py-1 text-left font-normal">
-                                <button type="button" @click="toggleGroup(@js('feature:'.$group))" title="{{ __('Toggle all :group permissions', ['group' => __($group)]) }}" aria-label="{{ __('Toggle all :group permissions', ['group' => __($group)]) }}" class="flex items-baseline gap-2 py-1 text-left whitespace-nowrap rounded-md transition-colors text-gray-900 hover:text-primary-600 dark:text-gray-100 dark:hover:text-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
-                                    <span class="font-medium">{{ __($group) }}</span>
+                                <button type="button" @click="toggleGroup(@js('feature:'.$group))" title="{{ __('Toggle all :group permissions', ['group' => $translate($group)]) }}" aria-label="{{ __('Toggle all :group permissions', ['group' => $translate($group)]) }}" class="flex items-baseline gap-2 py-1 text-left whitespace-nowrap rounded-md transition-colors text-gray-900 hover:text-primary-600 dark:text-gray-100 dark:hover:text-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                                    <span class="font-medium">{{ $translate($group) }}</span>
                                     <span class="text-[11px] font-medium text-gray-400 dark:text-gray-500">
                                         <span x-text="selectedCount(@js('feature:'.$group))"></span>/{{ count($items) }}
                                     </span>
@@ -107,9 +111,9 @@
                             <td class="px-4 py-1.5">
                                 <div class="flex flex-wrap gap-x-4 gap-y-2">
                                     @foreach($items as $item)
-                                        <label for="permissions_{{ $item['slug'] }}" title="{{ __($item['description'] ?? '') }}" class="inline-flex items-center gap-2 py-1 cursor-pointer text-gray-700 dark:text-gray-300">
+                                        <label for="permissions_{{ $item['slug'] }}" title="{{ $translate($item['description']) }}" class="inline-flex items-center gap-2 py-1 cursor-pointer text-gray-700 dark:text-gray-300">
                                             <input x-model="field[@js($item['slug'])]" type="checkbox" id="permissions_{{ $item['slug'] }}" class="{{ $checkboxClass }}">
-                                            <span>{{ __($item['name']) }}</span>
+                                            <span>{{ $translate($item['name']) }}</span>
                                             <span class="text-xs font-mono text-gray-400 dark:text-gray-500">{{ $item['slug'] }}</span>
                                         </label>
                                     @endforeach

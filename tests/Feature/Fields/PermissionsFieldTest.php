@@ -49,6 +49,16 @@ describe('Custom Permissions in the Role Form', function () {
             ->assertSeeHtml('title="Translated description"');
     });
 
+    test('a group named like a lang file renders as registered', function () {
+        Aura::registerPermissions([
+            'box.rules.edit' => ['name' => 'Edit rules', 'group' => 'validation'],
+        ]);
+
+        livewire(Create::class, ['slug' => 'role'])
+            ->assertSee('Edit rules')
+            ->assertSeeHtml('<span class="font-medium">validation</span>');
+    });
+
     test('registered definitions replace database rows with the same slug in the matrix', function () {
         Permission::create(['name' => 'Legacy invite permission', 'slug' => 'invite-users-team', 'group' => 'Legacy team']);
 
