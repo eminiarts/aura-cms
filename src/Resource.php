@@ -388,11 +388,11 @@ class Resource extends Model implements DefinesFields, TableResource
             return $this->{$key};
         }
 
-        if ($class && array_key_exists($key, $this->attributes) && method_exists($class, 'get')) {
+        if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
             return $class->get($class, $this->getAttribute($key), $field);
         }
 
-        if (array_key_exists($key, $this->attributes)) {
+        if (isset($this->attributes[$key])) {
             return $this->getAttribute($key);
         }
 

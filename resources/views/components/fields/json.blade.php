@@ -2,9 +2,11 @@
     @php
         $fieldSlug = $field['slug'];
         $fieldContent = $form['fields'][$fieldSlug] ?? '';
-        $content = is_string($fieldContent) && json_validate($fieldContent)
-            ? $fieldContent
-            : json_encode($fieldContent, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $content = match (true) {
+            $fieldContent === null => '',
+            is_string($fieldContent) && json_validate($fieldContent) => $fieldContent,
+            default => json_encode($fieldContent, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+        };
         $minHeight = (int) (optional($field)['min_height'] ?? 250);
         $maxHeight = (int) (optional($field)['max_height'] ?? 600);
     @endphp

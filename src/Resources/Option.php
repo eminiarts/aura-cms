@@ -122,8 +122,14 @@ class Option extends Resource
      */
     protected function forgetCachedValue(): void
     {
-        $name = (string) $this->name;
+        // On rename, the readers still hold the old name's entries.
+        foreach (array_filter(array_unique([(string) $this->getAttribute('name'), (string) $this->getOriginal('name')])) as $name) {
+            $this->forgetCachedValueFor($name);
+        }
+    }
 
+    private function forgetCachedValueFor(string $name): void
+    {
         Cache::forget($name);
         Cache::forget('aura.'.$name);
 

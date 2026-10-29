@@ -17,7 +17,14 @@ class Json extends Field
             return $value;
         }
 
-        return json_decode($value, true, 512, JSON_THROW_ON_ERROR);
+        if (trim($value) === '') {
+            return;
+        }
+
+        // Fields without a `json` rule can reach this with invalid text; store it unchanged.
+        $decoded = json_decode($value, true);
+
+        return json_last_error() === JSON_ERROR_NONE ? $decoded : $value;
     }
 
     public function display($field, $value, $model)

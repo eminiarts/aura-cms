@@ -156,3 +156,36 @@ it('forgets cached option values when an option is saved', function () {
         ->and(Cache::has('team.1.*'))->toBeFalse()
         ->and($option->fresh()->value)->toBe(['color-palette' => 'blue']);
 });
+
+it('keeps option values intact across consecutive saves', function (mixed $value) {
+    $option = Option::create([
+        'name' => 'repeat-option',
+        'value' => $value,
+    ]);
+
+    Livewire::test(Edit::class, ['slug' => 'option', 'id' => $option->id])
+        ->call('save')
+        ->assertHasNoErrors()
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($option->fresh()->value)->toBe($value);
+})->with([
+    'array' => [['title' => true]],
+    'string' => ['dark'],
+    'array-looking string' => ['[]'],
+    'boolean-looking string' => ['true'],
+]);
+
+it('forgets the cache entries of the old name when an option is renamed', function () {
+    $option = Option::create([
+        'name' => 'team.1.settings',
+        'value' => ['color-palette' => 'orange'],
+    ]);
+
+    Cache::put('1.aura.settings', 'stale');
+
+    $option->update(['name' => 'team.1.archived-settings']);
+
+    expect(Cache::has('1.aura.settings'))->toBeFalse();
+});
