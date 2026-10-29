@@ -21,27 +21,29 @@
             @endif
         </div>
 
-        <div class="flex gap-2 items-center">
-            @if($page === 'general' && ($form['fields']['appearance-expert-mode'] ?? false))
-                <x-aura::button.border size="sm" wire:click="restoreExpertDefaults">
-                    {{ __('Restore expert defaults') }}
-                </x-aura::button.border>
-            @endif
-            @if($page === 'general' && $this->hasAppearanceChanges)
-                <span class="text-xs font-medium text-amber-700 dark:text-amber-300">
-                    {{ __('Unsaved changes') }}
-                </span>
-                <x-aura::button.border size="sm" wire:click="discardAppearanceChanges">
-                    {{ __('Discard changes') }}
-                </x-aura::button.border>
-            @endif
-            <x-aura::button wire:click="save">
-                <div wire:loading wire:target="save">
-                    <x-aura::icon.loading  />
-                </div>
-                {{ __('Save') }}
-            </x-aura::button>
-        </div>
+        @if($canUpdate)
+            <div class="flex gap-2 items-center">
+                @if($page === 'general' && ($form['fields']['appearance-expert-mode'] ?? false))
+                    <x-aura::button.border size="sm" wire:click="restoreExpertDefaults">
+                        {{ __('Restore expert defaults') }}
+                    </x-aura::button.border>
+                @endif
+                @if($page === 'general' && $this->hasAppearanceChanges)
+                    <span class="text-xs font-medium text-amber-700 dark:text-amber-300">
+                        {{ __('Unsaved changes') }}
+                    </span>
+                    <x-aura::button.border size="sm" wire:click="discardAppearanceChanges">
+                        {{ __('Discard changes') }}
+                    </x-aura::button.border>
+                @endif
+                <x-aura::button wire:click="save">
+                    <div wire:loading wire:target="save">
+                        <x-aura::icon.loading  />
+                    </div>
+                    {{ __('Save') }}
+                </x-aura::button>
+            </div>
+        @endif
     </div>
 
     @if($page === 'general')

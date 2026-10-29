@@ -354,32 +354,62 @@
         {{-- Attachment index / media manager modal --}}
         @if ($table && ! $disabled)
             <div class="z-[2] relative flex flex-col">
-                <div class="flex flex-wrap gap-4 justify-between items-start">
-                    <div class="mb-6">
-                        <x-aura::breadcrumbs>
-                            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
-                            <x-aura::breadcrumbs.li :title="__('Media Library')" />
-                        </x-aura::breadcrumbs>
+                @if ($field)
+                    {{-- Picker modal: one dialog heading for the field being edited.
+                         The pr-10 reserves the panel's top-right corner (close
+                         button) so the upload action never collides with it. --}}
+                    <div class="flex items-center justify-between gap-4 pr-10 pb-4 mb-4 border-b border-gray-950/5 dark:border-white/10">
+                        <div class="min-w-0">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                {{ __('Select :field', ['field' => $field['name'] ?? $field['slug'] ?? '']) }}
+                            </h2>
+                            @if (! empty($field['description']))
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __($field['description']) }}</p>
+                            @endif
+                        </div>
+
+                        <div class="flex-shrink-0">
+                            <x-aura::button.border
+                                type="button"
+                                class="flex items-center space-x-2"
+                                x-on:click="triggerFileUpload()">
+                                <x-aura::icon.upload class="w-5 h-5" />
+                                <span>{{ __('Upload Files') }}</span>
+                            </x-aura::button.border>
+                        </div>
+                    </div>
+                @else
+                    {{-- Standalone Media Library page --}}
+                    <div class="flex flex-wrap gap-4 justify-between items-start">
+                        <div class="mb-6">
+                            <x-aura::breadcrumbs>
+                                <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
+                                <x-aura::breadcrumbs.li :title="__('Media Library')" />
+                            </x-aura::breadcrumbs>
+                        </div>
+
+                        <div class="flex justify-end">
+                            <x-aura::button.border
+                                type="button"
+                                class="flex items-center space-x-2"
+                                x-on:click="triggerFileUpload()">
+                                <x-aura::icon.upload class="w-5 h-5" />
+                                <span>{{ __('Upload Files') }}</span>
+                            </x-aura::button.border>
+                        </div>
                     </div>
 
-                    <div class="flex justify-end">
-                        <x-aura::button.border
-                            type="button"
-                            class="flex items-center space-x-2"
-                            x-on:click="triggerFileUpload()">
-                            <x-aura::icon.upload class="w-5 h-5" />
-                            <span>{{ __('Upload Files') }}</span>
-                        </x-aura::button.border>
+                    <div class="flex justify-between items-center mt-0">
+                        <h1 class="text-2xl font-semibold">
+                            {{ __('Media Library') }}
+                        </h1>
                     </div>
-                </div>
+                @endif
 
-                <div class="flex justify-between items-center mt-0">
-                    <h1 class="text-2xl font-semibold">
-                        {{ __('Media Library') }}
-                    </h1>
-                </div>
-
-                <livewire:aura::table wire:key="media-uploader-table" :model="$model" :field="$field" />
+                {{-- In the picker (field set) the dialog heading above is the only
+                     title; hide the table's own heading and its destructive bulk
+                     actions, which do not belong in a selection dialog. --}}
+                <livewire:aura::table wire:key="media-uploader-table" :model="$model" :field="$field" :settings="$field ? ['header' => false, 'bulk_actions' => false] : []" />
             </div>
         @endif
     </div>

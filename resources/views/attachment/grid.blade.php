@@ -80,12 +80,27 @@
         </div>
         @empty
             <div class="col-span-full">
-                <div class="py-12 mx-auto text-center">
-                    <svg class="mx-auto w-12 h-12 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
-                    </svg>
-                    <h3 class="mt-3 text-sm font-medium text-gray-900 dark:text-gray-100">{{ __('No media yet') }}</h3>
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Drag files anywhere on this page or use the Upload Files button.') }}</p>
+                <div class="flex flex-col gap-4 justify-center items-center px-6 py-16 mx-auto max-w-md text-center">
+                    <div class="flex justify-center items-center w-12 h-12 bg-gray-100 rounded-full dark:bg-gray-800">
+                        <x-aura::icon icon="media" class="w-6 h-6 text-gray-400 dark:text-gray-500" />
+                    </div>
+                    <div>
+                        <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ __('No media yet') }}</h3>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {{ __('Drag and drop your first file anywhere in this window, or upload one directly.') }}
+                        </p>
+                    </div>
+                    <div x-data="{ canUpload: !!document.getElementById('file-upload') }">
+                        <x-aura::button.primary
+                            x-cloak
+                            x-show="canUpload"
+                            type="button"
+                            class="flex items-center space-x-2"
+                            x-on:click="document.getElementById('file-upload').click()">
+                            <x-aura::icon.upload class="w-5 h-5" />
+                            <span>{{ __('Upload Files') }}</span>
+                        </x-aura::button.primary>
+                    </div>
                 </div>
             </div>
         @endforelse
@@ -93,15 +108,20 @@
 
     {{ $rows->links() }}
 
-    <div>
-        <p class="text-sm text-gray-600 dark:text-gray-400">
-            {{ count($selected) }} {{ __('selected') }}
+    {{-- Selection count: never shown for single-value fields (the pick itself is
+         the feedback), and hidden for everyone while nothing is selected. --}}
+    @php($maxFiles = (int) (optional($field)['max_files'] ?? 0))
+    @if (count($selected) > 0 && $maxFiles !== 1)
+        <div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+                {{ count($selected) }} {{ __('selected') }}
 
-            @if(optional($field)['max_files'])
-                <span>
-                    ({{ __('Max') }}: {{ $field['max_files'] }})
-                </span>
-            @endif
-        </p>
-    </div>
+                @if($maxFiles > 1)
+                    <span class="text-gray-400 dark:text-gray-500">
+                        ({{ __('Max') }}: {{ $maxFiles }})
+                    </span>
+                @endif
+            </p>
+        </div>
+    @endif
 </div>

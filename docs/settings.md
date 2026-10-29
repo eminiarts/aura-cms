@@ -1,6 +1,6 @@
 # Settings
 
-The Settings page lets administrators configure the admin theme, shared AI connection, and installed plugins. Aura saves these choices in a database option record, separately from configuration files and user preferences.
+The Settings page lets administrators configure the admin theme and installed plugins. Aura saves these choices in a database option record, separately from configuration files and user preferences. AI provider credentials remain in environment-backed configuration; the AI page is read-only.
 
 ![Settings page](/images/docs/settings/settings-general.png)
 
@@ -21,12 +21,12 @@ The route uses the middleware configured as `aura-settings.middleware.aura-admin
 
 ## Access and authorization
 
-When the page opens, the component checks that the settings feature is enabled and that the user is a super admin:
+When the page opens, the component checks that the settings feature is enabled and that the user may view the page:
 
 | Check | Result when it fails |
 | --- | --- |
 | `config('aura.features.settings')` | 404 |
-| `auth()->user()->isSuperAdmin()` | 403 |
+| The page's view access (below) | 403 |
 
 Set the feature flag to `false` to remove the page:
 
@@ -37,7 +37,15 @@ Set the feature flag to `false` to remove the page:
 ],
 ~~~
 
-The page requires a super admin role in the current team. Global admin status alone does not grant access. A global admin can use the page if they also have that role.
+The General page requires a super admin role in the current team. Registered plugin pages may declare their own `viewAbility` and `updateAbility` gates:
+
+- A page without declared abilities is available only to super admins.
+- When a page declares an ability, that gate alone decides. Super admins are not let in automatically, so define the gate so that it allows them, for example by checking a role permission that super admins hold.
+- A page that declares only `viewAbility` can be edited only by super admins.
+- Users who pass the update gate may also view the page.
+- Saving stores only the fields of the page being saved.
+
+The read-only AI status page declares the instance-level Global Admin gate as its view ability, so it is not available to a team Super Admin.
 
 The separate option resource follows the normal resource policy. Super admins and global admins have blanket access through that policy, while other users need the relevant resource permissions. Access to the option resource does not grant access to the Settings page.
 
@@ -46,10 +54,10 @@ The separate option resource follows the normal resource policy. Super admins an
 Every registered settings page has its own sidebar entry and URL:
 
 1. **Settings** (`/admin/settings`, route `aura.settings`) contains the theme and appearance fields below.
-2. **AI** (`/admin/settings/ai`) contains the shared provider, endpoint, model, encrypted API key, and connection test.
+2. **AI** (`/admin/settings/ai`) shows configured Laravel AI SDK providers and connection tests to Global Admins. It contains no editable credentials.
 3. Installed plugins add their own pages with `Aura::registerSettingsPages()`. A page with the slug `seo` is served at `/admin/settings/seo`. Link to it with `route('aura.settings.page', 'seo')`.
 
-All pages save into the same settings record. Saving one page leaves the values of the other pages untouched.
+Editable pages save into the same settings record. Saving one page leaves the values of the other pages untouched.
 
 See [Plugins](/docs/plugins#register-a-settings-page) for the plugin registration interface.
 
@@ -183,7 +191,7 @@ $palette = Aura::setting(
 );
 ~~~
 
-The helper selects the current team's settings when teams are enabled. For fields declared in `secretFields`, it decrypts the value on the server. Never expose a returned secret to a browser response or client-side component.
+The helper selects the current team's settings when teams are enabled. Do not store credentials in Aura settings; use environment-backed Laravel configuration.
 
 Use `SettingsStore` to update the current context programmatically:
 
@@ -279,7 +287,7 @@ $email = Aura::setting('support-email');
 
 ## Cache invalidation
 
-Saving the built-in Settings page invalidates only the cache entries for the shared or current-team settings record. Programmatic changes should use `SettingsStore::put()` or `SettingsStore::store()` for the same scoped invalidation and secret handling.
+Saving the built-in Settings page invalidates only the cache entries for the shared or current-team settings record. Programmatic changes should use `SettingsStore::put()` or `SettingsStore::store()` for the same scoped invalidation.
 
 Updating the option model directly bypasses these guarantees.
 
@@ -291,9 +299,9 @@ These are the supported PHP entry points for this data:
 
 | API | Reads or writes | Context |
 | --- | --- | --- |
-| `Aura::setting($key, $default, $teamId)` | Reads a saved setting and decrypts registered secrets | Current team when teams are enabled. Pass `$teamId` when there is no authenticated user, for example on public routes |
-| `SettingsStore::put($key, $value)` | Writes one setting and encrypts registered secrets | Current team when teams are enabled |
-| `SettingsStore::store($option, $values, $secretFields)` | Writes a form payload and preserves blank registered secrets | The supplied settings option |
+| `Aura::setting($key, $default, $teamId)` | Reads a saved setting | Current team when teams are enabled. Pass `$teamId` when there is no authenticated user, for example on public routes |
+| `SettingsStore::put($key, $value)` | Writes one setting | Current team when teams are enabled |
+| `SettingsStore::store($option, $values)` | Writes a form payload | The supplied settings option |
 | `Aura::getOption($name)` | Reads a cached option value | Current team when teams are enabled |
 | `Aura::updateOption($name, $value)` | Writes an option value and clears facade cache | Current team when teams are enabled |
 | `Aura::option($key)` | Reads a top-level value from `config('aura')` | Application configuration |
@@ -301,7 +309,7 @@ These are the supported PHP entry points for this data:
 | `Option::byName($name)` | Reads an option model | Current query scope |
 | `Team::getOption()` / `updateOption()` / `deleteOption()` | Reads or writes team-prefixed options | One team |
 | `User::getOption()` / `updateOption()` / `deleteOption()` | Reads or writes user-prefixed options | One user and current team |
-| `Aura::registerSettingsPages($source, $pages)` | Registers settings pages, fields, defaults, and secrets | Application boot process |
+| `Aura::registerSettingsPages($source, $pages)` | Registers settings pages, fields, and defaults | Application boot process |
 | `Settings::getFields()` | Resolves the fields from the settings registry | The configured Settings component |
 
 Authorize programmatic writes in your application. The Settings page and the resource interface check access, but the model and facade helpers do not.

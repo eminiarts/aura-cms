@@ -76,7 +76,8 @@ test('a single-select field swaps the selection instead of adding', function () 
     // The Hero field is limited to one file; its picker enforces single-select.
     $page->click('[data-media-picker-button="hero"]')->wait(2);
 
-    $page->assertSee('Max: 1');
+    // One dialog heading for the edited field; single-value pickers show no count.
+    $page->assertSee('Select Hero')->assertDontSee('Max: 1');
 
     $page->click('[data-attachment-card="'.$first->id.'"]')->wait(1);
 

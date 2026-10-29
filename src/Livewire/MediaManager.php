@@ -42,7 +42,16 @@ class MediaManager extends Component
             ->toArray();
         $this->fieldSlug = $slug;
         $this->modalAttributes = $modalAttributes;
+
+        // The resolved field definition becomes Livewire state, so closures
+        // (gate-checked `disabled`, `set` hooks) must not travel with it —
+        // the source definition still drives the form that opened this modal.
         $this->field = app($this->model)->fieldBySlug($this->fieldSlug);
+
+        if (is_array($this->field)) {
+            $this->field = array_filter($this->field, fn ($value) => ! $value instanceof \Closure);
+        }
+
         $this->rowIds = [];
 
         app(MediaAuthorization::class)->authorizeAttachments($this->selected, $user);

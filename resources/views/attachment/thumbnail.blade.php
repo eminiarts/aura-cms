@@ -1,5 +1,7 @@
-{{-- The grid view can render non-Attachment resources; only Attachment-likes have isImage(). --}}
-@if (method_exists($row, 'isImage') && $row->isImage())
+{{-- The grid view can render non-Attachment resources; only Attachment-likes have isImage().
+     SVGs are excluded: the thumbnail pipeline rasterizes via GD, which cannot
+     read SVG, so an <img> would 404 — render the file icon instead. --}}
+@if (method_exists($row, 'isImage') && $row->isImage() && $row->mime_type !== 'image/svg+xml')
     <img src="{{ $row->thumbnail('sm') }}" alt="{{ $row->alt_text ?: $row->name }}" loading="lazy"
         class="object-cover pointer-events-none transition duration-300 group-hover:scale-[1.03]">
 @else
