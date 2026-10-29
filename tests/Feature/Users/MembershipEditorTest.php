@@ -423,7 +423,7 @@ describe('Membership changes take effect in permission checks', function () {
 
         // A FRESH instance resolves the downgraded role: no longer Super Admin,
         // and now bound to exactly the plain role's granted permission.
-        $fresh = User::find($viewed->id);
+        $fresh = User::withoutGlobalScopes()->find($viewed->id);
         expect($fresh->isSuperAdmin())->toBeFalse()
             ->and($fresh->hasPermissionTo('view', new Post))->toBeTrue()
             ->and($fresh->hasPermissionTo('delete', new Post))->toBeFalse();
@@ -446,7 +446,7 @@ describe('Membership changes take effect in permission checks', function () {
             ->assertHasNoErrors();
 
         // The Membership is gone; the resolved role set is empty.
-        $fresh = User::find($viewed->id);
+        $fresh = User::withoutGlobalScopes()->find($viewed->id);
         expect($fresh->isSuperAdmin())->toBeFalse()
             ->and($fresh->hasPermissionTo('view', new Post))->toBeFalse();
     });

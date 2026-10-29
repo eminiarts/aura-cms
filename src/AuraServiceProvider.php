@@ -116,15 +116,8 @@ class AuraServiceProvider extends PackageServiceProvider
         Gate::policy(Resource::class, ResourcePolicy::class);
         Gate::policy(User::class, UserPolicy::class);
 
-        // Global Admin: an instance-level operator that transcends the tenant
-        // boundary. The package resolves it from the users.global_admin flag so
-        // the policy bypasses keyed on isAuraGlobalAdmin() become live out of the
-        // box. Host apps may redefine this gate in their own service provider —
-        // app providers boot after package providers, so a later Gate::define
-        // wins. A required $user param means guests are denied automatically.
-        Gate::define(User::GLOBAL_ADMIN_GATE, function ($user) {
-            return (bool) ($user->global_admin ?? false);
-        });
+        // Host apps may redefine this gate after package providers boot.
+        Gate::define(User::GLOBAL_ADMIN_GATE, fn ($user): bool => Support\GlobalAdminEmails::contains((string) $user->email));
 
         return $this;
     }
@@ -252,7 +245,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasRoutes('web')
             // Migrations are published, then run (ADR 0002: ownership-aware
             // rollback). runsMigrations() cannot load .php.stub files anyway.
-            ->hasMigrations(['create_aura_tables', 'consolidate_per_team_admin_roles', 'add_global_admin_to_users', 'forget_remember_tokens_of_two_factor_users'])
+            ->hasMigrations(['create_aura_tables', 'consolidate_per_team_admin_roles', 'forget_remember_tokens_of_two_factor_users'])
             ->hasCommands([
                 InstallConfigCommand::class,
                 MakeResource::class,
@@ -431,7 +424,8 @@ class AuraServiceProvider extends PackageServiceProvider
                         $createdAdmin = $command->confirm('Do you want to create a user?', true);
 
                         if ($createdAdmin) {
-                            $run('aura:user');
+                            // aura:user asks whether the user is a Global Admin.
+                            $run('aura:user', $command->option('no-global-admin') ? ['--no-global-admin' => true] : []);
                         }
 
                         $finish($command, $createdAdmin);

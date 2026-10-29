@@ -5,6 +5,8 @@ namespace Aura\Base\Commands;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Support\EnvironmentFile;
+use Aura\Base\Support\GlobalAdminEmails;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -61,13 +63,13 @@ class MakeUser extends Command
         }
 
         /** @var User $user */
-        $user = User::create([
+        $user = GlobalAdminEmails::trustedCreation(fn () => User::create([
             'name' => $name,
             'email' => $email,
             'fields' => [
                 'password' => $password,
             ],
-        ]);
+        ]));
 
         Auth::loginUsingId($user->id);
 
@@ -89,11 +91,12 @@ class MakeUser extends Command
             $user->roles()->sync([$role->id]);
         }
 
-        // The CLI is a trusted bootstrap path, so it writes the flag directly.
-        // saveQuietly bypasses the field pipeline's Global Admin escalation guard
-        // (which would otherwise refuse, as the actor is not yet a Global Admin).
         if ($globalAdmin) {
-            $user->forceFill(['global_admin' => true])->saveQuietly();
+            if (! EnvironmentFile::addGlobalAdmin($email)) {
+                $this->warn('No .env file found; set AURA_GLOBAL_ADMINS manually.');
+            }
+
+            $this->line('Production must set AURA_GLOBAL_ADMINS to include '.$email.'.');
         }
 
         $this->info('User created successfully.');

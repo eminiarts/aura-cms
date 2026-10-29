@@ -1006,23 +1006,6 @@ This field assigns roles to a user and respects the current team when [teams](/d
 
 Type: `input`. Although it inherits the input type, the class reports a relationship through `isRelation()`. The built-in user resource supplies the related role resource and allows only one selection.
 
-### GlobalAdmin
-
-This boolean field controls the instance-wide `global_admin` flag on the built-in user resource. It looks and behaves like a boolean toggle.
-
-Only users allowed by the `AuraGlobalAdmin` gate can change the flag. The save hook checks this permission before updating the users table. Attempts by other users leave the stored flag unchanged.
-
-```php
-[
-    'name' => 'Global Admin',
-    'slug' => 'global_admin',
-    'type' => 'Aura\\Base\\Fields\\GlobalAdmin',
-    'default' => false,
-]
-```
-
-Option group: Choice Fields. The inherited field metadata declares a `string` column type. The built-in user resource stores the value in its global admin column through the permission-checked save hook.
-
 ### UserTeams
 
 This field manages team membership on the built-in user resource. It extends the many-to-many table field to scope memberships to the user and provides a dedicated Livewire editor on the user's view page.
@@ -1059,7 +1042,6 @@ The option group is the heading under which a field appears in the resource edit
 | Datetime | input | no | timestamp | Input Fields |
 | Time | input | no | string | Input Fields |
 | Boolean | input | no | string | Choice Fields |
-| GlobalAdmin | input | no | string | Choice Fields |
 | Select | input | no | string | Choice Fields |
 | Radio | input | no | string | Choice Fields |
 | Checkbox | input | no | string | Choice Fields |

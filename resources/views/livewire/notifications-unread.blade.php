@@ -22,7 +22,7 @@
 
                     @if(($notification->data['message'] ?? false) && ($notification->data['id'] ?? false) && ($notification->data['type'] ?? false) && class_exists($notification->data['type']))
                     <div class="flex justify-between items-center">
-                        <a href="{{ route('aura.' . app($notification->data['type'])->getType() . '.edit', ['id' => $notification->data['id']]) }}" class="hover:underline"><h3 class="text-sm font-medium">{{ $notification->data['message'] }}</h3></a>
+                        <a href="{{ route(\Aura\Base\Facades\Aura::resourceRouteName(app($notification->data['type'])->getSlug(), 'edit'), ['id' => $notification->data['id']]) }}" class="hover:underline"><h3 class="text-sm font-medium">{{ $notification->data['message'] }}</h3></a>
                         <p class="text-sm text-gray-500">{{ $notification->created_at->diffForHumans() }}</p>
                     </div>
                     @else

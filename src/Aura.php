@@ -3,6 +3,7 @@
 namespace Aura\Base;
 
 use Aura\Base\Contracts\ResourceActionRegistry;
+use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Livewire\Resource\Index;
@@ -21,15 +22,19 @@ use Aura\Base\Traits\DefaultFields;
 use Closure;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Livewire\Livewire;
 use LogicException;
 use RuntimeException;
 use Symfony\Component\Finder\SplFileInfo;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use WeakMap;
 
 class Aura
 {
@@ -59,6 +64,33 @@ class Aura
     protected array $resources = [];
 
     protected array $widgets = [];
+
+    /** @var WeakMap<Request, string>|null */
+    private ?WeakMap $livewireAreas = null;
+
+    public function area(): ?string
+    {
+        if (! app()->bound('request')) {
+            return null;
+        }
+
+        $request = request();
+
+        if (Livewire::isLivewireRequest() && $request->route()?->named('*livewire.update')) {
+            // The update endpoint has no area of its own: take it from the
+            // page route the component was rendered on (a checksummed path).
+            // Matching routes is not free, so resolve once per request.
+            $this->livewireAreas ??= new WeakMap;
+
+            return $this->livewireAreas[$request] ??= $this->livewireArea($request);
+        }
+
+        if (app()->runningInConsole() && ! $request->route()) {
+            return null;
+        }
+
+        return $request->route()?->defaults['aura_area'] ?? 'team';
+    }
 
     /**
      * Determine if Aura's published assets are up-to-date.
@@ -374,7 +406,8 @@ class Aura
                     return false;
                 }
 
-                return auth()->user()->can('viewAny', $resource);
+                return ($this->area() === null || in_array($this->area(), $resource::$areas, true))
+                    && auth()->user()->can('viewAny', $resource);
             });
 
             // If a Resource is overriden, we want to remove the original from the navigation
@@ -385,13 +418,23 @@ class Aura
             $resources = $resources->filter(function ($value, $key) use ($keys) {
                 return $keys->contains($key);
             })
-                ->map(fn ($r) => app($r)->navigation())
+                ->map(function ($resource) {
+                    $item = app($resource)->navigation();
+                    // A resource in several areas may pin its menu item to one.
+                    $item['area'] ??= $this->area() ?? 'team';
+
+                    return $item;
+                })
                 ->filter(fn ($r) => $r['showInNavigation'] ?? true)
                 ->sortBy('sort');
 
             $resources = app('hook_manager')->applyHooks('navigation', $resources->values());
 
             $resources = $resources->sortBy('sort')->filter(function ($value, $key) {
+                if ($this->area() !== null && ($value['area'] ?? 'team') !== $this->area()) {
+                    return false;
+                }
+
                 if (isset($value['conditional_logic'])) {
                     return app('dynamicFunctions')::call($value['conditional_logic']);
                 }
@@ -447,7 +490,8 @@ class Aura
     public function navigationCacheKey(): string
     {
         return 'user-'.auth()->id()
-            .'-'.auth()->user()->current_team_id
+            .'-'.($this->area() ?? 'none')
+            .($this->area() === 'global' ? '' : '-'.auth()->user()->current_team_id)
             .'-navigation-'.md5(implode(',', $this->getResources()).'|'.implode(',', $this->settingsPageSlugs()).'|'.url('/'));
     }
 
@@ -485,6 +529,14 @@ class Aura
 
     public function registerResources(array $resources): void
     {
+        foreach ($resources as $resource) {
+            if (is_string($resource) && class_exists($resource)
+                && in_array('team', $resource::$areas, true)
+                && $resource::getSlug() === config('aura.global_admin.path')) {
+                throw new LogicException('The resource slug ['.$resource::getSlug().'] is reserved for the Global Admin area.');
+            }
+        }
+
         $this->resources = array_merge($this->resources, $resources);
     }
 
@@ -492,16 +544,37 @@ class Aura
     {
         $resource = $resource ? (is_object($resource) ? get_class($resource) : $resource) : null;
 
-        Route::domain(config('aura.domain'))
-            ->middleware(config('aura-settings.middleware.aura-admin'))
-            ->prefix(config('aura.path')) // This is likely 'admin' from your config
-            ->name('aura.')
-            ->group(function () use ($slug, $resource) {
-                Route::get("/{$slug}", $resource ? $resource::indexComponent() : Index::class)->name("{$slug}.index");
-                Route::get("/{$slug}/create", $resource ? $resource::createComponent() : Create::class)->name("{$slug}.create");
-                Route::get("/{$slug}/{id}/edit", $resource ? $resource::editComponent() : Edit::class)->name("{$slug}.edit");
-                Route::get("/{$slug}/{id}", $resource ? $resource::viewComponent() : View::class)->name("{$slug}.view");
-            });
+        $areas = $resource ? $resource::$areas : ['team'];
+
+        if (in_array('team', $areas, true) && $slug === config('aura.global_admin.path')) {
+            throw new LogicException("The resource slug [{$slug}] is reserved for the Global Admin area.");
+        }
+
+        foreach (array_unique($areas) as $area) {
+            if (! in_array($area, ['team', 'global'], true)) {
+                throw new LogicException("Unknown Aura area [{$area}].");
+            }
+
+            Route::domain(config('aura.domain'))
+                ->middleware(array_merge(config('aura-settings.middleware.aura-admin'), $area === 'global' ? ['can:AuraGlobalAdmin'] : []))
+                ->prefix(trim(config('aura.path').($area === 'global' ? '/'.config('aura.global_admin.path') : ''), '/'))
+                ->name($area === 'global' ? 'aura.global.' : 'aura.')
+                ->group(function () use ($slug, $resource, $area) {
+                    $routes = $slug === 'attachment' ? [
+                        'index' => ["/{$slug}", AttachmentIndex::class],
+                    ] : [
+                        'index' => ["/{$slug}", $resource ? $resource::indexComponent() : Index::class],
+                        'create' => ["/{$slug}/create", $resource ? $resource::createComponent() : Create::class],
+                        'edit' => ["/{$slug}/{id}/edit", $resource ? $resource::editComponent() : Edit::class],
+                        'view' => ["/{$slug}/{id}", $resource ? $resource::viewComponent() : View::class],
+                    ];
+
+                    foreach ($routes as $action => [$path, $component]) {
+                        Route::get($path, $component)->name("{$slug}.{$action}")
+                            ->defaults('slug', $slug)->defaults('aura_area', $area);
+                    }
+                });
+        }
     }
 
     /** @param  list<SettingsPage>  $pages */
@@ -517,6 +590,23 @@ class Aura
     public function registerWidgets(array $widgets): void
     {
         $this->widgets = array_merge($this->widgets, $widgets);
+    }
+
+    /**
+     * Route name for a resource page in the current area. Falls back to the
+     * other area's route when the resource is not registered in this one, so
+     * links to a global-only resource never point at a missing team route.
+     */
+    public function resourceRouteName(string $slug, string $action = 'index'): string
+    {
+        $team = "aura.{$slug}.{$action}";
+        $global = "aura.global.{$slug}.{$action}";
+
+        if ($this->area() === 'global' || ! Route::has($team)) {
+            return Route::has($global) ? $global : $team;
+        }
+
+        return $team;
     }
 
     public function scripts()
@@ -619,6 +709,29 @@ class Aura
             ->useBuildDirectory('vendor/aura')->withEntryPoints([
                 'resources/css/app.css',
             ]);
+    }
+
+    private function livewireArea(Request $request): string
+    {
+        // Rebuild the page request exactly like Livewire's persistent
+        // middleware (makeFakeRequest): swap the update path for the original
+        // path inside REQUEST_URI and restore the method. Scheme, host, base
+        // path and proxy headers carry over, so both resolve the same route.
+        $server = clone $request->server;
+        $server->set('REQUEST_URI', str_replace(
+            '/'.ltrim($request->path(), '/'),
+            '/'.ltrim((string) Livewire::originalPath(), '/'),
+            (string) $server->get('REQUEST_URI'),
+        ));
+        $server->set('REQUEST_METHOD', (string) Livewire::originalMethod());
+
+        try {
+            $route = Route::getRoutes()->match($request->duplicate(server: $server->all()));
+        } catch (HttpExceptionInterface) {
+            return 'team';
+        }
+
+        return $route->defaults['aura_area'] ?? 'team';
     }
 
     /** @return list<string> */

@@ -1,5 +1,19 @@
 <div class="w-64">
-    @if(config('aura.teams'))
+    @if(\Aura\Base\Facades\Aura::area() !== 'global')
+        @can('AuraGlobalAdmin')
+            <div class="block px-4 pt-2 pb-1 text-2xs font-medium tracking-wider uppercase text-gray-400 dark:text-gray-400 select-none">
+                {{ __('Instance') }}
+            </div>
+
+            <x-aura::dropdown-link href="{{ route('aura.global.index') }}">
+                {{ __('Global Admin') }}
+            </x-aura::dropdown-link>
+
+            <div class="my-2 border-t border-gray-100 dark:border-white/10"></div>
+        @endcan
+    @endif
+
+    @if(config('aura.teams') && \Aura\Base\Facades\Aura::area() !== 'global')
         @can('update', Auth::user()->currentTeam)
             <!-- Team Management -->
             <div class="block px-4 pt-2 pb-1 text-2xs font-medium tracking-wider uppercase text-gray-400 dark:text-gray-400 select-none">

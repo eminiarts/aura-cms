@@ -9,7 +9,7 @@ use Livewire\Livewire;
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     config(['aura.features.resource_editor' => true]); // Set config value before database is seeded
-    $this->actingAs($this->user = createSuperAdmin());
+    $this->actingAs($this->user = createGlobalAdmin());
 });
 
 class ConditionalLogicWithClosuresModel extends Resource

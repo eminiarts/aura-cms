@@ -69,18 +69,11 @@ if (! function_exists('browserMembershipExists')) {
 }
 
 if (! function_exists('browserGlobalAdmin')) {
-    /**
-     * A Global Admin who is also a team Super Admin with a KNOWN password. Built
-     * on browserSuperAdmin (attach-don't-mint global `admin` role + own team) and
-     * promoted with a trusted, pipeline-bypassing write (saveQuietly) — the same
-     * posture the CLI bootstrap uses — so the flag is never granted through a
-     * user-facing write path.
-     */
     function browserGlobalAdmin(string $password = 'password', array $attributes = []): User
     {
         $user = browserSuperAdmin($password, $attributes);
 
-        $user->forceFill(['global_admin' => true])->saveQuietly();
+        config(['aura.global_admin.emails' => [...config('aura.global_admin.emails', []), $user->email]]);
 
         return $user->refresh();
     }
