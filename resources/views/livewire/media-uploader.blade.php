@@ -361,7 +361,7 @@
                     <div class="flex items-center justify-between gap-4 pr-10 pb-4 mb-4 border-b border-gray-950/5 dark:border-white/10">
                         <div class="min-w-0">
                             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                {{ __('Select :field', ['field' => $field['name']]) }}
+                                {{ __('Select :field', ['field' => $field['name'] ?? $field['slug'] ?? '']) }}
                             </h2>
                             @if (! empty($field['description']))
                                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __($field['description']) }}</p>

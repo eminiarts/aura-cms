@@ -12,6 +12,9 @@
     }
 
     $files = null;
+
+    // Resolve a gate-checked `disabled` closure here, where the form is in scope.
+    $disabled = (bool) $field['field']->isDisabled($this->form, $field);
 @endphp
 
 @php
@@ -57,7 +60,7 @@
                             <div class="relative">
 
                                 <div
-                                    class="overflow-hidden w-full bg-gray-50 rounded-lg {{ !($field['disabled'] ?? false) ? 'cursor-move' : '' }} draggable-handle group aspect-w-10 aspect-h-7 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100"
+                                    class="overflow-hidden w-full bg-gray-50 rounded-lg {{ ! $disabled ? 'cursor-move' : '' }} draggable-handle group aspect-w-10 aspect-h-7 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100"
                                 >
                                     @if(in_array($file->mime_type, ['image/jpeg', 'image/png', 'image/jpg']))
                                         <img src="{{ $file->thumbnail('xs') }}" alt=""
@@ -70,7 +73,7 @@
 
                                     @endif
                                 </div>
-                                @if(!($field['disabled'] ?? false))
+                                @if(! $disabled)
                                     <div class="absolute top-2 right-2">
 
 
@@ -98,7 +101,7 @@
             :button="true"
             :model="app('Aura\Base\Resources\Attachment')"
             :for="get_class($this->model)"
-            :disabled="$field['disabled'] ?? false"
+            :disabled="$disabled"
         />
 
     </x-aura::fields.wrapper>
