@@ -776,9 +776,29 @@ class Table extends Component
 
     private function isValidMediaType(string $type): bool
     {
-        $modelClass = is_string($this->model) ? $this->model : get_class($this->model);
+        return array_key_exists($type, $this->mediaTypes() ?? []);
+    }
 
-        return array_key_exists($type, $modelClass::MEDIA_TYPES);
+    /**
+     * The MEDIA_TYPES map of the rendered resource, or null when it has none.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function mediaTypes(): ?array
+    {
+        $modelClass = match (true) {
+            is_string($this->model) => $this->model,
+            is_object($this->model) => $this->model::class,
+            default => null,
+        };
+
+        if ($modelClass === null || ! defined($modelClass.'::MEDIA_TYPES')) {
+            return null;
+        }
+
+        $types = constant($modelClass.'::MEDIA_TYPES');
+
+        return is_array($types) ? $types : null;
     }
 
     /**
@@ -792,8 +812,6 @@ class Table extends Component
             return false;
         }
 
-        $modelClass = is_string($this->model) ? $this->model : get_class($this->model);
-
-        return defined($modelClass.'::MEDIA_TYPES');
+        return $this->mediaTypes() !== null;
     }
 }

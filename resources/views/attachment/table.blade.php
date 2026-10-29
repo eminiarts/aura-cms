@@ -245,8 +245,17 @@
                             }
                         },
                     }"
-                    x-init="check()"
-                    @resize.window.debounce.150ms="check()"
+                    x-init="
+                        check();
+                        // Re-check when the toolbar's width changes, including when the
+                        // picker's details panel opens; ignore height changes caused by check() itself.
+                        let width = $el.parentElement.offsetWidth;
+                        new ResizeObserver(Alpine.debounce(() => {
+                            if ($el.parentElement.offsetWidth === width) return;
+                            width = $el.parentElement.offsetWidth;
+                            check();
+                        }, 150)).observe($el.parentElement);
+                    "
                 >
 
                     @if ($this->settings['search'])
@@ -364,7 +373,7 @@
 
                             @if ($this->settings['settings'])
                                 @if ($currentView == 'list' && $model->showTableSettings())
-                                    @include('aura::components.table.settings')
+                                    @include('aura::components.table.settings', ['controlHeight' => 'h-9'])
                                 @endif
                             @endif
 
@@ -374,8 +383,9 @@
                                 @endif
                             @endif
 
+                            {{-- The media toolbar's controls are h-9; resource tables use h-10. --}}
                             @if ($this->settings['filters'])
-                                @include($this->settings['views']['filter'])
+                                @include($this->settings['views']['filter'], ['controlHeight' => 'h-9'])
                             @endif
                         </div>
                     @endif
