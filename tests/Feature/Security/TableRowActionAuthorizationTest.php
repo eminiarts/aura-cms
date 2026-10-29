@@ -113,10 +113,16 @@ test('table view action uses scoped find and never bare model find', function ()
         'type' => SecurityRowActionModel::$type,
     ]);
 
-    // Out-of-scope id must 404 via firstOrFail on the scoped query.
-    expect(fn () => livewire(Table::class, ['query' => null, 'model' => $own])
-        ->call('action', ['action' => 'view', 'id' => $foreign->id]))
-        ->toThrow(ModelNotFoundException::class);
+    // Out-of-scope id must 404 via firstOrFail on the scoped query. Livewire
+    // rethrows ModelNotFoundException in tests before 4.4.6 and renders the
+    // 404 response from 4.4.6 on; composer allows both.
+    try {
+        livewire(Table::class, ['query' => null, 'model' => $own])
+            ->call('action', ['action' => 'view', 'id' => $foreign->id])
+            ->assertStatus(404);
+    } catch (ModelNotFoundException) {
+        // Older Livewire 4 releases surface the same 404 as the exception.
+    }
 
     // In-scope id is authorized and redirects.
     livewire(Table::class, ['query' => null, 'model' => $own])
