@@ -37,7 +37,7 @@
     </div>
     @endif
 
-    <div class="grid gap-6 aura-edit-post-container sm:grid-cols-3">
+    <div class="grid gap-6 aura-edit-post-container grid-cols-1 sm:grid-cols-3">
         <div class="col-span-1 sm:col-span-3">
 
             @if(!$inModal)

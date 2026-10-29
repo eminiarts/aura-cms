@@ -29,7 +29,7 @@
         </div>
     @endif
 
-    <div class="grid gap-6 mt-4 aura-edit-post-container sm:grid-cols-3" x-data="{
+    <div class="grid gap-6 mt-4 aura-edit-post-container grid-cols-1 sm:grid-cols-3" x-data="{
         model: @entangle('form'),
         init() {}
     }">
