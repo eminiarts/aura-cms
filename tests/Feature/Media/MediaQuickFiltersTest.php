@@ -8,6 +8,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Features\SupportTesting\Testable;
+use Livewire\Livewire;
 
 use function Pest\Livewire\livewire;
 
@@ -195,6 +196,106 @@ test('alt text persists on an attachment', function () {
     $attachment->update(['alt_text' => 'A blue square with white text']);
 
     expect(Attachment::find($attachment->id)->alt_text)->toBe('A blue square with white text');
+});
+
+test('standalone type filter is mirrored into the url query string', function () {
+    $component = mediaTable()
+        ->call('setQuickFilter', 'type', 'video');
+
+    $component->assertSet('urlType', 'video');
+
+    // "All" drops only the type — other quick filters survive.
+    $component->call('setQuickFilter', 'month', '2026-05');
+    $component->call('setQuickFilter', 'type', null)
+        ->assertSet('urlType', null)
+        ->assertSet('quickFilters', ['month' => '2026-05']);
+});
+
+test('standalone type filter is restored from the url query string', function () {
+    createAttachmentWithMime('photo.jpg', 'image/jpeg');
+    createAttachmentWithMime('clip.mp4', 'video/mp4');
+
+    $component = Livewire::withQueryParams(['type' => 'image'])
+        ->test(Table::class, [
+            'query' => null,
+            'model' => new Attachment,
+        ]);
+
+    $component->assertSet('urlType', 'image')
+        ->assertSet('quickFilters', ['type' => 'image']);
+
+    expect($component->instance()->rows->getCollection()->map(fn ($r) => $r->name)->all())
+        ->toBe(['photo.jpg']);
+});
+
+test('invalid url type values are discarded', function () {
+    Livewire::withQueryParams(['type' => 'bogus'])
+        ->test(Table::class, [
+            'query' => null,
+            'model' => new Attachment,
+        ])
+        ->assertSet('urlType', null)
+        ->assertSet('quickFilters', []);
+});
+
+test('picker tables keep the type filter out of the url query string', function () {
+    createAttachmentWithMime('photo.jpg', 'image/jpeg');
+
+    Livewire::test(Table::class, [
+        'query' => null,
+        'model' => new Attachment,
+        'field' => [
+            'name' => 'Poster Path',
+            'slug' => 'poster_path',
+            'type' => 'Aura\\Base\\Fields\\Image',
+        ],
+    ])
+        ->call('setQuickFilter', 'type', 'image')
+        ->assertSet('quickFilters', ['type' => 'image'])
+        ->assertSet('urlType', null);
+});
+
+test('standalone media grid never shows the selection-count footer', function () {
+    $image = createAttachmentWithMime('photo.jpg', 'image/jpeg');
+    createAttachmentWithMime('clip.mp4', 'video/mp4');
+
+    // With and without an active selection the standalone page stays silent.
+    Livewire::test(Table::class, ['model' => new Attachment])
+        ->assertDontSee('0 selected')
+        ->set('selected', [$image->id])
+        ->assertDontSee('1 selected');
+});
+
+test('picker grid shows the selection count once something is selected', function () {
+    $image = createAttachmentWithMime('photo.jpg', 'image/jpeg');
+
+    Livewire::test(Table::class, [
+        'model' => new Attachment,
+        'field' => [
+            'name' => 'Poster Path',
+            'slug' => 'poster_path',
+            'type' => 'Aura\\Base\\Fields\\Image',
+        ],
+    ])
+        ->assertDontSee('0 selected')
+        ->set('selected', [$image->id])
+        ->assertSee('1 selected');
+});
+
+test('single-value picker grid stays silent about the selection count', function () {
+    $image = createAttachmentWithMime('photo.jpg', 'image/jpeg');
+
+    Livewire::test(Table::class, [
+        'model' => new Attachment,
+        'field' => [
+            'name' => 'Avatar',
+            'slug' => 'avatar',
+            'type' => 'Aura\\Base\\Fields\\Image',
+            'max_files' => 1,
+        ],
+    ])
+        ->set('selected', [$image->id])
+        ->assertDontSee('1 selected');
 });
 
 class CustomTableAttachment extends Attachment
