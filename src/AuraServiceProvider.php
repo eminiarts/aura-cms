@@ -24,7 +24,6 @@ use Aura\Base\Commands\UpdateSchemaFromMigration;
 use Aura\Base\Contracts\ResourceActionRegistry as ResourceActionRegistryContract;
 use Aura\Base\Database\Seeders\RoleCatalogSeeder;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Livewire\AiProviderStatus;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\AttachmentDetails;
 use Aura\Base\Livewire\BookmarkPage;
@@ -177,7 +176,6 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura::user-teams' => UserTeams::class,
             'aura::modals' => Modals::class,
             'aura::plugins-page' => PluginsPage::class,
-            'aura::ai-provider-status' => AiProviderStatus::class,
             'aura::styleguide' => Styleguide::class,
             'aura::choose-template' => ChooseTemplate::class,
             'aura::two-factor-authentication-form' => TwoFactorAuthenticationForm::class,
@@ -198,7 +196,6 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura.base.livewire.user-teams' => UserTeams::class,
             'aura.base.livewire.modals' => Modals::class,
             'aura.base.livewire.plugins-page' => PluginsPage::class,
-            'aura.base.livewire.ai-provider-status' => AiProviderStatus::class,
             'aura.base.livewire.styleguide' => Styleguide::class,
             'aura.base.livewire.choose-template' => ChooseTemplate::class,
             'aura.base.livewire.two-factor-authentication-form' => TwoFactorAuthenticationForm::class,
