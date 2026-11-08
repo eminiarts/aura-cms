@@ -4,6 +4,7 @@
 'title',
 'icon' => 'arrow-right',
 'iconClass' => '',
+'backTitle' => null,
 ])
 
 @php
@@ -20,8 +21,9 @@ $iconWrapper = 'flex shrink-0 '.($isSeparator ? 'text-gray-300 dark:text-gray-60
 
 // The trail's last titled link is the page's parent: the breadcrumbs wrapper (rendered after its
 // slot) turns it into the phone back link. The home icon has no title and never becomes the parent.
+// backTitle names the link differently on phones (an edit page says "Task", not the record title the H1 repeats).
 if ($href && (string) $title !== '') {
-    request()->attributes->set('aura.breadcrumbs.parent', ['href' => $href, 'title' => $title]);
+    request()->attributes->set('aura.breadcrumbs.parent', ['href' => $href, 'title' => $backTitle ?? $title]);
 }
 @endphp
 

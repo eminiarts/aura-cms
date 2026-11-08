@@ -477,6 +477,76 @@ a.aura-record-card:focus-visible {
     @apply outline-none ring-2 ring-primary-500;
 }
 
+/* Form with a rail: a panel of 33% width or less beside other fields (the task's Properties card)
+   takes the view page's rail, 20rem from lg with the same gap, so edit and view read as one page.
+   The panels' own inline widths (75%, 25%) are for the plain flex-wrap form. */
+.aura-form-rail-layout [data-form-column] > [id$="-wrapper"] {
+    width: 100% !important;
+}
+
+/* Board (kanban). Columns have no fill: a title of dot, name and count, then cards. A card is a
+   13px white tile with a hairline ring and the smallest shadow; the ring darkens on hover. */
+.aura-board-column-title {
+    @apply flex items-center gap-2 px-0.5 pb-2.5 text-sm font-semibold text-gray-900 dark:text-white;
+}
+
+.aura-board-column-count {
+    @apply text-[13px] font-normal tabular-nums text-gray-400 dark:text-gray-500;
+}
+
+.aura-board-card {
+    @apply block rounded-lg bg-white p-3 text-[13px] leading-5 shadow-xs ring-1 ring-gray-950/[0.08] transition duration-150 dark:bg-gray-800 dark:ring-white/10;
+}
+
+a.aura-board-card:hover {
+    @apply ring-gray-950/[0.16] dark:ring-white/20;
+}
+
+a.aura-board-card:focus-visible {
+    @apply outline-none ring-2 ring-primary-500;
+}
+
+.aura-board-card-title {
+    @apply font-medium text-gray-900 dark:text-gray-100;
+}
+
+.aura-board-card-body {
+    @apply mt-0.5 text-gray-500 dark:text-gray-400;
+}
+
+.aura-board-card-meta {
+    @apply mt-2.5 flex h-5 items-center gap-3 text-xs text-gray-500 dark:text-gray-400;
+}
+
+.aura-board-empty {
+    @apply rounded-lg border border-dashed border-gray-200 py-5 text-center text-xs text-gray-400 dark:border-white/10 dark:text-gray-500;
+}
+
+/* Media tile (attachments grid, media library). The hairline sits in an overlay above the image
+   (an inset box-shadow on the box would hide under the <img>), so image and placeholder tiles get
+   the same edge; selected tiles draw a 2px primary ring inside the edge. No shadow, no zoom. */
+.aura-tile-ring {
+    @apply pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-gray-950/[0.08] transition duration-150 dark:ring-white/10;
+}
+
+@media (hover: hover) {
+    :root:not(.aura-pointer-still) .group:hover .aura-tile-ring:not(.aura-tile-ring-selected) {
+        @apply ring-gray-950/[0.16] dark:ring-white/20;
+    }
+}
+
+.aura-tile-ring-selected {
+    @apply ring-2 ring-primary-500 dark:ring-primary-400;
+}
+
+.aura-tile-name {
+    @apply truncate text-[13px] font-medium leading-5 text-gray-900 dark:text-gray-100;
+}
+
+.aura-tile-meta {
+    @apply mt-0.5 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400;
+}
+
 .dark .aura-card {
     @apply bg-gray-800 ring-white/10;
 }

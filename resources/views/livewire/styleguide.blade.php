@@ -555,6 +555,16 @@
                 @endforeach
                 <span class="aura-tag">Other</span>
             </div>
+            {{-- Specimen of fields/select when its options name colors: the trigger shows the selected option's tag. --}}
+            <div class="mt-4 max-w-56">
+                <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Select with colored options') }}</span>
+                <div class="flex relative items-center pr-9 pl-2 mt-2 w-full h-9 bg-white rounded-lg ring-1 shadow-xs ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10">
+                    <span class="aura-tag aura-tag-status bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300">High</span>
+                    <span class="flex absolute inset-y-0 right-0 items-center pr-2.5" aria-hidden="true">
+                        <svg class="text-gray-400 size-4 dark:text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.25 6.25 8 10l3.75-3.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </span>
+                </div>
+            </div>
             <div class="flex flex-wrap gap-1.5 items-center mt-3">
                 @foreach ($statusPills as $label => $classes)
                     <span class="aura-tag aura-tag-status {{ $classes }}">
@@ -716,6 +726,68 @@
             </div>
         </div>
 
+        {{-- Board column and media tiles: the two dense surfaces, both at 13px. --}}
+        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Board column (.aura-board-column-title, .aura-board-card) and media tiles (.aura-tile-ring, .aura-tile-name, .aura-tile-meta)') }}</span>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('A board column has no fill: a title of 8px status dot, name and count, then cards 8px apart; columns sit 20px apart. A card is a 13px tile with a hairline ring and the smallest shadow (hover darkens the ring): title at 500, body at gray-500 clamped to two lines, then a 20px meta row with the due date (red at 500 when overdue), the priority as colored text with a bar mark, and the 20px assignee avatar on the right. An empty column shows a dashed placeholder. A media tile is a 10:7 thumbnail under an inset hairline overlay; selected tiles draw a 2px primary ring inside the edge, no shadow and no zoom. Its caption: the name at 13px 500 (truncated before the extension), then "type · size" at 12px.') }}</p>
+            <div class="grid grid-cols-1 gap-8 mt-4 md:grid-cols-[16rem_minmax(0,1fr)]">
+                <div>
+                    <h3 class="aura-board-column-title">
+                        <svg class="text-blue-500 size-2 shrink-0 fill-current dark:text-blue-400" viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4" /></svg>
+                        <span class="truncate">In progress</span>
+                        <span class="aura-board-column-count">2</span>
+                    </h3>
+                    <div class="space-y-2">
+                        <a href="#cards" class="aura-board-card">
+                            <h4 class="aura-board-card-title">Migrate media library to S3</h4>
+                            <p class="aura-board-card-body line-clamp-2">Move existing attachments to object storage and update the disk configuration for every team.</p>
+                            <div class="aura-board-card-meta">
+                                <span class="inline-flex gap-1 items-center tabular-nums"><svg class="text-gray-400 size-3.5 shrink-0 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>Nov 14</span>
+                                <span class="inline-flex gap-1 items-center font-medium text-amber-700 dark:text-amber-300"><svg class="size-3.5 shrink-0" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="9" width="2.5" height="3" rx="0.75" class="fill-current" /><rect x="5" y="5" width="2.5" height="7" rx="0.75" class="fill-current" /><rect x="9" y="1" width="2.5" height="11" rx="0.75" class="fill-current opacity-25" /></svg>Medium</span>
+                                <x-aura::avatar name="Enes Emini" shape="circle" size="xs" class="ml-auto" />
+                            </div>
+                        </a>
+                        <a href="#cards" class="aura-board-card">
+                            <h4 class="aura-board-card-title">Build kanban board component</h4>
+                            <div class="aura-board-card-meta">
+                                <span class="inline-flex gap-1 items-center font-medium tabular-nums text-red-600 dark:text-red-400"><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>Nov 1</span>
+                                <x-aura::avatar name="Bajram Emini" shape="circle" size="xs" class="ml-auto" />
+                            </div>
+                        </a>
+                        <div class="aura-board-empty">{{ __('No tasks') }}</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-x-4 md:gap-y-5">
+                    @foreach ([
+                        ['northwind-office.jpg', 'JPEG', '49 KB', 'from-orange-200 via-rose-200 to-amber-100', false],
+                        ['brand-moodboard.png', 'PNG', '19 KB', 'from-amber-300 via-yellow-200 to-orange-200', true],
+                        ['proposal-northwind-erp.pdf', 'PDF', '86 KB', null, false],
+                    ] as [$name, $type, $size, $gradient, $selected])
+                        <div class="relative group select-none">
+                            <div class="overflow-hidden relative w-full bg-gray-100 rounded-lg dark:bg-gray-800 aspect-w-10 aspect-h-7">
+                                @if ($gradient)
+                                    <div class="bg-gradient-to-br {{ $gradient }}"></div>
+                                @else
+                                    <div class="flex flex-col gap-1.5 justify-center items-center w-full h-full text-gray-400 bg-gray-100 rounded-lg dark:bg-gray-800 dark:text-gray-500">
+                                        <x-aura::icon.file-document class="w-7 h-7" />
+                                        <span class="px-1 text-[11px] font-medium text-gray-500 dark:text-gray-400">{{ $type }}</span>
+                                    </div>
+                                @endif
+                                <div class="aura-tile-ring {{ $selected ? 'aura-tile-ring-selected' : '' }}"></div>
+                            </div>
+                            @if ($selected)
+                                <div class="absolute top-3 left-3"><x-aura::input.checkbox checked /></div>
+                            @endif
+                            <div class="mt-2">
+                                <p class="aura-tile-name">{{ $name }}</p>
+                                <p class="aura-tile-meta"><span>{{ $type }}</span><span class="text-gray-300 dark:text-gray-600" aria-hidden="true">&middot;</span><span>{{ $size }}</span></p>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-2">
             <div class="aura-card">
                 <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ __('KPI value (widgets/value)') }}</span>
@@ -725,6 +797,33 @@
                         <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
                         8.2%
                     </span>
+                </div>
+            </div>
+            {{-- Specimen of widgets/index on a resource index (compact): one hairline-divided strip, date range as the last cell. --}}
+            <div class="sm:col-span-2">
+                <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Index widget strip (widgets, compact)') }}</span>
+                <div class="flex overflow-hidden flex-wrap gap-px mt-2 rounded-xl ring-1 shadow-xs bg-gray-950/[0.06] ring-gray-950/10 dark:bg-white/10 dark:ring-white/10">
+                    <div class="flex flex-col justify-center px-4 py-3 min-w-0 bg-white dark:bg-gray-800" style="flex: 33 1 11rem">
+                        <span class="text-xs font-medium text-gray-500 truncate dark:text-gray-400">Total tasks</span>
+                        <div class="flex gap-2 items-baseline mt-1">
+                            <span class="text-xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">12</span>
+                            <span class="text-xs font-medium tabular-nums text-green-700 dark:text-green-400">+20%</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-center px-4 py-3 min-w-0 bg-white dark:bg-gray-800" style="flex: 66 1 11rem">
+                        <div class="min-w-0 shrink-0">
+                            <span class="block text-xs font-medium text-gray-500 truncate dark:text-gray-400">Tasks created per day</span>
+                            <span class="block mt-1 text-xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">12</span>
+                        </div>
+                        <svg viewBox="0 0 200 40" preserveAspectRatio="none" class="flex-1 ml-auto max-w-md h-10 text-primary-400" aria-hidden="true">
+                            @foreach ([12, 30, 18, 40, 22, 8, 26, 34, 16, 28, 20, 36] as $i => $h)
+                                <rect x="{{ $i * 16.6 + 3 }}" y="{{ 40 - $h }}" width="10" height="{{ $h }}" rx="2" fill="currentColor" />
+                            @endforeach
+                        </svg>
+                    </div>
+                    <div class="flex grow justify-end items-center px-3 py-2 bg-white dark:bg-gray-800">
+                        <span class="px-2 py-1 text-sm font-medium text-gray-600 dark:text-gray-300">Last 30 days</span>
+                    </div>
                 </div>
             </div>
             <div class="aura-card">
@@ -1086,6 +1185,33 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        {{-- Inbox rows (the notifications page): the dashboard's recently-edited list with a second line. --}}
+        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Inbox rows (notifications page)') }}</span>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('An unboxed hairline list, the same row as Recently edited with a body line: a 6px primary dot in an 8px column for unread, the 28px level icon (neutral for info, tinted for success, warning and error), title and body at 14px, the relative time as .aura-meta in a fixed right column. Unread titles take the leading weight (600) in gray-900; read titles are 500 in gray-700. Row actions appear on hover from sm, in a ⋯ menu on phones.') }}</p>
+            <ul class="mt-4 border-t border-gray-200 divide-y divide-gray-100 dark:border-white/10 dark:divide-white/[0.06]">
+                @foreach ([
+                    ['Deal won', 'Helvetia Capital Partners signed the Portfolio Reporting Platform deal.', '6 hours ago', true, 'bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400'],
+                    ['Task assigned', 'Enes Emini assigned "Review kanban column spacing" to you.', '9 hours ago', true, 'bg-gray-950/[0.04] text-gray-400 dark:bg-white/5 dark:text-gray-500'],
+                    ['Import finished', '10 companies were imported from companies-q4.csv.', '1 day ago', false, 'bg-gray-950/[0.04] text-gray-400 dark:bg-white/5 dark:text-gray-500'],
+                ] as [$title, $body, $time, $unread, $box])
+                    <li class="flex gap-3 items-start py-3 -mx-2 px-2 rounded-md group row-hover:bg-gray-50 dark:row-hover:bg-white/[0.04]">
+                        <span class="flex justify-center items-center w-2 h-7 shrink-0" aria-hidden="true">
+                            @if ($unread)<span class="w-1.5 h-1.5 rounded-full bg-primary-500"></span>@endif
+                        </span>
+                        <span class="flex justify-center items-center w-7 h-7 rounded-md shrink-0 {{ $box }}" aria-hidden="true">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"></path></svg>
+                        </span>
+                        <span class="flex-1 min-w-0">
+                            <span class="block text-sm leading-5 truncate {{ $unread ? 'font-semibold text-gray-900 dark:text-white' : 'font-medium text-gray-700 dark:text-gray-300' }}">{{ $title }}</span>
+                            <span class="block mt-0.5 text-sm leading-5 text-gray-500 dark:text-gray-400 line-clamp-2">{{ $body }}</span>
+                        </span>
+                        <span class="w-20 text-right shrink-0 leading-5 aura-meta">{{ $time }}</span>
+                    </li>
+                @endforeach
+            </ul>
         </div>
     </section>
 

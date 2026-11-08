@@ -7,6 +7,11 @@ use Livewire\Component;
 
 class Widgets extends Component
 {
+    /**
+     * Index pages render value and sparkline widgets as one slim strip.
+     */
+    public $compact = false;
+
     public $end;
 
     public $model;
@@ -19,10 +24,11 @@ class Widgets extends Component
 
     public $widgets;
 
-    public function mount($widgets, $model)
+    public function mount($widgets, $model, $compact = false)
     {
         $this->widgets = $widgets;
         $this->model = $model;
+        $this->compact = (bool) $compact;
 
         $this->selected = $this->model->widgetSettings['default'] ?? 'all';
         $this->updatedSelected();

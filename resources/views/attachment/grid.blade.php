@@ -4,7 +4,8 @@
         x-init="setTimeout(() => $wire.set('recentUploadIds', []), 8000)"
     @endif
 >
-    <div class="grid grid-cols-2 gap-2 my-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-3 md:gap-4 lg:gap-5 sm:my-3 md:my-4 lg:my-5">
+    {{-- Media tiles (.aura-tile-*): one gap from md on, the row gap a step larger than the column gap. --}}
+    <div class="grid grid-cols-2 gap-3 my-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 md:gap-x-4 md:gap-y-5 sm:my-3 md:my-4 lg:my-5">
         @forelse($rows as $row)
         @php
             $isRecentUpload = in_array((string) $row->id, $this->recentUploadIds, true);
@@ -17,14 +18,11 @@
                 x-on:click="@if ($field) toggleRow($event, {{ $row->id }}) @else Livewire.dispatch('open-attachment-details', { id: {{ $row->id }}, ids: rows.map(Number) }) @endif"
                 data-attachment-card="{{ $row->id }}">
                 <div class="relative">
-                    <div class="overflow-hidden relative w-full bg-gray-100 rounded-lg shadow-sm transition-all duration-300 ease-in-out dark:bg-gray-800 aspect-w-10 aspect-h-7 hover:shadow-md focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100 {{ $isRecentUpload ? 'ring-2 ring-green-400 ring-offset-2 dark:ring-offset-gray-900' : '' }}"
-                        :class="{
-                            'shadow-[inset_0_0_0_4px_theme(colors.primary.500)]': selected.includes('{{ $row->id }}'),
-                            'opacity-50': maxFilesReached && !selected.includes('{{ $row->id }}')
-                        }">
+                    <div class="overflow-hidden relative w-full bg-gray-100 rounded-lg dark:bg-gray-800 aspect-w-10 aspect-h-7 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 dark:focus-within:ring-offset-gray-900 {{ $isRecentUpload ? 'ring-2 ring-green-400 ring-offset-2 dark:ring-offset-gray-900' : '' }}"
+                        :class="{ 'opacity-50': maxFilesReached && !selected.includes('{{ $row->id }}') }">
                         @include('aura::attachment.thumbnail')
-                        <div class="rounded-lg absolute inset-0 opacity-0 shadow-[inset_0_0_0_4px_theme(colors.primary.500)]"
-                             :class="{ 'opacity-100': selected.includes('{{ $row->id }}') }"></div>
+                        {{-- Tile edge and selection ring, drawn above the image --}}
+                        <div class="aura-tile-ring" :class="{ 'aura-tile-ring-selected': selected.includes('{{ $row->id }}') }"></div>
                     </div>
 
                     @if ($field)
@@ -66,23 +64,15 @@
                 </div>
             </label>
 
-            @php
-                // Truncate the base name, keep the extension: "master-services-agre….pdf".
-                $extension = pathinfo($row->name, PATHINFO_EXTENSION);
-                $baseName = $extension !== '' ? Str::beforeLast($row->name, '.'.$extension) : $row->name;
-            @endphp
-            <div class="px-1 mt-2">
-                <p class="flex text-sm font-medium text-gray-900 dark:text-gray-100" title="{{ $row->name }}">
-                    <span class="truncate">{{ $baseName }}</span>@if ($extension !== '')<span class="shrink-0">.{{ $extension }}</span>@endif
+            {{-- Caption flush with the thumbnail edge. x-file-name truncates the base name and keeps the
+                 extension ("master-services-agre….pdf"); the media library plugin uses the same caption. --}}
+            <div class="mt-2">
+                <p x-data x-file-name class="aura-tile-name" title="{{ $row->name }}">{{ $row->name }}</p>
+                <p class="aura-tile-meta">
+                    <span>{{ $row->readable_mime_type }}</span>
+                    <span class="text-gray-300 dark:text-gray-600" aria-hidden="true">&middot;</span>
+                    <span>{{ $row->readable_filesize }}</span>
                 </p>
-                <div class="flex justify-between items-center mt-1">
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ $row->readable_mime_type }}
-                    </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ $row->readable_filesize }}
-                    </p>
-                </div>
             </div>
         </div>
         @empty

@@ -1,3 +1,30 @@
+@if ($compact)
+{{-- Compact (index strip): 12px name over a 20px value, the change as quiet colored text. --}}
+<div class="flex flex-col justify-center px-4 py-3 h-full min-w-0" @if (!$isCached) wire:init="loadWidget" @endif wire:key="value-widget-{{ $widget['slug'] ?? '' }}">
+    @if($loaded)
+        @php
+            $hasPrevious = optional($widget)['previous'] !== false
+                && (float) str_replace("'", '', $this->values['previous'] ?? '0') != 0.0;
+        @endphp
+        <span class="text-xs font-medium text-gray-500 truncate dark:text-gray-400">{{ __($widget['name']) }}</span>
+        <div class="flex gap-2 items-baseline mt-1 min-w-0">
+            <span class="text-xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">{{ $this->values['current'] ?? 'N/A' }}</span>
+            @if($hasPrevious)
+                <span class="text-xs font-medium tabular-nums {{ $this->values['change'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400' }}">
+                    <span class="sr-only">{{ $this->values['change'] >= 0 ? __('Increased by') : __('Decreased by') }}</span>
+                    {{ $this->values['change'] >= 0 ? '+' : '' }}{{ $this->values['change'] }}%
+                </span>
+            @endif
+        </div>
+    @else
+        {{-- Static placeholder, no pulse. --}}
+        <div aria-hidden="true">
+            <div class="w-24 h-3 bg-gray-100 rounded dark:bg-gray-700/60"></div>
+            <div class="mt-2 w-12 h-6 bg-gray-100 rounded-md dark:bg-gray-700/60"></div>
+        </div>
+    @endif
+</div>
+@else
 <div class="aura-card h-full" @if (!$isCached) wire:init="loadWidget" @endif wire:key="value-widget-{{ $widget['slug'] ?? '' }}">
 
     @if($loaded)
@@ -72,3 +99,4 @@
         </div>
     @endif
 </div>
+@endif

@@ -198,12 +198,18 @@
 
         <div @class(['mt-4' => $hasToolbar])>
 
-            {{-- One toolbar row at every width: search grows, the controls keep their size and end on the content edge. --}}
+            {{-- One toolbar row: search grows, the controls keep their size and end on the content edge.
+                 Phones with a view switch get two rows: the search full width, then the view switch on the
+                 left and the labelled Filters button (and the view's settings as a "more" menu) on the right. --}}
             @if ($hasToolbar)
-            <div class="flex gap-2 items-center w-full">
+            @php
+                $hasViewSwitch = $model->tableGridView() || ($this->resolvedKanbanConfiguration()['enabled'] ?? false) || $model->tableKanbanView();
+                $twoRowsOnPhones = $hasViewSwitch && ($this->settings['settings'] || $this->settings['filters']);
+            @endphp
+            <div @class(['flex gap-2 items-center w-full', 'max-sm:flex-wrap max-sm:gap-y-3' => $twoRowsOnPhones])>
 
                 @if ($this->settings['search'])
-                    <div class="flex-1 min-w-0 md:max-w-sm">
+                    <div @class(['flex-1 min-w-0 md:max-w-sm', 'max-sm:basis-full' => $twoRowsOnPhones])>
                         <label for="table-search" class="sr-only">{{ __('Search') }}</label>
                         <div class="relative">
                             <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
@@ -222,12 +228,14 @@
                     </div>
                 @endif
 
-                <div class="flex gap-2 items-center ml-auto shrink-0">
+                <div @class(['flex gap-2 items-center ml-auto shrink-0', 'max-sm:w-full' => $twoRowsOnPhones])>
 
                     {{-- Columns --}}
                     @if ($this->settings['settings'] || $this->settings['filters'])
 
-                        @include('aura::components.table.switch-view')
+                        <div @class(['max-sm:mr-auto' => $twoRowsOnPhones])>
+                            @include('aura::components.table.switch-view')
+                        </div>
 
                         @if ($this->settings['settings'])
                             @if ($currentView == 'list' && $model->showTableSettings())
@@ -235,14 +243,17 @@
                             @endif
                         @endif
 
+                        {{-- Board settings: a labelled button from sm, the "more" menu at the end of the row on phones. --}}
                         @if ($this->settings['settings'])
                             @if ($currentView == 'kanban' && $model->showTableSettings())
-                                @include('aura::components.table.kanban-settings')
+                                <div class="max-sm:order-last">
+                                    @include('aura::components.table.kanban-settings')
+                                </div>
                             @endif
                         @endif
 
                         @if ($this->settings['filters'])
-                            @include($this->settings['views']['filter'])
+                            @include($this->settings['views']['filter'], ['labelOnPhones' => $twoRowsOnPhones])
                         @endif
                     @endif
 

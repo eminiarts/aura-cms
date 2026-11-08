@@ -217,14 +217,13 @@
 
         <div class="mt-4">
 
-            {{-- Toolbar. Phones: full-width search, then one row that scrolls sideways (type,
-                 date, view switch, filters) with Columns and Actions pinned at its right edge,
-                 since their menus would be clipped inside the scroll row. From sm the wrappers
-                 dissolve (sm:contents) into one wrapping row: search and quick filters left,
-                 the controls right (sm:order keeps view switch, Columns, Filters, Actions).
-                 The type set stays on one line: when the segmented control no longer fits
-                 (the toolbar wraps), it collapses into a dropdown; phones keep the segment
-                 and scroll it instead. --}}
+            {{-- Toolbar. Phones: three rows, the full-width search, the type segment on its own row
+                 (scrolls sideways when it is wider than the phone), then the date filter left and
+                 the view switch, Filters, Columns and Actions right. From sm the wrappers dissolve
+                 (sm:contents) into one wrapping row: search and quick filters left, the controls
+                 right (sm:order keeps view switch, Columns, Filters, Actions). The type set stays on
+                 one line: when the segmented control no longer fits (the toolbar wraps), it
+                 collapses into a dropdown; phones keep the segment and scroll it instead. --}}
             <div
                 class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
                 x-data="{
@@ -283,12 +282,9 @@
                     </div>
                 @endif
 
-                {{-- Phone row 2: the scroll row plus the pinned menus. --}}
-                <div class="flex gap-2 items-center min-w-0 sm:contents">
-
-                    {{-- Scroll row: quick filters, view switch, filters. The 1px vertical
-                         padding keeps the buttons' rings inside the scroll box. --}}
-                    <div class="flex flex-1 gap-2 items-center py-px -my-px min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:contents" data-media-quick-filters>
+                {{-- Phone row 2: the type segment, scrolling sideways. The 1px vertical padding keeps
+                     the buttons' rings inside the scroll box. --}}
+                <div class="flex py-px -my-px min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:contents" data-media-quick-filters>
                         @php
                             $activeType = $this->quickFilters['type'] ?? null;
                             $activeMonth = $this->quickFilters['month'] ?? null;
@@ -341,12 +337,15 @@
                                 <option value="{{ $typeKey }}" @selected($activeType === $typeKey)>{{ __($typeLabel) }}</option>
                             @endforeach
                         </select>
+                </div>
 
+                {{-- Phone row 3: date left, the view and list controls right. --}}
+                <div class="flex gap-2 items-center min-w-0 sm:contents">
                         @if (count($uploadMonths))
                             <select
                                 wire:change="setQuickFilter('month', $event.target.value)"
                                 data-month-filter
-                                class="px-3 py-1.5 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none shrink-0 border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
+                                class="px-3 py-1.5 min-w-0 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none max-sm:flex-1 sm:shrink-0 border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
                             >
                                 <option value="" @selected($activeMonth === null)>{{ __('All dates') }}</option>
                                 @foreach ($uploadMonths as $month)
@@ -368,7 +367,7 @@
                         @endif
 
                         @if ($this->settings['settings'] || $this->settings['filters'])
-                            <div class="shrink-0 sm:order-1 sm:ml-auto">
+                            <div class="ml-auto shrink-0 sm:order-1">
                                 @include('aura::components.table.switch-view')
                             </div>
 
@@ -379,7 +378,6 @@
                                 </div>
                             @endif
                         @endif
-                    </div>
 
                     @if ($this->settings['settings'])
                         @if ($currentView == 'list' && $model->showTableSettings())

@@ -15,7 +15,7 @@
     {{ app('aura')::injectView('widgets_before') }}
 
     @if ($widgets = $resource->widgets())
-        @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $resource])
+        @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $resource, 'compact' => true])
     @endif
 
     {{ app('aura')::injectView('widgets_after') }}

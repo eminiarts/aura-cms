@@ -99,6 +99,11 @@ class Sparkline extends Widget
         return view('aura::components.widgets.sparkline-area');
     }
 
+    public static function supportsCompact(): bool
+    {
+        return true;
+    }
+
     #[On('dateFilterUpdated')]
     public function updateDateRange(Carbon|DateTimeInterface|string $start, Carbon|DateTimeInterface|string $end): void
     {
