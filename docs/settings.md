@@ -45,7 +45,7 @@ The General page requires a super admin role in the current team. Registered plu
 - Users who pass the update gate may also view the page.
 - Saving stores only the fields of the page being saved.
 
-The read-only AI status page declares the instance-level Global Admin gate as its view ability, so it is not available to a team Super Admin.
+A page can declare the instance-level Global Admin gate (`User::GLOBAL_ADMIN_GATE`) as its view ability, so a team Super Admin cannot open it.
 
 The separate option resource follows the normal resource policy. Super admins and global admins have blanket access through that policy, while other users need the relevant resource permissions. Access to the option resource does not grant access to the Settings page.
 
@@ -54,8 +54,7 @@ The separate option resource follows the normal resource policy. Super admins an
 Every registered settings page has its own sidebar entry and URL:
 
 1. **Settings** (`/admin/settings`, route `aura.settings`) contains the theme and appearance fields below.
-2. **AI** (`/admin/settings/ai`) shows configured Laravel AI SDK providers and connection tests to Global Admins. It contains no editable credentials.
-3. Installed plugins add their own pages with `Aura::registerSettingsPages()`. A page with the slug `seo` is served at `/admin/settings/seo`. Link to it with `route('aura.settings.page', 'seo')`.
+2. Installed plugins add their own pages with `Aura::registerSettingsPages()`. A page with the slug `seo` is served at `/admin/settings/seo`. Link to it with `route('aura.settings.page', 'seo')`.
 
 Editable pages save into the same settings record. Saving one page leaves the values of the other pages untouched.
 

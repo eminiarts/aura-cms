@@ -33,13 +33,27 @@ test('plugins register ordered settings pages through Aura', function () {
         ),
     ]);
 
+    // Registered later but ordered earlier: pages sort by order, not registration.
+    Aura::registerSettingsPages('acme/analytics', [
+        new SettingsPage(
+            slug: 'analytics',
+            title: 'Analytics',
+            fields: [[
+                'name' => 'Tracking ID',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'analytics-tracking-id',
+            ]],
+            order: 10,
+        ),
+    ]);
+
     $registry = app(SettingsRegistry::class);
 
     expect($registry->pages())
         ->sequence(
             fn ($page) => $page->slug->toBe('general'),
+            fn ($page) => $page->slug->toBe('analytics'),
             fn ($page) => $page->slug->toBe('seo'),
-            fn ($page) => $page->slug->toBe('ai'),
         );
 
     Livewire::test(Settings::class)
@@ -307,6 +321,11 @@ test('the registry rejects page and field collisions', function () {
 });
 
 test('read only settings pages never expose a save action', function () {
+    $views = sys_get_temp_dir().'/aura-settings-views-'.uniqid();
+    mkdir($views);
+    file_put_contents($views.'/status.blade.php', '<p>All systems go</p>');
+    view()->addNamespace('settings-test', $views);
+
     Aura::registerSettingsPages('acme/status', [
         new SettingsPage(
             slug: 'status',
@@ -315,12 +334,13 @@ test('read only settings pages never expose a save action', function () {
                 'name' => 'Current status',
                 'type' => 'Aura\\Base\\Fields\\View',
                 'slug' => 'current-status',
-                'view' => 'aura::settings.ai-provider-status',
+                'view' => 'settings-test::status',
             ]],
         ),
     ]);
 
     Livewire::test(Settings::class, ['page' => 'status'])
         ->assertSet('canUpdate', false)
+        ->assertSee('All systems go')
         ->assertDontSee('Save');
 });
