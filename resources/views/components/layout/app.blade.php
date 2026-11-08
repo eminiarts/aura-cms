@@ -72,9 +72,6 @@
             <div class="p-5 md:p-8">
                 {{ $slot }}
             </div>
-            <div class="flex justify-end px-8 pb-8">
-                @include('aura::components.layout.aura-version')
-            </div>
         </div>
     </div>
 

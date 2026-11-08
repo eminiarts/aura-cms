@@ -10,4 +10,9 @@ class Bar extends Sparkline
     {
         return view('aura::components.widgets.bar');
     }
+
+    public static function supportsCompact(): bool
+    {
+        return false;
+    }
 }

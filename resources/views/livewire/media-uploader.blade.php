@@ -324,7 +324,7 @@
                     <x-slot:icon>
                         <x-aura::icon icon="media" class="" />
                     </x-slot>
-                    <span>{{ __('Media Library') }}</span>
+                    <span>{{ __('Media library') }}</span>
                 </x-aura::button.light>
             </div>
         @elseif ($disabled)
@@ -333,7 +333,7 @@
                     <x-slot:icon>
                         <x-aura::icon icon="media" class="" />
                     </x-slot>
-                    <span>{{ __('Media Library is disabled') }}</span>
+                    <span>{{ __('Media library is disabled') }}</span>
                 </x-aura::button.light>
             </div>
         @endif
@@ -346,7 +346,7 @@
                     class="flex items-center space-x-2"
                     x-on:click="triggerFileUpload()">
                     <x-aura::icon.upload class="w-5 h-5" />
-                    <span>{{ __('Upload Files') }}</span>
+                    <span>{{ __('Upload files') }}</span>
                 </x-aura::button.border>
             </div>
         @endif
@@ -374,35 +374,36 @@
                                 class="flex items-center space-x-2"
                                 x-on:click="triggerFileUpload()">
                                 <x-aura::icon.upload class="w-5 h-5" />
-                                <span>{{ __('Upload Files') }}</span>
+                                <span>{{ __('Upload files') }}</span>
                             </x-aura::button.border>
                         </div>
                     </div>
                 @else
-                    {{-- Standalone Media Library page --}}
-                    <div class="flex flex-wrap gap-4 justify-between items-start">
-                        <div class="mb-6">
-                            <x-aura::breadcrumbs>
-                                <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
-                                <x-aura::breadcrumbs.li :title="__('Media Library')" />
-                            </x-aura::breadcrumbs>
-                        </div>
-
-                        <div class="flex justify-end">
-                            <x-aura::button.border
-                                type="button"
-                                class="flex items-center space-x-2"
-                                x-on:click="triggerFileUpload()">
-                                <x-aura::icon.upload class="w-5 h-5" />
-                                <span>{{ __('Upload Files') }}</span>
-                            </x-aura::button.border>
-                        </div>
+                    {{-- Standalone Media Library page: breadcrumb row (phones hide it, as on
+                         resource indexes), then the title row with the upload action, which
+                         shrinks to a 36px icon button on phones. --}}
+                    <div class="hidden sm:block">
+                        <x-aura::breadcrumbs>
+                            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
+                            <x-aura::breadcrumbs.li :title="__('Media library')" />
+                        </x-aura::breadcrumbs>
                     </div>
 
-                    <div class="flex justify-between items-center mt-0">
-                        <h1 class="text-2xl font-semibold">
-                            {{ __('Media Library') }}
+                    <div class="flex gap-4 justify-between items-center mt-1 sm:mt-6">
+                        <h1 class="aura-page-title">
+                            {{ __('Media library') }}
                         </h1>
+
+                        <x-aura::button.border
+                            type="button"
+                            class="shrink-0 max-sm:w-9 max-sm:px-0 max-sm:[&>span:first-child]:ml-0"
+                            title="{{ __('Upload files') }}"
+                            x-on:click="triggerFileUpload()">
+                            <x-slot:icon>
+                                <x-aura::icon.upload />
+                            </x-slot>
+                            <span class="sr-only sm:not-sr-only">{{ __('Upload files') }}</span>
+                        </x-aura::button.border>
                     </div>
                 @endif
 

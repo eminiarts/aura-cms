@@ -6,12 +6,12 @@
     </x-aura::dialog.open>
 
     <x-aura::dialog.panel>
-        <x-aura::dialog.title>{{ __('Save Filter') }}</x-aura::dialog.title>
+        <x-aura::dialog.title>{{ __('Save filter') }}</x-aura::dialog.title>
 
         <div class="mt-5 text-gray-600">
             <div>
                 <x-aura::input.wrapper label="Filter Name*" error="filter.name" :help="__('Enter a Filter Name')">
-                    <x-aura::input.text required wire:model="filter.name" error="filter.name" :placeholder="__('Enter a Name for the Filter')"></x-aura::input.text>
+                    <x-aura::input.text required wire:model="filter.name" error="filter.name" :placeholder="__('Enter a name for the filter')"></x-aura::input.text>
                 </x-aura::input.wrapper>
 
                 <x-aura::input.wrapper label="Icon" error="filter.icon" :help="__('Icon (optional)')">
@@ -20,11 +20,11 @@
             </div>
 
             <div class="mt-4">
-                <x-aura::input.wrapper label="{{ __('Table Tabs') }}" error="filter.global" :help="__('Show above the Table of the Index Page')">
+                <x-aura::input.wrapper label="{{ __('Table tabs') }}" error="filter.global" :help="__('Show above the table on the index page')">
                     <x-aura::input.toggle wire:model="filter.global" error="filter.global" label-after="Add this filter to the Tabs of the Index Page"></x-aura::input.toggle>
                 </x-aura::input.wrapper>
 
-                <x-aura::input.wrapper label="{{ __('Public Filter') }}" error="filter.public" :help="__('Make this filter available for everyone')">
+                <x-aura::input.wrapper label="{{ __('Public filter') }}" error="filter.public" :help="__('Make this filter available for everyone')">
                     <x-aura::input.toggle wire:model="filter.public" error="filter.public" label-after="Make this filter available for everyone"></x-aura::input.toggle>
                 </x-aura::input.wrapper>
             </div>

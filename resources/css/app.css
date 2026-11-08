@@ -46,18 +46,521 @@
     }
 }
 
+/* Numbers line up in tables, stats and amounts everywhere. The bundled Inter applies tnum to the
+   figures only (see public/inter.css), so hyphens and periods in domains keep their normal width. */
+body {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Type scale. Page title > section title > body > meta. Weight 600 is
+   reserved for titles and the leading table column, 500 for labels,
+   buttons and nav, 400 for everything else. */
+.aura-page-title {
+    @apply text-2xl font-semibold text-gray-900 dark:text-white;
+    letter-spacing: var(--aura-tracking-display);
+}
+
+/* Stat value (dashboard cards): 30px, 600, tabular. Color stays on the element so a calm card can mute it. */
+.aura-stat-value {
+    @apply text-3xl font-semibold leading-none;
+    letter-spacing: var(--aura-tracking-display);
+}
+
+/* Display tracking for Inter at 24 to 30px. Inter's own metric lands at -0.02em there; Tailwind's
+   tracking-tight (-0.025em) pinches the round letters. Applies to page titles, stat values, fact numbers. */
+:root {
+    --aura-tracking-display: -0.02em;
+}
+
+.aura-eyebrow {
+    @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+}
+
+.aura-section-title {
+    @apply text-sm font-semibold text-gray-900 dark:text-white;
+}
+
+.aura-body {
+    @apply text-sm text-gray-700 dark:text-gray-300;
+}
+
+.aura-meta {
+    @apply text-xs text-gray-500 dark:text-gray-400;
+}
+
+.aura-table-header {
+    @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+}
+
+/* Section count next to a section title ("Contacts 12"). */
+.aura-section-count {
+    @apply ml-1.5 text-sm font-normal text-gray-400 dark:text-gray-500;
+}
+
+/* Record count next to the page title ("Companies 14"), the page-level twin of the section count. */
+.aura-page-count {
+    @apply ml-2 text-lg font-normal text-gray-400 dark:text-gray-500;
+}
+
+/* Tag family. One 22px chip for every inline enum value: neutral (.aura-tag,
+   option values) and status (.aura-tag-status, tinted with a dot; the tint
+   comes from the option's own color classes). Same height, radius, 12px medium
+   text and padding. The colors sit in :where() so a status option's utility
+   classes override them. Relations are not chips (see .aura-record-link).
+   Used from PHP display() methods too, so it lives in CSS (src/Fields is
+   outside the content globs). */
+.aura-tag {
+    @apply inline-flex max-w-full items-center gap-1.5 whitespace-nowrap px-1.5 text-xs font-medium leading-none;
+    height: 1.375rem;
+    border-radius: calc(var(--aura-control-radius, 0.5rem) * 0.75);
+}
+
+:where(.aura-tag) {
+    @apply bg-gray-950/[0.05] text-gray-700 ring-1 ring-inset ring-gray-950/[0.06];
+}
+
+:where(.dark .aura-tag) {
+    @apply bg-white/[0.07] text-gray-300 ring-white/10;
+}
+
+/* Tinted: the option color classes win over the neutral fill. The ring is the option's own hue at
+   -600/20% (dark: -400/30%), keyed on the text color class the option already names, so a yellow
+   state gets a yellow ring where a mix of its brown -800 text read gray. Options only name fill and
+   text; an option that names its own ring utility still wins (these rules sit in :where()).
+   Status options use -100/-800 with a dot; Select options use the quieter -50/-700 without a
+   dot, so a category reads lighter than a state. */
+.aura-tag-status {
+    @apply ring-1 ring-inset;
+}
+
+:where(.aura-tag-status) {
+    --tw-ring-color: color-mix(in srgb, currentColor 22%, transparent);
+}
+
+:where(.dark .aura-tag-status) {
+    --tw-ring-color: color-mix(in srgb, currentColor 30%, transparent);
+}
+
+:where(.aura-tag-status.text-primary-600, .aura-tag-status.text-primary-700, .aura-tag-status.text-primary-800) { @apply ring-primary-600/20; }
+:where(.aura-tag-status.text-gray-600, .aura-tag-status.text-gray-700, .aura-tag-status.text-gray-800) { @apply ring-gray-500/20; }
+:where(.aura-tag-status.text-red-600, .aura-tag-status.text-red-700, .aura-tag-status.text-red-800) { @apply ring-red-600/20; }
+:where(.aura-tag-status.text-orange-600, .aura-tag-status.text-orange-700, .aura-tag-status.text-orange-800) { @apply ring-orange-600/20; }
+:where(.aura-tag-status.text-amber-600, .aura-tag-status.text-amber-700, .aura-tag-status.text-amber-800) { @apply ring-amber-600/20; }
+:where(.aura-tag-status.text-yellow-600, .aura-tag-status.text-yellow-700, .aura-tag-status.text-yellow-800) { @apply ring-yellow-600/25; }
+:where(.aura-tag-status.text-lime-600, .aura-tag-status.text-lime-700, .aura-tag-status.text-lime-800) { @apply ring-lime-600/25; }
+:where(.aura-tag-status.text-green-600, .aura-tag-status.text-green-700, .aura-tag-status.text-green-800) { @apply ring-green-600/20; }
+:where(.aura-tag-status.text-emerald-600, .aura-tag-status.text-emerald-700, .aura-tag-status.text-emerald-800) { @apply ring-emerald-600/20; }
+:where(.aura-tag-status.text-teal-600, .aura-tag-status.text-teal-700, .aura-tag-status.text-teal-800) { @apply ring-teal-600/20; }
+:where(.aura-tag-status.text-cyan-600, .aura-tag-status.text-cyan-700, .aura-tag-status.text-cyan-800) { @apply ring-cyan-600/20; }
+:where(.aura-tag-status.text-sky-600, .aura-tag-status.text-sky-700, .aura-tag-status.text-sky-800) { @apply ring-sky-600/20; }
+:where(.aura-tag-status.text-blue-600, .aura-tag-status.text-blue-700, .aura-tag-status.text-blue-800) { @apply ring-blue-600/20; }
+:where(.aura-tag-status.text-indigo-600, .aura-tag-status.text-indigo-700, .aura-tag-status.text-indigo-800) { @apply ring-indigo-600/20; }
+:where(.aura-tag-status.text-violet-600, .aura-tag-status.text-violet-700, .aura-tag-status.text-violet-800) { @apply ring-violet-600/20; }
+:where(.aura-tag-status.text-purple-600, .aura-tag-status.text-purple-700, .aura-tag-status.text-purple-800) { @apply ring-purple-600/20; }
+:where(.aura-tag-status.text-fuchsia-600, .aura-tag-status.text-fuchsia-700, .aura-tag-status.text-fuchsia-800) { @apply ring-fuchsia-600/20; }
+:where(.aura-tag-status.text-pink-600, .aura-tag-status.text-pink-700, .aura-tag-status.text-pink-800) { @apply ring-pink-600/20; }
+:where(.aura-tag-status.text-rose-600, .aura-tag-status.text-rose-700, .aura-tag-status.text-rose-800) { @apply ring-rose-600/20; }
+
+:where(.dark .aura-tag-status.dark\:text-primary-300, .dark .aura-tag-status.dark\:text-primary-400) { @apply ring-primary-400/30; }
+:where(.dark .aura-tag-status.dark\:text-gray-300, .dark .aura-tag-status.dark\:text-gray-400) { @apply ring-gray-400/30; }
+:where(.dark .aura-tag-status.dark\:text-red-300, .dark .aura-tag-status.dark\:text-red-400) { @apply ring-red-400/30; }
+:where(.dark .aura-tag-status.dark\:text-orange-300, .dark .aura-tag-status.dark\:text-orange-400) { @apply ring-orange-400/30; }
+:where(.dark .aura-tag-status.dark\:text-amber-300, .dark .aura-tag-status.dark\:text-amber-400) { @apply ring-amber-400/30; }
+:where(.dark .aura-tag-status.dark\:text-yellow-300, .dark .aura-tag-status.dark\:text-yellow-400) { @apply ring-yellow-400/30; }
+:where(.dark .aura-tag-status.dark\:text-lime-300, .dark .aura-tag-status.dark\:text-lime-400) { @apply ring-lime-400/30; }
+:where(.dark .aura-tag-status.dark\:text-green-300, .dark .aura-tag-status.dark\:text-green-400) { @apply ring-green-400/30; }
+:where(.dark .aura-tag-status.dark\:text-emerald-300, .dark .aura-tag-status.dark\:text-emerald-400) { @apply ring-emerald-400/30; }
+:where(.dark .aura-tag-status.dark\:text-teal-300, .dark .aura-tag-status.dark\:text-teal-400) { @apply ring-teal-400/30; }
+:where(.dark .aura-tag-status.dark\:text-cyan-300, .dark .aura-tag-status.dark\:text-cyan-400) { @apply ring-cyan-400/30; }
+:where(.dark .aura-tag-status.dark\:text-sky-300, .dark .aura-tag-status.dark\:text-sky-400) { @apply ring-sky-400/30; }
+:where(.dark .aura-tag-status.dark\:text-blue-300, .dark .aura-tag-status.dark\:text-blue-400) { @apply ring-blue-400/30; }
+:where(.dark .aura-tag-status.dark\:text-indigo-300, .dark .aura-tag-status.dark\:text-indigo-400) { @apply ring-indigo-400/30; }
+:where(.dark .aura-tag-status.dark\:text-violet-300, .dark .aura-tag-status.dark\:text-violet-400) { @apply ring-violet-400/30; }
+:where(.dark .aura-tag-status.dark\:text-purple-300, .dark .aura-tag-status.dark\:text-purple-400) { @apply ring-purple-400/30; }
+:where(.dark .aura-tag-status.dark\:text-fuchsia-300, .dark .aura-tag-status.dark\:text-fuchsia-400) { @apply ring-fuchsia-400/30; }
+:where(.dark .aura-tag-status.dark\:text-pink-300, .dark .aura-tag-status.dark\:text-pink-400) { @apply ring-pink-400/30; }
+:where(.dark .aura-tag-status.dark\:text-rose-300, .dark .aura-tag-status.dark\:text-rose-400) { @apply ring-rose-400/30; }
+
+.aura-tag-dot {
+    @apply shrink-0 fill-current opacity-70;
+    width: 0.375rem;
+    height: 0.375rem;
+}
+
+/* A leading avatar sits 3px from the chip edge. */
+.aura-tag:has(> .aura-avatar:first-child) {
+    padding-left: 0.1875rem;
+}
+
+/* Relation value (BelongsTo in tables and record views): the related record as
+   plain text, 14px gray-900, with its 20px avatar in front, underlined on
+   hover. Reads as a name, not a badge, so a row with three relations stays
+   calm; enum values keep their tags. */
+.aura-record-link {
+    @apply inline-flex max-w-full items-center gap-1.5 align-middle text-sm text-gray-900 decoration-gray-400 underline-offset-[3px] transition-colors duration-150 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:rounded-sm dark:text-gray-100 dark:decoration-gray-500;
+}
+
+.aura-record-link-icon {
+    @apply shrink-0 text-gray-400 dark:text-gray-500;
+}
+
+.aura-record-link-icon svg {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+.aura-record-link-title {
+    @apply truncate;
+}
+
+/* Inline link in a value cell (Text fields holding a URL show the host). Quiet at rest: body color,
+   no underline. On hover the underline and a small external-link mark appear; the mark keeps its
+   space at rest so nothing shifts. */
+.aura-link {
+    @apply text-gray-700 decoration-gray-400 underline-offset-[3px] transition-colors duration-150 hover:underline hover:text-gray-900 dark:text-gray-300 dark:decoration-gray-500 dark:hover:text-white;
+}
+
+.aura-link::after {
+    content: "";
+    display: inline-block;
+    width: 0.6875rem;
+    height: 0.6875rem;
+    margin-left: 0.25rem;
+    vertical-align: -0.0625rem;
+    background-color: currentColor;
+    opacity: 0;
+    transition: opacity 150ms ease-in-out;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3H4.5A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13h7a1.5 1.5 0 0 0 1.5-1.5V9M9.5 3H13v3.5M13 3 7.5 8.5'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3H4.5A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13h7a1.5 1.5 0 0 0 1.5-1.5V9M9.5 3H13v3.5M13 3 7.5 8.5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.aura-link:hover::after,
+.aura-link:focus-visible::after {
+    opacity: 0.7;
+}
+
+/* No external-link mark on mail links, nor on a link flattened to a span (phone list rows). */
+.aura-link[href^="mailto:"]::after,
+.aura-link:not([href])::after {
+    content: none;
+}
+
+/* Entity avatar. Initials on a tint derived from the record title, or the
+   record's own image. Square for organisations and things, circle for people.
+   The eight tones a name maps to (Resource::avatarTones) come from families the
+   tags do not use (blue, orange, teal, gray, yellow, green, red belong to status
+   and category chips) and leave the warm band to them, so an avatar never echoes
+   the tag beside it. The older tone classes stay for callers that pass a tone. */
+.aura-avatar {
+    @apply inline-flex shrink-0 select-none items-center justify-center overflow-hidden font-semibold uppercase leading-none;
+    letter-spacing: 0.02em;
+}
+
+.aura-avatar img {
+    @apply h-full w-full object-cover;
+}
+
+/* xs (20px, relation links) shows both initials at 10px, the same shape and tint as the 24px
+   row avatar one step smaller; sm is the table row size with 11px initials. */
+.aura-avatar-xs { width: 1.25rem; height: 1.25rem; font-size: 0.625rem; letter-spacing: 0; }
+.aura-avatar-sm { width: 1.5rem; height: 1.5rem; font-size: 0.6875rem; }
+.aura-avatar-md { width: 1.75rem; height: 1.75rem; font-size: 0.6875rem; }
+.aura-avatar-lg { width: 2.5rem; height: 2.5rem; font-size: 0.875rem; }
+
+.aura-avatar-circle { border-radius: 9999px; }
+.aura-avatar-square.aura-avatar-xs { border-radius: 0.25rem; }
+.aura-avatar-square.aura-avatar-sm { border-radius: 0.3125rem; }
+.aura-avatar-square.aura-avatar-md { border-radius: 0.375rem; }
+.aura-avatar-square.aura-avatar-lg { border-radius: 0.5rem; }
+
+.aura-avatar-image { @apply bg-gray-100 ring-1 ring-inset ring-gray-950/[0.06] dark:bg-white/10 dark:ring-white/10; }
+.aura-avatar-tone-primary { @apply bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300; }
+.aura-avatar-tone-gray { @apply bg-gray-200 text-gray-700 dark:bg-white/[0.12] dark:text-gray-300; }
+.aura-avatar-tone-blue { @apply bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300; }
+.aura-avatar-tone-green { @apply bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300; }
+.aura-avatar-tone-yellow { @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-300; }
+.aura-avatar-tone-indigo { @apply bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300; }
+.aura-avatar-tone-purple { @apply bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300; }
+.aura-avatar-tone-pink { @apply bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-300; }
+.aura-avatar-tone-orange { @apply bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300; }
+.aura-avatar-tone-teal { @apply bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300; }
+.aura-avatar-tone-violet { @apply bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300; }
+.aura-avatar-tone-fuchsia { @apply bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-500/20 dark:text-fuchsia-300; }
+.aura-avatar-tone-rose { @apply bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300; }
+.aura-avatar-tone-amber { @apply bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300; }
+.aura-avatar-tone-lime { @apply bg-lime-100 text-lime-700 dark:bg-lime-500/20 dark:text-lime-300; }
+.aura-avatar-tone-cyan { @apply bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300; }
+
+/* Row actions (view, edit) sit at gray-500 and, where a pointer can hover, stay hidden until the row
+   is hovered or holds focus. The row itself opens the record (table/row), so they are a shortcut. */
+@media (hover: hover) and (pointer: fine) {
+    .aura-row-actions {
+        opacity: 0;
+        transition: opacity 150ms ease-in-out;
+    }
+
+    :root:not(.aura-pointer-still) tr:hover .aura-row-actions,
+    tr:focus-within .aura-row-actions {
+        opacity: 1;
+    }
+}
+
 .aura-card {
-    @apply p-5 bg-white rounded-xl shadow-sm ring-1 ring-gray-950/10;
+    @apply p-5 bg-white rounded-xl shadow-xs ring-1 ring-gray-950/10;
     padding: var(--aura-panel-padding, 1.25rem);
     border-radius: var(--aura-panel-radius, 0.75rem);
+}
+
+/* Record page.
+   Header: the promoted fields (first Status and first Number field by default,
+   or the resource's recordHeaderFields()) sit under the title as a facts strip,
+   a number large and tabular, a status as its tag.
+   Body: an unboxed details column (every view panel becomes a titled section
+   of label/value rows with hairlines, no card) and, from xl, related records on
+   the right: embedded lists, or small cards for BelongsTo relations when the
+   record has no lists, so a record with four fields is never one stretched card. */
+.aura-record-facts {
+    @apply flex flex-wrap items-stretch gap-x-6 gap-y-3;
+}
+
+/* Record header row (view, edit, create): title block, then actions. From sm the actions sit right of
+   the title. On phones the row dissolves (display: contents) into the surrounding .aura-record-block,
+   a column with 12px gaps, so the actions become a quiet right-aligned row with natural button widths
+   that sorts last: under the facts strip on the view page, under the title on forms. */
+.aura-record-block {
+    @apply flex flex-col gap-3 sm:block;
+}
+
+.aura-record-header {
+    @apply contents sm:flex sm:items-center sm:justify-between sm:gap-4;
+}
+
+.aura-record-header-actions {
+    @apply order-last flex w-full items-center justify-end gap-2 sm:order-none sm:w-auto sm:shrink-0;
+}
+
+/* A row whose buttons all move elsewhere on phones (Edit into the title row, Save and Cancel into the
+   form bar) collapses there instead of leaving an empty band. */
+.aura-record-header-actions.aura-record-header-actions-sm {
+    display: none;
+}
+
+@screen sm {
+    .aura-record-header-actions.aura-record-header-actions-sm {
+        display: flex;
+    }
+}
+
+/* Phone form bar: Save and Cancel pinned to the bottom edge of create and edit forms, above the home
+   indicator. The spacer keeps the last field clear of it. */
+.aura-form-bar {
+    @apply fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-gray-200 bg-white px-5 pt-3 dark:border-white/10 dark:bg-gray-900;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+.aura-form-bar-spacer {
+    height: calc(4.25rem + env(safe-area-inset-bottom));
+}
+
+@screen sm {
+    .aura-form-bar,
+    .aura-form-bar-spacer {
+        display: none;
+    }
+}
+
+.aura-record-fact {
+    @apply flex min-w-0 flex-col justify-center gap-1;
+}
+
+.aura-record-fact + .aura-record-fact {
+    @apply border-l border-gray-200 pl-6 dark:border-white/10;
+}
+
+.aura-record-fact-value {
+    @apply flex min-h-[1.5rem] items-center text-sm font-medium text-gray-900 dark:text-gray-100;
+}
+
+.aura-record-fact-number {
+    @apply text-2xl font-semibold leading-none text-gray-900 dark:text-white;
+    letter-spacing: var(--aura-tracking-display);
+}
+
+/* Record meta line: created and updated time, and the author when the record has one, as one
+   quiet .aura-meta sentence under the details column (or under the related records when the
+   record has no details column). Each time carries its full timestamp as a tooltip. */
+.aura-record-meta {
+    @apply mt-5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-500 dark:text-gray-400;
+}
+
+.aura-record-meta time,
+.aura-record-meta [data-record-meta-author] {
+    @apply text-gray-700 dark:text-gray-300;
+}
+
+.aura-record-meta-sep {
+    @apply text-gray-300 dark:text-gray-600;
+}
+
+/* A view panel: section title, then one row per value. */
+.aura-record-section {
+    @apply mb-6;
+}
+
+.aura-record-section-title {
+    @apply mb-1 border-b border-gray-200 pb-2 text-sm font-semibold text-gray-900 dark:border-white/10 dark:text-white;
+}
+
+.aura-record-section .aura-view-row {
+    @apply border-b border-gray-100 py-2.5 dark:border-white/[0.06];
+}
+
+/* fields.fields wraps the rows in one flex container (-mx-2) and each row in px-4: pull the
+   container out by the difference so the rows sit flush with the section title. The last row
+   closes without a hairline. */
+.aura-record-section-body > div {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    width: calc(100% + 2rem);
+}
+
+.aura-record-section-body > div > div:last-child .aura-view-row {
+    border-bottom: 0;
+}
+
+/* Two-column record page: the details column is narrow, so sections fill it (a panel's own width
+   is for the single-column page), its label column is narrow too, and the related lists beside it
+   use tighter cell padding to fit their columns. */
+@media (min-width: 1280px) {
+    .aura-record-details > [data-record-section],
+    .aura-record-details > .aura-record-section {
+        width: 100% !important;
+    }
+
+    .aura-record-details .aura-view-row {
+        grid-template-columns: 7rem minmax(0, 1fr);
+        column-gap: 0.75rem;
+    }
+
+    .aura-record-columns [data-record-related] th,
+    .aura-record-columns [data-record-related] td {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+}
+
+/* Record page with a right rail (a panel of 33% width or less, the form's sidebar card): sections fill
+   their column, and from lg the 20rem rail uses a narrow label column. */
+.aura-record-rail-layout [data-record-section] {
+    width: 100% !important;
+}
+
+@screen lg {
+    .aura-record-rail .aura-view-row {
+        grid-template-columns: 6.5rem minmax(0, 1fr);
+        column-gap: 0.75rem;
+    }
+}
+
+/* Related-record card (a BelongsTo relation on a record without lists): avatar,
+   resource name, title, then up to three of the related record's own values. */
+.aura-record-card {
+    @apply block rounded-xl bg-white p-4 shadow-xs ring-1 ring-gray-950/10 transition duration-150 dark:bg-gray-800 dark:ring-white/10;
+    border-radius: var(--aura-panel-radius, 0.75rem);
+}
+
+a.aura-record-card:hover {
+    @apply ring-gray-950/20 dark:ring-white/20;
+}
+
+a.aura-record-card:focus-visible {
+    @apply outline-none ring-2 ring-primary-500;
+}
+
+/* Form with a rail: a panel of 33% width or less beside other fields (the task's Properties card)
+   takes the view page's rail, 20rem from lg with the same gap, so edit and view read as one page.
+   The panels' own inline widths (75%, 25%) are for the plain flex-wrap form. */
+.aura-form-rail-layout [data-form-column] > [id$="-wrapper"] {
+    width: 100% !important;
+}
+
+/* Board (kanban). Columns have no fill: a title of dot, name and count, then cards. A card is a
+   13px white tile with a hairline ring and the smallest shadow; the ring darkens on hover. */
+.aura-board-column-title {
+    @apply flex items-center gap-2 px-0.5 pb-2.5 text-sm font-semibold text-gray-900 dark:text-white;
+}
+
+.aura-board-column-count {
+    @apply text-[13px] font-normal tabular-nums text-gray-400 dark:text-gray-500;
+}
+
+.aura-board-card {
+    @apply block rounded-lg bg-white p-3 text-[13px] leading-5 shadow-xs ring-1 ring-gray-950/[0.08] transition duration-150 dark:bg-gray-800 dark:ring-white/10;
+}
+
+a.aura-board-card:hover {
+    @apply ring-gray-950/[0.16] dark:ring-white/20;
+}
+
+a.aura-board-card:focus-visible {
+    @apply outline-none ring-2 ring-primary-500;
+}
+
+.aura-board-card-title {
+    @apply font-medium text-gray-900 dark:text-gray-100;
+}
+
+.aura-board-card-body {
+    @apply mt-0.5 text-gray-500 dark:text-gray-400;
+}
+
+.aura-board-card-meta {
+    @apply mt-2.5 flex h-5 items-center gap-3 text-xs text-gray-500 dark:text-gray-400;
+}
+
+.aura-board-empty {
+    @apply rounded-lg border border-dashed border-gray-200 py-5 text-center text-xs text-gray-400 dark:border-white/10 dark:text-gray-500;
+}
+
+/* Media tile (attachments grid, media library). The hairline sits in an overlay above the image
+   (an inset box-shadow on the box would hide under the <img>), so image and placeholder tiles get
+   the same edge; selected tiles draw a 2px primary ring inside the edge. No shadow, no zoom. */
+.aura-tile-ring {
+    @apply pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-gray-950/[0.08] transition duration-150 dark:ring-white/10;
+}
+
+@media (hover: hover) {
+    :root:not(.aura-pointer-still) .group:hover .aura-tile-ring:not(.aura-tile-ring-selected) {
+        @apply ring-gray-950/[0.16] dark:ring-white/20;
+    }
+}
+
+.aura-tile-ring-selected {
+    @apply ring-2 ring-primary-500 dark:ring-primary-400;
+}
+
+.aura-tile-name {
+    @apply truncate text-[13px] font-medium leading-5 text-gray-900 dark:text-gray-100;
+}
+
+.aura-tile-meta {
+    @apply mt-0.5 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400;
 }
 
 .dark .aura-card {
     @apply bg-gray-800 ring-white/10;
 }
 
+/* Phones: a 12px card inset plus the 8px field gutter puts titles and
+   controls 20px from the card edge on both sides. */
+@media (max-width: 639.98px) {
+    .aura-card {
+        padding: 0.75rem;
+    }
+}
+
 .aura-card-small {
-    @apply p-2 bg-white rounded-lg shadow-sm ring-1 ring-gray-950/10;
+    @apply p-2 bg-white rounded-lg shadow-xs ring-1 ring-gray-950/10;
     padding: var(--aura-panel-small-padding, 0.5rem);
     border-radius: var(--aura-control-radius, 0.5rem);
 }
@@ -163,9 +666,17 @@
     @apply hidden;
 }
 
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 767.98px) {
     .closed-sidebar {
         display: none;
+    }
+}
+
+/* Touch screens keep :hover on the last tapped item, which reads as a second
+   active item in the drawer. Only devices that can hover get the hover fill. */
+@media (hover: none) {
+    .aura-sidebar .aura-sidebar-item.aura-sidebar-item:not(.is-active):hover {
+        background-color: transparent;
     }
 }
 
@@ -189,8 +700,10 @@
 .aura-sidebar-type-light .aura-sidebar-bg {
     @apply text-gray-900 bg-gray-50 border-gray-950/10 shadow-gray-400 md:shadow-none;
 }
+/* The dark sidebar takes the deepest step of the chosen gray palette (slate sits cool next to a blue
+   primary, zinc stays neutral), not a fixed near-black, so it belongs to the theme. */
 .aura-sidebar-type-dark .aura-sidebar-bg {
-    @apply text-gray-300 bg-[#18181b] border-white/10 shadow-gray-400 md:shadow-none;
+    @apply text-gray-300 bg-gray-900 border-white/[0.08] shadow-gray-400 md:shadow-none;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-bg {
@@ -200,7 +713,7 @@
     @apply dark:text-gray-900 dark:border-gray-950/10 dark:bg-gray-50 dark:shadow-gray-400 md:dark:shadow-none;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-bg {
-    @apply dark:text-gray-300 dark:border-white/10 dark:bg-[#18181b] dark:shadow-gray-400 md:dark:shadow-none;
+    @apply dark:text-gray-300 dark:border-white/[0.08] dark:bg-gray-900 dark:shadow-gray-400 md:dark:shadow-none;
 }
 
 
@@ -261,7 +774,7 @@
     @apply scrollbar-thumb-gray-300 scrollbar-track-gray-50
 }
 .aura-sidebar-type-dark .aura-sidebar-scrollbar{
-    @apply scrollbar-thumb-white/10 scrollbar-track-[#18181b];
+    @apply scrollbar-thumb-white/10 scrollbar-track-gray-900;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-scrollbar{
@@ -271,7 +784,7 @@
     @apply dark:scrollbar-thumb-gray-300 dark:scrollbar-track-gray-50
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-scrollbar{
-    @apply dark:scrollbar-thumb-white/10 dark:scrollbar-track-[#18181b];
+    @apply dark:scrollbar-thumb-white/10 dark:scrollbar-track-gray-900;
 }
 
 
@@ -533,9 +1046,9 @@
 .aura-sidebar-type-light .aura-sidebar-icon {
     @apply text-gray-400 group-hover:text-gray-500 group-[.is-active]:text-primary-600;
 }
-/* Dark Sidebar Type */
+/* Dark Sidebar Type: the active item's icon is the one place this sidebar carries the primary color. */
 .aura-sidebar-type-dark .aura-sidebar-icon {
-    @apply text-gray-400 group-hover:text-gray-200 group-[.is-active]:text-white;
+    @apply text-gray-500 group-hover:text-gray-300 group-[.is-active]:text-primary-400;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-icon {
@@ -547,30 +1060,38 @@
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-icon {
-    @apply dark:text-gray-400 dark:group-hover:text-gray-200 dark:group-[.is-active]:text-white;
+    @apply dark:text-gray-500 dark:group-hover:text-gray-300 dark:group-[.is-active]:text-primary-400;
 }
 
-/* .aura-sidebar-heading */
+/* .aura-sidebar-heading (group label: 12px medium, sentence case) */
 .aura-sidebar-heading {}
 .aura-sidebar-type-primary .aura-sidebar-heading{
     @apply text-sidebar-text;
 }
 .aura-sidebar-type-light .aura-sidebar-heading{
-    @apply text-gray-400;
+    @apply text-gray-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-heading {
-    @apply text-gray-400;
+    @apply text-gray-500;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-heading{
     @apply dark:text-sidebar-text;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-heading{
-    @apply dark:text-gray-400;
+    @apply dark:text-gray-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-heading {
-    @apply dark:text-gray-400;
+    @apply dark:text-gray-500;
 }
+
+/* .aura-sidebar-avatar (user card at the bottom) */
+.aura-sidebar-type-primary .aura-sidebar-avatar { @apply ring-white/20; }
+.aura-sidebar-type-light .aura-sidebar-avatar { @apply ring-gray-950/10; }
+.aura-sidebar-type-dark .aura-sidebar-avatar { @apply ring-white/10; }
+.aura-sidebar-darkmode-type-primary .aura-sidebar-avatar { @apply dark:ring-white/20; }
+.aura-sidebar-darkmode-type-light .aura-sidebar-avatar { @apply dark:ring-gray-950/10; }
+.aura-sidebar-darkmode-type-dark .aura-sidebar-avatar { @apply dark:ring-white/10; }
 
 /* .aura-sidebar-heading */
 .aura-sidebar-heading-border {}
@@ -606,26 +1127,34 @@
 .aura-sidebar-type-primary .aura-sidebar-item {
     @apply text-white/70 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
 }
+/* Active item, every sidebar type: a 2px hairline on the left edge plus a tint of the accent
+   (white on the primary sidebar). The tint is the one place the sidebar carries the primary color. */
 .aura-sidebar-type-primary .aura-sidebar-item.is-active {
-    @apply text-white bg-white/15 hover:bg-white/15;
+    @apply relative text-white bg-white/15 hover:bg-white/15;
+}
+.aura-sidebar-type-primary .aura-sidebar-item.is-active::before {
+    content: "";
+    @apply absolute left-0 inset-y-1.5 w-0.5 rounded-full bg-white;
 }
 
 .aura-sidebar-type-light .aura-sidebar-item {
     @apply text-gray-500 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-light .aura-sidebar-item.is-active {
-    @apply text-gray-900 bg-gray-950/5 hover:bg-gray-950/5;
+    @apply relative text-primary-700 bg-primary-50 hover:bg-primary-50;
+}
+.aura-sidebar-type-light .aura-sidebar-item.is-active::before {
+    content: "";
+    @apply absolute left-0 inset-y-1.5 w-0.5 rounded-full bg-primary-600;
 }
 
+/* Dark sidebar: one quiet active state, a white tint with white text and the icon in primary (no
+   edge hairline, no primary fill), so the current item reads as "here", not as a second button. */
 .aura-sidebar-type-dark .aura-sidebar-item {
-    @apply text-gray-300 bg-transparent hover:text-white hover:bg-white/[0.06] focus-visible:ring-primary-500;
+    @apply text-gray-400 bg-transparent hover:text-gray-100 hover:bg-white/[0.06] focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-item.is-active {
-    @apply relative text-white bg-white/[0.07] hover:bg-white/[0.08];
-}
-.aura-sidebar-type-dark .aura-sidebar-item.is-active::before {
-    content: "";
-    @apply absolute left-0 inset-y-1.5 w-0.5 rounded-full bg-primary-500;
+    @apply text-white bg-white/[0.08] hover:bg-white/[0.08];
 }
 
 /* Dark */
@@ -633,25 +1162,29 @@
     @apply dark:text-white/70 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
 }
 .aura-sidebar-darkmode-type-primary .aura-sidebar-item.is-active {
-    @apply dark:text-white dark:bg-white/15 dark:hover:bg-white/15;
+    @apply dark:relative dark:text-white dark:bg-white/15 dark:hover:bg-white/15;
+}
+.aura-sidebar-darkmode-type-primary .aura-sidebar-item.is-active::before {
+    content: "";
+    @apply dark:absolute dark:left-0 dark:inset-y-1.5 dark:w-0.5 dark:rounded-full dark:bg-white;
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-item {
     @apply dark:text-gray-500 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-item.is-active {
-    @apply dark:text-gray-900 dark:bg-gray-950/5 dark:hover:bg-gray-950/5;
+    @apply dark:relative dark:text-primary-700 dark:bg-primary-50 dark:hover:bg-primary-50;
+}
+.aura-sidebar-darkmode-type-light .aura-sidebar-item.is-active::before {
+    content: "";
+    @apply dark:absolute dark:left-0 dark:inset-y-1.5 dark:w-0.5 dark:rounded-full dark:bg-primary-600;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-item {
-    @apply dark:text-gray-300 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
+    @apply dark:text-gray-400 dark:bg-transparent dark:hover:text-gray-100 dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-item.is-active {
-    @apply dark:relative dark:text-white dark:bg-white/[0.07] dark:hover:bg-white/[0.08];
-}
-.aura-sidebar-darkmode-type-dark .aura-sidebar-item.is-active::before {
-    content: "";
-    @apply dark:absolute dark:left-0 dark:inset-y-1.5 dark:w-0.5 dark:rounded-full dark:bg-primary-500;
+    @apply dark:text-white dark:bg-white/[0.08] dark:hover:bg-white/[0.08];
 }
 
 /* .aura-sidebar-badge — theme-aware nav badge pill.

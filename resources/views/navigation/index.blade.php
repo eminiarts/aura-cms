@@ -1,9 +1,14 @@
 <div class="flex flex-col aura-sidebar-groups">
-@php
-   
-@endphp
-
     @foreach (app('aura')::navigation() as $group => $resources)
+        @php
+            // Items added through the navigation hook skip the viewAny filter of Aura::navigation() and are
+            // checked below as they render; a group whose items are all hidden gets no heading either.
+            $hasVisibleItems = collect($resources)->contains(fn ($item) => ! isset($item['resource'])
+                || (auth()->user()?->can('viewAny', app($item['resource'])) ?? false));
+        @endphp
+
+        @continue (! $hasVisibleItems)
+
         @if ($group !== '')
             <div wire:key="toggle-{{ $group }}" wire:click="toggleGroup('{{ $group }}')"
                 class="cursor-pointer">

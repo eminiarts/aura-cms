@@ -4,7 +4,7 @@
 
     @if(!$inModal)
     <x-aura::breadcrumbs>
-        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
+        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
         @if(Route::has('aura.' . $model->getSlug() . '.index'))
             <x-aura::breadcrumbs.li :href="route('aura.' . $model->getSlug() . '.index')" :title="__($model->getPluralName())" />
         @else

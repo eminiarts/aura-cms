@@ -14,20 +14,30 @@
 @php
     $settings = app('aura')::getOption('settings');
     $sidebarType = $settings['sidebar-type'] ?? 'primary';
-    // Check if the route exists before using it to prevent RouteNotFoundException
-    $isActive = false;
-
-    if (Request::url() == $route || Request::routeIs($route)) {
-        $isActive = true;
-    }
-    if (Request::url() == $href || Request::routeIs($href)) {
-        $isActive = true;
-    }
+    // Livewire updates (toggling a nav group) re-render this item on the update endpoint,
+    // so resolve the URL and route name of the page the user is on.
     $currentUrl = Request::url();
-    $expectedUrl = Request::getSchemeAndHttpHost() . $href;
-    $expectedRoute = Request::getSchemeAndHttpHost() . $route;
-    if ($currentUrl == $expectedUrl || $currentUrl == $expectedRoute) {
-        $isActive = true;
+    $currentRouteName = Request::route()?->getName();
+    if (app('livewire')->isLivewireRequest()) {
+        $currentUrl = app('livewire')->originalUrl();
+        try {
+            $currentRouteName = app('router')->getRoutes()->match(Request::create($currentUrl))->getName();
+        } catch (\Throwable) {
+            $currentRouteName = null;
+        }
+    }
+    $matchesCurrent = fn ($target) => is_string($target) && $target !== '' && (
+        $currentUrl === $target
+        || ($currentRouteName && Str::is($target, $currentRouteName))
+        || $currentUrl === Request::getSchemeAndHttpHost().$target
+    );
+
+    $isActive = $matchesCurrent($route) || $matchesCurrent($href);
+
+    // A resource's view, edit and create pages belong to its index item.
+    if (! $isActive && $currentRouteName && preg_match('/^(.+)\.(view|edit|create)$/', $currentRouteName, $routeMatch) && Route::has($routeMatch[1].'.index')) {
+        $indexUrl = route($routeMatch[1].'.index');
+        $isActive = in_array($route, [$routeMatch[1].'.index', $indexUrl], true) || ($href && $href === $indexUrl);
     }
 
     // Normalize badge color (a null prop should fall back to the default)
@@ -73,7 +83,7 @@
                     $attributes->get('class')
                 ])
             >
-                <div class="flex items-center ml-0 font-medium {{ $compact ? 'space-x-2 text-sm' : 'space-x-2.5 text-sm' }}">
+                <div class="flex items-center ml-0 font-medium {{ $compact ? 'space-x-2 text-[13px]' : 'space-x-2.5 text-[13px]' }}">
                     {{ $slot }}
                 </div>
             </a>
@@ -106,7 +116,7 @@
                 @endif
         >
             <div class="flex justify-between items-center w-full">
-                <div class="flex justify-between items-center ml-0 font-medium truncate {{ $compact ? 'space-x-2 text-sm' : 'space-x-2.5 text-sm' }}">{{ $slot }}</div>
+                <div class="flex justify-between items-center ml-0 font-medium truncate {{ $compact ? 'space-x-2 text-[13px]' : 'space-x-2.5 text-[13px]' }}">{{ $slot }}</div>
 
                 @php
                     $badgeColorClasses = [

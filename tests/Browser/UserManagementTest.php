@@ -165,6 +165,6 @@ test('a Global Admin sees a team they are not a member of in the team switcher',
 
     // Visitation: a Global Admin can enter any team, so the switcher lists a team
     // they hold no Membership in.
-    $page->assertSee('Switch Teams')
+    $page->assertSee('Switch teams')
         ->assertSee('Distant Tenant');
 });

@@ -10,6 +10,13 @@ use Livewire\Component;
 class Widget extends Component
 {
     /**
+     * Render as a cell of the slim widget strip on index pages (see components/widgets/index).
+     *
+     * @var bool
+     */
+    public $compact = false;
+
+    /**
      * The end date/time for the widget data.
      *
      * @var string|null
@@ -90,6 +97,15 @@ class Widget extends Component
             $this->isCached = true;
             $this->loaded = true;
         }
+    }
+
+    /**
+     * Whether the widget has a compact cell for the index strip. Large charts (bar, donut, pie)
+     * keep their card below the strip.
+     */
+    public static function supportsCompact(): bool
+    {
+        return false;
     }
 
     /**

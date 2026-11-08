@@ -13,6 +13,50 @@ class Number extends Field
     public $view = 'aura::fields.view-value';
 
     /**
+     * Optional display formatting. Only applies when the field sets
+     * `decimals` and/or `thousands_separator` (plus `decimal_separator`),
+     * otherwise the stored value is shown as before. With
+     * `trim_zero_decimals` a whole number drops its decimals
+     * ("84,500" instead of "84,500.00"); fractions keep all of them.
+     */
+    public function display($field, $value, $model)
+    {
+        $isNumber = is_numeric($value);
+        $hasDecimals = isset($field['decimals']) && $field['decimals'] !== '';
+        $hasSeparator = isset($field['thousands_separator']) && $field['thousands_separator'] !== '';
+
+        if ($isNumber && ($hasDecimals || $hasSeparator)) {
+            $decimals = $hasDecimals
+                ? (int) $field['decimals']
+                : (str_contains((string) $value, '.') ? strlen(substr(strrchr((string) $value, '.'), 1)) : 0);
+
+            if (! empty($field['trim_zero_decimals']) && fmod((float) $value, 1.0) === 0.0) {
+                $decimals = 0;
+            }
+
+            $value = number_format(
+                (float) $value,
+                $decimals,
+                $field['decimal_separator'] ?? '.',
+                $field['thousands_separator'] ?? '',
+            );
+        }
+
+        // The input's `prefix`/`suffix` (a unit such as "CHF" or "%") also frame the shown value.
+        // A word unit gets a non-breaking space ("CHF 84,500"), a symbol sits flush ("$84,500", "12%").
+        if ($isNumber && (filled($field['prefix'] ?? null) || filled($field['suffix'] ?? null))) {
+            $prefix = (string) ($field['prefix'] ?? '');
+            $suffix = (string) ($field['suffix'] ?? '');
+
+            $value = ($prefix !== '' ? $prefix.(preg_match('/\pL$/u', $prefix) ? "\u{00A0}" : '') : '')
+                .$value
+                .($suffix !== '' ? (preg_match('/^\pL/u', $suffix) ? "\u{00A0}" : '').$suffix : '');
+        }
+
+        return parent::display($field, $value, $model);
+    }
+
+    /**
      * Portable exact-query envelope for sorting/filtering/reporting.
      *
      * Minimal DEST port: enough for ResourceAggregateEngine precision/scale
@@ -98,7 +142,6 @@ class Number extends Field
                     'width' => '50',
                 ],
             ],
-
         ]);
     }
 

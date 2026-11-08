@@ -15,6 +15,11 @@ module.exports = {
     // darkMode: 'class',
     darkMode: 'selector',
 
+    // hover: variants only apply on devices that can hover, so a tap on a phone does not leave a stuck hover fill.
+    future: {
+        hoverOnlyWhenSupported: true,
+    },
+
     content: [
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './vendor/laravel/jetstream/**/*.blade.php',
@@ -104,6 +109,8 @@ module.exports = {
             },
             boxShadow: {
                 'xs': '0px 1px 2px rgba(0, 8, 24, 0.05)',
+                // Solid buttons: a 1px inner highlight on top plus a hairline drop shadow.
+                'button': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.14), 0px 1px 2px rgba(0, 8, 24, 0.08)',
             },
             spacing: {
                 '4.5': '1.125rem',
@@ -111,5 +118,15 @@ module.exports = {
         },
     },
 
-    plugins: [require('@tailwindcss/forms'), require('@tailwindcss/typography'), require('tailwind-scrollbar'), require('@tailwindcss/aspect-ratio'),],
+    plugins: [
+        require('@tailwindcss/forms'), require('@tailwindcss/typography'), require('tailwind-scrollbar'), require('@tailwindcss/aspect-ratio'),
+        // row-hover: a hover state that waits until the pointer has moved since the page rendered
+        // (resources/js/app.js sets .aura-pointer-still), so a list that loads under a resting cursor
+        // does not open with one row highlighted.
+        function ({ addVariant }) {
+            addVariant('row-hover', ':root:not(.aura-pointer-still) &:hover');
+            // group-row-hover: the same guard for overlays inside a hovered .group (media tiles).
+            addVariant('group-row-hover', '@media (hover: hover) { :root:not(.aura-pointer-still) :merge(.group):hover & }');
+        },
+    ],
 };

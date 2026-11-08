@@ -22,7 +22,7 @@ final class CoreSettingsPages
                 slug: 'ai',
                 title: 'AI',
                 fields: self::aiFields(),
-                icon: 'config',
+                icon: 'sparkles',
                 description: 'Review AI providers configured for this application.',
                 order: 50,
                 viewAbility: User::GLOBAL_ADMIN_GATE,

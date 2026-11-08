@@ -61,6 +61,12 @@ class Attachment extends Resource
 
     protected static ?string $group = 'Aura';
 
+    // Files show their own thumbnail in the media views.
+    public function avatarShape(): ?string
+    {
+        return null;
+    }
+
     public function defaultPerPage()
     {
         return 25;

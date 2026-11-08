@@ -119,7 +119,8 @@ test('defer should be false on field that is in conditional logic - create view'
     Aura::setModel($model);
 
     $component = Livewire::test(Create::class, ['slug' => $model->getSlug()])
-        ->assertSee('Title*')
+        ->assertSee('Title')
+        ->assertSeeHtml('aria-hidden="true">*</span>')
         ->assertSee('Type')
         ->assertSeeHtml('wire:model="form.fields.select_type"')
         ->assertDontSee('Advanced Text')

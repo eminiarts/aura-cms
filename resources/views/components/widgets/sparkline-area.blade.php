@@ -1,14 +1,16 @@
-<div class="overflow-hidden h-full aura-card" wire:key="sparkline-area-{{ $widget['slug'] ?? '' }}" @if (!$isCached) wire:init="loadWidget" @endif>
+@php($chartHeight = $compact ? 40 : 80)
+{{-- Compact (index strip): name and total on the left, a 40px chart filling the rest of the cell. --}}
+<div class="{{ $compact ? 'flex flex-col justify-center px-4 py-3 h-full min-w-0' : 'overflow-hidden h-full aura-card' }}" wire:key="sparkline-area-{{ $widget['slug'] ?? '' }}" @if (!$isCached) wire:init="loadWidget" @endif>
     @if($loaded)
-    <div class="flex flex-col justify-between h-full">
-        <div class="flex gap-2 justify-between items-center">
-            <span class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">{{ __($widget['name']) }}</span>
-            <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ array_sum($this->values['current']) }}</span>
+    <div class="{{ $compact ? 'flex gap-4 items-center' : 'flex flex-col justify-between h-full' }}">
+        <div class="{{ $compact ? 'min-w-0 sm:shrink-0' : 'flex gap-2 justify-between items-center' }}">
+            <span class="{{ $compact ? 'block text-xs' : 'text-sm' }} font-medium text-gray-500 truncate dark:text-gray-400">{{ __($widget['name']) }}</span>
+            <span class="{{ $compact ? 'block mt-1 text-xl tracking-tight tabular-nums' : 'text-sm' }} font-semibold text-gray-900 dark:text-white">{{ array_sum($this->values['current']) }}</span>
         </div>
 
-        <div class="mt-4 -mx-5 -mb-5">
+        <div class="{{ $compact ? 'flex-1 ml-auto min-w-0 max-w-md max-sm:hidden' : 'mt-4 -mx-5 -mb-5' }}">
             <div class="w-full">
-                <div style="height: 80px;"  x-data="{
+                <div style="height: {{ $chartHeight }}px;"  x-data="{
               values: {{ json_encode(array_values($this->values['current'])) }},
               labels: {{ json_encode(array_keys($this->values['current'])) }},
               init() {
@@ -28,7 +30,7 @@
                       type: 'area',
                       toolbar: false,
                       width: '100%',
-                      height: 80,
+                      height: {{ $chartHeight }},
 
                       sparkline: {
                         enabled: true,
@@ -96,6 +98,15 @@
 
             </div>
         </div>
+    </div>
+    @elseif($compact)
+    {{-- Static placeholder, no pulse: label, total and a flat chart baseline. --}}
+    <div class="flex gap-4 items-center" aria-hidden="true">
+        <div class="shrink-0">
+            <div class="w-24 h-3 bg-gray-100 rounded dark:bg-gray-700/60"></div>
+            <div class="mt-2 w-10 h-6 bg-gray-100 rounded-md dark:bg-gray-700/60"></div>
+        </div>
+        <div class="flex-1 ml-auto max-w-md h-10 bg-gray-50 rounded-md max-sm:hidden dark:bg-gray-700/30"></div>
     </div>
     @else
     <div class="animate-pulse" aria-hidden="true">

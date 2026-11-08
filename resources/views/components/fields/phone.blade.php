@@ -4,7 +4,7 @@
         wire:model.live="form.fields.{{ optional($field)['slug'] }}"
         error="form.fields.{{ optional($field)['slug'] }}"
         id="aura_field_{{ optional($field)['slug'] }}"
-        placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"
+        :placeholder="\Aura\Base\Fields\Field::placeholderFor($field)"
         autocomplete="{{ optional($field)['autocomplete'] ?? '' }}"
     ></x-aura::input.phone>
     @else
@@ -12,7 +12,7 @@
         wire:model="form.fields.{{ optional($field)['slug'] }}"
         error="form.fields.{{ optional($field)['slug'] }}"
         id="aura_field_{{ optional($field)['slug'] }}"
-        placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"
+        :placeholder="\Aura\Base\Fields\Field::placeholderFor($field)"
         autocomplete="{{ optional($field)['autocomplete'] ?? '' }}"
     ></x-aura::input.phone>
     @endif

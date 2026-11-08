@@ -5,56 +5,62 @@
         @endif
         ">
     <style>
-        @media screen and (max-width: 768px) {
+        @media screen and (max-width: 767.98px) {
             .mobile-load-hidden {
                 display: none !important;
             }
         }
     </style>
 
+    {{-- wire:ignore.self: a navigation re-render must not reset the Alpine state from the server attribute. --}}
     <div
+            wire:ignore.self
             x-data="{
         sidebarToggled: {{ $this->sidebarToggled ? 'true' : 'false' }},
+        {{-- The drawer below md is a separate, client-only state: it starts closed on every load and navigation.
+             matchMedia follows the CSS breakpoint; innerWidth grows when a page overflows on a phone. --}}
+        isMobile() {
+            return window.matchMedia('(max-width: 767.98px)').matches;
+        },
         init() {
-            {{-- console.log('init', this.sidebarToggled); --}}
+            if (this.isMobile()) {
+                this.sidebarToggled = false;
+            }
 
             this.$nextTick(() => {
                 document.querySelectorAll('.mobile-load-hidden').forEach((el) => {
                     el.classList.remove('mobile-load-hidden');
                 });
-
-                if (window.innerWidth < 768) {
-                    this.sidebarToggled = false;
-                }
             });
         },
         toggleSidebar: async function() {
-            if (window.innerWidth < 768) {
+            if (this.isMobile()) {
                 this.sidebarToggled = !this.sidebarToggled;
             } else {
+                const next = !this.sidebarToggled;
                 await $wire.toggleSidebar();
-                this.sidebarToggled = !this.sidebarToggled;
+                this.sidebarToggled = next;
             }
         }
     }">
 
-        <div class="flex justify-between px-5 py-3 md:hidden">
-            <div>
-                @include('aura::navigation.logo')
+        {{-- Phone top bar: the mark on the page background (not the sidebar logo, which is drawn for the sidebar color) and the drawer button. --}}
+        <div class="flex justify-between items-center pr-3 pl-5 h-14 border-b border-gray-200/80 md:hidden dark:border-white/10 aura-mobile-bar">
+            <div class="w-[5.5rem]">
+                <x-aura::application-logo class="w-full h-auto" />
             </div>
 
-            <!-- Button to toggle the sidebar -->
-            <button x-on:click="toggleSidebar()">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <button type="button" x-on:click="toggleSidebar()" class="inline-flex justify-center items-center w-10 h-10 text-gray-700 rounded-lg transition-colors duration-150 hover:bg-gray-950/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-200 dark:hover:bg-white/[0.06]">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                     <path d="M3 12H15M3 6H21M3 18H21" stroke="currentcolor" stroke-width="2" stroke-linecap="round"
                           stroke-linejoin="round"/>
                 </svg>
-                <span class="sr-only">Toggle sidebar</span>
+                <span class="sr-only">{{ __('Toggle sidebar') }}</span>
             </button>
-
         </div>
 
         <div
+            wire:ignore.self
             class="relative mobile-load-hidden overflow-x-visible flex-shrink-0 aura-navigation {{ $this->sidebarToggled ? ($this->compact ? 'open-sidebar md:w-56' : 'open-sidebar md:w-72') : 'closed-sidebar w-20' }}"
 
             x-bind:class="{
@@ -79,6 +85,7 @@
             </button>
         </div> --}}
             <div
+                wire:ignore.self
                 class="aura-sidebar-bg fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen border-r shadow-xl {{ $this->sidebarToggled ? ($this->compact ? 'w-56' : 'w-72') : 'w-20' }}
             "
                     x-bind:class="{
@@ -150,14 +157,14 @@
                     </div>
                 </div>
 
-                <div class=" flex-shrink-0 {{ $this->compact ? 'px-2' : 'px-4' }} min-h-[4.5rem] py-2 flex flex-wrap items-center border-t aura-sidebar-footer">
+                <div class="flex flex-wrap flex-shrink-0 items-center py-3 border-t {{ $this->compact ? 'px-2' : 'px-3' }} aura-sidebar-footer">
                     @impersonating($guard = null)
                     <div class="w-full">
                         <x-aura::button.primary :href="route('impersonate.leave')" class="my-2 w-full" size="xs">
                         <x-slot:icon>
                             <x-aura::icon icon="user-impersonate" size="xs"/>
                         </x-slot:icon>
-                        <span>{{ __('Leave Impersonation') }}</span>
+                        <span>{{ __('Leave impersonation') }}</span>
                     </x-aura::button.primary>
                     </div>
                     @endImpersonating
@@ -166,15 +173,16 @@
                         <div class="flex justify-between items-center pb-20 w-full md:pb-0">
                             <x-aura::navigation.team-switcher>
                                 <x-slot:title>
+                                    {{-- User card: 32px avatar, name, current team. --}}
                                     <div class="block min-w-0 flex-1 group">
                                         <div class="flex min-w-0 items-center">
                                             <div class="shrink-0">
-                                                <img class="inline-block object-cover w-9 h-9 rounded-full"
+                                                <img class="inline-block object-cover w-8 h-8 rounded-full ring-1 ring-inset aura-sidebar-avatar"
                                                      src="{{ auth()->user()->avatarUrl }}" alt="">
                                             </div>
-                                            <div class="ml-3 min-w-0 hide-collapsed">
-                                                <p class="truncate text-sm font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
-                                                <p class="truncate text-xs font-medium aura-sidebar-team-name">{{ Auth::user()->currentTeam->name }}</p>
+                                            <div class="ml-2.5 min-w-0 hide-collapsed">
+                                                <p class="truncate text-[13px] leading-4 font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
+                                                <p class="truncate text-xs leading-4 aura-sidebar-team-name">{{ Auth::user()->currentTeam->name }}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -203,11 +211,11 @@
                                     <div class="block min-w-0 flex-1 group">
                                         <div class="flex min-w-0 items-center">
                                             <div class="shrink-0">
-                                                <img class="inline-block object-cover w-9 h-9 rounded-full"
+                                                <img class="inline-block object-cover w-8 h-8 rounded-full ring-1 ring-inset aura-sidebar-avatar"
                                                     src="{{ auth()->user()->avatarUrl }}" alt="">
                                             </div>
-                                            <div class="ml-3 min-w-0 hide-collapsed">
-                                                <p class="truncate text-sm font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
+                                            <div class="ml-2.5 min-w-0 hide-collapsed">
+                                                <p class="truncate text-[13px] leading-4 font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
                                             </div>
                                         </div>
                                     </div>

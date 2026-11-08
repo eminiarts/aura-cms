@@ -17,7 +17,7 @@
                 },
             }"
         >
-            <x-aura::input.text :disabled="$field['field']->isDisabled($this->form, $field)" x-model="color" error="form.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" id="resource-field-{{ optional($field)['slug'] }}" autocomplete="{{ optional($field)['autocomplete'] ?? '' }}"></x-aura::input.text>
+            <x-aura::input.text :disabled="$field['field']->isDisabled($this->form, $field)" x-model="color" error="form.fields.{{ optional($field)['slug'] }}" :placeholder="\Aura\Base\Fields\Field::placeholderFor($field)" id="resource-field-{{ optional($field)['slug'] }}" autocomplete="{{ optional($field)['autocomplete'] ?? '' }}"></x-aura::input.text>
 
             <input type="color" x-model="color" class="absolute right-4 top-1/2 z-10 w-6 h-6 rounded-full border-none transform -translate-y-1/2 cursor-pointer" />
         </div>
@@ -149,7 +149,7 @@
         </div>
 
         <div class="ml-2">
-            <x-aura::input.text :disabled="$field['field']->isDisabled($this->form, $field)" x-model="selectedColor" error="form.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" id="resource-field-{{ optional($field)['slug'] }}"></x-aura::input.text>
+            <x-aura::input.text :disabled="$field['field']->isDisabled($this->form, $field)" x-model="selectedColor" error="form.fields.{{ optional($field)['slug'] }}" :placeholder="\Aura\Base\Fields\Field::placeholderFor($field)" id="resource-field-{{ optional($field)['slug'] }}"></x-aura::input.text>
         </div>
     </div>
 

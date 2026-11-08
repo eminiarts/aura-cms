@@ -20,7 +20,7 @@
     $sidebarType = $settings['sidebar-type'] ?? 'primary';
     $isActive = Request::fullUrlIs($route ? route($route, $id) : '');
     $compactClass = $compact ? 'sidebar-item-compact px-2 h-8' : 'sidebar-item px-3 h-9';
-    $fontClass = $compact ? 'space-x-2 text-sm' : 'space-x-2.5 text-sm';
+    $fontClass = $compact ? 'space-x-2 text-[13px]' : 'space-x-2.5 text-[13px]';
 @endphp
 
 <div>

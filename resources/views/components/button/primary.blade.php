@@ -8,7 +8,7 @@
   size="{{ $size }}"
   :disabled="$disabled"
   {{$attributes->merge([
-    'class' => 'text-white bg-primary-600 hover:bg-primary-500 active:bg-primary-700 focus-visible:ring-primary-500',
+    'class' => 'text-white bg-primary-600 shadow-button hover:bg-primary-500 active:bg-primary-700 focus-visible:ring-primary-500',
   ])}}
 >
   @if ($icon ?? false)

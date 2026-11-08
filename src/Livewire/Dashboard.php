@@ -10,11 +10,13 @@ class Dashboard extends Component
     public function render()
     {
         $resources = $this->accessibleAppResources();
+        $isEmptyWorkspace = $this->isEmptyWorkspace($resources);
 
         return view('aura::livewire.dashboard', [
             'stats' => $this->stats($resources),
-            'recentItems' => $this->recentItems($resources),
+            'recentItems' => $isEmptyWorkspace ? collect() : $this->recentItems($resources),
             'recentMedia' => $this->recentMedia(),
+            'isEmptyWorkspace' => $isEmptyWorkspace,
         ])->layout('aura::components.layout.app');
     }
 
@@ -32,6 +34,25 @@ class Dashboard extends Component
             ->values();
     }
 
+    /**
+     * True when the viewer's resources hold no records besides the viewer's
+     * own user account, i.e. a team that has just been created.
+     */
+    protected function isEmptyWorkspace($resources): bool
+    {
+        $user = auth()->user();
+
+        return $resources->every(function ($resource) use ($user) {
+            $query = $resource->query();
+
+            if ($user && $resource->getTable() === $user->getTable()) {
+                $query->whereKeyNot($user->getKey());
+            }
+
+            return ! $query->exists();
+        });
+    }
+
     protected function recentItems($resources)
     {
         $items = collect();
@@ -45,6 +66,7 @@ class Dashboard extends Component
                     'title' => $item->title ?: $item->title(),
                     'resource' => $resource->singularName(),
                     'icon' => $resource->icon(),
+                    'avatar' => $item->avatarHtml('md'),
                     'url' => $item->editUrl(),
                     'updated_at' => $item->updated_at,
                 ]);
@@ -116,6 +138,13 @@ class Dashboard extends Component
                 'total' => $resource->query()->count(),
                 'current' => $current,
                 'previous' => $previous,
+                // Change against the previous 30 days; unknown when that period was empty.
+                'delta' => $previous > 0 ? $current - $previous : null,
+                'deltaPercent' => $previous > 0 ? (int) round(($current - $previous) / $previous * 100) : null,
+                // New records per day, oldest first: the stat card draws one bar per day, so a
+                // sparse month reads as a few bars rather than a broken line.
+                'series' => $series,
+                'showSparkline' => count(array_filter($series)) >= 3,
                 'sparkline' => $this->sparkline($series),
             ];
         })->values();
