@@ -1,7 +1,8 @@
 @if (!$inModal)
-{{-- Same header as the record view: resource name as eyebrow, record title as H1. Phones wrap the title and put the actions on their own row. --}}
-<div class="flex flex-col gap-4 mt-1 mb-6 sm:flex-row sm:items-center sm:justify-between sm:my-8">
-    <div class="flex gap-3 items-center min-w-0">
+{{-- Same header as the record view: resource name as eyebrow, record title as H1 (up to two lines on
+     phones), actions to the right. They wrap below only when they leave the title less than 10rem. --}}
+<div class="flex flex-wrap gap-x-4 gap-y-3 justify-between items-center mt-1 mb-6 sm:flex-nowrap sm:my-8">
+    <div class="flex flex-1 gap-3 items-center min-w-[10rem]">
         {{ app('aura')::injectView('post_edit_title_before') }}
         @if ($model->avatarShape())
             <x-aura::avatar :record="$model" size="lg" />

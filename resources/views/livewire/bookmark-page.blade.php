@@ -1,9 +1,18 @@
-<div class="text-gray-300">
+<div class="text-gray-300 dark:text-gray-600">
     @if(config('aura.features.bookmarks') && config('aura.features.global_search'))
-    <div x-data="{ isBookmarked: {{ $this->isBookmarked ? 'true' : 'false' }} }">
-        <button wire:click="toggleBookmark" 
-                class="flex justify-center items-center ml-2 w-6 h-6 focus:outline-none" 
-                :class="{'text-primary-600': isBookmarked, 'text-gray-300': !isBookmarked }">
+    @php
+        // Icon-only toggle: the action is named in the tooltip and for screen readers.
+        $bookmarkLabel = $this->isBookmarked ? __('Remove bookmark') : __('Bookmark this page');
+    @endphp
+    {{-- Keyed by state, so a toggle swaps the element and Alpine starts the tooltip with the new label. --}}
+    <div x-data="{ isBookmarked: {{ $this->isBookmarked ? 'true' : 'false' }} }" class="ml-2" wire:key="bookmark-toggle-{{ $this->isBookmarked ? 'on' : 'off' }}">
+        <x-aura::tippy :text="$bookmarkLabel" position="bottom">
+        <button wire:click="toggleBookmark"
+                type="button"
+                aria-label="{{ $bookmarkLabel }}"
+                aria-pressed="{{ $this->isBookmarked ? 'true' : 'false' }}"
+                class="flex justify-center items-center w-6 h-6 rounded transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                :class="{'text-primary-600 dark:text-primary-400': isBookmarked, 'text-gray-300 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-400': !isBookmarked }">
 
             @if(!$this->isBookmarked)
                 <x-aura::icon.bookmark class="w-5 h-5" />
@@ -12,6 +21,7 @@
             @endif
 
         </button>
+        </x-aura::tippy>
     </div>
     @endif
 </div>

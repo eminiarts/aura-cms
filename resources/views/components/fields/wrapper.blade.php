@@ -42,11 +42,7 @@
                     <span class="truncate aura-eyebrow">{{ $label }}</span>
                 @endif
 
-                @if ($help)
-                    <x-aura::tippy text="{{ $help }}" position="top">
-                        <x-aura::icon icon="info" class="flex" iconClass="h-3.5 w-3.5 text-gray-400 transition-colors duration-150 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300" />
-                    </x-aura::tippy>
-                @endif
+                {{-- No help marker here: instructions explain how to fill a field, so they belong to the form. --}}
 
                 @if ($isTranslatable)
                     <span class="ml-auto inline-flex w-9 items-center justify-between align-middle text-gray-400 dark:text-gray-500" aria-label="{{ __('Translatable field') }}" data-translatable-field-indicator>

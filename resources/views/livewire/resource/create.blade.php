@@ -7,6 +7,8 @@
             ->implode(' '),
     ]);
     $indexUrl = Route::has('aura.' . $model->getSlug() . '.index') ? route('aura.' . $model->getSlug() . '.index') : null;
+    // A simple form keeps a readable width (header with it, so Save stays next to the fields) and loses its lone panel heading.
+    $formSections = \Aura\Base\RecordLayout\RecordFormSections::arrange($this->createFields);
 @endphp
 <div class="">
     @section('title', $newRecordTitle)
@@ -20,9 +22,11 @@
     </x-aura::breadcrumbs>
     @endif
 
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between {{ $inModal ? 'mb-8' : 'mt-1 mb-6 sm:my-8'}}">
-        <div class="min-w-0">
-            <h1 class="break-words aura-page-title">{{ $newRecordTitle }}</h1>
+    <div @class(['max-w-3xl' => $formSections['single'] && ! $inModal])>
+    {{-- Title left, actions right, as on the record header. --}}
+    <div class="flex flex-wrap gap-x-4 gap-y-3 justify-between items-center sm:flex-nowrap {{ $inModal ? 'mb-8' : 'mt-1 mb-6 sm:my-8'}}">
+        <div class="flex-1 min-w-[10rem]">
+            <h1 class="break-words aura-page-title line-clamp-2 sm:line-clamp-1">{{ $newRecordTitle }}</h1>
         </div>
 
         @if(!$inModal)
@@ -60,7 +64,7 @@
             @endif
 
             <div class="flex flex-wrap items-start -mx-2">
-           @foreach($this->createFields as $key => $field)
+           @foreach($formSections['fields'] as $key => $field)
             @checkCondition($model, $field, $form)
                     <x-dynamic-component :component="$field['field']->edit()" :field="$field" wire:key="resource-field-{{ $key }}" :form="$form" :mode="$mode" />
             @endcheckCondition
@@ -75,6 +79,7 @@
                 <x-aura::button size="xl" wire:click="save">Save</x-aura::button>
             </div>
         </div> --}}
+    </div>
     </div>
 
     @if ($inModal)

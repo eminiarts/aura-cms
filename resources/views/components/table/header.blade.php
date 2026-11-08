@@ -13,8 +13,12 @@
             // page: section title, row count, secondary create button. The
             // resource index is the page itself: page title, primary create.
             $isRelationTable = (bool) optional(optional($this)->field)['name'];
-            $relationCount = isset($rows) && method_exists($rows, 'total') ? $rows->total() : null;
+            // Record count (after search and filters) beside the title, on the page and on relation sections alike.
+            $rowCount = isset($rows) && method_exists($rows, 'total') ? $rows->total() : null;
             $createLabel = __('New :resource', ['resource' => Str::lower(__($model->singularName()))]);
+            // A page list without any records shows its create button in the empty state (list-view), not twice.
+            $createInEmptyState = ! $isRelationTable && ($collectionIsEmpty ?? false) && ($currentView ?? null) === 'list'
+                && ! $this->settings['create_in_modal'] && $this->createLink;
         @endphp
         <div class="flex justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3' : 'mt-1 sm:mt-6' }}">
 
@@ -23,12 +27,17 @@
                     @if ($isRelationTable)
                         <h2 class="aura-section-title">
                             {{ __($this->field['name']) }}
-                            @if ($relationCount !== null)
-                                <span class="aura-section-count">{{ $relationCount }}</span>
+                            @if ($rowCount !== null)
+                                <span class="aura-section-count">{{ number_format($rowCount) }}</span>
                             @endif
                         </h2>
                     @else
-                        <h1 class="aura-page-title">{{ __($model->pluralName()) }}</h1>
+                        <h1 class="aura-page-title">
+                            {{ __($model->pluralName()) }}
+                            @if ($rowCount !== null && ! ($collectionIsEmpty ?? false))
+                                <span class="aura-page-count">{{ number_format($rowCount) }}</span>
+                            @endif
+                        </h1>
                     @endif
 
                     @if (optional(optional($this)->field)['description'])
@@ -39,7 +48,7 @@
 
 
             @can('create', $model)
-                @if ($this->settings['create'])
+                @if ($this->settings['create'] && ! $createInEmptyState)
                     <div class="create-resource">
                         <div>
                             @if ($this->settings['create_in_modal'])

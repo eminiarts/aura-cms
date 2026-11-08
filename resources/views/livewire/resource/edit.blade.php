@@ -18,6 +18,12 @@
 
     {{ app('aura')::injectView('post_edit_breadcrumbs_after') }}
 
+    @php
+        // A simple form keeps a readable width (header with it, so Save stays next to the fields) and loses its lone panel heading.
+        $formSections = \Aura\Base\RecordLayout\RecordFormSections::arrange($this->editFields);
+    @endphp
+
+    <div @class(['max-w-3xl' => $formSections['single'] && ! $inModal])>
     @include($model->editHeaderView())
 
     @if ($model::usesTitle())
@@ -35,7 +41,7 @@
     }">
         <div class="col-span-1 mx-0 min-w-0 sm:col-span-3">
             <div class="flex flex-wrap items-start -mx-2" autocomplete="off">
-                @foreach ($this->editFields as $key => $field)
+                @foreach ($formSections['fields'] as $key => $field)
                     @checkCondition($model, $field, $form)
                         <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" :mode="$mode"
                             wire:key="resource-field-{{ $key }}" />
@@ -45,6 +51,7 @@
 
             <x-aura::validation-errors />
         </div>
+    </div>
     </div>
 
     @if ($inModal)

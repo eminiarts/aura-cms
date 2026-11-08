@@ -105,13 +105,17 @@ class BelongsTo extends Field implements PreloadsTableDisplay
 
             $related = $this->resolveDisplayModel($field, $value, $model);
 
-            // Record chip: the related record's avatar plus title; resources
-            // without an avatar fall back to their icon. Both are markup owned
-            // by the resource class; the title is database-backed and
-            // view-value renders this raw, so escape it here.
-            $leading = $related && method_exists($related, 'avatarHtml') ? $related->avatarHtml('xs') : '';
+            // Record chip: the related record's image (16px) when it has one,
+            // plus its title. Initials are not readable at chip size, so a
+            // record without an image shows the title alone; a resource that
+            // opts out of avatars altogether falls back to its icon. All of it
+            // is markup owned by the resource class; the title is
+            // database-backed and view-value renders this raw, so escape it.
+            $leading = '';
 
-            if ($leading === '' && $related && method_exists($related, 'getIcon') && (string) $related->getIcon() !== '') {
+            if ($related && method_exists($related, 'avatarShape') && $related->avatarShape()) {
+                $leading = $related->avatarImageId() ? $related->avatarHtml('xs') : '';
+            } elseif ($related && method_exists($related, 'getIcon') && (string) $related->getIcon() !== '') {
                 $leading = "<span class='aura-record-link-icon' aria-hidden='true'>".$related->getIcon().'</span>';
             }
 

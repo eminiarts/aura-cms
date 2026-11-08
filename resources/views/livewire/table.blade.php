@@ -181,14 +181,19 @@
             })
         }
     }">
+        @php
+            // No records at all (not a search or filter that matches nothing): there is nothing to search,
+            // arrange or filter yet, so the toolbar stays away and the empty state holds the one create button.
+            $collectionIsEmpty = $currentView !== 'kanban' && $rows->total() === 0
+                && blank($this->search ?? null) && blank($this->selectedFilter ?? null)
+                && empty(data_get($this->filters ?? [], 'custom'));
+        @endphp
+
         @include($this->settings['views']['header'])
 
         @php
-        @endphp
-
-        @php
-            $hasToolbar = $this->settings['search'] || $this->settings['settings'] || $this->settings['filters']
-                || ($this->settings['bulk_actions'] && $this->bulkActions);
+            $hasToolbar = ! $collectionIsEmpty && ($this->settings['search'] || $this->settings['settings'] || $this->settings['filters']
+                || ($this->settings['bulk_actions'] && $this->bulkActions));
         @endphp
 
         <div @class(['mt-4' => $hasToolbar])>

@@ -65,17 +65,21 @@
             'name' => 'Posts',
             'total' => 1284,
             'current' => 86,
+            'previous' => 74,
+            'delta' => 12,
+            'deltaPercent' => 16,
             'url' => '#cards',
             'icon' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>',
             'sparkline' => ['line' => $sparklineLine, 'area' => $sparklineArea],
         ],
         [
+            // No previous period and too few points: no delta row, no chart.
             'name' => 'Users',
             'total' => 342,
             'current' => 0,
             'url' => '#cards',
             'icon' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>',
-            'sparkline' => ['line' => $sparklineLine, 'area' => $sparklineArea],
+            'showSparkline' => false,
         ],
     ];
 
@@ -189,7 +193,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">02</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Typography') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Font family comes from the theme. Four steps carry the admin: page title, section title, body, meta. Weight 600 is reserved for titles and the leading table column, 500 for labels, buttons and nav, 400 for everything else. Numerals are tabular everywhere (body-level font-variant-numeric).') }}
+            {{ __('Inter 4 variable (bundled with the package under the SIL OFL, Latin subset, optical sizing on) is the default typeface; the theme font option replaces it. Four steps carry the admin: page title, section title, body, meta. Weight 600 is reserved for titles and the leading table column, 500 for labels, buttons and nav, 400 for everything else. Numerals are tabular everywhere (body-level font-variant-numeric).') }}
         </p>
 
         <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
@@ -197,6 +201,7 @@
             <div class="mt-4 divide-y divide-gray-100 dark:divide-white/5">
                 @foreach ([
                     ['aura-page-title', '.aura-page-title — 24px · 600 · tracking-tight', 'Northwind Software'],
+                    ['aura-page-title', '.aura-page-title + .aura-page-count — list title with its record count', 'Companies <span class="aura-page-count">14</span>'],
                     ['aura-section-title', '.aura-section-title — 14px · 600', 'Contacts'],
                     ['aura-eyebrow', '.aura-eyebrow — 12px · 500 · gray-500 (resource label, view labels)', 'Company'],
                     ['aura-body', '.aura-body — 14px · 400 · gray-700', 'The quick brown fox jumps over the lazy dog'],
@@ -206,7 +211,7 @@
                 ] as [$classes, $label, $sample])
                     <div class="flex flex-col gap-1 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-baseline sm:gap-6">
                         <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">{{ $label }}</span>
-                        <span class="text-gray-900 dark:text-white {{ $classes }}">{{ $sample }}</span>
+                        <span class="text-gray-900 dark:text-white {{ $classes }}">{!! $sample !!}</span>
                     </div>
                 @endforeach
             </div>
@@ -499,15 +504,27 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">06</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Tags, Avatars & Pills') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('One tag family for every inline value that is not plain text: 22px high, 12px medium, the same radius and padding. Three variants: neutral for option values, status with a colored dot, relation with the record avatar. Entity avatars put initials on a tint derived from the name (square for companies and things, circle for people) and are used before record names in tables, chips and the record header. Small rounded-full pills remain for sidebar counts and trends.') }}
+            {{ __('One tag family for every inline value that is not plain text: 22px high, 12px medium, the same radius and padding. Three variants: neutral for option values, tinted for an option that carries a color (a Select category at -50/-700 without a dot, a Status state at -100/-800 with a dot), relation for a linked record. Entity avatars put initials on a tint derived from the name (square for companies and things, circle for people) and sit before record names in tables and the record header; chips carry an image only, initials are not readable at 16px. Small rounded-full pills remain for sidebar counts and trends.') }}
         </p>
 
         <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Tag family (.aura-tag): neutral, status (.aura-tag-status + option color), relation (.aura-record-link)') }}</span>
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Tag family (.aura-tag): neutral, select color (.aura-tag-status + option color), status (+ dot), relation (.aura-record-link)') }}</span>
             <div class="flex flex-wrap gap-1.5 items-center mt-4">
                 @foreach (['Software', 'Retail', 'Finance', 'Other'] as $tag)
                     <span class="aura-tag">{{ $tag }}</span>
                 @endforeach
+            </div>
+            <div class="flex flex-wrap gap-1.5 items-center mt-3">
+                @foreach ([
+                    'Software' => 'bg-blue-50 text-blue-700 ring-blue-700/10 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-400/20',
+                    'Retail' => 'bg-orange-50 text-orange-700 ring-orange-700/10 dark:bg-orange-500/10 dark:text-orange-300 dark:ring-orange-400/20',
+                    'Finance' => 'bg-teal-50 text-teal-700 ring-teal-700/10 dark:bg-teal-500/10 dark:text-teal-300 dark:ring-teal-400/20',
+                    'Healthcare' => 'bg-pink-50 text-pink-700 ring-pink-700/10 dark:bg-pink-500/10 dark:text-pink-300 dark:ring-pink-400/20',
+                    'Education' => 'bg-purple-50 text-purple-700 ring-purple-700/10 dark:bg-purple-500/10 dark:text-purple-300 dark:ring-purple-400/20',
+                ] as $label => $classes)
+                    <span class="aura-tag aura-tag-status {{ $classes }}">{{ $label }}</span>
+                @endforeach
+                <span class="aura-tag">Other</span>
             </div>
             <div class="flex flex-wrap gap-1.5 items-center mt-3">
                 @foreach ($statusPills as $label => $classes)
@@ -519,11 +536,9 @@
             </div>
             <div class="flex flex-wrap gap-1.5 items-center mt-3">
                 <a href="#badges" class="aura-tag aura-record-link">
-                    <x-aura::avatar name="Northwind Software" shape="square" size="xs" />
                     <span class="aura-record-link-title">Northwind Software</span>
                 </a>
                 <a href="#badges" class="aura-tag aura-record-link">
-                    <x-aura::avatar name="Martina Keller" shape="circle" size="xs" />
                     <span class="aura-record-link-title">Martina Keller</span>
                 </a>
                 <a href="#badges" class="aura-tag aura-record-link">
@@ -534,7 +549,7 @@
         </div>
 
         <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Entity avatars (x-aura::avatar): sizes xs 16, sm 20, md 28, lg 40; tone from the name over 10 palette tints') }}</span>
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Entity avatars (x-aura::avatar): sizes xs 16 (images only), sm 24 (table rows, 11px initials), md 28, lg 40; tone from the name over 10 palette tints') }}</span>
             <div class="flex flex-wrap gap-4 items-center mt-4">
                 @foreach (['xs', 'sm', 'md', 'lg'] as $size)
                     <x-aura::avatar name="Atlas Components" shape="square" :size="$size" />
@@ -591,7 +606,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">07</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Cards & Widgets') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('.aura-card is the base surface. KPI stat cards below are the real dashboard/stats component with sample data.') }}
+            {{ __('.aura-card is the base surface. KPI stat cards below are the real dashboard/stats component with sample data: one sparkline style (1.5px primary line, 10% fill, 32px), shown only when the series has enough points, a delta row only when there is a previous period. The grid keeps the cards in a row the same height. Phones show a 2x2 grid with number and delta.') }}
         </p>
 
         <div class="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-2">
@@ -637,7 +652,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">08</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Table') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('The resource index table. No card around it: a header hairline, row dividers and a closing hairline carry the list. Headings use the real table.heading component (sentence case, 12px medium gray-500); rows are a faithful specimen of table/row (the live rows are Livewire-bound). First column: entity avatar plus the record name, 500 gray-900, linked to the record; other cells 400 gray-600, numerals tabular, empty cells show a dash. Second row shows the selected state.') }}
+            {{ __('The resource index table. No card around it: a header hairline, row dividers and a closing hairline carry the list. Headings use the real table.heading component (sentence case, 12px medium gray-500); rows are a faithful specimen of table/row (the live rows are Livewire-bound). First column: entity avatar (24px, when the resource has one) plus the record name, 500 gray-900, linked to the record; other cells 400 gray-600, numerals tabular, empty cells show a dash. The page title carries the record count. With a pointer, the whole row opens the record and the row actions (gray-500) appear on hover; on touch they are always visible. Second row shows the selected state.') }}
         </p>
 
         {{-- Filter tabs (specimen of table/filter-tabs) --}}
@@ -686,7 +701,6 @@
                                 </td>
                                 <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                                     <span class="aura-tag">
-                                        <x-aura::avatar :name="$row['author']" shape="circle" size="xs" />
                                         <span class="aura-record-link-title">{{ $row['author'] }}</span>
                                     </span>
                                 </td>

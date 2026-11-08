@@ -263,4 +263,13 @@ describe('Number Field display formatting', function () {
         expect((new Number)->display($field, '84500.00', null))->toBe('84,500')
             ->and((new Number)->display($field, '84500.5', null))->toBe('84,500.50');
     });
+
+    test('frames a number with its prefix and suffix, a word unit with a non-breaking space', function () {
+        $field = ['slug' => 'amount', 'prefix' => 'CHF', 'decimals' => 2, 'thousands_separator' => ',', 'trim_zero_decimals' => true];
+
+        expect((new Number)->display($field, '84500.00', null))->toBe("CHF\u{00A0}84,500")
+            ->and((new Number)->display(['slug' => 'price', 'prefix' => '$'], '12', null))->toBe('$12')
+            ->and((new Number)->display(['slug' => 'rate', 'suffix' => '%'], '12', null))->toBe('12%')
+            ->and((new Number)->display($field, null, null))->toBeNull();
+    });
 });

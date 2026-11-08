@@ -21,10 +21,11 @@ class Number extends Field
      */
     public function display($field, $value, $model)
     {
+        $isNumber = is_numeric($value);
         $hasDecimals = isset($field['decimals']) && $field['decimals'] !== '';
         $hasSeparator = isset($field['thousands_separator']) && $field['thousands_separator'] !== '';
 
-        if (is_numeric($value) && ($hasDecimals || $hasSeparator)) {
+        if ($isNumber && ($hasDecimals || $hasSeparator)) {
             $decimals = $hasDecimals
                 ? (int) $field['decimals']
                 : (str_contains((string) $value, '.') ? strlen(substr(strrchr((string) $value, '.'), 1)) : 0);
@@ -39,6 +40,17 @@ class Number extends Field
                 $field['decimal_separator'] ?? '.',
                 $field['thousands_separator'] ?? '',
             );
+        }
+
+        // The input's `prefix`/`suffix` (a unit such as "CHF" or "%") also frame the shown value.
+        // A word unit gets a non-breaking space ("CHF 84,500"), a symbol sits flush ("$84,500", "12%").
+        if ($isNumber && (filled($field['prefix'] ?? null) || filled($field['suffix'] ?? null))) {
+            $prefix = (string) ($field['prefix'] ?? '');
+            $suffix = (string) ($field['suffix'] ?? '');
+
+            $value = ($prefix !== '' ? $prefix.(preg_match('/\pL$/u', $prefix) ? "\u{00A0}" : '') : '')
+                .$value
+                .($suffix !== '' ? (preg_match('/^\pL/u', $suffix) ? "\u{00A0}" : '').$suffix : '');
         }
 
         return parent::display($field, $value, $model);

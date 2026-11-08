@@ -7,7 +7,7 @@
 
     $isEmpty = $rows->isEmpty();
     $isRelationTable = (bool) optional(optional($this)->field)['name'];
-    $isFiltered = filled($this->search ?? null) || collect(data_get($this->filters ?? [], 'custom', []))->isNotEmpty();
+    $isFiltered = filled($this->search ?? null) || filled($this->selectedFilter ?? null) || collect(data_get($this->filters ?? [], 'custom', []))->isNotEmpty();
     $pluralLabel = Str::lower(__($tableModel->pluralName()));
     $singularLabel = Str::lower(__($tableModel->singularName()));
 
@@ -24,7 +24,12 @@
     <div class="overflow-hidden">
 
         @if ($isEmpty)
-            <div class="flex flex-col items-center px-6 text-center border-t border-gray-200/80 dark:border-white/10 {{ $isRelationTable ? 'py-8' : 'py-14' }}">
+            {{-- A page with no records at all has no toolbar above, so no hairline either; lists keep it. --}}
+            <div @class([
+                'flex flex-col items-center px-6 text-center',
+                'border-t border-gray-200/80 dark:border-white/10' => $isRelationTable || $isFiltered,
+                $isRelationTable ? 'py-8' : 'py-14',
+            ])>
                 @if ($isFiltered)
                     <h3 class="aura-section-title">{{ __('No matching :resources', ['resources' => $pluralLabel]) }}</h3>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Try a different search or clear the filters.') }}</p>

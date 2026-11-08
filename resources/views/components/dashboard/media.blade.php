@@ -2,13 +2,13 @@
 
 <div {{ $attributes->merge(['class' => 'col-span-12 rounded-xl bg-white dark:bg-gray-800 shadow-xs ring-1 ring-gray-950/10 dark:ring-white/10']) }}>
     <div class="p-6">
-        <div class="flex justify-between items-center">
-            <div>
+        <div class="flex gap-4 justify-between items-center">
+            <div class="min-w-0">
                 <h2 class="aura-section-title">{{ __('Recent uploads') }}</h2>
                 <p class="mt-0.5 aura-meta">{{ __('The latest files in your media library') }}</p>
             </div>
             <a href="{{ route('aura.attachment.index') }}" wire:navigate
-                class="inline-flex gap-1 items-center text-sm font-medium transition-colors duration-150 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-md">
+                class="inline-flex shrink-0 gap-1 items-center text-sm font-medium whitespace-nowrap transition-colors duration-150 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-md">
                 {{ __('Media Library') }}
                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />

@@ -1,8 +1,8 @@
 {{--
     Entity avatar: the record's image when it has one, otherwise its initials
     on a tint derived from the name. Pass a resource record, or name/shape/tone
-    directly for specimens. Sizes: xs 16px (chips), sm 20px (table rows),
-    md 28px (stacked lists), lg 40px (record header).
+    directly for specimens. Sizes: xs 16px (chips, images only), sm 24px
+    (table rows), md 28px (stacked lists), lg 40px (record header).
 --}}
 @props([
     'record' => null,

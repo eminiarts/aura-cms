@@ -1,6 +1,7 @@
-{{-- Phones: the title wraps to two lines and the actions get their own row below it. --}}
-<div class="flex flex-col gap-4 mt-1 mb-6 sm:flex-row sm:items-center sm:justify-between sm:my-8 {{ $recordLayout->hasPanels() ? 'sm:flex-wrap' : '' }}">
-    <div class="flex gap-3 items-center min-w-0">
+{{-- Actions sit to the right of the title, as on list pages; the title takes up to two lines beside them.
+     Only when they leave the title less than 10rem (several actions on a phone) do they wrap below it. --}}
+<div class="flex flex-wrap gap-x-4 gap-y-3 justify-between items-center mt-1 mb-6 sm:my-8 {{ $recordLayout->hasPanels() ? '' : 'sm:flex-nowrap' }}">
+    <div class="flex flex-1 gap-3 items-center min-w-[10rem]">
         @yield('view-header')
         {{-- The record is the subject of the page: its avatar, resource name as eyebrow, record title as H1. --}}
         @if ($model->avatarShape())

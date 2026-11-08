@@ -1,0 +1,57 @@
+<?php
+
+namespace Aura\Base\RecordLayout;
+
+use Aura\Base\Fields\Panel;
+
+/**
+ * Arranges a create/edit field tree for the form page. A simple form (plain
+ * inputs, or one full-width panel holding them) is a single section: the page
+ * header already names the record, so the panel drops its heading (the same
+ * rule as RecordViewSections), and the page keeps the form at a readable width
+ * instead of stretching short inputs across the content area.
+ *
+ * Forms with several panels, side-by-side panels or tabs are returned unchanged.
+ */
+final class RecordFormSections
+{
+    /**
+     * @param  array<int|string, array<string, mixed>>  $fields  Output of Resource::editFields() / createFields().
+     * @return array{fields: array<int|string, array<string, mixed>>, single: bool}
+     */
+    public static function arrange(array $fields): array
+    {
+        $panels = [];
+
+        foreach ($fields as $key => $field) {
+            if (($field['field'] ?? null) instanceof Panel) {
+                $panels[] = $key;
+            } elseif (self::isGroup($field)) {
+                return ['fields' => $fields, 'single' => false];
+            }
+        }
+
+        if (count($panels) > 1) {
+            return ['fields' => $fields, 'single' => false];
+        }
+
+        if ($panels !== []) {
+            $panel = $fields[$panels[0]];
+
+            if (count($fields) > 1 || (string) ($panel['style']['width'] ?? '100') !== '100') {
+                return ['fields' => $fields, 'single' => false];
+            }
+
+            $fields[$panels[0]]['hide_title'] = true;
+        }
+
+        return ['fields' => $fields, 'single' => $fields !== []];
+    }
+
+    private static function isGroup(array $field): bool
+    {
+        $instance = $field['field'] ?? null;
+
+        return ($instance !== null && ($instance->group ?? false) === true) || ! empty($field['fields']);
+    }
+}
