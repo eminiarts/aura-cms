@@ -1,13 +1,19 @@
 @if (!$inModal)
-<div class="flex items-center justify-between gap-4 my-8">
-    <div class="min-w-0">
+{{-- Same header as the record view: resource name as eyebrow, record title as H1. Phones wrap the title and put the actions on their own row. --}}
+<div class="flex flex-col gap-4 mt-1 mb-6 sm:flex-row sm:items-center sm:justify-between sm:my-8">
+    <div class="flex gap-3 items-center min-w-0">
         {{ app('aura')::injectView('post_edit_title_before') }}
-        <p class="aura-eyebrow">{{ __('Edit :resource', ['resource' => __($model->singularName())]) }}</p>
-        <h1 class="mt-0.5 aura-page-title truncate">{{ $model->title() }}</h1>
+        @if ($model->avatarShape())
+            <x-aura::avatar :record="$model" size="lg" />
+        @endif
+        <div class="min-w-0">
+            <p class="aura-eyebrow">{{ __($model->singularName()) }}</p>
+            <h1 class="mt-0.5 break-words aura-page-title line-clamp-2 sm:line-clamp-1" title="{{ $model->title() }}">{{ $model->title() }}</h1>
+        </div>
         {{ app('aura')::injectView('post_edit_title_after') }}
     </div>
 
-    <div class="flex items-center space-x-2">
+    <div class="flex gap-2 items-center shrink-0">
 
         @include('aura::livewire.resource.actions')
 

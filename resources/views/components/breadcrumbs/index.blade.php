@@ -1,6 +1,7 @@
 {{ app('aura')::injectView('breadcrumbs_before') }}
 
-<nav class="flex" aria-label="Breadcrumb">
+{{-- Phones show the page title and the top bar instead of a breadcrumb trail. --}}
+<nav class="hidden sm:flex" aria-label="Breadcrumb">
     <ol class="inline-flex items-center space-x-1 md:space-x-3">
         {{ $slot }}
     </ol>

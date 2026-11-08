@@ -37,6 +37,20 @@
             <td class="px-4 py-3 text-sm {{ $cellClass }} {{ $firstVisibleColumn ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300' }}">
                 @if ($displayIsEmpty)
                     <span class="text-gray-400 dark:text-gray-500">–</span>
+                @elseif ($firstVisibleColumn && method_exists($row, 'avatarShape') && $row->avatarShape())
+                    {{-- Leading column is the record: avatar, name, and a link to the record when the viewer may open it. --}}
+                    @php
+                        // No link around a value that is itself a link (record chip, URL host).
+                        $rowViewUrl = ! (is_string($display) && stripos($display, '<a') !== false) && auth()->user()?->can('view', $row) ? $row->viewUrl() : null;
+                    @endphp
+                    <div class="flex gap-2.5 items-center min-w-0">
+                        <x-aura::avatar :record="$row" size="sm" />
+                        @if ($rowViewUrl)
+                            <a href="{{ $rowViewUrl }}" wire:navigate class="min-w-0 truncate rounded-sm decoration-gray-400 underline-offset-[3px] transition-colors duration-150 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:decoration-gray-500">{!! $display !!}</a>
+                        @else
+                            <span class="min-w-0 truncate">{!! $display !!}</span>
+                        @endif
+                    </div>
                 @elseif ($columnType === 'Aura\\Base\\Fields\\Email' && is_string($display))
                     {{-- Long addresses stay on one line; the full address is in the tooltip. --}}
                     <span class="block max-w-[16rem] truncate" title="{{ html_entity_decode(strip_tags($display)) }}">{!! $display !!}</span>

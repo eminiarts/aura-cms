@@ -32,7 +32,7 @@
         'chevron-down', 'chevron-up', 'circle', 'close', 'cog', 'collection', 'color-swatch', 'config',
         'dashboard', 'dots', 'edit', 'empty', 'exclamation', 'file', 'filter', 'grid', 'impersonate', 'info',
         'kanban', 'list', 'loading', 'media', 'minus', 'move', 'notifications', 'notifications-unread',
-        'option', 'permission', 'plus', 'role', 'search', 'table', 'team', 'team-invitation', 'template-plain',
+        'option', 'permission', 'plus', 'role', 'search', 'sparkles', 'table', 'team', 'team-invitation', 'template-plain',
         'template-tabs', 'template-tabs-panels', 'trash', 'upload', 'user', 'user-impersonate', 'view',
     ];
 
@@ -214,11 +214,11 @@
 
         <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Page header pattern') }}</span>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Record pages: the resource name is the eyebrow, the record title is the H1. One primary button per screen; everything else is secondary or ghost.') }}</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Record pages (view and edit): the resource name is the eyebrow, the record title is the H1. Create pages have no eyebrow; the H1 says "New deal" in sentence case, with a ghost Cancel left of Save. Phones wrap the H1 to two lines and put the actions on their own row. The view page shows the record values in a details card on the left and related lists on the right from xl up; the panel heading and the field equal to the title are dropped there. One primary button per screen; everything else is secondary or ghost.') }}</p>
             <div class="flex gap-4 justify-between items-center mt-4">
                 <div class="min-w-0">
                     <p class="aura-eyebrow">Company</p>
-                    <h3 class="mt-0.5 aura-page-title truncate">Northwind Software</h3>
+                    <h3 class="mt-0.5 break-words aura-page-title line-clamp-2 sm:line-clamp-1">Northwind Software</h3>
                 </div>
                 <div class="flex gap-2 items-center">
                     <x-aura::button.transparent>{{ __('View') }}</x-aura::button.transparent>
@@ -497,43 +497,64 @@
     {{-- ============================================================ --}}
     <section id="badges" class="pt-14 scroll-mt-16">
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">06</span>
-        <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Badges & Pills') }}</h2>
+        <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Tags, Avatars & Pills') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Four badge shapes: status pills (filled tint + dot, rounded-full), tag chips (outlined, for plain option values), record chips (relation values with the resource icon) and the small rounded-full pills for sidebar counts and trends.') }}
+            {{ __('One tag family for every inline value that is not plain text: 22px high, 12px medium, the same radius and padding. Three variants: neutral for option values, status with a colored dot, relation with the record avatar. Entity avatars put initials on a tint derived from the name (square for companies and things, circle for people) and are used before record names in tables, chips and the record header. Small rounded-full pills remain for sidebar counts and trends.') }}
         </p>
 
         <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Status pills (fields/status-index)') }}</span>
-            <div class="flex flex-wrap gap-2 mt-4">
-                @foreach ($statusPills as $label => $classes)
-                    <span class="inline-flex items-center gap-x-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ring-gray-950/10 dark:ring-white/10 {{ $classes }}">
-                        <svg class="size-1.5 shrink-0 fill-current opacity-70" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>
-                        {{ $label }}
-                    </span>
-                @endforeach
-            </div>
-        </div>
-
-        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Tag chips (.aura-tag, fields/select-index)') }}</span>
-            <div class="flex flex-wrap gap-1.5 mt-4">
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Tag family (.aura-tag): neutral, status (.aura-tag-status + option color), relation (.aura-record-link)') }}</span>
+            <div class="flex flex-wrap gap-1.5 items-center mt-4">
                 @foreach (['Software', 'Retail', 'Finance', 'Other'] as $tag)
                     <span class="aura-tag">{{ $tag }}</span>
                 @endforeach
             </div>
+            <div class="flex flex-wrap gap-1.5 items-center mt-3">
+                @foreach ($statusPills as $label => $classes)
+                    <span class="aura-tag aura-tag-status {{ $classes }}">
+                        <svg class="aura-tag-dot" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>
+                        {{ $label }}
+                    </span>
+                @endforeach
+            </div>
+            <div class="flex flex-wrap gap-1.5 items-center mt-3">
+                <a href="#badges" class="aura-tag aura-record-link">
+                    <x-aura::avatar name="Northwind Software" shape="square" size="xs" />
+                    <span class="aura-record-link-title">Northwind Software</span>
+                </a>
+                <a href="#badges" class="aura-tag aura-record-link">
+                    <x-aura::avatar name="Martina Keller" shape="circle" size="xs" />
+                    <span class="aura-record-link-title">Martina Keller</span>
+                </a>
+                <a href="#badges" class="aura-tag aura-record-link">
+                    <span class="aura-record-link-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg></span>
+                    <span class="aura-record-link-title">{{ __('Icon fallback') }}</span>
+                </a>
+            </div>
         </div>
 
         <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Record chips (.aura-record-link, BelongsTo::display)') }}</span>
-            <div class="flex flex-wrap gap-2 mt-4">
-                <a href="#badges" class="aura-record-link">
-                    <span class="aura-record-link-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg></span>
-                    <span class="aura-record-link-title">Northwind Software</span>
-                </a>
-                <a href="#badges" class="aura-record-link">
-                    <span class="aura-record-link-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg></span>
-                    <span class="aura-record-link-title">Martina Keller</span>
-                </a>
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Entity avatars (x-aura::avatar): sizes xs 16, sm 20, md 28, lg 40; tone from the name over 10 palette tints') }}</span>
+            <div class="flex flex-wrap gap-4 items-center mt-4">
+                @foreach (['xs', 'sm', 'md', 'lg'] as $size)
+                    <x-aura::avatar name="Atlas Components" shape="square" :size="$size" />
+                @endforeach
+                <span class="w-px h-6 bg-gray-200 dark:bg-white/10" aria-hidden="true"></span>
+                @foreach (['xs', 'sm', 'md', 'lg'] as $size)
+                    <x-aura::avatar name="Martina Keller" shape="circle" :size="$size" />
+                @endforeach
+            </div>
+            <div class="flex flex-wrap gap-2 items-center mt-4">
+                @foreach (\Aura\Base\Resource::avatarTones() as $tone)
+                    <x-aura::avatar :name="Str::title($tone)" shape="square" size="md" :tone="$tone" title="{{ $tone }}" />
+                @endforeach
+            </div>
+            <div class="flex gap-3 items-center mt-5">
+                <x-aura::avatar name="Northwind Software" shape="square" size="lg" />
+                <div class="min-w-0">
+                    <p class="aura-eyebrow">Company</p>
+                    <h3 class="mt-0.5 truncate aura-page-title">Northwind Software</h3>
+                </div>
             </div>
         </div>
 
@@ -616,7 +637,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">08</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Table') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('The resource index table. Headings use the real table.heading component (sentence case, 12px medium gray-500); rows are a faithful specimen of table/row (the live rows are Livewire-bound). First column 500 gray-900, other cells 400 gray-600, numerals tabular, empty cells show a dash. Second row shows the selected state.') }}
+            {{ __('The resource index table. No card around it: a header hairline, row dividers and a closing hairline carry the list. Headings use the real table.heading component (sentence case, 12px medium gray-500); rows are a faithful specimen of table/row (the live rows are Livewire-bound). First column: entity avatar plus the record name, 500 gray-900, linked to the record; other cells 400 gray-600, numerals tabular, empty cells show a dash. Second row shows the selected state.') }}
         </p>
 
         {{-- Filter tabs (specimen of table/filter-tabs) --}}
@@ -627,11 +648,11 @@
         </div>
 
         {{-- Table card (specimen of table/list-view) --}}
-        <div class="overflow-hidden mt-4 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="overflow-hidden mt-4">
             <div class="overflow-x-auto">
                 <table class="min-w-full">
                     <thead>
-                        <tr class="bg-gray-50/80 dark:bg-white/[0.03] border-b border-gray-200/80 dark:border-white/10">
+                        <tr class="border-b border-gray-200/80 dark:border-white/10">
                             <th class="py-2.5 pr-0 pl-4 w-px">
                                 <x-aura::input.checkbox hideLabel label="Select all" />
                             </th>
@@ -642,7 +663,7 @@
                             <th class="px-3 py-2.5"><span class="sr-only">{{ __('Actions') }}</span></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                    <tbody class="border-b divide-y divide-gray-200/60 border-gray-200/80 dark:divide-white/[0.06] dark:border-white/10">
                         @foreach ($tableRows as $row)
                             <tr class="transition-colors duration-150 ease-in-out cm-table-row hover:bg-gray-50/80 dark:hover:bg-white/[0.04] {{ $row['selected'] ? 'bg-primary-50/60 dark:bg-primary-500/10' : '' }}">
                                 <td class="relative py-3 pr-0 pl-4">
@@ -651,14 +672,24 @@
                                     @endif
                                     <x-aura::input.checkbox hideLabel :label="'Row '.$row['id']" :checked="$row['selected']" />
                                 </td>
-                                <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{{ $row['title'] }}</td>
+                                <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                                    <div class="flex gap-2.5 items-center min-w-0">
+                                        <x-aura::avatar :name="$row['title']" shape="square" size="sm" />
+                                        <a href="#table" class="min-w-0 truncate rounded-sm decoration-gray-400 underline-offset-[3px] transition-colors duration-150 hover:underline dark:decoration-gray-500">{{ $row['title'] }}</a>
+                                    </div>
+                                </td>
                                 <td class="px-4 py-3 text-sm">
-                                    <span class="inline-flex items-center gap-x-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ring-gray-950/10 dark:ring-white/10 {{ $row['statusClass'] }}">
-                                        <svg class="size-1.5 shrink-0 fill-current opacity-70" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>
+                                    <span class="aura-tag aura-tag-status {{ $row['statusClass'] }}">
+                                        <svg class="aura-tag-dot" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>
                                         {{ $row['status'] }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{{ $row['author'] }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                                    <span class="aura-tag">
+                                        <x-aura::avatar :name="$row['author']" shape="circle" size="xs" />
+                                        <span class="aura-record-link-title">{{ $row['author'] }}</span>
+                                    </span>
+                                </td>
                                 <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{{ $row['date'] }}</td>
                                 <td class="px-3 py-2 text-right">
                                     <x-aura::dropdown align="right" width="48">

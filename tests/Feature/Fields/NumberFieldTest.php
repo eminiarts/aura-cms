@@ -87,7 +87,7 @@ describe('Number Field Rendering', function () {
 
     test('renders in create form with correct type', function () {
         Livewire::test(Create::class, ['slug' => 'number-model'])
-            ->assertSee('Create Number Model')
+            ->assertSee('New number model')
             ->assertSee('Number for Test')
             ->assertSeeHtml('type="number"');
     });
@@ -255,5 +255,12 @@ describe('Number Field display formatting', function () {
 
     test('keeps the stored decimals when only a separator is set', function () {
         expect((new Number)->display(['slug' => 'amount', 'thousands_separator' => "'"], '1234567.5', null))->toBe('1&#039;234&#039;567.5');
+    });
+
+    test('drops zero decimals of whole numbers when trim_zero_decimals is set', function () {
+        $field = ['slug' => 'amount', 'decimals' => 2, 'thousands_separator' => ',', 'trim_zero_decimals' => true];
+
+        expect((new Number)->display($field, '84500.00', null))->toBe('84,500')
+            ->and((new Number)->display($field, '84500.5', null))->toBe('84,500.50');
     });
 });

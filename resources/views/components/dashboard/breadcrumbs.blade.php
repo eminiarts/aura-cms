@@ -9,7 +9,8 @@
     };
 @endphp
 
-<div {{ $attributes->merge(['class' => "{$colSpan}"]) }}>
+{{-- The breadcrumb is hidden on phones, so the grid cell goes too (no empty row plus gap). --}}
+<div {{ $attributes->merge(['class' => "hidden sm:block {$colSpan}"]) }}>
     <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
                 iconClass="text-gray-500 w-6 h-6 mr-0" />

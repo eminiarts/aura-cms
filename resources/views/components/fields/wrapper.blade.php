@@ -36,7 +36,7 @@
 
     @if ($isView)
         {{-- Record view: label column on the left, value on the right; stacked on phones. --}}
-        <div class="py-2 sm:grid sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-x-6 sm:items-baseline">
+        <div class="py-2 sm:grid sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-x-6 sm:items-baseline aura-view-row">
             <div class="flex gap-1.5 items-center mb-1 min-w-0 sm:mb-0">
                 @if ($label && $showLabel)
                     <span class="truncate aura-eyebrow">{{ $label }}</span>

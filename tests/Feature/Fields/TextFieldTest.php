@@ -116,6 +116,27 @@ describe('Text Field Rendering', function () {
         expect((string) $view)->toContain('placeholder="Placeholder for Test"');
     });
 
+    test('renders no placeholder when none is set or it repeats the field name', function () {
+        $fieldClass = app('Aura\\Base\\Fields\\Text');
+
+        foreach ([null, 'text for test'] as $placeholder) {
+            $field = array_filter([
+                'name' => 'Text for Test',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'placeholder' => $placeholder,
+                'slug' => 'text',
+                'field' => $fieldClass,
+            ]);
+
+            $view = $this->withViewErrors([])->blade(
+                '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
+                ['component' => $fieldClass->edit(), 'field' => $field, 'form' => []]
+            );
+
+            expect((string) $view)->not->toContain('placeholder=');
+        }
+    });
+
     test('renders prefix', function () {
         $field = [
             'name' => 'Text for Test',

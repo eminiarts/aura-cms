@@ -98,7 +98,7 @@ test('displays selected genre in advanced select when api option is enabled', fu
     Aura::setModel(new MovieModel);
 
     $component = Livewire::test(Create::class, ['slug' => 'movie'])
-        ->assertSee('Create Movie')
+        ->assertSee('New movie')
         ->assertSee('Genre')
         ->set('form.fields.title', 'The Matrix')
 

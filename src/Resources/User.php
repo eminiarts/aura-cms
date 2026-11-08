@@ -139,6 +139,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         ];
     }
 
+    public function avatarShape(): ?string
+    {
+        return 'circle';
+    }
+
     /**
      * Determine if the user belongs to the given team.
      *

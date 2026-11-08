@@ -3,7 +3,9 @@
 
     {{ app('aura')::injectView('index_before') }}
 
-    <div class="flex gap-3 justify-between items-center">
+    {{-- Breadcrumb row. Phones hide it: the top bar and the page title orient there, and the resource
+         editor (a desktop builder) is not something to open on a phone. --}}
+    <div class="hidden gap-3 justify-between items-center sm:flex">
 
         <div class="min-w-0">
             <x-aura::breadcrumbs>
@@ -14,13 +16,15 @@
         </div>
 
         @if (config('aura.features.resource_editor') && $resource->isAppResource())
-            {{-- Icon-only on phones so it fits the breadcrumb row; the label stays for screen readers. --}}
-            <x-aura::button.transparent :href="route('aura.resource.editor', $slug)" size="sm" class="shrink-0 max-sm:w-8 max-sm:px-0 max-sm:[&>span:first-child]:ml-0" title="{{ __('Edit Resource') }}">
-                <x-slot:icon>
-                    <x-aura::icon icon="cog" />
-                </x-slot>
-                <span class="sr-only sm:not-sr-only">{{ __('Edit Resource') }}</span>
-            </x-aura::button.transparent>
+            {{-- A developer tool, so a quiet icon button; the name is in the tooltip and for screen readers. --}}
+            <x-aura::tippy :text="__('Edit resource')" position="left">
+                <x-aura::button.transparent :href="route('aura.resource.editor', $slug)" size="sm" class="shrink-0 w-8 !px-0 [&>span:first-child]:ml-0" aria-label="{{ __('Edit resource') }}">
+                    <x-slot:icon>
+                        <x-aura::icon icon="cog" />
+                    </x-slot>
+                    <span class="sr-only">{{ __('Edit resource') }}</span>
+                </x-aura::button.transparent>
+            </x-aura::tippy>
         @endif
     </div>
 

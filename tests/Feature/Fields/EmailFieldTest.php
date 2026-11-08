@@ -163,7 +163,7 @@ describe('Email Field in Livewire', function () {
 
     test('renders in create form', function () {
         Livewire::test(Create::class, ['slug' => 'email'])
-            ->assertSee('Create Email Model')
+            ->assertSee('New email model')
             ->assertSee('Email for Test')
             ->assertSeeHtml('type="email"');
     });

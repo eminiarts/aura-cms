@@ -325,6 +325,38 @@ abstract class Field implements Wireable
         return $this->taxonomy;
     }
 
+    /**
+     * Placeholder for the field's input, translated. Null when the field sets
+     * none or when it only repeats the field name, which the label above the
+     * input already shows.
+     */
+    public static function placeholderFor($field): ?string
+    {
+        $placeholder = optional($field)['placeholder'];
+
+        if (! is_string($placeholder) || trim($placeholder) === '') {
+            return null;
+        }
+
+        $translated = __($placeholder);
+        $translated = is_string($translated) ? $translated : $placeholder;
+
+        $name = optional($field)['name'];
+
+        if (is_string($name)) {
+            $label = __($name);
+            $label = is_string($label) ? $label : $name;
+
+            foreach ([$name, $label] as $candidate) {
+                if (mb_strtolower(trim($candidate)) === mb_strtolower(trim($translated))) {
+                    return null;
+                }
+            }
+        }
+
+        return $translated;
+    }
+
     public function toLivewire()
     {
         return [

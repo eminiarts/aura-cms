@@ -102,7 +102,7 @@ describe('Date Field Rendering', function () {
 
     test('renders in create form', function () {
         Livewire::test(Create::class, ['slug' => 'datemodel'])
-            ->assertSee('Create Date Model')
+            ->assertSee('New date model')
             ->assertSee('Date for Test');
     });
 

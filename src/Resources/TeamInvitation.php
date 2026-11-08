@@ -25,6 +25,12 @@ class TeamInvitation extends Resource
 
     protected static bool $showInNavigation = true;
 
+    // Pending invitations are not records with an identity yet.
+    public function avatarShape(): ?string
+    {
+        return null;
+    }
+
     public static function getFields(): array
     {
         return [

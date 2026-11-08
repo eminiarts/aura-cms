@@ -83,20 +83,66 @@ body {
     @apply ml-1.5 text-sm font-normal text-gray-400 dark:text-gray-500;
 }
 
-/* Record chip: a relation value rendered as a small chip with the
-   related resource's icon. Used by BelongsTo::display(), so it lives in
-   CSS (src/Fields is outside the Tailwind content globs). */
+/* Tag family. One 22px chip for every inline value that is not plain text:
+   neutral (.aura-tag, option values), status (.aura-tag-status, tinted with a
+   dot; the tint comes from the option's own color classes) and relation
+   (.aura-record-link, with the related record's avatar). Same height, radius,
+   12px medium text and padding across all three. The colors sit in :where()
+   so a status option's utility classes override them. Used from PHP display()
+   methods too, so it lives in CSS (src/Fields is outside the content globs). */
+.aura-tag,
 .aura-record-link {
-    @apply inline-flex max-w-full items-center gap-1.5 rounded-md bg-gray-950/[0.04] px-1.5 py-0.5 text-sm font-medium text-gray-800 ring-1 ring-inset ring-gray-950/[0.06] transition-colors duration-150 hover:bg-primary-50 hover:text-primary-700 hover:ring-primary-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500;
+    @apply inline-flex max-w-full items-center gap-1.5 whitespace-nowrap px-1.5 text-xs font-medium leading-none;
+    height: 1.375rem;
     border-radius: calc(var(--aura-control-radius, 0.5rem) * 0.75);
 }
 
+:where(.aura-tag, .aura-record-link) {
+    @apply bg-gray-950/[0.05] text-gray-700 ring-1 ring-inset ring-gray-950/[0.06];
+}
+
+:where(.dark .aura-tag, .dark .aura-record-link) {
+    @apply bg-white/[0.07] text-gray-300 ring-white/10;
+}
+
+/* Status: the option color classes (bg-*-100 text-*-800 + dark: variants) win over the neutral fill. */
+.aura-tag-status {
+    @apply ring-1 ring-inset ring-gray-950/[0.08] dark:ring-white/10;
+}
+
+.aura-tag-dot {
+    @apply shrink-0 fill-current opacity-70;
+    width: 0.375rem;
+    height: 0.375rem;
+}
+
+/* A leading avatar sits 3px from the chip edge. */
+.aura-tag:has(> .aura-avatar:first-child),
+.aura-record-link:has(> .aura-avatar:first-child) {
+    padding-left: 0.1875rem;
+}
+
+/* Relation: a link to the record, hover tints primary. */
+.aura-record-link {
+    @apply text-gray-800 transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .aura-record-link:hover {
+        @apply bg-primary-50 text-primary-700 ring-primary-500/20;
+    }
+
+    .dark .aura-record-link:hover {
+        @apply bg-primary-500/15 text-primary-300 ring-primary-400/30;
+    }
+}
+
 .dark .aura-record-link {
-    @apply bg-white/[0.06] text-gray-200 ring-white/10 hover:bg-primary-500/15 hover:text-primary-300 hover:ring-primary-400/30;
+    @apply text-gray-200;
 }
 
 .aura-record-link-icon {
-    @apply shrink-0 text-gray-500 dark:text-gray-400;
+    @apply shrink-0 pl-0.5 text-gray-500 dark:text-gray-400;
 }
 
 .aura-record-link-icon svg {
@@ -108,17 +154,65 @@ body {
     @apply truncate;
 }
 
-/* Tag chip: a plain option value (Select, AdvancedSelect). Outlined so it
-   reads as a category, while status pills stay filled with a dot. */
-.aura-tag {
-    @apply inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-md bg-white px-1.5 py-0.5 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-950/10 dark:bg-white/[0.04] dark:text-gray-300 dark:ring-white/10;
-    border-radius: calc(var(--aura-control-radius, 0.5rem) * 0.75);
+/* Inline link in a value cell (Text fields holding a URL show the host). */
+.aura-link {
+    @apply font-medium text-primary-700 underline-offset-2 transition-colors duration-150 hover:underline hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300;
 }
+
+/* Entity avatar. Initials on a tint derived from the record title, or the
+   record's own image. Square for organisations and things, circle for people.
+   Tones mirror the Status field hues; red stays reserved for errors. */
+.aura-avatar {
+    @apply inline-flex shrink-0 select-none items-center justify-center overflow-hidden font-semibold uppercase leading-none;
+    letter-spacing: 0.02em;
+}
+
+.aura-avatar img {
+    @apply h-full w-full object-cover;
+}
+
+.aura-avatar-xs { width: 1rem; height: 1rem; font-size: 0.5rem; }
+.aura-avatar-sm { width: 1.25rem; height: 1.25rem; font-size: 0.5625rem; }
+.aura-avatar-md { width: 1.75rem; height: 1.75rem; font-size: 0.6875rem; }
+.aura-avatar-lg { width: 2.5rem; height: 2.5rem; font-size: 0.875rem; }
+
+.aura-avatar-circle { border-radius: 9999px; }
+.aura-avatar-square.aura-avatar-xs { border-radius: 0.1875rem; }
+.aura-avatar-square.aura-avatar-sm { border-radius: 0.25rem; }
+.aura-avatar-square.aura-avatar-md { border-radius: 0.375rem; }
+.aura-avatar-square.aura-avatar-lg { border-radius: 0.5rem; }
+
+.aura-avatar-image { @apply bg-gray-100 ring-1 ring-inset ring-gray-950/[0.06] dark:bg-white/10 dark:ring-white/10; }
+.aura-avatar-tone-primary { @apply bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300; }
+.aura-avatar-tone-gray { @apply bg-gray-200 text-gray-700 dark:bg-white/[0.12] dark:text-gray-300; }
+.aura-avatar-tone-blue { @apply bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300; }
+.aura-avatar-tone-green { @apply bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300; }
+.aura-avatar-tone-yellow { @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-300; }
+.aura-avatar-tone-indigo { @apply bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300; }
+.aura-avatar-tone-purple { @apply bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300; }
+.aura-avatar-tone-pink { @apply bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-300; }
+.aura-avatar-tone-orange { @apply bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300; }
+.aura-avatar-tone-teal { @apply bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300; }
 
 .aura-card {
     @apply p-5 bg-white rounded-xl shadow-xs ring-1 ring-gray-950/10;
     padding: var(--aura-panel-padding, 1.25rem);
     border-radius: var(--aura-panel-radius, 0.75rem);
+}
+
+/* Two-column record page: the details card is narrow, so its label column is too,
+   and the related lists beside it use tighter cell padding to fit their columns. */
+@media (min-width: 1280px) {
+    .aura-record-details .aura-view-row {
+        grid-template-columns: 6rem minmax(0, 1fr);
+        column-gap: 0.75rem;
+    }
+
+    .aura-record-columns [data-record-related] th,
+    .aura-record-columns [data-record-related] td {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
 }
 
 .dark .aura-card {

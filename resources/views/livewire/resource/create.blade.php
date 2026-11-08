@@ -1,23 +1,37 @@
+@php
+    // Header rule shared with view and edit: the eyebrow names the resource only above a record title.
+    // A new record has no title yet, so the H1 says "New deal" (sentence case, acronyms kept) and there is no eyebrow.
+    $newRecordTitle = __('New :resource', [
+        'resource' => collect(preg_split('/\s+/u', trim(__($model->singularName()))))
+            ->map(fn ($word) => mb_strlen($word) > 1 && mb_strtoupper($word) === $word ? $word : mb_strtolower($word))
+            ->implode(' '),
+    ]);
+    $indexUrl = Route::has('aura.' . $model->getSlug() . '.index') ? route('aura.' . $model->getSlug() . '.index') : null;
+@endphp
 <div class="">
-    @section('title', __('Create ' . $model->singularName()))
+    @section('title', $newRecordTitle)
 
 
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
-        <x-aura::breadcrumbs.li :href="route('aura.' . $model->getSlug() . '.index')" :title="__($model->getPluralName())" />
-        <x-aura::breadcrumbs.li title="{{ __('Create :resource', ['resource' => __($model->singularName())]) }}" />
+        <x-aura::breadcrumbs.li :href="$indexUrl" :title="__($model->getPluralName())" />
+        <x-aura::breadcrumbs.li :title="$newRecordTitle" />
     </x-aura::breadcrumbs>
     @endif
 
-    <div class="flex items-center justify-between gap-4 {{ $inModal ? 'mb-8' : 'my-8'}}">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between {{ $inModal ? 'mb-8' : 'mt-1 mb-6 sm:my-8'}}">
         <div class="min-w-0">
-            <p class="aura-eyebrow">{{ __($model->getPluralName()) }}</p>
-            <h1 class="mt-0.5 aura-page-title">{{ __('Create :resource', ['resource' => __($model->singularName())]) }}</h1>
+            <h1 class="break-words aura-page-title">{{ $newRecordTitle }}</h1>
         </div>
 
         @if(!$inModal)
-        <div class="save-resource">
+        <div class="flex gap-2 items-center shrink-0 save-resource">
+            @if($indexUrl)
+            <x-aura::button.transparent :href="$indexUrl">
+                {{ __('Cancel') }}
+            </x-aura::button.transparent>
+            @endif
             @if($showSaveButton)
             <x-aura::button wire:click="save">
                 <div wire:loading wire:target="save">

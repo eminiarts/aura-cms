@@ -2,10 +2,10 @@
 
     <x-aura::dashboard.breadcrumbs cols="full" />
 
-    <x-aura::dashboard.welcome cols="full" />
+    <x-aura::dashboard.welcome cols="full" :empty="$isEmptyWorkspace ?? false" />
 
     @if ($stats->isNotEmpty())
-        <x-aura::dashboard.stats :stats="$stats" />
+        <x-aura::dashboard.stats :stats="$stats" :calm="$isEmptyWorkspace ?? false" />
 
         <x-aura::dashboard.recent-activity :items="$recentItems" class="col-span-12 lg:col-span-7 xl:col-span-8 lg:self-start" />
 

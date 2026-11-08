@@ -235,9 +235,9 @@ test('thumbnail with missing image shows placeholder', function () {
     ];
     $model->save();
 
-    // Test the index view
+    // Without a thumbnail the chip falls back to the record's initials avatar
     Livewire::test(Index::class)
-        ->assertSee('bg-gray-300');
+        ->assertSee('aura-avatar');
 });
 
 test('multiple items render correctly in index view', function () {
@@ -254,5 +254,5 @@ test('multiple items render correctly in index view', function () {
 
     // Test the index view
     Livewire::test(Index::class)
-        ->assertSee('flex space-x-2');
+        ->assertSee('flex flex-wrap gap-1.5');
 });

@@ -15,7 +15,9 @@ class Number extends Field
     /**
      * Optional display formatting. Only applies when the field sets
      * `decimals` and/or `thousands_separator` (plus `decimal_separator`),
-     * otherwise the stored value is shown as before.
+     * otherwise the stored value is shown as before. With
+     * `trim_zero_decimals` a whole number drops its decimals
+     * ("84,500" instead of "84,500.00"); fractions keep all of them.
      */
     public function display($field, $value, $model)
     {
@@ -26,6 +28,10 @@ class Number extends Field
             $decimals = $hasDecimals
                 ? (int) $field['decimals']
                 : (str_contains((string) $value, '.') ? strlen(substr(strrchr((string) $value, '.'), 1)) : 0);
+
+            if (! empty($field['trim_zero_decimals']) && fmod((float) $value, 1.0) === 0.0) {
+                $decimals = 0;
+            }
 
             $value = number_format(
                 (float) $value,

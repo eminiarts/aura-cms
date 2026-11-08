@@ -105,13 +105,17 @@ class BelongsTo extends Field implements PreloadsTableDisplay
 
             $related = $this->resolveDisplayModel($field, $value, $model);
 
-            // Record chip: resource icon plus title. The icon is markup owned by
-            // the resource class; the title is database-backed and view-value
-            // renders this raw, so escape it here.
-            $icon = $related && method_exists($related, 'getIcon') ? (string) $related->getIcon() : '';
-            $iconHtml = $icon !== '' ? "<span class='aura-record-link-icon' aria-hidden='true'>{$icon}</span>" : '';
+            // Record chip: the related record's avatar plus title; resources
+            // without an avatar fall back to their icon. Both are markup owned
+            // by the resource class; the title is database-backed and
+            // view-value renders this raw, so escape it here.
+            $leading = $related && method_exists($related, 'avatarHtml') ? $related->avatarHtml('xs') : '';
 
-            return "<a class='aura-record-link' href='".e(route('aura.'.$slug.'.edit', $value))."'>".$iconHtml."<span class='aura-record-link-title'>".e(optional($related)->title()).'</span></a>';
+            if ($leading === '' && $related && method_exists($related, 'getIcon') && (string) $related->getIcon() !== '') {
+                $leading = "<span class='aura-record-link-icon' aria-hidden='true'>".$related->getIcon().'</span>';
+            }
+
+            return "<a class='aura-tag aura-record-link' href='".e(route('aura.'.$slug.'.edit', $value))."'>".$leading."<span class='aura-record-link-title'>".e(optional($related)->title()).'</span></a>';
         }
 
         return $value;

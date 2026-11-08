@@ -12,9 +12,13 @@
                 @foreach ($items as $item)
                     <a href="{{ $item['url'] }}" wire:navigate
                         class="flex gap-3 items-center px-3 py-2 rounded-lg transition-colors duration-150 group hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
-                        <span class="text-gray-400 transition-colors duration-150 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 [&>svg]:size-4 shrink-0" aria-hidden="true">
-                            {!! $item['icon'] !!}
-                        </span>
+                        @if (! empty($item['avatar']))
+                            {!! $item['avatar'] !!}
+                        @else
+                            <span class="flex justify-center items-center w-7 h-7 text-gray-400 rounded-md shrink-0 bg-gray-950/[0.04] dark:bg-white/5 dark:text-gray-500 [&>svg]:size-4" aria-hidden="true">
+                                {!! $item['icon'] !!}
+                            </span>
+                        @endif
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-medium text-gray-900 truncate dark:text-white">{{ $item['title'] }}</p>
                             <p class="aura-meta">

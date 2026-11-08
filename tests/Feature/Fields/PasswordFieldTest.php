@@ -75,7 +75,7 @@ describe('Password Field Configuration', function () {
 describe('Password Field Rendering', function () {
     test('renders in create form', function () {
         Livewire::test(Create::class, ['slug' => 'password-model'])
-            ->assertSee('Create Password Model')
+            ->assertSee('New password model')
             ->assertSee('Password for Test')
             ->assertSeeHtml('type="password"');
     });
@@ -145,7 +145,7 @@ describe('Password Field Edit Behavior', function () {
 
         // Edit should show empty password field
         Livewire::test(Edit::class, ['slug' => 'PasswordModel', 'id' => $post->id])
-            ->assertSee('Edit Password Model')
+            ->assertSee('Password Model')
             ->assertSee('Password for Test')
             ->assertSeeHtml('type="password"')
             ->assertSet('form.fields.password', null);

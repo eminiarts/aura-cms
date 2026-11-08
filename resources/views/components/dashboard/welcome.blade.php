@@ -1,4 +1,4 @@
-@props(['cols' => 'full'])
+@props(['cols' => 'full', 'empty' => false])
 
 @php
     $greeting = match (true) {
@@ -17,7 +17,7 @@
                 {{ $greeting }}{{ $firstName ? ', '.$firstName : '' }}
             </h1>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {{ now()->isoFormat('dddd, LL') }} &middot; {{ __("Here's what changed in your workspace.") }}
+                {{ now()->isoFormat('dddd, LL') }} &middot; {{ $empty ? __('Your workspace is empty. Start by adding a record.') : __("Here's what changed in your workspace.") }}
             </p>
         </div>
     </div>

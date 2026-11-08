@@ -1,3 +1,5 @@
+{{-- No wrapper without actions: an empty flex item would still add a gap in the header action row. --}}
+@if(count($this->actions))
 <div class="flex flex-wrap gap-2">
 @if(count($this->actions))
     @if($this->model::$showActionsAsButtons)
@@ -152,3 +154,4 @@
 @endif
 
 </div>
+@endif

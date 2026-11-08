@@ -16,7 +16,8 @@
             <p class="mt-0.5 aura-meta">{{ __('Common tasks and actions') }}</p>
         </div>
 
-        <div class="grid grid-cols-1 gap-1 mt-4 -mx-3 sm:grid-cols-2">
+        {{-- One column so titles and descriptions never truncate; one primary tint for every action icon. --}}
+        <div class="grid grid-cols-1 gap-1 mt-4 -mx-3">
             @if (config('aura.features.create_resource'))
                 <button onclick="Livewire.dispatch('openModal', { component: 'aura::create-resource' })"
                     class="flex gap-3 items-center px-3 py-2 text-left rounded-lg transition-colors duration-150 group hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">

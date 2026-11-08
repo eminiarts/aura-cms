@@ -15,7 +15,7 @@
     @endif
 
     <main class="min-w-0 space-y-6 {{ match ($mainColumns) { 6 => 'lg:col-span-6', 3 => 'lg:col-span-9', default => 'lg:col-span-12' } }}" data-record-layout-region="main-content">
-        @include('aura::livewire.resource.record-layout.default-main')
+        @include('aura::livewire.resource.record-layout.default-main', ['splitRelated' => $mainColumns === 0])
         @include('aura::livewire.resource.record-layout.region', ['region' => \Aura\Base\RecordLayout\RecordLayoutRegion::MainContent])
 
         @if ($recordLayout->panels(\Aura\Base\RecordLayout\RecordLayoutRegion::ActivityTimeline) !== [])

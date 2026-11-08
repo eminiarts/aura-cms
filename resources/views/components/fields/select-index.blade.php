@@ -20,7 +20,7 @@
     <div class="flex flex-wrap gap-1">
         @foreach ($values as $item)
             @if (! empty($colors[$item]))
-                <span class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded-md whitespace-nowrap {{ $colors[$item] }}">
+                <span class="aura-tag aura-tag-status {{ $colors[$item] }}">
                     {{ __($labels[$item] ?? $item) }}
                 </span>
             @else

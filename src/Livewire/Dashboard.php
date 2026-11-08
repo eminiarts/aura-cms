@@ -10,11 +10,13 @@ class Dashboard extends Component
     public function render()
     {
         $resources = $this->accessibleAppResources();
+        $isEmptyWorkspace = $this->isEmptyWorkspace($resources);
 
         return view('aura::livewire.dashboard', [
             'stats' => $this->stats($resources),
-            'recentItems' => $this->recentItems($resources),
+            'recentItems' => $isEmptyWorkspace ? collect() : $this->recentItems($resources),
             'recentMedia' => $this->recentMedia(),
+            'isEmptyWorkspace' => $isEmptyWorkspace,
         ])->layout('aura::components.layout.app');
     }
 
@@ -32,6 +34,25 @@ class Dashboard extends Component
             ->values();
     }
 
+    /**
+     * True when the viewer's resources hold no records besides the viewer's
+     * own user account, i.e. a team that has just been created.
+     */
+    protected function isEmptyWorkspace($resources): bool
+    {
+        $user = auth()->user();
+
+        return $resources->every(function ($resource) use ($user) {
+            $query = $resource->query();
+
+            if ($user && $resource->getTable() === $user->getTable()) {
+                $query->whereKeyNot($user->getKey());
+            }
+
+            return ! $query->exists();
+        });
+    }
+
     protected function recentItems($resources)
     {
         $items = collect();
@@ -45,6 +66,7 @@ class Dashboard extends Component
                     'title' => $item->title ?: $item->title(),
                     'resource' => $resource->singularName(),
                     'icon' => $resource->icon(),
+                    'avatar' => $item->avatarHtml('md'),
                     'url' => $item->editUrl(),
                     'updated_at' => $item->updated_at,
                 ]);

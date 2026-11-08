@@ -18,7 +18,7 @@
     }
 @endphp
 
-<div class="flex space-x-2">
+<div class="flex flex-wrap gap-1.5">
     @foreach($fieldItems as $item)
         @if(isset($field['view_index']))
             @include($field['view_index'], ['item' => $item])
@@ -39,14 +39,12 @@
                 }
             @endphp
             <span class="aura-tag">
-                @if($thumbnailField)
-                    @if($thumbnailId)
-                        <x-aura::image :id="$thumbnailId" alt="{{ $item->title() }}" class="thumbnail-image object-cover w-4 h-4 rounded-full shrink-0 -ml-0.5" />
-                    @else
-                        <span class="w-4 h-4 bg-gray-300 rounded-full shrink-0 -ml-0.5 dark:bg-gray-600"></span>
-                    @endif
+                @if($thumbnailField && $thumbnailId)
+                    <x-aura::image :id="$thumbnailId" alt="{{ $item->title() }}" class="thumbnail-image aura-avatar aura-avatar-xs aura-avatar-circle aura-avatar-image" />
+                @elseif(method_exists($item, 'avatarShape') && $item->avatarShape())
+                    <x-aura::avatar :record="$item" size="xs" />
                 @endif
-                <span class="truncate">{{ $item->title() }}</span>
+                <span class="aura-record-link-title">{{ $item->title() }}</span>
             </span>
         @endif
     @endforeach

@@ -16,7 +16,7 @@
             $relationCount = isset($rows) && method_exists($rows, 'total') ? $rows->total() : null;
             $createLabel = __('New :resource', ['resource' => Str::lower(__($model->singularName()))]);
         @endphp
-        <div class="flex justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3' : 'mt-6' }}">
+        <div class="flex justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3' : 'mt-1 sm:mt-6' }}">
 
             @if ($this->settings['title'])
                 <div class="min-w-0">

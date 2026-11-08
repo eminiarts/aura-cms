@@ -15,6 +15,11 @@ module.exports = {
     // darkMode: 'class',
     darkMode: 'selector',
 
+    // hover: variants only apply on devices that can hover, so a tap on a phone does not leave a stuck hover fill.
+    future: {
+        hoverOnlyWhenSupported: true,
+    },
+
     content: [
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './vendor/laravel/jetstream/**/*.blade.php',
