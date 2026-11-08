@@ -1,6 +1,6 @@
 @props(['cols' => 'full'])
 
-<div {{ $attributes->merge(['class' => 'col-span-12 rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-950/10 dark:ring-white/10']) }}>
+<div {{ $attributes->merge(['class' => 'col-span-12 rounded-xl bg-white dark:bg-gray-800 shadow-xs ring-1 ring-gray-950/10 dark:ring-white/10']) }}>
     <div class="flex flex-col items-center px-6 py-14 text-center">
         <div class="p-3 rounded-xl bg-primary-50 ring-1 ring-inset ring-primary-600/10 dark:bg-primary-900/50 dark:ring-primary-400/10">
             <svg class="size-7 text-primary-600 dark:text-primary-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
@@ -20,15 +20,13 @@
 
         <div class="flex gap-3 items-center mt-6">
             @if (config('aura.features.create_resource'))
-                <button onclick="Livewire.dispatch('openModal', { component: 'aura::create-resource' })"
-                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg shadow-sm transition bg-primary-600 hover:bg-primary-500">
+                <x-aura::button.primary onclick="Livewire.dispatch('openModal', { component: 'aura::create-resource' })">
                     {{ __('Create Resource') }}
-                </button>
+                </x-aura::button.primary>
             @endif
-            <a href="https://aura-cms.com/docs/resources" target="_blank"
-                class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-lg ring-1 shadow-sm transition dark:bg-gray-800 dark:text-gray-200 ring-gray-950/10 dark:ring-white/10 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+            <x-aura::button.border href="https://aura-cms.com/docs/resources" target="_blank" :navigate="false">
                 {{ __('Read the docs') }}
-            </a>
+            </x-aura::button.border>
         </div>
     </div>
 </div>

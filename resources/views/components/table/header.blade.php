@@ -8,18 +8,31 @@
     @elseif(View::exists('aura::' . $view))
         @include('aura::' . $view)
     @else
-        <div class="flex justify-between items-center mt-6">
+        @php
+            // A table embedded in a record (HasMany etc.) is a section of that
+            // page: section title, row count, secondary create button. The
+            // resource index is the page itself: page title, primary create.
+            $isRelationTable = (bool) optional(optional($this)->field)['name'];
+            $relationCount = isset($rows) && method_exists($rows, 'total') ? $rows->total() : null;
+            $createLabel = __('New :resource', ['resource' => Str::lower(__($model->singularName()))]);
+        @endphp
+        <div class="flex justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3' : 'mt-6' }}">
 
             @if ($this->settings['title'])
-                <div>
-                    @if (optional(optional($this)->field)['name'])
-                        <h1 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __($this->field['name']) }}</h1>
+                <div class="min-w-0">
+                    @if ($isRelationTable)
+                        <h2 class="aura-section-title">
+                            {{ __($this->field['name']) }}
+                            @if ($relationCount !== null)
+                                <span class="aura-section-count">{{ $relationCount }}</span>
+                            @endif
+                        </h2>
                     @else
-                        <h1 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __($model->pluralName()) }}</h1>
+                        <h1 class="aura-page-title">{{ __($model->pluralName()) }}</h1>
                     @endif
 
                     @if (optional(optional($this)->field)['description'])
-                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ __($this->field['description']) }}</span>
+                        <span class="aura-meta">{{ __($this->field['description']) }}</span>
                     @endif
                 </div>
             @endif
@@ -38,21 +51,39 @@
                                     'id': '{{ $parent->id }}'
                                 }
                             }})">
-                                    <x-aura::button>
-                                        <x-slot:icon>
-                                            <x-aura::icon icon="plus" />
-                                        </x-slot>
-                                        <span>Create {{ $model->getName() }}</span>
-                                    </x-aura::button>
+                                    @if ($isRelationTable)
+                                        <x-aura::button.border size="sm">
+                                            <x-slot:icon>
+                                                <x-aura::icon icon="plus" />
+                                            </x-slot>
+                                            <span>{{ $createLabel }}</span>
+                                        </x-aura::button.border>
+                                    @else
+                                        <x-aura::button>
+                                            <x-slot:icon>
+                                                <x-aura::icon icon="plus" />
+                                            </x-slot>
+                                            <span>{{ $createLabel }}</span>
+                                        </x-aura::button>
+                                    @endif
                                 </a>
                             @else
                                 @if($this->createLink)
-                                    <x-aura::button href="{{ $this->createLink }}">
-                                        <x-slot:icon>
-                                            <x-aura::icon icon="plus" />
-                                        </x-slot>
-                                        <span>{{ __('Create') }} {{ $model->getName() }}</span>
-                                    </x-aura::button>
+                                    @if ($isRelationTable)
+                                        <x-aura::button.border size="sm" href="{{ $this->createLink }}">
+                                            <x-slot:icon>
+                                                <x-aura::icon icon="plus" />
+                                            </x-slot>
+                                            <span>{{ $createLabel }}</span>
+                                        </x-aura::button.border>
+                                    @else
+                                        <x-aura::button href="{{ $this->createLink }}">
+                                            <x-slot:icon>
+                                                <x-aura::icon icon="plus" />
+                                            </x-slot>
+                                            <span>{{ $createLabel }}</span>
+                                        </x-aura::button>
+                                    @endif
                                 @endif
                             @endif
                         </div>

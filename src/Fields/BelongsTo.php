@@ -105,9 +105,13 @@ class BelongsTo extends Field implements PreloadsTableDisplay
 
             $related = $this->resolveDisplayModel($field, $value, $model);
 
-            // The related title is database-backed and this producer emits
-            // markup that view-value renders raw, so escape it here.
-            return "<a class='font-semibold' href='".e(route('aura.'.$slug.'.edit', $value))."'>".e(optional($related)->title()).'</a>';
+            // Record chip: resource icon plus title. The icon is markup owned by
+            // the resource class; the title is database-backed and view-value
+            // renders this raw, so escape it here.
+            $icon = $related && method_exists($related, 'getIcon') ? (string) $related->getIcon() : '';
+            $iconHtml = $icon !== '' ? "<span class='aura-record-link-icon' aria-hidden='true'>{$icon}</span>" : '';
+
+            return "<a class='aura-record-link' href='".e(route('aura.'.$slug.'.edit', $value))."'>".$iconHtml."<span class='aura-record-link-title'>".e(optional($related)->title()).'</span></a>';
         }
 
         return $value;

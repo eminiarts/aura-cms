@@ -23,8 +23,26 @@
     @php $firstVisibleColumn = true; @endphp
     @foreach ($this->headers as $key => $column)
         @if (optional($this->columns)[$key])
-            <td class="px-6 py-3 text-sm {{ $firstVisibleColumn ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300' }}">
-                {!! $row->display($key) !!}
+            @php
+                $display = $row->display($key);
+                // Empty cells show the same dash as empty view values.
+                $displayIsEmpty = $display === null || $display === '' || (is_string($display) && trim($display) === '');
+                $columnType = $columnTypes[$key] ?? null;
+                $cellClass = match ($columnType) {
+                    'Aura\\Base\\Fields\\Number' => 'text-right whitespace-nowrap',
+                    'Aura\\Base\\Fields\\Phone', 'Aura\\Base\\Fields\\Date', 'Aura\\Base\\Fields\\Datetime' => 'whitespace-nowrap',
+                    default => '',
+                };
+            @endphp
+            <td class="px-4 py-3 text-sm {{ $cellClass }} {{ $firstVisibleColumn ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300' }}">
+                @if ($displayIsEmpty)
+                    <span class="text-gray-400 dark:text-gray-500">–</span>
+                @elseif ($columnType === 'Aura\\Base\\Fields\\Email' && is_string($display))
+                    {{-- Long addresses stay on one line; the full address is in the tooltip. --}}
+                    <span class="block max-w-[16rem] truncate" title="{{ html_entity_decode(strip_tags($display)) }}">{!! $display !!}</span>
+                @else
+                    {!! $display !!}
+                @endif
             </td>
             @php $firstVisibleColumn = false; @endphp
         @endif

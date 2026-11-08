@@ -9,12 +9,12 @@
     data-record-layout="{{ $inModal ? 'modal' : 'page' }}"
 >
     @if ($leftPanels !== [])
-        <aside class="space-y-4 lg:col-span-3" data-record-layout-region="left-summary">
+        <aside class="min-w-0 space-y-4 lg:col-span-3" data-record-layout-region="left-summary">
             @include('aura::livewire.resource.record-layout.region', ['region' => \Aura\Base\RecordLayout\RecordLayoutRegion::LeftSummary])
         </aside>
     @endif
 
-    <main class="space-y-6 {{ match ($mainColumns) { 6 => 'lg:col-span-6', 3 => 'lg:col-span-9', default => 'lg:col-span-12' } }}" data-record-layout-region="main-content">
+    <main class="min-w-0 space-y-6 {{ match ($mainColumns) { 6 => 'lg:col-span-6', 3 => 'lg:col-span-9', default => 'lg:col-span-12' } }}" data-record-layout-region="main-content">
         @include('aura::livewire.resource.record-layout.default-main')
         @include('aura::livewire.resource.record-layout.region', ['region' => \Aura\Base\RecordLayout\RecordLayoutRegion::MainContent])
 
@@ -26,7 +26,7 @@
     </main>
 
     @if ($rightPanels !== [])
-        <aside class="space-y-4 lg:col-span-3" data-record-layout-region="right-sidebar">
+        <aside class="min-w-0 space-y-4 lg:col-span-3" data-record-layout-region="right-sidebar">
             @include('aura::livewire.resource.record-layout.region', ['region' => \Aura\Base\RecordLayout\RecordLayoutRegion::RightSidebar])
         </aside>
     @endif

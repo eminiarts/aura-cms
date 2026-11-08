@@ -106,22 +106,18 @@
             <div x-listbox x-model="value" class="relative">
                 <label x-listbox:label class="sr-only">Select</label>
 
+                @php
+                    $placeholder = __($field['placeholder'] ?? __('Select :field…', ['field' => Str::lower(__($field['name'] ?? ''))]));
+                @endphp
                 <button x-listbox:button :disabled="disabled"
                     x-ref="button"
-                    class="
-                        shadow-xs border border-gray-500/30 appearance-none px-3 py-2 focus:outline-none w-full ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:dark:bg-gray-800 bg-white dark:bg-gray-900 dark:border-gray-700 z-[1]
-
-                        flex items-center justify-between gap-2 rounded-lg relative
-                    ">
-                    <span x-text="value ? findItem(value) : '{{ __($field['placeholder'] ?? __('Select')) }}'"
+                    class="flex relative gap-2 justify-between items-center px-3 w-full h-9 text-base text-left text-gray-900 bg-white rounded-lg ring-1 shadow-xs transition duration-150 appearance-none sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 dark:hover:ring-white/20 dark:disabled:bg-gray-800/50 dark:disabled:text-gray-500 z-[1]">
+                    <span x-text="value ? findItem(value) : @js($placeholder)"
+                        :class="value ? '' : 'text-gray-400 dark:text-gray-500'"
                         class="truncate"></span>
 
-                    <!-- Heroicons up/down -->
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                        class="w-5 h-5 text-gray-500 shrink-0">
-                        <path fill-rule="evenodd"
-                            d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.908 2.7-2.908a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z"
-                            clip-rule="evenodd" />
+                    <svg class="size-4 shrink-0 text-gray-400 dark:text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                        <path d="M4.25 6.25 8 10l3.75-3.75" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                 </button>
 

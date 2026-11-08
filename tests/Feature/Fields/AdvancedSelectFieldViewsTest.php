@@ -216,11 +216,11 @@ test('default view rendering when no custom views are specified', function () {
 
     // Test index view
     Livewire::test(Index::class)
-        ->assertSee('text-gray-800');
+        ->assertSee('aura-tag');
 
     // Test view component
     Livewire::test(ResourceView::class, ['id' => $model->id])
-        ->assertSee('text-gray-800');
+        ->assertSee('aura-tag');
 });
 
 test('thumbnail with missing image shows placeholder', function () {

@@ -13,11 +13,11 @@
 <div {{ $attributes->merge(['class' => 'col-span-12']) }}>
     <div class="flex flex-wrap gap-4 justify-between items-end">
         <div>
-            <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
+            <h1 class="aura-page-title">
                 {{ $greeting }}{{ $firstName ? ', '.$firstName : '' }}
             </h1>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {{ now()->translatedFormat('l, j. F Y') }} &middot; {{ __("Here's what's happening in your CMS.") }}
+                {{ now()->isoFormat('dddd, LL') }} &middot; {{ __("Here's what changed in your workspace.") }}
             </p>
         </div>
     </div>

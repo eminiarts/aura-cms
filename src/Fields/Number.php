@@ -13,6 +13,32 @@ class Number extends Field
     public $view = 'aura::fields.view-value';
 
     /**
+     * Optional display formatting. Only applies when the field sets
+     * `decimals` and/or `thousands_separator` (plus `decimal_separator`),
+     * otherwise the stored value is shown as before.
+     */
+    public function display($field, $value, $model)
+    {
+        $hasDecimals = isset($field['decimals']) && $field['decimals'] !== '';
+        $hasSeparator = isset($field['thousands_separator']) && $field['thousands_separator'] !== '';
+
+        if (is_numeric($value) && ($hasDecimals || $hasSeparator)) {
+            $decimals = $hasDecimals
+                ? (int) $field['decimals']
+                : (str_contains((string) $value, '.') ? strlen(substr(strrchr((string) $value, '.'), 1)) : 0);
+
+            $value = number_format(
+                (float) $value,
+                $decimals,
+                $field['decimal_separator'] ?? '.',
+                $field['thousands_separator'] ?? '',
+            );
+        }
+
+        return parent::display($field, $value, $model);
+    }
+
+    /**
      * Portable exact-query envelope for sorting/filtering/reporting.
      *
      * Minimal DEST port: enough for ResourceAggregateEngine precision/scale
@@ -98,7 +124,6 @@ class Number extends Field
                     'width' => '50',
                 ],
             ],
-
         ]);
     }
 

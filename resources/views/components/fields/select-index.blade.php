@@ -19,9 +19,13 @@
 @if (count($values))
     <div class="flex flex-wrap gap-1">
         @foreach ($values as $item)
-            <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md whitespace-nowrap {{ $colors[$item] ?? 'bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/10 dark:bg-white/5 dark:text-gray-300 dark:ring-white/10' }}">
-                {{ __($labels[$item] ?? $item) }}
-            </span>
+            @if (! empty($colors[$item]))
+                <span class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded-md whitespace-nowrap {{ $colors[$item] }}">
+                    {{ __($labels[$item] ?? $item) }}
+                </span>
+            @else
+                <span class="aura-tag">{{ __($labels[$item] ?? $item) }}</span>
+            @endif
         @endforeach
     </div>
 @endif

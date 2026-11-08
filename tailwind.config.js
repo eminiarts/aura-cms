@@ -104,6 +104,8 @@ module.exports = {
             },
             boxShadow: {
                 'xs': '0px 1px 2px rgba(0, 8, 24, 0.05)',
+                // Solid buttons: a 1px inner highlight on top plus a hairline drop shadow.
+                'button': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.14), 0px 1px 2px rgba(0, 8, 24, 0.08)',
             },
             spacing: {
                 '4.5': '1.125rem',

@@ -240,3 +240,20 @@ describe('Number Field Value Handling', function () {
             ->and($values['max'])->toBeNull();
     });
 });
+
+describe('Number Field display formatting', function () {
+    test('keeps the stored value when no display option is set', function () {
+        expect((new Number)->display(['slug' => 'amount'], '84500.00', null))->toBe('84500.00');
+    });
+
+    test('formats with decimals and a thousands separator when set', function () {
+        $field = ['slug' => 'amount', 'decimals' => 2, 'thousands_separator' => ','];
+
+        expect((new Number)->display($field, '84500', null))->toBe('84,500.00');
+        expect((new Number)->display($field, 'n/a', null))->toBe('n/a');
+    });
+
+    test('keeps the stored decimals when only a separator is set', function () {
+        expect((new Number)->display(['slug' => 'amount', 'thousands_separator' => "'"], '1234567.5', null))->toBe('1&#039;234&#039;567.5');
+    });
+});

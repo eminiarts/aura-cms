@@ -7,7 +7,7 @@
 </div>
 @endif
 
-<div class="grid gap-6 mt-4 aura-view-post-container sm:grid-cols-3" x-data="{
+<div class="grid grid-cols-1 gap-6 mt-4 aura-view-post-container sm:grid-cols-3" x-data="{
      init() {
         const container = document.querySelector('.aura-view-post-container');
         const inputs = container.querySelectorAll('input, select, textarea, .aura-input');
@@ -20,7 +20,7 @@
     }
 }">
 
-    <div class="col-span-1 mx-0 sm:col-span-3">
+    <div class="col-span-1 mx-0 min-w-0 sm:col-span-3">
         <div class="flex flex-wrap items-start -mx-2" wire:key="resource-view-fields">
             @foreach($this->viewFields as $key => $field)
             <x-aura::fields.conditions :field="$field" :model="$model" wire:key="resource-field-{{ $key }}">

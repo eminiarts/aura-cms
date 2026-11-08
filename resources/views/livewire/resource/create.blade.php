@@ -10,15 +10,16 @@
     </x-aura::breadcrumbs>
     @endif
 
-    <div class="flex items-center justify-between {{ $inModal ? 'mb-8' : 'my-8'}}">
-        <div>
-            <h1 class="text-2xl font-semibold">{{ __('Create :resource', ['resource' => __($model->singularName())]) }}</h1>
+    <div class="flex items-center justify-between gap-4 {{ $inModal ? 'mb-8' : 'my-8'}}">
+        <div class="min-w-0">
+            <p class="aura-eyebrow">{{ __($model->getPluralName()) }}</p>
+            <h1 class="mt-0.5 aura-page-title">{{ __('Create :resource', ['resource' => __($model->singularName())]) }}</h1>
         </div>
 
         @if(!$inModal)
         <div class="save-resource">
             @if($showSaveButton)
-            <x-aura::button size="lg" wire:click="save">
+            <x-aura::button wire:click="save">
                 <div wire:loading wire:target="save">
                     <x-aura::icon.loading />
                 </div>
@@ -37,8 +38,8 @@
     </div>
     @endif
 
-    <div class="grid gap-6 aura-edit-post-container sm:grid-cols-3">
-        <div class="col-span-1 sm:col-span-3">
+    <div class="grid grid-cols-1 gap-6 aura-edit-post-container sm:grid-cols-3">
+        <div class="col-span-1 min-w-0 sm:col-span-3">
 
             @if(!$inModal)
             <x-aura::validation-errors />

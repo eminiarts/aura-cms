@@ -1,8 +1,9 @@
 @if (!$inModal)
-<div class="flex items-center justify-between my-8">
-    <div>
+<div class="flex items-center justify-between gap-4 my-8">
+    <div class="min-w-0">
         {{ app('aura')::injectView('post_edit_title_before') }}
-        <h1 class="text-2xl font-semibold">{{ __('Edit :resource', ['resource' => __($model->singularName())]) }}</h1>
+        <p class="aura-eyebrow">{{ __('Edit :resource', ['resource' => __($model->singularName())]) }}</p>
+        <h1 class="mt-0.5 aura-page-title truncate">{{ $model->title() }}</h1>
         {{ app('aura')::injectView('post_edit_title_after') }}
     </div>
 

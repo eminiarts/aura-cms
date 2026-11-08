@@ -17,8 +17,8 @@
     <div class="{{ $field['style']['class'] ?? 'aura-card mb-8' }}">
         <div class="mb-2">
           @if(isset($field['name']) && (!isset($field['hide_title']) || $field['hide_title'] === false))
-            <div class="px-2 mt-1">
-              <h2 class="font-semibold">{{ __($field['name']) }}</h2>
+            <div class="px-2">
+              <h2 class="aura-section-title">{{ __($field['name']) }}</h2>
             </div>
           @endif
 

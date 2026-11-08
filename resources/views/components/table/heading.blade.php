@@ -2,15 +2,20 @@
     'sortable' => null,
     'direction' => null,
     'multiColumn' => null,
+    'align' => 'left',
 ])
 
+@php
+    $alignRight = $align === 'right';
+@endphp
+
 <th
-    {{ $attributes->merge(['class' => 'px-6 py-2.5 text-left'])->only('class') }}
+    {{ $attributes->merge(['class' => 'px-4 py-2.5 '.($alignRight ? 'text-right' : 'text-left')])->only('class') }}
 >
     @unless ($sortable)
-        <span class="text-[11px] font-semibold uppercase tracking-wide text-left text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ $slot }}</span>
+        <span class="aura-table-header whitespace-nowrap {{ $alignRight ? 'text-right' : 'text-left' }}">{{ $slot }}</span>
     @else
-        <button type="button" {{ $attributes->except('class') }} class="group inline-flex items-center gap-x-1 -mx-2 px-2 py-1 rounded-md text-[11px] font-semibold uppercase tracking-wide leading-4 text-left whitespace-nowrap transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 {{ $direction ? 'text-gray-600 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200' }}">
+        <button type="button" {{ $attributes->except('class') }} class="group inline-flex items-center gap-x-1 -mx-2 px-2 py-1 rounded-md aura-table-header leading-4 whitespace-nowrap {{ $alignRight ? 'flex-row-reverse text-right' : 'text-left' }} transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 {{ $direction ? '!text-gray-900 dark:!text-white' : 'hover:text-gray-700 dark:hover:text-gray-200' }}">
             <span class="table-heading">{{ $slot }}</span>
 
             <span class="flex items-center justify-center w-3.5 h-3.5 shrink-0" aria-hidden="true">

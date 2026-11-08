@@ -116,6 +116,11 @@ class Dashboard extends Component
                 'total' => $resource->query()->count(),
                 'current' => $current,
                 'previous' => $previous,
+                // Change against the previous 30 days; unknown when that period was empty.
+                'delta' => $previous > 0 ? $current - $previous : null,
+                'deltaPercent' => $previous > 0 ? (int) round(($current - $previous) / $previous * 100) : null,
+                // A trend line needs at least a few points to say anything.
+                'showSparkline' => count(array_filter($series)) >= 3,
                 'sparkline' => $this->sparkline($series),
             ];
         })->values();

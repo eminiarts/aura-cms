@@ -189,57 +189,98 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">02</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Typography') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Font family: configured through the Aura theme. The admin mostly lives between text-xs and text-2xl.') }}
+            {{ __('Font family comes from the theme. Four steps carry the admin: page title, section title, body, meta. Weight 600 is reserved for titles and the leading table column, 500 for labels, buttons and nav, 400 for everything else. Numerals are tabular everywhere (body-level font-variant-numeric).') }}
         </p>
 
-        <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-            <div class="divide-y divide-gray-100 dark:divide-white/5">
+        <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Type scale') }}</span>
+            <div class="mt-4 divide-y divide-gray-100 dark:divide-white/5">
                 @foreach ([
-                    ['text-3xl font-semibold tracking-tight', 'text-3xl · semibold', 'Aura CMS'],
-                    ['text-2xl font-semibold tracking-tight', 'text-2xl · semibold — page title', 'Page title'],
-                    ['text-xl font-semibold', 'text-xl · semibold — section title', 'Section title'],
-                    ['text-lg font-semibold', 'text-lg · semibold — modal title', 'Modal title'],
-                    ['text-base font-medium', 'text-base · medium', 'The quick brown fox jumps over the lazy dog'],
-                    ['text-sm', 'text-sm — body / inputs / table cells', 'The quick brown fox jumps over the lazy dog'],
-                    ['text-xs', 'text-xs — captions / table headers / badges', 'The quick brown fox jumps over the lazy dog'],
-                    ['text-2xs', 'text-2xs — compact sidebar headings', 'The quick brown fox jumps over the lazy dog'],
+                    ['aura-page-title', '.aura-page-title — 24px · 600 · tracking-tight', 'Northwind Software'],
+                    ['aura-section-title', '.aura-section-title — 14px · 600', 'Contacts'],
+                    ['aura-eyebrow', '.aura-eyebrow — 12px · 500 · gray-500 (resource label, view labels)', 'Company'],
+                    ['aura-body', '.aura-body — 14px · 400 · gray-700', 'The quick brown fox jumps over the lazy dog'],
+                    ['aura-meta', '.aura-meta — 12px · 400 · gray-500', 'Company · 2 minutes ago'],
+                    ['aura-table-header', '.aura-table-header — 12px · 500 · gray-500, sentence case', 'Created at'],
+                    ['text-3xl font-semibold tracking-tight', 'stat value — 30px · 600 · tabular', '84,500'],
                 ] as [$classes, $label, $sample])
                     <div class="flex flex-col gap-1 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-baseline sm:gap-6">
-                        <span class="w-64 text-xs text-gray-400 shrink-0 dark:text-gray-500">{{ $label }}</span>
+                        <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">{{ $label }}</span>
                         <span class="text-gray-900 dark:text-white {{ $classes }}">{{ $sample }}</span>
                     </div>
                 @endforeach
             </div>
         </div>
 
-        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Page header pattern') }}</span>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Record pages: the resource name is the eyebrow, the record title is the H1. One primary button per screen; everything else is secondary or ghost.') }}</p>
+            <div class="flex gap-4 justify-between items-center mt-4">
+                <div class="min-w-0">
+                    <p class="aura-eyebrow">Company</p>
+                    <h3 class="mt-0.5 aura-page-title truncate">Northwind Software</h3>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <x-aura::button.transparent>{{ __('View') }}</x-aura::button.transparent>
+                    <x-aura::button.primary>{{ __('Save') }}</x-aura::button.primary>
+                </div>
+            </div>
+            <div class="flex gap-4 justify-between items-center pt-4 mt-4 border-t border-gray-100 dark:border-white/5">
+                <h3 class="aura-section-title">Contacts <span class="aura-section-count">12</span></h3>
+                <x-aura::button.border size="sm">
+                    <x-slot:icon><x-aura::icon icon="plus" /></x-slot:icon>
+                    {{ __('Create') }}
+                </x-aura::button.border>
+            </div>
+        </div>
+
+        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Recurring text styles') }}</span>
             <div class="mt-4 space-y-4">
-                <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
-                    <span class="w-64 text-xs text-gray-400 shrink-0 dark:text-gray-500">field label</span>
-                    <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Title <span class="text-red-500">*</span></span>
+                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-6">
+                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">field label (form) + help marker</span>
+                    <span class="flex gap-1.5 items-center">
+                        <x-aura::fields.label label="Website" required class="!my-0" />
+                        <x-aura::icon icon="info" class="flex" iconClass="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
+                    </span>
                 </div>
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
-                    <span class="w-64 text-xs text-gray-400 shrink-0 dark:text-gray-500">table header</span>
-                    <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">CREATED AT</span>
+                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">field label (view) + value</span>
+                    <span><span class="block aura-eyebrow">Website</span><span class="block text-sm text-gray-900 dark:text-gray-100">https://northwindsoftware.com</span></span>
                 </div>
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
-                    <span class="w-64 text-xs text-gray-400 shrink-0 dark:text-gray-500">help text</span>
+                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">empty value (tables and views)</span>
+                    <span class="text-sm text-gray-400 dark:text-gray-500">–</span>
+                </div>
+                <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
+                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">help text</span>
                     <span class="text-sm text-gray-500 dark:text-gray-400">A short hint that helps the user fill this field.</span>
                 </div>
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
-                    <span class="w-64 text-xs text-gray-400 shrink-0 dark:text-gray-500">validation error</span>
-                    <span class="text-sm font-semibold text-red-500">The title field is required.</span>
+                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">validation error</span>
+                    <span class="text-sm text-red-600 dark:text-red-400">The title field is required.</span>
                 </div>
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
-                    <span class="w-64 text-xs text-gray-400 shrink-0 dark:text-gray-500">sidebar heading</span>
+                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">sidebar heading</span>
                     <span class="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">Resources</span>
                 </div>
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
-                    <span class="w-64 text-xs text-gray-400 shrink-0 dark:text-gray-500">link</span>
-                    <a href="#typography" class="text-sm font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400">Forgot your password?</a>
+                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">link</span>
+                    <a href="#typography" class="text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline dark:text-primary-400">Forgot your password?</a>
                 </div>
             </div>
+        </div>
+
+        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Where the primary color appears') }}</span>
+            <ul class="grid grid-cols-1 gap-x-6 gap-y-1 mt-3 text-sm text-gray-600 sm:grid-cols-2 dark:text-gray-300">
+                <li>{{ __('Active navigation item') }}</li>
+                <li>{{ __('The one primary button per screen') }}</li>
+                <li>{{ __('Links and record chips on hover') }}</li>
+                <li>{{ __('Focus rings and selected rows') }}</li>
+                <li>{{ __('Dashboard sparklines and quick-action icons') }}</li>
+                <li>{{ __('Nothing else: badges, icons and surfaces stay in the gray ramp') }}</li>
+            </ul>
         </div>
     </section>
 
@@ -272,7 +313,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">04</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Buttons') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            <code class="text-xs">&lt;x-aura::button&gt;</code> {{ __('with variants as sub-components and sizes via the size prop.') }}
+            <code class="text-xs">&lt;x-aura::button&gt;</code> {{ __('with variants as sub-components and sizes via the size prop. Hierarchy: primary (solid, one per screen), secondary (button.border: white, hairline ring), ghost (button.transparent). Fixed heights: xs 28, sm 32, base 36, lg 40, xl 48px.') }}
         </p>
 
         <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
@@ -357,7 +398,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">05</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Forms') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Raw inputs from components/input/*. Resource fields wrap these with label, help tooltip and validation error.') }}
+            {{ __('Raw inputs from components/input/*. Resource fields wrap these with label, help tooltip and validation error. Every control (input, select, relation picker, status) is 36px tall with 14px text, 16px on phones so iOS does not zoom. Empty selects show a gray placeholder from the field name and use one chevron.') }}
         </p>
 
         <div class="grid grid-cols-1 gap-4 mt-6 lg:grid-cols-2">
@@ -397,6 +438,15 @@
                         />
                     </div>
                     <div>
+                        <x-aura::fields.label label="Select, empty" />
+                        <x-aura::input.select
+                            name="styleguide-select-empty"
+                            class="[&:has(option[value='']:checked)]:text-gray-400 dark:[&:has(option[value='']:checked)]:text-gray-500 [&_option]:text-gray-900 dark:[&_option]:text-gray-100"
+                            placeholder="Select company…"
+                            :options="['northwind' => 'Northwind Software', 'atlas' => 'Atlas Components']"
+                        />
+                    </div>
+                    <div>
                         <x-aura::fields.label label="Textarea" />
                         <x-aura::input.textarea placeholder="Write something…" rows="3"></x-aura::input.textarea>
                     </div>
@@ -433,8 +483,8 @@
                             </svg>
                         </div>
                         <input type="text"
-                            class="block py-2 pl-9 pr-3 w-64 max-w-full text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"
-                            placeholder="{{ __('Search for items') }}">
+                            class="block h-9 py-2 pl-9 pr-3 w-64 max-w-full text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"
+                            placeholder="{{ __('Search :resources…', ['resources' => 'companies']) }}">
                     </div>
                 </div>
             </div>
@@ -449,10 +499,10 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">06</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Badges & Pills') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Three badge shapes are in use: status pills (dot + ring), sidebar badges and trend pills (both rounded-full).') }}
+            {{ __('Four badge shapes: status pills (filled tint + dot, rounded-full), tag chips (outlined, for plain option values), record chips (relation values with the resource icon) and the small rounded-full pills for sidebar counts and trends.') }}
         </p>
 
-        <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Status pills (fields/status-index)') }}</span>
             <div class="flex flex-wrap gap-2 mt-4">
                 @foreach ($statusPills as $label => $classes)
@@ -461,6 +511,29 @@
                         {{ $label }}
                     </span>
                 @endforeach
+            </div>
+        </div>
+
+        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Tag chips (.aura-tag, fields/select-index)') }}</span>
+            <div class="flex flex-wrap gap-1.5 mt-4">
+                @foreach (['Software', 'Retail', 'Finance', 'Other'] as $tag)
+                    <span class="aura-tag">{{ $tag }}</span>
+                @endforeach
+            </div>
+        </div>
+
+        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Record chips (.aura-record-link, BelongsTo::display)') }}</span>
+            <div class="flex flex-wrap gap-2 mt-4">
+                <a href="#badges" class="aura-record-link">
+                    <span class="aura-record-link-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg></span>
+                    <span class="aura-record-link-title">Northwind Software</span>
+                </a>
+                <a href="#badges" class="aura-record-link">
+                    <span class="aura-record-link-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg></span>
+                    <span class="aura-record-link-title">Martina Keller</span>
+                </a>
             </div>
         </div>
 
@@ -503,7 +576,7 @@
         <div class="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-2">
             <div class="aura-card">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-white">.aura-card</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">p-5, rounded-xl, shadow-sm, ring-1 ring-gray-950/10.</p>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">p-5, rounded-xl (--aura-panel-radius), shadow-xs, ring-1 ring-gray-950/10. Dark: bg-gray-800, ring-white/10. Flat surfaces, one hairline, no stacked shadows.</p>
             </div>
             <div class="flex items-center aura-card-small">
                 <p class="text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold text-gray-900 dark:text-white">.aura-card-small</span> — p-2, rounded-lg, ring-gray-950/10.</p>
@@ -543,7 +616,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">08</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Table') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('The resource index table. Headings use the real table.heading component; rows are a faithful specimen of table/row (the live rows are Livewire-bound). Second row shows the selected state.') }}
+            {{ __('The resource index table. Headings use the real table.heading component (sentence case, 12px medium gray-500); rows are a faithful specimen of table/row (the live rows are Livewire-bound). First column 500 gray-900, other cells 400 gray-600, numerals tabular, empty cells show a dash. Second row shows the selected state.') }}
         </p>
 
         {{-- Filter tabs (specimen of table/filter-tabs) --}}
@@ -559,7 +632,7 @@
                 <table class="min-w-full">
                     <thead>
                         <tr class="bg-gray-50/80 dark:bg-white/[0.03] border-b border-gray-200/80 dark:border-white/10">
-                            <th class="py-2.5 pr-0 pl-6 w-px">
+                            <th class="py-2.5 pr-0 pl-4 w-px">
                                 <x-aura::input.checkbox hideLabel label="Select all" />
                             </th>
                             <x-aura::table.heading sortable direction="asc">{{ __('Title') }}</x-aura::table.heading>
@@ -572,21 +645,21 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-white/5">
                         @foreach ($tableRows as $row)
                             <tr class="transition-colors duration-150 ease-in-out cm-table-row hover:bg-gray-50/80 dark:hover:bg-white/[0.04] {{ $row['selected'] ? 'bg-primary-50/60 dark:bg-primary-500/10' : '' }}">
-                                <td class="relative py-3 pr-0 pl-6">
+                                <td class="relative py-3 pr-0 pl-4">
                                     @if ($row['selected'])
                                         <span class="absolute inset-y-0 left-0 w-0.5 bg-primary-600" aria-hidden="true"></span>
                                     @endif
                                     <x-aura::input.checkbox hideLabel :label="'Row '.$row['id']" :checked="$row['selected']" />
                                 </td>
-                                <td class="px-6 py-3 text-sm font-medium text-gray-900 dark:text-white">{{ $row['title'] }}</td>
-                                <td class="px-6 py-3 text-sm">
+                                <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{{ $row['title'] }}</td>
+                                <td class="px-4 py-3 text-sm">
                                     <span class="inline-flex items-center gap-x-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ring-gray-950/10 dark:ring-white/10 {{ $row['statusClass'] }}">
                                         <svg class="size-1.5 shrink-0 fill-current opacity-70" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>
                                         {{ $row['status'] }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">{{ $row['author'] }}</td>
-                                <td class="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">{{ $row['date'] }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{{ $row['author'] }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{{ $row['date'] }}</td>
                                 <td class="px-3 py-2 text-right">
                                     <x-aura::dropdown align="right" width="48">
                                         <x-slot:trigger>
@@ -625,17 +698,59 @@
             </div>
         </div>
 
+        {{-- Phone list (specimen of table/list-view below sm) --}}
+        <p class="mt-6 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+            {{ __('Below sm the default row turns into a stacked list: the first column as the primary line, the next two values as one quiet meta line, a chevron when the record can be opened. Number columns are right-aligned on desktop; phone and dates do not wrap; long emails truncate with the full address as tooltip.') }}
+        </p>
+        <ul class="overflow-hidden mt-3 max-w-sm bg-white rounded-xl ring-1 divide-y divide-gray-100 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10 dark:divide-white/5">
+            @foreach (array_slice($tableRows, 0, 3) as $row)
+                <li>
+                    <a href="#table" class="flex gap-3 items-center px-4 py-3">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-gray-900 truncate dark:text-white">{{ $row['title'] }}</div>
+                            <div class="flex overflow-hidden gap-x-2 items-center mt-1 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400">
+                                <span class="min-w-0 truncate">{{ $row['author'] }}</span>
+                                <span class="text-gray-300 dark:text-gray-600" aria-hidden="true">&middot;</span>
+                                <span class="min-w-0 truncate">{{ $row['date'] }}</span>
+                            </div>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                    </a>
+                </li>
+            @endforeach
+        </ul>
+
         {{-- Empty state (specimen of table/list-view) --}}
-        <div class="overflow-hidden mt-4 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-            <div class="flex flex-col items-center px-6 py-16 text-center">
-                <div class="p-3 bg-gray-50 rounded-full dark:bg-gray-700/50">
-                    <svg class="w-6 h-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                    </svg>
+        <p class="mt-6 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+            {{ __('Empty index: resource icon, "No {plural} yet", one helpful line and a "New {singular}" button for users who may create. No header row or select-all. Relation tables only show the title line; a search with no hits says so instead.') }}
+        </p>
+        <div class="overflow-hidden mt-3 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <div class="flex flex-col items-center px-6 py-14 text-center">
+                <div class="flex justify-center items-center mb-3 w-10 h-10 rounded-lg bg-gray-950/[0.04] text-gray-400 dark:bg-white/5 dark:text-gray-500" aria-hidden="true">
+                    <svg class="size-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg>
                 </div>
-                <h3 class="mt-3 text-sm font-medium text-gray-900 dark:text-white">{{ __('No entries available') }}</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Entries you create will show up here.') }}</p>
+                <h3 class="aura-section-title">{{ __('No :resources yet', ['resources' => 'companies']) }}</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Create the first one to get started.') }}</p>
+                <div class="mt-5">
+                    <x-aura::button href="#table">
+                        <x-slot:icon><x-aura::icon icon="plus" /></x-slot>
+                        <span>{{ __('New :resource', ['resource' => 'company']) }}</span>
+                    </x-aura::button>
+                </div>
             </div>
+        </div>
+
+        {{-- Record view (specimen of fields/wrapper in view mode) --}}
+        <p class="mt-6 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+            {{ __('View pages list fields as a label/value grid: a 10rem gray label column and a 14px value, stacked on phones. No required markers in view mode.') }}
+        </p>
+        <div class="mt-3 max-w-2xl aura-card">
+            @foreach (['Name' => 'Northwind Software', 'Website' => 'https://northwindsoftware.com', 'Amount' => '84,500.00'] as $label => $value)
+                <div class="py-2 sm:grid sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-x-6 sm:items-baseline">
+                    <span class="block mb-1 sm:mb-0 aura-eyebrow">{{ $label }}</span>
+                    <div class="text-sm text-gray-900 dark:text-gray-100">{{ $value }}</div>
+                </div>
+            @endforeach
         </div>
     </section>
 

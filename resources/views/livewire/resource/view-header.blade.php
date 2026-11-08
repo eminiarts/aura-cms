@@ -1,9 +1,9 @@
-<div class="flex items-center justify-between my-8 {{ $recordLayout->hasPanels() ? 'flex-wrap gap-4' : '' }}">
-    <div>
+<div class="flex items-center justify-between gap-4 my-8 {{ $recordLayout->hasPanels() ? 'flex-wrap' : '' }}">
+    <div class="min-w-0">
         @yield('view-header')
-        <h1 class="text-2xl font-semibold">
-            {{ __('View :resource', ['resource' => __($model->singularName())]) }}
-        </h1>
+        {{-- The record is the subject of the page: resource name as eyebrow, record title as H1. --}}
+        <p class="aura-eyebrow">{{ __($model->singularName()) }}</p>
+        <h1 class="mt-0.5 aura-page-title truncate">{{ $model->title() }}</h1>
     </div>
 
     <div class="flex items-center {{ $recordLayout->hasPanels() ? 'flex-wrap gap-2' : 'space-x-2' }}">

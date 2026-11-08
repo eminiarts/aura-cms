@@ -5,35 +5,41 @@
         @endif
         ">
     <style>
-        @media screen and (max-width: 768px) {
+        @media screen and (max-width: 767.98px) {
             .mobile-load-hidden {
                 display: none !important;
             }
         }
     </style>
 
+    {{-- wire:ignore.self: a navigation re-render must not reset the Alpine state from the server attribute. --}}
     <div
+            wire:ignore.self
             x-data="{
         sidebarToggled: {{ $this->sidebarToggled ? 'true' : 'false' }},
+        {{-- The drawer below md is a separate, client-only state: it starts closed on every load and navigation.
+             matchMedia follows the CSS breakpoint; innerWidth grows when a page overflows on a phone. --}}
+        isMobile() {
+            return window.matchMedia('(max-width: 767.98px)').matches;
+        },
         init() {
-            {{-- console.log('init', this.sidebarToggled); --}}
+            if (this.isMobile()) {
+                this.sidebarToggled = false;
+            }
 
             this.$nextTick(() => {
                 document.querySelectorAll('.mobile-load-hidden').forEach((el) => {
                     el.classList.remove('mobile-load-hidden');
                 });
-
-                if (window.innerWidth < 768) {
-                    this.sidebarToggled = false;
-                }
             });
         },
         toggleSidebar: async function() {
-            if (window.innerWidth < 768) {
+            if (this.isMobile()) {
                 this.sidebarToggled = !this.sidebarToggled;
             } else {
+                const next = !this.sidebarToggled;
                 await $wire.toggleSidebar();
-                this.sidebarToggled = !this.sidebarToggled;
+                this.sidebarToggled = next;
             }
         }
     }">
@@ -55,6 +61,7 @@
         </div>
 
         <div
+            wire:ignore.self
             class="relative mobile-load-hidden overflow-x-visible flex-shrink-0 aura-navigation {{ $this->sidebarToggled ? ($this->compact ? 'open-sidebar md:w-56' : 'open-sidebar md:w-72') : 'closed-sidebar w-20' }}"
 
             x-bind:class="{
@@ -79,6 +86,7 @@
             </button>
         </div> --}}
             <div
+                wire:ignore.self
                 class="aura-sidebar-bg fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen border-r shadow-xl {{ $this->sidebarToggled ? ($this->compact ? 'w-56' : 'w-72') : 'w-20' }}
             "
                     x-bind:class="{
