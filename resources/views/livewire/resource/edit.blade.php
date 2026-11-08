@@ -4,6 +4,10 @@
     @php
         // A simple form keeps a readable width (breadcrumb and header with it, so Save stays at the form's edge) and loses its lone panel heading.
         $formSections = \Aura\Base\RecordLayout\RecordFormSections::arrange($this->editFields);
+        // Cancel leaves the form for the record view, or for the list when the record has no view page.
+        $cancelUrl = (Route::has('aura.' . $model->getSlug() . '.view') && auth()->user()?->can('view', $model))
+            ? $model->viewUrl()
+            : (Route::has('aura.' . $model->getSlug() . '.index') ? route('aura.' . $model->getSlug() . '.index') : null);
     @endphp
 
     <div @class(['max-w-3xl' => $formSections['single'] && ! $inModal])>
@@ -18,7 +22,13 @@
             @else
                 <x-aura::breadcrumbs.li :title="__($model->getPluralName())" />
             @endif
-            <x-aura::breadcrumbs.li :title="$model->title()" />
+            {{-- The record links back to its view page, so the form's parent (and the phone back link) is the record. --}}
+            @if (Route::has('aura.' . $model->getSlug() . '.view') && auth()->user()?->can('view', $model))
+                <x-aura::breadcrumbs.li :href="$model->viewUrl()" :title="$model->title()" />
+                <x-aura::breadcrumbs.li :title="__('Edit')" />
+            @else
+                <x-aura::breadcrumbs.li :title="$model->title()" />
+            @endif
         </x-aura::breadcrumbs>
     @endif
 
@@ -53,6 +63,12 @@
         </div>
     </div>
     </div>
+
+    {{-- Phones: Save and Cancel in a bar on the bottom edge. Only with the default header, whose phone
+         layout hands its buttons to the bar; a resource's own header keeps its actions. --}}
+    @if (! $inModal && $model->editHeaderView() === 'aura::livewire.resource.edit-header')
+        @include('aura::livewire.resource.form-bar', ['cancelUrl' => $cancelUrl])
+    @endif
 
     @if ($inModal)
     <div class="flex justify-end space-x-2 mt-4">

@@ -56,7 +56,20 @@ body {
    reserved for titles and the leading table column, 500 for labels,
    buttons and nav, 400 for everything else. */
 .aura-page-title {
-    @apply text-2xl font-semibold tracking-tight text-gray-900 dark:text-white;
+    @apply text-2xl font-semibold text-gray-900 dark:text-white;
+    letter-spacing: var(--aura-tracking-display);
+}
+
+/* Stat value (dashboard cards): 30px, 600, tabular. Color stays on the element so a calm card can mute it. */
+.aura-stat-value {
+    @apply text-3xl font-semibold leading-none;
+    letter-spacing: var(--aura-tracking-display);
+}
+
+/* Display tracking for Inter at 24 to 30px. Inter's own metric lands at -0.02em there; Tailwind's
+   tracking-tight (-0.025em) pinches the round letters. Applies to page titles, stat values, fact numbers. */
+:root {
+    --aura-tracking-display: -0.02em;
 }
 
 .aura-eyebrow {
@@ -110,9 +123,10 @@ body {
     @apply bg-white/[0.07] text-gray-300 ring-white/10;
 }
 
-/* Tinted: the option color classes win over the neutral fill. The ring takes the option's own
-   hue from its text color (22% of it on the -100 fill lands near the -200 shade), so a green
-   state has a green ring and a blue category a blue one, without the option naming a ring.
+/* Tinted: the option color classes win over the neutral fill. The ring is the option's own hue at
+   -600/20% (dark: -400/30%), keyed on the text color class the option already names, so a yellow
+   state gets a yellow ring where a mix of its brown -800 text read gray. Options only name fill and
+   text; an option that names its own ring utility still wins (these rules sit in :where()).
    Status options use -100/-800 with a dot; Select options use the quieter -50/-700 without a
    dot, so a category reads lighter than a state. */
 .aura-tag-status {
@@ -126,6 +140,46 @@ body {
 :where(.dark .aura-tag-status) {
     --tw-ring-color: color-mix(in srgb, currentColor 30%, transparent);
 }
+
+:where(.aura-tag-status.text-primary-600, .aura-tag-status.text-primary-700, .aura-tag-status.text-primary-800) { @apply ring-primary-600/20; }
+:where(.aura-tag-status.text-gray-600, .aura-tag-status.text-gray-700, .aura-tag-status.text-gray-800) { @apply ring-gray-500/20; }
+:where(.aura-tag-status.text-red-600, .aura-tag-status.text-red-700, .aura-tag-status.text-red-800) { @apply ring-red-600/20; }
+:where(.aura-tag-status.text-orange-600, .aura-tag-status.text-orange-700, .aura-tag-status.text-orange-800) { @apply ring-orange-600/20; }
+:where(.aura-tag-status.text-amber-600, .aura-tag-status.text-amber-700, .aura-tag-status.text-amber-800) { @apply ring-amber-600/20; }
+:where(.aura-tag-status.text-yellow-600, .aura-tag-status.text-yellow-700, .aura-tag-status.text-yellow-800) { @apply ring-yellow-600/25; }
+:where(.aura-tag-status.text-lime-600, .aura-tag-status.text-lime-700, .aura-tag-status.text-lime-800) { @apply ring-lime-600/25; }
+:where(.aura-tag-status.text-green-600, .aura-tag-status.text-green-700, .aura-tag-status.text-green-800) { @apply ring-green-600/20; }
+:where(.aura-tag-status.text-emerald-600, .aura-tag-status.text-emerald-700, .aura-tag-status.text-emerald-800) { @apply ring-emerald-600/20; }
+:where(.aura-tag-status.text-teal-600, .aura-tag-status.text-teal-700, .aura-tag-status.text-teal-800) { @apply ring-teal-600/20; }
+:where(.aura-tag-status.text-cyan-600, .aura-tag-status.text-cyan-700, .aura-tag-status.text-cyan-800) { @apply ring-cyan-600/20; }
+:where(.aura-tag-status.text-sky-600, .aura-tag-status.text-sky-700, .aura-tag-status.text-sky-800) { @apply ring-sky-600/20; }
+:where(.aura-tag-status.text-blue-600, .aura-tag-status.text-blue-700, .aura-tag-status.text-blue-800) { @apply ring-blue-600/20; }
+:where(.aura-tag-status.text-indigo-600, .aura-tag-status.text-indigo-700, .aura-tag-status.text-indigo-800) { @apply ring-indigo-600/20; }
+:where(.aura-tag-status.text-violet-600, .aura-tag-status.text-violet-700, .aura-tag-status.text-violet-800) { @apply ring-violet-600/20; }
+:where(.aura-tag-status.text-purple-600, .aura-tag-status.text-purple-700, .aura-tag-status.text-purple-800) { @apply ring-purple-600/20; }
+:where(.aura-tag-status.text-fuchsia-600, .aura-tag-status.text-fuchsia-700, .aura-tag-status.text-fuchsia-800) { @apply ring-fuchsia-600/20; }
+:where(.aura-tag-status.text-pink-600, .aura-tag-status.text-pink-700, .aura-tag-status.text-pink-800) { @apply ring-pink-600/20; }
+:where(.aura-tag-status.text-rose-600, .aura-tag-status.text-rose-700, .aura-tag-status.text-rose-800) { @apply ring-rose-600/20; }
+
+:where(.dark .aura-tag-status.dark\:text-primary-300, .dark .aura-tag-status.dark\:text-primary-400) { @apply ring-primary-400/30; }
+:where(.dark .aura-tag-status.dark\:text-gray-300, .dark .aura-tag-status.dark\:text-gray-400) { @apply ring-gray-400/30; }
+:where(.dark .aura-tag-status.dark\:text-red-300, .dark .aura-tag-status.dark\:text-red-400) { @apply ring-red-400/30; }
+:where(.dark .aura-tag-status.dark\:text-orange-300, .dark .aura-tag-status.dark\:text-orange-400) { @apply ring-orange-400/30; }
+:where(.dark .aura-tag-status.dark\:text-amber-300, .dark .aura-tag-status.dark\:text-amber-400) { @apply ring-amber-400/30; }
+:where(.dark .aura-tag-status.dark\:text-yellow-300, .dark .aura-tag-status.dark\:text-yellow-400) { @apply ring-yellow-400/30; }
+:where(.dark .aura-tag-status.dark\:text-lime-300, .dark .aura-tag-status.dark\:text-lime-400) { @apply ring-lime-400/30; }
+:where(.dark .aura-tag-status.dark\:text-green-300, .dark .aura-tag-status.dark\:text-green-400) { @apply ring-green-400/30; }
+:where(.dark .aura-tag-status.dark\:text-emerald-300, .dark .aura-tag-status.dark\:text-emerald-400) { @apply ring-emerald-400/30; }
+:where(.dark .aura-tag-status.dark\:text-teal-300, .dark .aura-tag-status.dark\:text-teal-400) { @apply ring-teal-400/30; }
+:where(.dark .aura-tag-status.dark\:text-cyan-300, .dark .aura-tag-status.dark\:text-cyan-400) { @apply ring-cyan-400/30; }
+:where(.dark .aura-tag-status.dark\:text-sky-300, .dark .aura-tag-status.dark\:text-sky-400) { @apply ring-sky-400/30; }
+:where(.dark .aura-tag-status.dark\:text-blue-300, .dark .aura-tag-status.dark\:text-blue-400) { @apply ring-blue-400/30; }
+:where(.dark .aura-tag-status.dark\:text-indigo-300, .dark .aura-tag-status.dark\:text-indigo-400) { @apply ring-indigo-400/30; }
+:where(.dark .aura-tag-status.dark\:text-violet-300, .dark .aura-tag-status.dark\:text-violet-400) { @apply ring-violet-400/30; }
+:where(.dark .aura-tag-status.dark\:text-purple-300, .dark .aura-tag-status.dark\:text-purple-400) { @apply ring-purple-400/30; }
+:where(.dark .aura-tag-status.dark\:text-fuchsia-300, .dark .aura-tag-status.dark\:text-fuchsia-400) { @apply ring-fuchsia-400/30; }
+:where(.dark .aura-tag-status.dark\:text-pink-300, .dark .aura-tag-status.dark\:text-pink-400) { @apply ring-pink-400/30; }
+:where(.dark .aura-tag-status.dark\:text-rose-300, .dark .aura-tag-status.dark\:text-rose-400) { @apply ring-rose-400/30; }
 
 .aura-tag-dot {
     @apply shrink-0 fill-current opacity-70;
@@ -193,7 +247,10 @@ body {
 
 /* Entity avatar. Initials on a tint derived from the record title, or the
    record's own image. Square for organisations and things, circle for people.
-   Tones mirror the Status field hues; red stays reserved for errors. */
+   The eight tones a name maps to (Resource::avatarTones) come from families the
+   tags do not use (blue, orange, teal, gray, yellow, green, red belong to status
+   and category chips) and leave the warm band to them, so an avatar never echoes
+   the tag beside it. The older tone classes stay for callers that pass a tone. */
 .aura-avatar {
     @apply inline-flex shrink-0 select-none items-center justify-center overflow-hidden font-semibold uppercase leading-none;
     letter-spacing: 0.02em;
@@ -227,6 +284,12 @@ body {
 .aura-avatar-tone-pink { @apply bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-300; }
 .aura-avatar-tone-orange { @apply bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300; }
 .aura-avatar-tone-teal { @apply bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300; }
+.aura-avatar-tone-violet { @apply bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300; }
+.aura-avatar-tone-fuchsia { @apply bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-500/20 dark:text-fuchsia-300; }
+.aura-avatar-tone-rose { @apply bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300; }
+.aura-avatar-tone-amber { @apply bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300; }
+.aura-avatar-tone-lime { @apply bg-lime-100 text-lime-700 dark:bg-lime-500/20 dark:text-lime-300; }
+.aura-avatar-tone-cyan { @apply bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300; }
 
 /* Row actions (view, edit) sit at gray-500 and, where a pointer can hover, stay hidden until the row
    is hovered or holds focus. The row itself opens the record (table/row), so they are a shortcut. */
@@ -236,7 +299,7 @@ body {
         transition: opacity 150ms ease-in-out;
     }
 
-    tr:hover .aura-row-actions,
+    :root:not(.aura-pointer-still) tr:hover .aura-row-actions,
     tr:focus-within .aura-row-actions {
         opacity: 1;
     }
@@ -276,6 +339,36 @@ body {
     @apply order-last flex w-full items-center justify-end gap-2 sm:order-none sm:w-auto sm:shrink-0;
 }
 
+/* A row whose buttons all move elsewhere on phones (Edit into the title row, Save and Cancel into the
+   form bar) collapses there instead of leaving an empty band. */
+.aura-record-header-actions.aura-record-header-actions-sm {
+    display: none;
+}
+
+@screen sm {
+    .aura-record-header-actions.aura-record-header-actions-sm {
+        display: flex;
+    }
+}
+
+/* Phone form bar: Save and Cancel pinned to the bottom edge of create and edit forms, above the home
+   indicator. The spacer keeps the last field clear of it. */
+.aura-form-bar {
+    @apply fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-gray-200 bg-white px-5 pt-3 dark:border-white/10 dark:bg-gray-900;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+.aura-form-bar-spacer {
+    height: calc(4.25rem + env(safe-area-inset-bottom));
+}
+
+@screen sm {
+    .aura-form-bar,
+    .aura-form-bar-spacer {
+        display: none;
+    }
+}
+
 .aura-record-fact {
     @apply flex min-w-0 flex-col justify-center gap-1;
 }
@@ -289,7 +382,24 @@ body {
 }
 
 .aura-record-fact-number {
-    @apply text-2xl font-semibold leading-none tracking-tight text-gray-900 dark:text-white;
+    @apply text-2xl font-semibold leading-none text-gray-900 dark:text-white;
+    letter-spacing: var(--aura-tracking-display);
+}
+
+/* Record meta line: created and updated time, and the author when the record has one, as one
+   quiet .aura-meta sentence under the details column (or under the related records when the
+   record has no details column). Each time carries its full timestamp as a tooltip. */
+.aura-record-meta {
+    @apply mt-5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-500 dark:text-gray-400;
+}
+
+.aura-record-meta time,
+.aura-record-meta [data-record-meta-author] {
+    @apply text-gray-700 dark:text-gray-300;
+}
+
+.aura-record-meta-sep {
+    @apply text-gray-300 dark:text-gray-600;
 }
 
 /* A view panel: section title, then one row per value. */

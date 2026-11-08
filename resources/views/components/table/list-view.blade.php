@@ -123,8 +123,15 @@
                         ->pluck('key')
                         ->sortBy(fn ($key) => $visibleColumnKeys->search($key))
                         ->values();
+
+                    // A Number and a Status column share one line: the tag left, the value right-aligned
+                    // (a deal's stage and amount), so such rows take three lines instead of four.
+                    $metaKeyOfType = fn ($class) => $metaKeys->first(fn ($key) => is_string($columnTypes[$key] ?? null) && is_a($columnTypes[$key], $class, true));
+                    $numberKey = $metaKeyOfType(\Aura\Base\Fields\Number::class);
+                    $statusKey = $metaKeyOfType(\Aura\Base\Fields\Status::class);
+                    $pairedKeys = ($numberKey && $statusKey) ? [$statusKey, $numberKey] : [];
                 @endphp
-                {{-- Phones: one line for the record, its relations on one line when it has several, then the same two columns on every row, one per line. --}}
+                {{-- Phones: one line for the record, its relations on one line when it has several, then the same two columns on every row, one per line (a status and a number share one). --}}
                 <ul class="border-t border-b divide-y divide-gray-200/60 border-gray-200/80 sm:hidden dark:divide-white/[0.06] dark:border-white/10">
                     @foreach ($mobileRows as $item)
                         @php
@@ -134,7 +141,7 @@
                             $primary = $rowTitle !== '' ? e($rowTitle) : $displays->first();
                             $hasAvatar = method_exists($row, 'avatarShape') && $row->avatarShape();
                             // A blank value keeps its line as a dash, so every row has the same lines and height.
-                            $metaValues = $metaKeys->map(fn ($key) => $displays[$key])->values();
+                            $metaValues = $metaKeys->reject(fn ($key) => in_array($key, $pairedKeys, true))->map(fn ($key) => $displays[$key])->values();
                             $relationLine = $relationKeys->map(fn ($key) => $relationName($displays[$key]))->filter(fn ($name) => $name !== '')->implode(' · ');
                             $rowUrl = auth()->user()?->can('view', $row) ? $row->viewUrl() : null;
                         @endphp
@@ -159,6 +166,17 @@
                                             @else
                                                 {{ $relationLine }}
                                             @endif
+                                        </div>
+                                    @endif
+                                    @if ($pairedKeys !== [])
+                                        <div class="flex gap-3 justify-between items-center mt-1 min-w-0 h-5 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400" data-mobile-row-pair>
+                                            @foreach ($pairedKeys as $pairedKey)
+                                                @if ($isBlank($displays[$pairedKey]))
+                                                    <span class="text-gray-400 dark:text-gray-500">–</span>
+                                                @else
+                                                    <span @class(['min-w-0 truncate', 'tabular-nums shrink-0' => $pairedKey === $numberKey])>{!! $displays[$pairedKey] !!}</span>
+                                                @endif
+                                            @endforeach
                                         </div>
                                     @endif
                                     {{-- One quiet line per meta value: two values side by side would both cut off on a phone. --}}

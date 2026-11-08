@@ -38,12 +38,14 @@
     </div>
 
     @if ($facts !== [])
-        <dl class="pt-3 mt-3 space-y-1.5 border-t border-gray-100 dark:border-white/[0.06]">
+        {{-- Phones stack each label above its value (left-aligned), so values start on one edge and long
+             ones get the full card width; from sm label and value share a line. --}}
+        <dl class="pt-3 mt-3 space-y-2.5 border-t border-gray-100 sm:space-y-1.5 dark:border-white/[0.06]">
             @foreach ($facts as $fact)
-                <div class="flex gap-4 justify-between items-center text-sm">
+                <div class="flex flex-col gap-0.5 text-sm sm:flex-row sm:gap-4 sm:justify-between sm:items-center">
                     <dt class="text-gray-500 shrink-0 dark:text-gray-400">{{ __($fact['name']) }}</dt>
                     @php $plain = is_scalar($fact['value']) ? trim(html_entity_decode(strip_tags((string) $fact['value']), ENT_QUOTES)) : ''; @endphp
-                    <dd class="min-w-0 text-right text-gray-900 truncate dark:text-gray-100" @if ($plain !== '') title="{{ $plain }}" @endif>{!! $fact['value'] !!}</dd>
+                    <dd class="min-w-0 text-gray-900 truncate sm:text-right dark:text-gray-100" @if ($plain !== '') title="{{ $plain }}" @endif>{!! $fact['value'] !!}</dd>
                 </div>
             @endforeach
         </dl>

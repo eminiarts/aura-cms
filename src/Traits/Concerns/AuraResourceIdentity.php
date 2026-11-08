@@ -91,13 +91,14 @@ trait AuraResourceIdentity
     }
 
     /**
-     * Tints an avatar may use. All come from palette families already in the
-     * UI (primary, gray and the Status field hues); red stays reserved for
-     * errors.
+     * Tints an avatar may use: eight Tailwind families the status and category
+     * tags do not use (those hold blue, orange, teal, gray, yellow, green and
+     * red). The warm band stays with the tags, so an avatar never echoes the
+     * chip in its row. Red stays reserved for errors.
      */
     public static function avatarTones(): array
     {
-        return ['primary', 'gray', 'blue', 'green', 'yellow', 'indigo', 'purple', 'pink', 'orange', 'teal'];
+        return ['indigo', 'purple', 'fuchsia', 'pink', 'rose', 'violet', 'lime', 'cyan'];
     }
 
     public static function getName(): ?string

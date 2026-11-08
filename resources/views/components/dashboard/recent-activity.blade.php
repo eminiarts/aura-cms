@@ -11,7 +11,7 @@
             @foreach ($items as $item)
                 <li>
                     <a href="{{ $item['url'] }}" wire:navigate
-                        class="flex gap-3 items-center py-2 -mx-2 px-2 rounded-md transition-colors duration-150 group hover:bg-gray-50 dark:hover:bg-white/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                        class="flex gap-3 items-center py-2 -mx-2 px-2 rounded-md transition-colors duration-150 group row-hover:bg-gray-50 dark:row-hover:bg-white/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                         @if (! empty($item['avatar']))
                             {!! $item['avatar'] !!}
                         @else

@@ -84,6 +84,15 @@ document.addEventListener('livewire:init', () => {
 });
 
 
+// Until the pointer moves, list rows keep their hover state off (the row-hover Tailwind variant and
+// .aura-row-actions): a page rendered under a resting cursor, after a click or wire:navigate, would
+// otherwise open with one row highlighted and its actions showing.
+const markPointerStill = () => document.documentElement.classList.add('aura-pointer-still');
+markPointerStill();
+document.addEventListener('livewire:navigated', markPointerStill);
+document.addEventListener('pointermove', () => document.documentElement.classList.remove('aura-pointer-still'), { passive: true });
+
+
 function updateVisitedPages(title, url) {
   const key = 'visitedPages';
   const maxVisitedPages = 5;

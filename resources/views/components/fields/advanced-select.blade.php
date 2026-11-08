@@ -457,13 +457,13 @@
                             <div>
                                 <input x-model.debounce.500ms="search" autofocus x-ref="searchField"
                                     class="px-4 py-2.5 w-full placeholder-gray-500 text-gray-900 border-none focus:ring-primary-600 focus:outline-none"
-                                    placeholder="{{ __('Search...')}}">
+                                    placeholder="{{ __('Search…')}}">
                             </div>
                         </li>
                     </template>
 
                     <template x-if="loading">
-                        <li role="status" class="px-4 py-3 text-sm text-gray-500">{{ __('Loading...') }}</li>
+                        <li role="status" class="px-4 py-3 text-sm text-gray-500">{{ __('Loading…') }}</li>
                     </template>
                     <template x-if="loadError">
                         <li class="px-4 py-3 text-sm">

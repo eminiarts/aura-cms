@@ -19,7 +19,7 @@
     </x-aura::breadcrumbs>
     @endif
 
-    {{-- Title left, actions right, as on the record header; on phones the actions form a right-aligned row under it. --}}
+    {{-- Title left, actions right, as on the record header; on phones Cancel and Save sit in the bottom form bar instead. --}}
     <div class="aura-record-block {{ $inModal ? 'mb-8' : 'mt-1 mb-6 sm:my-8'}}">
     <div class="aura-record-header">
         <div class="flex-1 min-w-0 sm:min-w-[10rem]">
@@ -27,7 +27,7 @@
         </div>
 
         @if(!$inModal)
-        <div class="aura-record-header-actions save-resource">
+        <div class="aura-record-header-actions save-resource {{ $showSaveButton ? 'aura-record-header-actions-sm' : '' }}">
             @if($indexUrl)
             <x-aura::button.transparent :href="$indexUrl">
                 {{ __('Cancel') }}
@@ -79,6 +79,10 @@
         </div> --}}
     </div>
     </div>
+
+    @if (! $inModal && $showSaveButton)
+        @include('aura::livewire.resource.form-bar', ['cancelUrl' => $indexUrl])
+    @endif
 
     @if ($inModal)
         <div class="flex justify-end space-x-2 mt-4">

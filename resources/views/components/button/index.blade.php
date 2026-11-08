@@ -21,9 +21,10 @@ if ($block) {
 }
 
 // Fixed heights so buttons, inputs and chips align on one baseline:
-// xs 28px, sm 32px, base 36px, lg 40px, xl 48px.
+// xs 28px, sm 32px, base 36px, lg 40px, xl 48px. icon-xs (28px) and icon (36px) are square, icon-only.
 $sizes = [
   'icon-xs' => 'h-7 w-7 p-0 text-xs font-medium rounded-md',
+  'icon' => 'h-9 w-9 p-0 text-sm font-medium rounded-lg',
   'xs' => 'h-7 gap-1.5 px-2.5 text-xs font-medium rounded-md',
   'sm' => 'h-8 gap-1.5 px-3 text-sm font-medium rounded-lg',
   'base' => 'h-9 gap-2 px-3.5 text-sm font-medium rounded-lg',
@@ -32,6 +33,7 @@ $sizes = [
 ];
 $iconSizes = [
   'icon-xs' => 'size-3.5',
+  'icon' => 'size-4',
   'xs' => 'size-3.5',
   'sm' => 'size-4',
   'base' => 'size-4',

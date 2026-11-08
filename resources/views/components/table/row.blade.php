@@ -14,7 +14,7 @@
         $rowOpen = '($event.metaKey || $event.ctrlKey) ? window.open('.Js::from($rowViewUrl).", '_blank') : Livewire.navigate(".Js::from($rowViewUrl).')';
     }
 @endphp
-<tr class="transition-colors duration-150 ease-in-out cm-table-row hover:bg-gray-50/80 dark:hover:bg-white/[0.04] {{ $rowOpen ? 'sm:cursor-pointer' : '' }}"
+<tr class="transition-colors duration-150 ease-in-out cm-table-row row-hover:bg-gray-50/80 dark:row-hover:bg-white/[0.04] {{ $rowOpen ? 'sm:cursor-pointer' : '' }}"
     wire:key="{{ $row->id }}"
     data-id="{{ $row->id }}"
     :class="{ 'bg-primary-50/60 dark:bg-primary-500/10': selected.includes('{{ $row->id }}') }"

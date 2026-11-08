@@ -17,6 +17,12 @@ if (! $iconClass) {
 }
 
 $iconWrapper = 'flex shrink-0 '.($isSeparator ? 'text-gray-300 dark:text-gray-600' : '');
+
+// The trail's last titled link is the page's parent: the breadcrumbs wrapper (rendered after its
+// slot) turns it into the phone back link. The home icon has no title and never becomes the parent.
+if ($href && (string) $title !== '') {
+    request()->attributes->set('aura.breadcrumbs.parent', ['href' => $href, 'title' => $title]);
+}
 @endphp
 
 <li class="inline-flex items-center gap-x-1.5">

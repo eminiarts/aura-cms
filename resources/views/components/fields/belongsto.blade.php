@@ -128,7 +128,7 @@
                             {{-- search input --}}
                             <input x-ref="input" x-model.debounce.300ms="search" autofocus
                                 class="px-4 py-2.5 w-full placeholder-gray-500 text-gray-900 border-none focus:outline-none dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-400 focus:ring-primary-500"
-                                placeholder="Search..." />
+                                placeholder="Search…" />
                         </div>
                     </li>
                     <template x-if="filteredItems.length === 0">

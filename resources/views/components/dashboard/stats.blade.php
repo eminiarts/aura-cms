@@ -2,13 +2,14 @@
 
 {{-- One anatomy for every card: label and icon, the total with a 30-day trend beside it, then the
      count of new records in the last 30 days and the change against the 30 days before.
-     The trend is the running total of new records, drawn as a line only when at least three days
-     of the month had records; a sparser month leaves the slot empty (the row keeps one height).
-     The delta pill is a row-wide decision: when any card can show one, every card gets the slot,
-     and a card without a previous period shows a neutral dash. Calm cards (an empty workspace)
-     keep label and a muted total. Phones: a 2x2 grid; the trend is a desktop detail. --}}
+     The trend is the running total of new records. It is a row decision: drawn on every card when
+     each card had records on at least three days of the month, otherwise on none, so the row never
+     mixes charted and bare cards. The delta pill only appears on cards with a previous period to
+     compare against; the others show no pill (the line keeps its height). Calm cards (an empty
+     workspace) keep label and a muted total. Phones: a 2x2 grid; the trend is a desktop detail. --}}
 @php
-    $anyDelta = ! $calm && collect($stats)->contains(fn ($stat) => ($stat['delta'] ?? null) !== null);
+    $qualifies = fn ($stat) => $stat['showSparkline'] ?? (count(array_filter(array_map('intval', $stat['series'] ?? []))) >= 3);
+    $rowTrend = ! $calm && collect($stats)->isNotEmpty() && collect($stats)->every($qualifies);
     $chartWidth = 112;
     $chartHeight = 28;
 @endphp
@@ -18,7 +19,7 @@
         $deltaPercent = $stat['deltaPercent'] ?? null;
         $current = (int) ($stat['current'] ?? 0);
         $series = array_values(array_map('intval', $stat['series'] ?? []));
-        $showTrend = ! $calm && ($stat['showSparkline'] ?? (count(array_filter($series)) >= 3));
+        $showTrend = $rowTrend;
         $points = '';
 
         if ($showTrend) {
@@ -50,7 +51,7 @@
         </div>
 
         <div class="flex gap-4 justify-between items-end mt-3 h-[1.875rem]">
-            <span class="text-3xl font-semibold leading-none tracking-tight {{ $calm && ! $stat['total'] ? 'text-gray-300 dark:text-gray-600' : 'text-gray-900 dark:text-white' }}">{{ number_format($stat['total']) }}</span>
+            <span class="aura-stat-value {{ $calm && ! $stat['total'] ? 'text-gray-300 dark:text-gray-600' : 'text-gray-900 dark:text-white' }}">{{ number_format($stat['total']) }}</span>
 
             @if ($showTrend)
                 <svg viewBox="0 0 {{ $chartWidth }} {{ $chartHeight }}" width="{{ $chartWidth }}" height="{{ $chartHeight }}" class="hidden shrink-0 w-28 h-7 sm:block" aria-hidden="true" data-stat-trend>
@@ -79,9 +80,6 @@
                         @endif
                         {{ abs((int) $deltaPercent) }}%
                     </span>
-                @elseif ($anyDelta)
-                    <span class="inline-flex items-center justify-center ml-auto h-5 min-w-[2rem] rounded-full px-1.5 font-medium shrink-0 bg-gray-100 text-gray-400 dark:bg-white/10 dark:text-gray-500"
-                        title="{{ __('No records in the 30 days before') }}" data-stat-delta-empty>—</span>
                 @endif
             </div>
         @endunless

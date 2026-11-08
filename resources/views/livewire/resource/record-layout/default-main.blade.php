@@ -47,7 +47,7 @@
         $panels = array_values(array_filter($sections['details'], fn ($field) => ($field['field'] ?? null) instanceof \Aura\Base\Fields\Panel));
     @endphp
 
-    <div class="col-span-1 mx-0 min-w-0 sm:col-span-3 {{ $splitRelated ? 'aura-record-columns xl:grid xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] xl:gap-10 xl:items-start 2xl:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] 2xl:gap-12' : '' }}">
+    <div class="col-span-1 mx-0 min-w-0 sm:col-span-3 {{ $splitRelated ? 'aura-record-columns xl:grid xl:grid-cols-[minmax(0,25rem)_minmax(0,1fr)] xl:gap-10 xl:items-start 2xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] 2xl:gap-12' : '' }}">
         @if ($sections['details'] !== [])
         {{-- Sections bring px-2; -mx-2 puts their titles flush with the page title. --}}
         <div class="-mx-2 min-w-0 {{ $splitRelated ? 'aura-record-details' : '' }}" wire:key="resource-view-fields" data-record-details>
@@ -69,6 +69,10 @@
                 <x-dynamic-component :component="$field['field']->view()" :field="$field" :form="$form" :mode="$mode" />
             </x-aura::fields.conditions>
             @endforeach
+
+            @unless ($inModal)
+                @include('aura::livewire.resource.record-meta', ['attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => 'px-2'])])
+            @endunless
         </div>
         @endif
 
@@ -90,6 +94,11 @@
                 </div>
             </x-aura::fields.conditions>
             @endforeach
+
+            {{-- Without a details column the meta line closes the related records instead. --}}
+            @if (! $inModal && $sections['details'] === [])
+                @include('aura::livewire.resource.record-meta', ['attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => '!mt-6'])])
+            @endif
         </div>
         @endif
 
