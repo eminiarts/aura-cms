@@ -125,6 +125,8 @@ module.exports = {
         // does not open with one row highlighted.
         function ({ addVariant }) {
             addVariant('row-hover', ':root:not(.aura-pointer-still) &:hover');
+            // group-row-hover: the same guard for overlays inside a hovered .group (media tiles).
+            addVariant('group-row-hover', '@media (hover: hover) { :root:not(.aura-pointer-still) :merge(.group):hover & }');
         },
     ],
 };

@@ -6,7 +6,7 @@
      each card had records on at least three days of the month, otherwise on none, so the row never
      mixes charted and bare cards. The delta pill only appears on cards with a previous period to
      compare against; the others show no pill (the line keeps its height). Calm cards (an empty
-     workspace) keep label and a muted total. Phones: a 2x2 grid; the trend is a desktop detail. --}}
+     workspace) keep label and total; a zero is muted to gray-500 with a "No … yet" caption. Phones: a 2x2 grid; the trend is a desktop detail. --}}
 @php
     $qualifies = fn ($stat) => $stat['showSparkline'] ?? (count(array_filter(array_map('intval', $stat['series'] ?? []))) >= 3);
     $rowTrend = ! $calm && collect($stats)->isNotEmpty() && collect($stats)->every($qualifies);
@@ -51,7 +51,7 @@
         </div>
 
         <div class="flex gap-4 justify-between items-end mt-3 h-[1.875rem]">
-            <span class="aura-stat-value {{ $calm && ! $stat['total'] ? 'text-gray-300 dark:text-gray-600' : 'text-gray-900 dark:text-white' }}">{{ number_format($stat['total']) }}</span>
+            <span class="aura-stat-value {{ $calm && ! $stat['total'] ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white' }}">{{ number_format($stat['total']) }}</span>
 
             @if ($showTrend)
                 <svg viewBox="0 0 {{ $chartWidth }} {{ $chartHeight }}" width="{{ $chartWidth }}" height="{{ $chartHeight }}" class="hidden shrink-0 w-28 h-7 sm:block" aria-hidden="true" data-stat-trend>
@@ -60,6 +60,11 @@
                 </svg>
             @endif
         </div>
+
+        @if ($calm && ! $stat['total'])
+            {{-- A muted zero still reads (gray-500, 4.8:1) and says what it counts. --}}
+            <p class="mt-3 h-5 text-xs leading-5 text-gray-500 truncate dark:text-gray-400">{{ __('No :items yet', ['items' => Str::lower($stat['name'])]) }}</p>
+        @endif
 
         @unless ($calm)
             {{-- Fixed h-5 line: a card with a delta pill is as tall as one without, so cards in a row match.

@@ -217,72 +217,78 @@
 
         <div class="mt-4">
 
-            <div class="flex flex-wrap gap-3 items-center justify-between">
-
-                {{-- Left cluster: search + media type / upload month quick filters.
-                     The type set stays on one line: when the segmented control
-                     no longer fits next to search and dates, it collapses into
-                     a dropdown instead of wrapping. --}}
-                <div
-                    class="flex flex-wrap gap-3 items-center min-w-0"
-                    x-ref="cluster"
-                    x-data="{
-                        compact: false,
-                        wrapped(el) { return !!el && el.offsetHeight > 52 },
-                        check() {
-                            if (! this.compact) {
-                                if (this.wrapped(this.$refs.segment) || this.wrapped(this.$refs.cluster)) {
+            {{-- Toolbar. Phones: full-width search, then one row that scrolls sideways (type,
+                 date, view switch, filters) with Columns and Actions pinned at its right edge,
+                 since their menus would be clipped inside the scroll row. From sm the wrappers
+                 dissolve (sm:contents) into one wrapping row: search and quick filters left,
+                 the controls right (sm:order keeps view switch, Columns, Filters, Actions).
+                 The type set stays on one line: when the segmented control no longer fits
+                 (the toolbar wraps), it collapses into a dropdown; phones keep the segment
+                 and scroll it instead. --}}
+            <div
+                class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
+                x-data="{
+                    compact: false,
+                    wrapped(el) { return !!el && el.offsetHeight > 52 },
+                    check() {
+                        if (window.matchMedia('(max-width: 639px)').matches) {
+                            this.compact = false
+                            return
+                        }
+                        if (! this.compact) {
+                            if (this.wrapped(this.$refs.segment) || this.wrapped(this.$root)) {
+                                this.compact = true
+                            }
+                        } else {
+                            // Let the segment re-render and settle, then re-test.
+                            this.compact = false
+                            setTimeout(() => {
+                                if (this.wrapped(this.$refs.segment) || this.wrapped(this.$root)) {
                                     this.compact = true
                                 }
-                            } else {
-                                // Let the segment re-render and settle, then re-test.
-                                this.compact = false
-                                setTimeout(() => {
-                                    if (this.wrapped(this.$refs.segment) || this.wrapped(this.$refs.cluster)) {
-                                        this.compact = true
-                                    }
-                                }, 60)
-                            }
-                        },
-                    }"
-                    x-init="
+                            }, 60)
+                        }
+                    },
+                }"
+                x-init="
+                    check();
+                    // Re-check when the toolbar's width changes, including when the
+                    // picker's details panel opens; ignore height changes caused by check() itself.
+                    let width = $el.parentElement.offsetWidth;
+                    new ResizeObserver(Alpine.debounce(() => {
+                        if ($el.parentElement.offsetWidth === width) return;
+                        width = $el.parentElement.offsetWidth;
                         check();
-                        // Re-check when the toolbar's width changes, including when the
-                        // picker's details panel opens; ignore height changes caused by check() itself.
-                        let width = $el.parentElement.offsetWidth;
-                        new ResizeObserver(Alpine.debounce(() => {
-                            if ($el.parentElement.offsetWidth === width) return;
-                            width = $el.parentElement.offsetWidth;
-                            check();
-                        }, 150)).observe($el.parentElement);
-                    "
-                >
+                    }, 150)).observe($el.parentElement);
+                "
+            >
 
-                    @if ($this->settings['search'])
-                        <div class="w-56 max-w-full">
-                            <label for="table-search" class="sr-only">Search</label>
-                            <div class="relative">
-                                <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
-                                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor"
-                                        viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                        <path fill-rule="evenodd"
-                                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                            clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                                <input type="text" id="table-search"
-                                    class="block w-56 max-w-full text-sm bg-white rounded-lg shadow-xs transition appearance-none border border-gray-500/30 pl-10 pr-3 py-1.5 focus:outline-none ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:dark:bg-gray-800 dark:bg-transparent dark:border-gray-700 dark:focus:border-gray-500 z-[1]"
-                                    placeholder="{{ __('Search for items') }}" wire:model.live.debounce="search">
-
+                @if ($this->settings['search'])
+                    <div class="w-full sm:w-56 sm:max-w-full">
+                        <label for="table-search" class="sr-only">{{ __('Search') }}</label>
+                        <div class="relative">
+                            <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor"
+                                    viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd"
+                                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
                             </div>
-                        </div>
-                    @endif
+                            <input type="text" id="table-search"
+                                class="block w-full sm:w-56 max-w-full text-sm bg-white rounded-lg shadow-xs transition appearance-none border border-gray-500/30 pl-10 pr-3 py-1.5 focus:outline-none ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:dark:bg-gray-800 dark:bg-transparent dark:border-gray-700 dark:focus:border-gray-500 z-[1]"
+                                placeholder="{{ __('Search files…') }}" wire:model.live.debounce="search">
 
-                    {{-- Media type + upload month quick filters.
-                         The type set uses the same segmented treatment as the
-                         grid/list switch-view control, so the active file type
-                         reads as a tab, not a standalone pill. --}}
-                    <div class="flex flex-wrap gap-3 items-center min-w-0" data-media-quick-filters>
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Phone row 2: the scroll row plus the pinned menus. --}}
+                <div class="flex gap-2 items-center min-w-0 sm:contents">
+
+                    {{-- Scroll row: quick filters, view switch, filters. The 1px vertical
+                         padding keeps the buttons' rings inside the scroll box. --}}
+                    <div class="flex flex-1 gap-2 items-center py-px -my-px min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:contents" data-media-quick-filters>
                         @php
                             $activeType = $this->quickFilters['type'] ?? null;
                             $activeMonth = $this->quickFilters['month'] ?? null;
@@ -296,7 +302,7 @@
                         <div
                             x-ref="segment"
                             x-show="!compact"
-                            class="inline-flex gap-0.5 isolate items-center p-0.5 rounded-lg bg-gray-950/[0.04] dark:bg-white/5"
+                            class="inline-flex gap-0.5 isolate items-center p-0.5 rounded-lg shrink-0 bg-gray-950/[0.04] dark:bg-white/5"
                         >
                             <button
                                 type="button"
@@ -328,7 +334,7 @@
                             wire:change="setQuickFilter('type', $event.target.value)"
                             data-type-dropdown
                             aria-label="{{ __('Media type') }}"
-                            class="px-3 py-1.5 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
+                            class="px-3 py-1.5 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none shrink-0 border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
                         >
                             <option value="" @selected($activeType === null)>{{ __('All types') }}</option>
                             @foreach ($model::MEDIA_TYPES as $typeKey => $typeLabel)
@@ -340,7 +346,7 @@
                             <select
                                 wire:change="setQuickFilter('month', $event.target.value)"
                                 data-month-filter
-                                class="px-3 py-1.5 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
+                                class="px-3 py-1.5 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none shrink-0 border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
                             >
                                 <option value="" @selected($activeMonth === null)>{{ __('All dates') }}</option>
                                 @foreach ($uploadMonths as $month)
@@ -354,44 +360,44 @@
                         @if($this->settings['table_before'] && !empty($this->userFilters))
                             <x-aura::input.select
                                 wire:model.live="selectedFilter"
-                                class="w-40"
+                                class="w-40 shrink-0"
                                 :options="collect($this->userFilters)->mapWithKeys(function ($filter, $key) {
                                     return [$key => $filter['name']];
                                 })->prepend(__('All'), '')"
                             />
                         @endif
-                    </div>
-                </div>
 
-                {{-- Right cluster: view switch, table settings, filters, bulk actions --}}
-                <div class="flex gap-2 justify-end items-center ml-auto">
-
-                    @if ($this->settings['settings'] || $this->settings['filters'])
-                        <div class="flex gap-2">
-
-                            @include('aura::components.table.switch-view')
-
-                            @if ($this->settings['settings'])
-                                @if ($currentView == 'list' && $model->showTableSettings())
-                                    @include('aura::components.table.settings', ['controlHeight' => 'h-9'])
-                                @endif
-                            @endif
-
-                            @if ($this->settings['settings'])
-                                @if ($currentView == 'kanban' && $model->showTableSettings())
-                                    @include('aura::components.table.kanban-settings')
-                                @endif
-                            @endif
+                        @if ($this->settings['settings'] || $this->settings['filters'])
+                            <div class="shrink-0 sm:order-1 sm:ml-auto">
+                                @include('aura::components.table.switch-view')
+                            </div>
 
                             {{-- The media toolbar's controls are h-9; resource tables use h-10. --}}
                             @if ($this->settings['filters'])
-                                @include($this->settings['views']['filter'], ['controlHeight' => 'h-9'])
+                                <div class="shrink-0 sm:order-3">
+                                    @include($this->settings['views']['filter'], ['controlHeight' => 'h-9'])
+                                </div>
                             @endif
-                        </div>
+                        @endif
+                    </div>
+
+                    @if ($this->settings['settings'])
+                        @if ($currentView == 'list' && $model->showTableSettings())
+                            <div class="shrink-0 sm:order-2">
+                                @include('aura::components.table.settings', ['controlHeight' => 'h-9'])
+                            </div>
+                        @endif
+                        @if ($currentView == 'kanban' && $model->showTableSettings())
+                            <div class="shrink-0 sm:order-2">
+                                @include('aura::components.table.kanban-settings')
+                            </div>
+                        @endif
                     @endif
 
                     @if ($this->settings['bulk_actions'])
-                        @include($this->settings['views']['bulk_actions'])
+                        <div class="shrink-0 sm:order-4">
+                            @include($this->settings['views']['bulk_actions'])
+                        </div>
                     @endif
                 </div>
             </div>

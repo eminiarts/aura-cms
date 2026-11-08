@@ -15,11 +15,6 @@
         );
         $tooltip = $singleLine && is_scalar($value) ? trim(html_entity_decode(strip_tags((string) $value), ENT_QUOTES)) : null;
     @endphp
-    <div @if($tooltip) title="{{ $tooltip }}" @endif class="{{ $keepsLines ? 'whitespace-pre-line' : '' }} {{ $singleLine ? 'truncate' : 'break-words [overflow-wrap:anywhere]' }} min-w-0 text-sm text-gray-900 dark:text-gray-100">
-        @if(empty($value))
-            <span class="text-gray-400 dark:text-gray-500">–</span>
-        @else
-            {!! $value !!}
-        @endif
-    </div>
+    {{-- One line on purpose: whitespace-pre-line would render the template's own line breaks as a blank first line. --}}
+    <div @if($tooltip) title="{{ $tooltip }}" @endif class="{{ $keepsLines ? 'whitespace-pre-line' : '' }} {{ $singleLine ? 'truncate' : 'break-words [overflow-wrap:anywhere]' }} min-w-0 text-sm text-gray-900 dark:text-gray-100">@if(empty($value))<span class="text-gray-400 dark:text-gray-500">–</span>@else{!! $keepsLines ? trim((string) $value) : $value !!}@endif</div>
 </x-aura::fields.wrapper>

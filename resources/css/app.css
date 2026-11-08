@@ -449,6 +449,19 @@ body {
     }
 }
 
+/* Record page with a right rail (a panel of 33% width or less, the form's sidebar card): sections fill
+   their column, and from lg the 20rem rail uses a narrow label column. */
+.aura-record-rail-layout [data-record-section] {
+    width: 100% !important;
+}
+
+@screen lg {
+    .aura-record-rail .aura-view-row {
+        grid-template-columns: 6.5rem minmax(0, 1fr);
+        column-gap: 0.75rem;
+    }
+}
+
 /* Related-record card (a BelongsTo relation on a record without lists): avatar,
    resource name, title, then up to three of the related record's own values. */
 .aura-record-card {

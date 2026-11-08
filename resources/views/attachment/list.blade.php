@@ -27,7 +27,7 @@
                                         x-show="canUpload"
                                         type="button"
                                         x-on:click="document.getElementById('file-upload').click()">
-                                        {{ __('Upload Files') }}
+                                        {{ __('Upload files') }}
                                     </x-aura::button.primary>
                                 </div>
                             </div>
