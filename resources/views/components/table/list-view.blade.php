@@ -73,36 +73,53 @@
             </div>
 
             @if ($stackOnMobile)
-                {{-- Phones: one line for the record, one quiet line with the next two columns. --}}
+                @php
+                    // The whole row is one link, so links inside cell values (record chips, website hosts)
+                    // become plain spans: nested anchors would split the row in the DOM.
+                    $flattenLinks = fn ($html) => is_string($html)
+                        ? preg_replace(['/<a\b([^>]*)>/i', '/<\/a>/i', '/\s(?:href|wire:navigate)(?:=("[^"]*"|\'[^\']*\'))?/i'], ['<span$1>', '</span>', ''], $html)
+                        : $html;
+                    $plainText = fn ($html) => is_scalar($html) ? trim(html_entity_decode(strip_tags((string) $html), ENT_QUOTES)) : '';
+                    $isBlank = fn ($value) => $value === null || (is_string($value) && trim(strip_tags($value)) === '' && ! str_contains($value, '<svg'));
+
+                    $mobileRows = $rows->map(function ($row) use ($visibleColumnKeys, $flattenLinks, $leadsWithTitle) {
+                        return [
+                            'row' => $row,
+                            'title' => $leadsWithTitle ? trim((string) $row->title()) : '',
+                            'displays' => $visibleColumnKeys->mapWithKeys(fn ($key) => [$key => $flattenLinks($row->display($key))]),
+                        ];
+                    });
+
+                    // The meta line shows the same columns on every row: the two most filled columns on this page
+                    // (in column order), so one row cannot show a company where the next shows a phone number.
+                    // Columns the record name already contains (first and last name) and the leading column stay out.
+                    $metaKeys = $visibleColumnKeys
+                        ->reject(fn ($key, $index) => ! $leadsWithTitle && $index === 0)
+                        ->reject(fn ($key) => $leadsWithTitle && $mobileRows->every(function ($item) use ($key, $plainText) {
+                            $text = $plainText($item['displays'][$key]);
+
+                            return $text === '' || $item['title'] === ''
+                                || preg_match('/(?<![\p{L}\p{N}])'.preg_quote($text, '/').'(?![\p{L}\p{N}])/iu', $item['title']) === 1;
+                        }))
+                        ->map(fn ($key) => ['key' => $key, 'filled' => $mobileRows->reject(fn ($item) => $isBlank($item['displays'][$key]))->count()])
+                        ->filter(fn ($column) => $column['filled'] > 0)
+                        ->sortByDesc('filled')
+                        ->take(2)
+                        ->pluck('key')
+                        ->sortBy(fn ($key) => $visibleColumnKeys->search($key))
+                        ->values();
+                @endphp
+                {{-- Phones: one line for the record, then the same two columns on every row, one per line. --}}
                 <ul class="border-t border-b divide-y divide-gray-200/60 border-gray-200/80 sm:hidden dark:divide-white/[0.06] dark:border-white/10">
-                    @foreach ($rows as $row)
+                    @foreach ($mobileRows as $item)
                         @php
-                            // The whole row is one link, so links inside cell values (record chips, website hosts)
-                            // become plain spans: nested anchors would split the row in the DOM.
-                            $flattenLinks = fn ($html) => is_string($html)
-                                ? preg_replace(['/<a\b([^>]*)>/i', '/<\/a>/i', '/\s(?:href|wire:navigate)(?:=("[^"]*"|\'[^\']*\'))?/i'], ['<span$1>', '</span>', ''], $html)
-                                : $html;
-                            $displays = $visibleColumnKeys->mapWithKeys(fn ($key) => [$key => $flattenLinks($row->display($key))]);
-                            $plainText = fn ($html) => is_scalar($html) ? trim(html_entity_decode(strip_tags((string) $html), ENT_QUOTES)) : '';
-                            $rowTitle = $leadsWithTitle ? trim((string) $row->title()) : '';
-
-                            if ($rowTitle !== '') {
-                                // "Hannah Schmid" leads; columns it already contains (first and last name) leave the meta line.
-                                $primary = e($rowTitle);
-                                $metaDisplays = $displays->reject(function ($html) use ($plainText, $rowTitle) {
-                                    $text = $plainText($html);
-
-                                    return $text !== '' && preg_match('/(?<![\p{L}\p{N}])'.preg_quote($text, '/').'(?![\p{L}\p{N}])/iu', $rowTitle) === 1;
-                                });
-                            } else {
-                                $primary = $displays->first();
-                                $metaDisplays = $displays->slice(1);
-                            }
-
+                            $row = $item['row'];
+                            $displays = $item['displays'];
+                            $rowTitle = $item['title'];
+                            $primary = $rowTitle !== '' ? e($rowTitle) : $displays->first();
                             $hasAvatar = method_exists($row, 'avatarShape') && $row->avatarShape();
-                            $metaValues = $metaDisplays
-                                ->filter(fn ($value) => ! ($value === null || (is_string($value) && trim(strip_tags($value)) === '' && ! str_contains($value, '<svg'))))
-                                ->take(2);
+                            // A blank value keeps its line as a dash, so every row has the same lines and height.
+                            $metaValues = $metaKeys->map(fn ($key) => $displays[$key])->values();
                             $rowUrl = auth()->user()?->can('view', $row) ? $row->viewUrl() : null;
                         @endphp
                         <li wire:key="mobile-row-{{ $row->id }}">
@@ -119,20 +136,16 @@
                                             {!! $primary !!}
                                         @endif
                                     </div>
-                                    @if ($metaValues->isNotEmpty())
-                                        {{-- One line only: a value that does not fit wraps onto a second line, which max-h hides,
-                                             so a long email shows alone (truncated) instead of two cut-off values. --}}
-                                        <div class="flex overflow-hidden flex-wrap items-center mt-1 max-h-6 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400">
-                                            @foreach ($metaValues as $metaValue)
-                                                <span class="inline-flex items-center max-w-full min-w-0 h-6">
-                                                    @if (! $loop->first)
-                                                        <span class="px-2 text-gray-300 dark:text-gray-600" aria-hidden="true">&middot;</span>
-                                                    @endif
-                                                    <span class="min-w-0 truncate">{!! $metaValue !!}</span>
-                                                </span>
-                                            @endforeach
+                                    {{-- One quiet line per meta value: two values side by side would both cut off on a phone. --}}
+                                    @foreach ($metaValues as $metaValue)
+                                        <div class="flex items-center mt-0.5 min-w-0 h-5 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400 [&_.aura-link]:text-inherit [&_.aura-record-link]:text-inherit">
+                                            @if ($isBlank($metaValue))
+                                                <span class="text-gray-400 dark:text-gray-500">–</span>
+                                            @else
+                                                <span class="min-w-0 truncate">{!! $metaValue !!}</span>
+                                            @endif
                                         </div>
-                                    @endif
+                                    @endforeach
                                 </div>
                                 @if ($rowUrl)
                                     <svg class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">

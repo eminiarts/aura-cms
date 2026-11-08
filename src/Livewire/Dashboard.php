@@ -141,7 +141,9 @@ class Dashboard extends Component
                 // Change against the previous 30 days; unknown when that period was empty.
                 'delta' => $previous > 0 ? $current - $previous : null,
                 'deltaPercent' => $previous > 0 ? (int) round(($current - $previous) / $previous * 100) : null,
-                // A trend line needs at least a few points to say anything.
+                // New records per day, oldest first: the stat card draws one bar per day, so a
+                // sparse month reads as a few bars rather than a broken line.
+                'series' => $series,
                 'showSparkline' => count(array_filter($series)) >= 3,
                 'sparkline' => $this->sparkline($series),
             ];

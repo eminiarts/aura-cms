@@ -74,8 +74,9 @@
                         @endif
                     </div>
                 @elseif ($columnType === 'Aura\\Base\\Fields\\Email' && is_string($display))
-                    {{-- Long addresses stay on one line; the full address is in the tooltip. --}}
-                    <span class="block max-w-[16rem] truncate" title="{{ html_entity_decode(strip_tags($display)) }}">{!! $display !!}</span>
+                    {{-- Long addresses stay on one line; w-max makes the column claim the address width (up to 20rem) in the
+                         auto table layout, so it is only cut when it is longer than that. The full address is in the tooltip. --}}
+                    <span class="block w-max max-w-[20rem] truncate" title="{{ html_entity_decode(strip_tags($display)) }}">{!! $display !!}</span>
                 @else
                     {!! $display !!}
                 @endif

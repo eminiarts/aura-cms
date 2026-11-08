@@ -83,7 +83,7 @@
                     $attributes->get('class')
                 ])
             >
-                <div class="flex items-center ml-0 font-medium {{ $compact ? 'space-x-2 text-sm' : 'space-x-2.5 text-sm' }}">
+                <div class="flex items-center ml-0 font-medium {{ $compact ? 'space-x-2 text-[13px]' : 'space-x-2.5 text-[13px]' }}">
                     {{ $slot }}
                 </div>
             </a>
@@ -116,7 +116,7 @@
                 @endif
         >
             <div class="flex justify-between items-center w-full">
-                <div class="flex justify-between items-center ml-0 font-medium truncate {{ $compact ? 'space-x-2 text-sm' : 'space-x-2.5 text-sm' }}">{{ $slot }}</div>
+                <div class="flex justify-between items-center ml-0 font-medium truncate {{ $compact ? 'space-x-2 text-[13px]' : 'space-x-2.5 text-[13px]' }}">{{ $slot }}</div>
 
                 @php
                     $badgeColorClasses = [

@@ -10,6 +10,21 @@ class Email extends Field
 
     public $view = 'aura::fields.view-value';
 
+    /**
+     * A valid address renders as a mailto link in the quiet value-link style;
+     * anything else takes the escaped scalar path.
+     */
+    public function display($field, $value, $model)
+    {
+        if (! optional($field)['display_view'] && ! $this->index && is_string($value) && filter_var(trim($value), FILTER_VALIDATE_EMAIL)) {
+            $email = e(trim($value));
+
+            return "<a class='aura-link' href='mailto:{$email}'>{$email}</a>";
+        }
+
+        return parent::display($field, $value, $model);
+    }
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [

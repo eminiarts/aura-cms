@@ -70,15 +70,18 @@
             'deltaPercent' => 16,
             'url' => '#cards',
             'icon' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>',
+            'series' => [2, 0, 4, 3, 0, 1, 5, 2, 0, 3, 4, 6, 1, 0, 2, 3, 5, 0, 4, 2, 6, 3, 1, 0, 5, 4, 2, 7, 3, 4],
             'sparkline' => ['line' => $sparklineLine, 'area' => $sparklineArea],
         ],
         [
-            // No previous period and too few points: no delta row, no chart.
+            // No previous period and a sparse month: no delta pill, a few bars.
             'name' => 'Users',
             'total' => 342,
-            'current' => 0,
+            'current' => 3,
+            'previous' => 0,
             'url' => '#cards',
             'icon' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>',
+            'series' => [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             'showSparkline' => false,
         ],
     ];
@@ -219,15 +222,34 @@
 
         <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Page header pattern') }}</span>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Record pages (view and edit): the resource name is the eyebrow, the record title is the H1. Create pages have no eyebrow; the H1 says "New deal" in sentence case, with a ghost Cancel left of Save. Phones wrap the H1 to two lines and put the actions on their own row. The view page shows the record values in a details card on the left and related lists on the right from xl up; the panel heading and the field equal to the title are dropped there. One primary button per screen; everything else is secondary or ghost.') }}</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Record pages (view and edit): the resource name is the eyebrow, the record title is the H1. Create pages have no eyebrow; the H1 says "New deal" in sentence case, with a ghost Cancel left of Save. Phones wrap the H1 to two lines and put the actions on their own row. The view page promotes key fields into a facts strip under the title (.aura-record-facts: by default the first Number field, large and tabular, and the first Status field as its tag; a resource overrides the pick with recordHeaderFields()). One primary button per screen; everything else is secondary or ghost.') }}</p>
             <div class="flex gap-4 justify-between items-center mt-4">
                 <div class="min-w-0">
-                    <p class="aura-eyebrow">Company</p>
-                    <h3 class="mt-0.5 break-words aura-page-title line-clamp-2 sm:line-clamp-1">Northwind Software</h3>
+                    <p class="aura-eyebrow">Deal</p>
+                    <h3 class="mt-0.5 break-words aura-page-title line-clamp-2 sm:line-clamp-1">Northwind ERP Rollout 2026</h3>
                 </div>
                 <div class="flex gap-2 items-center">
                     <x-aura::button.transparent>{{ __('View') }}</x-aura::button.transparent>
                     <x-aura::button.primary>{{ __('Save') }}</x-aura::button.primary>
+                </div>
+            </div>
+            <div class="mt-4 aura-record-facts">
+                <div class="aura-record-fact">
+                    <span class="aura-eyebrow">Amount</span>
+                    <span class="aura-record-fact-number">CHF 84,500</span>
+                </div>
+                <div class="aura-record-fact">
+                    <span class="aura-eyebrow">Stage</span>
+                    <span class="aura-record-fact-value">
+                        <span class="aura-tag aura-tag-status bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+                            <svg class="aura-tag-dot" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>
+                            Proposal
+                        </span>
+                    </span>
+                </div>
+                <div class="aura-record-fact">
+                    <span class="aura-eyebrow">Owner</span>
+                    <span class="aura-record-fact-value"><a href="#typography" class="aura-record-link"><x-aura::avatar name="Martina Keller" shape="circle" size="xs" /><span class="aura-record-link-title">Martina Keller</span></a></span>
                 </div>
             </div>
             <div class="flex gap-4 justify-between items-center pt-4 mt-4 border-t border-gray-100 dark:border-white/5">
@@ -250,8 +272,16 @@
                     </span>
                 </div>
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
-                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">field label (view) + value</span>
-                    <span><span class="block aura-eyebrow">Website</span><span class="block text-sm text-gray-900 dark:text-gray-100">https://northwindsoftware.com</span></span>
+                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">field label (view) + value — 14px gray-500 beside 14px gray-900</span>
+                    <span class="flex gap-6 items-baseline"><span class="w-28 text-sm text-gray-500 dark:text-gray-400">Website</span><span class="text-sm text-gray-900 dark:text-gray-100"><a href="#typography" class="aura-link">northwindsoftware.com</a></span></span>
+                </div>
+                <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
+                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">URL value (.aura-link) — no underline at rest; underline and an external mark on hover</span>
+                    <span class="text-sm"><a href="#typography" class="aura-link">atlascomponents.de</a></span>
+                </div>
+                <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
+                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">Email value (.aura-link, mailto) — same link, no external mark; long values wrap in the details column</span>
+                    <span class="text-sm"><a href="mailto:martina.keller@northwindsoftware.com" class="aura-link">martina.keller@northwindsoftware.com</a></span>
                 </div>
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
                     <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">empty value (tables and views)</span>
@@ -266,8 +296,8 @@
                     <span class="text-sm text-red-600 dark:text-red-400">The title field is required.</span>
                 </div>
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
-                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">sidebar heading</span>
-                    <span class="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">Resources</span>
+                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">sidebar group label — 12px · 500 · sentence case · gray-500</span>
+                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Resources</span>
                 </div>
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
                     <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">link</span>
@@ -281,9 +311,9 @@
             <ul class="grid grid-cols-1 gap-x-6 gap-y-1 mt-3 text-sm text-gray-600 sm:grid-cols-2 dark:text-gray-300">
                 <li>{{ __('Active navigation item') }}</li>
                 <li>{{ __('The one primary button per screen') }}</li>
-                <li>{{ __('Links and record chips on hover') }}</li>
+                <li>{{ __('Text links in auth and settings copy') }}</li>
                 <li>{{ __('Focus rings and selected rows') }}</li>
-                <li>{{ __('Dashboard sparklines and quick-action icons') }}</li>
+                <li>{{ __('Dashboard sparkline bars') }}</li>
                 <li>{{ __('Nothing else: badges, icons and surfaces stay in the gray ramp') }}</li>
             </ul>
         </div>
@@ -504,11 +534,11 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">06</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Tags, Avatars & Pills') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('One tag family for every inline value that is not plain text: 22px high, 12px medium, the same radius and padding. Three variants: neutral for option values, tinted for an option that carries a color (a Select category at -50/-700 without a dot, a Status state at -100/-800 with a dot), relation for a linked record. Entity avatars put initials on a tint derived from the name (square for companies and things, circle for people) and sit before record names in tables and the record header; chips carry an image only, initials are not readable at 16px. Small rounded-full pills remain for sidebar counts and trends.') }}
+            {{ __('One tag family for enum values: 22px high, 12px medium, the same radius and padding. Neutral for option values, tinted for an option that carries a color (a Select category at -50/-700 without a dot, a Status state at -100/-800 with a dot). A relation is not a tag: it reads as the related record\'s name, 14px gray-900 with its 16px avatar (one initial) in front, underlined on hover, so a row with three relations stays calm. Entity avatars put initials on a tint derived from the name (square for companies and things, circle for people) and sit before record names in tables and the record header. Small rounded-full pills remain for sidebar counts and trends.') }}
         </p>
 
         <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Tag family (.aura-tag): neutral, select color (.aura-tag-status + option color), status (+ dot), relation (.aura-record-link)') }}</span>
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Tag family (.aura-tag): neutral, select color (.aura-tag-status + option color), status (+ dot); relation as a record link (.aura-record-link)') }}</span>
             <div class="flex flex-wrap gap-1.5 items-center mt-4">
                 @foreach (['Software', 'Retail', 'Finance', 'Other'] as $tag)
                     <span class="aura-tag">{{ $tag }}</span>
@@ -534,14 +564,16 @@
                     </span>
                 @endforeach
             </div>
-            <div class="flex flex-wrap gap-1.5 items-center mt-3">
-                <a href="#badges" class="aura-tag aura-record-link">
+            <div class="flex flex-wrap gap-6 items-center mt-4">
+                <a href="#badges" class="aura-record-link">
+                    <x-aura::avatar name="Northwind Software" shape="square" size="xs" />
                     <span class="aura-record-link-title">Northwind Software</span>
                 </a>
-                <a href="#badges" class="aura-tag aura-record-link">
+                <a href="#badges" class="aura-record-link">
+                    <x-aura::avatar name="Martina Keller" shape="circle" size="xs" />
                     <span class="aura-record-link-title">Martina Keller</span>
                 </a>
-                <a href="#badges" class="aura-tag aura-record-link">
+                <a href="#badges" class="aura-record-link">
                     <span class="aura-record-link-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg></span>
                     <span class="aura-record-link-title">{{ __('Icon fallback') }}</span>
                 </a>
@@ -549,7 +581,7 @@
         </div>
 
         <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Entity avatars (x-aura::avatar): sizes xs 16 (images only), sm 24 (table rows, 11px initials), md 28, lg 40; tone from the name over 10 palette tints') }}</span>
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Entity avatars (x-aura::avatar): sizes xs 16 (relation links, one initial), sm 24 (table rows, 11px initials), md 28, lg 40; tone from the name over 10 palette tints') }}</span>
             <div class="flex flex-wrap gap-4 items-center mt-4">
                 @foreach (['xs', 'sm', 'md', 'lg'] as $size)
                     <x-aura::avatar name="Atlas Components" shape="square" :size="$size" />
@@ -606,7 +638,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">07</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Cards & Widgets') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('.aura-card is the base surface. KPI stat cards below are the real dashboard/stats component with sample data: one sparkline style (1.5px primary line, 10% fill, 32px), shown only when the series has enough points, a delta row only when there is a previous period. The grid keeps the cards in a row the same height. Phones show a 2x2 grid with number and delta.') }}
+            {{ __('.aura-card is the base surface, used for forms and the few boxed surfaces: stat cards and related-record cards. Lists, record details and dashboard sections are unboxed under a hairline title. Stat cards below are the real dashboard/stats component with sample data; every card has the same anatomy: label and icon, the total with a 30-day bar sparkline (one bar per day, the one place a card carries primary), then the new records in the last 30 days and, when the 30 days before had records, the change as a pill. Phones show a 2x2 grid without the sparkline.') }}
         </p>
 
         <div class="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-2">
@@ -621,6 +653,62 @@
 
         <div class="grid grid-cols-12 gap-4 mt-4">
             <x-aura::dashboard.stats :stats="$stats" />
+        </div>
+
+        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Record page: details section (.aura-record-section) and related-record cards (x-aura::resource.record-card)') }}</span>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Every view panel renders as a titled section of label/value rows with hairlines; a single panel is titled "Details". From xl the sections sit in a 22rem column with the related records on the right: embedded lists, or, for a record without lists, one card per BelongsTo relation with the related record and up to three of its own list values.') }}</p>
+            <div class="grid grid-cols-1 gap-8 mt-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+                <div class="aura-record-section !mb-0">
+                    <h3 class="aura-record-section-title">{{ __('Details') }}</h3>
+                    <div class="aura-record-section-body">
+                        <div>
+                            @foreach ([
+                                ['Amount', '<span class="tabular-nums">CHF 84,500</span>'],
+                                ['Stage', '<span class="aura-tag aura-tag-status bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"><svg class="aura-tag-dot" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>Proposal</span>'],
+                                ['Company', '<a href="#cards" class="aura-record-link"><span class="aura-avatar aura-avatar-xs aura-avatar-square aura-avatar-tone-teal" aria-hidden="true">N</span><span class="aura-record-link-title">Northwind Software</span></a>'],
+                                ['Phone', '<span class="text-gray-400 dark:text-gray-500">–</span>'],
+                            ] as [$label, $value])
+                                <div class="px-4">
+                                    <div class="py-2 sm:grid sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-x-3 sm:items-baseline aura-view-row">
+                                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ $label }}</span>
+                                        <span class="text-sm text-gray-900 dark:text-gray-100">{!! $value !!}</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div class="aura-record-card">
+                        <div class="flex gap-3 items-center">
+                            <x-aura::avatar name="Northwind Software" shape="square" size="lg" />
+                            <div class="flex-1 min-w-0">
+                                <p class="aura-eyebrow">Company</p>
+                                <p class="mt-0.5 text-sm font-semibold text-gray-900 truncate dark:text-white">Northwind Software</p>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
+                        </div>
+                        <dl class="pt-3 mt-3 space-y-1.5 border-t border-gray-100 dark:border-white/[0.06]">
+                            <div class="flex gap-4 justify-between items-center text-sm"><dt class="text-gray-500 dark:text-gray-400">Website</dt><dd class="text-gray-900 dark:text-gray-100"><a href="#cards" class="aura-link">northwindsoftware.com</a></dd></div>
+                            <div class="flex gap-4 justify-between items-center text-sm"><dt class="text-gray-500 dark:text-gray-400">Industry</dt><dd><span class="aura-tag aura-tag-status bg-blue-50 text-blue-700 ring-blue-700/10 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-400/20">Software</span></dd></div>
+                        </dl>
+                    </div>
+                    <div class="aura-record-card">
+                        <div class="flex gap-3 items-center">
+                            <x-aura::avatar name="Martina Keller" shape="circle" size="lg" />
+                            <div class="flex-1 min-w-0">
+                                <p class="aura-eyebrow">Contact</p>
+                                <p class="mt-0.5 text-sm font-semibold text-gray-900 truncate dark:text-white">Martina Keller</p>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
+                        </div>
+                        <dl class="pt-3 mt-3 space-y-1.5 border-t border-gray-100 dark:border-white/[0.06]">
+                            <div class="flex gap-4 justify-between items-center text-sm"><dt class="text-gray-500 dark:text-gray-400">Email</dt><dd class="min-w-0 text-gray-900 truncate dark:text-gray-100">martina.keller@northwindsoftware.com</dd></div>
+                        </dl>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-2">
@@ -807,7 +895,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">09</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Sidebar') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Real navigation.item / navigation.heading components inside the three sidebar themes (config: sidebar-type). The first item shows the active state.') }}
+            {{ __('Real navigation.item / navigation.heading components inside the three sidebar themes (config: sidebar-type). Standard size: 32px items, 13px medium labels, 18px icons at 1.5 stroke; group labels 12px medium in sentence case; the active item carries a 2px primary hairline on its left edge. The first item shows the active state.') }}
         </p>
 
         <div class="grid grid-cols-1 gap-4 mt-6 md:grid-cols-3">

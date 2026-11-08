@@ -10,15 +10,13 @@
     $firstName = \Illuminate\Support\Str::before(trim(auth()->user()->name ?? ''), ' ');
 @endphp
 
+{{-- The date is the eyebrow, the greeting the title; the empty workspace gets one line of guidance. --}}
 <div {{ $attributes->merge(['class' => 'col-span-12']) }}>
-    <div class="flex flex-wrap gap-4 justify-between items-end">
-        <div>
-            <h1 class="aura-page-title">
-                {{ $greeting }}{{ $firstName ? ', '.$firstName : '' }}
-            </h1>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {{ now()->isoFormat('dddd, LL') }} &middot; {{ $empty ? __('Your workspace is empty. Start by adding a record.') : __("Here's what changed in your workspace.") }}
-            </p>
-        </div>
-    </div>
+    <p class="aura-eyebrow">{{ now()->isoFormat('dddd, LL') }}</p>
+    <h1 class="mt-0.5 aura-page-title">
+        {{ $greeting }}{{ $firstName ? ', '.$firstName : '' }}
+    </h1>
+    @if ($empty)
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Your workspace is empty. Start by adding a record.') }}</p>
+    @endif
 </div>

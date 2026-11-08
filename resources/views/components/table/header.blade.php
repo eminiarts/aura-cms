@@ -47,6 +47,11 @@
             @endif
 
 
+            {{-- No records yet: no toolbar, so "Edit resource" sits on the title row. --}}
+            @if (! $isRelationTable && ($collectionIsEmpty ?? false))
+                @include('aura::components.table.resource-editor-button')
+            @endif
+
             @can('create', $model)
                 @if ($this->settings['create'] && ! $createInEmptyState)
                     <div class="create-resource">

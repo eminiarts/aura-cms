@@ -24,6 +24,19 @@ trait AuraResourceViews
         return 'aura::livewire.resource.index';
     }
 
+    /**
+     * Slugs of the fields the record page promotes into its header, under the
+     * title (a deal's amount and stage, an order's total and status). Null
+     * picks the default: the first Status and the first Number field that are
+     * shown in lists. An empty array promotes nothing.
+     *
+     * @return array<int, string>|null
+     */
+    public function recordHeaderFields(): ?array
+    {
+        return null;
+    }
+
     public function rowView()
     {
         return 'aura::components.table.row';

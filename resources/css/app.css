@@ -88,25 +88,24 @@ body {
     @apply ml-2 text-lg font-normal text-gray-400 dark:text-gray-500;
 }
 
-/* Tag family. One 22px chip for every inline value that is not plain text:
-   neutral (.aura-tag, option values), status (.aura-tag-status, tinted with a
-   dot; the tint comes from the option's own color classes) and relation
-   (.aura-record-link, with the related record's avatar). Same height, radius,
-   12px medium text and padding across all three. The colors sit in :where()
-   so a status option's utility classes override them. Used from PHP display()
-   methods too, so it lives in CSS (src/Fields is outside the content globs). */
-.aura-tag,
-.aura-record-link {
+/* Tag family. One 22px chip for every inline enum value: neutral (.aura-tag,
+   option values) and status (.aura-tag-status, tinted with a dot; the tint
+   comes from the option's own color classes). Same height, radius, 12px medium
+   text and padding. The colors sit in :where() so a status option's utility
+   classes override them. Relations are not chips (see .aura-record-link).
+   Used from PHP display() methods too, so it lives in CSS (src/Fields is
+   outside the content globs). */
+.aura-tag {
     @apply inline-flex max-w-full items-center gap-1.5 whitespace-nowrap px-1.5 text-xs font-medium leading-none;
     height: 1.375rem;
     border-radius: calc(var(--aura-control-radius, 0.5rem) * 0.75);
 }
 
-:where(.aura-tag, .aura-record-link) {
+:where(.aura-tag) {
     @apply bg-gray-950/[0.05] text-gray-700 ring-1 ring-inset ring-gray-950/[0.06];
 }
 
-:where(.dark .aura-tag, .dark .aura-record-link) {
+:where(.dark .aura-tag) {
     @apply bg-white/[0.07] text-gray-300 ring-white/10;
 }
 
@@ -132,32 +131,20 @@ body {
 }
 
 /* A leading avatar sits 3px from the chip edge. */
-.aura-tag:has(> .aura-avatar:first-child),
-.aura-record-link:has(> .aura-avatar:first-child) {
+.aura-tag:has(> .aura-avatar:first-child) {
     padding-left: 0.1875rem;
 }
 
-/* Relation: a link to the record, hover tints primary. */
+/* Relation value (BelongsTo in tables and record views): the related record as
+   plain text, 14px gray-900, with its 16px avatar in front, underlined on
+   hover. Reads as a name, not a badge, so a row with three relations stays
+   calm; enum values keep their tags. */
 .aura-record-link {
-    @apply text-gray-800 transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500;
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .aura-record-link:hover {
-        @apply bg-primary-50 text-primary-700 ring-primary-500/20;
-    }
-
-    .dark .aura-record-link:hover {
-        @apply bg-primary-500/15 text-primary-300 ring-primary-400/30;
-    }
-}
-
-.dark .aura-record-link {
-    @apply text-gray-200;
+    @apply inline-flex max-w-full items-center gap-1.5 align-middle text-sm text-gray-900 decoration-gray-400 underline-offset-[3px] transition-colors duration-150 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:rounded-sm dark:text-gray-100 dark:decoration-gray-500;
 }
 
 .aura-record-link-icon {
-    @apply shrink-0 pl-0.5 text-gray-500 dark:text-gray-400;
+    @apply shrink-0 text-gray-400 dark:text-gray-500;
 }
 
 .aura-record-link-icon svg {
@@ -169,10 +156,36 @@ body {
     @apply truncate;
 }
 
-/* Inline link in a value cell (Text fields holding a URL show the host). Quiet: body color with a
-   hairline underline, primary only on hover, so a column of websites does not become a column of blue. */
+/* Inline link in a value cell (Text fields holding a URL show the host). Quiet at rest: body color,
+   no underline. On hover the underline and a small external-link mark appear; the mark keeps its
+   space at rest so nothing shifts. */
 .aura-link {
-    @apply text-gray-700 underline decoration-gray-300 decoration-1 underline-offset-[3px] transition-colors duration-150 hover:text-primary-700 hover:decoration-primary-400 dark:text-gray-300 dark:decoration-gray-600 dark:hover:text-primary-300 dark:hover:decoration-primary-500;
+    @apply text-gray-700 decoration-gray-400 underline-offset-[3px] transition-colors duration-150 hover:underline hover:text-gray-900 dark:text-gray-300 dark:decoration-gray-500 dark:hover:text-white;
+}
+
+.aura-link::after {
+    content: "";
+    display: inline-block;
+    width: 0.6875rem;
+    height: 0.6875rem;
+    margin-left: 0.25rem;
+    vertical-align: -0.0625rem;
+    background-color: currentColor;
+    opacity: 0;
+    transition: opacity 150ms ease-in-out;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3H4.5A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13h7a1.5 1.5 0 0 0 1.5-1.5V9M9.5 3H13v3.5M13 3 7.5 8.5'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3H4.5A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13h7a1.5 1.5 0 0 0 1.5-1.5V9M9.5 3H13v3.5M13 3 7.5 8.5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.aura-link:hover::after,
+.aura-link:focus-visible::after {
+    opacity: 0.7;
+}
+
+/* No external-link mark on mail links, nor on a link flattened to a span (phone list rows). */
+.aura-link[href^="mailto:"]::after,
+.aura-link:not([href])::after {
+    content: none;
 }
 
 /* Entity avatar. Initials on a tint derived from the record title, or the
@@ -187,8 +200,8 @@ body {
     @apply h-full w-full object-cover;
 }
 
-/* xs is for images only (initials are not readable at 16px); sm is the table row size with 11px initials. */
-.aura-avatar-xs { width: 1rem; height: 1rem; font-size: 0.5rem; }
+/* xs (16px, relation links) shows one initial at 9px; sm is the table row size with 11px initials. */
+.aura-avatar-xs { width: 1rem; height: 1rem; font-size: 0.5625rem; letter-spacing: 0; }
 .aura-avatar-sm { width: 1.5rem; height: 1.5rem; font-size: 0.6875rem; }
 .aura-avatar-md { width: 1.75rem; height: 1.75rem; font-size: 0.6875rem; }
 .aura-avatar-lg { width: 2.5rem; height: 2.5rem; font-size: 0.875rem; }
@@ -231,11 +244,71 @@ body {
     border-radius: var(--aura-panel-radius, 0.75rem);
 }
 
-/* Two-column record page: the details card is narrow, so its label column is too,
-   and the related lists beside it use tighter cell padding to fit their columns. */
+/* Record page.
+   Header: the promoted fields (first Status and first Number field by default,
+   or the resource's recordHeaderFields()) sit under the title as a facts strip,
+   a number large and tabular, a status as its tag.
+   Body: an unboxed details column (every view panel becomes a titled section
+   of label/value rows with hairlines, no card) and, from xl, related records on
+   the right: embedded lists, or small cards for BelongsTo relations when the
+   record has no lists, so a record with four fields is never one stretched card. */
+.aura-record-facts {
+    @apply flex flex-wrap items-stretch gap-x-6 gap-y-3;
+}
+
+.aura-record-fact {
+    @apply flex min-w-0 flex-col justify-center gap-1;
+}
+
+.aura-record-fact + .aura-record-fact {
+    @apply border-l border-gray-200 pl-6 dark:border-white/10;
+}
+
+.aura-record-fact-value {
+    @apply flex min-h-[1.5rem] items-center text-sm font-medium text-gray-900 dark:text-gray-100;
+}
+
+.aura-record-fact-number {
+    @apply text-2xl font-semibold leading-none tracking-tight text-gray-900 dark:text-white;
+}
+
+/* A view panel: section title, then one row per value. */
+.aura-record-section {
+    @apply mb-6;
+}
+
+.aura-record-section-title {
+    @apply mb-1 border-b border-gray-200 pb-2 text-sm font-semibold text-gray-900 dark:border-white/10 dark:text-white;
+}
+
+.aura-record-section .aura-view-row {
+    @apply border-b border-gray-100 py-2.5 dark:border-white/[0.06];
+}
+
+/* fields.fields wraps the rows in one flex container (-mx-2) and each row in px-4: pull the
+   container out by the difference so the rows sit flush with the section title. The last row
+   closes without a hairline. */
+.aura-record-section-body > div {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    width: calc(100% + 2rem);
+}
+
+.aura-record-section-body > div > div:last-child .aura-view-row {
+    border-bottom: 0;
+}
+
+/* Two-column record page: the details column is narrow, so sections fill it (a panel's own width
+   is for the single-column page), its label column is narrow too, and the related lists beside it
+   use tighter cell padding to fit their columns. */
 @media (min-width: 1280px) {
+    .aura-record-details > [data-record-section],
+    .aura-record-details > .aura-record-section {
+        width: 100% !important;
+    }
+
     .aura-record-details .aura-view-row {
-        grid-template-columns: 6rem minmax(0, 1fr);
+        grid-template-columns: 7rem minmax(0, 1fr);
         column-gap: 0.75rem;
     }
 
@@ -244,6 +317,21 @@ body {
         padding-left: 0.75rem;
         padding-right: 0.75rem;
     }
+}
+
+/* Related-record card (a BelongsTo relation on a record without lists): avatar,
+   resource name, title, then up to three of the related record's own values. */
+.aura-record-card {
+    @apply block rounded-xl bg-white p-4 shadow-xs ring-1 ring-gray-950/10 transition duration-150 dark:bg-gray-800 dark:ring-white/10;
+    border-radius: var(--aura-panel-radius, 0.75rem);
+}
+
+a.aura-record-card:hover {
+    @apply ring-gray-950/20 dark:ring-white/20;
+}
+
+a.aura-record-card:focus-visible {
+    @apply outline-none ring-2 ring-primary-500;
 }
 
 .dark .aura-card {
@@ -745,7 +833,7 @@ body {
 }
 /* Dark Sidebar Type */
 .aura-sidebar-type-dark .aura-sidebar-icon {
-    @apply text-gray-400 group-hover:text-gray-200 group-[.is-active]:text-white;
+    @apply text-gray-500 group-hover:text-gray-300 group-[.is-active]:text-white;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-icon {
@@ -757,30 +845,38 @@ body {
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-icon {
-    @apply dark:text-gray-400 dark:group-hover:text-gray-200 dark:group-[.is-active]:text-white;
+    @apply dark:text-gray-500 dark:group-hover:text-gray-300 dark:group-[.is-active]:text-white;
 }
 
-/* .aura-sidebar-heading */
+/* .aura-sidebar-heading (group label: 12px medium, sentence case) */
 .aura-sidebar-heading {}
 .aura-sidebar-type-primary .aura-sidebar-heading{
     @apply text-sidebar-text;
 }
 .aura-sidebar-type-light .aura-sidebar-heading{
-    @apply text-gray-400;
+    @apply text-gray-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-heading {
-    @apply text-gray-400;
+    @apply text-gray-500;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-heading{
     @apply dark:text-sidebar-text;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-heading{
-    @apply dark:text-gray-400;
+    @apply dark:text-gray-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-heading {
-    @apply dark:text-gray-400;
+    @apply dark:text-gray-500;
 }
+
+/* .aura-sidebar-avatar (user card at the bottom) */
+.aura-sidebar-type-primary .aura-sidebar-avatar { @apply ring-white/20; }
+.aura-sidebar-type-light .aura-sidebar-avatar { @apply ring-gray-950/10; }
+.aura-sidebar-type-dark .aura-sidebar-avatar { @apply ring-white/10; }
+.aura-sidebar-darkmode-type-primary .aura-sidebar-avatar { @apply dark:ring-white/20; }
+.aura-sidebar-darkmode-type-light .aura-sidebar-avatar { @apply dark:ring-gray-950/10; }
+.aura-sidebar-darkmode-type-dark .aura-sidebar-avatar { @apply dark:ring-white/10; }
 
 /* .aura-sidebar-heading */
 .aura-sidebar-heading-border {}
@@ -838,7 +934,7 @@ body {
 }
 
 .aura-sidebar-type-dark .aura-sidebar-item {
-    @apply text-gray-300 bg-transparent hover:text-white hover:bg-white/[0.06] focus-visible:ring-primary-500;
+    @apply text-gray-400 bg-transparent hover:text-gray-100 hover:bg-white/[0.06] focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-item.is-active {
     @apply relative text-white bg-primary-500/[0.14] hover:bg-primary-500/[0.16];
@@ -872,7 +968,7 @@ body {
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-item {
-    @apply dark:text-gray-300 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
+    @apply dark:text-gray-400 dark:bg-transparent dark:hover:text-gray-100 dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-item.is-active {
     @apply dark:relative dark:text-white dark:bg-primary-500/[0.14] dark:hover:bg-primary-500/[0.16];

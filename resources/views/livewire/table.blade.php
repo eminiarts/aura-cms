@@ -249,6 +249,8 @@
                     @if ($this->settings['bulk_actions'])
                         @include($this->settings['views']['bulk_actions'])
                     @endif
+
+                    @include('aura::components.table.resource-editor-button')
                 </div>
             </div>
             @endif

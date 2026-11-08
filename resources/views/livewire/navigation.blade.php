@@ -157,7 +157,7 @@
                     </div>
                 </div>
 
-                <div class=" flex-shrink-0 {{ $this->compact ? 'px-2' : 'px-4' }} min-h-[4.5rem] py-2 flex flex-wrap items-center border-t aura-sidebar-footer">
+                <div class="flex flex-wrap flex-shrink-0 items-center py-3 border-t {{ $this->compact ? 'px-2' : 'px-3' }} aura-sidebar-footer">
                     @impersonating($guard = null)
                     <div class="w-full">
                         <x-aura::button.primary :href="route('impersonate.leave')" class="my-2 w-full" size="xs">
@@ -173,15 +173,16 @@
                         <div class="flex justify-between items-center pb-20 w-full md:pb-0">
                             <x-aura::navigation.team-switcher>
                                 <x-slot:title>
+                                    {{-- User card: 32px avatar, name, current team. --}}
                                     <div class="block min-w-0 flex-1 group">
                                         <div class="flex min-w-0 items-center">
                                             <div class="shrink-0">
-                                                <img class="inline-block object-cover w-9 h-9 rounded-full"
+                                                <img class="inline-block object-cover w-8 h-8 rounded-full ring-1 ring-inset aura-sidebar-avatar"
                                                      src="{{ auth()->user()->avatarUrl }}" alt="">
                                             </div>
-                                            <div class="ml-3 min-w-0 hide-collapsed">
-                                                <p class="truncate text-sm font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
-                                                <p class="truncate text-xs font-medium aura-sidebar-team-name">{{ Auth::user()->currentTeam->name }}</p>
+                                            <div class="ml-2.5 min-w-0 hide-collapsed">
+                                                <p class="truncate text-[13px] leading-4 font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
+                                                <p class="truncate text-xs leading-4 aura-sidebar-team-name">{{ Auth::user()->currentTeam->name }}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -210,11 +211,11 @@
                                     <div class="block min-w-0 flex-1 group">
                                         <div class="flex min-w-0 items-center">
                                             <div class="shrink-0">
-                                                <img class="inline-block object-cover w-9 h-9 rounded-full"
+                                                <img class="inline-block object-cover w-8 h-8 rounded-full ring-1 ring-inset aura-sidebar-avatar"
                                                     src="{{ auth()->user()->avatarUrl }}" alt="">
                                             </div>
-                                            <div class="ml-3 min-w-0 hide-collapsed">
-                                                <p class="truncate text-sm font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
+                                            <div class="ml-2.5 min-w-0 hide-collapsed">
+                                                <p class="truncate text-[13px] leading-4 font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
                                             </div>
                                         </div>
                                     </div>

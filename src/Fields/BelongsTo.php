@@ -105,21 +105,20 @@ class BelongsTo extends Field implements PreloadsTableDisplay
 
             $related = $this->resolveDisplayModel($field, $value, $model);
 
-            // Record chip: the related record's image (16px) when it has one,
-            // plus its title. Initials are not readable at chip size, so a
-            // record without an image shows the title alone; a resource that
-            // opts out of avatars altogether falls back to its icon. All of it
-            // is markup owned by the resource class; the title is
-            // database-backed and view-value renders this raw, so escape it.
+            // Record link: the related record's 16px avatar (its image or one
+            // initial) plus its title as plain text. A resource that opts out
+            // of avatars falls back to its icon. All of it is markup owned by
+            // the resource class; the title is database-backed and view-value
+            // renders this raw, so escape it.
             $leading = '';
 
             if ($related && method_exists($related, 'avatarShape') && $related->avatarShape()) {
-                $leading = $related->avatarImageId() ? $related->avatarHtml('xs') : '';
+                $leading = $related->avatarHtml('xs');
             } elseif ($related && method_exists($related, 'getIcon') && (string) $related->getIcon() !== '') {
                 $leading = "<span class='aura-record-link-icon' aria-hidden='true'>".$related->getIcon().'</span>';
             }
 
-            return "<a class='aura-tag aura-record-link' href='".e(route('aura.'.$slug.'.edit', $value))."'>".$leading."<span class='aura-record-link-title'>".e(optional($related)->title()).'</span></a>';
+            return "<a class='aura-record-link' href='".e(route('aura.'.$slug.'.edit', $value))."'>".$leading."<span class='aura-record-link-title'>".e(optional($related)->title()).'</span></a>';
         }
 
         return $value;

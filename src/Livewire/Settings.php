@@ -893,11 +893,11 @@ class Settings extends Component
             'expert-panel-small-padding' => 8,
             'expert-layout-gap' => 24,
             'expert-section-gap' => 16,
-            'expert-sidebar-item-height' => 36,
-            'expert-sidebar-item-padding-x' => 12,
+            'expert-sidebar-item-height' => 32,
+            'expert-sidebar-item-padding-x' => 10,
             'expert-sidebar-group-gap' => 4,
-            'expert-sidebar-heading-gap' => 20,
-            'expert-sidebar-icon-size' => 20,
+            'expert-sidebar-heading-gap' => 18,
+            'expert-sidebar-icon-size' => 18,
             'expert-light-sidebar-background' => '#1643d7',
             'expert-light-sidebar-hover' => '#1f55e9',
             'expert-light-sidebar-dropdown' => '#1236b9',
@@ -946,7 +946,7 @@ class Settings extends Component
         $sidebar = match ($this->form['fields']['sidebar-size'] ?? 'standard') {
             'dense' => [28, 6, 2, 10, 16],
             'compact' => [32, 8, 4, 14, 18],
-            default => [36, 12, 4, 20, 20],
+            default => [32, 10, 4, 18, 18],
         };
         [$values['expert-sidebar-item-height'], $values['expert-sidebar-item-padding-x'], $values['expert-sidebar-group-gap'], $values['expert-sidebar-heading-gap'], $values['expert-sidebar-icon-size']] = $sidebar;
 
