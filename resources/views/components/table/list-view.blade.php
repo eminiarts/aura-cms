@@ -90,11 +90,26 @@
                         ];
                     });
 
-                    // The meta line shows the same columns on every row: the two most filled columns on this page
+                    // A relation's name without its avatar initial.
+                    $relationName = fn ($html) => is_string($html) && preg_match('/class=["\'][^"\']*aura-record-link-title[^"\']*["\'][^>]*>(.*?)<\/span>/s', $html, $match)
+                        ? $plainText($match[1])
+                        : $plainText($html);
+
+                    // Two or more BelongsTo columns share one muted line under the name ("Northwind Software · Martina Keller"),
+                    // as plain names, so the relations do not use up both meta lines. A single relation stays a regular meta column.
+                    $relationKeys = $visibleColumnKeys
+                        ->reject(fn ($key, $index) => ! $leadsWithTitle && $index === 0)
+                        ->filter(fn ($key) => is_string($columnTypes[$key] ?? null) && is_a($columnTypes[$key], \Aura\Base\Fields\BelongsTo::class, true))
+                        ->filter(fn ($key) => $mobileRows->contains(fn ($item) => $relationName($item['displays'][$key]) !== ''))
+                        ->values();
+                    $relationKeys = $relationKeys->count() > 1 ? $relationKeys : collect();
+
+                    // The meta lines show the same columns on every row: the two most filled other columns on this page
                     // (in column order), so one row cannot show a company where the next shows a phone number.
                     // Columns the record name already contains (first and last name) and the leading column stay out.
                     $metaKeys = $visibleColumnKeys
                         ->reject(fn ($key, $index) => ! $leadsWithTitle && $index === 0)
+                        ->reject(fn ($key) => $relationKeys->contains($key))
                         ->reject(fn ($key) => $leadsWithTitle && $mobileRows->every(function ($item) use ($key, $plainText) {
                             $text = $plainText($item['displays'][$key]);
 
@@ -109,7 +124,7 @@
                         ->sortBy(fn ($key) => $visibleColumnKeys->search($key))
                         ->values();
                 @endphp
-                {{-- Phones: one line for the record, then the same two columns on every row, one per line. --}}
+                {{-- Phones: one line for the record, its relations on one line when it has several, then the same two columns on every row, one per line. --}}
                 <ul class="border-t border-b divide-y divide-gray-200/60 border-gray-200/80 sm:hidden dark:divide-white/[0.06] dark:border-white/10">
                     @foreach ($mobileRows as $item)
                         @php
@@ -120,6 +135,7 @@
                             $hasAvatar = method_exists($row, 'avatarShape') && $row->avatarShape();
                             // A blank value keeps its line as a dash, so every row has the same lines and height.
                             $metaValues = $metaKeys->map(fn ($key) => $displays[$key])->values();
+                            $relationLine = $relationKeys->map(fn ($key) => $relationName($displays[$key]))->filter(fn ($name) => $name !== '')->implode(' · ');
                             $rowUrl = auth()->user()?->can('view', $row) ? $row->viewUrl() : null;
                         @endphp
                         <li wire:key="mobile-row-{{ $row->id }}">
@@ -136,6 +152,15 @@
                                             {!! $primary !!}
                                         @endif
                                     </div>
+                                    @if ($relationKeys->isNotEmpty())
+                                        <div class="mt-0.5 h-5 text-sm text-gray-500 truncate dark:text-gray-400" data-mobile-row-relations>
+                                            @if ($relationLine === '')
+                                                <span class="text-gray-400 dark:text-gray-500">–</span>
+                                            @else
+                                                {{ $relationLine }}
+                                            @endif
+                                        </div>
+                                    @endif
                                     {{-- One quiet line per meta value: two values side by side would both cut off on a phone. --}}
                                     @foreach ($metaValues as $metaValue)
                                         <div class="flex items-center mt-0.5 min-w-0 h-5 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400 [&_.aura-link]:text-inherit [&_.aura-record-link]:text-inherit">

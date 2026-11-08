@@ -109,7 +109,7 @@ test('advancedselect field gets displayed correctly on edit view', function () {
 
     // If we call the edit view, the advancedselect field should be empty
     $component = Livewire::test(Edit::class, ['slug' => $slug, 'id' => $post->id])
-        ->assertSee('AdvancedSelect Model')
+        ->assertSee('Edit advancedselect model')
         ->assertSee('AdvancedSelect for Test')
         ->assertSeeHtml('Admin (#1)')
         ->assertSeeHtml('<span x-show="isSelected(item)" class="font-semibold text-primary-600">&check;</span>')

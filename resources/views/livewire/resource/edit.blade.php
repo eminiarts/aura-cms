@@ -1,12 +1,18 @@
 <div autocomplete="off">
     @section('title', __('Edit :resource', ['resource' => __($model->singularName())]))
 
+    @php
+        // A simple form keeps a readable width (breadcrumb and header with it, so Save stays at the form's edge) and loses its lone panel heading.
+        $formSections = \Aura\Base\RecordLayout\RecordFormSections::arrange($this->editFields);
+    @endphp
+
+    <div @class(['max-w-3xl' => $formSections['single'] && ! $inModal])>
     {{ app('aura')::injectView('post_edit_breadcrumbs_before') }}
 
     @if (!$inModal)
         <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
-                iconClass="text-gray-500 w-6 h-6 mr-0" />
+ />
             @if (Route::has('aura.' . $model->getSlug() . '.index'))
                 <x-aura::breadcrumbs.li :href="route('aura.' . $model->getSlug() . '.index')" :title="__($model->getPluralName())" />
             @else
@@ -18,12 +24,6 @@
 
     {{ app('aura')::injectView('post_edit_breadcrumbs_after') }}
 
-    @php
-        // A simple form keeps a readable width (header with it, so Save stays next to the fields) and loses its lone panel heading.
-        $formSections = \Aura\Base\RecordLayout\RecordFormSections::arrange($this->editFields);
-    @endphp
-
-    <div @class(['max-w-3xl' => $formSections['single'] && ! $inModal])>
     @include($model->editHeaderView())
 
     @if ($model::usesTitle())

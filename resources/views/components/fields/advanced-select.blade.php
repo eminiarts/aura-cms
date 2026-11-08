@@ -370,7 +370,7 @@
         @click.away="closeListbox()">
 
         <div class="relative p-0 w-full bg-transparent border-0 aura-input">
-            <label class="sr-only">{{ __('Select Entry') }}</label>
+            <label class="sr-only">{{ __('Select entry') }}</label>
             <button type="button"
                 class="relative flex items-center justify-between w-full px-3 pt-1 pb-0 border rounded-lg shadow-xs appearance-none min-h-[2.625rem] border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
                 x-ref="listboxButton" @click="toggleListbox">
@@ -378,7 +378,7 @@
                 <div class="flex items-center w-full">
                     <!-- Placeholder text on the left -->
                     <template x-if="!value || value.length === 0">
-                        <span class="block text-sm text-gray-500 truncate dark:text-gray-400">{{ __('Select Entry') }}</span>
+                        <span class="block text-sm text-gray-500 truncate dark:text-gray-400">{{ __('Select entry') }}</span>
                     </template>
 
                     <!-- Selected items -->

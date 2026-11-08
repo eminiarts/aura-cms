@@ -363,7 +363,7 @@
         @click.away="closeListbox()">
 
         <div class="relative p-0 w-full bg-transparent border-0 aura-input" :class="{ 'aura-input-xs': size === 'xs' }">
-            <label class="sr-only">{{ __('Select Entry') }}</label>
+            <label class="sr-only">{{ __('Select entry') }}</label>
             <button type="button"
                 class="flex relative justify-between items-center w-full bg-white border appearance-none shadow-xs border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
                 :class="{
@@ -439,7 +439,7 @@
                 </template>
 
                 <template x-if="!value || value.length == 0">
-                    <span class="mb-1 text-gray-400">{{ __('Select Entry') }}</span>
+                    <span class="mb-1 text-gray-400">{{ __('Select entry') }}</span>
                 </template>
 
                 <!-- Heroicons up/down -->

@@ -164,7 +164,7 @@
                         <x-slot:icon>
                             <x-aura::icon icon="user-impersonate" size="xs"/>
                         </x-slot:icon>
-                        <span>{{ __('Leave Impersonation') }}</span>
+                        <span>{{ __('Leave impersonation') }}</span>
                     </x-aura::button.primary>
                     </div>
                     @endImpersonating

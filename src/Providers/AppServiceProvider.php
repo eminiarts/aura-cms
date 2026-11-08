@@ -34,7 +34,7 @@ class AppServiceProvider extends ServiceProvider
             ] : null,
             config('aura.features.create_resource') ? [
                 'icon' => "<x-aura::icon icon='collection' />",
-                'name' => 'Create Resource',
+                'name' => 'Create resource',
                 'slug' => 'create_resource',
                 'group' => 'settings',
                 'sort' => 300,

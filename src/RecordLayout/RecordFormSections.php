@@ -48,6 +48,17 @@ final class RecordFormSections
         return ['fields' => $fields, 'single' => $fields !== []];
     }
 
+    /**
+     * A resource name as it reads inside a sentence ("New deal", "Edit company"):
+     * lower case, acronyms kept ("New CRM note").
+     */
+    public static function inSentence(string $name): string
+    {
+        return collect(preg_split('/\s+/u', trim($name)))
+            ->map(fn ($word) => mb_strlen($word) > 1 && mb_strtoupper($word) === $word ? $word : mb_strtolower($word))
+            ->implode(' ');
+    }
+
     private static function isGroup(array $field): bool
     {
         $instance = $field['field'] ?? null;

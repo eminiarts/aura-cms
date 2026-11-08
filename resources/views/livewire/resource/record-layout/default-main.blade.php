@@ -27,27 +27,20 @@
         // cards instead. Modals and pages with record-layout side panels keep the single column.
         $sections = \Aura\Base\RecordLayout\RecordViewSections::split($this->viewFields, $model);
         $cards = (! $inModal && $sections['related'] === []) ? \Aura\Base\RecordLayout\RecordViewSections::cards($this->viewFields, $model) : [];
-        $splitRelated = ! $inModal && ($splitRelated ?? true) && ($sections['related'] !== [] || $cards !== []);
-
         // Fields the header facts strip or a relation card already shows are not repeated in Details.
-        // Try header facts plus card relations first, then header facts alone, so the details column never ends up empty.
+        // When nothing else is left, the page renders header and related records without a details column.
         if (! $inModal) {
-            $headerSlugs = array_column(\Aura\Base\RecordLayout\RecordViewSections::header($this->viewFields, $model), 'slug');
-            $cardSlugs = array_map(fn ($card) => $card['field']['slug'], $cards);
+            $shownElsewhere = array_merge(
+                array_column(\Aura\Base\RecordLayout\RecordViewSections::header($this->viewFields, $model), 'slug'),
+                array_map(fn ($card) => $card['field']['slug'], $cards),
+            );
 
-            foreach (array_unique([array_merge($headerSlugs, $cardSlugs), $headerSlugs], SORT_REGULAR) as $shownElsewhere) {
-                if ($shownElsewhere === []) {
-                    continue;
-                }
-
-                $trimmed = \Aura\Base\RecordLayout\RecordViewSections::split($this->viewFields, $model, $shownElsewhere);
-
-                if ($trimmed['details'] !== []) {
-                    $sections = $trimmed;
-                    break;
-                }
+            if ($shownElsewhere !== []) {
+                $sections = \Aura\Base\RecordLayout\RecordViewSections::split($this->viewFields, $model, $shownElsewhere);
             }
         }
+
+        $splitRelated = ! $inModal && ($splitRelated ?? true) && $sections['details'] !== [] && ($sections['related'] !== [] || $cards !== []);
 
         // Values outside any panel form one "Details" section ahead of the panels.
         $loose = array_values(array_filter($sections['details'], fn ($field) => ! (($field['field'] ?? null) instanceof \Aura\Base\Fields\Panel)));

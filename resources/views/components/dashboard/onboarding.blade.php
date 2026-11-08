@@ -21,7 +21,7 @@
         <div class="flex gap-3 items-center mt-6">
             @if (config('aura.features.create_resource'))
                 <x-aura::button.primary onclick="Livewire.dispatch('openModal', { component: 'aura::create-resource' })">
-                    {{ __('Create Resource') }}
+                    {{ __('Create resource') }}
                 </x-aura::button.primary>
             @endif
             <x-aura::button.border href="https://aura-cms.com/docs/resources" target="_blank" :navigate="false">

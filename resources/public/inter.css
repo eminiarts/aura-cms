@@ -1,11 +1,14 @@
 /* Inter 4.001, variable (wght 100-900, opsz 14-32), Latin + Latin Extended-A subset.
    SIL Open Font License 1.1, see fonts/inter/LICENSE.txt. Served from the published
    package assets: no network request. The browser fetches the file only when a
-   rendered element asks for the family, so a host that sets its own font never loads it. */
+   rendered element asks for the family, so a host that sets its own font never loads it.
+   The subset's tnum feature covers the figures only: Inter's stock tnum also widens hyphen,
+   space, period, colon and brackets, which put gaps into domains and emails
+   ("quanta - insurance.ch") under the admin's global tabular-nums. */
 @font-face {
   font-family: 'Inter';
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url("/vendor/aura/public/fonts/inter/InterVariable.woff2?v=4.001") format("woff2");
+  src: url("/vendor/aura/public/fonts/inter/InterVariable.woff2?v=4.001-tnum") format("woff2");
 }

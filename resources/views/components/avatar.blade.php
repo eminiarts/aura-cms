@@ -1,8 +1,9 @@
 {{--
     Entity avatar: the record's image when it has one, otherwise its initials
     on a tint derived from the name. Pass a resource record, or name/shape/tone
-    directly for specimens. Sizes: xs 16px (relation links, one initial),
-    sm 24px (table rows), md 28px (stacked lists), lg 40px (record header).
+    directly for specimens. Sizes: xs 20px (relation links), sm 24px (table
+    rows), md 28px (stacked lists), lg 40px (record header). Every size shows
+    the same initials.
 --}}
 @props([
     'record' => null,
@@ -29,11 +30,6 @@
 
     $shape = $shape ?: 'square';
     $size = in_array($size, ['xs', 'sm', 'md', 'lg'], true) ? $size : 'sm';
-
-    // 16px holds one letter.
-    if ($size === 'xs') {
-        $initials = Str::substr($initials, 0, 1);
-    }
 
     $imageUrl = null;
 

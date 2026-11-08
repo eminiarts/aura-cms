@@ -57,9 +57,6 @@
         'pink' => 'bg-pink-100 text-pink-700',
     ];
 
-    $sparklineLine = '0,22 8,20 17,23 25,17 33,19 42,14 50,16 58,11 67,13 75,9 83,12 92,7 100,9';
-    $sparklineArea = $sparklineLine.' 100,28 0,28';
-
     $stats = [
         [
             'name' => 'Posts',
@@ -71,10 +68,9 @@
             'url' => '#cards',
             'icon' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>',
             'series' => [2, 0, 4, 3, 0, 1, 5, 2, 0, 3, 4, 6, 1, 0, 2, 3, 5, 0, 4, 2, 6, 3, 1, 0, 5, 4, 2, 7, 3, 4],
-            'sparkline' => ['line' => $sparklineLine, 'area' => $sparklineArea],
         ],
         [
-            // No previous period and a sparse month: no delta pill, a few bars.
+            // No previous period and a sparse month: a neutral dash in the delta slot, no trend line.
             'name' => 'Users',
             'total' => 342,
             'current' => 3,
@@ -222,18 +218,19 @@
 
         <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Page header pattern') }}</span>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Record pages (view and edit): the resource name is the eyebrow, the record title is the H1. Create pages have no eyebrow; the H1 says "New deal" in sentence case, with a ghost Cancel left of Save. Phones wrap the H1 to two lines and put the actions on their own row. The view page promotes key fields into a facts strip under the title (.aura-record-facts: by default the first Number field, large and tabular, and the first Status field as its tag; a resource overrides the pick with recordHeaderFields()). One primary button per screen; everything else is secondary or ghost.') }}</p>
-            <div class="flex gap-4 justify-between items-center mt-4">
-                <div class="min-w-0">
-                    <p class="aura-eyebrow">Deal</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Record pages: the record title is the H1, the eyebrow names the resource on the view page ("Deal") and the task on the edit page ("Edit deal"). Create pages have no eyebrow; the H1 says "New deal" in sentence case. Every form page has a ghost Cancel left of the primary Save (on edit, Cancel returns to the record); the view page has no primary action, its Edit is a secondary button with its pencil. .aura-record-header puts the actions right of the title from sm; on phones the row dissolves into .aura-record-block and .aura-record-header-actions becomes a right-aligned row with natural button widths that sorts last: under the title on forms, under the facts strip on the view page. A simple form caps breadcrumb, header and fields at one width, so Save sits at the edge of the form. The view page promotes key fields into a facts strip under the title (.aura-record-facts: by default the first Number field, large and tabular, and the first Status field as its tag; a resource overrides the pick with recordHeaderFields()). One primary button per screen; everything else is secondary or ghost.') }}</p>
+            <div class="mt-4 aura-record-block">
+            <div class="aura-record-header">
+                <div class="flex-1 min-w-0">
+                    <p class="aura-eyebrow">{{ __('Edit deal') }}</p>
                     <h3 class="mt-0.5 break-words aura-page-title line-clamp-2 sm:line-clamp-1">Northwind ERP Rollout 2026</h3>
                 </div>
-                <div class="flex gap-2 items-center">
-                    <x-aura::button.transparent>{{ __('View') }}</x-aura::button.transparent>
+                <div class="aura-record-header-actions">
+                    <x-aura::button.transparent>{{ __('Cancel') }}</x-aura::button.transparent>
                     <x-aura::button.primary>{{ __('Save') }}</x-aura::button.primary>
                 </div>
             </div>
-            <div class="mt-4 aura-record-facts">
+            <div class="aura-record-facts sm:mt-4">
                 <div class="aura-record-fact">
                     <span class="aura-eyebrow">Amount</span>
                     <span class="aura-record-fact-number">CHF 84,500</span>
@@ -251,6 +248,7 @@
                     <span class="aura-eyebrow">Owner</span>
                     <span class="aura-record-fact-value"><a href="#typography" class="aura-record-link"><x-aura::avatar name="Martina Keller" shape="circle" size="xs" /><span class="aura-record-link-title">Martina Keller</span></a></span>
                 </div>
+            </div>
             </div>
             <div class="flex gap-4 justify-between items-center pt-4 mt-4 border-t border-gray-100 dark:border-white/5">
                 <h3 class="aura-section-title">Contacts <span class="aura-section-count">12</span></h3>
@@ -309,11 +307,11 @@
         <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Where the primary color appears') }}</span>
             <ul class="grid grid-cols-1 gap-x-6 gap-y-1 mt-3 text-sm text-gray-600 sm:grid-cols-2 dark:text-gray-300">
-                <li>{{ __('Active navigation item') }}</li>
-                <li>{{ __('The one primary button per screen') }}</li>
+                <li>{{ __('Active navigation item (on the dark sidebar: its icon only)') }}</li>
+                <li>{{ __('The one primary button per screen (create and save; a view page has none)') }}</li>
                 <li>{{ __('Text links in auth and settings copy') }}</li>
                 <li>{{ __('Focus rings and selected rows') }}</li>
-                <li>{{ __('Dashboard sparkline bars') }}</li>
+                <li>{{ __('Dashboard trend lines') }}</li>
                 <li>{{ __('Nothing else: badges, icons and surfaces stay in the gray ramp') }}</li>
             </ul>
         </div>
@@ -534,7 +532,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">06</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Tags, Avatars & Pills') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('One tag family for enum values: 22px high, 12px medium, the same radius and padding. Neutral for option values, tinted for an option that carries a color (a Select category at -50/-700 without a dot, a Status state at -100/-800 with a dot). A relation is not a tag: it reads as the related record\'s name, 14px gray-900 with its 16px avatar (one initial) in front, underlined on hover, so a row with three relations stays calm. Entity avatars put initials on a tint derived from the name (square for companies and things, circle for people) and sit before record names in tables and the record header. Small rounded-full pills remain for sidebar counts and trends.') }}
+            {{ __('One tag family for enum values: 22px high, 12px medium, the same radius and padding. Neutral for option values, tinted for an option that carries a color (a Select category at -50/-700 without a dot, a Status state at -100/-800 with a dot). A tinted tag\'s ring takes its own hue from the text color (22% of it, near the -200 shade), so the option only names fill and text. A relation is not a tag: it reads as the related record\'s name, 14px gray-900 with its 20px avatar (both initials at 10px, the row avatar one step smaller) in front, underlined on hover, so a row with three relations stays calm. Entity avatars put initials on a tint derived from the name (square for companies and things, circle for people) and sit before record names in tables and the record header. Small rounded-full pills remain for sidebar counts and trends.') }}
         </p>
 
         <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
@@ -546,11 +544,11 @@
             </div>
             <div class="flex flex-wrap gap-1.5 items-center mt-3">
                 @foreach ([
-                    'Software' => 'bg-blue-50 text-blue-700 ring-blue-700/10 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-400/20',
-                    'Retail' => 'bg-orange-50 text-orange-700 ring-orange-700/10 dark:bg-orange-500/10 dark:text-orange-300 dark:ring-orange-400/20',
-                    'Finance' => 'bg-teal-50 text-teal-700 ring-teal-700/10 dark:bg-teal-500/10 dark:text-teal-300 dark:ring-teal-400/20',
-                    'Healthcare' => 'bg-pink-50 text-pink-700 ring-pink-700/10 dark:bg-pink-500/10 dark:text-pink-300 dark:ring-pink-400/20',
-                    'Education' => 'bg-purple-50 text-purple-700 ring-purple-700/10 dark:bg-purple-500/10 dark:text-purple-300 dark:ring-purple-400/20',
+                    'Software' => 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300',
+                    'Retail' => 'bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-300',
+                    'Finance' => 'bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-300',
+                    'Healthcare' => 'bg-pink-50 text-pink-700 dark:bg-pink-500/10 dark:text-pink-300',
+                    'Education' => 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300',
                 ] as $label => $classes)
                     <span class="aura-tag aura-tag-status {{ $classes }}">{{ $label }}</span>
                 @endforeach
@@ -581,7 +579,7 @@
         </div>
 
         <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Entity avatars (x-aura::avatar): sizes xs 16 (relation links, one initial), sm 24 (table rows, 11px initials), md 28, lg 40; tone from the name over 10 palette tints') }}</span>
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Entity avatars (x-aura::avatar): sizes xs 20 (relation links, 10px initials), sm 24 (table rows, 11px initials), md 28, lg 40; tone from the name over 10 palette tints') }}</span>
             <div class="flex flex-wrap gap-4 items-center mt-4">
                 @foreach (['xs', 'sm', 'md', 'lg'] as $size)
                     <x-aura::avatar name="Atlas Components" shape="square" :size="$size" />
@@ -638,7 +636,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">07</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Cards & Widgets') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('.aura-card is the base surface, used for forms and the few boxed surfaces: stat cards and related-record cards. Lists, record details and dashboard sections are unboxed under a hairline title. Stat cards below are the real dashboard/stats component with sample data; every card has the same anatomy: label and icon, the total with a 30-day bar sparkline (one bar per day, the one place a card carries primary), then the new records in the last 30 days and, when the 30 days before had records, the change as a pill. Phones show a 2x2 grid without the sparkline.') }}
+            {{ __('.aura-card is the base surface, used for forms and the few boxed surfaces: stat cards and related-record cards. Lists, record details and dashboard sections are unboxed under a hairline title. Stat cards below are the real dashboard/stats component with sample data; every card has the same anatomy: label and icon, the total with a 30-day trend beside it (the running total of new records as a line, the one place a card carries primary, drawn only when at least three days had records), then the new records in the last 30 days and the change against the 30 days before as a pill. The pill is a row-wide decision: when any card can show one, every card gets the slot, and a card without a previous period shows a neutral dash. Phones show a 2x2 grid without the trend.') }}
         </p>
 
         <div class="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-2">
@@ -666,7 +664,7 @@
                             @foreach ([
                                 ['Amount', '<span class="tabular-nums">CHF 84,500</span>'],
                                 ['Stage', '<span class="aura-tag aura-tag-status bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"><svg class="aura-tag-dot" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>Proposal</span>'],
-                                ['Company', '<a href="#cards" class="aura-record-link"><span class="aura-avatar aura-avatar-xs aura-avatar-square aura-avatar-tone-teal" aria-hidden="true">N</span><span class="aura-record-link-title">Northwind Software</span></a>'],
+                                ['Company', '<a href="#cards" class="aura-record-link"><span class="aura-avatar aura-avatar-xs aura-avatar-square aura-avatar-tone-teal" aria-hidden="true">NS</span><span class="aura-record-link-title">Northwind Software</span></a>'],
                                 ['Phone', '<span class="text-gray-400 dark:text-gray-500">–</span>'],
                             ] as [$label, $value])
                                 <div class="px-4">
@@ -740,7 +738,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">08</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Table') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('The resource index table. No card around it: a header hairline, row dividers and a closing hairline carry the list. Headings use the real table.heading component (sentence case, 12px medium gray-500); rows are a faithful specimen of table/row (the live rows are Livewire-bound). First column: entity avatar (24px, when the resource has one) plus the record name, 500 gray-900, linked to the record; other cells 400 gray-600, numerals tabular, empty cells show a dash. The page title carries the record count. With a pointer, the whole row opens the record and the row actions (gray-500) appear on hover; on touch they are always visible. Second row shows the selected state.') }}
+            {{ __('The resource index table. No card around it: a header hairline, row dividers and a closing hairline carry the list. Headings use the real table.heading component (sentence case, 12px medium gray-500) and carry a 14px mark for the column\'s value type (text, email, phone, number, date, status, relation; table/column-icon from the field class); rows are a faithful specimen of table/row (the live rows are Livewire-bound). First column: entity avatar (24px, when the resource has one) plus the record name, 500 gray-900, linked to the record; other cells 400 gray-600, numerals tabular, empty cells show a dash. The page title carries the record count. With a pointer, the whole row opens the record and the row actions (gray-500) appear on hover; on touch they are always visible. Second row shows the selected state.') }}
         </p>
 
         {{-- Filter tabs (specimen of table/filter-tabs) --}}
@@ -759,10 +757,10 @@
                             <th class="py-2.5 pr-0 pl-4 w-px">
                                 <x-aura::input.checkbox hideLabel label="Select all" />
                             </th>
-                            <x-aura::table.heading sortable direction="asc">{{ __('Title') }}</x-aura::table.heading>
-                            <x-aura::table.heading sortable>{{ __('Status') }}</x-aura::table.heading>
-                            <x-aura::table.heading>{{ __('Author') }}</x-aura::table.heading>
-                            <x-aura::table.heading sortable direction="desc">{{ __('Created at') }}</x-aura::table.heading>
+                            <x-aura::table.heading sortable direction="asc" type="Aura\Base\Fields\Text">{{ __('Title') }}</x-aura::table.heading>
+                            <x-aura::table.heading sortable type="Aura\Base\Fields\Status">{{ __('Status') }}</x-aura::table.heading>
+                            <x-aura::table.heading type="Aura\Base\Fields\BelongsTo">{{ __('Author') }}</x-aura::table.heading>
+                            <x-aura::table.heading sortable direction="desc" type="Aura\Base\Fields\Datetime">{{ __('Created at') }}</x-aura::table.heading>
                             <th class="px-3 py-2.5"><span class="sr-only">{{ __('Actions') }}</span></th>
                         </tr>
                     </thead>
@@ -895,7 +893,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">09</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Sidebar') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Real navigation.item / navigation.heading components inside the three sidebar themes (config: sidebar-type). Standard size: 32px items, 13px medium labels, 18px icons at 1.5 stroke; group labels 12px medium in sentence case; the active item carries a 2px primary hairline on its left edge. The first item shows the active state.') }}
+            {{ __('Real navigation.item / navigation.heading components inside the three sidebar themes (config: sidebar-type). Standard size: 32px items, 13px medium labels, 18px icons at 1.5 stroke; group labels 12px medium in sentence case. The light and primary sidebars mark the active item with a 2px hairline on its left edge; the dark sidebar, whose surface is gray-900 of the chosen gray palette rather than a fixed near-black, uses one quiet white tint with the icon in primary. The first item shows the active state.') }}
         </p>
 
         <div class="grid grid-cols-1 gap-4 mt-6 md:grid-cols-3">

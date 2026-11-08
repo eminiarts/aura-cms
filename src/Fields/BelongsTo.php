@@ -105,8 +105,8 @@ class BelongsTo extends Field implements PreloadsTableDisplay
 
             $related = $this->resolveDisplayModel($field, $value, $model);
 
-            // Record link: the related record's 16px avatar (its image or one
-            // initial) plus its title as plain text. A resource that opts out
+            // Record link: the related record's 20px avatar (its image or its
+            // initials) plus its title as plain text. A resource that opts out
             // of avatars falls back to its icon. All of it is markup owned by
             // the resource class; the title is database-backed and view-value
             // renders this raw, so escape it.

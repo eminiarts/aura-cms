@@ -3,11 +3,11 @@
     $facts = \Aura\Base\RecordLayout\RecordViewSections::header($this->viewFields, $model);
 @endphp
 
-<div class="mt-4 mb-6 sm:mt-6 sm:mb-8" data-record-header>
-    {{-- Actions sit to the right of the title, as on list pages; the title takes up to two lines beside them.
-         Only when they leave the title less than 10rem (several actions on a phone) do they wrap below it. --}}
-    <div class="flex flex-wrap gap-x-4 gap-y-3 justify-between items-center {{ $recordLayout->hasPanels() ? '' : 'sm:flex-nowrap' }}">
-        <div class="flex flex-1 gap-3 items-center min-w-[10rem]">
+<div class="mt-4 mb-6 sm:mt-6 sm:mb-8 aura-record-block" data-record-header>
+    {{-- Actions sit to the right of the title from sm, as on list pages; on phones the header row
+         dissolves into the block and the actions sort last, right-aligned under the facts strip. --}}
+    <div class="aura-record-header {{ $recordLayout->hasPanels() ? 'sm:flex-wrap' : '' }}">
+        <div class="flex flex-1 gap-3 items-center min-w-0 sm:min-w-[10rem]">
             @yield('view-header')
             {{-- The record is the subject of the page: its avatar, resource name as eyebrow, record title as H1. --}}
             @if ($model->avatarShape())
@@ -19,7 +19,7 @@
             </div>
         </div>
 
-        <div class="flex flex-wrap gap-2 items-center shrink-0">
+        <div class="aura-record-header-actions {{ $recordLayout->hasPanels() ? 'flex-wrap' : '' }}">
             @if ($recordLayout->panels(\Aura\Base\RecordLayout\RecordLayoutRegion::HeaderActions) !== [])
                 <div class="flex flex-wrap items-center gap-2" data-record-layout-region="header-actions">
                     @foreach ($recordLayout->panels(\Aura\Base\RecordLayout\RecordLayoutRegion::HeaderActions) as $registeredPanel)
@@ -30,18 +30,22 @@
 
             @include('aura::livewire.resource.actions')
 
+            {{-- A reading page has no primary action: Edit is a secondary button with its pencil. --}}
             @can('update', $model)
                 @if(Route::has('aura.' . $slug . '.edit'))
-                    <x-aura::button href="{{ route('aura.' . $slug . '.edit', $model->id) }}">
+                    <x-aura::button.border href="{{ route('aura.' . $slug . '.edit', $model->id) }}">
+                        <x-slot:icon>
+                            <x-aura::icon icon="edit" />
+                        </x-slot>
                         {{ __('Edit') }}
-                    </x-aura::button>
+                    </x-aura::button.border>
                 @endif
             @endcan
         </div>
     </div>
 
     @if ($facts !== [])
-        <div class="mt-4 aura-record-facts sm:mt-5" data-record-facts>
+        <div class="aura-record-facts sm:mt-5" data-record-facts>
             @foreach ($facts as $fact)
                 @php
                     $instance = $fact['field'] ?? null;

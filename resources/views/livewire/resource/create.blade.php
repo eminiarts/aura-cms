@@ -1,36 +1,33 @@
 @php
     // Header rule shared with view and edit: the eyebrow names the resource only above a record title.
     // A new record has no title yet, so the H1 says "New deal" (sentence case, acronyms kept) and there is no eyebrow.
-    $newRecordTitle = __('New :resource', [
-        'resource' => collect(preg_split('/\s+/u', trim(__($model->singularName()))))
-            ->map(fn ($word) => mb_strlen($word) > 1 && mb_strtoupper($word) === $word ? $word : mb_strtolower($word))
-            ->implode(' '),
-    ]);
+    $newRecordTitle = __('New :resource', ['resource' => \Aura\Base\RecordLayout\RecordFormSections::inSentence(__($model->singularName()))]);
     $indexUrl = Route::has('aura.' . $model->getSlug() . '.index') ? route('aura.' . $model->getSlug() . '.index') : null;
-    // A simple form keeps a readable width (header with it, so Save stays next to the fields) and loses its lone panel heading.
+    // A simple form keeps a readable width (breadcrumb and header with it, so Save stays at the form's edge) and loses its lone panel heading.
     $formSections = \Aura\Base\RecordLayout\RecordFormSections::arrange($this->createFields);
 @endphp
 <div class="">
     @section('title', $newRecordTitle)
 
 
+    <div @class(['max-w-3xl' => $formSections['single'] && ! $inModal])>
     @if(!$inModal)
     <x-aura::breadcrumbs>
-        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
+        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
         <x-aura::breadcrumbs.li :href="$indexUrl" :title="__($model->getPluralName())" />
         <x-aura::breadcrumbs.li :title="$newRecordTitle" />
     </x-aura::breadcrumbs>
     @endif
 
-    <div @class(['max-w-3xl' => $formSections['single'] && ! $inModal])>
-    {{-- Title left, actions right, as on the record header. --}}
-    <div class="flex flex-wrap gap-x-4 gap-y-3 justify-between items-center sm:flex-nowrap {{ $inModal ? 'mb-8' : 'mt-1 mb-6 sm:my-8'}}">
-        <div class="flex-1 min-w-[10rem]">
+    {{-- Title left, actions right, as on the record header; on phones the actions form a right-aligned row under it. --}}
+    <div class="aura-record-block {{ $inModal ? 'mb-8' : 'mt-1 mb-6 sm:my-8'}}">
+    <div class="aura-record-header">
+        <div class="flex-1 min-w-0 sm:min-w-[10rem]">
             <h1 class="break-words aura-page-title line-clamp-2 sm:line-clamp-1">{{ $newRecordTitle }}</h1>
         </div>
 
         @if(!$inModal)
-        <div class="flex gap-2 items-center shrink-0 save-resource">
+        <div class="aura-record-header-actions save-resource">
             @if($indexUrl)
             <x-aura::button.transparent :href="$indexUrl">
                 {{ __('Cancel') }}
@@ -46,6 +43,7 @@
             @endif
         </div>
         @endif
+    </div>
     </div>
 
     @if($model::usesTitle())

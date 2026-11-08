@@ -14,10 +14,11 @@
                 class="flex justify-center items-center w-6 h-6 rounded transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                 :class="{'text-primary-600 dark:text-primary-400': isBookmarked, 'text-gray-300 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-400': !isBookmarked }">
 
+            {{-- 16px, the size of the trail's home icon beside it. --}}
             @if(!$this->isBookmarked)
-                <x-aura::icon.bookmark class="w-5 h-5" />
+                <x-aura::icon.bookmark class="w-4 h-4" />
             @else
-                <x-aura::icon.bookmarked class="w-5 h-5" />
+                <x-aura::icon.bookmarked class="w-4 h-4" />
             @endif
 
         </button>

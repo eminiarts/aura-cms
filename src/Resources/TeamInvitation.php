@@ -70,7 +70,7 @@ class TeamInvitation extends Resource
 
     public function singularName(): string
     {
-        return 'Team Invitation';
+        return 'Team invitation';
     }
 
     /**

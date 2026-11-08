@@ -145,7 +145,7 @@ describe('Password Field Edit Behavior', function () {
 
         // Edit should show empty password field
         Livewire::test(Edit::class, ['slug' => 'PasswordModel', 'id' => $post->id])
-            ->assertSee('Password Model')
+            ->assertSee('Edit password model')
             ->assertSee('Password for Test')
             ->assertSeeHtml('type="password"')
             ->assertSet('form.fields.password', null);

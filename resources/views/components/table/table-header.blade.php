@@ -9,7 +9,7 @@
         @if($this->headers)
         @foreach($this->headers as $key => $column)
             @if(optional($this->columns)[$key])
-                <x-aura::table.heading sortable wire:click="sortBy('{{ $key }}')" :direction="$sorts[$key] ?? null" :align="($columnTypes[$key] ?? null) === 'Aura\\Base\\Fields\\Number' ? 'right' : 'left'">{{ __($column) }}</x-aura::table.heading>
+                <x-aura::table.heading sortable wire:click="sortBy('{{ $key }}')" :direction="$sorts[$key] ?? null" :type="$columnTypes[$key] ?? null" :align="($columnTypes[$key] ?? null) === 'Aura\\Base\\Fields\\Number' ? 'right' : 'left'">{{ __($column) }}</x-aura::table.heading>
             @endif
         @endforeach
         @endif

@@ -1,22 +1,44 @@
 @props(['stats', 'calm' => false])
 
-{{-- One anatomy for every card: label and icon, the total with a 30-day bar sparkline beside it
-     (one bar per day, so a sparse month shows a few bars instead of an empty chart), then the
-     count of new records in the last 30 days with the change against the 30 days before when
-     that period had records. Calm cards (an empty workspace) keep label and a muted total.
-     Phones: a 2x2 grid; the sparkline is a desktop detail. --}}
+{{-- One anatomy for every card: label and icon, the total with a 30-day trend beside it, then the
+     count of new records in the last 30 days and the change against the 30 days before.
+     The trend is the running total of new records, drawn as a line only when at least three days
+     of the month had records; a sparser month leaves the slot empty (the row keeps one height).
+     The delta pill is a row-wide decision: when any card can show one, every card gets the slot,
+     and a card without a previous period shows a neutral dash. Calm cards (an empty workspace)
+     keep label and a muted total. Phones: a 2x2 grid; the trend is a desktop detail. --}}
+@php
+    $anyDelta = ! $calm && collect($stats)->contains(fn ($stat) => ($stat['delta'] ?? null) !== null);
+    $chartWidth = 112;
+    $chartHeight = 28;
+@endphp
 @foreach ($stats as $stat)
     @php
         $delta = $calm ? null : ($stat['delta'] ?? null);
         $deltaPercent = $stat['deltaPercent'] ?? null;
         $current = (int) ($stat['current'] ?? 0);
         $series = array_values(array_map('intval', $stat['series'] ?? []));
-        $max = max(max($series ?: [0]), 1);
-        $barCount = count($series);
-        $barWidth = 3;
-        $gap = 1;
-        $chartWidth = $barCount > 0 ? $barCount * ($barWidth + $gap) - $gap : 0;
-        $chartHeight = 28;
+        $showTrend = ! $calm && ($stat['showSparkline'] ?? (count(array_filter($series)) >= 3));
+        $points = '';
+
+        if ($showTrend) {
+            $cumulative = [];
+            $sum = 0;
+
+            foreach ($series as $value) {
+                $sum += $value;
+                $cumulative[] = $sum;
+            }
+
+            $max = max($sum, 1);
+            $count = count($cumulative);
+            $points = collect($cumulative)->map(function ($value, $index) use ($count, $chartWidth, $chartHeight, $max) {
+                $x = $count > 1 ? $index / ($count - 1) * ($chartWidth - 2) + 1 : 1;
+                $y = $chartHeight - 1.5 - $value / $max * ($chartHeight - 3);
+
+                return round($x, 2).','.round($y, 2);
+            })->implode(' ');
+        }
     @endphp
     <a href="{{ $stat['url'] }}" wire:navigate
         class="flex relative flex-col col-span-6 p-4 min-w-0 rounded-xl ring-1 shadow-xs transition duration-150 sm:p-5 xl:col-span-3 bg-white dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10 hover:ring-gray-950/20 dark:hover:ring-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 group" data-stat-card>
@@ -27,18 +49,13 @@
             </span>
         </div>
 
-        <div class="flex gap-4 justify-between items-end mt-3">
+        <div class="flex gap-4 justify-between items-end mt-3 h-[1.875rem]">
             <span class="text-3xl font-semibold leading-none tracking-tight {{ $calm && ! $stat['total'] ? 'text-gray-300 dark:text-gray-600' : 'text-gray-900 dark:text-white' }}">{{ number_format($stat['total']) }}</span>
 
-            @if (! $calm && $chartWidth > 0)
-                <svg viewBox="0 0 {{ $chartWidth }} {{ $chartHeight }}" class="hidden shrink-0 w-28 h-7 sm:block" preserveAspectRatio="none" aria-hidden="true">
-                    <line x1="0" y1="{{ $chartHeight - 0.5 }}" x2="{{ $chartWidth }}" y2="{{ $chartHeight - 0.5 }}" class="stroke-gray-200 dark:stroke-white/10" stroke-width="1" />
-                    @foreach ($series as $index => $value)
-                        @if ($value > 0)
-                            @php $height = max(2, round($value / $max * ($chartHeight - 2), 2)); @endphp
-                            <rect x="{{ $index * ($barWidth + $gap) }}" y="{{ $chartHeight - 1 - $height }}" width="{{ $barWidth }}" height="{{ $height }}" rx="0.75" class="fill-primary-500 dark:fill-primary-400" />
-                        @endif
-                    @endforeach
+            @if ($showTrend)
+                <svg viewBox="0 0 {{ $chartWidth }} {{ $chartHeight }}" width="{{ $chartWidth }}" height="{{ $chartHeight }}" class="hidden shrink-0 w-28 h-7 sm:block" aria-hidden="true" data-stat-trend>
+                    <polygon points="1,{{ $chartHeight }} {{ $points }} {{ $chartWidth - 1 }},{{ $chartHeight }}" class="fill-primary-500/10 dark:fill-primary-400/15" />
+                    <polyline points="{{ $points }}" fill="none" class="stroke-primary-500 dark:stroke-primary-400" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" />
                 </svg>
             @endif
         </div>
@@ -62,6 +79,9 @@
                         @endif
                         {{ abs((int) $deltaPercent) }}%
                     </span>
+                @elseif ($anyDelta)
+                    <span class="inline-flex items-center justify-center ml-auto h-5 min-w-[2rem] rounded-full px-1.5 font-medium shrink-0 bg-gray-100 text-gray-400 dark:bg-white/10 dark:text-gray-500"
+                        title="{{ __('No records in the 30 days before') }}" data-stat-delta-empty>—</span>
                 @endif
             </div>
         @endunless

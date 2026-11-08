@@ -17,6 +17,6 @@
         {{ $greeting }}{{ $firstName ? ', '.$firstName : '' }}
     </h1>
     @if ($empty)
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Your workspace is empty. Start by adding a record.') }}</p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('No records yet. New records will show up here.') }}</p>
     @endif
 </div>
