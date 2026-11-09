@@ -80,7 +80,7 @@ test('a Global Admin grants the flag, and the newly-flagged user then sees acros
 
     $page = visit('/admin/user/'.$target->id.'/edit');
 
-    $page->assertSee('Global Admin');
+    $page->assertSee('Global admin');
 
     // The Global Admin toggle is the only Boolean on the user form; flip it on.
     $page->click('#resource-field-global-admin-wrapper [x-ref="toggle"]')->wait(1);

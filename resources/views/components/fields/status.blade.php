@@ -1,15 +1,15 @@
 <x-aura::fields.wrapper :field="$field">
     <div x-data="{ open: false, selected: @entangle('form.fields.' . $field['slug']) }" class="relative" wire:ignore>
         <button @click="open = !open" type="button"
-                class="flex relative items-center w-full h-9 bg-white dark:bg-gray-800 rounded-lg shadow-xs ring-1 ring-gray-950/10 hover:ring-gray-950/20 dark:ring-white/10 dark:hover:ring-white/20 pl-3 pr-10 text-left text-base cursor-default transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary-500 sm:text-sm">
+                class="flex relative items-center w-full h-9 bg-white dark:bg-gray-800 rounded-lg shadow-xs ring-1 ring-gray-950/10 hover:ring-gray-950/20 dark:ring-white/10 dark:hover:ring-white/20 pl-2 pr-9 text-left text-base cursor-default transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary-500 sm:text-sm">
             <span class="flex items-center">
                 <span x-show="selected"
                       :class="selected ? $refs.listbox.querySelector(`[data-value='${selected}']`).getAttribute('data-color') : ''"
-                      class="inline-flex items-center gap-x-1.5 whitespace-nowrap rounded-full me-2 px-2 py-0.5 text-xs font-medium ring-1 ring-inset ring-gray-950/10 dark:ring-white/10">
-                    <svg class="size-1.5 shrink-0 fill-current opacity-70" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>
+                      class="aura-tag aura-tag-status">
+                    <svg class="aura-tag-dot" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>
                     <span x-text="selected ? $refs.listbox.querySelector(`[data-value='${selected}']`).textContent.trim() : ''"></span>
                 </span>
-                <span x-show="!selected" class="text-gray-400 dark:text-gray-500">{{ __('Select :field…', ['field' => Str::lower(__($field['name']))]) }}</span>
+                <span x-show="!selected" class="pl-1 text-gray-400 dark:text-gray-500">{{ __('Select :field…', ['field' => Str::lower(__($field['name']))]) }}</span>
             </span>
             <span class="flex absolute inset-y-0 right-0 items-center pr-2.5 pointer-events-none">
                 <svg class="size-4 text-gray-400 dark:text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
@@ -19,23 +19,23 @@
         </button>
 
         <div x-show="open" @click.away="open = false"
-             class="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 shadow-lg max-h-60 rounded-lg p-1 text-base ring-1 ring-gray-950/10 dark:ring-white/10 overflow-auto focus:outline-none sm:text-sm"
+             class="absolute z-20 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg max-h-60 rounded-lg p-1 text-base ring-1 ring-gray-950/10 dark:ring-white/10 overflow-auto focus:outline-none sm:text-sm"
              x-ref="listbox">
             @foreach ($field['options'] as $option)
                 <div @click="selected = '{{ $option['key'] }}'; open = false"
-                     class="cursor-default select-none relative rounded-md py-2 pl-2 pr-9 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                     class="flex relative items-center pr-9 pl-2 h-8 rounded-md transition-colors cursor-default select-none hover:bg-gray-950/[0.04] dark:hover:bg-white/5"
                      data-value="{{ $option['key'] }}"
                      data-color="{{ $option['color'] }}">
                     <span class="flex items-center">
-                        <span class="inline-flex items-center gap-x-1.5 whitespace-nowrap rounded-full me-2 px-2.5 py-1 text-xs font-medium ring-1 ring-inset ring-gray-950/10 dark:ring-white/10 {{ $option['color'] }}">
-                            <svg class="size-1.5 shrink-0 fill-current opacity-70" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>
+                        <span class="aura-tag aura-tag-status {{ $option['color'] }}">
+                            <svg class="aura-tag-dot" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>
                             {{ $option['value'] }}
                         </span>
                     </span>
                     <span x-show="selected === '{{ $option['key'] }}'"
-                          class="absolute inset-y-0 right-0 flex items-center pr-3 text-primary-600 dark:text-primary-400">
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                          class="flex absolute inset-y-0 right-0 items-center pr-2 text-primary-600 dark:text-primary-400">
+                        <svg class="size-4 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                            <path d="m3.5 8.5 3 3 6-7" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                     </span>
                 </div>

@@ -191,6 +191,10 @@
 
         @include($this->settings['views']['header'])
 
+        @if ($this->settings['widgets'] ?? false)
+            @include('aura::components.table.widgets')
+        @endif
+
         @php
             $hasToolbar = ! $collectionIsEmpty && ($this->settings['search'] || $this->settings['settings'] || $this->settings['filters']
                 || ($this->settings['bulk_actions'] && $this->bulkActions));

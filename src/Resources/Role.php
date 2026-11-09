@@ -273,7 +273,7 @@ class Role extends Resource
                 'default' => false,
             ],
             [
-                'name' => 'Global Role',
+                'name' => 'Global role',
                 'slug' => 'is_global',
                 'type' => 'Aura\\Base\\Fields\\Boolean',
                 'instructions' => 'Available in every team as part of the shared Role Catalog. Only a Global Admin can define global roles.',

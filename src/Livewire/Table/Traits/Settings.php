@@ -45,6 +45,9 @@ trait Settings
             // The resource index page turns this on: an "Edit resource" icon button among the table controls
             // (only with the resource editor feature and for app resources).
             'resource_editor' => false,
+            // The resource index page turns this on: the resource's widgets() strip between the page
+            // header and the toolbar (components/table/widgets).
+            'widgets' => false,
             'views' => [
                 'table' => 'aura::components.table.index',
                 'list' => $this->model->tableView(),

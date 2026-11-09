@@ -1,5 +1,5 @@
 @if($value === null || $value === '')
-    <span class="text-gray-400">–</span>
+    <span class="text-gray-400 dark:text-gray-500">–</span>
 @else
     @php
         if (isset($field['display_format'])) {

@@ -82,12 +82,17 @@ trait AuraResourceIdentity
         return 'square';
     }
 
-    /** Tint derived from the title, so the same record always gets the same color. */
+    /**
+     * Tint derived from the title, so the same record always gets the same color. A trailing
+     * " (#id)" (Role, the generic fallback title) is left out, as in the initials: the tint
+     * follows the name, so "Admin (#1)" and "Admin (#2)" share it.
+     */
     public function avatarTone(): string
     {
         $tones = static::avatarTones();
+        $name = preg_replace('/\s*\(#\d+\)$/u', '', trim((string) $this->title()));
 
-        return $tones[crc32(Str::lower(trim((string) $this->title()))) % count($tones)];
+        return $tones[crc32(Str::lower(trim($name))) % count($tones)];
     }
 
     /**

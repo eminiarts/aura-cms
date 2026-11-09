@@ -39,9 +39,20 @@
                             {!! $tableModel->getIcon() !!}
                         </div>
                     @endunless
-                    <h3 class="aura-section-title">{{ __('No :resources yet', ['resources' => $pluralLabel]) }}</h3>
+                    @php
+                        // A resource may word its own empty page (title, line, action) in aura/{type}/empty,
+                        // like its header in aura/{type}/header; the icon box above stays shared.
+                        $emptyView = 'aura.'.Str::lower($tableModel->getType()).'.empty';
+                        $emptyView = $isRelationTable ? null : (View::exists($emptyView) ? $emptyView : (View::exists('aura::'.$emptyView) ? 'aura::'.$emptyView : null));
+                    @endphp
 
-                    @unless ($isRelationTable)
+                    @if ($emptyView)
+                        @include($emptyView)
+                    @else
+                    <h3 class="aura-section-title">{{ __('No :resources yet', ['resources' => $pluralLabel]) }}</h3>
+                    @endif
+
+                    @unless ($isRelationTable || $emptyView)
                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Create the first one to get started.') }}</p>
 
                         @can('create', $tableModel)
@@ -147,7 +158,7 @@
                         @endphp
                         <li wire:key="mobile-row-{{ $row->id }}">
                             <{{ $rowUrl ? 'a' : 'div' }} @if ($rowUrl) href="{{ $rowUrl }}" wire:navigate @endif
-                                class="flex gap-3 items-center px-4 py-3 {{ $rowUrl ? 'transition-colors duration-150 active:bg-gray-50 dark:active:bg-white/[0.04] focus:outline-none focus-visible:bg-gray-50 dark:focus-visible:bg-white/[0.04]' : '' }}">
+                                class="flex gap-3 items-center py-3 {{ $rowUrl ? 'transition-colors duration-150 active:bg-gray-50 dark:active:bg-white/[0.04] focus:outline-none focus-visible:bg-gray-50 dark:focus-visible:bg-white/[0.04]' : '' }}">
                                 @if ($hasAvatar)
                                     <x-aura::avatar :record="$row" size="md" />
                                 @endif

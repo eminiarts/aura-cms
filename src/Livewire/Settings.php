@@ -110,7 +110,7 @@ class Settings extends Component
                 ],
             ],
             [
-                'name' => 'Logo Darkmode',
+                'name' => 'Logo (dark mode)',
                 'type' => 'Aura\\Base\\Fields\\Image',
                 'slug' => 'logo-darkmode',
                 'style' => [
@@ -178,7 +178,7 @@ class Settings extends Component
                 ],
             ],
             [
-                'name' => 'Darkmode',
+                'name' => 'Dark mode',
                 'live' => true,
                 'type' => 'Aura\\Base\\Fields\\Radio',
                 'options' => [
@@ -202,7 +202,7 @@ class Settings extends Component
             ],
 
             [
-                'name' => 'Sidebar Darkmode',
+                'name' => 'Sidebar (dark mode)',
                 'type' => 'Aura\\Base\\Fields\\Radio',
                 'live' => true,
                 'options' => [
@@ -226,14 +226,14 @@ class Settings extends Component
             ],
             [
                 'type' => 'Aura\\Base\\Fields\\Panel',
-                'name' => 'Advanced Appearance',
+                'name' => 'Advanced appearance',
                 'slug' => 'panel-theme-advanced',
                 'style' => [
                     'width' => '100',
                 ],
             ],
             [
-                'name' => 'Interface Density',
+                'name' => 'Interface density',
                 'type' => 'Aura\\Base\\Fields\\Radio',
                 'live' => true,
                 'options' => [
@@ -253,7 +253,7 @@ class Settings extends Component
                 ],
             ],
             [
-                'name' => 'Corner Radius',
+                'name' => 'Corner radius',
                 'type' => 'Aura\\Base\\Fields\\Radio',
                 'live' => true,
                 'options' => [
@@ -276,17 +276,18 @@ class Settings extends Component
                     'width' => '50',
                 ],
             ],
+            // One Theme card: both palettes side by side, then the custom color groups of the one set to Custom.
             [
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'name' => 'Theme',
                 'slug' => 'panel-theme-primary',
                 'style' => [
-                    'width' => '50',
+                    'width' => '100',
                 ],
             ],
 
             [
-                'name' => 'Primary Color Palette',
+                'name' => 'Primary color palette',
                 'type' => 'Aura\\Base\\Fields\\Select',
                 'options' => [
                     'aura' => 'Aura',
@@ -334,10 +335,39 @@ class Settings extends Component
                 ],
                 'slug' => 'color-palette',
                 'live' => true,
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'Gray color palette',
+                'type' => 'Aura\\Base\\Fields\\Select',
+                'options' => [
+                    'slate' => 'Slate',
+                    'dark-slate' => 'Dark Slate',
+                    'blackout' => 'Blackout',
+                    'obsidian' => 'Obsidian',
+                    'amethyst' => 'Amethyst',
+                    'opal' => 'Opal',
+                    'gray' => 'Gray',
+                    'zinc' => 'Zinc',
+                    'neutral' => 'Neutral',
+                    'stone' => 'Stone',
+                    'sandstone' => 'Sandstone',
+                    'rose-quartz' => 'Rose Quartz',
+                    'olive' => 'Olive',
+                    'smaragd' => 'Smaragd',
+                    'custom' => 'Custom',
+                ],
+                'slug' => 'gray-color-palette',
+                'live' => true,
+                'style' => [
+                    'width' => '50',
+                ],
             ],
             [
                 'type' => 'Aura\\Base\\Fields\\Group',
-                'name' => 'Custom Colors',
+                'name' => 'Custom colors',
                 'slug' => 'tab-primary-colors-lightmode',
                 'conditional_logic' => function ($model, $form) {
                     if ($form && $form['fields'] && $form['fields']['color-palette']) {
@@ -443,42 +473,11 @@ class Settings extends Component
             ],
 
             [
-                'type' => 'Aura\\Base\\Fields\\Panel',
-                'name' => 'Theme',
-                'slug' => 'panel-theme-gray',
-                'style' => [
-                    'width' => '50',
-                ],
-            ],
-
-            [
-                'name' => 'Gray Color Palette',
-                'type' => 'Aura\\Base\\Fields\\Select',
-                'options' => [
-                    'slate' => 'Slate',
-                    'dark-slate' => 'Dark Slate',
-                    'blackout' => 'Blackout',
-                    'obsidian' => 'Obsidian',
-                    'amethyst' => 'Amethyst',
-                    'opal' => 'Opal',
-                    'gray' => 'Gray',
-                    'zinc' => 'Zinc',
-                    'neutral' => 'Neutral',
-                    'stone' => 'Stone',
-                    'sandstone' => 'Sandstone',
-                    'rose-quartz' => 'Rose Quartz',
-                    'olive' => 'Olive',
-                    'smaragd' => 'Smaragd',
-                    'custom' => 'Custom',
-                ],
-                'slug' => 'gray-color-palette',
-                'live' => true,
-            ],
-
-            [
                 'type' => 'Aura\\Base\\Fields\\Group',
-                'name' => 'Custom Colors',
+                'name' => 'Custom colors',
                 'slug' => 'tab-gray-colors-custom-tab',
+                // A sibling of the primary custom colors group in the Theme panel, not nested in it.
+                'exclude_level' => 1,
                 'conditional_logic' => function ($model, $form) {
                     if ($form && $form['fields'] && $form['fields']['gray-color-palette']) {
                         return $form['fields']['gray-color-palette'] == 'custom';
@@ -788,7 +787,7 @@ class Settings extends Component
         $fields = [
             [
                 'type' => 'Aura\\Base\\Fields\\Panel',
-                'name' => 'Expert Appearance',
+                'name' => 'Expert appearance',
                 'slug' => 'panel-theme-expert',
                 'style' => ['width' => '100'],
             ],
@@ -858,7 +857,7 @@ class Settings extends Component
             foreach ($names as $name) {
                 $slug = 'expert-'.$prefix.'-'.$name;
                 $fields[] = [
-                    'name' => str($name)->replace('-', ' ')->headline()->toString(),
+                    'name' => str($name)->replace('-', ' ')->ucfirst()->toString(),
                     'type' => 'Aura\\Base\\Fields\\Color',
                     'slug' => $slug,
                     'default' => $defaults[$slug],

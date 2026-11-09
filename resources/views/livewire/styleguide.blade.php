@@ -502,7 +502,7 @@
             </div>
 
             <div class="p-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-                <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Toggles') }}</span>
+                <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Toggles (36x20, the Boolean field uses the same switch)') }}</span>
                 <div class="mt-4 space-y-4">
                     <x-aura::input.toggle wire:model="toggleOn" labelAfter="Enabled" />
                     <x-aura::input.toggle wire:model="toggleOff" labelAfter="Disabled" />
@@ -586,6 +586,10 @@
                     <span class="aura-record-link-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg></span>
                     <span class="aura-record-link-title">{{ __('Icon fallback') }}</span>
                 </a>
+            </div>
+            <div class="mt-4 text-sm text-gray-500 dark:text-gray-400">
+                {{-- .aura-code: a path or command inside running text (plugins page, AI settings). --}}
+                Run <code class="aura-code">php artisan config:cache</code> after changing <code class="aura-code">config/ai.php</code>.
             </div>
         </div>
 
@@ -1265,7 +1269,7 @@
         <div class="flex justify-center p-8 mt-6 bg-gray-50 rounded-xl ring-1 dark:bg-gray-900 ring-gray-950/10 dark:ring-white/10 sm:p-12">
             <div class="w-full max-w-md rounded-2xl bg-white/95 backdrop-blur-xl ring-1 ring-gray-950/10 shadow-xl shadow-gray-950/[0.08] dark:bg-gray-800/90 dark:ring-white/10 dark:shadow-black/40 p-8 sm:p-10">
                 <h3 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __('Welcome back') }}</h3>
-                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('Login to your account to continue.') }}</p>
+                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('Log in to your account to continue.') }}</p>
 
                 <div class="mt-8 space-y-5">
                     <x-aura::input.email label="Email" placeholder="you@example.com" />

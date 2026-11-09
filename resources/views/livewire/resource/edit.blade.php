@@ -18,9 +18,9 @@
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
  />
             @if (Route::has('aura.' . $model->getSlug() . '.index'))
-                <x-aura::breadcrumbs.li :href="route('aura.' . $model->getSlug() . '.index')" :title="__($model->getPluralName())" />
+                <x-aura::breadcrumbs.li :href="route('aura.' . $model->getSlug() . '.index')" :title="$model->pluralName()" />
             @else
-                <x-aura::breadcrumbs.li :title="__($model->getPluralName())" />
+                <x-aura::breadcrumbs.li :title="$model->pluralName()" />
             @endif
             {{-- The record links back to its view page, so the form's parent (and the phone back link) is the record.
                  The phone back link names the resource ("‹ Task"): the H1 and the Title input already show the record title. --}}
@@ -83,6 +83,24 @@
                         @endif
                     @endforeach
                 </aside>
+            @elseif ($formSections['card'] && ! $inModal)
+                {{-- Plain inputs without a panel get the card a panel would give them (fields/panel). --}}
+                <div class="flex flex-wrap items-start -mx-2" autocomplete="off">
+                    <div class="px-2 w-full" data-form-card>
+                        <div class="mb-8 aura-card">
+                            <div class="mb-2">
+                                <div class="flex flex-wrap items-start -mx-2 w-[calc(100%+1rem)]">
+                                    @foreach ($formSections['fields'] as $key => $field)
+                                        @checkCondition($model, $field, $form)
+                                            <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" :mode="$mode"
+                                                wire:key="resource-field-{{ $key }}" />
+                                        @endcheckCondition
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             @else
                 <div class="flex flex-wrap items-start -mx-2" autocomplete="off">
                     @foreach ($formSections['fields'] as $key => $field)

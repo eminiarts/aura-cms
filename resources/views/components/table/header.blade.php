@@ -20,7 +20,8 @@
             $createInEmptyState = ! $isRelationTable && ($collectionIsEmpty ?? false) && ($currentView ?? null) === 'list'
                 && ! $this->settings['create_in_modal'] && $this->createLink;
         @endphp
-        <div class="flex justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3' : 'mt-1 sm:mt-6' }}">
+        {{-- A relation section's row keeps the 32px button height without a button too, so its title sits at the same height. --}}
+        <div class="flex justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3 min-h-8' : 'mt-1 min-h-9 sm:mt-6' }}" @if ($isRelationTable) data-relation-header @endif>
 
             @if ($this->settings['title'])
                 <div class="min-w-0">

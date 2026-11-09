@@ -45,7 +45,13 @@
 
         <x-aura::dropdown width="w-72">
             <x-slot name="trigger">
-                <x-aura::button.transparent>
+                {{-- $iconTriggerOnPhones (edit header): a 36px "more" button on phones, the labelled button from sm. --}}
+                @if ($iconTriggerOnPhones ?? false)
+                    <x-aura::button.border size="icon" class="sm:hidden" aria-label="{{ __('Actions') }}" aria-haspopup="menu">
+                        <x-aura::icon.dots class="size-4" aria-hidden="true" />
+                    </x-aura::button.border>
+                @endif
+                <x-aura::button.transparent class="{{ ($iconTriggerOnPhones ?? false) ? 'hidden sm:inline-flex' : '' }}">
                     <x-aura::icon.dots class="mr-2 w-5 h-5" />
                     {{ __('Actions') }}
                 </x-aura::button.transparent>

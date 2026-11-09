@@ -6,9 +6,9 @@
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
         @if(Route::has('aura.' . $model->getSlug() . '.index'))
-            <x-aura::breadcrumbs.li :href="route('aura.' . $model->getSlug() . '.index')" :title="__($model->getPluralName())" />
+            <x-aura::breadcrumbs.li :href="route('aura.' . $model->getSlug() . '.index')" :title="$model->pluralName()" />
         @else
-            <x-aura::breadcrumbs.li :title="__($model->getPluralName())" />
+            <x-aura::breadcrumbs.li :title="$model->pluralName()" />
         @endif
         <x-aura::breadcrumbs.li :title="$model->title()" />
     </x-aura::breadcrumbs>

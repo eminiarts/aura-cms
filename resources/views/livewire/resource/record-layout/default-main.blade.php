@@ -121,7 +121,7 @@
         @endif
 
         @if ($sections['related'] !== [] || $cards !== [])
-        {{-- Related records as unboxed lists; the has-many view brings its own px-4, which -mx-4 cancels so the lists align with the column. --}}
+        {{-- Related records as unboxed lists; the has-many view brings its own px-2, which -mx-2 cancels so the lists align with the column. --}}
         {{-- Stacked under the details column (below xl) the related records keep a section gap from the meta line. --}}
         <div class="space-y-8 min-w-0 {{ $splitRelated ? 'mt-6 xl:mt-0' : 'mt-2' }} {{ $useRail ? 'lg:col-start-1' : '' }}" wire:key="resource-view-related" data-record-related>
             @if ($cards !== [])
@@ -134,7 +134,7 @@
 
             @foreach($sections['related'] as $key => $field)
             <x-aura::fields.conditions :field="$field" :model="$model" wire:key="resource-related-{{ $field['slug'] ?? $key }}">
-                <div class="-mx-4">
+                <div class="-mx-2">
                     <x-dynamic-component :component="$field['field']->view()" :field="$field" :form="$form" :mode="$mode" />
                 </div>
             </x-aura::fields.conditions>

@@ -67,7 +67,8 @@
             <p class="mt-3 h-5 text-xs leading-5 text-gray-500 truncate dark:text-gray-400">{{ __('No :items yet', ['items' => Str::lower($stat['name'])]) }}</p>
         @endif
 
-        @unless ($calm)
+        {{-- A calm card with records keeps the count line (without the pill), so it is as tall as the captioned zeros beside it. --}}
+        @unless ($calm && ! $stat['total'])
             {{-- Fixed h-5 line: a card with a delta pill is as tall as one without, so cards in a row match.
                  Phones say "+10 · 30d" (the full phrase stays for screen readers) so count and pill fit side by side. --}}
             <div class="flex gap-2 items-center mt-3 h-5 min-w-0 text-xs">

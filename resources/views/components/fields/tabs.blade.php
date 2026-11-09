@@ -32,7 +32,7 @@
         },
     }"
     x-id="['tab']"
-    class="mx-0 mt-0 w-full"
+    class="px-2 mx-0 mt-0 w-full"
 >
 
     <ul

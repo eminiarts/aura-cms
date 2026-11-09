@@ -1,28 +1,27 @@
 <div>
     @section('title', 'Edit Settings')
 
-    <div class="mb-6">
-        <x-aura::breadcrumbs>
-            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
-            @if($page === 'general')
-                <x-aura::breadcrumbs.li title="Settings" />
-            @else
-                <x-aura::breadcrumbs.li :href="route('aura.settings')" title="Settings" />
-                <x-aura::breadcrumbs.li :title="$this->settingsPage()->title" />
-            @endif
-        </x-aura::breadcrumbs>
-    </div>
+    {{-- Page header as on index pages: the trail (a back link on phones), then title, description and actions. --}}
+    <x-aura::breadcrumbs>
+        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
+        @if($page === 'general')
+            <x-aura::breadcrumbs.li :title="__('Settings')" />
+        @else
+            <x-aura::breadcrumbs.li :href="route('aura.settings')" :title="__('Settings')" />
+            <x-aura::breadcrumbs.li :title="__($this->settingsPage()->title)" />
+        @endif
+    </x-aura::breadcrumbs>
 
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="mb-2 text-2xl font-semibold">{{ $page === 'general' ? __('Settings') : __($this->settingsPage()->title) }}</h1>
+    <div class="flex gap-4 justify-between items-center mt-1 mb-6 sm:mt-6">
+        <div class="min-w-0">
+            <h1 class="aura-page-title">{{ $page === 'general' ? __('Settings') : __($this->settingsPage()->title) }}</h1>
             @if(filled($this->settingsPage()->description))
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ __($this->settingsPage()->description) }}</p>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __($this->settingsPage()->description) }}</p>
             @endif
         </div>
 
         @if($canUpdate)
-            <div class="flex gap-2 items-center">
+            <div class="flex gap-2 items-center shrink-0">
                 @if($page === 'general' && ($form['fields']['appearance-expert-mode'] ?? false))
                     <x-aura::button.border size="sm" wire:click="restoreExpertDefaults">
                         {{ __('Restore expert defaults') }}
@@ -125,6 +124,9 @@
     @endif
 
 
+    {{-- Same field gutter as the edit page: panels bring px-2, so their cards line up with the title.
+         A block, not flex, so the cards' bottom margins keep collapsing into one section gap. --}}
+    <div class="-mx-2">
     @foreach($this->fieldsForView as $key => $field)
         <style>
             #resource-field-{{ optional($field)['slug'] }}-wrapper {
@@ -144,11 +146,13 @@
         </style>
 
         @checkCondition($model, $field, $form)
-            <div wire:key="resource-field-{{ $key }}"
+            {{-- A View field (a settings page's own block) brings no gutter, so it gets the panels' px-2. --}}
+            <div wire:key="resource-field-{{ $key }}" @class(['w-full', 'px-2' => optional($field)['type'] === 'Aura\\Base\\Fields\\View'])
             id="resource-field-{{ optional($field)['slug'] }}-wrapper">
             <x-dynamic-component :component="$field['field']->edit()" mode="edit" :field="$field" :form="$form" />
             </div>
         @endcheckCondition
     @endforeach
+    </div>
 
 </div>

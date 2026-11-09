@@ -3,19 +3,18 @@
 
     {{ app('aura')::injectView('profile_before_header') }}
 
-    <div class="mb-6">
+    {{-- Page header as on index pages: breadcrumb from sm, then the title row with the action. --}}
+    <div class="hidden sm:block">
         <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
             <x-aura::breadcrumbs.li title="{{ __('Profile') }}" />
         </x-aura::breadcrumbs>
     </div>
 
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="mb-2 text-2xl font-semibold">{{ __('Profile') }}</h1>
-        </div>
+    <div class="flex gap-4 justify-between items-center mt-1 mb-6 sm:mt-6">
+        <h1 class="aura-page-title">{{ __('Profile') }}</h1>
 
-        <div>
+        <div class="shrink-0">
             <x-aura::button wire:click="save">
                 <div wire:loading wire:target="save">
                     <x-aura::icon.loading  />
@@ -29,6 +28,8 @@
 
     <x-aura::validation-errors />
 
+    {{-- Same field gutter as the edit page: sections bring px-2, so tabs and cards line up with the title. --}}
+    <div class="-mx-2">
     @foreach($this->fieldsForView as $key => $field)
     <style>
         #resource-field-{{ optional($field)['slug'] }}-wrapper {
@@ -42,12 +43,13 @@
         }
     </style>
     <x-aura::fields.conditions :field="$field" :model="$this->model">
-        <div wire:key="resource-field-{{ $key }}"
+        <div wire:key="resource-field-{{ $key }}" class="w-full"
         id="resource-field-{{ optional($field)['slug'] }}-wrapper">
         <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" mode="edit" />
         </div>
     </x-aura::fields.conditions>
     @endforeach
+    </div>
 
 
 </div>

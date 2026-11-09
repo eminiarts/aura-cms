@@ -3,7 +3,7 @@
 test('login page renders in a real browser', function () {
     $page = visit('/login');
 
-    $page->assertSee('Login');
+    $page->assertSee('Log in');
 });
 
 test('an authenticated super admin can open the media library', function () {

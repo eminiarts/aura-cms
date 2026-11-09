@@ -322,7 +322,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'global' => true,
             ],
             [
-                'name' => 'Personal Infos',
+                'name' => 'Personal information',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => 'required',
                 'slug' => 'user-details',
@@ -337,6 +337,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'conditional_logic' => [],
                 'slug' => 'avatar',
                 'on_create' => false,
+                // The table's leading avatar already shows the image (or the initials), so no second column.
+                'on_index' => false,
                 'max_files' => 1,
                 'display' => [self::class, 'displayAvatarField'],
                 'style' => [
@@ -370,7 +372,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 ],
             ],
             [
-                'name' => 'Current Team',
+                'name' => 'Current team',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'on_index' => false,
@@ -412,7 +414,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 ],
             ],
             [
-                'name' => 'Global Admin',
+                'name' => 'Global admin',
                 'slug' => 'global_admin',
                 'type' => 'Aura\\Base\\Fields\\GlobalAdmin',
                 'instructions' => 'Instance-level operator with access across all teams. Only a Global Admin can grant or revoke this.',

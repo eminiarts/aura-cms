@@ -3,7 +3,7 @@
     <div class="mb-6">
         <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __('Forgot your password?') }}</h1>
         <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+            {{ __("Enter your email and we'll send you a reset link.") }}
         </p>
     </div>
 
@@ -15,12 +15,12 @@
         <!-- Email Address -->
         <div>
             <x-aura::input-label class="!mt-0" for="email" :value="__('Email')" />
-            <x-aura::input.text id="email" class="block w-full" type="email" name="email" :value="old('email')" required autofocus />
+            <x-aura::input.text id="email" placeholder="{{ __('Enter your email') }}" class="block w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
             <x-aura::input-error :for="$errors->get('email')" class="mt-2" />
         </div>
 
         <div class="pt-1">
-            <x-aura::button type="submit" block>{{ __('Email Password Reset Link') }}</x-aura::button>
+            <x-aura::button type="submit" block>{{ __('Send reset link') }}</x-aura::button>
         </div>
     </form>
 

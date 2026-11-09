@@ -371,23 +371,24 @@
 
         <div class="relative p-0 w-full bg-transparent border-0 aura-input">
             <label class="sr-only">{{ __('Select entry') }}</label>
+            {{-- Same trigger as the other selects (BelongsTo, Select): 36px, hairline ring, chevron; chips wrap and grow it. --}}
             <button type="button"
-                class="relative flex items-center justify-between w-full px-3 pt-1 pb-0 border rounded-lg shadow-xs appearance-none min-h-[2.625rem] border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
+                class="flex relative justify-between items-center py-1 pr-9 pl-3 w-full min-h-9 text-base text-left text-gray-900 bg-white rounded-lg ring-1 shadow-xs transition duration-150 appearance-none sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 dark:hover:ring-white/20"
                 x-ref="listboxButton" @click="toggleListbox">
 
                 <div class="flex items-center w-full">
                     <!-- Placeholder text on the left -->
                     <template x-if="!value || value.length === 0">
-                        <span class="block text-sm text-gray-500 truncate dark:text-gray-400">{{ __('Select entry') }}</span>
+                        <span class="block text-gray-400 truncate dark:text-gray-500">{{ __('Select entry') }}</span>
                     </template>
 
                     <!-- Selected items -->
                     <template x-if="value && value.length > 0 && !multiple">
-                        <span class="block text-sm truncate" x-html="selectedItemMarkup(value[0]).title || selectedItemMarkup(value[0])"></span>
+                        <span class="block truncate" x-html="selectedItemMarkup(value[0]).title || selectedItemMarkup(value[0])"></span>
                     </template>
 
                     <template x-if="value && value.length > 0 && multiple">
-                        <div class="flex flex-wrap items-center pt-0" @mousemove.prevent="moveItem($event)"
+                        <div class="flex flex-wrap items-center -mb-1" @mousemove.prevent="moveItem($event)"
                             @mouseup.prevent="stopDragging()" x-ref="selectedItemsContainer">
                             <template x-for="(item, index) in value" :key="item">
                                 {{-- <pre x-html="'item: ' + item + ', selected: ' + selectedItemMarkup(item)"></pre> --}}
@@ -440,10 +441,9 @@
 
                     </template>
 
-                    <!-- Heroicons up/down -->
-                    <div class="flex absolute inset-y-0 right-0 items-center px-2 pointer-events-none shrink-0">
-                        <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+                    <div class="flex absolute inset-y-0 right-0 items-center pr-2.5 pointer-events-none shrink-0" aria-hidden="true">
+                        <svg class="text-gray-400 size-4 dark:text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4.25 6.25 8 10l3.75-3.75" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                     </div>
                 </div>

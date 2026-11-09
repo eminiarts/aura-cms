@@ -86,7 +86,7 @@ test('a Global Admin mints a Global Role through the guarded global toggle', fun
 
     $page = visit('/admin/role/create');
 
-    $page->assertSee('Global Role');
+    $page->assertSee('Global role');
 
     $page->fill('#resource-field-name', 'Continent Role');
 

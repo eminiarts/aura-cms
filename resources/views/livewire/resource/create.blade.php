@@ -14,7 +14,7 @@
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
-        <x-aura::breadcrumbs.li :href="$indexUrl" :title="__($model->getPluralName())" />
+        <x-aura::breadcrumbs.li :href="$indexUrl" :title="$model->pluralName()" />
         <x-aura::breadcrumbs.li :title="$newRecordTitle" />
     </x-aura::breadcrumbs>
     @endif
@@ -62,11 +62,28 @@
             @endif
 
             <div class="flex flex-wrap items-start -mx-2">
+            @if ($formSections['card'] && ! $inModal)
+                {{-- Plain inputs without a panel get the card a panel would give them (fields/panel). --}}
+                <div class="px-2 w-full" data-form-card>
+                    <div class="mb-8 aura-card">
+                        <div class="mb-2">
+                            <div class="flex flex-wrap items-start -mx-2 w-[calc(100%+1rem)]">
+                                @foreach($formSections['fields'] as $key => $field)
+                                    @checkCondition($model, $field, $form)
+                                        <x-dynamic-component :component="$field['field']->edit()" :field="$field" wire:key="resource-field-{{ $key }}" :form="$form" :mode="$mode" />
+                                    @endcheckCondition
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @else
            @foreach($formSections['fields'] as $key => $field)
             @checkCondition($model, $field, $form)
                     <x-dynamic-component :component="$field['field']->edit()" :field="$field" wire:key="resource-field-{{ $key }}" :form="$form" :mode="$mode" />
             @endcheckCondition
             @endforeach
+            @endif
             </div>
 
             <x-aura::validation-errors />

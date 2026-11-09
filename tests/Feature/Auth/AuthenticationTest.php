@@ -15,7 +15,7 @@ describe('Login Screen', function () {
     test('login page renders successfully', function () {
         $this->get(route('login'))
             ->assertSuccessful()
-            ->assertSee('Login')
+            ->assertSee('Log in')
             ->assertSee('Email')
             ->assertSee('Password');
     });
@@ -25,7 +25,7 @@ describe('Login Screen', function () {
 
         $this->get(route('login'))
             ->assertSuccessful()
-            ->assertSee('Login');
+            ->assertSee('Log in');
     });
 
     test('login page shows remember me checkbox', function () {

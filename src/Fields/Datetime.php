@@ -6,6 +6,9 @@ class Datetime extends Field
 {
     public $edit = 'aura::fields.datetime';
 
+    // Same list and view display as Date: the raw value, or the field's display_format when it names one.
+    public $index = 'aura::fields.date-index';
+
     public $optionGroup = 'Input Fields';
 
     // public $view = 'components.fields.datetime';

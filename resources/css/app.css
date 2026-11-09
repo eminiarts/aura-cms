@@ -105,81 +105,99 @@ body {
 /* Tag family. One 22px chip for every inline enum value: neutral (.aura-tag,
    option values) and status (.aura-tag-status, tinted with a dot; the tint
    comes from the option's own color classes). Same height, radius, 12px medium
-   text and padding. The colors sit in :where() so a status option's utility
+   text and padding. Fill and text sit in :where() so a status option's utility
    classes override them. Relations are not chips (see .aura-record-link).
    Used from PHP display() methods too, so it lives in CSS (src/Fields is
    outside the content globs). */
 .aura-tag {
-    @apply inline-flex max-w-full items-center gap-1.5 whitespace-nowrap px-1.5 text-xs font-medium leading-none;
+    @apply inline-flex max-w-full items-center gap-1.5 whitespace-nowrap px-1.5 text-xs font-medium leading-none ring-1 ring-inset;
     height: 1.375rem;
     border-radius: calc(var(--aura-control-radius, 0.5rem) * 0.75);
 }
 
 :where(.aura-tag) {
-    @apply bg-gray-950/[0.05] text-gray-700 ring-1 ring-inset ring-gray-950/[0.06];
+    @apply bg-gray-950/[0.05] text-gray-700;
 }
 
 :where(.dark .aura-tag) {
-    @apply bg-white/[0.07] text-gray-300 ring-white/10;
+    @apply bg-white/[0.07] text-gray-300;
 }
 
-/* Tinted: the option color classes win over the neutral fill. The ring is the option's own hue at
-   -600/20% (dark: -400/30%), keyed on the text color class the option already names, so a yellow
-   state gets a yellow ring where a mix of its brown -800 text read gray. Options only name fill and
-   text; an option that names its own ring utility still wins (these rules sit in :where()).
-   Status options use -100/-800 with a dot; Select options use the quieter -50/-700 without a
+/* Ring colors carry real specificity (a class plus :not()), not :where(): an app's own Tailwind build
+   loads after Aura's and resets --tw-ring-color on every element (*, ::before, ::after) to its blue
+   default, which beats any zero-specificity rule. An option that names its own ring utility (any class
+   containing "ring-") keeps it: these rules skip such tags.
+   Neutral tags get a hairline gray ring. Tinted tags get the option's own hue at -600/20% (dark:
+   -400/30%), keyed on the text color class the option already names, so a yellow state gets a yellow
+   ring where a mix of its brown -800 text read gray; other text colors fall back to their own color
+   at 22%. Status options use -100/-800 with a dot; Select options use the quieter -50/-700 without a
    dot, so a category reads lighter than a state. */
-.aura-tag-status {
-    @apply ring-1 ring-inset;
+.aura-tag:not([class*='ring-']) {
+    @apply ring-gray-950/[0.06];
 }
 
-:where(.aura-tag-status) {
+.dark .aura-tag:not([class*='ring-']) {
+    @apply ring-white/10;
+}
+
+.aura-tag-status:not([class*='ring-']) {
     --tw-ring-color: color-mix(in srgb, currentColor 22%, transparent);
 }
 
-:where(.dark .aura-tag-status) {
+.dark .aura-tag-status:not([class*='ring-']) {
     --tw-ring-color: color-mix(in srgb, currentColor 30%, transparent);
 }
 
-:where(.aura-tag-status.text-primary-600, .aura-tag-status.text-primary-700, .aura-tag-status.text-primary-800) { @apply ring-primary-600/20; }
-:where(.aura-tag-status.text-gray-600, .aura-tag-status.text-gray-700, .aura-tag-status.text-gray-800) { @apply ring-gray-500/20; }
-:where(.aura-tag-status.text-red-600, .aura-tag-status.text-red-700, .aura-tag-status.text-red-800) { @apply ring-red-600/20; }
-:where(.aura-tag-status.text-orange-600, .aura-tag-status.text-orange-700, .aura-tag-status.text-orange-800) { @apply ring-orange-600/20; }
-:where(.aura-tag-status.text-amber-600, .aura-tag-status.text-amber-700, .aura-tag-status.text-amber-800) { @apply ring-amber-600/20; }
-:where(.aura-tag-status.text-yellow-600, .aura-tag-status.text-yellow-700, .aura-tag-status.text-yellow-800) { @apply ring-yellow-600/25; }
-:where(.aura-tag-status.text-lime-600, .aura-tag-status.text-lime-700, .aura-tag-status.text-lime-800) { @apply ring-lime-600/25; }
-:where(.aura-tag-status.text-green-600, .aura-tag-status.text-green-700, .aura-tag-status.text-green-800) { @apply ring-green-600/20; }
-:where(.aura-tag-status.text-emerald-600, .aura-tag-status.text-emerald-700, .aura-tag-status.text-emerald-800) { @apply ring-emerald-600/20; }
-:where(.aura-tag-status.text-teal-600, .aura-tag-status.text-teal-700, .aura-tag-status.text-teal-800) { @apply ring-teal-600/20; }
-:where(.aura-tag-status.text-cyan-600, .aura-tag-status.text-cyan-700, .aura-tag-status.text-cyan-800) { @apply ring-cyan-600/20; }
-:where(.aura-tag-status.text-sky-600, .aura-tag-status.text-sky-700, .aura-tag-status.text-sky-800) { @apply ring-sky-600/20; }
-:where(.aura-tag-status.text-blue-600, .aura-tag-status.text-blue-700, .aura-tag-status.text-blue-800) { @apply ring-blue-600/20; }
-:where(.aura-tag-status.text-indigo-600, .aura-tag-status.text-indigo-700, .aura-tag-status.text-indigo-800) { @apply ring-indigo-600/20; }
-:where(.aura-tag-status.text-violet-600, .aura-tag-status.text-violet-700, .aura-tag-status.text-violet-800) { @apply ring-violet-600/20; }
-:where(.aura-tag-status.text-purple-600, .aura-tag-status.text-purple-700, .aura-tag-status.text-purple-800) { @apply ring-purple-600/20; }
-:where(.aura-tag-status.text-fuchsia-600, .aura-tag-status.text-fuchsia-700, .aura-tag-status.text-fuchsia-800) { @apply ring-fuchsia-600/20; }
-:where(.aura-tag-status.text-pink-600, .aura-tag-status.text-pink-700, .aura-tag-status.text-pink-800) { @apply ring-pink-600/20; }
-:where(.aura-tag-status.text-rose-600, .aura-tag-status.text-rose-700, .aura-tag-status.text-rose-800) { @apply ring-rose-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-primary-600, .text-primary-700, .text-primary-800) { @apply ring-primary-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-gray-600, .text-gray-700, .text-gray-800) { @apply ring-gray-500/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-red-600, .text-red-700, .text-red-800) { @apply ring-red-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-orange-600, .text-orange-700, .text-orange-800) { @apply ring-orange-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-amber-600, .text-amber-700, .text-amber-800) { @apply ring-amber-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-yellow-600, .text-yellow-700, .text-yellow-800) { @apply ring-yellow-600/25; }
+.aura-tag-status:not([class*='ring-']):where(.text-lime-600, .text-lime-700, .text-lime-800) { @apply ring-lime-600/25; }
+.aura-tag-status:not([class*='ring-']):where(.text-green-600, .text-green-700, .text-green-800) { @apply ring-green-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-emerald-600, .text-emerald-700, .text-emerald-800) { @apply ring-emerald-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-teal-600, .text-teal-700, .text-teal-800) { @apply ring-teal-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-cyan-600, .text-cyan-700, .text-cyan-800) { @apply ring-cyan-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-sky-600, .text-sky-700, .text-sky-800) { @apply ring-sky-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-blue-600, .text-blue-700, .text-blue-800) { @apply ring-blue-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-indigo-600, .text-indigo-700, .text-indigo-800) { @apply ring-indigo-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-violet-600, .text-violet-700, .text-violet-800) { @apply ring-violet-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-purple-600, .text-purple-700, .text-purple-800) { @apply ring-purple-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-fuchsia-600, .text-fuchsia-700, .text-fuchsia-800) { @apply ring-fuchsia-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-pink-600, .text-pink-700, .text-pink-800) { @apply ring-pink-600/20; }
+.aura-tag-status:not([class*='ring-']):where(.text-rose-600, .text-rose-700, .text-rose-800) { @apply ring-rose-600/20; }
 
-:where(.dark .aura-tag-status.dark\:text-primary-300, .dark .aura-tag-status.dark\:text-primary-400) { @apply ring-primary-400/30; }
-:where(.dark .aura-tag-status.dark\:text-gray-300, .dark .aura-tag-status.dark\:text-gray-400) { @apply ring-gray-400/30; }
-:where(.dark .aura-tag-status.dark\:text-red-300, .dark .aura-tag-status.dark\:text-red-400) { @apply ring-red-400/30; }
-:where(.dark .aura-tag-status.dark\:text-orange-300, .dark .aura-tag-status.dark\:text-orange-400) { @apply ring-orange-400/30; }
-:where(.dark .aura-tag-status.dark\:text-amber-300, .dark .aura-tag-status.dark\:text-amber-400) { @apply ring-amber-400/30; }
-:where(.dark .aura-tag-status.dark\:text-yellow-300, .dark .aura-tag-status.dark\:text-yellow-400) { @apply ring-yellow-400/30; }
-:where(.dark .aura-tag-status.dark\:text-lime-300, .dark .aura-tag-status.dark\:text-lime-400) { @apply ring-lime-400/30; }
-:where(.dark .aura-tag-status.dark\:text-green-300, .dark .aura-tag-status.dark\:text-green-400) { @apply ring-green-400/30; }
-:where(.dark .aura-tag-status.dark\:text-emerald-300, .dark .aura-tag-status.dark\:text-emerald-400) { @apply ring-emerald-400/30; }
-:where(.dark .aura-tag-status.dark\:text-teal-300, .dark .aura-tag-status.dark\:text-teal-400) { @apply ring-teal-400/30; }
-:where(.dark .aura-tag-status.dark\:text-cyan-300, .dark .aura-tag-status.dark\:text-cyan-400) { @apply ring-cyan-400/30; }
-:where(.dark .aura-tag-status.dark\:text-sky-300, .dark .aura-tag-status.dark\:text-sky-400) { @apply ring-sky-400/30; }
-:where(.dark .aura-tag-status.dark\:text-blue-300, .dark .aura-tag-status.dark\:text-blue-400) { @apply ring-blue-400/30; }
-:where(.dark .aura-tag-status.dark\:text-indigo-300, .dark .aura-tag-status.dark\:text-indigo-400) { @apply ring-indigo-400/30; }
-:where(.dark .aura-tag-status.dark\:text-violet-300, .dark .aura-tag-status.dark\:text-violet-400) { @apply ring-violet-400/30; }
-:where(.dark .aura-tag-status.dark\:text-purple-300, .dark .aura-tag-status.dark\:text-purple-400) { @apply ring-purple-400/30; }
-:where(.dark .aura-tag-status.dark\:text-fuchsia-300, .dark .aura-tag-status.dark\:text-fuchsia-400) { @apply ring-fuchsia-400/30; }
-:where(.dark .aura-tag-status.dark\:text-pink-300, .dark .aura-tag-status.dark\:text-pink-400) { @apply ring-pink-400/30; }
-:where(.dark .aura-tag-status.dark\:text-rose-300, .dark .aura-tag-status.dark\:text-rose-400) { @apply ring-rose-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-primary-300, .dark\:text-primary-400) { @apply ring-primary-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-gray-300, .dark\:text-gray-400) { @apply ring-gray-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-red-300, .dark\:text-red-400) { @apply ring-red-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-orange-300, .dark\:text-orange-400) { @apply ring-orange-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-amber-300, .dark\:text-amber-400) { @apply ring-amber-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-yellow-300, .dark\:text-yellow-400) { @apply ring-yellow-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-lime-300, .dark\:text-lime-400) { @apply ring-lime-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-green-300, .dark\:text-green-400) { @apply ring-green-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-emerald-300, .dark\:text-emerald-400) { @apply ring-emerald-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-teal-300, .dark\:text-teal-400) { @apply ring-teal-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-cyan-300, .dark\:text-cyan-400) { @apply ring-cyan-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-sky-300, .dark\:text-sky-400) { @apply ring-sky-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-blue-300, .dark\:text-blue-400) { @apply ring-blue-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-indigo-300, .dark\:text-indigo-400) { @apply ring-indigo-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-violet-300, .dark\:text-violet-400) { @apply ring-violet-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-purple-300, .dark\:text-purple-400) { @apply ring-purple-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-fuchsia-300, .dark\:text-fuchsia-400) { @apply ring-fuchsia-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-pink-300, .dark\:text-pink-400) { @apply ring-pink-400/30; }
+.dark .aura-tag-status:not([class*='ring-']):where(.dark\:text-rose-300, .dark\:text-rose-400) { @apply ring-rose-400/30; }
+
+/* Inline code chip for a path or command inside running text ("Run `php artisan config:cache`"):
+   monospace one step under the text, on the neutral tag fill with its hairline. */
+.aura-code {
+    @apply whitespace-nowrap rounded px-1 py-px font-mono text-[0.8125em] text-gray-800 bg-gray-950/[0.05] dark:text-gray-200 dark:bg-white/[0.07];
+    box-shadow: inset 0 0 0 1px rgb(var(--gray-950) / 0.06);
+}
+
+.dark .aura-code {
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+}
 
 .aura-tag-dot {
     @apply shrink-0 fill-current opacity-70;
@@ -447,6 +465,13 @@ body {
         padding-left: 0.75rem;
         padding-right: 0.75rem;
     }
+
+    /* The first related list's title shares the line of the "Details" title beside it: its 32px header
+       row (title centred against the create button) starts 6px above the column, so both titles start
+       at the column top. */
+    .aura-record-columns [data-record-related] > :first-child [data-relation-header] {
+        margin-top: -0.375rem;
+    }
 }
 
 /* Record page with a right rail (a panel of 33% width or less, the form's sidebar card): sections fill
@@ -467,6 +492,15 @@ body {
 .aura-record-card {
     @apply block rounded-xl bg-white p-4 shadow-xs ring-1 ring-gray-950/10 transition duration-150 dark:bg-gray-800 dark:ring-white/10;
     border-radius: var(--aura-panel-radius, 0.75rem);
+}
+
+/* From sm the card's values are right-aligned: a link's hover mark keeps its space at rest and would
+   end the website 15px short of the other values, so cards drop it (the card's chevron and ring
+   already say "opens"). */
+@screen sm {
+    .aura-record-card dd .aura-link::after {
+        content: none;
+    }
 }
 
 a.aura-record-card:hover {
