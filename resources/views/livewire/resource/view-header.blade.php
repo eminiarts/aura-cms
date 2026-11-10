@@ -6,7 +6,8 @@
     $hasPhoneActions = $recordLayout->panels(\Aura\Base\RecordLayout\RecordLayoutRegion::HeaderActions) !== [] || count($this->actions);
 @endphp
 
-<div class="mt-4 mb-6 sm:mt-6 sm:mb-8 aura-record-block" data-record-header>
+{{-- The same spacing as the edit and create headers, so avatar, eyebrow and title stay put when switching. --}}
+<div class="mt-1 mb-6 sm:my-8 aura-record-block" data-record-header>
     {{-- Actions sit to the right of the title from sm, as on list pages; on phones the header row
          dissolves into the block, Edit becomes an icon button in the title row, and any other actions
          sort last, right-aligned under the facts strip. --}}

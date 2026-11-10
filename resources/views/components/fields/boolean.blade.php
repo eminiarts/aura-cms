@@ -1,6 +1,6 @@
 <x-aura::fields.wrapper :field="$field">
-    {{-- The 36x20 switch (same as input.toggle) sits centred in a 36px row, so it lines up with the
-         inputs beside it while the label stays above, as on every other field. --}}
+    {{-- The 36x20 switch (same as input.toggle) under its label, as on every other field and with the
+         same 6px gap between label and control. --}}
     <div x-data="{
         @if(optional($field)['live'] === true)
         value: $wire.entangle('form.fields.{{ optional($field)['slug'] }}').live,
@@ -9,7 +9,7 @@
         @endif
         disabled: {{ isset($field['disabled']) && $field['disabled'] ? 'true' : 'false' }}
     }"
-        class="flex items-center h-9" x-id="['boolean']">
+        class="flex items-center" x-id="['boolean']">
         <button x-ref="toggle" @click="!disabled && (value = !value)" type="button" role="switch" :aria-checked="value"
             :aria-labelledby="$id('boolean')"
             :class="[

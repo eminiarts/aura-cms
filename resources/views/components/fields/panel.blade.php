@@ -1,4 +1,4 @@
-@aware(['mode'])
+@aware(['mode', 'frame' => null])
 
 <style >
   #resource-field-{{ optional($field)['slug'] }}-wrapper {
@@ -15,8 +15,9 @@
 
 @php
     // Record view pages: an unboxed section (title, then one hairline row per value) unless the
-    // panel brings its own class. Forms keep the card.
-    $isSection = $mode === 'view' && empty($field['style']['class']);
+    // panel brings its own class. Forms keep the card, and so does a view in its form's frame
+    // (frame "form", RecordViewSections::formFrame()), so toggling view and edit keeps the card in place.
+    $isSection = $mode === 'view' && $frame !== 'form' && empty($field['style']['class']);
     $showTitle = isset($field['name']) && (! isset($field['hide_title']) || $field['hide_title'] === false);
 @endphp
 

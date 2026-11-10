@@ -670,7 +670,7 @@
 
         <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Record page: details section (.aura-record-section) and related-record cards (x-aura::resource.record-card)') }}</span>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Every view panel renders as a titled section of label/value rows with hairlines; a single panel is titled "Details". From xl the sections sit in a 25rem (400px) column with the related records on the right: embedded lists, or, for a record without lists, one card per BelongsTo relation with the related record and up to three of its own list values. The column closes with the record meta line (.aura-record-meta, resource/record-meta): created date, author when the record has one, and the last update once it differs.') }}</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('With related records beside the values, every view panel renders as a titled section of label/value rows with hairlines; a single panel is titled "Details". From xl the sections sit in a 25rem (400px) column with the related records on the right: embedded lists, or, for a record without lists, one card per BelongsTo relation with the related record and up to three of its own list values. The column closes with the record meta line (.aura-record-meta, resource/record-meta): created date, author when the record has one, and the last update once it differs.') }}</p>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Right rail: when a record has a narrow panel (style width 33% or less, the sidebar card of its form) next to other values, the view page mirrors the form: from lg the other sections fill the main column and the narrow panels stack in a 20rem rail on the right (.aura-record-rail, 6.5rem label column), with the meta line under them. Relations in the rail stay inline record links instead of cards. On phones the rail follows the main column.') }}</p>
             <div class="grid grid-cols-1 gap-8 mt-4 lg:grid-cols-[minmax(0,25rem)_minmax(0,1fr)]">
                 <div class="aura-record-section !mb-0">
@@ -727,6 +727,46 @@
                         </dl>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        {{-- Read-only field grid: the record view in its form's frame, same markup as fields/wrapper in view mode. --}}
+        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Record page in its form\'s frame: read-only field grid (.aura-view-grid)') }}</span>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('A record with nothing beside its values (no embedded lists, no relation cards, no rail) mirrors its edit form: the same width (max-w-3xl for a simple record), the same tab bar, every panel the form\'s .aura-card and .aura-section-title, plain values in one card. Inside, .aura-view-grid lays out the view rows: each value at its field\'s form width (full width on phones), the 13px gray-500 label 2px above the 14px value, 16px between rows, no hairlines. A boolean reads as a check and "Yes" or a muted "No"; an empty value is a muted dash. The record meta line follows the last card at the card\'s edge.') }}</p>
+            <div class="mt-4 max-w-3xl">
+                <div class="flex flex-wrap items-start -mx-2 aura-view-grid">
+                    <div class="px-2 w-full">
+                        <div class="aura-card">
+                            <div class="mb-2">
+                                <div class="px-2">
+                                    <h3 class="aura-section-title">{{ __('Personal information') }}</h3>
+                                </div>
+                                <div class="flex flex-wrap items-start -mx-2 w-[calc(100%+1rem)]">
+                                    @foreach ([
+                                        ['Name', 'Martina Keller', 'sm:w-1/2'],
+                                        ['Email', 'martina.keller@northwindsoftware.com', 'sm:w-1/2'],
+                                        ['Role', 'Admin', 'sm:w-1/2'],
+                                        ['Global admin', '<span class="flex gap-1.5 items-center"><svg class="size-4 shrink-0 text-primary-600 dark:text-primary-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" /></svg>Yes</span>', 'sm:w-1/2'],
+                                        ['Phone', '<span class="text-gray-400 dark:text-gray-500">–</span>', ''],
+                                    ] as [$label, $value, $width])
+                                        <div class="px-4 w-full {{ $width }}">
+                                            <div class="py-2 sm:grid sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-x-6 sm:items-baseline aura-view-row">
+                                                <div class="flex gap-1.5 items-center mb-1 min-w-0 sm:mb-0">
+                                                    <span class="text-sm text-gray-500 truncate dark:text-gray-400 aura-view-label">{{ $label }}</span>
+                                                </div>
+                                                <div class="min-w-0 text-sm text-gray-900 truncate dark:text-gray-100">{!! $value !!}</div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="aura-record-meta">
+                    <span>Created <time datetime="2026-11-03T09:14:00+01:00" title="Tuesday, November 3, 2026 9:14 AM">Nov 3, 2026</time> by <span data-record-meta-author>Bajram Emini</span></span>
+                </p>
             </div>
         </div>
 

@@ -18,6 +18,10 @@ use Aura\Base\Resource;
  * Trees with other groups (tabs) are returned unchanged with no related
  * sections, no header facts and no cards, so custom layouts keep rendering
  * as before.
+ *
+ * A record with nothing beside its values (no embedded lists, no relation
+ * cards, no rail panel) does not use the record layout at all: its view
+ * takes its form's frame (formFrame()).
  */
 final class RecordViewSections
 {
@@ -73,6 +77,35 @@ final class RecordViewSections
     }
 
     /**
+     * The form's frame for a record view that has nothing beside its values:
+     * no embedded lists, no relation cards and no rail panel. Trees with tabs
+     * qualify (their lists stay inside the tabs). The view page then mirrors
+     * the edit form: RecordFormSections::arrange() of the view tree decides the
+     * page width, the lone panel's title and the card around plain values, the
+     * same as on the form. Null when the record page keeps its own layout.
+     *
+     * @param  array<int, array<string, mixed>>  $fields  Output of Resource::viewFields().
+     * @return array{fields: array<int|string, array<string, mixed>>, single: bool, card: bool}|null
+     */
+    public static function formFrame(array $fields, $model): ?array
+    {
+        $sections = self::partition($fields, $model) ?? ['details' => $fields, 'related' => []];
+
+        if ($sections['related'] !== [] || self::hasRail($sections['details']) || self::cards($fields, $model) !== []) {
+            return null;
+        }
+
+        // Values the header facts strip shows are not repeated, as on the record layout.
+        $shownElsewhere = array_column(self::header($fields, $model), 'slug');
+
+        if ($shownElsewhere !== []) {
+            $sections = self::partition($fields, $model, $shownElsewhere) ?? $sections;
+        }
+
+        return RecordFormSections::arrange($sections['details']);
+    }
+
+    /**
      * Fields promoted into the page header. The resource's
      * recordHeaderFields() wins; otherwise the first Status and the first
      * Number field shown in lists, in field order.
@@ -117,57 +150,36 @@ final class RecordViewSections
     }
 
     /**
+     * A narrow panel (style width up to 33%, the form's sidebar card). Beside
+     * other values the record page and the form show it as a right rail.
+     */
+    public static function isRailPanel(array $field): bool
+    {
+        return ($field['field'] ?? null) instanceof Panel
+            && is_numeric($field['style']['width'] ?? null) && (float) $field['style']['width'] <= 33;
+    }
+
+    /**
      * @param  array<int, array<string, mixed>>  $fields  Output of Resource::viewFields().
      * @param  array<int, string>  $shownElsewhere  Slugs the page already shows (header facts, relation cards).
      * @return array{details: array<int, array<string, mixed>>, related: array<int, array<string, mixed>>}
      */
     public static function split(array $fields, $model, array $shownElsewhere = []): array
     {
-        $title = trim((string) $model->title());
-        $details = [];
-        $related = [];
+        $sections = self::partition($fields, $model, $shownElsewhere);
 
-        foreach ($fields as $field) {
-            $instance = $field['field'] ?? null;
-
-            if ($instance instanceof Panel) {
-                $children = [];
-
-                foreach ($field['fields'] ?? [] as $child) {
-                    if (self::isRelatedList($child)) {
-                        $related[] = $child;
-                    } elseif (self::isGroup($child)) {
-                        return ['details' => $fields, 'related' => []];
-                    } elseif (! self::repeatsTitle($child, $model, $title) && ! in_array($child['slug'] ?? null, $shownElsewhere, true)) {
-                        $children[] = $child;
-                    }
-                }
-
-                if ($children !== []) {
-                    $field['fields'] = $children;
-                    $details[] = $field;
-                }
-
-                continue;
-            }
-
-            if (self::isRelatedList($field)) {
-                $related[] = $field;
-            } elseif (self::isGroup($field)) {
-                return ['details' => $fields, 'related' => []];
-            } elseif (! self::repeatsTitle($field, $model, $title) && ! in_array($field['slug'] ?? null, $shownElsewhere, true)) {
-                $details[] = $field;
-            }
+        if ($sections === null) {
+            return ['details' => $fields, 'related' => []];
         }
 
-        $panels = array_keys(array_filter($details, fn ($field) => ($field['field'] ?? null) instanceof Panel));
+        $panels = array_keys(array_filter($sections['details'], fn ($field) => ($field['field'] ?? null) instanceof Panel));
 
         // A single panel usually carries the resource name, which the header shows already.
         if (count($panels) === 1) {
-            $details[$panels[0]]['name'] = __('Details');
+            $sections['details'][$panels[0]]['name'] = __('Details');
         }
 
-        return ['details' => $details, 'related' => $related];
+        return $sections;
     }
 
     /**
@@ -245,6 +257,12 @@ final class RecordViewSections
         return $flat;
     }
 
+    private static function hasRail(array $details): bool
+    {
+        return collect($details)->contains(fn ($field) => self::isRailPanel($field))
+            && collect($details)->contains(fn ($field) => ! self::isRailPanel($field));
+    }
+
     private static function isGroup(array $field): bool
     {
         $instance = $field['field'] ?? null;
@@ -257,6 +275,54 @@ final class RecordViewSections
         $instance = $field['field'] ?? null;
 
         return $instance !== null && method_exists($instance, 'view') && $instance->view() === self::RELATED_LIST_VIEW;
+    }
+
+    /**
+     * The record's values (minus the title and the slugs shown elsewhere) and
+     * its embedded lists. Null when the tree holds other groups (tabs).
+     *
+     * @return array{details: array<int, array<string, mixed>>, related: array<int, array<string, mixed>>}|null
+     */
+    private static function partition(array $fields, $model, array $shownElsewhere = []): ?array
+    {
+        $title = trim((string) $model->title());
+        $details = [];
+        $related = [];
+
+        foreach ($fields as $field) {
+            $instance = $field['field'] ?? null;
+
+            if ($instance instanceof Panel) {
+                $children = [];
+
+                foreach ($field['fields'] ?? [] as $child) {
+                    if (self::isRelatedList($child)) {
+                        $related[] = $child;
+                    } elseif (self::isGroup($child)) {
+                        return null;
+                    } elseif (! self::repeatsTitle($child, $model, $title) && ! in_array($child['slug'] ?? null, $shownElsewhere, true)) {
+                        $children[] = $child;
+                    }
+                }
+
+                if ($children !== []) {
+                    $field['fields'] = $children;
+                    $details[] = $field;
+                }
+
+                continue;
+            }
+
+            if (self::isRelatedList($field)) {
+                $related[] = $field;
+            } elseif (self::isGroup($field)) {
+                return null;
+            } elseif (! self::repeatsTitle($field, $model, $title) && ! in_array($field['slug'] ?? null, $shownElsewhere, true)) {
+                $details[] = $field;
+            }
+        }
+
+        return ['details' => $details, 'related' => $related];
     }
 
     private static function repeatsTitle(array $field, $model, string $title): bool

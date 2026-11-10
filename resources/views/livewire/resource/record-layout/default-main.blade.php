@@ -25,20 +25,22 @@
         // next to the app sidebar, embedded lists would be too narrow for their columns). Related
         // records are the embedded lists; a record without lists shows its BelongsTo relations as
         // cards instead. Modals and pages with record-layout side panels keep the single column.
-        $sections = \Aura\Base\RecordLayout\RecordViewSections::split($this->viewFields, $model);
+        // A record with nothing beside its values renders in its form's frame instead (view.blade.php
+        // decides it with RecordViewSections::formFrame()), so none of this applies to it.
+        $formFrame ??= null;
+        $sections = $formFrame !== null ? ['details' => [], 'related' => []] : \Aura\Base\RecordLayout\RecordViewSections::split($this->viewFields, $model);
 
         // A narrow panel (style width up to 33%, the form's sidebar card) becomes a right rail beside the
         // other values from lg, so the page mirrors the form: main column left, properties right. Its
         // relations stay inline values there instead of turning into cards.
-        $isRailPanel = fn ($field) => ($field['field'] ?? null) instanceof \Aura\Base\Fields\Panel
-            && is_numeric($field['style']['width'] ?? null) && (float) $field['style']['width'] <= 33;
+        $isRailPanel = fn ($field) => \Aura\Base\RecordLayout\RecordViewSections::isRailPanel($field);
         $hasRail = fn ($details) => collect($details)->contains($isRailPanel) && collect($details)->contains(fn ($field) => ! $isRailPanel($field));
         $useRail = ! $inModal && ($splitRelated ?? true) && $hasRail($sections['details']);
 
-        $cards = (! $inModal && ! $useRail && $sections['related'] === []) ? \Aura\Base\RecordLayout\RecordViewSections::cards($this->viewFields, $model) : [];
+        $cards = ($formFrame === null && ! $inModal && ! $useRail && $sections['related'] === []) ? \Aura\Base\RecordLayout\RecordViewSections::cards($this->viewFields, $model) : [];
         // Fields the header facts strip or a relation card already shows are not repeated in Details.
         // When nothing else is left, the page renders header and related records without a details column.
-        if (! $inModal) {
+        if (! $inModal && $formFrame === null) {
             $shownElsewhere = array_merge(
                 array_column(\Aura\Base\RecordLayout\RecordViewSections::header($this->viewFields, $model), 'slug'),
                 array_map(fn ($card) => $card['field']['slug'], $cards),
@@ -68,7 +70,38 @@
     @endphp
 
     <div class="col-span-1 mx-0 min-w-0 sm:col-span-3 {{ $splitRelated ? 'aura-record-columns xl:grid xl:grid-cols-[minmax(0,25rem)_minmax(0,1fr)] xl:gap-10 xl:items-start 2xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] 2xl:gap-12' : '' }} {{ $useRail ? 'aura-record-rail-layout lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-x-10 lg:items-start' : '' }}">
-        @if ($sections['details'] !== [])
+        @if ($formFrame !== null)
+        {{-- The form's frame (edit.blade.php) with view components: the same tab bar, a panel is the form's
+             card (frame="form" reaches fields/panel and fields/wrapper through @aware), plain values get the
+             card a panel would give them, and .aura-view-grid lays the values out at their form widths. --}}
+        <div class="flex flex-wrap items-start -mx-2 min-w-0 aura-view-grid" wire:key="resource-view-fields" data-record-details data-record-frame="form">
+            @if ($formFrame['card'] && ! $inModal)
+                <div class="px-2 w-full" data-form-card>
+                    <div class="mb-8 aura-card">
+                        <div class="mb-2">
+                            <div class="flex flex-wrap items-start -mx-2 w-[calc(100%+1rem)]">
+                                @foreach ($formFrame['fields'] as $key => $field)
+                                <x-aura::fields.conditions :field="$field" :model="$model" wire:key="resource-field-{{ $field['slug'] ?? $key }}">
+                                    <x-dynamic-component :component="$field['field']->view()" :field="$field" :form="$form" :mode="$mode" frame="form" />
+                                </x-aura::fields.conditions>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @else
+                @foreach ($formFrame['fields'] as $key => $field)
+                <x-aura::fields.conditions :field="$field" :model="$model" wire:key="resource-field-{{ $field['slug'] ?? $key }}">
+                    <x-dynamic-component :component="$field['field']->view()" :field="$field" :form="$form" :mode="$mode" frame="form" />
+                </x-aura::fields.conditions>
+                @endforeach
+            @endif
+        </div>
+
+        @unless ($inModal)
+            @include('aura::livewire.resource.record-meta', ['attributes' => new \Illuminate\View\ComponentAttributeBag()])
+        @endunless
+        @elseif ($sections['details'] !== [])
         {{-- Sections bring px-2; -mx-2 puts their titles flush with the page title. --}}
         <div class="-mx-2 min-w-0 {{ $splitRelated ? 'aura-record-details' : '' }}" wire:key="resource-view-fields" data-record-details>
             @if ($bodyField)

@@ -330,13 +330,20 @@ body {
 }
 
 /* Record page.
-   Header: the promoted fields (first Status and first Number field by default,
-   or the resource's recordHeaderFields()) sit under the title as a facts strip,
-   a number large and tabular, a status as its tag.
-   Body: an unboxed details column (every view panel becomes a titled section
-   of label/value rows with hairlines, no card) and, from xl, related records on
-   the right: embedded lists, or small cards for BelongsTo relations when the
-   record has no lists, so a record with four fields is never one stretched card. */
+   Header: the same block on view, edit and create (avatar, eyebrow, H1, actions at one height), with
+   the promoted fields (first Status and first Number field by default, or the resource's
+   recordHeaderFields()) under the title as a facts strip, a number large and tabular, a status as its tag.
+   Body, two cases (RecordViewSections::formFrame() decides):
+   - Nothing beside the values (no embedded lists, no relation cards, no rail): the view mirrors its
+     form. Same width rule (a simple record at max-w-3xl, breadcrumb and header with it), same tab bar,
+     every panel the form's .aura-card with its .aura-section-title (a lone full-width panel without
+     title, plain values in one card), and the values in the read-only field grid (.aura-view-grid):
+     each at its field's form width, label above value. Switching between view and edit keeps title,
+     tab bar and card outline in place.
+   - Related records beside the values: an unboxed details column (every view panel a titled section of
+     label/value rows with hairlines, no card) and, from xl, related records on the right: embedded
+     lists, or small cards for BelongsTo relations when the record has no lists. A narrow panel (33% or
+     less) beside other values becomes a right rail instead. */
 .aura-record-facts {
     @apply flex flex-wrap items-stretch gap-x-6 gap-y-3;
 }
@@ -485,6 +492,33 @@ body {
         grid-template-columns: 6.5rem minmax(0, 1fr);
         column-gap: 0.75rem;
     }
+}
+
+/* Read-only field grid: a record view in its form's frame. Each value sits where its input sits on the
+   form (fields/wrapper keeps the field's width, full width on phones), the 13px muted label 2px above
+   the 14px value, 16px between rows, no hairlines. Denser than the form, which needs room for inputs. */
+.aura-view-grid .aura-view-row {
+    @apply flex flex-col gap-0.5 pb-1 pt-3;
+}
+
+.aura-view-grid .aura-view-row > :first-child {
+    margin-bottom: 0;
+}
+
+.aura-view-grid .aura-view-label {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+}
+
+/* The meta line sits one distance under the last card or list, with tabs or without: the last card
+   drops its 32px bottom margin and a tab panel its 16px bottom padding. */
+.aura-view-grid [role="tabpanel"] {
+    padding-bottom: 0;
+}
+
+.aura-view-grid > :last-child > .aura-card,
+.aura-view-grid [role="tabpanel"] > div > :last-child > .aura-card {
+    margin-bottom: 0;
 }
 
 /* Related-record card (a BelongsTo relation on a record without lists): avatar,

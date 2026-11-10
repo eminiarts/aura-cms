@@ -307,6 +307,21 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return $model->displayAvatar($value);
     }
 
+    /**
+     * The current team's name (escaped: views print display values raw), or the stored id when the team
+     * cannot be read. A lookup by key, not currentTeam(), which switches a user without a team.
+     */
+    public static function displayCurrentTeamField($value, self $model): mixed
+    {
+        if (blank($value)) {
+            return $value;
+        }
+
+        $team = config('aura.resources.team', Team::class)::query()->find($value);
+
+        return $team ? e($team->name) : $value;
+    }
+
     public function getAvatarUrlAttribute()
     {
         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
@@ -379,6 +394,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'on_forms' => false,
                 'searchable' => false,
                 'slug' => 'current_team_id',
+                // The record view names the team instead of printing its id.
+                'display' => [self::class, 'displayCurrentTeamField'],
             ],
             [
                 'name' => 'Role',

@@ -1,4 +1,4 @@
-@aware(['mode' => null])
+@aware(['mode' => null, 'frame' => null])
 @props(['field', 'wrapperClass' => 'px-4', 'showLabel' => true])
 
 @php
@@ -23,8 +23,9 @@
 <div id="resource-field-{{ $slug }}-wrapper" {{ $attributes->merge(['class' => $wrapperClass]) }}>
     <style>
         #resource-field-{{ $slug }}-wrapper {
-            {{-- View pages list label/value rows, one per line; forms keep their column widths. --}}
-            width: {{ $isView ? '100' : (optional(optional($field)['style'])['width'] ?? '100') }}%;
+            {{-- View pages list label/value rows, one per line; forms keep their column widths, and so does a
+                 view in its form's frame (.aura-view-grid), where each value sits where its input sits. --}}
+            width: {{ $isView && $frame !== 'form' ? '100' : (optional(optional($field)['style'])['width'] ?? '100') }}%;
         }
 
         @media screen and (max-width: 768px) {
@@ -35,11 +36,12 @@
     </style>
 
     @if ($isView)
-        {{-- Record view: label column on the left, value on the right; stacked on phones. --}}
+        {{-- Record view: label column on the left, value on the right; stacked on phones. In the form's
+             frame .aura-view-grid puts the label above the value. --}}
         <div class="py-2 sm:grid sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-x-6 sm:items-baseline aura-view-row">
             <div class="flex gap-1.5 items-center mb-1 min-w-0 sm:mb-0">
                 @if ($label && $showLabel)
-                    <span class="text-sm text-gray-500 truncate dark:text-gray-400">{{ $label }}</span>
+                    <span class="text-sm text-gray-500 truncate dark:text-gray-400 aura-view-label">{{ $label }}</span>
                 @endif
 
                 {{-- No help marker here: instructions explain how to fill a field, so they belong to the form. --}}
