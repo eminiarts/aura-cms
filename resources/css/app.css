@@ -97,6 +97,24 @@
     @apply text-xs text-gray-500 dark:text-gray-400;
 }
 
+/* Toolbar button label (Columns, Filters): visually hidden on phones, where the
+   button is icon-only, shown from sm. A dedicated class instead of
+   sr-only + sm:not-sr-only, so a host stylesheet that loads after Aura's and
+   ships its own .sr-only cannot hide the label on desktop. */
+@media (max-width: 639.98px) {
+    .aura-label-sm-up {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+}
+
 /* Column headings: sentence case, 12px, with the column-type mark in front. */
 .aura-table-header {
     @apply text-xs font-medium text-gray-500 dark:text-gray-400;

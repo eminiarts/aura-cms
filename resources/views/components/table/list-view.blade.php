@@ -16,7 +16,8 @@
 
     // Phone rows lead with the record's display name (the record page H1) when the resource defines one;
     // the generic "Type (#id)" fallback is no name, so those rows keep leading with their first column.
-    $leadsWithTitle = $stackOnMobile && (new ReflectionMethod($tableModel, 'title'))->getDeclaringClass()->getName() !== \Aura\Base\Resource::class;
+    $hasOwnTitle = (new ReflectionMethod($tableModel, 'title'))->getDeclaringClass()->getName() !== \Aura\Base\Resource::class;
+    $leadsWithTitle = $stackOnMobile && $hasOwnTitle;
 @endphp
 
 <div class="flex flex-col mt-2" wire:key="table-index">
@@ -159,8 +160,11 @@
                         <li wire:key="mobile-row-{{ $row->id }}">
                             <{{ $rowUrl ? 'a' : 'div' }} @if ($rowUrl) href="{{ $rowUrl }}" wire:navigate @endif
                                 class="flex gap-3 items-center py-3 {{ $rowUrl ? 'transition-colors duration-150 active:bg-gray-50 dark:active:bg-white/[0.04] focus:outline-none focus-visible:bg-gray-50 dark:focus-visible:bg-white/[0.04]' : '' }}">
-                                @if ($hasAvatar)
+                                @if ($hasAvatar && $hasOwnTitle)
                                     <x-aura::avatar :record="$row" size="md" />
+                                @elseif ($hasAvatar)
+                                    {{-- Generic "Type (#id)" title: initials and tint from the row's leading text, as in the desktop row. --}}
+                                    <x-aura::avatar :name="$plainText($primary)" :shape="$row->avatarShape()" :image-id="$row->avatarImageId()" size="md" />
                                 @endif
                                 <div class="flex-1 min-w-0">
                                     <div class="text-sm font-medium text-gray-900 truncate dark:text-white">

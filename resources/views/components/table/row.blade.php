@@ -64,8 +64,12 @@
                         $leadUrl = ! (is_string($display) && stripos($display, '<a') !== false) ? $rowViewUrl : null;
                     @endphp
                     <div class="flex gap-2.5 items-center min-w-0">
-                        @if ($hasAvatar)
+                        @if ($hasAvatar && ($hasOwnTitle ?? true))
                             <x-aura::avatar :record="$row" size="sm" />
+                        @elseif ($hasAvatar)
+                            {{-- No title() of its own: the generic "Type (#id)" would give every row the same
+                                 initial, so the avatar takes the leading column's text instead. --}}
+                            <x-aura::avatar :name="trim(html_entity_decode(strip_tags((string) $display), ENT_QUOTES))" :shape="$row->avatarShape()" :image-id="$row->avatarImageId()" size="sm" />
                         @endif
                         @if ($leadUrl)
                             <a href="{{ $leadUrl }}" wire:navigate class="min-w-0 truncate rounded-sm decoration-gray-400 underline-offset-[3px] transition-colors duration-150 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:decoration-gray-500">{!! $display !!}</a>

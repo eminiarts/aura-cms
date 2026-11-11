@@ -4,6 +4,6 @@
         <x-slot:icon>
             <x-aura::icon icon="filter" />
         </x-slot>
-        <span @class(['sr-only sm:not-sr-only' => ! ($labelOnPhones ?? false)])>{{ __('Filters') }}</span>
+        <span @class(['aura-label-sm-up' => ! ($labelOnPhones ?? false)])>{{ __('Filters') }}</span>
     </x-aura::button.border>
 </div>
