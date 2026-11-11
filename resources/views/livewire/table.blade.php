@@ -181,17 +181,35 @@
             })
         }
     }">
+        @php
+            // No records at all (not a search or filter that matches nothing): there is nothing to search,
+            // arrange or filter yet, so the toolbar stays away and the empty state holds the one create button.
+            $collectionIsEmpty = $currentView !== 'kanban' && $rows->total() === 0
+                && blank($this->search ?? null) && blank($this->selectedFilter ?? null)
+                && empty(data_get($this->filters ?? [], 'custom'));
+        @endphp
+
         @include($this->settings['views']['header'])
 
         @php
+            $hasToolbar = ! $collectionIsEmpty && ($this->settings['search'] || $this->settings['settings'] || $this->settings['filters']
+                || ($this->settings['bulk_actions'] && $this->bulkActions));
         @endphp
 
-        <div class="mt-4">
+        <div @class(['mt-4' => $hasToolbar])>
 
-            <div class="flex w-full flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            {{-- One toolbar row: search grows, the controls keep their size and end on the content edge.
+                 Phones with a view switch get two rows: the search full width, then the view switch on the
+                 left and the labelled Filters button (and the view's settings as a "more" menu) on the right. --}}
+            @if ($hasToolbar)
+            @php
+                $hasViewSwitch = $model->tableGridView() || ($this->resolvedKanbanConfiguration()['enabled'] ?? false) || $model->tableKanbanView();
+                $twoRowsOnPhones = $hasViewSwitch && ($this->settings['settings'] || $this->settings['filters']);
+            @endphp
+            <div @class(['flex gap-2 items-center w-full', 'max-sm:flex-wrap max-sm:gap-y-3' => $twoRowsOnPhones])>
 
                 @if ($this->settings['search'])
-                    <div class="w-full md:w-64 md:shrink-0">
+                    <div @class(['flex-1 min-w-0 md:max-w-sm', 'max-sm:basis-full' => $twoRowsOnPhones])>
                         <label for="table-search" class="sr-only">{{ __('Search') }}</label>
                         <div class="relative">
                             <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
@@ -203,44 +221,50 @@
                                 </svg>
                             </div>
                             <input type="text" id="table-search"
-                                class="block h-10 w-full py-2 pl-9 pr-3 text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 dark:placeholder:text-gray-500 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"
-                                placeholder="{{ __('Search for items') }}" wire:model.live.debounce="search">
+                                class="block h-9 w-full py-2 pl-9 pr-3 text-base sm:text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 dark:placeholder:text-gray-500 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"
+                                placeholder="{{ __('Search :resources…', ['resources' => Str::lower(__($model->pluralName()))]) }}" wire:model.live.debounce="search">
 
                         </div>
                     </div>
                 @endif
 
-                <div class="flex w-full items-center justify-end space-x-4 md:w-auto">
+                <div @class(['flex gap-2 items-center ml-auto shrink-0', 'max-sm:w-full' => $twoRowsOnPhones])>
 
                     {{-- Columns --}}
                     @if ($this->settings['settings'] || $this->settings['filters'])
-                        <div class="flex space-x-2">
 
+                        <div @class(['max-sm:mr-auto' => $twoRowsOnPhones])>
                             @include('aura::components.table.switch-view')
-
-                            @if ($this->settings['settings'])
-                                @if ($currentView == 'list' && $model->showTableSettings())
-                                    @include('aura::components.table.settings')
-                                @endif
-                            @endif
-
-                            @if ($this->settings['settings'])
-                                @if ($currentView == 'kanban' && $model->showTableSettings())
-                                    @include('aura::components.table.kanban-settings')
-                                @endif
-                            @endif
-
-                            @if ($this->settings['filters'])
-                                @include($this->settings['views']['filter'])
-                            @endif
                         </div>
+
+                        @if ($this->settings['settings'])
+                            @if ($currentView == 'list' && $model->showTableSettings())
+                                @include('aura::components.table.settings')
+                            @endif
+                        @endif
+
+                        {{-- Board settings: a labelled button from sm, the "more" menu at the end of the row on phones. --}}
+                        @if ($this->settings['settings'])
+                            @if ($currentView == 'kanban' && $model->showTableSettings())
+                                <div class="max-sm:order-last">
+                                    @include('aura::components.table.kanban-settings')
+                                </div>
+                            @endif
+                        @endif
+
+                        @if ($this->settings['filters'])
+                            @include($this->settings['views']['filter'], ['labelOnPhones' => $twoRowsOnPhones])
+                        @endif
                     @endif
 
                     @if ($this->settings['bulk_actions'])
                         @include($this->settings['views']['bulk_actions'])
                     @endif
+
+                    @include('aura::components.table.resource-editor-button')
                 </div>
             </div>
+            @endif
 
             <div class="aura-table">
                 @if($this->settings['selectable'])

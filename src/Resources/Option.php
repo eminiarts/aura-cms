@@ -27,6 +27,12 @@ class Option extends Resource
 
     protected $table = 'options';
 
+    // Config rows, not entities: no avatar.
+    public function avatarShape(): ?string
+    {
+        return null;
+    }
+
     public static function byName($name)
     {
         return static::where('name', $name)->first();
