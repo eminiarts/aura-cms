@@ -167,7 +167,7 @@ You can configure these views:
 - `layout` is read by the package's config-driven Blade views, including the dashboard, profile and team views. The default Livewire dashboard and profile routes render `aura::components.layout.app` directly.
 - `login-layout` wraps login, registration, password reset and forgot-password pages.
 - `logo` is rendered inside the login layout.
-- `navigation` names an application view that replaces the admin sidebar for signed-in users, for example `'layouts.sidebar'`. The application layout includes it in place of `<livewire:aura::navigation/>`, as the first child of its horizontal flex row. The view owns its width, scrolling and mobile behaviour, and it bypasses the navigation cache and hooks. `null` keeps Aura's sidebar.
+- `navigation` names an application view that replaces the admin sidebar for signed-in users, for example `'layouts.sidebar'`. The application layout includes it in place of `<livewire:aura::navigation/>`, as the first child of its horizontal flex row. The view owns its width, scrolling and mobile behaviour, and it bypasses the navigation cache and hooks. It also replaces what Aura's sidebar offers besides links: team switching (`PUT` to `aura.current-team.update`), profile and logout (`POST` to `aura.logout`), leaving an impersonation (`impersonate.leave`, inside `@impersonating`), the global search button (`$dispatch('search')`) and a menu toggle on small screens. `null` keeps Aura's sidebar.
 
 Dashboard, index, detail, create and edit views do not have configuration keys. To change them, publish and override the relevant Blade view.
 

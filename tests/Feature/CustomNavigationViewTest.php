@@ -33,7 +33,9 @@ test('a flush layout renders its slot without padding and version line', functio
 
     $flush = $render(true);
     expect($flush)->toContain('data-test="page"')
-        ->not->toContain('<div class="p-5 md:p-8">');
+        ->not->toContain('<div class="p-5 md:p-8">')
+        ->not->toContain('https://aura-cms.com/');
 
-    expect($render(false))->toContain('<div class="p-5 md:p-8">');
+    expect($render(false))->toContain('<div class="p-5 md:p-8">')
+        ->toContain('https://aura-cms.com/');
 });
