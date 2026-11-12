@@ -1,6 +1,10 @@
 @props([
     'header' => null,
     'sidebar' => null,
+    // A page that draws its own frame (top bar, side panels) passes flush: true, e.g.
+    // ->layout('aura::components.layout.app', ['flush' => true]). Its slot then fills the
+    // content area without padding and without the version line.
+    'flush' => false,
 ])
 
 <!DOCTYPE html>
@@ -39,7 +43,12 @@
 
 
     @if(auth()->check())
-        <livewire:aura::navigation/>
+        {{-- config aura.views.navigation: an application view that replaces Aura's sidebar. --}}
+        @if (config('aura.views.navigation'))
+            @include(config('aura.views.navigation'))
+        @else
+            <livewire:aura::navigation/>
+        @endif
     @else
         <x-aura::navigation.guest/>
     @endif
@@ -68,14 +77,20 @@
         @endif
 
 
-        <div class="overflow-y-auto flex-1">
-            <div class="p-5 md:p-8">
+        @if ($flush)
+            <div class="flex flex-col flex-1" style="min-height: 0">
                 {{ $slot }}
             </div>
-            <div class="flex justify-end px-8 pb-8">
-                @include('aura::components.layout.aura-version')
+        @else
+            <div class="overflow-y-auto flex-1">
+                <div class="p-5 md:p-8">
+                    {{ $slot }}
+                </div>
+                <div class="flex justify-end px-8 pb-8">
+                    @include('aura::components.layout.aura-version')
+                </div>
             </div>
-        </div>
+        @endif
     </div>
 
     @if($sidebar)
