@@ -669,7 +669,11 @@ class Settings extends Component
         $this->form['fields'] = $this->inputFields()->mapWithKeys(function ($field) use ($defaults, $stored) {
             $slug = $field['slug'];
 
-            return [$slug => $stored[$slug] ?? $defaults[$slug] ?? ''];
+            // Unsaved palette shades start from config('aura.theme'): the page previews the form's
+            // values, and an empty shade renders as black.
+            $configured = preg_match('/^(primary|gray)-\d+$/', $slug) === 1 ? config("aura.theme.{$slug}") : null;
+
+            return [$slug => $stored[$slug] ?? $configured ?? $defaults[$slug] ?? ''];
         })->toArray();
 
         if ($this->page === 'general') {

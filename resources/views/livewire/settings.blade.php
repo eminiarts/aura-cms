@@ -125,30 +125,29 @@
     @endif
 
 
-    @foreach($this->fieldsForView as $key => $field)
-        <style>
-            #resource-field-{{ optional($field)['slug'] }}-wrapper {
-                width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
-                @if(optional($field)['type'] === 'Aura\\Base\\Fields\\Panel')
-                    margin-bottom: var(--aura-layout-gap, 1rem);
-                @elseif(optional($field)['type'] === 'Aura\\Base\\Fields\\Group')
-                    margin-bottom: var(--aura-section-gap, 1rem);
-                @endif
-            }
+    {{-- Each field view renders its own #resource-field-…-wrapper with its width; a second wrapper here would halve a 50% panel again. --}}
+    <div class="flex flex-wrap items-start -mx-2">
+        @foreach($this->fieldsForView as $key => $field)
+            {{-- Flex items do not collapse margins, so the gap replaces the card's own mb-8 instead of adding to it. --}}
+            @if(optional($field)['type'] === 'Aura\\Base\\Fields\\Panel')
+                <style>
+                    #resource-field-{{ optional($field)['slug'] }}-wrapper > .aura-card {
+                        margin-bottom: var(--aura-layout-gap, 1rem);
+                    }
+                </style>
+            @elseif(optional($field)['type'] === 'Aura\\Base\\Fields\\Group')
+                <style>
+                    #resource-field-{{ Str::slug(optional($field)['slug']) }}-wrapper {
+                        margin-bottom: var(--aura-section-gap, 1rem);
+                    }
+                </style>
+            @endif
 
-            @media screen and (max-width: 768px) {
-                #resource-field-{{ optional($field)['slug'] }}-wrapper {
-                    width: 100%;
-                }
-            }
-        </style>
-
-        @checkCondition($model, $field, $form)
-            <div wire:key="resource-field-{{ $key }}"
-            id="resource-field-{{ optional($field)['slug'] }}-wrapper">
-            <x-dynamic-component :component="$field['field']->edit()" mode="edit" :field="$field" :form="$form" />
-            </div>
-        @endcheckCondition
-    @endforeach
+            @checkCondition($model, $field, $form)
+                <x-dynamic-component :component="$field['field']->edit()" mode="edit" :field="$field" :form="$form"
+                    wire:key="resource-field-{{ $key }}" />
+            @endcheckCondition
+        @endforeach
+    </div>
 
 </div>

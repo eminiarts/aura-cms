@@ -81,6 +81,17 @@ test('saved appearance choices persist', function () {
         ->and($settings['corner-radius'])->toBe('square');
 });
 
+test('unsaved custom palette shades start from the configured theme', function () {
+    config([
+        'aura.theme.gray-color-palette' => 'custom',
+        'aura.theme.gray-900' => '#07080c',
+    ]);
+
+    Livewire::test(Settings::class)
+        ->assertSet('form.fields.gray-900', '#07080c')
+        ->assertSee('--gray-900: 7 8 12;');
+});
+
 test('Default Team Settings are created', function () {
     if (! Schema::hasTable('teams')) {
         $this->markTestSkipped('Team tests require the teams schema.');
