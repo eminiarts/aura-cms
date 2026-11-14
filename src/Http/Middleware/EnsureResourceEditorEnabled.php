@@ -5,6 +5,7 @@ namespace Aura\Base\Http\Middleware;
 use Aura\Base\Resources\User;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureResourceEditorEnabled
@@ -16,9 +17,7 @@ class EnsureResourceEditorEnabled
             404
         );
 
-        $user = $request->user();
-
-        abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
+        abort_unless(Gate::allows(User::GLOBAL_ADMIN_GATE), 403);
 
         return $next($request);
     }

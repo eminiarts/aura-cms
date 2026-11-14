@@ -80,8 +80,7 @@ class Edit extends Component
         if ($slug) {
             $this->slug = $slug;
         } elseif (! $this->slug) {
-            $routeName = request()->route()->getName();
-            $this->slug = explode('.', $routeName)[1] ?? null;
+            $this->slug = request()->route()?->parameter('slug');
         }
 
         $this->model = Aura::findResourceBySlug($this->slug)->find($id);
@@ -140,6 +139,10 @@ class Edit extends Component
     #[On('saveModel')]
     public function save()
     {
+        // Mount-time authorization can go stale while the editor is open
+        // (e.g. the record became a Global Admin account), so check again.
+        $this->authorize('update', $this->model);
+
         $this->validate();
 
         // `form` is client-mutable, so the payload is rebuilt from the

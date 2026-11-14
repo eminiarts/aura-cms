@@ -41,8 +41,7 @@ class Create extends Component
         $this->slug = $slug;
 
         if (! $this->slug) {
-            $routeName = request()->route()->getName();
-            $this->slug = explode('.', $routeName)[1] ?? null;
+            $this->slug = request()->route()?->parameter('slug');
         }
 
         $this->model = Aura::findResourceBySlug($this->slug);
@@ -174,7 +173,7 @@ class Create extends Component
                 $this->dispatch('resourceCreated', ['for' => $this->params['for'], 'resource' => $model, 'title' => $model->title()]);
             }
         } else {
-            return redirect()->route('aura.'.$this->slug.'.edit', $model->id);
+            return redirect()->route(Aura::resourceRouteName($this->slug, 'edit'), $model->id);
         }
     }
 

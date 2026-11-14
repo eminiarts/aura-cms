@@ -53,6 +53,8 @@ class Resource extends Model implements DefinesFields, TableResource
     use SaveFieldAttributes;
     use SaveMetaFields;
 
+    public static array $areas = ['team'];
+
     public $fieldsAttributeCache;
 
     protected $appends = ['fields'];

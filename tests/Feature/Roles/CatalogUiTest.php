@@ -67,10 +67,10 @@ function catalogTeamRole(int $teamId, string $slug, array $attributes = []): Rol
     ], $attributes));
 }
 
-/** Promote an existing team Super Admin to Global Admin (trusted, quiet write). */
+/** Promote an existing team Super Admin to Global Admin (config fixture). */
 function promoteToGlobalAdmin(User $user): User
 {
-    $user->forceFill(['global_admin' => true])->saveQuietly();
+    config(['aura.global_admin.emails' => [...config('aura.global_admin.emails', []), $user->email]]);
 
     return $user->refresh();
 }

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Global Area: Global Admin work (Teams, all Users, Create Resource, Resource Editor, Plugins) lives under `/{aura.path}/global` (`aura.global_admin.path`) with its own sidebar. The URL decides the area; there is no session mode. Resources opt in with `public static array $areas = ['team', 'global']`, navigation items with an `'area'` key.
 - Per-resource page component hooks (`indexComponent()`, `createComponent()`, `editComponent()`, `viewComponent()`): a resource can swap in a custom Livewire component for any of its admin pages while keeping the default URI and `aura.{slug}.*` route name, so all generated links keep working.
 - `aura:customize` command: customize a resource page by copying its Blade view into `resources/views/aura/{slug}/`, generating a custom Livewire component in `app/Livewire/`, or both (`--mode=view|component|full`). Wires the resource to the generated files automatically and scaffolds an app-level subclass for package resources (User, Team, …).
 
@@ -19,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Upgrade:** Global Admins are defined in config, not the database. Set `AURA_GLOBAL_ADMINS` (comma-separated emails) before upgrading, or existing Global Admins lose instance access. `aura:user --global-admin` writes it to `.env`. Host apps may still override the `AuraGlobalAdmin` gate.
+- Inside a team, the Users index lists current-team members for everyone, including Global Admins; all users are under the Global Area. The team switcher lists Memberships only; Global Admins enter other teams with the Team "Visit" action.
+- Create Resource, the Resource Editor and Plugins require a Global Admin instead of a team Super Admin. Routes renamed: `aura.plugins` → `aura.global.plugins`, `aura.resource.editor` → `aura.global.resource.editor`.
 - The `standard` sidebar size renders at its intended width (18rem, 36px items). Every size used to render compact, so default installs get a wider sidebar. Set `sidebar-size` to `compact` to keep the previous look.
 - `sidebar-darkmode-type` applies whenever the admin renders dark, including forced dark mode. Installs that force dark mode with a light or primary sidebar now get the configured sidebar dark style.
 
@@ -36,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- The `users.global_admin` flag: no longer read or created by new installs (existing columns stay, unused), the `GlobalAdmin` field, and `User::GLOBAL_ADMIN_TEAMS_CACHE_KEY`.
 - The broken `aura:customize-component` command (superseded by `aura:customize`; it never copied views and generated routes outside the admin middleware group).
 - Unread config keys: `features.last_visited_pages`, `features.resource_view`, `features.resource_edit`, `views.dashboard|index|view|create|edit|navigation`, `reporting.projection.enabled`, `aura-settings.paths.*.register`.
 - `Attachment::import()`, the `HasFields` trait, `Resource::attachment()`/`revision()`, `MetaPolicy`/`TaxonomyPolicy`, the `SyncDatabase` listener, the `password_resets` table and the `ApplyLayoutFields` pipeline step.

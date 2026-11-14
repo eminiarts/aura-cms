@@ -11,7 +11,7 @@
         @include('aura::livewire.resource.actions')
 
         @can('view', $model)
-            @if(Route::has('aura.' . $model->getSlug() . '.view'))
+            @if(Route::has(\Aura\Base\Facades\Aura::resourceRouteName($model->getSlug(), 'view')))
                 <a href="{{ $model->viewUrl() }}" class="text-gray-500 hover:text-gray-700">
                     <x-aura::button.transparent>
                         {{-- <x-aura::icon.view class="w-5 h-5 mr-2"/> --}}

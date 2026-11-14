@@ -6,6 +6,7 @@ use Aura\Base\Traits\FieldsOnComponent;
 use Aura\Base\Traits\InputFields;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 
 class CreateResource extends Component
@@ -18,6 +19,11 @@ class CreateResource extends Component
             'name' => '',
         ],
     ];
+
+    public function boot(): void
+    {
+        Gate::authorize('AuraGlobalAdmin');
+    }
 
     public function closemodal()
     {
@@ -46,7 +52,7 @@ class CreateResource extends Component
     {
         abort_if(app()->environment('production'), 403);
 
-        abort_unless(auth()->user()->isSuperAdmin(), 403);
+        abort_unless(Gate::allows('AuraGlobalAdmin'), 403);
     }
 
     public function render()
@@ -63,7 +69,7 @@ class CreateResource extends Component
 
     public function save()
     {
-        abort_unless(auth()->user()->isSuperAdmin(), 403);
+        abort_unless(Gate::allows('AuraGlobalAdmin'), 403);
 
         $name = $this->form['fields']['name'];
         $slug = str($name)->slug();
@@ -81,7 +87,7 @@ class CreateResource extends Component
         $this->dispatch('closeModal');
 
         // redirect to route
-        return redirect()->route('aura.resource.editor', ['slug' => $slug]);
+        return redirect()->route('aura.global.resource.editor', ['slug' => $slug]);
 
         // Route::get('/resources/{slug}/editor', ResourceEditor::class)->name('resource.editor');
     }

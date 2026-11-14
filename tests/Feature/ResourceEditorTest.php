@@ -79,7 +79,7 @@ class ResourceEditorTestModel extends Resource
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
-    $this->actingAs($this->user = createSuperAdmin());
+    $this->actingAs($this->user = createGlobalAdmin());
 
     $appResource = new ResourceEditorTestModel;
 
@@ -203,25 +203,25 @@ it('can save the resource component', function () {
         ->assertSet('resource', $resource);
 });
 
-it('rejects non-super-admin users on the editor route', function () {
+it('rejects non-Global-Admin users on the editor route', function () {
     $this->actingAs(createAdmin());
 
-    $this->get(route('aura.resource.editor', ['slug' => 'model']))
+    $this->get(route('aura.global.resource.editor', ['slug' => 'model']))
         ->assertStatus(403);
 });
 
-it('rejects non-super-admin users mounting the editor component', function () {
+it('rejects non-Global-Admin users mounting the editor component', function () {
     $this->actingAs(createAdmin());
 
     Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])
         ->assertStatus(403);
 });
 
-it('allows super admins on the editor route gate', function () {
-    // The super admin from beforeEach passes the middleware; the underlying
+it('allows Global Admins on the editor route gate', function () {
+    // The Global Admin from beforeEach passes the middleware; the underlying
     // page needs a registered app resource, so only assert we get past the
     // authorization gates (not 403/404 from the middleware).
-    $response = $this->get(route('aura.resource.editor', ['slug' => 'model']));
+    $response = $this->get(route('aura.global.resource.editor', ['slug' => 'model']));
 
     expect($response->status())->not->toBeIn([403, 404]);
 });

@@ -3,6 +3,7 @@
 namespace Aura\Base\Fields;
 
 use Aura\Base\Contracts\PreloadsTableDisplay;
+use Aura\Base\Facades\Aura;
 use Aura\Base\Models\Meta;
 use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Collection;
@@ -107,7 +108,7 @@ class BelongsTo extends Field implements PreloadsTableDisplay
 
             // The related title is database-backed and this producer emits
             // markup that view-value renders raw, so escape it here.
-            return "<a class='font-semibold' href='".e(route('aura.'.$slug.'.edit', $value))."'>".e(optional($related)->title()).'</a>';
+            return "<a class='font-semibold' href='".e(route(Aura::resourceRouteName($slug, 'edit'), $value))."'>".e(optional($related)->title()).'</a>';
         }
 
         return $value;

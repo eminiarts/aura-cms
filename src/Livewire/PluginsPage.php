@@ -2,11 +2,18 @@
 
 namespace Aura\Base\Livewire;
 
+use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 
 class PluginsPage extends Component
 {
     public $installedPackages = [];
+
+    // boot() runs on mount and on every update, so it guards all actions.
+    public function boot(): void
+    {
+        Gate::authorize('AuraGlobalAdmin');
+    }
 
     public function getInstalledPackages()
     {
@@ -73,8 +80,6 @@ class PluginsPage extends Component
 
     public function mount()
     {
-        abort_unless(auth()->user()->isSuperAdmin(), 403);
-
         $this->installedPackages = $this->getInstalledPackages();
     }
 

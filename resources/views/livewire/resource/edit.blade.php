@@ -7,8 +7,8 @@
         <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
                 iconClass="text-gray-500 w-6 h-6 mr-0" />
-            @if (Route::has('aura.' . $model->getSlug() . '.index'))
-                <x-aura::breadcrumbs.li :href="route('aura.' . $model->getSlug() . '.index')" :title="__($model->getPluralName())" />
+            @if (Route::has(\Aura\Base\Facades\Aura::resourceRouteName($model->getSlug(), 'index')))
+                <x-aura::breadcrumbs.li :href="route(\Aura\Base\Facades\Aura::resourceRouteName($model->getSlug(), 'index'))" :title="__($model->getPluralName())" />
             @else
                 <x-aura::breadcrumbs.li :title="__($model->getPluralName())" />
             @endif

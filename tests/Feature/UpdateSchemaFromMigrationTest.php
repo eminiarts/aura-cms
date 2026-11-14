@@ -22,7 +22,7 @@ beforeEach(function () {
 
     Aura::clear();
 
-    $this->user = createSuperAdmin();
+    $this->user = createGlobalAdmin();
 
     $this->actingAs($this->user);
 

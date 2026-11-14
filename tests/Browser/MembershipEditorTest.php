@@ -39,7 +39,7 @@ test('a Global Admin views both Memberships and changes, attaches, and detaches 
     $ga = browserGlobalAdmin('ga-password');
     $this->actingAs($ga);
 
-    $page = visit('/admin/user/'.$target->id);
+    $page = visit('/admin/global/user/'.$target->id);
 
     // Open the Teams tab; both Memberships render with their resolved role names.
     $page->click('[role="tab"]:has-text("Teams")')->wait(1);

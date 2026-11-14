@@ -7,6 +7,13 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
 beforeEach(function () {
+    $directory = storage_path('command-env');
+    if (! is_dir($directory)) {
+        mkdir($directory, 0755, true);
+    }
+    app()->useEnvironmentPath($directory);
+    file_put_contents(app()->environmentFilePath(), '');
+
     config(['aura.teams' => false]);
 
     $this->artisan('migrate:fresh');
@@ -128,7 +135,7 @@ describe('aura:user command without teams', function () {
         $user = User::where('email', 'ops@example.com')->first();
 
         expect($user)->not->toBeNull()
-            ->and($user->global_admin)->toBeTrue()
+            ->and($user->isAuraGlobalAdmin())->toBeTrue()
             // The package gate resolves the flag even in Teams-off mode.
             ->and(Gate::forUser($user)->allows('AuraGlobalAdmin'))->toBeTrue();
 
@@ -148,7 +155,7 @@ describe('aura:user command without teams', function () {
 
         $user = User::where('email', 'plain@example.com')->first();
 
-        expect($user->global_admin)->toBeFalse();
+        expect($user->isAuraGlobalAdmin())->toBeFalse();
     });
 
     it('enforces unique role slug constraint without teams', function () {

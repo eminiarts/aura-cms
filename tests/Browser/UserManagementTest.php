@@ -4,7 +4,6 @@ use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 
 require_once __DIR__.'/Support/helpers.php';
 
@@ -14,9 +13,8 @@ require_once __DIR__.'/Support/helpers.php';
 |--------------------------------------------------------------------------
 |
 | Real Chromium against the Testbench app: an admin creates a user with a role
-| through the Roles field (AdvancedSelect) and that user logs in; a Global Admin
-| grants the flag through the user form and then sees users and teams across the
-| whole instance where a plain team Super Admin does not.
+| through the Roles field (AdvancedSelect) and that user logs in; a configured
+| Global Admin sees users and teams across the whole instance in the global area.
 |
 */
 
@@ -60,46 +58,6 @@ test('a team Super Admin creates a user with a role through the form, and that u
     $login->assertPathIs('/admin');
 });
 
-test('a Global Admin grants the flag, and the newly-flagged user then sees across all teams', function () {
-    $ga = browserGlobalAdmin('ga-password');
-    $team = $ga->currentTeam;
-
-    // A user whose only Membership is in a foreign team the target is not part of —
-    // invisible to a plain team Super Admin, visible to a Global Admin.
-    $foreign = foreignTeam();
-    $foreignMember = soleMemberOf($foreign);
-    $foreignMember->forceFill(['email' => 'foreign-seen@example.com'])->save();
-
-    // The target starts as a team Super Admin in the GA's team (via the global
-    // admin role) but is NOT yet a Global Admin.
-    $target = User::factory()->create(['email' => 'promote-me@example.com', 'current_team_id' => $team->id]);
-    browserAttachMembership($target, $team->id, globalAdminRole()->id);
-    $target->refresh();
-
-    expect($target->fresh()->global_admin)->toBeFalse();
-
-    $page = visit('/admin/user/'.$target->id.'/edit');
-
-    $page->assertSee('Global Admin');
-
-    // The Global Admin toggle is the only Boolean on the user form; flip it on.
-    $page->click('#resource-field-global-admin-wrapper [x-ref="toggle"]')->wait(1);
-
-    $page->press('Save')->wait(3);
-
-    expect($target->fresh()->global_admin)->toBeTrue();
-
-    // Causal chain, one continuous journey: log in AS the newly-flagged user and
-    // confirm the grant took effect — their Users index is now unscoped and lists
-    // the foreign-team member a plain team Super Admin could never see.
-    Auth::logout();
-    $this->actingAs($target->fresh());
-
-    $promotedIndex = visit('/admin/user');
-
-    $promotedIndex->assertSee('foreign-seen@example.com');
-});
-
 test('a Global Admin sees users across all teams where a plain Super Admin does not', function () {
     // A user whose ONLY Membership is in a foreign team the actor is not part of.
     $foreign = foreignTeam();
@@ -119,52 +77,19 @@ test('a Global Admin sees users across all teams where a plain Super Admin does 
     $ga = browserGlobalAdmin('ga-password');
     $this->actingAs($ga);
 
-    $gaIndex = visit('/admin/user');
+    $gaIndex = visit('/admin/global/user');
 
     $gaIndex->assertSee('foreign-only@example.com');
 });
 
-test('a Global Admin sees a team they are not a member of in the team switcher', function () {
+test('a Global Admin sees foreign teams in the global Teams index', function () {
     $ga = browserGlobalAdmin('ga-password');
     $this->actingAs($ga);
-
-    // createQuietly skips Team model events (and the shared switcher cache
-    // invalidation). Clear the cache so getTeams() rebuilds with this row.
     Team::factory()->createQuietly([
         'name' => 'Distant Tenant',
         'user_id' => User::factory()->create()->id,
     ]);
-    Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
 
-    expect($ga->fresh()->isAuraGlobalAdmin())->toBeTrue()
-        ->and($ga->fresh()->getTeams()->pluck('name')->all())->toContain('Distant Tenant');
-
-    $page = visit('/admin');
-
-    // Wait for package JS (window.tippy) before opening the switcher popover.
-    // Playwright evaluate resolves returned Promises.
-    $page->script(<<<'JS'
-        new Promise((resolve, reject) => {
-            let n = 0;
-            const tick = () => {
-                if (typeof window.tippy === 'function') {
-                    resolve(true);
-                    return;
-                }
-                if (n++ > 100) {
-                    reject(new Error('window.tippy never became available'));
-                    return;
-                }
-                setTimeout(tick, 20);
-            };
-            tick();
-        })
-    JS);
-
-    $page->click('.aura-sidebar-team-switcher')->wait(1);
-
-    // Visitation: a Global Admin can enter any team, so the switcher lists a team
-    // they hold no Membership in.
-    $page->assertSee('Switch Teams')
-        ->assertSee('Distant Tenant');
+    expect($ga->getTeams()->pluck('name')->all())->not->toContain('Distant Tenant');
+    visit('/admin/global/team')->assertSee('Distant Tenant');
 });

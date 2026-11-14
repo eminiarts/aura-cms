@@ -84,10 +84,10 @@ Use the following keys in the feature settings. Aura ignores additional keys.
 | `global_search` | `true` | The global-search component, its navigation button and the search UI. |
 | `bookmarks` | `true` | The bookmark button. The button also requires `global_search`. |
 | `notifications` | `true` | The notification component and its navigation button. |
-| `plugins` | `true` | The Plugins quick action on the dashboard. The `/admin/plugins` route still registers when this is `false`. |
+| `plugins` | `true` | The Plugins navigation item in the Global Area and the Plugins quick action for Global Admins. The `/admin/global/plugins` route still registers when this is `false` and requires a Global Admin. |
 | `settings` | `true` | The Settings navigation item and component. The component returns 404 when disabled and requires a Super Admin. |
 | `profile` | `true` | The profile navigation item and component. The component rejects access when disabled. |
-| `create_resource` | `true` | The Create Resource navigation item and dashboard quick actions. The navigation item is restricted to Super Admins, and the modal rejects other users. |
+| `create_resource` | `true` | The Create Resource navigation item in the Global Area and the dashboard quick actions. Both are shown to Global Admins only, and the modal rejects other users. |
 | `resource_editor` | `config('app.env') == 'local'` | The Resource Editor. The route and component require the `local` or `testing` environment, this flag and a Super Admin. Vendor resources cannot be edited. |
 | `custom_tables_for_resources` | `false` | The Resource Editor migration listener. See [Custom tables](#custom-tables). |
 | `legacy_fields_append` | `true` | Whether the `fields` accessor is appended during resource array and JSON serialization. Set it to `false` and call `$resource->append('fields')` only where serialized field values are needed. |

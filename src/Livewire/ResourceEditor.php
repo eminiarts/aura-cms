@@ -8,6 +8,7 @@ use Aura\Base\Traits\HasActions;
 use Aura\Base\Traits\SaveFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -141,9 +142,7 @@ class ResourceEditor extends Component
             404
         );
 
-        $user = auth()->user();
-
-        abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
+        abort_unless(Gate::allows(User::GLOBAL_ADMIN_GATE), 403);
     }
 
     public function checkAuthorization()

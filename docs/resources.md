@@ -425,7 +425,7 @@ public static function viewComponent(): string
 
 Use `php artisan aura:customize Article view --mode=full` to generate a component and view. The command accepts page types index, create, edit, and view, and modes full, view, and component. To change only markup, override `indexView()`, `createView()`, `editView()`, `viewView()`, `editHeaderView()`, `viewHeaderView()`, `rowView()`, or `tableComponentView()`.
 
-The Resource Editor route is `aura.resource.editor`. It is available only in the local or testing environment when `aura.features.resource_editor` is enabled, and it requires a Super Admin. It is not a production resource-management route.
+The Resource Editor route is `aura.global.resource.editor`. It is available only in the local or testing environment when `aura.features.resource_editor` is enabled, and it requires a Global Admin. It is not a production resource-management route.
 
 <a id="navigation"></a>
 ## Navigation and icons

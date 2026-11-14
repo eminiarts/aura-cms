@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Commands;
 
+use Aura\Base\Support\EnvironmentFile;
 use Illuminate\Console\Command;
 
 use function Laravel\Prompts\confirm;
@@ -363,29 +364,9 @@ class InstallConfigCommand extends Command
 
     private function setEnvValue(string $key, string $value): void
     {
-        $envPath = app()->environmentFilePath();
-
-        if (! file_exists($envPath)) {
+        if (! EnvironmentFile::set($key, $value)) {
             $this->warn("No .env file found, could not set {$key}={$value}.");
-
-            return;
         }
-
-        $env = file_get_contents($envPath);
-
-        $pattern = '/^'.preg_quote($key, '/').'=.*$/m';
-        $replacement = $key.'='.$value;
-
-        if (preg_match($pattern, $env)) {
-            // Replace the existing value, leaving every other line untouched.
-            // Every occurrence is rewritten so a duplicated key cannot keep a stale value.
-            $env = preg_replace($pattern, $replacement, $env);
-        } else {
-            $env = rtrim($env, "\r\n");
-            $env = ($env === '' ? '' : $env.PHP_EOL).$replacement.PHP_EOL;
-        }
-
-        file_put_contents($envPath, $env);
     }
 
     private function unquote(string $token): string

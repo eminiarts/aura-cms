@@ -165,7 +165,7 @@ class Table extends Component
 
             $route = $action === 'view' ? 'view' : 'edit';
 
-            return redirect()->route('aura.'.$this->model()->getSlug().'.'.$route, ['id' => $record->getKey()]);
+            return redirect()->route(Aura::resourceRouteName($this->model()->getSlug(), $route), ['id' => $record->getKey()]);
         }
 
         $record = app(TableMutationAuthorizer::class)->authorizeRow(
@@ -200,7 +200,7 @@ class Table extends Component
         }
 
         if ($this->parent) {
-            $name = 'aura.'.$this->model()->getSlug().'.create';
+            $name = Aura::resourceRouteName($this->model()->getSlug(), 'create');
 
             // Ternary instead of an early return: Pint's simplified_null_return
             // and PHPStan's return.empty disagree about `return null;` here.

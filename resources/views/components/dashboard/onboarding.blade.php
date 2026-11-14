@@ -19,7 +19,7 @@
         </code>
 
         <div class="flex gap-3 items-center mt-6">
-            @if (config('aura.features.create_resource'))
+            @if (config('aura.features.create_resource') && auth()->user()->isAuraGlobalAdmin())
                 <button onclick="Livewire.dispatch('openModal', { component: 'aura::create-resource' })"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg shadow-sm transition bg-primary-600 hover:bg-primary-500">
                     {{ __('Create Resource') }}

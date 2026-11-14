@@ -19,7 +19,7 @@
                 <div class="flex-1 space-y-1">
                     <div class="flex items-center justify-between">
                         @if($notificationResource && ($notification->data['id'] ?? false))
-                        <a href="{{ route('aura.' . $notification->data['type'] . '.edit', ['id' => $notification->data['id']]) }}" class="hover:underline"><h3 class="text-sm font-medium">{{ $notification->data['message'] ?? '' }}</h3></a>
+                        <a href="{{ route(\Aura\Base\Facades\Aura::resourceRouteName($notificationResource->getSlug(), 'edit'), ['id' => $notification->data['id']]) }}" class="hover:underline"><h3 class="text-sm font-medium">{{ $notification->data['message'] ?? '' }}</h3></a>
                         @else
                         <h3 class="text-sm font-medium">{{ $notification->data['title'] ?? ($notification->data['message'] ?? $notification->type) }}</h3>
                         @endif

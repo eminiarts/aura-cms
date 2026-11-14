@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\File;
 use function Pest\Livewire\livewire;
 
 beforeEach(function () {
-    $this->actingAs($this->user = createSuperAdmin());
+    $this->actingAs($this->user = createGlobalAdmin());
 });
 
 test('regular user cannot access create resource component', function () {
@@ -20,7 +20,7 @@ test('regular user cannot access create resource component', function () {
         ->assertForbidden();
 });
 
-test('super admin can access create resource component', function () {
+test('global admin can access create resource component', function () {
     livewire(CreateResource::class)
         ->assertOk();
 });

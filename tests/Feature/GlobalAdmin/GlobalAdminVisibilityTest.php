@@ -47,18 +47,14 @@ describe('Global Admin Users index sees every team', function () {
         $ga = createGlobalAdmin();
         actAsWithCurrentTeam($ga, $this->currentTeam);
 
-        // The unpaginated query the table runs — robust to page size/ordering.
-        $ids = livewire(Table::class, ['query' => null, 'model' => new User])
-            ->instance()->rowsQuery()->pluck('id');
-
-        expect($ids)->toContain($this->otherUser->id);
+        $this->get(route('aura.global.user.index'))->assertOk()->assertSee($this->otherUser->email);
     });
 
     it('serves the Users index to a Global Admin over HTTP', function () {
         $ga = createGlobalAdmin();
         actAsWithCurrentTeam($ga, $this->currentTeam);
 
-        $this->get(route('aura.user.index'))
+        $this->get(route('aura.global.user.index'))
             ->assertOk()
             ->assertSeeLivewire(Table::class);
     });
@@ -93,14 +89,13 @@ describe('Global Admin sees and can manage all teams', function () {
         $this->teamC = Team::factory()->createQuietly(['user_id' => User::factory()->create()->id]);
     });
 
-    it('offers every team to a Global Admin through getTeams (switcher source)', function () {
+    it('offers a Global Admin only Membership teams through getTeams', function () {
         $ga = createGlobalAdmin();
         $this->actingAs($ga);
-        Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
 
         $ids = $ga->getTeams()->pluck('id');
 
-        expect($ids)->toContain($this->teamB->id)->toContain($this->teamC->id);
+        expect($ids)->not->toContain($this->teamB->id)->not->toContain($this->teamC->id);
     });
 
     it('offers a non-Global-Admin only their own teams through getTeams', function () {
@@ -124,20 +119,6 @@ describe('Global Admin sees and can manage all teams', function () {
         expect($ids)->toContain($this->teamB->id)->toContain($this->teamC->id);
     });
 
-    it('reflects a newly created team in the Global Admin switcher cache immediately', function () {
-        $ga = createGlobalAdmin();
-        $this->actingAs($ga);
-
-        // Prime the shared cache.
-        $ga->getTeams();
-        expect(Cache::has(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY))->toBeTrue();
-
-        // A real create fires Team::created, which invalidates the shared cache.
-        $newTeam = Team::create(['name' => 'Fresh Tenant']);
-        expect(Cache::has(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY))->toBeFalse();
-
-        expect($ga->getTeams()->pluck('id'))->toContain($newTeam->id);
-    });
 });
 
 describe('Teams-off mode', function () {
@@ -147,7 +128,7 @@ describe('Teams-off mode', function () {
         }
     });
 
-    it('keeps the flag readable while team surfaces no-op', function () {
+    it('keeps configured Global Admin status while team surfaces no-op', function () {
         $ga = createGlobalAdmin();
         $this->actingAs($ga);
 

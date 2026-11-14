@@ -532,7 +532,7 @@ Use `hasConfigFile()` for package-owned settings. Use Aura's `config/aura.php` a
 
 Aura does not scan `plugins/` and does not discover a provider from a directory name. The local generator updates the host Composer autoload map and can add a provider to `config/app.php`. A separately installed Composer package can use Laravel package discovery through its own `extra.laravel.providers` metadata.
 
-Super admins can view installed package information on the Plugins page. Its URL is `/admin/plugins` by default, or `/{aura-path}/plugins` if you changed the admin prefix. The route name is `aura.plugins`.
+Global Admins can view installed package information on the Plugins page in the Global Area. Its URL is `/admin/global/plugins` by default, or `/{aura-path}/{global-path}/plugins` if you changed `aura.path` or `aura.global_admin.path`. The route name is `aura.global.plugins`.
 
 The page reads the application's Composer file and lockfile, along with each installed package's Composer file. It shows the package name, locked version, description, and keywords. It does not install or update packages, or check Packagist for newer versions.
 

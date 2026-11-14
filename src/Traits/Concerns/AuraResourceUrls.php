@@ -2,13 +2,14 @@
 
 namespace Aura\Base\Traits\Concerns;
 
+use Aura\Base\Facades\Aura;
 use Illuminate\Support\Facades\Route;
 
 trait AuraResourceUrls
 {
     public function createUrl()
     {
-        $name = 'aura.'.$this->getSlug().'.create';
+        $name = Aura::resourceRouteName($this->getSlug(), 'create');
 
         if (! Route::has($name)) {
             return;
@@ -23,7 +24,7 @@ trait AuraResourceUrls
             return;
         }
 
-        $name = 'aura.'.$this->getSlug().'.edit';
+        $name = Aura::resourceRouteName($this->getSlug(), 'edit');
 
         if (! Route::has($name)) {
             return;
@@ -34,12 +35,12 @@ trait AuraResourceUrls
 
     public function getIndexRoute()
     {
-        return route('aura.'.$this->getSlug().'.index');
+        return route(Aura::resourceRouteName($this->getSlug(), 'index'));
     }
 
     public function indexUrl()
     {
-        $name = 'aura.'.$this->getSlug().'.index';
+        $name = Aura::resourceRouteName($this->getSlug(), 'index');
 
         if (! Route::has($name)) {
             return;
@@ -54,7 +55,7 @@ trait AuraResourceUrls
             return;
         }
 
-        $name = 'aura.'.$this->getSlug().'.view';
+        $name = Aura::resourceRouteName($this->getSlug(), 'view');
 
         if (! Route::has($name)) {
             return;

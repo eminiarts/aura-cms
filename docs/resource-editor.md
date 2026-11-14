@@ -22,10 +22,10 @@ Aura checks the resource's class name to decide whether it can be edited. Built-
 The route is:
 
 ```text
-/{aura.path}/resources/{slug}/editor
+/{aura.path}/global/resources/{slug}/editor
 ```
 
-The default admin path is `admin`, so the usual URL is `/admin/resources/{slug}/editor`. You can change the path through `aura.path` or link to the named route, `aura.resource.editor`.
+The default admin path is `admin`, so the usual URL is `/admin/global/resources/{slug}/editor`. It lives in the Global Area and requires a Global Admin. You can change the path through `aura.path` and `aura.global_admin.path`, or link to the named route, `aura.global.resource.editor`.
 
 The route uses the `aura-admin` middleware group, which includes the web and authentication middleware by default. Customise this group in `config/aura-settings.php`.
 
@@ -198,7 +198,7 @@ Review the generated migration and command result. Use an application migration 
 
 1. Commit or otherwise save the resource class before opening the editor.
 2. Enable `aura.features.resource_editor` in a local environment if it is disabled.
-3. Open `/admin/resources/{slug}/editor`, or use the configured `aura.path`.
+3. Open `/admin/global/resources/{slug}/editor`, or use the configured `aura.path`.
 4. Add or edit fields, then save each field. Use the top Save button for icon, group, dropdown, or sort changes.
 5. Review the PHP diff immediately. Check slugs, field classes, nested panel or tab structure, and conditional rules.
 6. If the resource uses a custom table and a schema listener is enabled, inspect the migration and the command output before keeping the database change.

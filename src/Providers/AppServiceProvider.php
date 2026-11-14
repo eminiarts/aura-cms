@@ -10,6 +10,7 @@ use Aura\Base\Navigation\Navigation;
 use Aura\Base\Settings\SettingsPageAuthorizer;
 use Aura\Base\Settings\SettingsRegistry;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -35,14 +36,25 @@ class AppServiceProvider extends ServiceProvider
             config('aura.features.create_resource') ? [
                 'icon' => "<x-aura::icon icon='collection' />",
                 'name' => 'Create Resource',
+                'area' => 'global',
                 'slug' => 'create_resource',
                 'group' => 'settings',
                 'sort' => 300,
                 'onclick' => "Livewire.dispatch('openModal', { component : 'aura::create-resource' })",
                 'route' => false,
                 'conditional_logic' => DynamicFunctions::add(function () {
-                    return auth()->user()->isSuperAdmin();
+                    return Gate::allows('AuraGlobalAdmin');
                 }),
+            ] : null,
+            config('aura.features.plugins') ? [
+                'icon' => "<x-aura::icon icon='grid' />",
+                'name' => 'Plugins',
+                'slug' => 'plugins',
+                'area' => 'global',
+                'group' => 'settings',
+                'sort' => 301,
+                'route' => 'aura.global.plugins',
+                'conditional_logic' => DynamicFunctions::add(fn () => Gate::allows('AuraGlobalAdmin')),
             ] : null,
             config('aura.features.settings') ? [
                 'icon' => "<x-aura::icon icon='config' />",

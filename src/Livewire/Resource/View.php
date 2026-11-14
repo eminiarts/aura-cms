@@ -44,8 +44,7 @@ class View extends Component
         if ($slug) {
             $this->slug = $slug;
         } elseif (! $this->slug) {
-            $routeName = request()->route()->getName();
-            $this->slug = explode('.', $routeName)[1] ?? null;
+            $this->slug = request()->route()?->parameter('slug');
         }
 
         $this->model = Aura::findResourceBySlug($this->slug)->find($id);
