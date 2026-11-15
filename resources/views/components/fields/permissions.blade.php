@@ -120,7 +120,7 @@
                 <div class="aura-permissions-options min-w-0 px-2 pb-2">
                     @foreach($items as $item)
                         <label for="permissions_{{ $item['slug'] }}" class="flex min-w-0 items-start gap-2.5 px-2 py-1.5 text-sm rounded-md cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/70">
-                            <input x-model="field['{{ $item['slug'] }}']" type="checkbox" id="permissions_{{ $item['slug'] }}" class="w-4 h-4 mt-0.5 bg-white rounded border-0 ring-1 ring-gray-300 shadow-xs transition duration-150 ease-in-out cursor-pointer shrink-0 form-checkbox text-primary-600 hover:ring-gray-400 checked:ring-primary-600 focus:ring-primary-500 dark:bg-gray-950/40 dark:ring-gray-500 dark:hover:ring-gray-400 dark:checked:bg-primary-600 dark:checked:ring-primary-600">
+                            <input x-model="field['{{ $item['slug'] }}']" type="checkbox" id="permissions_{{ $item['slug'] }}" class="w-4 h-4 mt-0.5 bg-white rounded border-0 ring-1 ring-gray-400 shadow-xs transition duration-150 ease-in-out cursor-pointer shrink-0 form-checkbox text-primary-600 hover:ring-gray-500 checked:ring-primary-600 focus:ring-primary-500 dark:bg-gray-950/40 dark:ring-gray-500 dark:hover:ring-gray-400 dark:checked:bg-primary-600 dark:checked:ring-primary-600">
                             <span class="min-w-0 leading-5 text-gray-700 dark:text-gray-200">
                                 <span class="block">{{ \Aura\Base\Resources\Permission::displayLabel($item['name']) }}</span>
                                 @if($item['description'])

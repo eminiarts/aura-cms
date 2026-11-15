@@ -21,12 +21,12 @@
             <div class="p-[calc(var(--aura-panel-padding,1.25rem)+0.5rem)]" data-ai-providers-empty>
                 <h2 class="aura-section-title">{{ __('No AI providers configured') }}</h2>
                 <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ __('Add provider credentials to the application environment to enable AI features.') }}</p>
-                <p class="mt-3 text-[13px] leading-5 text-gray-500 dark:text-gray-400">{!! $setupNote !!}</p>
+                <p class="aura-code-note mt-3 text-[13px] leading-5 text-gray-500 dark:text-gray-400">{!! $setupNote !!}</p>
             </div>
         @else
             <div class="px-[calc(var(--aura-panel-padding,1.25rem)+0.5rem)] py-4 border-b border-gray-950/[0.06] dark:border-white/10">
                 <h2 class="aura-section-title">{{ __('Configured providers') }}</h2>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{!! $setupNote !!}</p>
+                <p class="aura-code-note mt-1 text-sm text-gray-500 dark:text-gray-400">{!! $setupNote !!}</p>
             </div>
             <div class="divide-y divide-gray-950/[0.06] dark:divide-white/10">
                 @foreach($this->providers() as $provider)

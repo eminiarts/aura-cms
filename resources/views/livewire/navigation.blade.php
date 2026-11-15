@@ -51,8 +51,9 @@
             </div>
 
             <button type="button" x-on:click="toggleSidebar()" class="inline-flex justify-center items-center w-10 h-10 text-gray-700 rounded-lg transition-colors duration-150 hover:bg-gray-950/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-200 dark:hover:bg-white/[0.06]">
+                {{-- Three equal bars at the nav icons' 1.5 stroke. --}}
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M3 12H15M3 6H21M3 18H21" stroke="currentcolor" stroke-width="2" stroke-linecap="round"
+                    <path d="M4 6.5H20M4 12H20M4 17.5H20" stroke="currentcolor" stroke-width="1.5" stroke-linecap="round"
                           stroke-linejoin="round"/>
                 </svg>
                 <span class="sr-only">{{ __('Toggle sidebar') }}</span>

@@ -1,6 +1,6 @@
 {{-- Settings are a form: the readable width of the resource forms (max-w-3xl), header and Save with it,
      so short controls do not stretch into half-empty cards. --}}
-<div class="max-w-3xl">
+<div class="mx-auto max-w-3xl">
     @section('title', 'Edit Settings')
 
     {{-- Page header as on index pages: the trail (a back link on phones), then title, description and actions. --}}

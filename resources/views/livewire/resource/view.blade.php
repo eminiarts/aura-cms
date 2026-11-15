@@ -8,7 +8,7 @@
         $formFrame = $recordLayout->hasPanels() ? null : \Aura\Base\RecordLayout\RecordViewSections::formFrame($this->viewFields, $model);
     @endphp
 
-    <div @class(['max-w-3xl' => $formFrame !== null && ! ($formFrame['rail'] ?? false) && ! $inModal])>
+    <div @class(['mx-auto max-w-3xl' => $formFrame !== null && ! ($formFrame['rail'] ?? false) && ! $inModal])>
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />

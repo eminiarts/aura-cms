@@ -41,7 +41,7 @@
         {{-- a good looking empty state with text: you're all set, everything read --}}
         <div class="flex flex-col justify-center items-center w-full h-full">
 
-            <p class="mt-2 text-sm text-gray-400">{{ __('You\'re all set, everything read') }}</p>
+            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('You\'re all set, everything read') }}</p>
         </div>
 
         @endforelse

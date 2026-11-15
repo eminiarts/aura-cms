@@ -54,16 +54,16 @@
                 @elseif($hasPrevious)
                     @if($this->values['change'] >= 0)
                         <span class="inline-flex items-center gap-0.5 rounded-full bg-green-50 dark:bg-green-900/40 px-2 py-0.5 text-xs font-medium text-green-700 dark:text-green-400 shrink-0">
-                            <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" aria-hidden="true">
-                                <path d="M8 14V5M4.8 8.5 8 3l3.2 5.5" />
+                            <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M8 13V3.5M4.5 7 8 3.5 11.5 7" />
                             </svg>
                             <span class="sr-only">{{ __('Increased by') }}</span>
                             {{ $this->values['change'] }}%
                         </span>
                     @else
                         <span class="inline-flex items-center gap-0.5 rounded-full bg-red-50 dark:bg-red-900/40 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-400 shrink-0">
-                            <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" aria-hidden="true">
-                                <path d="M8 2v9M4.8 7.5 8 13l3.2-5.5" />
+                            <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M8 3v9.5M4.5 9 8 12.5 11.5 9" />
                             </svg>
                             <span class="sr-only">{{ __('Decreased by') }}</span>
                             {{ $this->values['change'] }}%

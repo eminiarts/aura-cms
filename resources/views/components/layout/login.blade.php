@@ -84,7 +84,8 @@
             $markDarkColor = ['light' => 'dark:bg-primary-600', 'primary' => 'dark:bg-white', 'dark' => 'dark:bg-primary-400'][$sidebarDarkType] ?? 'dark:bg-primary-400';
         @endphp
 
-        {{-- The form pane is the app's page: white, dark gray-900, so inputs and buttons look as they do in the app. --}}
+        {{-- The form pane is the app's page: white, dark gray-900, so inputs and buttons look as they do in the app.
+             In dark mode the dark brand panel is the dark sidebar (gray-950), one step below the form pane. --}}
         <div class="min-h-screen bg-white lg:grid lg:grid-cols-12 dark:bg-gray-900">
             <aside class="hidden lg:block lg:col-span-5 aura-sidebar-type-{{ $sidebarType }} aura-sidebar-darkmode-type-{{ $sidebarDarkType }}">
                 <div class="flex overflow-hidden relative flex-col justify-between p-10 h-full aura-sidebar-bg">
@@ -107,7 +108,7 @@
                     <div class="relative">
                         @if ($loginLine)
                             <div class="flex gap-3 items-start mb-6" data-login-line>
-                                <span class="aura-mark h-8 shrink-0 {{ $markColor }} {{ $markDarkColor }}" aria-hidden="true"></span>
+                                <span class="mt-1 w-[3px] h-6 shrink-0 {{ $markColor }} {{ $markDarkColor }}" aria-hidden="true"></span>
                                 <p @class([
                                     'max-w-xs text-2xl leading-8',
                                     $panelOnLight ? 'text-gray-900' : 'text-white',

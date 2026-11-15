@@ -136,7 +136,9 @@
             @endforeach
 
             @unless ($inModal || $useRail)
-                @include('aura::livewire.resource.record-meta', ['attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => 'px-2'])])
+                {{-- Beside the related records (xl) the meta closes the details column; stacked below xl it
+                     moves after the related lists (the copy at their end), so it still closes the page. --}}
+                @include('aura::livewire.resource.record-meta', ['attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => $splitRelated ? 'px-2 max-xl:!hidden' : 'px-2'])])
             @endunless
         </div>
         @endif
@@ -159,7 +161,7 @@
         {{-- Stacked under the details column (below xl) the related records keep a section gap from the meta line. --}}
         <div class="space-y-8 min-w-0 {{ $splitRelated ? 'mt-6 xl:mt-0' : 'mt-2' }} {{ $useRail ? 'lg:col-start-1' : '' }}" wire:key="resource-view-related" data-record-related>
             @if ($cards !== [])
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2" data-record-cards>
+                <div class="grid grid-cols-1 gap-4 items-start sm:grid-cols-2" data-record-cards>
                     @foreach ($cards as $card)
                         <x-aura::resource.record-card :record="$card['record']" :label="__($card['field']['name'] ?? $card['record']->singularName())" :facts="$card['facts']" wire:key="resource-card-{{ $card['field']['slug'] }}" />
                     @endforeach
@@ -174,9 +176,12 @@
             </x-aura::fields.conditions>
             @endforeach
 
-            {{-- Without a details column the meta line closes the related records instead. --}}
+            {{-- Without a details column the meta line closes the related records instead, and so it does
+                 below xl, where the related records stack under the details column. --}}
             @if (! $inModal && $sections['details'] === [])
                 @include('aura::livewire.resource.record-meta', ['attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => '!mt-6'])])
+            @elseif (! $inModal && $splitRelated)
+                @include('aura::livewire.resource.record-meta', ['attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => '!mt-6 xl:!hidden'])])
             @endif
         </div>
         @endif

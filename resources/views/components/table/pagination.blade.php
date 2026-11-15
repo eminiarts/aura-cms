@@ -15,7 +15,7 @@
 
         {{-- Mobile: page position and the same chevron pager as desktop --}}
         <div class="flex flex-1 gap-2 justify-between items-center sm:hidden">
-            <p class="text-sm text-gray-600 dark:text-gray-400">
+            <p class="text-sm tabular-nums text-gray-600 dark:text-gray-400">
                 @if ($isLengthAware)
                     {!! __('Page :current of :last', ['current' => '<span class="font-medium text-gray-900 dark:text-white">'.$paginator->currentPage().'</span>', 'last' => '<span class="font-medium text-gray-900 dark:text-white">'.$paginator->lastPage().'</span>']) !!}
                 @else
@@ -49,7 +49,7 @@
         {{-- Desktop --}}
         <div class="hidden sm:flex sm:flex-1 sm:justify-between sm:items-center">
             <div>
-                <p class="text-sm text-gray-600 dark:text-gray-400">
+                <p class="text-sm tabular-nums text-gray-600 dark:text-gray-400">
                     {!! __('Showing') !!}
                     @if ($isLengthAware && $paginator->firstItem())
                         <span class="font-medium text-gray-900 dark:text-white">{{ $paginator->firstItem() }}</span>

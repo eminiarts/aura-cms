@@ -2,7 +2,7 @@
 
     <div class="mb-8">
         <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __('Create your account') }}</h1>
-        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('Enter your details below to get started.') }}</p>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ config('aura.teams') ? __('Create a workspace for your team.') : __('Enter your details below to get started.') }}</p>
     </div>
 
     <form method="POST" action="{{ route('aura.register') }}" onsubmit="document.getElementById('register-button').disabled = true;" class="space-y-5">

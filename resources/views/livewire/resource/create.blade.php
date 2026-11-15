@@ -11,7 +11,7 @@
     @section('title', $newRecordTitle)
 
 
-    <div @class(['max-w-3xl' => ! $formSections['rail'] && ! $inModal])>
+    <div @class(['mx-auto max-w-3xl' => ! $formSections['rail'] && ! $inModal])>
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />

@@ -61,7 +61,7 @@
       x-on:keydown.arrow-down.prevent="show()"
       x-on:keydown.arrow-up.prevent="show()"
       aria-haspopup="listbox" :aria-expanded="open"
-      class="flex relative items-center pr-9 pl-2 w-full h-9 text-left bg-white rounded-lg ring-1 shadow-xs transition duration-150 cursor-default sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 dark:bg-gray-950/40 dark:ring-white/15 dark:hover:ring-white/25 dark:disabled:bg-gray-800/50">
+      class="aura-touch-control flex relative items-center pr-9 pl-2 w-full h-9 text-left bg-white rounded-lg ring-1 shadow-xs transition duration-150 cursor-default sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 dark:bg-gray-950/40 dark:ring-white/15 dark:hover:ring-white/25 dark:disabled:bg-gray-800/50">
       <span x-show="is('')" class="pl-1 text-base text-gray-400 truncate sm:text-sm dark:text-gray-500">{{ $placeholder }}</span>
       @foreach ($choices as $choice)
         @if ($choice['html'] !== '')

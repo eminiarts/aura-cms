@@ -16,7 +16,7 @@
                 <span class="aura-page-count">{{ number_format(count($installedPackages)) }}</span>
             </h1>
         </div>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <p class="aura-code-note mt-1 text-sm text-gray-500 dark:text-gray-400">
             {!! strtr(e(__('Plugins are managed with Composer. Run :command to install or update one.')), [
                 ':command' => '<code class="aura-code">composer require vendor/plugin</code>',
             ]) !!}

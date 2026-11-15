@@ -113,15 +113,23 @@ body {
     border-radius: var(--aura-control-radius, 0.375rem);
 }
 
-/* Native selects keep @tailwindcss/forms' position and size but draw the Λ caret (icon/caret, down).
+/* Form controls (input, native select, select and relation triggers) are 36px on desktop and 44px
+   touch targets on phones. min-height wins over their h-9, and the xs size does not carry the hook. */
+@media (max-width: 639px) {
+    .aura-touch-control {
+        min-height: 2.75rem;
+    }
+}
+
+/* Native selects keep @tailwindcss/forms' position and size but draw the caret (icon/caret, down).
    Zero added specificity, so bg-none and list boxes ([multiple], [size]) keep theirs. */
 select:where(:not([multiple], [size]:not([size="1"]))) {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='-4 -4 24 24'%3e%3cpath stroke='%236b7280' stroke-linecap='butt' stroke-linejoin='miter' stroke-width='1.8' d='M4 4.54 8 11.46l4-6.92'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='-4 -4 24 24'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M4 6C4 6 6.946 10 8 10C9.054 10 12 6 12 6'/%3e%3c/svg%3e");
 }
 
 /* Dark surfaces: the caret in gray-400, like the other functional icons there. */
 :where(.dark) select:where(:not([multiple], [size]:not([size="1"]))) {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='-4 -4 24 24'%3e%3cpath stroke='%239ca3af' stroke-linecap='butt' stroke-linejoin='miter' stroke-width='1.8' d='M4 4.54 8 11.46l4-6.92'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='-4 -4 24 24'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M4 6C4 6 6.946 10 8 10C9.054 10 12 6 12 6'/%3e%3c/svg%3e");
 }
 
 .aura-eyebrow {
@@ -146,12 +154,12 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
 
 /* Section count next to a section title ("Contacts 12"). */
 .aura-section-count {
-    @apply ml-1.5 text-sm font-normal text-gray-400 dark:text-gray-500;
+    @apply ml-1.5 text-sm font-normal tabular-nums text-gray-500 dark:text-gray-400;
 }
 
 /* Record count next to the page title ("Companies 14"), the page-level twin of the section count. */
 .aura-page-count {
-    @apply ml-2 text-lg font-normal text-gray-400 dark:text-gray-500;
+    @apply ml-2 text-lg font-normal tabular-nums text-gray-500 dark:text-gray-400;
 }
 
 /* Values on one line joined with " · ", wrapping only when they do not fit. Every item carries its dot
@@ -165,6 +173,12 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
 
 .aura-dot-list-item {
     @apply flex h-5 min-w-0 max-w-full items-center whitespace-nowrap;
+}
+
+/* An item that takes a whole line (a relation chip or a tag in a phone row): it starts a line, so its dot
+   is clipped, and the next item starts the line after it. */
+.aura-dot-list-item.aura-dot-list-item-line {
+    flex-basis: 100%;
 }
 
 .aura-dot-list-item::before {
@@ -308,6 +322,21 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
     box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
 }
 
+/* A sentence that carries file or command chips (settings AI, plugins intro). On phones each chip
+   leaves the running text and sits on its own line as a block, so it never splits mid-word or
+   leaves a one-word orphan beside it. */
+@media (max-width: 639px) {
+    .aura-code-note .aura-code {
+        display: block;
+        width: fit-content;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-block: 0.375rem;
+        padding: 0.125rem 0.375rem;
+    }
+}
+
 .aura-tag-dot {
     @apply shrink-0 fill-current opacity-70;
     width: 0.375rem;
@@ -397,12 +426,11 @@ a.aura-record-link:hover {
     content: none;
 }
 
-/* Entity avatar. Initials on a tint derived from the record title, or the
-   record's own image. Square for organisations and things, circle for people.
-   The eight tones a name maps to (Resource::avatarTones) come from families the
-   tags do not use (blue, orange, teal, gray, yellow, green, red belong to status
-   and category chips) and leave the warm band to them, so an avatar never echoes
-   the tag beside it. The older tone classes stay for callers that pass a tone. */
+/* Entity avatar. Initials on the primary tint (Resource::avatarTones() defaults to
+   ['primary']), or the record's own image. Square for organisations and things, circle
+   for people. One hue, so initial tiles never compete with the status and category tags
+   beside them. The other tone classes stay for apps and resources that pass a tone or
+   return several from avatarTones(). */
 .aura-avatar {
     @apply inline-flex shrink-0 select-none items-center justify-center overflow-hidden uppercase leading-none;
     font-weight: 650;
@@ -542,20 +570,10 @@ a.aura-record-link:hover {
     @apply flex min-w-0 flex-col justify-center gap-1;
 }
 
-/* Facts are divided by one skewed hairline, the breadcrumb's leg, not a vertical rule. */
+/* Facts are divided by a plain vertical hairline (--aura-edge). */
 .aura-record-fact + .aura-record-fact {
-    position: relative;
-    padding-left: 1.75rem;
-}
-
-.aura-record-fact + .aura-record-fact::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    inset-block: 0;
-    width: 1px;
-    background: var(--aura-edge);
-    transform: skewX(-30deg);
+    border-left: 1px solid var(--aura-edge);
+    padding-left: 1.5rem;
 }
 
 .aura-record-fact-value {
@@ -677,8 +695,23 @@ a.aura-record-link:hover {
 }
 
 /* Phones: the rail's short properties (status, priority, dates, people) stay label-left, value-right rows,
-   a property list rather than stacked label-over-value blocks. */
+   a property list rather than stacked label-over-value blocks. So do the details beside related records
+   (company, contact): their values are short too. */
 @media (max-width: 639.98px) {
+    .aura-record-details .aura-view-row {
+        display: grid;
+        grid-template-columns: 7rem minmax(0, 1fr);
+        column-gap: 0.75rem;
+        align-items: center;
+        min-height: 2.75rem;
+        padding-top: 0.375rem;
+        padding-bottom: 0.375rem;
+    }
+
+    .aura-record-details .aura-view-row > :first-child {
+        margin-bottom: 0;
+    }
+
     .aura-record-rail .aura-view-row {
         display: grid;
         grid-template-columns: 7rem minmax(0, 1fr);
@@ -723,15 +756,6 @@ a.aura-record-link:hover {
     @apply block bg-white p-4 ring-1 transition duration-150 dark:bg-gray-800;
     --tw-ring-color: var(--aura-edge);
     border-radius: var(--aura-panel-radius, 0.5rem);
-}
-
-/* From sm the card's values are right-aligned: a link's hover mark keeps its space at rest and would
-   end the website 15px short of the other values, so cards drop it (the card's chevron and ring
-   already say "opens"). */
-@screen sm {
-    .aura-record-card dd .aura-link::after {
-        content: none;
-    }
 }
 
 a.aura-record-card:hover {
@@ -996,8 +1020,10 @@ a.aura-board-card:focus-visible {
 .aura-sidebar-darkmode-type-light .aura-sidebar-bg {
     @apply dark:text-gray-900 dark:border-gray-950/10 dark:bg-gray-50 dark:shadow-gray-400 md:dark:shadow-none;
 }
+/* In dark mode the canvas is gray-900 too, so the dark sidebar steps down to gray-950: the two
+   surfaces stay apart without relying on the hairline alone. */
 .aura-sidebar-darkmode-type-dark .aura-sidebar-bg {
-    @apply dark:text-gray-300 dark:border-white/[0.08] dark:bg-gray-900 dark:shadow-gray-400 md:dark:shadow-none;
+    @apply dark:text-gray-300 dark:border-white/[0.08] dark:bg-gray-950 dark:shadow-gray-400 md:dark:shadow-none;
 }
 
 
@@ -1068,7 +1094,7 @@ a.aura-board-card:focus-visible {
     @apply dark:scrollbar-thumb-gray-300 dark:scrollbar-track-gray-50
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-scrollbar{
-    @apply dark:scrollbar-thumb-white/10 dark:scrollbar-track-gray-900;
+    @apply dark:scrollbar-thumb-white/10 dark:scrollbar-track-gray-950;
 }
 
 

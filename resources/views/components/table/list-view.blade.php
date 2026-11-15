@@ -216,8 +216,9 @@
                                             @endforeach
                                         </div>
                                     @endif
-                                    {{-- The meta values share one quiet line, joined with " · " (a domain and its tag), and wrap
-                                         onto a second line only when they do not fit (.aura-dot-list drops the dot at a line start).
+                                    {{-- Plain text meta values share one quiet line, joined with " · ", and wrap onto a second
+                                         line only when they do not fit (.aura-dot-list drops the dot at a line start). A relation
+                                         chip or a tag always takes a line of its own, so rows keep one rhythm whatever their data.
                                          Blank values drop out; a row with none keeps one line as a dash. --}}
                                     @if ($metaValues->isNotEmpty())
                                         @php
@@ -229,7 +230,7 @@
                                             @else
                                                 <div class="aura-dot-list">
                                                     @foreach ($filledMeta as $metaValue)
-                                                        <span class="aura-dot-list-item"><span class="min-w-0 truncate">{!! $metaValue !!}</span></span>
+                                                        <span @class(['aura-dot-list-item', 'aura-dot-list-item-line' => preg_match('/class=["\'][^"\']*\baura-(record-link|tag)\b/', (string) $metaValue) === 1])><span class="min-w-0 truncate">{!! $metaValue !!}</span></span>
                                                     @endforeach
                                                 </div>
                                             @endif

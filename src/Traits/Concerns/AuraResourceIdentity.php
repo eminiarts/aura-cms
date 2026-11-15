@@ -114,15 +114,15 @@ trait AuraResourceIdentity
     }
 
     /**
-     * Tints an avatar may use: eight Tailwind families the status and category
-     * tags do not use (those hold blue, orange, teal, gray, yellow, green and
-     * red). The warm band stays with the tags, so an avatar never echoes the
-     * chip in its row. Red stays reserved for errors. The order alternates
-     * cool and warm hues, so neighbouring keys never get two near-identical tints.
+     * Tints an avatar may use. By default one: the primary tint, so initial tiles follow the
+     * palette setting and never compete with the status and category tags in their row. A
+     * resource that wants per-record hues returns several tone names (every .aura-avatar-tone-*
+     * class: indigo, lime, pink, cyan, purple, rose, violet, fuchsia, ...) and avatarTone()
+     * spreads its records over them.
      */
     public static function avatarTones(): array
     {
-        return ['indigo', 'lime', 'pink', 'cyan', 'purple', 'rose', 'violet', 'fuchsia'];
+        return ['primary'];
     }
 
     public static function getName(): ?string

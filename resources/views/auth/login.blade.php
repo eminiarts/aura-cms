@@ -46,7 +46,7 @@
         <div class="flex justify-between items-center">
             <!-- Remember Me: the whole label is the tap target, a 44px row on phones. -->
             <label for="remember_me" class="inline-flex gap-2 items-center pr-3 -my-1 min-h-11 cursor-pointer sm:my-0 sm:min-h-0">
-                <input id="remember_me" type="checkbox" class="w-4 h-4 rounded border-gray-300 shadow-xs cursor-pointer text-primary-600 focus:ring-primary-500 dark:border-gray-500 dark:bg-gray-950/40 dark:checked:bg-primary-600 dark:focus:ring-offset-gray-900" name="remember">
+                <input id="remember_me" type="checkbox" class="w-4 h-4 rounded border-gray-400 shadow-xs cursor-pointer text-primary-600 focus:ring-primary-500 dark:border-gray-500 dark:bg-gray-950/40 dark:checked:bg-primary-600 dark:focus:ring-offset-gray-900" name="remember">
                 <span class="text-sm text-gray-600 select-none dark:text-gray-300">{{ __('Remember me') }}</span>
             </label>
 
@@ -73,7 +73,7 @@
         {{-- A developer shortcut, not part of the sign-in: muted, smaller (32px) and set apart by its divider. --}}
         <div class="flex gap-3 items-center mt-10" aria-hidden="true">
             <div class="flex-1 h-px bg-gray-950/5 dark:bg-white/10"></div>
-            <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('Local development') }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ __('Local development') }}</span>
             <div class="flex-1 h-px bg-gray-950/5 dark:bg-white/10"></div>
         </div>
 

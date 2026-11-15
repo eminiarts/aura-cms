@@ -11,7 +11,7 @@
             : (Route::has('aura.' . $model->getSlug() . '.index') ? route('aura.' . $model->getSlug() . '.index') : null);
     @endphp
 
-    <div @class(['max-w-3xl' => ! $formSections['rail'] && ! $inModal])>
+    <div @class(['mx-auto max-w-3xl' => ! $formSections['rail'] && ! $inModal])>
     {{ app('aura')::injectView('post_edit_breadcrumbs_before') }}
 
     @if (!$inModal)
