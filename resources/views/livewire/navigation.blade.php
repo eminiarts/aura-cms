@@ -97,7 +97,7 @@
                 <div class="flex overflow-y-auto overflow-x-visible flex-col flex-1 px-0 pt-0 pb-5 space-y-1 aura-sidebar-scrollbar">
 
                     <div class="flex flex-col {{ $this->compact ? 'px-2' : 'px-4' }} space-y-1">
-                        <div class="flex-shrink-0 h-[4.5rem] flex items-center justify-between aura-sidebar-header">
+                        <div class="flex-shrink-0 h-14 flex items-center justify-between aura-sidebar-header">
 
                             <div class="hide-collapsed">
                                 @include('aura::navigation.logo')

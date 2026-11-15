@@ -179,6 +179,10 @@ return [
         'login-bg' => false,
         'login-bg-darkmode' => false,
 
+        // Line on the login brand panel: null shows the default, a string replaces it
+        // (passed through __()), false hides it.
+        'login-line' => null,
+
         'app-favicon' => false,
         'app-favicon-darkmode' => false,
     ],

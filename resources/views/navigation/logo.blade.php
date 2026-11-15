@@ -26,12 +26,12 @@
     </div>
 @else
     @if($this->sidebarType == 'light')
-        <div class="px-2 {{ ($this->compact ? 'w-28' : 'w-48') }}">
-            <x-aura::application-logo class="w-full h-8 text-gray-700 fill-current" />
+        <div class="{{ $this->compact ? 'px-2 w-28' : 'pl-3 w-[8.25rem]' }}">
+            <x-aura::application-logo class="w-full {{ $this->compact ? 'h-8' : 'h-auto' }} text-gray-700 fill-current" />
         </div>
     @else
-        <div class="px-2 {{ ($this->compact ? 'w-28' : 'w-48') }}">
-            <x-aura::application-logo class="w-full h-8 text-white fill-current dark:text-white" />
+        <div class="{{ $this->compact ? 'px-2 w-28' : 'pl-3 w-[8.25rem]' }}">
+            <x-aura::application-logo class="w-full {{ $this->compact ? 'h-8' : 'h-auto' }} text-white fill-current dark:text-white" />
         </div>
     @endif
 @endif

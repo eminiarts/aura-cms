@@ -76,6 +76,12 @@
             $customLogo = config('aura.views.logo') !== 'aura::application-logo'
                 || filled($themeSettings['logo'] ?? null)
                 || filled($themeSettings['logo-darkmode'] ?? null);
+            // aura.theme.login-line: null shows the default line, a string replaces it, false hides it.
+            $loginLine = config('aura.theme.login-line');
+            $loginLine = $loginLine === false ? null : __(is_string($loginLine) && $loginLine !== '' ? $loginLine : 'Every record in one place.');
+            // The mark before the line takes the active sidebar item's mark color.
+            $markColor = ['light' => 'bg-primary-600', 'primary' => 'bg-white', 'dark' => 'bg-primary-400'][$sidebarType] ?? 'bg-primary-400';
+            $markDarkColor = ['light' => 'dark:bg-primary-600', 'primary' => 'dark:bg-white', 'dark' => 'dark:bg-primary-400'][$sidebarDarkType] ?? 'dark:bg-primary-400';
         @endphp
 
         {{-- The form pane is the app's page: white, dark gray-900, so inputs and buttons look as they do in the app. --}}
@@ -85,34 +91,45 @@
                     @php
                         $wordmarkColor = ($panelOnLight ? 'text-gray-900' : 'text-white').' '.($panelOnLightDark ? 'dark:text-gray-900' : 'dark:text-white');
                     @endphp
-                    <a href="/" class="relative block w-36 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                    <a href="/" class="relative block w-[7.5rem] rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                         <x-dynamic-component :component="config('aura.views.logo')" class="block w-full h-auto {{ $wordmarkColor }}" />
                     </a>
 
                     @unless ($customLogo)
                         {{-- One Λ of the wordmark, outlined at 1px and cropped by the panel's corner. --}}
-                        <svg @class([
-                                'absolute -right-32 -bottom-24 w-[36rem] pointer-events-none',
-                                $panelOnLight ? 'stroke-gray-950/10' : 'stroke-white/10',
-                                $panelOnLightDark ? 'dark:stroke-gray-950/10' : 'dark:stroke-white/10',
-                            ]) viewBox="95 0 28 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <path d="M122.214 23.7945H115.914L111.327 15.7146L108.827 11.1611L106.328 15.7146L103.418 20.7817L101.74 23.8287L95.4406 23.7945L108.827 0.17111L122.214 23.7945Z" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linejoin="miter" />
-                        </svg>
+                        <x-aura::icon.apex-outline :class="\Illuminate\Support\Arr::toCssClasses([
+                            'absolute -right-32 -bottom-24 w-[36rem] pointer-events-none',
+                            $panelOnLight ? 'stroke-gray-950/10' : 'stroke-white/10',
+                            $panelOnLightDark ? 'dark:stroke-gray-950/10' : 'dark:stroke-white/10',
+                        ])" />
                     @endunless
 
-                    <p @class([
-                        'relative text-xs',
-                        $panelOnLight ? 'text-gray-500' : 'text-white/60',
-                        $panelOnLightDark ? 'dark:text-gray-500' : 'dark:text-white/60',
-                    ])>
-                        &copy; {{ date('Y') }} {{ config('app.name') }}
-                    </p>
+                    <div class="relative">
+                        @if ($loginLine)
+                            <div class="flex gap-3 items-start mb-6" data-login-line>
+                                <span class="aura-mark h-8 shrink-0 {{ $markColor }} {{ $markDarkColor }}" aria-hidden="true"></span>
+                                <p @class([
+                                    'max-w-xs text-2xl leading-8',
+                                    $panelOnLight ? 'text-gray-900' : 'text-white',
+                                    $panelOnLightDark ? 'dark:text-gray-900' : 'dark:text-white',
+                                ]) style="font-weight: 650; letter-spacing: -0.022em">{{ $loginLine }}</p>
+                            </div>
+                        @endif
+
+                        <p @class([
+                            'text-xs',
+                            $panelOnLight ? 'text-gray-500' : 'text-white/60',
+                            $panelOnLightDark ? 'dark:text-gray-500' : 'dark:text-white/60',
+                        ])>
+                            &copy; {{ date('Y') }} {{ config('app.name') }}
+                        </p>
+                    </div>
                 </div>
             </aside>
 
             <main class="flex flex-col px-6 py-6 min-h-screen sm:px-10 sm:py-8 lg:col-span-7">
                 <div class="lg:hidden">
-                    <a href="/" class="block w-28 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                    <a href="/" class="block w-[7.5rem] rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                         <x-dynamic-component :component="config('aura.views.logo')" class="block w-full h-auto text-gray-900 dark:text-white" />
                     </a>
                 </div>

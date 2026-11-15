@@ -17,7 +17,7 @@
                         @if (! empty($item['avatar']))
                             {!! $item['avatar'] !!}
                         @else
-                            <span class="flex justify-center items-center w-7 h-7 text-gray-400 rounded-md shrink-0 bg-gray-950/[0.04] dark:bg-white/5 dark:text-gray-500 [&>svg]:size-4" aria-hidden="true">
+                            <span class="aura-avatar aura-avatar-md aura-avatar-square aura-avatar-tone-gray [&>svg]:size-4" aria-hidden="true">
                                 {!! $item['icon'] !!}
                             </span>
                         @endif

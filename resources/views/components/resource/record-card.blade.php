@@ -20,7 +20,7 @@
         @if ($hasAvatar)
             <x-aura::avatar :record="$record" size="lg" />
         @elseif (method_exists($record, 'getIcon') && (string) $record->getIcon() !== '')
-            <span class="flex justify-center items-center w-10 h-10 text-gray-400 rounded-lg shrink-0 bg-gray-950/[0.04] dark:bg-white/5 dark:text-gray-500 [&>svg]:size-5" aria-hidden="true">{!! $record->getIcon() !!}</span>
+            <span class="aura-avatar aura-avatar-lg aura-avatar-square aura-avatar-tone-gray [&>svg]:size-5" aria-hidden="true">{!! $record->getIcon() !!}</span>
         @endif
         <div class="flex-1 min-w-0">
             <p class="aura-eyebrow">{{ $label ?? __($record->singularName()) }}</p>

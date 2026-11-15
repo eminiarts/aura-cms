@@ -220,7 +220,7 @@
 
         <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Page header pattern') }}</span>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Record pages: the record title is the H1, the eyebrow names the resource on the view page ("Deal") and the task on the edit page ("Edit deal"). Create pages have no eyebrow; the H1 says "New deal" in sentence case. Every form page has a ghost Cancel left of the primary Save (on edit, Cancel returns to the record); the view page has no primary action, its Edit is a secondary button with its pencil. .aura-record-header puts the actions right of the title from sm; on phones the row dissolves into .aura-record-block and the header has no action band of its own: the view page\'s Edit becomes a 36px pencil (button size="icon", aria-label and tooltip "Edit") in the title row, and forms move Cancel and Save into .aura-form-bar, a bar on the bottom edge (safe-area aware) with a ghost Cancel and a full-width primary Save. Other resource actions stay as a right-aligned row under the title or facts strip (.aura-record-header-actions-sm hides a row that would be empty on phones). Phones also replace the breadcrumb trail with one 14px back link above the title, built from the trail\'s last link ("‹ Companies" on a record, "‹ Northwind Software" on its edit form). A simple form caps breadcrumb, header and fields at one width, so Save sits at the edge of the form. The view page promotes key fields into a facts strip under the title (.aura-record-facts: by default the first Number field, large and tabular, and the first Status field as its tag; a resource overrides the pick with recordHeaderFields()). One primary button per screen; everything else is secondary or ghost. A list page\'s create button (table/create-button) keeps its object ("New company") while it fits beside the title and reads "+ New" only when the full label would wrap the title (.aura-create-fit, pure CSS). On phones the list toolbar controls are 44px targets.') }}</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Record pages: the record title is the H1, the eyebrow names the resource on the view page ("Deal") and the task on the edit page ("Edit deal"). Create pages have no eyebrow; the H1 says "New deal" in sentence case. Every form page has a ghost Cancel left of the primary Save (on edit, Cancel returns to the record); the view page has no primary action, its Edit is a secondary button with its pencil. .aura-record-header puts the actions right of the title from sm; on phones the row dissolves into .aura-record-block and the header has no action band of its own: the view page\'s Edit becomes a 36px pencil (button size="icon", aria-label and tooltip "Edit") in the title row, and forms move Cancel and Save into .aura-form-bar, a bar on the bottom edge (safe-area aware) with a ghost Cancel and a full-width primary Save. Other resource actions stay as a right-aligned row under the title or facts strip (.aura-record-header-actions-sm hides a row that would be empty on phones). Phones also replace the breadcrumb trail with one 14px back link above the title, built from the trail\'s last link ("‹ Companies" on a record, "‹ Northwind Software" on its edit form). A simple form caps breadcrumb, header and fields at one width, so Save sits at the edge of the form. The view page promotes key fields into a facts strip under the title (.aura-record-facts: by default the first Number field, large and tabular, and the first Status field as its tag; a resource overrides the pick with recordHeaderFields(); facts are divided by one skewed hairline, the breadcrumb\'s leg, a relation fact shows its record chip). One primary button per screen; everything else is secondary or ghost. A list page\'s create button (table/create-button) keeps its object ("New company") while it fits beside the title and reads "+ New" only when the full label would wrap the title (.aura-create-fit, pure CSS). On phones the list toolbar controls are 44px targets.') }}</p>
             <div class="mt-4 aura-record-block">
             <div class="aura-record-header">
                 <div class="flex-1 min-w-0">
@@ -557,7 +557,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">06</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Tags, Avatars & Pills') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('One tag family for enum values: 22px high, 12px medium, the same radius and padding. Neutral for option values, tinted for an option that carries a color (a Select category at -50/-700 without a dot, a Status state at -100/-800 with a dot). A tinted tag\'s ring is its own hue at -600/20% (dark -400/30%), keyed on the text color class the option names, so a yellow state gets a yellow ring and the option only names fill and text. A relation is not a tag: it reads as the related record\'s name, 14px gray-900 with its 20px avatar (both initials at 10px, the row avatar one step smaller) in front, underlined on hover, so a row with three relations stays calm. Entity avatars put initials on a tint derived from the name (square for companies and things, circle for people) and sit before record names in tables and the record header. Small rounded-full pills remain for sidebar counts and trends.') }}
+            {{ __('One tag family for enum values: 22px high, 12px medium, the same radius and padding. Neutral for option values, tinted for an option that carries a color (a Select category at -50/-700 without a dot, a Status state at -100/-800 with a dot). A tinted tag\'s ring is its own hue at -600/20% (dark -400/30%), keyed on the text color class the option names, so a yellow state gets a yellow ring and the option only names fill and text. A relation is one object, not a tag: a 24px chip (.aura-record-link) in its record\'s shape, a pill when it leads with a person\'s round avatar, squared at the control radius for everything else. 13px medium gray-900 on a 4% fill, the 20px avatar or icon 2px from the edge, a primary tint on hover, no underline. Phone list rows flatten it back to plain text. Entity avatars put initials (weight 650) on the -50 tint of a hue derived from the record (dark: -400/15%) with a 1px inset edge in the same hue; square for companies and things, circle for people. Square tiles follow the corner radius: xs and sm 2px inside the control radius, md at the control radius, lg at the panel radius. Icon tiles (records without an avatar) are the same tile in gray. Small rounded-full pills remain for sidebar counts and trends.') }}
         </p>
 
         <div class="p-6 mt-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
@@ -618,7 +618,7 @@
         </div>
 
         <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
-            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Entity avatars (x-aura::avatar): sizes xs 20 (relation links, 10px initials), sm 24 (table rows, 11px initials), md 28, lg 40; tone from the name over 8 families the tags do not use (indigo, purple, fuchsia, pink, rose, violet, lime, cyan)') }}</span>
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Entity avatars (x-aura::avatar): sizes xs 20 (relation chips, 10px initials), sm 24 (table rows, 11px initials), md 28, lg 40; -50 tint plus a 1px inset edge in the hue, tone from the record over 8 families the tags do not use (indigo, purple, fuchsia, pink, rose, violet, lime, cyan); gray for icon tiles') }}</span>
             <div class="flex flex-wrap gap-4 items-center mt-4">
                 @foreach (['xs', 'sm', 'md', 'lg'] as $size)
                     <x-aura::avatar name="Atlas Components" shape="square" :size="$size" />
@@ -632,6 +632,7 @@
                 @foreach (\Aura\Base\Resource::avatarTones() as $tone)
                     <x-aura::avatar :name="Str::title($tone)" shape="square" size="md" :tone="$tone" title="{{ $tone }}" />
                 @endforeach
+                <span class="aura-avatar aura-avatar-md aura-avatar-square aura-avatar-tone-gray" aria-hidden="true" title="icon tile"><x-aura::icon.file class="size-4" /></span>
             </div>
             <div class="flex gap-3 items-center mt-5">
                 <x-aura::avatar name="Northwind Software" shape="square" size="lg" />
@@ -994,7 +995,8 @@
                     <span class="inline-flex items-center justify-center h-8 w-8 rounded-control text-gray-300 dark:text-gray-600">
                         <x-aura::icon.caret direction="left" class="size-4" />
                     </span>
-                    <span class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-control bg-primary-50 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-500/15 dark:text-primary-300 dark:ring-primary-500/20">1</span>
+                    {{-- Current page: no box, the number in primary over the lying mark (.aura-mark-x). --}}
+                    <span class="inline-flex relative items-center justify-center h-8 min-w-8 px-2 text-sm font-semibold tabular-nums rounded-control text-primary-700 dark:text-primary-300" aria-current="page">1<span class="absolute bottom-0.5 left-1/2 w-4 -translate-x-1/2 aura-mark-x bg-primary-600 dark:bg-primary-400" aria-hidden="true"></span></span>
                     <button type="button" class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">2</button>
                     <button type="button" class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">3</button>
                     {{-- Long lists collapse to the first pages, one "…" and the last page. --}}
@@ -1335,17 +1337,21 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">14</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Authentication') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('The auth layout (layout/login: login, register, reset password, 2FA). From lg the page splits: a 5/12 brand panel in the configured sidebar type\'s colors (primary, light or dark, each with its dark-mode type) with the wordmark top-left (w-36), the copyright bottom-left and one Λ of the wordmark outlined at 1px (white/10, gray-950/10 on a light panel), cropped by the corner and left out when a custom logo is set. The form sits beside it without a card, max-w-sm, on white (gray-950 in dark mode). Below lg: the wordmark top-left, then the form. A custom login background keeps the centered card over the image.') }}
+            {{ __('The auth layout (layout/login: login, register, reset password, 2FA). From lg the page splits: a 5/12 brand panel in the configured sidebar type\'s colors (primary, light or dark, each with its dark-mode type) with the wordmark top-left (120px, as in the sidebar), one line bottom-left above the copyright (24px, weight 650, white on dark and primary panels, gray-900 on light, led by the mark in the active nav item\'s color; aura.theme.login-line: null for the default "Every record in one place.", a string to replace it, false to hide it) and one Λ of the wordmark outlined at 1px (white/10, gray-950/10 on a light panel), cropped by the corner and left out when a custom logo is set. The form sits beside it without a card, max-w-sm, on white (gray-950 in dark mode). Below lg: the wordmark top-left, then the form. A custom login background keeps the centered card over the image.') }}
         </p>
 
         <div class="overflow-hidden mt-6 bg-white rounded-panel ring-1 ring-aura-edge dark:bg-gray-950 sm:grid sm:grid-cols-12">
             <div class="hidden sm:block sm:col-span-5 aura-sidebar-type-dark aura-sidebar-darkmode-type-dark">
                 <div class="flex overflow-hidden relative flex-col justify-between p-8 h-full aura-sidebar-bg">
-                    <div class="w-28"><x-aura::application-logo class="block w-full h-auto text-white" /></div>
-                    <svg class="absolute -right-24 -bottom-20 w-[26rem] pointer-events-none stroke-white/10" viewBox="95 0 28 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path d="M122.214 23.7945H115.914L111.327 15.7146L108.827 11.1611L106.328 15.7146L103.418 20.7817L101.74 23.8287L95.4406 23.7945L108.827 0.17111L122.214 23.7945Z" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linejoin="miter" />
-                    </svg>
-                    <p class="relative mt-40 text-xs text-white/60">&copy; {{ date('Y') }} {{ config('app.name') }}</p>
+                    <div class="w-[7.5rem]"><x-aura::application-logo class="block w-full h-auto text-white" /></div>
+                    <x-aura::icon.apex-outline class="absolute -right-24 -bottom-20 w-[26rem] pointer-events-none stroke-white/10" />
+                    <div class="relative mt-32">
+                        <div class="flex gap-3 items-start mb-6">
+                            <span class="h-8 aura-mark shrink-0 bg-primary-400" aria-hidden="true"></span>
+                            <p class="max-w-xs text-2xl leading-8 text-white" style="font-weight: 650; letter-spacing: -0.022em">{{ __('Every record in one place.') }}</p>
+                        </div>
+                        <p class="text-xs text-white/60">&copy; {{ date('Y') }} {{ config('app.name') }}</p>
+                    </div>
                 </div>
             </div>
             <div class="flex justify-center items-center p-8 sm:col-span-7 sm:p-12">
