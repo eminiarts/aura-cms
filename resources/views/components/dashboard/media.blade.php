@@ -7,7 +7,7 @@
         <a href="{{ route('aura.attachment.index') }}" wire:navigate
             class="inline-flex shrink-0 gap-1 items-center text-sm font-medium whitespace-nowrap rounded-md transition-colors duration-150 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
             {{ __('Media library') }}
-            <x-aura::icon.caret direction="right" class="w-3.5 h-3.5" />
+            <x-aura::icon.caret direction="right" class="size-4" />
         </a>
     </div>
 

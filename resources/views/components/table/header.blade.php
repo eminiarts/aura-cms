@@ -21,8 +21,8 @@
                 && ! $this->settings['create_in_modal'] && $this->createLink;
         @endphp
         {{-- A relation section's row keeps the 32px button height without a button too, so its title sits at the same height. --}}
-        {{-- Phones: the page's create button reads "+ New" (its full label stays the accessible name), so a
-             long title such as "System updates 20" keeps one line beside it. --}}
+        {{-- The page's create button keeps its object ("New company") while it fits beside the title and reads
+             "+ New" only when the full label would wrap the title (table/create-button). --}}
         <div class="flex gap-3 justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3 min-h-8' : 'mt-1 min-h-9 sm:mt-6' }}" @if ($isRelationTable) data-relation-header @endif>
 
             @if ($this->settings['title'])
@@ -57,10 +57,11 @@
 
             @can('create', $model)
                 @if ($this->settings['create'] && ! $createInEmptyState)
-                    <div class="create-resource shrink-0">
+                    {{-- A page's create button takes the width the title leaves (it decides there whether its full label fits). --}}
+                    <div class="create-resource {{ $isRelationTable ? 'shrink-0' : 'flex-1' }}">
                         <div>
                             @if ($this->settings['create_in_modal'])
-                                <a href="#"
+                                <a href="#" @class(['block' => ! $isRelationTable])
                                     wire:click.prevent="$dispatch('openModal', { component: 'aura::resource-create-modal', arguments: {
                                 type: '{{ $this->model->getType() }}',
                                 params: {
@@ -76,13 +77,7 @@
                                             <span>{{ $createLabel }}</span>
                                         </x-aura::button.border>
                                     @else
-                                        <x-aura::button aria-label="{{ $createLabel }}">
-                                            <x-slot:icon>
-                                                <x-aura::icon icon="plus" />
-                                            </x-slot>
-                                            <span class="sm:hidden" aria-hidden="true">{{ __('New') }}</span>
-                                            <span class="max-sm:hidden">{{ $createLabel }}</span>
-                                        </x-aura::button>
+                                        <x-aura::table.create-button :label="$createLabel" />
                                     @endif
                                 </a>
                             @else
@@ -95,13 +90,7 @@
                                             <span>{{ $createLabel }}</span>
                                         </x-aura::button.border>
                                     @else
-                                        <x-aura::button href="{{ $this->createLink }}" aria-label="{{ $createLabel }}">
-                                            <x-slot:icon>
-                                                <x-aura::icon icon="plus" />
-                                            </x-slot>
-                                            <span class="sm:hidden" aria-hidden="true">{{ __('New') }}</span>
-                                            <span class="max-sm:hidden">{{ $createLabel }}</span>
-                                        </x-aura::button>
+                                        <x-aura::table.create-button :href="$this->createLink" :label="$createLabel" />
                                     @endif
                                 @endif
                             @endif

@@ -18,7 +18,7 @@
     @endphp
 
 </head>
-<body class="font-sans antialiased text-gray-800 bg-gray-50 dark:bg-gray-950 dark:text-gray-100">
+<body class="font-sans antialiased text-gray-800 bg-gray-50 dark:bg-gray-900 dark:text-gray-100">
 
     @if ($loginBgUrl && $loginBgDarkUrl)
         <script>
@@ -78,7 +78,8 @@
                 || filled($themeSettings['logo-darkmode'] ?? null);
         @endphp
 
-        <div class="min-h-screen bg-white lg:grid lg:grid-cols-12 dark:bg-gray-950">
+        {{-- The form pane is the app's page: white, dark gray-900, so inputs and buttons look as they do in the app. --}}
+        <div class="min-h-screen bg-white lg:grid lg:grid-cols-12 dark:bg-gray-900">
             <aside class="hidden lg:block lg:col-span-5 aura-sidebar-type-{{ $sidebarType }} aura-sidebar-darkmode-type-{{ $sidebarDarkType }}">
                 <div class="flex overflow-hidden relative flex-col justify-between p-10 h-full aura-sidebar-bg">
                     @php

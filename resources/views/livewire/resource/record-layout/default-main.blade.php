@@ -107,12 +107,13 @@
             @if ($bodyField)
                 <x-aura::fields.conditions :field="$bodyField" :model="$model" wire:key="resource-field-{{ $bodyField['slug'] }}">
                     @php($bodyValue = $model->display($bodyField['slug']))
-                    {{-- Below lg the rail follows the body, so the body closes with a section gap. --}}
+                    {{-- Below lg the rail follows the body, so the body closes with a section gap. The text fills the
+                         main column up to 720px (about 90 characters), no dead gap before the rail. --}}
                     @if ($bodyField['field'] instanceof \Aura\Base\Fields\Wysiwyg)
-                        <div class="px-2 mb-8 max-w-prose prose prose-sm text-gray-800 lg:mb-0 dark:prose-invert dark:text-gray-200" data-record-body>{!! $bodyValue !!}</div>
+                        <div class="px-2 mb-8 max-w-[45rem] prose prose-sm text-gray-800 lg:mb-0 dark:prose-invert dark:text-gray-200" data-record-body>{!! $bodyValue !!}</div>
                     @else
                         {{-- One line on purpose: whitespace-pre-line would render the template's own line breaks. --}}
-                        <div class="px-2 mb-8 max-w-prose text-[15px] leading-relaxed text-gray-800 whitespace-pre-line break-words lg:mb-0 dark:text-gray-200" data-record-body>{!! trim((string) $bodyValue) !!}</div>
+                        <div class="px-2 mb-8 max-w-[45rem] text-[15px] leading-relaxed text-gray-800 whitespace-pre-line break-words lg:mb-0 dark:text-gray-200" data-record-body>{!! trim((string) $bodyValue) !!}</div>
                     @endif
                 </x-aura::fields.conditions>
             @elseif ($loose !== [])

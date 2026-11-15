@@ -32,7 +32,7 @@
                     <svg class="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 transition-transform duration-200 {{ $direction === 'desc' ? 'rotate-180' : '' }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter"><path d="M8 13.5V5M5.1 8.5 8 3.5l2.9 5" /></svg>
                 @else
                     {{-- Unsorted: muted arrow revealed on hover --}}
-                    <svg class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity duration-150" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter"><path d="M8 13.5V5M5.1 8.5 8 3.5l2.9 5" /></svg>
+                    <svg class="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter"><path d="M8 13.5V5M5.1 8.5 8 3.5l2.9 5" /></svg>
                 @endif
             </span>
         </button>

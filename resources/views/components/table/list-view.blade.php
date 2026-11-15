@@ -160,7 +160,6 @@
                             $rowTitle = $item['title'];
                             $primary = $rowTitle !== '' ? e($rowTitle) : $displays->first();
                             $hasAvatar = method_exists($row, 'avatarShape') && $row->avatarShape();
-                            // A blank value keeps its line as a dash, so every row has the same lines and height.
                             $metaValues = $metaKeys->reject(fn ($key) => in_array($key, $pairedKeys, true))->map(fn ($key) => $displays[$key])->values();
                             $relationLine = $relationKeys->map(fn ($key) => $relationName($displays[$key]))->filter(fn ($name) => $name !== '')->implode(' · ');
                             $rowUrl = auth()->user()?->can('view', $row) ? $row->viewUrl() : null;
@@ -199,19 +198,26 @@
                                             @endforeach
                                         </div>
                                     @endif
-                                    {{-- One quiet line per meta value: two values side by side would both cut off on a phone. --}}
-                                    @foreach ($metaValues as $metaValue)
-                                        <div class="flex items-center mt-0.5 min-w-0 h-5 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400 [&_.aura-link]:text-inherit [&_.aura-record-link]:text-inherit">
-                                            @if ($isBlank($metaValue))
-                                                <span class="text-gray-400 dark:text-gray-500">–</span>
+                                    {{-- The meta values share one quiet line, joined with " · " (a domain and its tag), and wrap
+                                         onto a second line only when they do not fit (.aura-dot-list drops the dot at a line start).
+                                         Blank values drop out; a row with none keeps one line as a dash. --}}
+                                    @if ($metaValues->isNotEmpty())
+                                        @php($filledMeta = $metaValues->reject(fn ($value) => $isBlank($value)))
+                                        <div class="mt-0.5 text-sm text-gray-500 dark:text-gray-400 [&_.aura-link]:text-inherit [&_.aura-record-link]:text-inherit" data-mobile-row-meta>
+                                            @if ($filledMeta->isEmpty())
+                                                <div class="h-5 text-gray-400 dark:text-gray-500">–</div>
                                             @else
-                                                <span class="min-w-0 truncate">{!! $metaValue !!}</span>
+                                                <div class="aura-dot-list">
+                                                    @foreach ($filledMeta as $metaValue)
+                                                        <span class="aura-dot-list-item"><span class="min-w-0 truncate">{!! $metaValue !!}</span></span>
+                                                    @endforeach
+                                                </div>
                                             @endif
                                         </div>
-                                    @endforeach
+                                    @endif
                                 </div>
                                 @if ($rowUrl)
-                                    <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" />
+                                    <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-400 shrink-0" />
                                 @endif
                             </{{ $rowUrl ? 'a' : 'div' }}>
                         </li>

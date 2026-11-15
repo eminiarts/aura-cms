@@ -43,7 +43,7 @@
         @endforeach
     </select>
 
-    <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center text-gray-400 dark:text-gray-500 {{ $size === 'xs' ? 'pr-1.5' : 'pr-2.5' }}" aria-hidden="true">
+    <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center text-gray-500 dark:text-gray-400 {{ $size === 'xs' ? 'pr-1.5' : 'pr-2.5' }}" aria-hidden="true">
         <x-aura::icon.caret direction="down" class="{{ $size === 'xs' ? 'size-3' : 'size-4' }}" />
     </span>
 </div>

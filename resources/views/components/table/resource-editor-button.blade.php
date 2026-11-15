@@ -19,7 +19,7 @@
 
             <x-slot name="content">
                 <x-aura::dropdown-link :href="route('aura.resource.editor', $model::getSlug())" class="flex gap-2 items-center" role="menuitem">
-                    <x-aura::icon icon="cog" size="xs" class="text-gray-400 dark:text-gray-500" />
+                    <x-aura::icon icon="cog" size="xs" class="text-gray-400" />
                     {{ __('Edit resource') }}
                 </x-aura::dropdown-link>
             </x-slot>

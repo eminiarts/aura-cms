@@ -70,15 +70,15 @@
     @endif
 
     @if($localAdmin)
-        <div class="flex gap-3 items-center mt-8" aria-hidden="true">
+        {{-- A developer shortcut, not part of the sign-in: muted, smaller (32px) and set apart by its divider. --}}
+        <div class="flex gap-3 items-center mt-10" aria-hidden="true">
             <div class="flex-1 h-px bg-gray-950/5 dark:bg-white/10"></div>
-            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ __('Local development') }}</span>
+            <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('Local development') }}</span>
             <div class="flex-1 h-px bg-gray-950/5 dark:bg-white/10"></div>
         </div>
 
-        <div class="mt-4">
-            {{-- Same 36px height as the Log in button above. --}}
-            <x-aura::button.border href="{{ route('aura.login-as', ['id' => $localAdmin->id]) }}" class="justify-center w-full login-as-admin">
+        <div class="mt-3">
+            <x-aura::button.border size="sm" href="{{ route('aura.login-as', ['id' => $localAdmin->id]) }}" class="justify-center w-full !text-gray-600 !shadow-none dark:!text-gray-300 login-as-admin">
                 <x-slot:icon>
                     <x-aura::icon.user />
                 </x-slot>

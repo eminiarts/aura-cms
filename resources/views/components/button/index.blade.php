@@ -56,10 +56,10 @@ $sharedClass = ' aura-button relative items-center justify-center whitespace-now
 @if(isset($href))
 <a
   @if(isset($id)) id="{{ $id }}" @endif
-  tabindex="{{ $disabled ? '-1' : '0' }}"
+  tabindex="{{ $disabled ? '-1' : ($attributes->has('tabindex') ? $attributes->get('tabindex') : '0') }}"
   href="{{ $disabled ? '#' : $href }}"
   @if($navigate && !$disabled) wire:navigate @endif
-  {{$attributes->merge([
+  {{$attributes->except('tabindex')->merge([
     'class' => $class . $sharedClass . $sizes[$size],
   ])}}
   @if($disabled) aria-disabled="true" @endif
@@ -76,7 +76,7 @@ $sharedClass = ' aura-button relative items-center justify-center whitespace-now
   @if(isset($id)) id="{{ $id }}" @endif
   tabindex="{{ $disabled ? '-1' : ($attributes->has('tabindex') ? $attributes->get('tabindex') : '0') }}"
   type="{{ $type }}"
-  {{$attributes->merge([
+  {{$attributes->except('tabindex')->merge([
     'class' => $class . $sharedClass . $sizes[$size],
   ])}}
   @if($disabled) disabled aria-disabled="true" @endif

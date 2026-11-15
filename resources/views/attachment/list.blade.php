@@ -113,7 +113,7 @@
                             </span>
                         </span>
                         @unless ($isPicker)
-                            <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" />
+                            <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-400 shrink-0" />
                         @endunless
                     </button>
                 </li>

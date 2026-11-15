@@ -116,7 +116,7 @@
                         :class="value ? '' : 'text-gray-400 dark:text-gray-500'"
                         class="truncate"></span>
 
-                    <x-aura::icon.caret direction="down" class="size-4 shrink-0 text-gray-400 dark:text-gray-500" />
+                    <x-aura::icon.caret direction="down" class="size-4 shrink-0 text-gray-500 dark:text-gray-400" />
                 </button>
 
                 <ul x-listbox:options x-transition.origin.top.right x-cloak

@@ -29,7 +29,9 @@
         @endif
     </div>
 
-    <div class="flex gap-2 items-center shrink-0">
+    {{-- On the page the actions take the width the title leaves, so the create button can decide whether
+         "New user" fits (table/create-button); in a record section they keep their size. --}}
+    <div class="flex gap-2 items-center {{ $isRelationTable ? 'shrink-0' : 'flex-1 justify-end' }}">
         @if (config('aura.auth.user_invitations'))
             <x-aura::button.border :size="$buttonSize" wire:click.prevent="$dispatch('openModal', { component: 'aura::invite-user'})">
                 <x-slot:icon>
@@ -40,7 +42,7 @@
         @endif
 
         @if ($this->settings['create_in_modal'])
-            <a href="#" wire:click.prevent="$dispatch('openModal', 'resource.create-modal', {{ json_encode(['type' => $this->model->getType(), 'params' => [
+            <a href="#" @class(['flex-1 block' => ! $isRelationTable]) wire:click.prevent="$dispatch('openModal', 'resource.create-modal', {{ json_encode(['type' => $this->model->getType(), 'params' => [
             'for' => $this->parent->getType(), 'id' => $this->parent->id
             ]]) }})">
                 @if ($isRelationTable)
@@ -51,12 +53,7 @@
                         <span>{{ $createLabel }}</span>
                     </x-aura::button.border>
                 @else
-                    <x-aura::button>
-                        <x-slot:icon>
-                            <x-aura::icon icon="plus" />
-                        </x-slot>
-                        <span>{{ $createLabel }}</span>
-                    </x-aura::button>
+                    <x-aura::table.create-button :label="$createLabel" />
                 @endif
             </a>
         @elseif ($isRelationTable)
@@ -67,12 +64,9 @@
                 <span>{{ $createLabel }}</span>
             </x-aura::button.border>
         @else
-            <x-aura::button href="{{ $this->createLink }}">
-                <x-slot:icon>
-                    <x-aura::icon icon="plus" />
-                </x-slot>
-                <span>{{ $createLabel }}</span>
-            </x-aura::button>
+            <div class="flex-1">
+                <x-aura::table.create-button :href="$this->createLink" :label="$createLabel" />
+            </div>
         @endif
     </div>
 </div>

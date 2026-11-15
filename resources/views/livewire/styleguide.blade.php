@@ -202,10 +202,10 @@
                     ['aura-page-title', '.aura-page-title — 24px · 650 · -0.022em', 'Northwind Software'],
                     ['aura-page-title', '.aura-page-title + .aura-page-count — list title with its record count', 'Companies <span class="aura-page-count">14</span>'],
                     ['aura-section-title', '.aura-section-title — 14px · 600', 'Contacts'],
-                    ['aura-eyebrow', '.aura-eyebrow — 12px · 500 · gray-500 (resource label, view labels)', 'Company'],
+                    ['aura-eyebrow', '.aura-eyebrow — 13px · 500 · gray-500 (resource label, view labels)', 'Company'],
                     ['aura-body', '.aura-body — 14px · 400 · gray-700', 'The quick brown fox jumps over the lazy dog'],
                     ['aura-meta', '.aura-meta — 12px · 400 · gray-500', 'Company · 2 minutes ago'],
-                    ['aura-table-header', '.aura-table-header — 12px · 500 · gray-600 (dark gray-300), sentence case', 'Created at'],
+                    ['aura-table-header', '.aura-table-header — 13px · 500 · gray-600 (dark gray-300), sentence case', 'Created at'],
                     ['aura-stat-value', '.aura-stat-value — 30px · 600 · -0.02em · tabular', '84,500'],
                     ['aura-record-fact-number', '.aura-record-fact-number + .aura-num-unit — the unit at 0.85em · 400 · gray-500', '<span class="aura-num-unit">CHF</span>&nbsp;84,500'],
                     ['aura-record-meta !mt-0', '.aura-record-meta — 13px · gray-600 (dark gray-400), times and author in gray-800', 'Created <time>Nov 3, 2026</time> by <span data-record-meta-author>Bajram Emini</span> <span class="aura-record-meta-sep">&middot;</span> Updated <time>4 hours ago</time>'],
@@ -220,7 +220,7 @@
 
         <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Page header pattern') }}</span>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Record pages: the record title is the H1, the eyebrow names the resource on the view page ("Deal") and the task on the edit page ("Edit deal"). Create pages have no eyebrow; the H1 says "New deal" in sentence case. Every form page has a ghost Cancel left of the primary Save (on edit, Cancel returns to the record); the view page has no primary action, its Edit is a secondary button with its pencil. .aura-record-header puts the actions right of the title from sm; on phones the row dissolves into .aura-record-block and the header has no action band of its own: the view page\'s Edit becomes a 36px pencil (button size="icon", aria-label and tooltip "Edit") in the title row, and forms move Cancel and Save into .aura-form-bar, a bar on the bottom edge (safe-area aware) with a ghost Cancel and a full-width primary Save. Other resource actions stay as a right-aligned row under the title or facts strip (.aura-record-header-actions-sm hides a row that would be empty on phones). Phones also replace the breadcrumb trail with one 14px back link above the title, built from the trail\'s last link ("‹ Companies" on a record, "‹ Northwind Software" on its edit form). A simple form caps breadcrumb, header and fields at one width, so Save sits at the edge of the form. The view page promotes key fields into a facts strip under the title (.aura-record-facts: by default the first Number field, large and tabular, and the first Status field as its tag; a resource overrides the pick with recordHeaderFields()). One primary button per screen; everything else is secondary or ghost.') }}</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Record pages: the record title is the H1, the eyebrow names the resource on the view page ("Deal") and the task on the edit page ("Edit deal"). Create pages have no eyebrow; the H1 says "New deal" in sentence case. Every form page has a ghost Cancel left of the primary Save (on edit, Cancel returns to the record); the view page has no primary action, its Edit is a secondary button with its pencil. .aura-record-header puts the actions right of the title from sm; on phones the row dissolves into .aura-record-block and the header has no action band of its own: the view page\'s Edit becomes a 36px pencil (button size="icon", aria-label and tooltip "Edit") in the title row, and forms move Cancel and Save into .aura-form-bar, a bar on the bottom edge (safe-area aware) with a ghost Cancel and a full-width primary Save. Other resource actions stay as a right-aligned row under the title or facts strip (.aura-record-header-actions-sm hides a row that would be empty on phones). Phones also replace the breadcrumb trail with one 14px back link above the title, built from the trail\'s last link ("‹ Companies" on a record, "‹ Northwind Software" on its edit form). A simple form caps breadcrumb, header and fields at one width, so Save sits at the edge of the form. The view page promotes key fields into a facts strip under the title (.aura-record-facts: by default the first Number field, large and tabular, and the first Status field as its tag; a resource overrides the pick with recordHeaderFields()). One primary button per screen; everything else is secondary or ghost. A list page\'s create button (table/create-button) keeps its object ("New company") while it fits beside the title and reads "+ New" only when the full label would wrap the title (.aura-create-fit, pure CSS). On phones the list toolbar controls are 44px targets.') }}</p>
             <div class="mt-4 aura-record-block">
             <div class="aura-record-header">
                 <div class="flex-1 min-w-0">
@@ -334,7 +334,7 @@
 
         <div class="p-6 mt-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('The caret') }}</span>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400"><code class="text-xs">&lt;x-aura::icon.caret direction="up|down|left|right|up-down" /&gt;</code> {{ __('One caret for every chevron: the wordmark\'s Λ, 60° legs, a mitered apex, flat ends, 1.5px at 16px (chevron-up, chevron-down and arrow-right draw it too). Selects, pagers, disclosure, row and card "opens", back links and native selects use it; the breadcrumb separator is a single leg; sort and delta arrows take its head.') }}</p>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400"><code class="text-xs">&lt;x-aura::icon.caret direction="up|down|left|right|up-down" /&gt;</code> {{ __('One caret for every chevron: the wordmark\'s Λ, 60° legs, a mitered apex, flat ends, 8px wide and 1.6px thick in its 16px box, the weight of the nav icons; gray-500, dark gray-400 (chevron-up, chevron-down and arrow-right draw it too). Selects, pagers, disclosure, row and card "opens", back links and native selects use it; the breadcrumb separator is a single leg; sort and delta arrows take its head.') }}</p>
             <div class="flex flex-wrap gap-6 items-center mt-4 text-gray-600 dark:text-gray-300">
                 @foreach (['up', 'down', 'left', 'right', 'up-down'] as $direction)
                     <span class="flex flex-col gap-2 items-center">
@@ -499,7 +499,7 @@
                         <x-aura::fields.label label="Select, empty" />
                         <x-aura::input.select
                             name="styleguide-select-empty"
-                            class="[&:has(option[value='']:checked)]:text-gray-400 dark:[&:has(option[value='']:checked)]:text-gray-500 [&_option]:text-gray-900 dark:[&_option]:text-gray-100"
+                            class="[&:has(option[value='']:checked)]:text-gray-400 dark:[&:has(option[value='']:checked)]:text-gray-400 [&_option]:text-gray-900 dark:[&_option]:text-gray-100"
                             placeholder="Select company…"
                             :options="['northwind' => 'Northwind Software', 'atlas' => 'Atlas Components']"
                         />
@@ -541,7 +541,7 @@
                             </svg>
                         </div>
                         <input type="text"
-                            class="block h-9 py-2 pl-9 pr-3 w-64 max-w-full text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"
+                            class="block h-9 py-2 pl-9 pr-3 w-64 max-w-full text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"
                             placeholder="{{ __('Search :resources…', ['resources' => 'companies']) }}">
                     </div>
                 </div>
@@ -585,7 +585,7 @@
                 <div class="flex relative items-center pr-9 pl-2 mt-2 w-full h-9 bg-white rounded-lg ring-1 shadow-xs ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10">
                     <span class="aura-tag aura-tag-status bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-300">High</span>
                     <span class="flex absolute inset-y-0 right-0 items-center pr-2.5" aria-hidden="true">
-                        <x-aura::icon.caret direction="down" class="text-gray-400 size-4 dark:text-gray-500" />
+                        <x-aura::icon.caret direction="down" class="text-gray-500 size-4 dark:text-gray-400" />
                     </span>
                 </div>
             </div>
@@ -695,7 +695,7 @@
         <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Record page: details section (.aura-record-section) and related-record cards (x-aura::resource.record-card)') }}</span>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('With related records beside the values, every view panel renders as a titled section of label/value rows with hairlines; a single panel is titled "Details". From xl the sections sit in a 25rem (400px) column with the related records on the right: embedded lists, or, for a record without lists, one card per BelongsTo relation with the related record and up to three of its own list values. The column closes with the record meta line (.aura-record-meta, resource/record-meta): created date, author when the record has one, and the last update once it differs.') }}</p>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Right rail: when a record has a narrow panel (style width 33% or less, the sidebar card of its form) next to other values, the view page mirrors the form: from lg the other sections fill the main column and the narrow panels stack in a 20rem rail on the right (.aura-record-rail, 6.5rem label column), with the meta line under them. Relations in the rail stay inline record links instead of cards. On phones the rail follows the main column and keeps label-left, value-right rows (7rem label column).') }}</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Right rail: when a record has a narrow panel (style width 33% or less, the sidebar card of its form) next to other values, the view page mirrors the form: from lg the other sections fill the main column and the narrow panels stack in a 20rem rail on the right (.aura-record-rail, 6.5rem label column), with the meta line under them. Every rail property is one 44px row, label and value centred. Relations in the rail stay inline record links instead of cards. A record body (a lone long text beside the rail) fills the main column up to 720px. On phones the rail follows the main column and keeps label-left, value-right rows (7rem label column).') }}</p>
             <div class="grid grid-cols-1 gap-8 mt-4 lg:grid-cols-[minmax(0,25rem)_minmax(0,1fr)]">
                 <div class="aura-record-section !mb-0">
                     <h3 class="aura-record-section-title">{{ __('Details') }}</h3>
@@ -730,7 +730,7 @@
                                 <p class="aura-eyebrow">Company</p>
                                 <p class="mt-0.5 text-sm font-semibold text-gray-900 truncate dark:text-white">Northwind Software</p>
                             </div>
-                            <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" />
+                            <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-400 shrink-0" />
                         </div>
                         <dl class="pt-3 mt-3 space-y-1.5 border-t border-gray-100 dark:border-white/[0.06]">
                             <div class="flex gap-4 justify-between items-center text-sm"><dt class="text-gray-500 dark:text-gray-400">Website</dt><dd class="text-gray-900 dark:text-gray-100"><a href="#cards" class="aura-link">northwindsoftware.com</a></dd></div>
@@ -744,7 +744,7 @@
                                 <p class="aura-eyebrow">Contact</p>
                                 <p class="mt-0.5 text-sm font-semibold text-gray-900 truncate dark:text-white">Martina Keller</p>
                             </div>
-                            <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" />
+                            <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-400 shrink-0" />
                         </div>
                         <dl class="pt-3 mt-3 space-y-1.5 border-t border-gray-100 dark:border-white/[0.06]">
                             <div class="flex gap-4 justify-between items-center text-sm"><dt class="text-gray-500 dark:text-gray-400">Email</dt><dd class="min-w-0 text-gray-900 truncate dark:text-gray-100">martina.keller@northwindsoftware.com</dd></div>
@@ -912,7 +912,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">08</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Table') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('The resource index table. No card around it: a header hairline, row dividers and a closing hairline carry the list. Headings use the real table.heading component (sentence case, 12px medium gray-600) and lead with a 14px gray-400 mark for the column\'s value type (text, email, phone, number, date, status, relation; table/column-icon from the field class). A number column is right-aligned: the mark still leads the label and the sort arrow moves in front, so the label stays flush with the figures below; rows are a faithful specimen of table/row (the live rows are Livewire-bound). First column: entity avatar (24px, when the resource has one) plus the record name, 500 gray-900, linked to the record; other cells 400 gray-600, numerals tabular, empty cells show a dash. The page title carries the record count. With a pointer, the whole row opens the record and the row actions (gray-500) appear on hover; on touch they are always visible. Row hover (the row-hover: variant) waits until the pointer has moved, so a page that loads under a resting cursor shows no highlighted row. Related lists on record pages use the same rows. Second row shows the selected state: a primary tint and the mark (.aura-mark, one Λ leg) on its left edge. Row height follows the density setting (--aura-row-padding-y: 10px comfortable, 44px rows; 6px compact). A number\'s unit (prefix or suffix, "CHF") sits in .aura-num-unit: 0.85em, 400, gray-500. Header line, row dividers and the closing line use --aura-hairline. An empty list is still a table, see below.') }}
+            {{ __('The resource index table. No card around it: a header hairline, row dividers and a closing hairline carry the list. Headings use the real table.heading component (sentence case, 13px medium gray-600) and lead with a 14px gray-400 mark for the column\'s value type (email, phone, number, date, status, select, boolean, image, relation; table/column-icon from the field class). Plain text columns (text, textarea, slug, rich text) carry no mark: text is the default, a mark there is noise. A number column is right-aligned: the mark still leads the label and the sort arrow moves in front, so the label stays flush with the figures below; rows are a faithful specimen of table/row (the live rows are Livewire-bound). First column: entity avatar (24px, when the resource has one) plus the record name, 500 gray-900, linked to the record; other cells 400 gray-600, numerals tabular, empty cells show a dash. The page title carries the record count. With a pointer, the whole row opens the record and the row actions (gray-500) appear on hover; on touch they are always visible. Row hover (the row-hover: variant) waits until the pointer has moved, so a page that loads under a resting cursor shows no highlighted row. Related lists on record pages use the same rows. Second row shows the selected state: a primary tint and the mark (.aura-mark, one Λ leg) on its left edge. Row height follows the density setting (--aura-row-padding-y: 10px comfortable, 44px rows; 6px compact). A number\'s unit (prefix or suffix, "CHF") sits in .aura-num-unit: 0.85em, 400, gray-500. Header line, row dividers and the closing line use --aura-hairline. An empty list is still a table, see below.') }}
         </p>
 
         {{-- Filter tabs (specimen of table/filter-tabs) --}}
@@ -1009,7 +1009,7 @@
 
         {{-- Phone list (specimen of table/list-view below sm) --}}
         <p class="mt-6 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Below sm the default row turns into a stacked list: the first column as the primary line, the next two values as quiet meta lines, a chevron when the record can be opened. A Number and a Status column share one line, the tag left and the value right, so a deal takes three lines. Number columns are right-aligned on desktop; phone and dates do not wrap; long emails truncate with the full address as tooltip.') }}
+            {{ __('Below sm the default row turns into a stacked list: the first column as the primary line, the next two values on one quiet meta line joined with " · " (.aura-dot-list: they wrap onto a second line only when they do not fit, and the dot at a line start is clipped), a 16px gray-400 chevron when the record can be opened. A Number and a Status column share one line, the tag left and the value right, so a deal takes three lines. Number columns are right-aligned on desktop; phone and dates do not wrap; long emails truncate with the full address as tooltip.') }}
         </p>
         <ul class="overflow-hidden mt-3 max-w-sm bg-white rounded-panel ring-1 divide-y divide-aura-hairline dark:bg-gray-800 ring-aura-edge">
             @foreach (array_slice($tableRows, 0, 3) as $row)
@@ -1023,7 +1023,7 @@
                                 <span class="min-w-0 truncate">{{ $row['date'] }}</span>
                             </div>
                         </div>
-                        <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" />
+                        <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-400 shrink-0" />
                     </a>
                 </li>
             @endforeach

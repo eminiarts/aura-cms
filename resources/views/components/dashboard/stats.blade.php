@@ -84,15 +84,15 @@
 
                 @if ($delta !== null)
                     {{-- The change as colored text, as in the index widget strip; the words say what it compares with. --}}
-                    <p class="flex gap-x-1.5 min-w-0 whitespace-nowrap" title="{{ __(':current new vs :previous in the previous 30 days', ['current' => $current, 'previous' => $stat['previous'] ?? 0]) }}">
+                    <p class="flex flex-wrap gap-x-1.5 min-w-0 whitespace-nowrap" title="{{ __(':current new vs :previous in the previous 30 days', ['current' => $current, 'previous' => $stat['previous'] ?? 0]) }}">
                         <span class="font-medium tabular-nums shrink-0 {{ $delta > 0 ? 'text-green-700 dark:text-green-400' : ($delta < 0 ? 'text-red-700 dark:text-red-400' : 'text-gray-600 dark:text-gray-300') }}">
                             @if ($delta !== 0)
                                 <span class="sr-only">{{ $delta > 0 ? __('Increased by') : __('Decreased by') }}</span>
                             @endif
                             {{ $delta > 0 ? '+' : ($delta < 0 ? '−' : '') }}{{ abs((int) $deltaPercent) }}%
                         </span>
-                        {{-- Phones (a 140px card) take the shorter phrase so the line does not break. --}}
-                        <span class="min-w-0 text-gray-500 truncate dark:text-gray-400"><span class="sm:hidden">{{ __('vs prior 30 days') }}</span><span class="hidden sm:inline">{{ __('vs previous 30 days') }}</span></span>
+                        {{-- One phrase everywhere; in a narrow phone card it wraps under the figure as a whole. --}}
+                        <span class="min-w-0 text-gray-500 truncate dark:text-gray-400">{{ __('vs previous 30 days') }}</span>
                     </p>
                 @endif
             </div>

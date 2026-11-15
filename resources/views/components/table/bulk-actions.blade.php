@@ -40,7 +40,7 @@
                     <div class="hidden sm:block" data-resource-editor-button>
                         <div class="-mx-1 my-1 h-px bg-gray-950/5 dark:bg-white/10" role="separator"></div>
                         <a href="{{ route('aura.resource.editor', $model::getSlug()) }}" class="gap-2 {{ $itemClass }}" role="menuitem" tabindex="-1">
-                            <x-aura::icon icon="cog" size="xs" class="text-gray-400 dark:text-gray-500" />
+                            <x-aura::icon icon="cog" size="xs" class="text-gray-400" />
                             {{ __('Edit resource') }}
                         </a>
                     </div>

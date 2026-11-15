@@ -442,7 +442,7 @@
                     </template>
 
                     <div class="flex absolute inset-y-0 right-0 items-center pr-2.5 pointer-events-none shrink-0" aria-hidden="true">
-                        <x-aura::icon.caret direction="down" class="text-gray-400 size-4 dark:text-gray-500" />
+                        <x-aura::icon.caret direction="down" class="text-gray-500 size-4 dark:text-gray-400" />
                     </div>
                 </div>
             </button>

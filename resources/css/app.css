@@ -109,11 +109,16 @@ body {
 /* Native selects keep @tailwindcss/forms' position and size but draw the Λ caret (icon/caret, down).
    Zero added specificity, so bg-none and list boxes ([multiple], [size]) keep theirs. */
 select:where(:not([multiple], [size]:not([size="1"]))) {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='-4 -4 24 24'%3e%3cpath stroke='%236b7280' stroke-linecap='butt' stroke-linejoin='miter' stroke-width='1.7' d='M4.5 4.5 8 10.5l3.5-6'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='-4 -4 24 24'%3e%3cpath stroke='%236b7280' stroke-linecap='butt' stroke-linejoin='miter' stroke-width='1.8' d='M4 4.54 8 11.46l4-6.92'/%3e%3c/svg%3e");
+}
+
+/* Dark surfaces: the caret in gray-400, like the other functional icons there. */
+:where(.dark) select:where(:not([multiple], [size]:not([size="1"]))) {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='-4 -4 24 24'%3e%3cpath stroke='%239ca3af' stroke-linecap='butt' stroke-linejoin='miter' stroke-width='1.8' d='M4 4.54 8 11.46l4-6.92'/%3e%3c/svg%3e");
 }
 
 .aura-eyebrow {
-    @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+    @apply text-[0.8125rem] leading-5 font-medium text-gray-500 dark:text-gray-400;
 }
 
 .aura-section-title {
@@ -129,7 +134,7 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
 }
 
 .aura-table-header {
-    @apply text-xs font-medium text-gray-600 dark:text-gray-300;
+    @apply text-[0.8125rem] leading-5 font-medium text-gray-600 dark:text-gray-300;
 }
 
 /* Section count next to a section title ("Contacts 12"). */
@@ -140,6 +145,63 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
 /* Record count next to the page title ("Companies 14"), the page-level twin of the section count. */
 .aura-page-count {
     @apply ml-2 text-lg font-normal text-gray-400 dark:text-gray-500;
+}
+
+/* Values on one line joined with " · ", wrapping only when they do not fit. Every item carries its dot
+   in front; the list is pulled 12px left inside a clipping box, so the dot of whichever item starts a
+   line falls outside and only the dots between values show. A value longer than the line truncates. */
+.aura-dot-list {
+    @apply flex flex-wrap;
+    margin-left: -0.75rem;
+    clip-path: inset(-0.25rem -0.25rem -0.25rem 0.75rem);
+}
+
+.aura-dot-list-item {
+    @apply flex h-5 min-w-0 max-w-full items-center whitespace-nowrap;
+}
+
+.aura-dot-list-item::before {
+    content: "·";
+    @apply w-3 shrink-0 text-center text-gray-400 dark:text-gray-500;
+}
+
+/* A list page's create button (table/create-button): "New company" while it fits beside the title, "New"
+   only when the full label would wrap the title. Both copies share one grid cell. The full one sits on a
+   one-line wrapping row behind a zero-width first item, so when it does not fit it wraps onto the second
+   line, which the row clips; the short copy under it then shows. The row contributes no size of its own
+   (zero width and height, cancelled padding), so the cell is as narrow as "New" allows and as wide as the
+   title leaves. The 4px padding keeps the focus ring inside the clip. */
+.aura-create-fit {
+    display: grid;
+    justify-items: end;
+    align-items: center;
+}
+
+.aura-create-fit > * {
+    grid-area: 1 / 1;
+}
+
+.aura-create-fit-full {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-content: flex-start;
+    /* The first line can be as short as the empty marker, so the gap alone must push line two out of the clip. */
+    row-gap: 10rem;
+    justify-self: stretch;
+    align-self: start;
+    width: 0;
+    min-width: calc(100% + 0.5rem);
+    height: 0;
+    min-height: calc(100% + 0.5rem);
+    margin: -0.25rem;
+    padding: 0.25rem;
+    overflow: hidden;
+}
+
+.aura-create-fit-full::before {
+    content: "";
+    width: 0;
 }
 
 /* Tag family. One 22px chip for every inline enum value: neutral (.aura-tag,
@@ -536,6 +598,32 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
     }
 }
 
+/* Phones: the list toolbar's controls are 44px touch targets (search, icon buttons, labelled Filters, the
+   view switch), one row height. */
+@media (max-width: 639.98px) {
+    .aura-table-toolbar #table-search,
+    .aura-table-toolbar .aura-button {
+        height: 2.75rem;
+    }
+
+    .aura-table-toolbar .aura-button:is(.w-9, [class~="max-sm:w-9"]) {
+        width: 2.75rem;
+    }
+
+    .aura-table-toolbar [data-view-switch] > button {
+        padding: 0.625rem;
+    }
+}
+
+/* Rail properties are one 44px row each, label and value centred, whether the value is text, a tag or
+   an avatar link (baseline alignment made a tag row 46px and a text row 41px). */
+.aura-record-rail .aura-view-row {
+    min-height: 2.75rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    align-items: center;
+}
+
 /* Phones: the rail's short properties (status, priority, dates, people) stay label-left, value-right rows,
    a property list rather than stacked label-over-value blocks. */
 @media (max-width: 639.98px) {
@@ -543,7 +631,6 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
         display: grid;
         grid-template-columns: 7rem minmax(0, 1fr);
         column-gap: 0.75rem;
-        align-items: baseline;
     }
 
     .aura-record-rail .aura-view-row > :first-child {

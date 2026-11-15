@@ -34,20 +34,30 @@ trait AuraResourceIdentity
      */
     public function avatarImageId(): int|string|null
     {
+        $slug = $this->avatarImageSlug();
+
+        if ($slug === null) {
+            return null;
+        }
+
+        $value = $this->{$slug} ?? null;
+
+        if (is_array($value)) {
+            $value = $value[0] ?? null;
+        }
+
+        return $value ?: null;
+    }
+
+    /** Slug of the Image field avatarImageId() reads (avatar, logo, image or photo), null without one. */
+    public function avatarImageSlug(): ?string
+    {
         foreach (['avatar', 'logo', 'image', 'photo'] as $slug) {
             $field = $this->fieldBySlug($slug);
 
-            if (! $field || ($field['type'] ?? null) !== 'Aura\\Base\\Fields\\Image') {
-                continue;
+            if ($field && ($field['type'] ?? null) === 'Aura\\Base\\Fields\\Image') {
+                return $slug;
             }
-
-            $value = $this->{$slug} ?? null;
-
-            if (is_array($value)) {
-                $value = $value[0] ?? null;
-            }
-
-            return $value ?: null;
         }
 
         return null;

@@ -444,7 +444,7 @@
 
                 <!-- Heroicons up/down -->
                 <div class="flex absolute inset-y-0 right-0 items-center px-2 pointer-events-none shrink-0">
-                    <x-aura::icon.caret direction="up-down" class="text-gray-400" x-bind:class="{ 'w-4 h-4': size === 'xs', 'w-5 h-5': size === 'default' }" />
+                    <x-aura::icon.caret direction="up-down" class="text-gray-500 dark:text-gray-400" x-bind:class="{ 'w-4 h-4': size === 'xs', 'w-5 h-5': size === 'default' }" />
                 </div>
             </button>
 

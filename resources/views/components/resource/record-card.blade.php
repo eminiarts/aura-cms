@@ -31,7 +31,7 @@
             @endif
         </div>
         @if ($url)
-            <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-300 transition-colors duration-150 shrink-0 group-hover:text-gray-500 dark:text-gray-600 dark:group-hover:text-gray-400" />
+            <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-400 transition-colors duration-150 shrink-0 group-hover:text-gray-600 dark:text-gray-400 dark:group-hover:text-gray-200" />
         @endif
     </div>
 

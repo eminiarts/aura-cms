@@ -105,6 +105,8 @@ trait ProfileFields
                 'name' => 'Delete',
                 'slug' => 'delete-tab',
                 'global' => true,
+                // A destructive tab: its label in the danger color (fields/tabs).
+                'tone' => 'danger',
             ],
             [
                 'name' => 'Delete account',

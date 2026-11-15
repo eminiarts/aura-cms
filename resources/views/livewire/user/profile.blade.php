@@ -15,7 +15,8 @@
     <div class="flex gap-4 justify-between items-center mt-1 mb-6 sm:mt-6">
         <h1 class="aura-page-title">{{ __('Profile') }}</h1>
 
-        <div class="shrink-0">
+        {{-- Phones save from the bar on the bottom edge, as on resource forms and settings. --}}
+        <div class="shrink-0 max-sm:hidden">
             <x-aura::button wire:click="save">
                 <div wire:loading wire:target="save">
                     <x-aura::icon.loading  />
@@ -52,5 +53,5 @@
     @endforeach
     </div>
 
-
+    @include('aura::livewire.resource.form-bar', ['cancelUrl' => null])
 </div>

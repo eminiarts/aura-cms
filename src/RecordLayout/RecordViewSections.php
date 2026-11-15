@@ -12,7 +12,8 @@ use Aura\Base\Resource;
  * Arranges a record's view-field tree for the record page: the record's own
  * values go into the details column, embedded record lists (HasMany-style
  * tables) become related sections beside it. The field whose value is the
- * record title is dropped (the header shows it), and a single panel is
+ * record title is dropped (the header shows it), so is the Image field
+ * behind the header avatar, and a single panel is
  * retitled "Details" since its name usually repeats the resource name.
  *
  * Trees with other groups (tabs) are returned unchanged with no related
@@ -89,6 +90,7 @@ final class RecordViewSections
      */
     public static function formFrame(array $fields, $model): ?array
     {
+        $fields = self::withoutHeaderAvatar($fields, $model);
         $sections = self::partition($fields, $model) ?? ['details' => $fields, 'related' => []];
 
         if ($sections['related'] !== [] || self::hasRail($sections['details']) || self::cards($fields, $model) !== []) {
@@ -285,6 +287,7 @@ final class RecordViewSections
      */
     private static function partition(array $fields, $model, array $shownElsewhere = []): ?array
     {
+        $fields = self::withoutHeaderAvatar($fields, $model);
         $title = trim((string) $model->title());
         $details = [];
         $related = [];
@@ -338,5 +341,41 @@ final class RecordViewSections
         }
 
         return trim(html_entity_decode(strip_tags((string) $value), ENT_QUOTES)) === $title;
+    }
+
+    /**
+     * The tree without the Image field the header avatar shows (avatar, logo, image or photo), at any
+     * depth, tabs included: the record header already shows that picture (or its initials).
+     *
+     * @param  array<int|string, array<string, mixed>>  $fields
+     * @return array<int|string, array<string, mixed>>
+     */
+    private static function withoutHeaderAvatar(array $fields, $model): array
+    {
+        $slug = method_exists($model, 'avatarImageSlug') && $model->avatarShape() ? $model->avatarImageSlug() : null;
+
+        if ($slug === null) {
+            return $fields;
+        }
+
+        $strip = function (array $fields) use (&$strip, $slug): array {
+            $kept = [];
+
+            foreach ($fields as $key => $field) {
+                if (($field['slug'] ?? null) === $slug && empty($field['fields'])) {
+                    continue;
+                }
+
+                if (! empty($field['fields']) && is_array($field['fields'])) {
+                    $field['fields'] = $strip($field['fields']);
+                }
+
+                $kept[$key] = $field;
+            }
+
+            return array_is_list($fields) ? array_values($kept) : $kept;
+        };
+
+        return $strip($fields);
     }
 }

@@ -75,7 +75,7 @@
                     :tabindex="isSelected($el.id) ? 0 : -1"
                     :aria-selected="isSelected($el.id)"
                     :class="isSelected($el.id) ? 'border-primary-600 text-primary-700 dark:border-primary-400 dark:text-primary-400 whitespace-nowrap border-b-2 font-semibold text-sm' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-500/30 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600 whitespace-nowrap border-b-2 font-semibold text-sm'"
-                    class="inline-flex pb-2.5 {{ $tabHasErrors ? '!text-red-500 border-red-500' : '' }}"
+                    class="inline-flex pb-2.5 {{ $tabHasErrors ? '!text-red-500 border-red-500' : '' }} {{ optional($tab)['tone'] === 'danger' ? '!text-red-600 dark:!text-red-400 aria-selected:!border-red-600 dark:aria-selected:!border-red-400' : '' }}"
                     role="tab"
                 >
                     <span class="tab">{{ __($tab['name']) }}</span>

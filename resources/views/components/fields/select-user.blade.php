@@ -42,7 +42,7 @@ $values = $field['field']->values($field['model']);
             <span x-text="value ? findItem(value) : 'Select User'" class="truncate"></span>
 
             {{-- Selector mark --}}
-            <x-aura::icon.caret direction="up-down" class="w-4 h-4 text-gray-500 shrink-0" />
+            <x-aura::icon.caret direction="up-down" class="w-4 h-4 text-gray-500 shrink-0 dark:text-gray-400" />
         </button>
 
 

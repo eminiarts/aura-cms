@@ -436,7 +436,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'name' => 'Global admin',
                 'slug' => 'global_admin',
                 'type' => 'Aura\\Base\\Fields\\GlobalAdmin',
-                'instructions' => 'Instance-level operator with access across all teams. Only a Global Admin can grant or revoke this.',
+                'instructions' => 'Instance-level operator with access across all teams. Only a global admin can grant or revoke this.',
                 'validation' => '',
                 'default' => false,
                 'on_index' => false,

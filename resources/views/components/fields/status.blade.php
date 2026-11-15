@@ -12,7 +12,7 @@
                 <span x-show="!selected" class="pl-1 text-gray-400 dark:text-gray-500">{{ __('Select :field…', ['field' => Str::lower(__($field['name']))]) }}</span>
             </span>
             <span class="flex absolute inset-y-0 right-0 items-center pr-2.5 pointer-events-none">
-                <x-aura::icon.caret direction="down" class="size-4 text-gray-400 dark:text-gray-500" />
+                <x-aura::icon.caret direction="down" class="size-4 text-gray-500 dark:text-gray-400" />
             </span>
         </button>
 

@@ -11,15 +11,15 @@
         @if(config('aura.teams'))
         <!-- Team -->
         <div>
-            <x-aura::input-label class="!mt-0" for="team" :value="__('Team')" />
-            <x-aura::input.text id="team" placeholder="{{ __('Your team name') }}" class="block w-full" type="text" name="team" :value="old('team')" required autofocus autocomplete="organization" />
+            <x-aura::input-label class="!mt-0" for="team" :value="__('Team name')" />
+            <x-aura::input.text id="team" placeholder="{{ __('Enter your team name') }}" class="block w-full" type="text" name="team" :value="old('team')" required autofocus autocomplete="organization" />
             <x-aura::input-error :for="$errors->get('team')" class="mt-2" />
         </div>
         @endif
 
         <!-- Name -->
         <div>
-            <x-aura::input-label class="!mt-0" for="name" :value="__('Name')" />
+            <x-aura::input-label class="!mt-0" for="name" :value="__('Your name')" />
             <x-aura::input.text id="name" placeholder="{{ __('Enter your name') }}" class="block w-full" type="text" name="name" :value="old('name')" required :autofocus="!config('aura.teams')" autocomplete="name" />
             <x-aura::input-error :for="$errors->get('name')" class="mt-2" />
         </div>

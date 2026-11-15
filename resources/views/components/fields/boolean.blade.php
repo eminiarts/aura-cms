@@ -2,13 +2,14 @@
     $booleanLabel = optional($field)['name'];
     $booleanLabel = $booleanLabel && is_string(__($booleanLabel)) ? __($booleanLabel) : $booleanLabel;
     $booleanHelp = optional($field)['instructions'];
-    $booleanRequired = is_string(optional($field)['validation']) && str(optional($field)['validation'])->contains('required');
+    $booleanRequired = optional($field)['disabled'] !== true && is_string(optional($field)['validation']) && str(optional($field)['validation'])->contains('required');
 @endphp
 
 {{-- A switch reads as a sentence: the 36x20 switch (same as input.toggle) on the left, its label and the
      field's instructions as visible text beside it, both of which toggle it. The wrapper keeps the field's
-     width and error line; its own label row (and the help tooltip) stays away. --}}
-<x-aura::fields.wrapper :field="array_merge($field, ['instructions' => null])" :show-label="false">
+     error line; its own label row (and the help tooltip) stays away. A switch with instructions takes the
+     form's full width, so the sentence is not squeezed into a half column, and the text stops at 560px. --}}
+<x-aura::fields.wrapper :field="array_merge($field, ['instructions' => null], $booleanHelp ? ['style' => array_merge((array) (optional($field)['style'] ?? []), ['width' => '100'])] : [])" :show-label="false">
     <div x-data="{
         @if(optional($field)['live'] === true)
         value: $wire.entangle('form.fields.{{ optional($field)['slug'] }}').live,
@@ -37,7 +38,7 @@
                     <span :id="$id('boolean')" class="block font-medium text-gray-700 dark:text-gray-200">{{ $booleanLabel }}@if($booleanRequired)<span class="ml-0.5 text-gray-400 dark:text-gray-500" aria-hidden="true">*</span>@endif</span>
                 @endif
                 @if($booleanHelp)
-                    <span :id="$id('boolean-help')" class="block mt-0.5 text-gray-500 dark:text-gray-400">{{ __($booleanHelp) }}</span>
+                    <span :id="$id('boolean-help')" class="block mt-0.5 max-w-[35rem] text-gray-500 dark:text-gray-400">{{ __($booleanHelp) }}</span>
                 @endif
             </div>
         @endif
