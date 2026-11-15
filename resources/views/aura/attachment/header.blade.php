@@ -16,4 +16,36 @@
 
 
         </div>
+@elseif ($this->settings['media_page'] ?? false)
+    {{-- The Media library page (livewire/media-uploader passes media_page): the header of the media
+         library grid page. Breadcrumb (phones hide it), the title with the file count after search and
+         filters, "Upload files" as the primary action, a 36px icon button on phones. The uploader around
+         this table owns the hidden #file-upload input. --}}
+    <div class="hidden sm:block">
+        <x-aura::breadcrumbs>
+            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
+            <x-aura::breadcrumbs.li :title="__('Media library')" />
+        </x-aura::breadcrumbs>
+    </div>
+
+    <div class="flex gap-4 justify-between items-center mt-1 sm:mt-6">
+        <h1 class="aura-page-title">
+            {{ __('Media library') }}
+            @if (isset($rows) && $rows->total() > 0)
+                <span class="aura-page-count">{{ number_format($rows->total()) }}</span>
+            @endif
+        </h1>
+
+        <x-aura::button.primary
+            type="button"
+            class="shrink-0 max-sm:w-9 max-sm:px-0 max-sm:[&>span:first-child]:ml-0"
+            title="{{ __('Upload files') }}"
+            x-on:click="document.getElementById('file-upload')?.click()"
+            data-media-upload>
+            <x-slot:icon>
+                <x-aura::icon.upload />
+            </x-slot>
+            <span class="sr-only sm:not-sr-only">{{ __('Upload files') }}</span>
+        </x-aura::button.primary>
+    </div>
 @endif

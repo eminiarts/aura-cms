@@ -161,7 +161,8 @@
         {{-- Stacked under the details column (below xl) the related records keep a section gap from the meta line. --}}
         <div class="space-y-8 min-w-0 {{ $splitRelated ? 'mt-6 xl:mt-0' : 'mt-2' }} {{ $useRail ? 'lg:col-start-1' : '' }}" wire:key="resource-view-related" data-record-related>
             @if ($cards !== [])
-                <div class="grid grid-cols-1 gap-4 items-start sm:grid-cols-2" data-record-cards>
+                {{-- Cards in one row share its height (grid stretch). --}}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2" data-record-cards>
                     @foreach ($cards as $card)
                         <x-aura::resource.record-card :record="$card['record']" :label="__($card['field']['name'] ?? $card['record']->singularName())" :facts="$card['facts']" wire:key="resource-card-{{ $card['field']['slug'] }}" />
                     @endforeach

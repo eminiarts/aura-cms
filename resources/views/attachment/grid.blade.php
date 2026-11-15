@@ -87,17 +87,6 @@
                             {{ __('Drag and drop your first file anywhere in this window, or upload one directly.') }}
                         </p>
                     </div>
-                    <div x-data="{ canUpload: !!document.getElementById('file-upload') }">
-                        <x-aura::button.primary
-                            x-cloak
-                            x-show="canUpload"
-                            type="button"
-                            class="flex items-center space-x-2"
-                            x-on:click="document.getElementById('file-upload').click()">
-                            <x-aura::icon.upload class="w-5 h-5" />
-                            <span>{{ __('Upload files') }}</span>
-                        </x-aura::button.primary>
-                    </div>
                 </div>
             </div>
         @endforelse

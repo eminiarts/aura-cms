@@ -159,7 +159,7 @@
                     $statusKey = $metaKeyOfType(\Aura\Base\Fields\Status::class);
                     $pairedKeys = ($numberKey && $statusKey) ? [$statusKey, $numberKey] : [];
                 @endphp
-                {{-- Phones: one line for the record, its relations on one line when it has several, then the same two columns on every row (a status and a number share one line), then a Boolean state with its date. --}}
+                {{-- Phones: one line for the record, its relations on one line when it has several, then the same two columns on every row (a status and a number share one line); a Boolean state with its date joins the meta line, its row's tags then sit on the title line. --}}
                 <ul class="border-t border-b divide-y divide-aura-hairline border-aura-hairline sm:hidden">
                     @foreach ($mobileRows as $item)
                         @php
@@ -171,6 +171,24 @@
                             $metaValues = $metaKeys->reject(fn ($key) => in_array($key, $pairedKeys, true))->map(fn ($key) => $displays[$key])->values();
                             $relationLine = $relationKeys->map(fn ($key) => $relationName($displays[$key]))->filter(fn ($name) => $name !== '')->implode(' · ');
                             $rowUrl = auth()->user()?->can('view', $row) ? $row->viewUrl() : null;
+
+                            // A row with a state line keeps two lines: its tags (a category) sit on the title line, and
+                            // the state joins the plain meta line as "1.8.0 · Jul 12, 2026": the date when the state is
+                            // on, the label when it has no date, "Not published" when it is off.
+                            $titleTags = collect();
+                            if ($stateKeys) {
+                                $isTag = fn ($value) => preg_match('/class=["\'][^"\']*\baura-tag\b/', (string) $value) === 1;
+                                $titleTags = $metaValues->reject(fn ($value) => $isBlank($value))->filter($isTag)->values();
+                                $metaValues = $metaValues->reject($isTag)->values();
+
+                                [$stateBool, $stateDate] = $stateKeys;
+                                $stateDateText = $row->{$stateBool} ? $plainText($displays[$stateDate]) : '';
+                                $metaValues->push(e(match (true) {
+                                    ! $row->{$stateBool} => __('Not :state', ['state' => Str::lower($columnLabel($stateBool))]),
+                                    $stateDateText !== '' && $stateDateText !== '–' => $stateDateText,
+                                    default => $columnLabel($stateBool),
+                                }));
+                            }
                         @endphp
                         <li wire:key="mobile-row-{{ $row->id }}">
                             <{{ $rowUrl ? 'a' : 'div' }} @if ($rowUrl) href="{{ $rowUrl }}" wire:navigate @endif
@@ -179,11 +197,17 @@
                                     <x-aura::avatar :record="$row" size="md" />
                                 @endif
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-sm font-medium text-gray-900 truncate dark:text-white">
+                                    <div @class(['text-sm font-medium text-gray-900 dark:text-white', 'truncate' => $titleTags->isEmpty(), 'flex gap-2 items-center min-w-0' => $titleTags->isNotEmpty()])>
+                                        @if ($titleTags->isNotEmpty())<span class="min-w-0 truncate">@endif
                                         @if ($primary === null || $primary === '')
                                             <span class="text-gray-400 dark:text-gray-500">–</span>
                                         @else
                                             {!! $primary !!}
+                                        @endif
+                                        @if ($titleTags->isNotEmpty())</span>
+                                            @foreach ($titleTags as $titleTag)
+                                                <span class="flex shrink-0 font-normal" data-mobile-row-tag>{!! $titleTag !!}</span>
+                                            @endforeach
                                         @endif
                                     </div>
                                     @if ($relationKeys->isNotEmpty())
@@ -223,20 +247,6 @@
                                                         <span @class(['aura-dot-list-item', 'aura-dot-list-item-line' => preg_match('/class=["\'][^"\']*\baura-(record-link|tag)\b/', (string) $metaValue) === 1])><span class="min-w-0 truncate">{!! $metaValue !!}</span></span>
                                                     @endforeach
                                                 </div>
-                                            @endif
-                                        </div>
-                                    @endif
-                                    @if ($stateKeys)
-                                        @php
-                                            [$stateBool, $stateDate] = $stateKeys;
-                                            $stateOn = (bool) $row->{$stateBool};
-                                            $stateDateText = $stateOn ? $plainText($displays[$stateDate]) : '';
-                                        @endphp
-                                        <div class="mt-0.5 text-sm text-gray-500 truncate dark:text-gray-400" data-mobile-row-state>
-                                            @if ($stateOn)
-                                                <span class="text-gray-700 dark:text-gray-300">{{ $columnLabel($stateBool) }}</span>@if ($stateDateText !== '' && $stateDateText !== '–') &middot; {{ $stateDateText }}@endif
-                                            @else
-                                                {{ __('Not :state', ['state' => Str::lower($columnLabel($stateBool))]) }}
                                             @endif
                                         </div>
                                     @endif

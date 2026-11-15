@@ -385,39 +385,16 @@
                             </x-aura::button.border>
                         </div>
                     </div>
-                @else
-                    {{-- Standalone Media Library page: breadcrumb row (phones hide it, as on
-                         resource indexes), then the title row with the upload action, which
-                         shrinks to a 36px icon button on phones. --}}
-                    <div class="hidden sm:block">
-                        <x-aura::breadcrumbs>
-                            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
-                            <x-aura::breadcrumbs.li :title="__('Media library')" />
-                        </x-aura::breadcrumbs>
-                    </div>
-
-                    <div class="flex gap-4 justify-between items-center mt-1 sm:mt-6">
-                        <h1 class="aura-page-title">
-                            {{ __('Media library') }}
-                        </h1>
-
-                        <x-aura::button.border
-                            type="button"
-                            class="shrink-0 max-sm:w-9 max-sm:px-0 max-sm:[&>span:first-child]:ml-0"
-                            title="{{ __('Upload files') }}"
-                            x-on:click="triggerFileUpload()">
-                            <x-slot:icon>
-                                <x-aura::icon.upload />
-                            </x-slot>
-                            <span class="sr-only sm:not-sr-only">{{ __('Upload files') }}</span>
-                        </x-aura::button.border>
-                    </div>
                 @endif
+
+                {{-- The standalone Media library page's breadcrumb and title row (with the file count and the
+                     upload action) live in the table's header (aura/attachment/header, media_page), so the
+                     count follows search and filters. --}}
 
                 {{-- In the picker (field set) the dialog heading above is the only
                      title; hide the table's own heading and its destructive bulk
                      actions, which do not belong in a selection dialog. --}}
-                <livewire:aura::table wire:key="media-uploader-table" :model="$model" :field="$field" :settings="$field ? ['header' => false, 'bulk_actions' => false] : []" />
+                <livewire:aura::table wire:key="media-uploader-table" :model="$model" :field="$field" :settings="$field ? ['header' => false, 'bulk_actions' => false] : ['media_page' => true]" />
             </div>
         @endif
     </div>

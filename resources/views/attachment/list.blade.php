@@ -21,15 +21,6 @@
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 {{ __('Drag and drop your first file anywhere in this window, or upload one directly.') }}
             </p>
-            <div class="mt-5" x-data="{ canUpload: !!document.getElementById('file-upload') }">
-                <x-aura::button.primary
-                    x-cloak
-                    x-show="canUpload"
-                    type="button"
-                    x-on:click="document.getElementById('file-upload').click()">
-                    {{ __('Upload files') }}
-                </x-aura::button.primary>
-            </div>
         </div>
     @else
         <div class="hidden overflow-x-auto min-w-full align-middle sm:block">
