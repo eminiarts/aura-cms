@@ -13,6 +13,8 @@
                 'settings' => false,
                 'search' => false,
                 'selectable' => false,
+                // A related list is a list, also for resources whose index opens on a board; table_settings may say otherwise.
+                'default_view' => 'list',
             ];
 
             if(optional($field)['foreign_key']) {

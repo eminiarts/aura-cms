@@ -8,7 +8,8 @@ trait SwitchView
 
     public function mountSwitchView()
     {
-        $userPreference = auth()->user()->getOption('table_view.'.$this->model()->getType());
+        // The stored choice belongs to the resource's index; a related list on a record page keeps its own default.
+        $userPreference = $this->parent ? null : auth()->user()->getOption('table_view.'.$this->model()->getType());
         $defaultView = is_string($this->settings['default_view'] ?? null)
             ? $this->settings['default_view']
             : 'list';
@@ -33,6 +34,10 @@ trait SwitchView
 
     protected function saveViewPreference()
     {
+        if ($this->parent) {
+            return;
+        }
+
         auth()->user()->updateOption('table_view.'.$this->model()->getType(), $this->currentView);
     }
 

@@ -19,6 +19,16 @@ if (! $iconClass) {
 
 $iconWrapper = 'flex shrink-0 '.($isSeparator ? 'text-gray-300 dark:text-gray-600' : '');
 
+// The home crumb is one Λ of the wordmark, outlined like the auth panel's; with a custom logo it
+// would be a stranger's mark, so the dashboard icon stays.
+$apexHome = false;
+if ($icon === 'dashboard' && (string) $title === '') {
+    $themeSettings = app('aura')::getOption('settings') ?? [];
+    $apexHome = config('aura.views.logo') === 'aura::application-logo'
+        && blank($themeSettings['logo'] ?? null)
+        && blank($themeSettings['logo-darkmode'] ?? null);
+}
+
 // The trail's last titled link is the page's parent: the breadcrumbs wrapper (rendered after its
 // slot) turns it into the phone back link. The home icon has no title and never becomes the parent.
 // backTitle names the link differently on phones (an edit page says "Task", not the record title the H1 repeats).
@@ -34,7 +44,9 @@ if ($href && (string) $title !== '') {
         @if ((string) $title === '')
             <span class="sr-only">{{ __('Go to home') }}</span>
         @endif
-        @if ($isSeparator)
+        @if ($apexHome)
+            <x-aura::icon.apex-outline class="overflow-visible w-auto h-3.5 stroke-current [stroke-width:1.5]" data-breadcrumb-home />
+        @elseif ($isSeparator)
             <span class="{{ $iconWrapper }}" aria-hidden="true">
                 <svg class="{{ $iconClass }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt"><path d="M5.5 12.3 10.5 3.7" /></svg>
             </span>

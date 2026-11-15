@@ -34,6 +34,9 @@ trait InteractsWithTable
      *
      * Returning a Kanban view from tableKanbanView() continues to enable the
      * legacy status-based board. New resources should override this method.
+     * Optional: column_total (a number field summed in each column header) and
+     * card_fields (slugs shown on each card: relations as a chip, a user as an
+     * avatar, dates with a calendar mark, anything else as its display value).
      *
      * @return array<string, mixed>
      */
@@ -47,6 +50,8 @@ trait InteractsWithTable
             'card_subtitle' => null,
             'order_by' => null,
             'show_empty_columns' => true,
+            'column_total' => null,
+            'card_fields' => [],
         ];
     }
 

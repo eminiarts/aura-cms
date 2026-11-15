@@ -183,6 +183,11 @@ return [
         // (passed through __()), false hides it.
         'login-line' => null,
 
+        // Product image on the login brand panel (lg and up): a path under public/ or a URL, or
+        // ['light' => …, 'dark' => …] for one per color scheme. It sits under the login line and
+        // bleeds off the panel's right and bottom edge. null keeps the outlined Λ.
+        'login-image' => null,
+
         'app-favicon' => false,
         'app-favicon-darkmode' => false,
     ],

@@ -17,7 +17,9 @@ final class KanbanConfiguration
      *     card_title: string,
      *     card_subtitle: string|null,
      *     order_by: array{field: string, direction: 'asc'|'desc'}|null,
-     *     show_empty_columns: bool
+     *     show_empty_columns: bool,
+     *     column_total: string|null,
+     *     card_fields: list<string>
      * }
      */
     public static function for(Model&TableResource $resource): array
@@ -44,6 +46,16 @@ final class KanbanConfiguration
             ? $declared['card_subtitle']
             : null;
         $showEmptyColumns = $declared['show_empty_columns'] ?? true;
+
+        // Opt-in board details; unknown slugs are dropped instead of disabling the board.
+        $columnTotal = is_string($declared['column_total'] ?? null) && is_array($resource->fieldBySlug($declared['column_total']))
+            ? $declared['column_total']
+            : null;
+        $cardFields = collect(is_array($declared['card_fields'] ?? null) ? $declared['card_fields'] : [])
+            ->filter(fn (mixed $slug): bool => is_string($slug) && is_array($resource->fieldBySlug($slug)))
+            ->unique()
+            ->values()
+            ->all();
 
         $field = $resource->fieldBySlug($groupField);
         $fieldClass = $resource->fieldClassBySlug($groupField);
@@ -87,6 +99,8 @@ final class KanbanConfiguration
             'card_subtitle' => $cardSubtitle,
             'order_by' => $orderBy,
             'show_empty_columns' => is_bool($showEmptyColumns) ? $showEmptyColumns : true,
+            'column_total' => $columnTotal,
+            'card_fields' => $cardFields,
         ];
     }
 

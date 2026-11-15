@@ -82,6 +82,12 @@
             // The mark before the line takes the active sidebar item's mark color.
             $markColor = ['light' => 'bg-primary-600', 'primary' => 'bg-white', 'dark' => 'bg-primary-400'][$sidebarType] ?? 'bg-primary-400';
             $markDarkColor = ['light' => 'dark:bg-primary-600', 'primary' => 'dark:bg-white', 'dark' => 'dark:bg-primary-400'][$sidebarDarkType] ?? 'dark:bg-primary-400';
+            // aura.theme.login-image: one image, or one per color scheme.
+            $loginImage = config('aura.theme.login-image');
+            $loginImage = is_array($loginImage) ? $loginImage : ['light' => $loginImage, 'dark' => $loginImage];
+            $loginImageUrl = fn ($path) => filled($path) ? (\Illuminate\Support\Str::startsWith($path, ['http://', 'https://', '/']) ? $path : asset($path)) : null;
+            $loginImageLight = $loginImageUrl($loginImage['light'] ?? null) ?? $loginImageUrl($loginImage['dark'] ?? null);
+            $loginImageDark = $loginImageUrl($loginImage['dark'] ?? null) ?? $loginImageLight;
         @endphp
 
         {{-- The form pane is the app's page: white, dark gray-900, so inputs and buttons look as they do in the app.
@@ -96,16 +102,26 @@
                         <x-dynamic-component :component="config('aura.views.logo')" class="block w-full h-auto {{ $wordmarkColor }}" />
                     </a>
 
-                    @unless ($customLogo)
+                    @if ($loginImageLight)
+                        {{-- The product: 720px wide from the panel's left padding, below the login line, bleeding off
+                             the right and bottom edge. The dark-scheme image swaps in with the dark class. --}}
+                        <img src="{{ $loginImageLight }}" alt="" aria-hidden="true" data-login-image
+                            @class(['absolute left-10 top-[44%] w-[720px] max-w-none rounded-tl-xl ring-1 shadow-2xl ring-white/10 shadow-black/40 pointer-events-none select-none', 'dark:hidden' => $loginImageDark !== $loginImageLight])>
+                        @if ($loginImageDark !== $loginImageLight)
+                            <img src="{{ $loginImageDark }}" alt="" aria-hidden="true" data-login-image-dark
+                                class="hidden absolute left-10 top-[44%] w-[720px] max-w-none rounded-tl-xl ring-1 shadow-2xl ring-white/10 shadow-black/40 pointer-events-none select-none dark:block">
+                        @endif
+                    @elseif (! $customLogo)
                         {{-- One Λ of the wordmark, outlined at 1px and cropped by the panel's corner. --}}
                         <x-aura::icon.apex-outline :class="\Illuminate\Support\Arr::toCssClasses([
                             'absolute -right-32 -bottom-24 w-[36rem] pointer-events-none',
                             $panelOnLight ? 'stroke-gray-950/10' : 'stroke-white/10',
                             $panelOnLightDark ? 'dark:stroke-gray-950/10' : 'dark:stroke-white/10',
                         ])" />
-                    @endunless
+                    @endif
 
-                    <div class="relative">
+                    {{-- With a product image the line moves up to the top third, above the image. --}}
+                    <div @class(['relative', 'mt-[12vh] mb-auto' => $loginImageLight])>
                         @if ($loginLine)
                             <div class="flex gap-3 items-start mb-6" data-login-line>
                                 <span class="mt-1 w-[3px] h-6 shrink-0 {{ $markColor }} {{ $markDarkColor }}" aria-hidden="true"></span>

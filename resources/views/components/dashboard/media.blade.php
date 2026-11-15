@@ -11,8 +11,9 @@
         </a>
     </div>
 
-    {{-- From sm the tiles keep about 88px whatever column they sit in (the dashboard's wide column or full width). --}}
-    <div class="grid grid-cols-4 gap-3 mt-4 sm:grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))]">
+    {{-- From sm the tiles keep about 88px whatever column they sit in (the dashboard's wide column or full width).
+         One row: tiles that would wrap get a zero-height row and are clipped (the 2px padding keeps focus rings). --}}
+    <div class="grid grid-cols-4 grid-rows-[auto] auto-rows-[0] gap-x-3 gap-y-0 overflow-hidden p-0.5 -m-0.5 mt-3.5 sm:grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))]">
         @foreach ($media as $file)
             <a href="{{ $file->viewUrl() ?? route('aura.attachment.index') }}" wire:navigate title="{{ $file->name }}"
                 class="block overflow-hidden relative rounded-lg transition duration-150 aspect-square group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">

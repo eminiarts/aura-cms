@@ -937,6 +937,15 @@ a.aura-record-card:focus-visible {
     @apply text-[13px] font-normal tabular-nums text-gray-400 dark:text-gray-500;
 }
 
+/* A column title with a sum (kanban column_total) tightens its gaps, so "Proposal 4 CHF 329,700" fits a 13rem column. */
+.aura-board-column-title:has(.aura-board-column-total) {
+    gap: 0.375rem;
+}
+
+.aura-board-column-total {
+    @apply whitespace-nowrap text-[13px] font-medium tabular-nums text-gray-600 dark:text-gray-300;
+}
+
 .aura-board-card {
     @apply block bg-white p-4 text-[13px] leading-5 ring-1 transition duration-150 dark:bg-gray-800;
     --tw-ring-color: var(--aura-edge);
