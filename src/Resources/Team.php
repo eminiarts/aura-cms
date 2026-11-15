@@ -91,14 +91,16 @@ class Team extends Resource
 
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => 'Team',
+                'name' => 'Details',
                 'slug' => 'tab-team',
                 'global' => true,
             ],
             [
+                // The tab already names the card.
                 'name' => 'Team',
                 'slug' => 'team-panel',
                 'type' => 'Aura\\Base\\Fields\\Panel',
+                'hide_title' => true,
                 'validation' => '',
                 'conditional_logic' => [],
             ],

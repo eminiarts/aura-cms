@@ -65,10 +65,25 @@ class PluginsPage extends Component
                 'description' => $packageJson['description'] ?? '',
                 'keywords' => $packageJson['keywords'] ?? [],
                 'version' => $version ?? '',
+                'type' => $packageJson['type'] ?? 'library',
+                // Required only in require-dev: a development tool, not part of the running app.
+                'dev' => array_key_exists($package, $composerJson['require-dev'] ?? [])
+                    && ! array_key_exists($package, $composerJson['require'] ?? []),
             ];
         }
 
         return $installedPackages;
+    }
+
+    /**
+     * Aura's own packages and plugins (eminiarts/aura-*, aura/*, or an aura-* package type), so the
+     * page can list them apart from the other Composer packages.
+     */
+    public static function isAuraPackage(string $name, ?string $type = null): bool
+    {
+        return str_starts_with($name, 'eminiarts/aura')
+            || str_starts_with($name, 'aura/')
+            || str_starts_with((string) $type, 'aura');
     }
 
     public function mount()
@@ -80,6 +95,15 @@ class PluginsPage extends Component
 
     public function render()
     {
-        return view('aura::livewire.plugins-page')->layout('aura::components.layout.app');
+        // Every installed package lands in exactly one section.
+        [$aura, $other] = collect($this->installedPackages)
+            ->partition(fn ($package, $name) => static::isAuraPackage($name, $package['type'] ?? null));
+
+        return view('aura::livewire.plugins-page', [
+            'sections' => array_filter([
+                __('Aura plugins') => $aura->all(),
+                __('Other packages') => $other->all(),
+            ]),
+        ])->layout('aura::components.layout.app');
     }
 }

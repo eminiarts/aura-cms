@@ -3,6 +3,7 @@
 namespace Aura\Base\Widgets;
 
 use Aura\Base\Resources\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -57,6 +58,21 @@ class Widget extends Component
      */
     public $widget;
 
+    /**
+     * The comparison the change refers to, "vs previous 30 days": the range before the selected one,
+     * of the same length. Null for an open range (All).
+     */
+    public function comparisonLabel(): ?string
+    {
+        $days = $this->periodDays();
+
+        if ($days === null) {
+            return null;
+        }
+
+        return $days === 1 ? __('vs previous day') : __('vs previous :count days', ['count' => $days]);
+    }
+
     public function format($value)
     {
         $formatted = number_format($value, 2, '.', "'");
@@ -100,12 +116,45 @@ class Widget extends Component
     }
 
     /**
+     * The selected range in words, "last 30 days", for a widget name with a :period placeholder
+     * ("New in :period"). Every range counts records created in it.
+     */
+    public function periodLabel(): string
+    {
+        $days = $this->periodDays();
+
+        if ($days === null) {
+            return __('all time');
+        }
+
+        return $days === 1 ? __('last day') : __('last :count days', ['count' => $days]);
+    }
+
+    /**
      * Whether the widget has a compact cell for the index strip. Large charts (bar, donut, pie)
      * keep their card below the strip.
      */
     public static function supportsCompact(): bool
     {
         return false;
+    }
+
+    /**
+     * The widget's name, its :period placeholder filled with the selected range.
+     */
+    public function title(): string
+    {
+        return __($this->widget['name'] ?? '', ['period' => $this->periodLabel()]);
+    }
+
+    protected function isSafeColumn($column): bool
+    {
+        if (! is_string($column) || $column === '') {
+            return false;
+        }
+
+        return in_array($column, $this->model->getBaseFillable(), true)
+            || in_array($column, $this->model->inputFieldsSlugs(), true);
     }
 
     /**
@@ -116,13 +165,17 @@ class Widget extends Component
      * identifier paths in the concrete widgets so a tampered or unknown column can
      * never reach selectRaw()/DB::raw() as an interpolated identifier.
      */
-    protected function isSafeColumn($column): bool
+    /**
+     * Length of the selected range in whole days, null when the range is open.
+     */
+    protected function periodDays(): ?int
     {
-        if (! is_string($column) || $column === '') {
-            return false;
+        if (blank($this->start) || blank($this->end)) {
+            return null;
         }
 
-        return in_array($column, $this->model->getBaseFillable(), true)
-            || in_array($column, $this->model->inputFieldsSlugs(), true);
+        $days = (int) round(Carbon::parse($this->start)->diffInDays(Carbon::parse($this->end)));
+
+        return max($days, 1);
     }
 }

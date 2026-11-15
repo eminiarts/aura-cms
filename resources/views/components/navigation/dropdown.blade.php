@@ -52,7 +52,7 @@
                 </span>
             </button>
 
-            <div x-show="expanded" x-ref="container" x-cloak class="p-1.5" x-aura::collapse>
+            <div x-show="expanded" x-ref="container" x-cloak class="pt-0.5 pb-1 pl-3" x-aura::collapse>
                 {{ $slot }}
             </div>
         </div>

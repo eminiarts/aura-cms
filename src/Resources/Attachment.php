@@ -125,7 +125,8 @@ class Attachment extends Resource
                 'name' => 'Preview',
                 'type' => 'Aura\\Base\\Fields\\Embed',
                 'validation' => '',
-                'on_index' => true,
+                // The list shows the thumbnail in the Name cell (attachment/list), not as a column.
+                'on_index' => false,
                 'slug' => 'embed',
                 'style' => [
                     'width' => '100',
@@ -206,7 +207,7 @@ class Attachment extends Resource
             ],
 
             [
-                'name' => 'Mime Type',
+                'name' => 'Type',
                 'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'validation' => 'required',
                 'searchable' => true,
@@ -292,16 +293,13 @@ class Attachment extends Resource
 
         $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
 
-        for ($i = 0; $bytes > 1024; $i++) {
+        for ($i = 0; $bytes >= 1024 && $i < count($units) - 1; $i++) {
             $bytes /= 1024;
         }
 
-        if ($i <= 1) {
-            // For B and KB, don't round decimals
-            return (int) $bytes.' '.$units[$i];
-        }
-
-        return round($bytes, 2).' '.$units[$i];
+        // B and KB rounded to whole numbers, larger units to two decimals: the formatter of the
+        // media library plugin too, so a file shows one size in list, grid and details.
+        return round($bytes, $i <= 1 ? 0 : 2).' '.$units[$i];
     }
 
     public function getReadableMimeTypeAttribute()

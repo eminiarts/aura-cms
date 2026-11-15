@@ -4,6 +4,7 @@ namespace Aura\Base\Resources;
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resource;
+use Illuminate\Support\Str;
 
 class Permission extends Resource
 {
@@ -33,6 +34,38 @@ class Permission extends Resource
         return null;
     }
 
+    /** The group as the list's tag (escaped: views print display values raw). */
+    public static function displayGroupField($value, self $model): string
+    {
+        if (blank($value)) {
+            return '';
+        }
+
+        return '<span class="aura-tag">'.e(static::displayLabel($value)).'</span>';
+    }
+
+    /**
+     * A generated permission name or group in sentence case: "View Any Media Library" is "View any media
+     * library", "Media-Folders" is "Media folders". Words in capitals (API) keep them. Display only.
+     */
+    public static function displayLabel(?string $value): string
+    {
+        $words = preg_split('/[\s_-]+/u', trim((string) $value), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        $words = array_map(
+            fn (string $word) => preg_match('/^\p{Lu}{2,}$/u', $word) ? $word : Str::lower($word),
+            $words,
+        );
+
+        return Str::ucfirst(implode(' ', $words));
+    }
+
+    /** Escaped: views print display values raw. */
+    public static function displayNameField($value, self $model): string
+    {
+        return e(static::displayLabel($value));
+    }
+
     public static function getFields(): array
     {
         return [
@@ -42,6 +75,8 @@ class Permission extends Resource
                 'slug' => 'name',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
+                // Shown in sentence case ("Create media library"); the stored name stays as generated.
+                'display' => [self::class, 'displayNameField'],
                 'conditional_logic' => [],
                 'wrapper' => '',
                 'on_index' => true,
@@ -74,6 +109,7 @@ class Permission extends Resource
                 'slug' => 'group',
                 'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => '',
+                'display' => [self::class, 'displayGroupField'],
                 'conditional_logic' => [],
                 'options' => [
                     'Invoice' => 'Invoice',

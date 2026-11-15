@@ -4,7 +4,7 @@
     @if($loaded)
     <div class="{{ $compact ? 'flex gap-4 items-center' : 'flex flex-col justify-between h-full' }}">
         <div class="{{ $compact ? 'min-w-0 sm:shrink-0' : 'flex gap-2 justify-between items-center' }}">
-            <span class="{{ $compact ? 'block text-xs' : 'text-sm' }} font-medium text-gray-500 truncate dark:text-gray-400">{{ __($widget['name']) }}</span>
+            <span class="{{ $compact ? 'block text-xs' : 'text-sm' }} font-medium text-gray-500 truncate dark:text-gray-400">{{ $this->title() }}</span>
             <span class="{{ $compact ? 'block mt-1 text-xl tracking-tight tabular-nums' : 'text-sm' }} font-semibold text-gray-900 dark:text-white">{{ array_sum($this->values['current']) }}</span>
         </div>
 

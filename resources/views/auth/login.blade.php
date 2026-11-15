@@ -72,7 +72,7 @@
     @if($localAdmin)
         <div class="flex gap-3 items-center mt-8" aria-hidden="true">
             <div class="flex-1 h-px bg-gray-950/5 dark:bg-white/10"></div>
-            <span class="text-xs font-medium tracking-wider text-gray-400 uppercase dark:text-gray-500">{{ __('Local') }}</span>
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ __('Local development') }}</span>
             <div class="flex-1 h-px bg-gray-950/5 dark:bg-white/10"></div>
         </div>
 
@@ -82,7 +82,7 @@
                 <x-slot:icon>
                     <x-aura::icon.user />
                 </x-slot>
-                {{ __('Admin') }}
+                {{ __('Log in as admin') }}
             </x-aura::button.border>
         </div>
     @endif

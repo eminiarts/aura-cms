@@ -37,12 +37,15 @@
                         {{ __('Discard changes') }}
                     </x-aura::button.border>
                 @endif
-                <x-aura::button wire:click="save">
-                    <div wire:loading wire:target="save">
-                        <x-aura::icon.loading  />
-                    </div>
-                    {{ __('Save') }}
-                </x-aura::button>
+                {{-- Phones save from the bar on the bottom edge, as on resource forms. --}}
+                <div class="max-sm:hidden">
+                    <x-aura::button wire:click="save">
+                        <div wire:loading wire:target="save">
+                            <x-aura::icon.loading  />
+                        </div>
+                        {{ __('Save') }}
+                    </x-aura::button>
+                </div>
             </div>
         @endif
     </div>
@@ -156,5 +159,9 @@
         @endcheckCondition
     @endforeach
     </div>
+
+    @if($canUpdate)
+        @include('aura::livewire.resource.form-bar', ['cancelUrl' => null])
+    @endif
 
 </div>

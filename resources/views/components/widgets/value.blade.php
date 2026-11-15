@@ -6,14 +6,18 @@
             $hasPrevious = optional($widget)['previous'] !== false
                 && (float) str_replace("'", '', $this->values['previous'] ?? '0') != 0.0;
         @endphp
-        <span class="text-xs font-medium text-gray-500 truncate dark:text-gray-400">{{ __($widget['name']) }}</span>
-        <div class="flex gap-2 items-baseline mt-1 min-w-0">
-            <span class="text-xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">{{ $this->values['current'] ?? 'N/A' }}</span>
+        <span class="text-xs font-medium text-gray-500 truncate dark:text-gray-400">{{ $this->title() }}</span>
+        {{-- The change names what it compares against ("+50% vs previous 30 days"); phones put the words on a line of their own. --}}
+        <div class="flex flex-wrap gap-x-2 items-baseline mt-1 min-w-0">
+            <span class="text-xl font-semibold tracking-tight tabular-nums text-gray-900 shrink-0 dark:text-white">{{ $this->values['current'] ?? 'N/A' }}</span>
             @if($hasPrevious)
-                <span class="text-xs font-medium tabular-nums {{ $this->values['change'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400' }}">
+                <span class="text-xs font-medium tabular-nums shrink-0 {{ $this->values['change'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400' }}">
                     <span class="sr-only">{{ $this->values['change'] >= 0 ? __('Increased by') : __('Decreased by') }}</span>
                     {{ $this->values['change'] >= 0 ? '+' : '' }}{{ $this->values['change'] }}%
                 </span>
+                @if ($this->comparisonLabel())
+                    <span class="min-w-0 text-xs text-gray-500 truncate max-sm:w-full dark:text-gray-400">{{ $this->comparisonLabel() }}</span>
+                @endif
             @endif
         </div>
     @else
@@ -34,7 +38,7 @@
         @endphp
         <div class="flex flex-col justify-between h-full">
             <div class="flex gap-2 justify-between items-center">
-                <span class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">{{ __($widget['name']) }}</span>
+                <span class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">{{ $this->title() }}</span>
 
                 @if(optional($widget)['goal'] && is_numeric($widget['goal']))
                     @php

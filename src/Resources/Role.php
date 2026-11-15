@@ -485,14 +485,18 @@ class Role extends Resource
             ->withTimestamps();
     }
 
+    /**
+     * The role's name, as in breadcrumbs, headers and role pickers. Lists that can hold two roles of one
+     * name (a Global Role and a Team Role) tell them apart by the Global badge, not by the id.
+     */
     public function title()
     {
         if (isset($this->title)) {
-            return $this->title." (#{$this->id})";
+            return $this->title;
         } elseif (isset($this->name)) {
-            return $this->name." (#{$this->id})";
+            return $this->name;
         } else {
-            return "Role (#{$this->id})";
+            return __('Role');
         }
     }
 

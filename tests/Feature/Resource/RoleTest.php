@@ -116,15 +116,14 @@ test('role super_admin is cast to boolean', function () {
     expect($role->super_admin)->toBe(false);
 });
 
-test('role title method returns formatted name', function () {
+test('role title method returns the role name', function () {
     $role = Role::create([
         'name' => 'Editor',
         'slug' => 'editor',
         ...config('aura.teams') ? ['team_id' => 1] : [],
     ]);
 
-    expect($role->title())->toContain('Editor');
-    expect($role->title())->toContain("#{$role->id}");
+    expect($role->title())->toBe('Editor');
 });
 
 test('role has actions defined', function () {

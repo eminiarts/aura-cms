@@ -65,7 +65,7 @@
             </label>
 
             {{-- Caption flush with the thumbnail edge. x-file-name truncates the base name and keeps the
-                 extension ("master-services-agre….pdf"); the media library plugin uses the same caption. --}}
+                 extension ("master-servi…ent.pdf"); the media library plugin uses the same caption. --}}
             <div class="mt-2">
                 <p x-data x-file-name class="aura-tile-name" title="{{ $row->name }}">{{ $row->name }}</p>
                 <p class="aura-tile-meta">

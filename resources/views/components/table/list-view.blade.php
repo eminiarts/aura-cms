@@ -24,10 +24,13 @@
     <div class="overflow-hidden">
 
         @if ($isEmpty)
-            {{-- A page with no records at all has no toolbar above, so no hairline either; lists keep it. --}}
+            {{-- A page with no records at all has no toolbar above: its empty state sits in a quiet panel that
+                 spans the content width from the title's edge, so it does not float in the page. Filtered
+                 lists and relation tables keep the hairline of the list they replace. --}}
             <div @class([
                 'flex flex-col items-center px-6 text-center',
                 'border-t border-gray-200/80 dark:border-white/10' => $isRelationTable || $isFiltered,
+                'mt-2 rounded-xl ring-1 ring-gray-950/[0.06] bg-gray-50/70 dark:bg-white/[0.02] dark:ring-white/10' => ! $isRelationTable && ! $isFiltered,
                 $isRelationTable ? 'py-8' : 'py-14',
             ])>
                 @if ($isFiltered)
@@ -35,7 +38,7 @@
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Try a different search or clear the filters.') }}</p>
                 @else
                     @unless ($isRelationTable)
-                        <div class="flex justify-center items-center mb-3 w-10 h-10 rounded-lg bg-gray-950/[0.04] text-gray-400 dark:bg-white/5 dark:text-gray-500 [&>svg]:size-5" aria-hidden="true">
+                        <div class="flex justify-center items-center mb-3 w-10 h-10 bg-white rounded-lg ring-1 shadow-xs ring-gray-950/[0.06] text-gray-400 dark:bg-white/5 dark:ring-white/10 dark:text-gray-500 [&>svg]:size-5" aria-hidden="true">
                             {!! $tableModel->getIcon() !!}
                         </div>
                     @endunless

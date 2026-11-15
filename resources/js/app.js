@@ -64,9 +64,10 @@ document.addEventListener('livewire:init', () => {
     }
   }))
 
-  // x-file-name: a file name that does not fit loses characters from the end of its base name and
-  // keeps its extension, "proposal-northwi….pdf". CSS ellipsis cannot keep a suffix, and a flex pair
-  // (truncated base + extension) leaves a gap of up to one glyph after the ellipsis. The element holds
+  // x-file-name: a file name that does not fit loses characters from the middle of its base name and
+  // keeps the base's last three characters with the extension, "proposal-nort…erp.pdf": one ellipsis,
+  // never right before the extension's dot ("….pdf" reads as four dots). CSS ellipsis cannot keep a
+  // suffix, and a flex pair (truncated base + extension) leaves a gap after the ellipsis. The element holds
   // the full name (with CSS truncate as the no-JS fallback); a Livewire morph that puts the full name
   // back is fitted again.
   Alpine.directive('file-name', (el, {}, { cleanup }) => {
@@ -86,18 +87,20 @@ document.addEventListener('livewire:init', () => {
       if (el.clientWidth === 0 || fits()) return;
 
       const dot = full.lastIndexOf('.');
-      const base = dot > 0 ? full.slice(0, dot) : full;
+      const name = dot > 0 ? full.slice(0, dot) : full;
       const ext = dot > 0 ? full.slice(dot) : '';
+      const tail = name.length > 8 ? name.slice(-3) : '';
+      const base = name.slice(0, name.length - tail.length);
       let low = 1;
       let high = base.length - 1;
 
       while (low < high) {
         const mid = Math.ceil((low + high) / 2);
-        show(base.slice(0, mid) + '…' + ext);
+        show(base.slice(0, mid) + '…' + tail + ext);
         if (fits()) low = mid; else high = mid - 1;
       }
 
-      show(base.slice(0, low).replace(/[\s._-]+$/, '') + '…' + ext);
+      show(base.slice(0, low).replace(/[\s._-]+$/, '') + '…' + tail + ext);
     };
 
     const resize = new ResizeObserver(() => fit());
