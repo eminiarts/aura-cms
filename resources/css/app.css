@@ -633,6 +633,16 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
     @apply text-gray-300 dark:text-gray-600;
 }
 
+/* Beside or under a narrow column (the Properties rail, phones) the meta is two lines, Created then Updated,
+   without the dot between them, so no line ends on a dangling "·". */
+.aura-record-meta.aura-record-meta-stacked {
+    @apply flex-col items-start gap-y-0.5;
+}
+
+.aura-record-meta-stacked .aura-record-meta-sep {
+    display: none;
+}
+
 /* A view panel: section title, then one row per value. */
 .aura-record-section {
     @apply mb-6;
@@ -721,13 +731,15 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
     min-height: 1.75rem;
 }
 
-/* Phones: the facts form two columns, so a third fact starts the next row without a divider before it. */
+/* Phones: the facts form equal columns with a hairline between them, no orphan on a row of its own. Three
+   facts share one row (values 18px, amounts compact: "CHF 84.5K", dates "Nov 27"); two or four form a 2x2
+   grid, a fourth under a horizontal hairline. */
 @media (max-width: 639.98px) {
     .aura-record-template .aura-record-facts {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        column-gap: 1.25rem;
-        row-gap: 1rem;
+        column-gap: 1rem;
+        row-gap: 0.75rem;
     }
 
     .aura-record-template .aura-record-fact:nth-child(odd) {
@@ -736,7 +748,29 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
     }
 
     .aura-record-template .aura-record-fact:nth-child(even) {
-        padding-left: 1.25rem;
+        padding-left: 1rem;
+    }
+
+    .aura-record-template .aura-record-fact:nth-child(n + 3) {
+        border-top: 1px solid var(--aura-edge);
+        padding-top: 0.75rem;
+    }
+
+    .aura-record-template .aura-record-facts:has(> .aura-record-fact:nth-child(3):last-child) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        column-gap: 0.75rem;
+    }
+
+    .aura-record-template .aura-record-facts:has(> .aura-record-fact:nth-child(3):last-child) > .aura-record-fact + .aura-record-fact {
+        border-top: 0;
+        border-left: 1px solid var(--aura-edge);
+        padding-top: 0;
+        padding-left: 0.75rem;
+    }
+
+    .aura-record-template .aura-record-facts:has(> .aura-record-fact:nth-child(3):last-child) .aura-record-fact-number,
+    .aura-record-template .aura-record-facts:has(> .aura-record-fact:nth-child(3):last-child) .aura-record-fact-text {
+        @apply truncate text-lg leading-7;
     }
 }
 
@@ -975,8 +1009,19 @@ a.aura-board-card:focus-visible {
     @apply mt-1 line-clamp-2 text-gray-500 dark:text-gray-300;
 }
 
+/* The meta row wraps instead of overflowing a narrow card: a second line rather than a value past the edge. */
 .aura-board-card-meta {
-    @apply mt-3 flex h-6 items-center gap-3 text-[13px] text-gray-500 dark:text-gray-300;
+    @apply mt-3 flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-gray-500 dark:text-gray-300;
+}
+
+/* A card footer with a person: the meta row takes the flexible column, the 24px avatar a fixed one, so the
+   avatar never leaves the card; the meta wraps beside it when it does not fit one line. */
+.aura-board-card-footer {
+    @apply mt-3 grid grid-cols-[minmax(0,1fr)_1.5rem] items-start gap-x-2;
+}
+
+.aura-board-card-footer > .aura-board-card-meta {
+    @apply mt-0;
 }
 
 .aura-board-empty {
@@ -1777,4 +1822,46 @@ a.aura-board-card:focus-visible {
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-team-switcher {
     @apply dark:text-gray-200 dark:bg-transparent dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
+}
+
+/* A related list on a record page (has-many and friends) sits in the main column beside the Properties rail:
+   8px cell gutters instead of 16px, and the record name (11rem), short texts (10rem), addresses (13rem) and
+   related records (7.5rem) end in an ellipsis, so its columns fit before it has to scroll. */
+.aura-relation-table th,
+.aura-relation-table td {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.aura-relation-table .aura-record-link-title {
+    @apply block max-w-[7.5rem] truncate;
+}
+
+.aura-relation-table th:first-child,
+.aura-relation-table td:first-child {
+    padding-left: 1rem;
+}
+
+/* A list keeps no column for the row actions: they appear over the row's right end on hover or focus (where a pointer
+   can hover; touch screens keep the column), on the row's hover tone with a short fade in front, so the value columns get the width. */
+@media (hover: hover) and (pointer: fine) {
+    .aura-list-table th.table-row-actions,
+    .aura-list-table td.table-row-actions-cell {
+        position: relative;
+        width: 0;
+        padding: 0;
+    }
+
+    .aura-list-table td.table-row-actions-cell .aura-row-actions {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        padding-left: 1.5rem;
+        background: linear-gradient(to right, transparent, rgb(var(--gray-50)) 1.25rem);
+    }
+
+    .dark .aura-list-table td.table-row-actions-cell .aura-row-actions {
+        background: linear-gradient(to right, transparent, color-mix(in srgb, rgb(var(--gray-900)), white 4%) 1.25rem);
+    }
 }

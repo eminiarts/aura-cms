@@ -49,71 +49,11 @@
         </div>
     @endif
 
-    @php
-        // A narrow panel (style width up to 33%, the sidebar card) beside other fields becomes a right rail
-        // from lg, the same 20rem column as on the record view, so edit and view read as one page.
-        $isRailPanel = fn ($field) => \Aura\Base\RecordLayout\RecordViewSections::isRailPanel($field);
-        $useRail = ! $inModal && $formSections['rail'];
-    @endphp
-
     <div class="grid grid-cols-1 gap-6 mt-4 aura-edit-post-container sm:grid-cols-3" x-data="{
         model: @entangle('form'),
         init() {}
     }">
-        <div class="col-span-1 mx-0 min-w-0 sm:col-span-3 {{ $useRail ? 'aura-form-rail-layout lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-x-10 lg:items-start' : '' }}">
-            @if ($useRail)
-                <div class="flex flex-wrap items-start -mx-2 min-w-0" autocomplete="off" data-form-column="main">
-                    @foreach ($formSections['fields'] as $key => $field)
-                        @if (! $isRailPanel($field))
-                            @checkCondition($model, $field, $form)
-                                <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" :mode="$mode"
-                                    wire:key="resource-field-{{ $key }}" />
-                            @endcheckCondition
-                        @endif
-                    @endforeach
-                </div>
-
-                <aside class="flex flex-wrap items-start -mx-2 min-w-0" data-form-column="rail" data-form-rail>
-                    @foreach ($formSections['fields'] as $key => $field)
-                        @if ($isRailPanel($field))
-                            @checkCondition($model, $field, $form)
-                                <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" :mode="$mode"
-                                    wire:key="resource-field-{{ $key }}" />
-                            @endcheckCondition
-                        @endif
-                    @endforeach
-                </aside>
-            @elseif ($formSections['card'] && ! $inModal)
-                {{-- Plain inputs without a panel get the card a panel would give them (fields/panel). --}}
-                <div class="flex flex-wrap items-start -mx-2" autocomplete="off">
-                    <div class="px-2 w-full" data-form-card>
-                        <div class="mb-8 aura-card">
-                            <div class="mb-2">
-                                <div class="flex flex-wrap items-start -mx-2 w-[calc(100%+1rem)]">
-                                    @foreach ($formSections['fields'] as $key => $field)
-                                        @checkCondition($model, $field, $form)
-                                            <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" :mode="$mode"
-                                                wire:key="resource-field-{{ $key }}" />
-                                        @endcheckCondition
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @else
-                <div class="flex flex-wrap items-start -mx-2" autocomplete="off">
-                    @foreach ($formSections['fields'] as $key => $field)
-                        @checkCondition($model, $field, $form)
-                            <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" :mode="$mode"
-                                wire:key="resource-field-{{ $key }}" />
-                        @endcheckCondition
-                    @endforeach
-                </div>
-            @endif
-
-            <x-aura::validation-errors />
-        </div>
+        @include('aura::livewire.resource.form-fields')
     </div>
     </div>
 

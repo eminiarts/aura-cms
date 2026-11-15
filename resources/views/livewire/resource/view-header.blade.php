@@ -2,7 +2,7 @@
     // Key fields promoted under the title: a number large and tabular, a status as its tag.
     $facts = \Aura\Base\RecordLayout\RecordViewSections::header($this->viewFields, $model);
     // Computed facts (a company's open pipeline) from the resource's optional recordHighlights(): each
-    // ['label' => …, 'value' => string or Htmlable], after the field facts, three facts in all.
+    // ['label' => …, 'value' => string or Htmlable, 'short' => optional phone value], after the field facts, three facts in all.
     $highlights = method_exists($model, 'recordHighlights') ? array_values(array_filter((array) $model->recordHighlights(), fn ($item) => is_array($item) && isset($item['label']))) : [];
     $highlights = array_slice($highlights, 0, max(0, 3 - count($facts)));
     $recordTemplate ??= false;
@@ -103,16 +103,44 @@
                     @elseif ($isEmpty)
                         <span class="aura-record-fact-value text-gray-400 dark:text-gray-500">–</span>
                     @elseif ($instance instanceof \Aura\Base\Fields\Number)
-                        <span class="aura-record-fact-number">{!! \Aura\Base\Fields\Number::unitMarkup($fact, $value) !!}</span>
+                        @php
+                            $compact = $recordTemplate ? \Aura\Base\Fields\Number::compactDisplay($fact, $model->{$fact['slug']}) : null;
+                        @endphp
+                        <span class="aura-record-fact-number">
+                            @if ($compact)
+                                <span class="max-sm:hidden">{!! \Aura\Base\Fields\Number::unitMarkup($fact, $value) !!}</span><span class="sm:hidden" title="{{ html_entity_decode(strip_tags((string) $value)) }}">{!! \Aura\Base\Fields\Number::unitMarkup($fact, $compact) !!}</span>
+                            @else
+                                {!! \Aura\Base\Fields\Number::unitMarkup($fact, $value) !!}
+                            @endif
+                        </span>
                     @else
-                        <span @class(['aura-record-fact-value', 'aura-record-fact-text' => $recordTemplate && ! ($instance instanceof \Aura\Base\Fields\BelongsTo)])>{!! $value !!}</span>
+                        @php
+                            // Phones: a date of this year drops the year in the facts strip ("Nov 27").
+                            $shortDate = null;
+                            if ($recordTemplate && ($instance instanceof \Aura\Base\Fields\Date || $instance instanceof \Aura\Base\Fields\Datetime) && filled($model->{$fact['slug']})) {
+                                try {
+                                    $parsedDate = \Illuminate\Support\Carbon::parse($model->{$fact['slug']});
+                                    $shortDate = $parsedDate->year === now()->year ? $parsedDate->format('M j') : null;
+                                } catch (\Throwable $e) {
+                                    $shortDate = null;
+                                }
+                            }
+                        @endphp
+                        <span @class(['aura-record-fact-value', 'aura-record-fact-text' => $recordTemplate && ! ($instance instanceof \Aura\Base\Fields\BelongsTo)])>@if ($shortDate)<span class="max-sm:hidden">{!! $value !!}</span><span class="sm:hidden">{{ $shortDate }}</span>@else{!! $value !!}@endif</span>
                     @endif
                 </div>
             @endforeach
             @foreach ($highlights as $highlight)
                 <div class="aura-record-fact" data-record-highlight>
                     <span class="aura-eyebrow">{{ $highlight['label'] }}</span>
-                    <span class="aura-record-fact-number">{{ $highlight['value'] ?? '–' }}</span>
+                    {{-- An optional 'short' value replaces it on phones, where three facts share one row ("CHF 84.5K"). --}}
+                    <span class="aura-record-fact-number">
+                        @if (filled($highlight['short'] ?? null))
+                            <span class="max-sm:hidden">{{ $highlight['value'] ?? '–' }}</span><span class="sm:hidden">{{ $highlight['short'] }}</span>
+                        @else
+                            {{ $highlight['value'] ?? '–' }}
+                        @endif
+                    </span>
                 </div>
             @endforeach
         </div>

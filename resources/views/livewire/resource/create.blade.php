@@ -57,39 +57,8 @@
     @endif
 
     <div class="grid grid-cols-1 gap-6 aura-edit-post-container sm:grid-cols-3">
-        <div class="col-span-1 min-w-0 sm:col-span-3">
-
-            @if(!$inModal)
-            <x-aura::validation-errors />
-            @endif
-
-            <div class="flex flex-wrap items-start -mx-2">
-            @if ($formSections['card'] && ! $inModal)
-                {{-- Plain inputs without a panel get the card a panel would give them (fields/panel). --}}
-                <div class="px-2 w-full" data-form-card>
-                    <div class="mb-8 aura-card">
-                        <div class="mb-2">
-                            <div class="flex flex-wrap items-start -mx-2 w-[calc(100%+1rem)]">
-                                @foreach($formSections['fields'] as $key => $field)
-                                    @checkCondition($model, $field, $form)
-                                        <x-dynamic-component :component="$field['field']->edit()" :field="$field" wire:key="resource-field-{{ $key }}" :form="$form" :mode="$mode" />
-                                    @endcheckCondition
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @else
-           @foreach($formSections['fields'] as $key => $field)
-            @checkCondition($model, $field, $form)
-                    <x-dynamic-component :component="$field['field']->edit()" :field="$field" wire:key="resource-field-{{ $key }}" :form="$form" :mode="$mode" />
-            @endcheckCondition
-            @endforeach
-            @endif
-            </div>
-
-            <x-aura::validation-errors />
-        </div>
+        {{-- The same field grid as the edit form (main column, 20rem rail, 40px gap). --}}
+        @include('aura::livewire.resource.form-fields')
 
         {{-- <div class="col-span-1">
             <div class="aura-card">

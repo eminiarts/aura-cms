@@ -23,8 +23,33 @@ test('the stats slot replaces the count cards and the main and side slots lead t
     $this->get(route('aura.dashboard'))
         ->assertOk()
         ->assertSee('data-dashboard-slot="stats"', false)
-        ->assertSeeInOrder(['Open pipeline', 'CHF 42', '3 open deals', 'Pipeline by stage', 'Recently edited', 'My tasks', 'Quick actions'])
+        ->assertSeeInOrder(['Open pipeline', 'CHF 42', '3 open deals', 'Pipeline by stage', 'Recently edited', 'My tasks', 'Setup', 'Documentation'])
         ->assertSee('text-red-700', false)
+        ->assertDontSee('Quick actions')
+        ->assertDontSee('Create your first resource');
+});
+
+// With app sections the package's own links are one Setup block, only for people who see the team links.
+test('the setup block is left out for members without team links', function () {
+    $this->actingAs(soleMemberOf($this->user->currentTeam));
+    Aura::registerInjectView('dashboard_side', fn () => '<section>My tasks</section>');
+
+    $this->get(route('aura.dashboard'))
+        ->assertOk()
+        ->assertSee('My tasks')
+        ->assertDontSee('data-dashboard-quick-actions', false)
+        ->assertDontSee('Documentation');
+});
+
+// An empty team's onboarding (the stats slot without other app sections) stands alone: no quick actions repeat it.
+test('an empty team with an onboarding stats slot shows only that block', function () {
+    Aura::registerInjectView('dashboard_stats', fn () => '<div>Set up your pipeline</div>');
+
+    $this->get(route('aura.dashboard'))
+        ->assertOk()
+        ->assertSee('Set up your pipeline')
+        ->assertDontSee('Quick actions')
+        ->assertDontSee('Recently edited')
         ->assertDontSee('Create your first resource');
 });
 

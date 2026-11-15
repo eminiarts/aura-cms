@@ -64,16 +64,27 @@
                 @endif
             </div>
         @else
-            <div @class(['overflow-x-auto min-w-full align-middle', 'hidden sm:block' => $stackOnMobile])>
-                <table class="min-w-full">
-                    @include($this->settings['views']['table_header'])
+            {{-- A table wider than its column scrolls inside it, never past the page; while columns sit off to the
+                 right a short fade on the page background says so (as on the boards). --}}
+            <div @class(['relative', 'hidden sm:block' => $stackOnMobile]) x-data="{
+                    more: false,
+                    update() {
+                        const el = this.$refs.scroller;
+                        this.more = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+                    },
+                }" x-init="update()" x-on:resize.window="update()" data-table-scroll>
+                <div x-ref="scroller" x-on:scroll.passive="update()" class="overflow-x-auto min-w-full align-middle">
+                    <table @class(['min-w-full aura-list-table', 'aura-relation-table' => $isRelationTable])>
+                        @include($this->settings['views']['table_header'])
 
-                    <tbody class="border-b divide-y divide-aura-hairline border-aura-hairline">
-                        @foreach ($rows as $row)
-                            @include($this->settings['views']['row'])
-                        @endforeach
-                    </tbody>
-                </table>
+                        <tbody class="border-b divide-y divide-aura-hairline border-aura-hairline">
+                            @foreach ($rows as $row)
+                                @include($this->settings['views']['row'])
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div x-show="more" x-cloak class="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent pointer-events-none dark:from-gray-900" aria-hidden="true" data-table-fade></div>
             </div>
 
             @if ($stackOnMobile)
@@ -158,6 +169,31 @@
                     $numberKey = $metaKeyOfType(\Aura\Base\Fields\Number::class);
                     $statusKey = $metaKeyOfType(\Aura\Base\Fields\Status::class);
                     $pairedKeys = ($numberKey && $statusKey) ? [$statusKey, $numberKey] : [];
+
+                    // A resource may set its phone rows itself with mobileListRow(): ['tag' => slug, 'lines' => [[slug, …], …]].
+                    // The tag (a category) sits beside the name, each line joins its values as plain text with " · "
+                    // (relations as names), a dash when all are empty, so every row has the same lines. In a related
+                    // list the relation to the page's own record drops out (a company's contacts do not repeat it).
+                    $customRow = method_exists($tableModel, 'mobileListRow') ? $tableModel->mobileListRow() : null;
+                    $customLine = function ($row, array $keys) use ($tableModel, $plainText, $relationName) {
+                        return collect($keys)
+                            ->reject(function ($key) use ($row, $tableModel) {
+                                $field = $tableModel->fieldBySlug($key) ?? [];
+                                $isRelation = is_string($field['type'] ?? null) && is_a($field['type'], \Aura\Base\Fields\BelongsTo::class, true);
+
+                                return $isRelation && $this->parent && is_string($field['resource'] ?? null)
+                                    && is_a($this->parent, $field['resource']) && (string) $row->{$key} === (string) $this->parent->getKey();
+                            })
+                            ->map(function ($key) use ($row, $tableModel, $plainText, $relationName) {
+                                $type = $tableModel->fieldBySlug($key)['type'] ?? null;
+
+                                return is_string($type) && is_a($type, \Aura\Base\Fields\BelongsTo::class, true)
+                                    ? $relationName($row->display($key))
+                                    : $plainText($row->display($key));
+                            })
+                            ->filter(fn ($text) => $text !== '' && $text !== '–')
+                            ->implode(' · ');
+                    };
                 @endphp
                 {{-- Phones: one line for the record, its relations on one line when it has several, then the same two columns on every row (a status and a number share one line); a Boolean state with its date joins the meta line, its row's tags lead that line and the title gets the full width, up to two lines. --}}
                 <ul class="border-t border-b divide-y divide-aura-hairline border-aura-hairline sm:hidden">
@@ -196,6 +232,34 @@
                                 @if ($hasAvatar)
                                     <x-aura::avatar :record="$row" size="md" />
                                 @endif
+                                @if ($customRow)
+                                <div class="flex-1 min-w-0" data-mobile-row-custom>
+                                    <div class="flex gap-2 items-center min-w-0">
+                                        <span class="text-sm font-medium text-gray-900 truncate dark:text-white">
+                                            @if ($primary === null || $primary === '')
+                                                <span class="text-gray-400 dark:text-gray-500">–</span>
+                                            @else
+                                                {!! $primary !!}
+                                            @endif
+                                        </span>
+                                        @if (filled($customRow['tag'] ?? null) && ! $isBlank($tagHtml = $flattenLinks($row->display($customRow['tag']))))
+                                            <span class="flex shrink-0" data-mobile-row-tag>{!! $tagHtml !!}</span>
+                                        @endif
+                                    </div>
+                                    @foreach ($customRow['lines'] ?? [] as $lineKeys)
+                                        @php
+                                            $lineText = $customLine($row, (array) $lineKeys);
+                                        @endphp
+                                        <div class="mt-0.5 h-5 text-sm text-gray-500 truncate dark:text-gray-400" data-mobile-row-line>
+                                            @if ($lineText === '')
+                                                <span class="text-gray-400 dark:text-gray-500">–</span>
+                                            @else
+                                                {{ $lineText }}
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                                @else
                                 <div class="flex-1 min-w-0">
                                     <div @class(['text-sm font-medium text-gray-900 dark:text-white', 'truncate' => ! $stateKeys, 'line-clamp-2 break-words' => (bool) $stateKeys])>
                                         @if ($primary === null || $primary === '')
@@ -252,6 +316,7 @@
                                         </div>
                                     @endif
                                 </div>
+                                @endif
                                 @if ($rowUrl)
                                     <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-400 shrink-0" />
                                 @endif

@@ -78,6 +78,16 @@ class Permission extends Resource
         return e(static::displayLabel($value));
     }
 
+    /** The slug is a key, so it reads as one: 12px mono (escaped: views print display values raw). */
+    public static function displaySlugField($value, self $model): string
+    {
+        if (blank($value)) {
+            return '';
+        }
+
+        return '<span class="font-mono text-xs text-gray-600 dark:text-gray-300">'.e($value).'</span>';
+    }
+
     public static function getFields(): array
     {
         return [
@@ -99,6 +109,7 @@ class Permission extends Resource
                 'name' => 'Slug',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
+                'display' => [self::class, 'displaySlugField'],
                 'on_index' => true,
                 'slug' => 'slug',
                 'style' => [

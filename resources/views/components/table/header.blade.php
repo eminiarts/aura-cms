@@ -17,11 +17,13 @@
             $rowCount = isset($rows) && method_exists($rows, 'total') ? $rows->total() : null;
             // The create button stays in the title row on an empty list too; the empty block only words it.
             $createLabel = __('New :resource', ['resource' => Str::lower(__($model->singularName()))]);
+            // A page's description goes under the title row, so the title sits at the height of every other page title.
+            $indexDescription = ! $isRelationTable && $this->settings['title'] && method_exists($model, 'indexDescription') ? $model->indexDescription() : null;
         @endphp
         {{-- A relation section's row keeps the 32px button height without a button too, so its title sits at the same height. --}}
         {{-- The page's create button keeps its object ("New company") while it fits beside the title and reads
              "+ New" only when the full label would wrap the title (table/create-button). --}}
-        <div class="flex gap-3 justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3 min-h-8' : 'mt-1 min-h-9 sm:mt-8 sm:mb-8 sm:min-h-[3.375rem] sm:items-end' }}" @if ($isRelationTable) data-relation-header @endif>
+        <div class="flex gap-3 justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3 min-h-8' : 'mt-1 min-h-9 sm:mt-8 sm:min-h-[3.375rem] sm:items-end'.(filled($indexDescription) ? '' : ' sm:mb-8') }}" @if ($isRelationTable) data-relation-header @endif>
 
             @if ($this->settings['title'])
                 <div class="min-w-0">
@@ -41,9 +43,6 @@
                         </h1>
                     @endif
 
-                    @if (! $isRelationTable && method_exists($model, 'indexDescription') && filled($indexDescription = $model->indexDescription()))
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $indexDescription }}</p>
-                    @endif
 
                     @if (optional(optional($this)->field)['description'])
                         <span class="aura-meta">{{ __($this->field['description']) }}</span>
@@ -97,6 +96,10 @@
             @endcan
 
         </div>
+
+        @if (filled($indexDescription))
+            <p class="mt-1 text-sm text-gray-500 sm:mb-8 dark:text-gray-400" data-page-description>{{ $indexDescription }}</p>
+        @endif
     @endif
 @endif
 @if ($this->settings['header_after'])

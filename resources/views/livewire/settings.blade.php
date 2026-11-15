@@ -15,12 +15,13 @@
         @endif
     </x-aura::breadcrumbs>
 
-    <div class="flex gap-4 justify-between items-center mt-1 mb-6 sm:mt-8 sm:mb-8 sm:min-h-[3.375rem] sm:items-end">
+    @php
+        $settingsDescription = $this->settingsPage()->description;
+    @endphp
+    {{-- The title sits in the 54px band every page title shares; a description goes under the row. --}}
+    <div @class(['flex gap-4 justify-between items-center mt-1 sm:mt-8 sm:min-h-[3.375rem] sm:items-end', 'mb-6 sm:mb-8' => blank($settingsDescription)])>
         <div class="min-w-0">
             <h1 class="aura-page-title">{{ $page === 'general' ? __('Settings') : __($this->settingsPage()->title) }}</h1>
-            @if(filled($this->settingsPage()->description))
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __($this->settingsPage()->description) }}</p>
-            @endif
         </div>
 
         @if($canUpdate)
@@ -50,6 +51,10 @@
             </div>
         @endif
     </div>
+
+    @if(filled($settingsDescription))
+        <p class="mt-1 mb-6 text-sm text-gray-500 sm:mb-8 dark:text-gray-400" data-page-description>{{ __($settingsDescription) }}</p>
+    @endif
 
     @if($page === 'general')
         @php

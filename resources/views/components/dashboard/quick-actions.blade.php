@@ -1,6 +1,8 @@
 {{-- splitOnPhones: below lg the block dissolves into the dashboard grid (contents), the create actions
-     take order-1 and the workspace links order-3, so the caller can place its own blocks between them. --}}
-@props(['cols' => null, 'create' => [], 'splitOnPhones' => false])
+     take order-1 and the workspace links order-3, so the caller can place its own blocks between them.
+     title: the block's heading (default "Quick actions"). adminOnly: render only for people who see the
+     team links. withDocs: the documentation links close the block under a small label. --}}
+@props(['cols' => null, 'create' => [], 'splitOnPhones' => false, 'title' => null, 'adminOnly' => false, 'withDocs' => false])
 
 @php
     $colSpan = match($cols) {
@@ -12,7 +14,7 @@
 
     // One quiet row per action: 16px icon, label.
     $rowClass = 'flex gap-2.5 items-center px-2 w-full h-8 text-sm text-left text-gray-700 rounded-md transition-colors duration-150 group hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.04] dark:hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
-    $iconClass = 'size-4 shrink-0 text-gray-400 transition-colors duration-150 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300';
+    $iconClass = 'size-4 shrink-0 text-gray-500 transition-colors duration-150 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-200';
 
     // Each action shows only to users the target lets in (see Dashboard::workspaceLinks()).
     $user = auth()->user();
@@ -31,12 +33,12 @@
     $splitOnPhones = $splitOnPhones && $create->isNotEmpty() && $hasAdmin;
 @endphp
 
-@if ($create->isNotEmpty() || $hasAdmin)
+@if (($create->isNotEmpty() || $hasAdmin) && (! $adminOnly || $hasAdmin))
 {{-- Without cols the block sits in the dashboard's side column, which dissolves into the 12-column grid
      below lg: unsplit, it spans the full row there and follows the stats, where the create actions go. --}}
 <div {{ $attributes->merge(['class' => trim("{$colSpan} min-w-0".($splitOnPhones ? ' max-lg:contents' : ($colSpan === '' ? ' max-lg:col-span-12 max-lg:order-1' : '')))]) }} data-dashboard-quick-actions>
     <div @class(['min-w-0', 'col-span-12 order-1 lg:order-none' => $splitOnPhones])>
-    <h2 class="pb-2 border-b border-gray-200 aura-section-title dark:border-white/10">{{ __('Quick actions') }}</h2>
+    <h2 class="pb-2 border-b border-gray-200 aura-section-title dark:border-white/10">{{ $title ?? __('Quick actions') }}</h2>
 
     @if ($create->isNotEmpty())
         <div class="flex flex-col gap-0.5 mt-2 -mx-2" data-dashboard-create-actions>
@@ -106,6 +108,10 @@
         @endif
     </div>
     </div>
+    @endif
+
+    @if ($withDocs)
+        <x-aura::dashboard.docs bare />
     @endif
 </div>
 @endif

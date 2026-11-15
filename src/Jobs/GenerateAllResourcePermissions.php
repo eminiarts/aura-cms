@@ -51,18 +51,22 @@ class GenerateAllResourcePermissions
 
     private function generatePermissionsForResource(Resource $resource)
     {
+        // The resource's name in permissions (permissionName(), the plural name unless the resource says
+        // otherwise, as GenerateResourcePermissions does): a media plugin grants "View all media files".
+        $name = $resource->permissionName();
+
         $permissions = [
-            'view' => "View {$resource->pluralName()}",
-            'viewAny' => "View Any {$resource->pluralName()}",
-            'create' => "Create {$resource->pluralName()}",
-            'update' => "Update {$resource->pluralName()}",
-            'restore' => "Restore {$resource->pluralName()}",
-            'delete' => "Delete {$resource->pluralName()}",
-            'forceDelete' => "Force Delete {$resource->pluralName()}",
-            'scope' => "Scope {$resource->pluralName()}",
+            'view' => "View {$name}",
+            'viewAny' => "View Any {$name}",
+            'create' => "Create {$name}",
+            'update' => "Update {$name}",
+            'restore' => "Restore {$name}",
+            'delete' => "Delete {$name}",
+            'forceDelete' => "Force Delete {$name}",
+            'scope' => "Scope {$name}",
         ];
 
-        foreach ($permissions as $action => $name) {
+        foreach ($permissions as $action => $label) {
             $identity = ['slug' => "{$action}-{$resource::$slug}"];
 
             // The permissions table only has a team_id column when teams are on.
@@ -74,8 +78,8 @@ class GenerateAllResourcePermissions
                 Permission::withoutGlobalScopes()->updateOrCreate(
                     $identity,
                     [
-                        'name' => $name,
-                        'group' => $resource->pluralName(),
+                        'name' => $label,
+                        'group' => $name,
                     ]
                 );
             } catch (QueryException $e) {

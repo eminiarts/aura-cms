@@ -10,22 +10,21 @@
         </x-aura::breadcrumbs>
     </div>
 
-    <div class="mt-1 sm:mt-8 sm:flex sm:flex-col sm:justify-end sm:min-h-[3.375rem]">
-        <div class="flex items-center min-h-9">
-            <h1 class="aura-page-title">
-                {{ __('Plugins') }}
-                @if ($pluginCount)
-                    <span class="aura-page-count">{{ number_format($pluginCount) }}</span>
-                @endif
-            </h1>
-        </div>
-        {{-- The core package is the CMS itself: its version is the page meta, not a plugin row. --}}
-        @if ($coreVersion)
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400" data-core-version>
-                {{ __('Aura CMS') }} <span class="font-mono text-[13px] tabular-nums text-gray-600 dark:text-gray-300">{{ $coreVersion }}</span>
-            </p>
-        @endif
+    {{-- The title sits in the 54px band every page title shares; the version line goes under it. --}}
+    <div class="flex items-center mt-1 min-h-9 sm:mt-8 sm:items-end sm:min-h-[3.375rem]">
+        <h1 class="aura-page-title">
+            {{ __('Plugins') }}
+            @if ($pluginCount)
+                <span class="aura-page-count">{{ number_format($pluginCount) }}</span>
+            @endif
+        </h1>
     </div>
+    {{-- The core package is the CMS itself: its version is the page meta, not a plugin row. --}}
+    @if ($coreVersion)
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400" data-core-version>
+            {{ __('Aura CMS') }} <span class="font-mono text-[13px] tabular-nums text-gray-600 dark:text-gray-300">{{ $coreVersion }}</span>
+        </p>
+    @endif
 
     @php
         $composerHint = strtr(e(__('Plugins are managed with Composer. Run :command to install or update one.')), [

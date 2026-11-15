@@ -30,7 +30,7 @@
 @endphp
 
 @if ($path)
-    <svg {{ $attributes->merge(['class' => 'w-3.5 h-3.5 shrink-0 text-gray-400']) }} viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-column-icon>
+    <svg {{ $attributes->merge(['class' => 'w-3.5 h-3.5 shrink-0 text-gray-500 dark:text-gray-400']) }} viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-column-icon>
         <path d="{{ $path }}" />
     </svg>
 @endif

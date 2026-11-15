@@ -56,6 +56,18 @@
                 if ($columnType === 'Aura\\Base\\Fields\\Number') {
                     $display = \Aura\Base\Fields\Number::unitMarkup(($tableModel ?? $this->model)->fieldBySlug($key) ?? [], $display);
                 }
+                // A related list (a section of a record page) is narrow: its dates read "Nov 27" in the current year,
+                // with the full date in the tooltip, so the columns fit the record's main column.
+                if (($isRelationTable ?? false) && ! $displayIsEmpty && ! isset($columnField['display']) && is_string($columnType)
+                    && (is_a($columnType, \Aura\Base\Fields\Date::class, true) || is_a($columnType, \Aura\Base\Fields\Datetime::class, true))) {
+                    try {
+                        $shortDate = \Illuminate\Support\Carbon::parse($row->{$key});
+                        $display = '<time datetime="'.e($shortDate->toDateString()).'" title="'.e($shortDate->format('M j, Y')).'">'
+                            .e($shortDate->format($shortDate->year === now()->year ? 'M j' : 'M j, Y')).'</time>';
+                    } catch (\Throwable $e) {
+                        // An unparsable stored value keeps the field's own display.
+                    }
+                }
                 // A Boolean column with a date column named after it ("Published" and "Published at") reads as a
                 // word, "Published" or "Not published", as the phone list says it, instead of a check or a faint cross.
                 $isStateColumn = is_string($columnType) && is_a($columnType, \Aura\Base\Fields\Boolean::class, true)
@@ -86,7 +98,7 @@
                         $hasAvatar = method_exists($row, 'avatarShape') && $row->avatarShape();
                         $leadUrl = ! (is_string($display) && stripos($display, '<a') !== false) ? $rowViewUrl : null;
                     @endphp
-                    <div class="flex gap-2.5 items-center min-w-0">
+                    <div @class(['flex gap-2.5 items-center min-w-0', 'max-w-[11rem]' => $isRelationTable ?? false])>
                         @if ($hasAvatar)
                             <x-aura::avatar :record="$row" size="sm" />
                         @endif
@@ -99,7 +111,11 @@
                 @elseif ($columnType === 'Aura\\Base\\Fields\\Email' && is_string($display))
                     {{-- Long addresses stay on one line; w-max makes the column claim the address width (up to 20rem) in the
                          auto table layout, so it is only cut when it is longer than that. The full address is in the tooltip. --}}
-                    <span class="block w-max max-w-[20rem] truncate" title="{{ html_entity_decode(strip_tags($display)) }}">{!! $display !!}</span>
+                    <span @class(['block w-max truncate', ($isRelationTable ?? false) ? 'max-w-[13rem]' : 'max-w-[20rem]']) title="{{ html_entity_decode(strip_tags($display)) }}">{!! $display !!}</span>
+                @elseif ($columnType === 'Aura\\Base\\Fields\\Text' && is_string($display) && ! str_contains($display, '<'))
+                    {{-- A short text (a job title, a city) keeps one line, up to 16rem (10rem in a related list), then ends in an ellipsis with the
+                         full value in the tooltip, so rows keep one height instead of breaking "Head of / Finance". --}}
+                    <span @class(['block w-max truncate', ($isRelationTable ?? false) ? 'max-w-[10rem]' : 'max-w-[16rem]']) title="{{ html_entity_decode($display, ENT_QUOTES) }}">{!! $display !!}</span>
                 @else
                     {!! $display !!}
                 @endif
@@ -110,7 +126,7 @@
     @endif
 
     @if ($this->settings['actions'])
-        <td class="px-3 py-2">
+        <td class="px-3 py-2 table-row-actions-cell">
             @include('aura::components.table.row-actions')
         </td>
     @endif

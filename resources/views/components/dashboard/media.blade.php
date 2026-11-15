@@ -6,7 +6,8 @@
         <h2 class="aura-section-title">{{ __('Recent uploads') }}</h2>
         <a href="{{ route('aura.attachment.index') }}" wire:navigate
             class="inline-flex shrink-0 gap-1 items-center text-sm font-medium whitespace-nowrap rounded-md transition-colors duration-150 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
-            {{ __('Media library') }}
+            {{-- The attachments page: "Files" beside a media library plugin's own page, else the media library. --}}
+            {{ Route::has('aura.media-library.index') ? __('All files') : __('Media library') }}
             <x-aura::icon.caret direction="right" class="size-4" />
         </a>
     </div>

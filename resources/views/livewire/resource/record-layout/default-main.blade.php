@@ -166,7 +166,7 @@
             </x-aura::fields.conditions>
             @endforeach
 
-            @include('aura::livewire.resource.record-meta', ['attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => 'px-2 max-lg:!hidden'])])
+            @include('aura::livewire.resource.record-meta', ['attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => 'px-2 max-lg:!hidden aura-record-meta-stacked'])])
         </aside>
         @endif
 
@@ -198,7 +198,7 @@
             {{-- Without a details column the meta line closes the related records instead, and so it does
                  below xl, where the related records stack under the details column, and on phones beside a rail. --}}
             @if (! $inModal && $useRail)
-                @include('aura::livewire.resource.record-meta', ['attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => '!mt-6 lg:!hidden'])])
+                @include('aura::livewire.resource.record-meta', ['attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => '!mt-6 lg:!hidden aura-record-meta-stacked'])])
             @elseif (! $inModal && $sections['details'] === [])
                 @include('aura::livewire.resource.record-meta', ['attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => '!mt-6'])])
             @elseif (! $inModal && $splitRelated)

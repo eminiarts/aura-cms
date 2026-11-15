@@ -821,17 +821,21 @@
                                 <h4 class="aura-board-card-title">Migrate media library to S3</h4>
                                 <p class="aura-board-card-body">Move existing attachments to object storage and update the disk configuration for every team.</p>
                             </div>
-                            <div class="aura-board-card-meta">
+                            <div class="aura-board-card-footer">
+                                <div class="aura-board-card-meta">
                                 <span class="inline-flex gap-1 items-center tabular-nums"><svg class="text-gray-400 size-3.5 shrink-0 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>Nov 14</span>
                                 <span class="inline-flex gap-1 items-center font-medium text-gray-600 dark:text-gray-300"><svg class="size-3.5 shrink-0" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="9" width="2.5" height="3" rx="0.75" class="fill-current" /><rect x="5" y="5" width="2.5" height="7" rx="0.75" class="fill-current" /><rect x="9" y="1" width="2.5" height="11" rx="0.75" class="fill-current opacity-25" /></svg>Medium</span>
-                                <x-aura::avatar name="Enes Emini" shape="circle" size="sm" class="ml-auto" />
+                                </div>
+                                <x-aura::avatar name="Enes Emini" shape="circle" size="sm" />
                             </div>
                         </a>
                         <a href="#cards" class="aura-board-card">
                             <h4 class="aura-board-card-title">Build kanban board component</h4>
-                            <div class="aura-board-card-meta">
+                            <div class="aura-board-card-footer">
+                                <div class="aura-board-card-meta">
                                 <span class="inline-flex gap-1 items-center font-medium tabular-nums text-red-600 dark:text-red-400"><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>Nov 1</span>
-                                <x-aura::avatar name="Bajram Emini" shape="circle" size="sm" class="ml-auto" />
+                                </div>
+                                <x-aura::avatar name="Bajram Emini" shape="circle" size="sm" />
                             </div>
                         </a>
                         <div class="aura-board-empty">{{ __('No tasks') }}</div>

@@ -4,7 +4,7 @@
         $instance = $field['field'] ?? null;
         // Single-line values (emails, URLs, phone numbers, slugs, short text) stay on one line from sm and
         // truncate in a narrow details column, with the full value in the tooltip; on phones, where there is
-        // no tooltip, they wrap anywhere so the whole value shows. A Textarea keeps its lines and
+        // no tooltip, they wrap at their soft break points so the whole value shows. A Textarea keeps its lines and
         // wraps: it is the one field whose value is a paragraph. Everything else (tags, relations) wraps,
         // with [overflow-wrap:anywhere] breaking a single long token where no space or hyphen is.
         $keepsLines = $instance instanceof \Aura\Base\Fields\Textarea;
@@ -15,6 +15,14 @@
             || $instance instanceof \Aura\Base\Fields\Slug
         );
         $tooltip = $singleLine && is_scalar($value) ? trim(html_entity_decode(strip_tags((string) $value), ENT_QUOTES)) : null;
+        // Where a single-line value wraps (the Properties rail, phones), an address or a host breaks after its
+        // "@", "." and "/" rather than inside a word: soft break points in the text, never inside a tag.
+        if ($singleLine && is_string($value) && $tooltip !== null && ! preg_match('/\s/u', $tooltip) && preg_match('/[@.\/]/', $tooltip)) {
+            $value = implode('', array_map(
+                fn ($part) => str_starts_with($part, '<') ? $part : preg_replace('/([@.\/])(?=[^@.\/])/', '$1<wbr>', $part),
+                preg_split('/(<[^>]*>)/', $value, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY),
+            ));
+        }
         // A boolean reads as a word on the record page: a small check and "Yes", or a muted "No". Lists keep
         // Boolean::display()'s icons; a field with its own display callback keeps that.
         $isBoolean = $instance instanceof \Aura\Base\Fields\Boolean && ! isset($field['display']);
@@ -34,6 +42,6 @@
         @endif
     @else
     {{-- One line on purpose: whitespace-pre-line would render the template's own line breaks as a blank first line. --}}
-    <div @if($tooltip) title="{{ $tooltip }}" @endif class="{{ $keepsLines ? 'whitespace-pre-line' : '' }} {{ $singleLine ? 'break-words [overflow-wrap:anywhere] sm:truncate' : 'break-words [overflow-wrap:anywhere]' }} min-w-0 text-sm text-gray-900 aura-view-value dark:text-gray-100">@if(empty($value))<span class="text-gray-400 dark:text-gray-500">–</span>@else{!! $keepsLines ? trim((string) $value) : $value !!}@endif</div>
+    <div @if($tooltip) title="{{ $tooltip }}" @endif class="{{ $keepsLines ? 'whitespace-pre-line' : '' }} {{ $singleLine ? 'break-words sm:truncate' : 'break-words [overflow-wrap:anywhere]' }} min-w-0 text-sm text-gray-900 aura-view-value dark:text-gray-100">@if(empty($value))<span class="text-gray-400 dark:text-gray-500">–</span>@else{!! $keepsLines ? trim((string) $value) : $value !!}@endif</div>
     @endif
 </x-aura::fields.wrapper>
