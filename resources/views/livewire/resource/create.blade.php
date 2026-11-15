@@ -22,7 +22,7 @@
     @endif
 
     {{-- Title left, actions right, as on the record header; on phones Cancel and Save sit in the bottom form bar instead. --}}
-    <div class="aura-record-block {{ $inModal ? 'mb-8' : 'mt-1 mb-6 sm:my-8'}}">
+    <div class="aura-record-block {{ $inModal ? 'mb-8' : 'mt-1 mb-6 sm:my-8 sm:flex sm:flex-col sm:justify-end sm:min-h-[3.375rem]'}}">
     <div class="aura-record-header">
         <div class="flex-1 min-w-0 sm:min-w-[10rem]">
             <h1 class="break-words aura-page-title line-clamp-2 sm:line-clamp-1">{{ $newRecordTitle }}</h1>

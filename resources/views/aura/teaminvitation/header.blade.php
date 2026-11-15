@@ -5,7 +5,7 @@
     $isRelationTable = (bool) optional(optional($this)->field)['name'];
     $rowCount = isset($rows) && method_exists($rows, 'total') ? $rows->total() : null;
 @endphp
-<div class="flex gap-4 justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3 min-h-8' : 'mt-1 min-h-9 sm:mt-6' }}" @if ($isRelationTable) data-relation-header @endif>
+<div class="flex gap-4 justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3 min-h-8' : 'mt-1 min-h-9 sm:mt-8 sm:mb-8 sm:min-h-[3.375rem] sm:items-end' }}" @if ($isRelationTable) data-relation-header @endif>
     @if ($this->settings['title'])
         @if ($isRelationTable)
             <h2 class="aura-section-title">
@@ -30,14 +30,14 @@
                 <x-slot:icon>
                     <x-aura::icon icon="plus" />
                 </x-slot>
-                <span>{{ __('Invite') }}</span>
+                <span>{{ __('Invite user') }}</span>
             </x-aura::button.border>
         @else
             <x-aura::button wire:click.prevent="$dispatch('openModal', { component: 'aura::invite-user'})">
                 <x-slot:icon>
                     <x-aura::icon icon="plus" />
                 </x-slot>
-                <span>{{ __('Invite') }}</span>
+                <span>{{ __('Invite user') }}</span>
             </x-aura::button>
         @endif
     @endif

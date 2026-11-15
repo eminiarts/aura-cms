@@ -204,6 +204,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Navigation
+    |--------------------------------------------------------------------------
+    |
+    | Optional sidebar layout. `groups` orders the groups (unlisted groups
+    | follow). `items` is keyed by item slug and may set `group`, `sort`,
+    | `dropdown`, `name`, `icon` (an x-aura::icon name or raw SVG) and
+    | `hidden`. Empty keeps the order the resources declare.
+    |
+    */
+
+    'navigation' => [
+        'groups' => [],
+        'items' => [],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Features
     |--------------------------------------------------------------------------
     |
@@ -253,6 +270,8 @@ return [
         'user_invitations' => true,
         'invitation_expiry' => 7,
         'create_teams' => env('AURA_CREATE_TEAMS', true),
+        // The "Log in as admin" shortcut on the login page (local environment, .test hosts only).
+        'local_login' => true,
     ],
 
     /*

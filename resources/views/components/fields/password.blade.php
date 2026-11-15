@@ -11,7 +11,7 @@
     }
 @endphp
 <x-aura::fields.wrapper :field="$field">
-    <x-aura::input.text wire:model="form.fields.{{ optional($field)['slug'] }}" error="form.fields.{{ optional($field)['slug'] }}" :placeholder="$placeholder" id="resource-field-{{ optional($field)['slug'] }}" type="password" data-lpignore="true" autocomplete="{{ optional($field)['autocomplete'] ?? 'new-password' }}" :aria-describedby="$keepHint ? 'resource-field-'.optional($field)['slug'].'-hint' : null"></x-aura::input.text>
+    <x-aura::input.text wire:model="form.fields.{{ optional($field)['slug'] }}" error="form.fields.{{ optional($field)['slug'] }}" :placeholder="$placeholder" id="resource-field-{{ optional($field)['slug'] }}" type="password" :reveal="true" data-lpignore="true" autocomplete="{{ optional($field)['autocomplete'] ?? 'new-password' }}" :aria-describedby="$keepHint ? 'resource-field-'.optional($field)['slug'].'-hint' : null"></x-aura::input.text>
     @if ($keepHint)
         <p id="resource-field-{{ optional($field)['slug'] }}-hint" class="mt-1.5 text-[13px] leading-5 text-gray-500 dark:text-gray-400">{{ $keepHint }}</p>
     @endif

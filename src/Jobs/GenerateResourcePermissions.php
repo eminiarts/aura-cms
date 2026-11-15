@@ -42,76 +42,77 @@ class GenerateResourcePermissions implements ShouldQueue
     public function handle()
     {
         $r = app($this->resource);
+        $name = $r->permissionName();
 
         Permission::firstOrCreate(
             ['slug' => 'view-'.$r::$slug],
             [
-                'name' => 'View '.$r->pluralName(),
+                'name' => 'View '.$name,
                 'slug' => 'view-'.$r::$slug,
-                'group' => $r->pluralName(),
+                'group' => $name,
             ]
         );
 
         Permission::firstOrCreate(
             ['slug' => 'viewAny-'.$r::$slug],
             [
-                'name' => 'View Any '.$r->pluralName(),
+                'name' => 'View Any '.$name,
                 'slug' => 'viewAny-'.$r::$slug,
-                'group' => $r->pluralName(),
+                'group' => $name,
             ]
         );
 
         Permission::firstOrCreate(
             ['slug' => 'create-'.$r::$slug],
             [
-                'name' => 'Create '.$r->pluralName(),
+                'name' => 'Create '.$name,
                 'slug' => 'create-'.$r::$slug,
-                'group' => $r->pluralName(),
+                'group' => $name,
             ]
         );
 
         Permission::firstOrCreate(
             ['slug' => 'update-'.$r::$slug],
             [
-                'name' => 'Update '.$r->pluralName(),
+                'name' => 'Update '.$name,
                 'slug' => 'update-'.$r::$slug,
-                'group' => $r->pluralName(),
+                'group' => $name,
             ]
         );
 
         Permission::firstOrCreate(
             ['slug' => 'restore-'.$r::$slug],
             [
-                'name' => 'Restore '.$r->pluralName(),
+                'name' => 'Restore '.$name,
                 'slug' => 'restore-'.$r::$slug,
-                'group' => $r->pluralName(),
+                'group' => $name,
             ]
         );
 
         Permission::firstOrCreate(
             ['slug' => 'delete-'.$r::$slug],
             [
-                'name' => 'Delete '.$r->pluralName(),
+                'name' => 'Delete '.$name,
                 'slug' => 'delete-'.$r::$slug,
-                'group' => $r->pluralName(),
+                'group' => $name,
             ]
         );
 
         Permission::firstOrCreate(
             ['slug' => 'forceDelete-'.$r::$slug],
             [
-                'name' => 'Force Delete '.$r->pluralName(),
+                'name' => 'Force Delete '.$name,
                 'slug' => 'forceDelete-'.$r::$slug,
-                'group' => $r->pluralName(),
+                'group' => $name,
             ]
         );
 
         Permission::firstOrCreate(
             ['slug' => 'scope-'.$r::$slug],
             [
-                'name' => 'Scope '.$r->pluralName(),
+                'name' => 'Scope '.$name,
                 'slug' => 'scope-'.$r::$slug,
-                'group' => $r->pluralName(),
+                'group' => $name,
             ]
         );
     }

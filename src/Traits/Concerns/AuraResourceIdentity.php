@@ -149,6 +149,12 @@ trait AuraResourceIdentity
         return static::$type;
     }
 
+    /** Optional one-line description under the list page title. */
+    public function indexDescription(): ?string
+    {
+        return null;
+    }
+
     public function isAppResource()
     {
         return Str::startsWith(get_class($this), 'App');
@@ -157,6 +163,12 @@ trait AuraResourceIdentity
     public function isVendorResource()
     {
         return ! $this->isAppResource();
+    }
+
+    /** The resource in its generated permission names and group ("View Any Media files"). */
+    public function permissionName()
+    {
+        return $this->pluralName();
     }
 
     public function pluralName()

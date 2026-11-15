@@ -21,7 +21,7 @@
         {{-- A relation section's row keeps the 32px button height without a button too, so its title sits at the same height. --}}
         {{-- The page's create button keeps its object ("New company") while it fits beside the title and reads
              "+ New" only when the full label would wrap the title (table/create-button). --}}
-        <div class="flex gap-3 justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3 min-h-8' : 'mt-1 min-h-9 sm:mt-6' }}" @if ($isRelationTable) data-relation-header @endif>
+        <div class="flex gap-3 justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3 min-h-8' : 'mt-1 min-h-9 sm:mt-8 sm:mb-8 sm:min-h-[3.375rem] sm:items-end' }}" @if ($isRelationTable) data-relation-header @endif>
 
             @if ($this->settings['title'])
                 <div class="min-w-0">
@@ -39,6 +39,10 @@
                                 <span class="aura-page-count">{{ number_format($rowCount) }}</span>
                             @endif
                         </h1>
+                    @endif
+
+                    @if (! $isRelationTable && method_exists($model, 'indexDescription') && filled($indexDescription = $model->indexDescription()))
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $indexDescription }}</p>
                     @endif
 
                     @if (optional(optional($this)->field)['description'])

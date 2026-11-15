@@ -159,18 +159,9 @@ class Settings extends Component
                 'type' => 'Aura\\Base\\Fields\\Radio',
                 'live' => true,
                 'options' => [
-                    [
-                        'key' => 'primary',
-                        'value' => 'Primary',
-                    ],
-                    [
-                        'key' => 'light',
-                        'value' => 'Light',
-                    ],
-                    [
-                        'key' => 'dark',
-                        'value' => 'Dark',
-                    ],
+                    ['key' => 'primary', 'value' => 'Primary', 'preview' => static::sidebarSample('primary', false)],
+                    ['key' => 'light', 'value' => 'Light', 'preview' => static::sidebarSample('light', false)],
+                    ['key' => 'dark', 'value' => 'Dark', 'preview' => static::sidebarSample('dark', false)],
                 ],
                 'slug' => 'sidebar-type',
                 'style' => [
@@ -182,18 +173,9 @@ class Settings extends Component
                 'type' => 'Aura\\Base\\Fields\\Radio',
                 'live' => true,
                 'options' => [
-                    [
-                        'key' => 'primary',
-                        'value' => 'Primary',
-                    ],
-                    [
-                        'key' => 'light',
-                        'value' => 'Light',
-                    ],
-                    [
-                        'key' => 'dark',
-                        'value' => 'Dark',
-                    ],
+                    ['key' => 'primary', 'value' => 'Primary', 'preview' => static::sidebarSample('primary', true)],
+                    ['key' => 'light', 'value' => 'Light', 'preview' => static::sidebarSample('light', true)],
+                    ['key' => 'dark', 'value' => 'Dark', 'preview' => static::sidebarSample('dark', true)],
                 ],
                 'slug' => 'sidebar-darkmode-type',
                 'style' => [
@@ -281,6 +263,7 @@ class Settings extends Component
                     'custom' => 'Custom',
                 ],
                 'slug' => 'color-palette',
+                'swatches' => static::paletteSwatches(),
                 'live' => true,
                 'style' => [
                     'width' => '33',
@@ -307,6 +290,7 @@ class Settings extends Component
                     'custom' => 'Custom',
                 ],
                 'slug' => 'gray-color-palette',
+                'swatches' => static::paletteSwatches(),
                 'live' => true,
                 'style' => [
                     'width' => '33',
@@ -685,6 +669,14 @@ class Settings extends Component
         $this->model->setAttribute('value', $stored);
     }
 
+    /** 16px swatch per palette in the palette selects: the palette's primary (600) color. */
+    public static function paletteSwatches(): array
+    {
+        return collect(ThemeTokens::paletteNames())
+            ->mapWithKeys(fn (string $palette) => [$palette => ThemeTokens::expertPaletteColors(['color-palette' => $palette])['primary']])
+            ->all();
+    }
+
     public function render()
     {
         return view('aura::livewire.settings')->layout('aura::components.layout.app');
@@ -741,6 +733,15 @@ class Settings extends Component
     public function settingsPage(): SettingsPage
     {
         return app(SettingsRegistry::class)->page($this->page) ?? abort(404);
+    }
+
+    /**
+     * 56x40 picture of the sidebar color option beside its radio, on a light or dark page. A view and its data,
+     * not HTML: the fields are built before the aura view namespace exists (the radio field renders it).
+     */
+    public static function sidebarSample(string $type, bool $dark): array
+    {
+        return ['aura::settings.sidebar-sample', ['type' => $type, 'dark' => $dark]];
     }
 
     public function updated(string $property, mixed $value): void

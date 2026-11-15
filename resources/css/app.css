@@ -145,8 +145,9 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
     @apply text-[0.8125rem] leading-5 font-medium text-gray-500 dark:text-gray-300;
 }
 
+/* 16px/24px: a step under the 24px page title, a step over the 14px body. */
 .aura-section-title {
-    @apply text-sm font-semibold text-gray-900 dark:text-white;
+    @apply text-base/6 font-semibold text-gray-900 dark:text-white;
 }
 
 .aura-body {
@@ -638,7 +639,7 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
 }
 
 .aura-record-section-title {
-    @apply mb-1 border-b border-gray-200 pb-2 text-sm font-semibold text-gray-900 dark:border-white/10 dark:text-white;
+    @apply mb-1 border-b border-gray-200 pb-2 text-base/6 font-semibold text-gray-900 dark:border-white/10 dark:text-white;
 }
 
 .aura-record-section .aura-view-row {

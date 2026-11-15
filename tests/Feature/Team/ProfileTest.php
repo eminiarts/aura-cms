@@ -25,7 +25,7 @@ describe('Profile Component Rendering', function () {
             ->assertSee('Profile')
             ->assertSee('Personal information')
             ->assertSee('Password')
-            ->assertSee('2FA')
+            ->assertSee('Two-factor')
             ->assertSee('Delete');
     });
 

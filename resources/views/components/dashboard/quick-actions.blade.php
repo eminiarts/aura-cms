@@ -25,7 +25,7 @@
     $canPlugins = $links['plugins'];
     $hasAdmin = $canCreateResource || $canSettings || $canEditTeam || $canPlugins;
 
-    // "New …" links (label, url) lead; the admin links follow under a small "Workspace" label.
+    // "New …" links (label, url) lead; the admin links follow under a small "Team" label.
     $create = collect($create)->filter(fn ($action) => filled($action['url'] ?? null))->values();
     // Without create actions there is nothing to split: the workspace links stay under the title.
     $splitOnPhones = $splitOnPhones && $create->isNotEmpty() && $hasAdmin;
@@ -55,10 +55,10 @@
     <div @class(['min-w-0', 'col-span-12 order-3 lg:order-none' => $splitOnPhones]) data-dashboard-workspace>
     @if ($splitOnPhones)
         {{-- On its own below lg the group gets a section title; beside the create actions a small label. --}}
-        <h2 class="pb-2 border-b border-gray-200 lg:hidden aura-section-title dark:border-white/10">{{ __('Workspace') }}</h2>
-        <p class="hidden mt-5 mb-1 text-xs font-medium text-gray-500 lg:block dark:text-gray-400">{{ __('Workspace') }}</p>
+        <h2 class="pb-2 border-b border-gray-200 lg:hidden aura-section-title dark:border-white/10">{{ __('Team') }}</h2>
+        <p class="hidden mt-5 mb-1 text-xs font-medium text-gray-500 lg:block dark:text-gray-400">{{ __('Team') }}</p>
     @elseif ($create->isNotEmpty())
-        <p class="mt-5 mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">{{ __('Workspace') }}</p>
+        <p class="mt-5 mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">{{ __('Team') }}</p>
     @endif
     <div @class(['flex flex-col gap-0.5 -mx-2', 'mt-2' => $create->isEmpty() || $splitOnPhones, 'lg:mt-0' => $splitOnPhones])>
         @if ($canCreateResource)

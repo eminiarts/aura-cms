@@ -6,7 +6,7 @@
     $createLabel = __('New :resource', ['resource' => Str::lower(__($this->model->singularName()))]);
     $buttonSize = $isRelationTable ? 'sm' : 'base';
 @endphp
-<div class="flex gap-4 justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3 min-h-8' : 'mt-1 min-h-9 sm:mt-6' }}" @if ($isRelationTable) data-relation-header @endif>
+<div class="flex gap-4 justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3 min-h-8' : 'mt-1 min-h-9 sm:mt-8 sm:mb-8 sm:min-h-[3.375rem] sm:items-end' }}" @if ($isRelationTable) data-relation-header @endif>
     <div class="min-w-0">
         @if ($isRelationTable)
             <h2 class="aura-section-title">
@@ -51,7 +51,7 @@
                     <x-slot:icon>
                         <x-aura::icon icon="plus" />
                     </x-slot>
-                    <span>{{ $isRelationTable ? __('Invite') : __('Invite user') }}</span>
+                    <span>{{ __('Invite user') }}</span>
                 </x-aura::button.border>
             </div>
         @endif

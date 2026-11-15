@@ -2,7 +2,7 @@
 
     <div class="mb-8">
         <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __('Create your account') }}</h1>
-        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ config('aura.teams') ? __('Create a workspace for your team.') : __('Enter your details below to get started.') }}</p>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ config('aura.teams') ? __('Create your team and your account.') : __('Enter your details below to get started.') }}</p>
     </div>
 
     <form method="POST" action="{{ route('aura.register') }}" onsubmit="document.getElementById('register-button').disabled = true;" class="space-y-5">
@@ -36,7 +36,7 @@
             <x-aura::input-label class="!mt-0" for="password" :value="__('Password')" />
 
             <x-aura::input.text id="password" class="block w-full"
-                            type="password"
+                            type="password" :reveal="true"
                             name="password"
                             placeholder="{{ __('Create a password') }}"
                             required autocomplete="new-password" />
@@ -49,7 +49,7 @@
             <x-aura::input-label class="!mt-0" for="password_confirmation" :value="__('Confirm password')" />
 
             <x-aura::input.text id="password_confirmation" class="block w-full"
-                            type="password"
+                            type="password" :reveal="true"
                             name="password_confirmation"
                             placeholder="{{ __('Repeat your password') }}"
                             required autocomplete="new-password" />

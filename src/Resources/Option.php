@@ -39,12 +39,6 @@ class Option extends Resource
         return static::where('name', $name)->first();
     }
 
-    /**
-     * A readable label for the stored key, for lists: "user.1.sidebarToggled" is "Sidebar toggled",
-     * "user.1.table_view.Attachment" is "Table view · Attachment", "team.1.settings" is "Team settings".
-     * The key's first segment is put in words; later segments (resource names) stay as stored.
-     * Display only: the key itself is never changed.
-     */
     public function displayLabel(): string
     {
         $segments = $this->keySegments();
@@ -125,6 +119,17 @@ class Option extends Resource
     public static function getWidgets(): array
     {
         return [];
+    }
+
+    /**
+     * A readable label for the stored key, for lists: "user.1.sidebarToggled" is "Sidebar toggled",
+     * "user.1.table_view.Attachment" is "Table view · Attachment", "team.1.settings" is "Team settings".
+     * The key's first segment is put in words; later segments (resource names) stay as stored.
+     * Display only: the key itself is never changed.
+     */
+    public function indexDescription(): ?string
+    {
+        return __('Stored key/value settings. For developers.');
     }
 
     /**

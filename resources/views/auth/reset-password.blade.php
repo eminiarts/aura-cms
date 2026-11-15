@@ -14,14 +14,14 @@
         <!-- Email Address -->
         <div>
             <x-aura::input-label class="!mt-0" for="email" :value="__('Email')" />
-            <x-aura::text-input id="email" class="block w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus />
+            <x-aura::input.text id="email" class="block w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus autocomplete="username" />
             <x-aura::input-error :for="$errors->get('email')" class="mt-2" />
         </div>
 
         <!-- Password -->
         <div>
             <x-aura::input-label class="!mt-0" for="password" :value="__('Password')" />
-            <x-aura::text-input id="password" class="block w-full" type="password" name="password" required />
+            <x-aura::input.text id="password" class="block w-full" type="password" :reveal="true" name="password" required autocomplete="new-password" />
             <x-aura::input-error :for="$errors->get('password')" class="mt-2" />
         </div>
 
@@ -29,9 +29,9 @@
         <div>
             <x-aura::input-label class="!mt-0" for="password_confirmation" :value="__('Confirm password')" />
 
-            <x-aura::text-input id="password_confirmation" class="block w-full"
-                                type="password"
-                                name="password_confirmation" required />
+            <x-aura::input.text id="password_confirmation" class="block w-full"
+                                type="password" :reveal="true"
+                                name="password_confirmation" required autocomplete="new-password" />
 
             <x-aura::input-error :for="$errors->get('password_confirmation')" class="mt-2" />
         </div>

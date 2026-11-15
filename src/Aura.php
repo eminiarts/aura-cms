@@ -391,6 +391,8 @@ class Aura
 
             $resources = app('hook_manager')->applyHooks('navigation', $resources->values());
 
+            $resources = $this->applyNavigationConfig($resources);
+
             $resources = $resources->sortBy('sort')->filter(function ($value, $key) {
                 if (isset($value['conditional_logic'])) {
                     return app('dynamicFunctions')::call($value['conditional_logic']);
@@ -419,10 +421,10 @@ class Aura
                 return $carry;
             }, []);
 
-            return collect($grouped)
+            return $this->orderNavigationGroups(collect($grouped)
                 ->groupBy('group')
                 ->map(fn ($group) => $group->values()->all())
-                ->all();
+                ->all());
         });
 
         // Revive incomplete/legacy Collection payloads written before this fix.
@@ -448,7 +450,7 @@ class Aura
     {
         return 'user-'.auth()->id()
             .'-'.auth()->user()->current_team_id
-            .'-navigation-'.md5(implode(',', $this->getResources()).'|'.implode(',', $this->settingsPageSlugs()).'|'.url('/'));
+            .'-navigation-'.md5(implode(',', $this->getResources()).'|'.implode(',', $this->settingsPageSlugs()).'|'.url('/').'|'.json_encode(config('aura.navigation')));
     }
 
     public function option($key)
@@ -619,6 +621,54 @@ class Aura
             ->useBuildDirectory('vendor/aura')->withEntryPoints([
                 'resources/css/app.css',
             ]);
+    }
+
+    /**
+     * Optional `aura.navigation.items` config, keyed by item slug: `group`, `sort`, `dropdown`
+     * and `name` replace the item's values, `icon` takes an `x-aura::icon` name or raw SVG,
+     * `hidden` drops the item. Runs after the navigation hooks, so plugin items can be moved too.
+     */
+    protected function applyNavigationConfig($items)
+    {
+        $overrides = config('aura.navigation.items') ?: [];
+
+        if ($overrides === []) {
+            return $items;
+        }
+
+        return $items
+            ->reject(fn ($item) => (bool) ($overrides[$item['slug'] ?? '']['hidden'] ?? false))
+            ->map(function ($item) use ($overrides) {
+                $override = $overrides[$item['slug'] ?? ''] ?? [];
+
+                $item = array_merge($item, array_intersect_key($override, array_flip(['group', 'sort', 'dropdown', 'name'])));
+
+                if (isset($override['icon'])) {
+                    $item['icon'] = view()->exists('aura::components.icon.'.$override['icon'])
+                        ? view('aura::components.icon.'.$override['icon'])->render()
+                        : $override['icon'];
+                }
+
+                return $item;
+            })
+            ->values();
+    }
+
+    /**
+     * Optional `aura.navigation.groups` config: the listed groups come first, in that order;
+     * groups it does not list keep their place after them.
+     */
+    protected function orderNavigationGroups(array $groups): array
+    {
+        $ordered = [];
+
+        foreach (config('aura.navigation.groups') ?: [] as $group) {
+            if (array_key_exists($group, $groups)) {
+                $ordered[$group] = $groups[$group];
+            }
+        }
+
+        return $ordered + $groups;
     }
 
     /** @return list<string> */

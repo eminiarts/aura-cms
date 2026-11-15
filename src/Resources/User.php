@@ -480,7 +480,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             ],
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => '2FA',
+                'name' => 'Two-factor',
                 'label' => 'Tab',
                 'slug' => '2fa-tab',
                 'global' => true,
@@ -488,7 +488,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'on_view' => false,
             ],
             [
-                'name' => '2FA',
+                'name' => 'Two-factor',
                 'type' => 'Aura\\Base\\Fields\\LivewireComponent',
                 'component' => 'aura::two-factor-authentication-form',
                 'on_create' => false,

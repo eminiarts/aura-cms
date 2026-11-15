@@ -15,7 +15,7 @@
         @endif
     </x-aura::breadcrumbs>
 
-    <div class="flex gap-4 justify-between items-center mt-1 mb-6 sm:mt-6">
+    <div class="flex gap-4 justify-between items-center mt-1 mb-6 sm:mt-8 sm:mb-8 sm:min-h-[3.375rem] sm:items-end">
         <div class="min-w-0">
             <h1 class="aura-page-title">{{ $page === 'general' ? __('Settings') : __($this->settingsPage()->title) }}</h1>
             @if(filled($this->settingsPage()->description))

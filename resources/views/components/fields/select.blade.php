@@ -17,6 +17,10 @@
     && collect($options)->every(fn ($option) => is_array($option) && isset($option['key'], $option['value']))
     && collect($options)->contains(fn ($option) => ! empty($option['color']));
   $required = is_string(optional($field)['validation']) && str($field['validation'])->contains('required');
+
+  // Optional `swatches` (option key => CSS color): a 16px swatch of the chosen option inside the native select.
+  $swatches = optional($field)['swatches'];
+  $swatch = $swatches ? ($swatches[data_get($this->form ?? [], 'fields.'.$slug)] ?? null) : null;
 @endphp
 <x-aura::fields.wrapper :field="$field">
   @if ($tagOptions)
@@ -109,6 +113,9 @@
   </div>
   @else
   <div class="relative">
+    @if ($swatches)
+      <span class="absolute left-3 top-1/2 z-[1] -translate-y-1/2 rounded size-4 pointer-events-none {{ $swatch ? 'ring-1 ring-inset ring-gray-950/10 dark:ring-white/15' : 'border border-dashed border-gray-300 dark:border-gray-600' }}" @if ($swatch) style="background-color: {{ $swatch }}" @endif aria-hidden="true"></span>
+    @endif
     <select
       @if($disabled)
       disabled
@@ -119,7 +126,7 @@
       wire:model="form.fields.{{ optional($field)['slug'] }}"
       @endif
       id="aura_field_{{ optional($field)['slug'] }}"
-    error="form.fields.{{ optional($field)['slug'] }}" name="post_fields_{{ optional($field)['slug'] }}" id="post_fields_{{ optional($field)['slug'] }}" class="block py-0 pr-9 pl-3 w-full h-9 text-base text-gray-900 bg-white bg-none rounded-lg border-0 ring-1 shadow-xs transition duration-150 appearance-none sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:bg-gray-950/40 dark:text-gray-100 dark:ring-white/15 dark:hover:ring-white/25 dark:disabled:bg-gray-800/50 [&:has(option[value='']:checked)]:text-gray-400 dark:[&:has(option[value='']:checked)]:text-gray-400 [&_option]:text-gray-900 dark:[&_option]:text-gray-100">
+    error="form.fields.{{ optional($field)['slug'] }}" name="post_fields_{{ optional($field)['slug'] }}" id="post_fields_{{ optional($field)['slug'] }}" class="block py-0 pr-9 {{ $swatches ? 'pl-9' : 'pl-3' }} w-full h-9 text-base text-gray-900 bg-white bg-none rounded-lg border-0 ring-1 shadow-xs transition duration-150 appearance-none sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:bg-gray-950/40 dark:text-gray-100 dark:ring-white/15 dark:hover:ring-white/25 dark:disabled:bg-gray-800/50 [&:has(option[value='']:checked)]:text-gray-400 dark:[&:has(option[value='']:checked)]:text-gray-400 [&_option]:text-gray-900 dark:[&_option]:text-gray-100">
 
     <option  value="">{{ $placeholder }}</option>
 

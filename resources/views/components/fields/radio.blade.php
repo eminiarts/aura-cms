@@ -1,9 +1,12 @@
 @php
+    // An option's preview is HTML or [view, data] (Settings::sidebarSample()).
+    $renderPreview = fn ($preview) => is_array($preview) ? view($preview[0], $preview[1] ?? [])->render() : $preview;
+    $hasPreviews = collect(optional($field)['options'])->contains(fn ($option) => is_array($option) && ! empty($option['preview']));
 @endphp
 
 <x-aura::fields.wrapper :field="$field">
-    {{-- 8px between options, so a choice list keeps the rhythm of the rest of the form. --}}
-    <div class="flex flex-col gap-2 py-0.5">
+    {{-- 8px between options, so a choice list keeps the rhythm of the rest of the form (12px with option pictures). --}}
+    <div @class(['flex flex-col py-0.5', 'gap-3' => $hasPreviews, 'gap-2' => ! $hasPreviews])>
     @foreach(optional($field)['options'] as $key => $option)
 
         @if (is_array($option))
@@ -13,6 +16,7 @@
                     name="post_fields_{{ optional($field)['slug'] }}"
                     id="post_fields_{{ optional($field)['slug'] }}"
                     :label="$option['value']"
+                    :preview="$renderPreview($option['preview'] ?? null)"
                     :value="$option['key']"
                     :disabled="optional($field)['disabled'] ?? false"
                 />
@@ -22,6 +26,7 @@
                     name="post_fields_{{ optional($field)['slug'] }}"
                     id="post_fields_{{ optional($field)['slug'] }}"
                     :label="$option['value']"
+                    :preview="$renderPreview($option['preview'] ?? null)"
                     :value="$option['key']"
                     :disabled="optional($field)['disabled'] ?? false"
                 />

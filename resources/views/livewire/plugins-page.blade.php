@@ -10,7 +10,7 @@
         </x-aura::breadcrumbs>
     </div>
 
-    <div class="mt-1 sm:mt-6">
+    <div class="mt-1 sm:mt-8 sm:flex sm:flex-col sm:justify-end sm:min-h-[3.375rem]">
         <div class="flex items-center min-h-9">
             <h1 class="aura-page-title">
                 {{ __('Plugins') }}

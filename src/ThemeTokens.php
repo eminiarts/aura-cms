@@ -308,6 +308,12 @@ final class ThemeTokens
         return ltrim($stylesheet, '/');
     }
 
+    /** @return list<string> */
+    public static function paletteNames(): array
+    {
+        return array_keys(self::PALETTE_EXPERT_COLORS);
+    }
+
     /**
      * Resolve package defaults, host config, and persisted settings in that order.
      *

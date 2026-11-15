@@ -3,7 +3,9 @@
     @php
         // Same condition as the aura.login-as route in routes/auth.php: that route
         // 404s outside local + .test, so the button must not render there either.
-        $localLoginAs = app()->environment('local')
+        // aura.auth.local_login = false hides the shortcut (a demo that signs in with seeded accounts).
+        $localLoginAs = config('aura.auth.local_login', true)
+            && app()->environment('local')
             && \Illuminate\Support\Str::endsWith(request()->getHost(), '.test');
 
         // Bypass TeamScope: guests have no team, and fail-closed scoping returns no users.
@@ -35,7 +37,7 @@
             <x-aura::input-label class="!mt-0" for="password" :value="__('Password')" />
 
             <x-aura::input.text id="password" class="block w-full"
-                            type="password"
+                            type="password" :reveal="true"
                             name="password"
                             placeholder="{{ __('Enter your password') }}"
                             required autocomplete="current-password" />
