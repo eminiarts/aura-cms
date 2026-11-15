@@ -568,7 +568,8 @@ a.aura-record-card:focus-visible {
 }
 
 /* Board (kanban). Columns have no fill: a title of dot, name and count, then cards. A card is a
-   13px white tile with a hairline ring and the smallest shadow; the ring darkens on hover. */
+   white tile with 16px padding, a hairline ring and the smallest shadow; the ring darkens on hover.
+   Title 14px at 500, body and meta row 13px. */
 .aura-board-column-title {
     @apply flex items-center gap-2 px-0.5 pb-2.5 text-sm font-semibold text-gray-900 dark:text-white;
 }
@@ -578,7 +579,7 @@ a.aura-record-card:focus-visible {
 }
 
 .aura-board-card {
-    @apply block rounded-lg bg-white p-3 text-[13px] leading-5 shadow-xs ring-1 ring-gray-950/[0.08] transition duration-150 dark:bg-gray-800 dark:ring-white/10;
+    @apply block rounded-lg bg-white p-4 text-[13px] leading-5 shadow-xs ring-1 ring-gray-950/[0.08] transition duration-150 dark:bg-gray-800 dark:ring-white/10;
 }
 
 a.aura-board-card:hover {
@@ -590,15 +591,15 @@ a.aura-board-card:focus-visible {
 }
 
 .aura-board-card-title {
-    @apply font-medium text-gray-900 dark:text-gray-100;
+    @apply text-sm font-medium text-gray-900 dark:text-gray-100;
 }
 
 .aura-board-card-body {
-    @apply mt-0.5 text-gray-500 dark:text-gray-400;
+    @apply mt-1 text-gray-500 dark:text-gray-400;
 }
 
 .aura-board-card-meta {
-    @apply mt-2.5 flex h-5 items-center gap-3 text-xs text-gray-500 dark:text-gray-400;
+    @apply mt-3 flex h-5 items-center gap-3 text-[13px] text-gray-500 dark:text-gray-400;
 }
 
 .aura-board-empty {
@@ -883,7 +884,7 @@ a.aura-board-card:focus-visible {
     @apply text-gray-400 hover:text-gray-700 hover:bg-gray-950/5 focus:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-toggle{
-    @apply text-gray-500 hover:text-gray-200 hover:bg-white/[0.06] focus:ring-primary-500;
+    @apply text-gray-400 hover:text-gray-200 hover:bg-white/[0.06] focus:ring-primary-500;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-toggle{
@@ -893,7 +894,7 @@ a.aura-board-card:focus-visible {
     @apply dark:text-gray-400 dark:hover:text-gray-700 dark:hover:bg-gray-950/5 dark:focus:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-toggle {
-    @apply dark:text-gray-500 dark:hover:text-gray-200 dark:hover:bg-white/[0.06] dark:focus:ring-primary-500;
+    @apply dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-white/[0.06] dark:focus:ring-primary-500;
 }
 
 /* .aura-sidebar-search */
@@ -970,23 +971,23 @@ a.aura-board-card:focus-visible {
 /* .aura-sidebar-team-name */
 .aura-sidebar-team-name {}
 .aura-sidebar-type-primary .aura-sidebar-team-name{
-    @apply text-white/60;
+    @apply text-white/70;
 }
 .aura-sidebar-type-light .aura-sidebar-team-name{
     @apply text-gray-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-team-name {
-    @apply text-gray-500;
+    @apply text-gray-400;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-team-name{
-    @apply dark:text-white/60;
+    @apply dark:text-white/70;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-team-name{
     @apply dark:text-gray-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-team-name {
-    @apply dark:text-gray-500;
+    @apply dark:text-gray-400;
 }
 
 
@@ -1027,53 +1028,53 @@ a.aura-board-card:focus-visible {
 
 /* Primary Sidebar Type */
 .aura-sidebar-type-primary .aura-sidebar-dropdown-button {
-    @apply text-white/70 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
+    @apply text-white/80 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
 }
 .aura-sidebar-type-primary .aura-sidebar-dropdown-button-expanded {
-    @apply text-white/70 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
+    @apply text-white/80 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
 }
 .aura-sidebar-type-primary .aura-sidebar-dropdown-container-expanded {
     @apply rounded-lg;
 }
 .aura-sidebar-type-primary .aura-sidebar-dropdown-collapsed {
-    @apply text-white/70 hover:text-white hover:bg-white/10;
+    @apply text-white/80 hover:text-white hover:bg-white/10;
 }
 
 /* Light Sidebar Type */
 .aura-sidebar-type-light .aura-sidebar-dropdown-button {
-    @apply text-gray-500 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
+    @apply text-gray-600 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-light .aura-sidebar-dropdown-button-expanded {
-    @apply text-gray-500 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
+    @apply text-gray-600 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-light .aura-sidebar-dropdown-container-expanded {
     @apply rounded-lg;
 }
 .aura-sidebar-type-light .aura-sidebar-dropdown-collapsed {
-    @apply text-gray-500 hover:text-gray-900 hover:bg-gray-950/5;
+    @apply text-gray-600 hover:text-gray-900 hover:bg-gray-950/5;
 }
 
 /* Dark Sidebar Type */
 .aura-sidebar-type-dark .aura-sidebar-dropdown-button {
-    @apply text-gray-400 bg-transparent hover:text-white hover:bg-white/[0.06] focus-visible:ring-primary-500;
+    @apply text-gray-300 bg-transparent hover:text-white hover:bg-white/[0.06] focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-dropdown-button-expanded {
-    @apply text-gray-400 bg-transparent hover:text-white hover:bg-white/[0.06] focus-visible:ring-primary-500;
+    @apply text-gray-300 bg-transparent hover:text-white hover:bg-white/[0.06] focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-dropdown-container-expanded {
     @apply rounded-lg;
 }
 .aura-sidebar-type-dark .aura-sidebar-dropdown-collapsed {
-    @apply text-gray-400 hover:text-white hover:bg-white/[0.06];
+    @apply text-gray-300 hover:text-white hover:bg-white/[0.06];
 }
 
 /* Darkmode Primary Sidebar Type */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-button {
-    @apply dark:text-white/70 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
+    @apply dark:text-white/80 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
 }
 
 .aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-button-expanded {
-    @apply dark:text-white/70 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
+    @apply dark:text-white/80 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
 }
 
 .aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-container-expanded {
@@ -1081,16 +1082,16 @@ a.aura-board-card:focus-visible {
 }
 
 .aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-collapsed {
-    @apply dark:text-white/70 dark:hover:text-white dark:hover:bg-white/10;
+    @apply dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10;
 }
 
 /* Darkmode Light Sidebar Type */
 .aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-button {
-    @apply dark:text-gray-500 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
+    @apply dark:text-gray-600 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-button-expanded {
-    @apply dark:text-gray-500 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
+    @apply dark:text-gray-600 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-container-expanded {
@@ -1098,16 +1099,16 @@ a.aura-board-card:focus-visible {
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-collapsed {
-    @apply dark:text-gray-500 dark:hover:text-gray-900 dark:hover:bg-gray-950/5;
+    @apply dark:text-gray-600 dark:hover:text-gray-900 dark:hover:bg-gray-950/5;
 }
 
 /* Darkmode Dark Sidebar Type */
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-button {
-    @apply dark:text-gray-400 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
+    @apply dark:text-gray-300 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-button-expanded {
-    @apply dark:text-gray-400 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
+    @apply dark:text-gray-300 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-container-expanded {
@@ -1115,7 +1116,7 @@ a.aura-board-card:focus-visible {
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-collapsed {
-    @apply dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/[0.06];
+    @apply dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/[0.06];
 }
 
 
@@ -1129,11 +1130,11 @@ a.aura-board-card:focus-visible {
 }
 /* Light Sidebar Type */
 .aura-sidebar-type-light .aura-sidebar-icon {
-    @apply text-gray-400 group-hover:text-gray-500 group-[.is-active]:text-primary-600;
+    @apply text-gray-500 group-hover:text-gray-700 group-[.is-active]:text-primary-600;
 }
 /* Dark Sidebar Type: the active item's icon is the one place this sidebar carries the primary color. */
 .aura-sidebar-type-dark .aura-sidebar-icon {
-    @apply text-gray-500 group-hover:text-gray-300 group-[.is-active]:text-primary-400;
+    @apply text-gray-400 group-hover:text-gray-200 group-[.is-active]:text-primary-400;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-icon {
@@ -1141,11 +1142,11 @@ a.aura-board-card:focus-visible {
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-icon {
-    @apply dark:text-gray-400 dark:group-hover:text-gray-500 dark:group-[.is-active]:text-primary-600;
+    @apply dark:text-gray-500 dark:group-hover:text-gray-700 dark:group-[.is-active]:text-primary-600;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-icon {
-    @apply dark:text-gray-500 dark:group-hover:text-gray-300 dark:group-[.is-active]:text-primary-400;
+    @apply dark:text-gray-400 dark:group-hover:text-gray-200 dark:group-[.is-active]:text-primary-400;
 }
 
 /* .aura-sidebar-heading (group label: 12px medium, sentence case) */
@@ -1157,7 +1158,7 @@ a.aura-board-card:focus-visible {
     @apply text-gray-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-heading {
-    @apply text-gray-500;
+    @apply text-gray-400;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-heading{
@@ -1167,7 +1168,7 @@ a.aura-board-card:focus-visible {
     @apply dark:text-gray-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-heading {
-    @apply dark:text-gray-500;
+    @apply dark:text-gray-400;
 }
 
 /* .aura-sidebar-avatar (user card at the bottom) */
@@ -1210,7 +1211,7 @@ a.aura-board-card:focus-visible {
 }
 
 .aura-sidebar-type-primary .aura-sidebar-item {
-    @apply text-white/70 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
+    @apply text-white/80 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
 }
 /* Active item, every sidebar type: a 2px hairline on the left edge plus a tint of the accent
    (white on the primary sidebar). The tint is the one place the sidebar carries the primary color. */
@@ -1223,7 +1224,7 @@ a.aura-board-card:focus-visible {
 }
 
 .aura-sidebar-type-light .aura-sidebar-item {
-    @apply text-gray-500 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
+    @apply text-gray-600 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-light .aura-sidebar-item.is-active {
     @apply relative text-primary-700 bg-primary-50 hover:bg-primary-50;
@@ -1236,15 +1237,15 @@ a.aura-board-card:focus-visible {
 /* Dark sidebar: one quiet active state, a white tint with white text and the icon in primary (no
    edge hairline, no primary fill), so the current item reads as "here", not as a second button. */
 .aura-sidebar-type-dark .aura-sidebar-item {
-    @apply text-gray-400 bg-transparent hover:text-gray-100 hover:bg-white/[0.06] focus-visible:ring-primary-500;
+    @apply text-gray-300 bg-transparent hover:text-white hover:bg-white/[0.06] focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-item.is-active {
-    @apply text-white bg-white/[0.08] hover:bg-white/[0.08];
+    @apply text-white bg-white/10 hover:bg-white/10;
 }
 
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-item {
-    @apply dark:text-white/70 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
+    @apply dark:text-white/80 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
 }
 .aura-sidebar-darkmode-type-primary .aura-sidebar-item.is-active {
     @apply dark:relative dark:text-white dark:bg-white/15 dark:hover:bg-white/15;
@@ -1255,7 +1256,7 @@ a.aura-board-card:focus-visible {
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-item {
-    @apply dark:text-gray-500 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
+    @apply dark:text-gray-600 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-item.is-active {
     @apply dark:relative dark:text-primary-700 dark:bg-primary-50 dark:hover:bg-primary-50;
@@ -1266,10 +1267,10 @@ a.aura-board-card:focus-visible {
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-item {
-    @apply dark:text-gray-400 dark:bg-transparent dark:hover:text-gray-100 dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
+    @apply dark:text-gray-300 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-item.is-active {
-    @apply dark:text-white dark:bg-white/[0.08] dark:hover:bg-white/[0.08];
+    @apply dark:text-white dark:bg-white/10 dark:hover:bg-white/10;
 }
 
 /* .aura-sidebar-badge — theme-aware nav badge pill.

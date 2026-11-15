@@ -1,13 +1,14 @@
 @props(['stats', 'calm' => false])
 
-{{-- One anatomy for every card: label and icon, the total with a 30-day trend beside it, then the
-     count of new records in the last 30 days and the change against the 30 days before.
+{{-- One anatomy for every card: label and icon, the total with a 30-day trend beside it, then up to two
+     quiet lines: "8 added in 30 days" (left out when it equals the total, all records are new) and the
+     change against the 30 days before, "+33% vs previous 30 days", in the index widget strip's colored
+     text (only with a previous period to compare against).
      The trend is the running total of new records. It is a row decision: drawn on every card when
      each card had records on at least three days of the month, otherwise on none, so the row never
-     mixes charted and bare cards. The delta pill only appears on cards with a previous period to
-     compare against; the others show no pill (the line keeps its height). Calm cards (an empty
-     workspace) keep label and total; a zero stays gray-900 (a muted zero read as disabled) and the
-     "No … yet" caption below says what it counts. Phones: a 2x2 grid; the trend is a desktop detail. --}}
+     mixes charted and bare cards. Calm cards (an empty workspace) keep label and total; a zero stays
+     gray-900 (a muted zero read as disabled) and the "No … yet" caption below says what it counts.
+     Phones: a 2x2 grid; the trend is a desktop detail. --}}
 @php
     $qualifies = fn ($stat) => $stat['showSparkline'] ?? (count(array_filter(array_map('intval', $stat['series'] ?? []))) >= 3);
     $rowTrend = ! $calm && collect($stats)->isNotEmpty() && collect($stats)->every($qualifies);
@@ -19,6 +20,8 @@
         $delta = $calm ? null : ($stat['delta'] ?? null);
         $deltaPercent = $stat['deltaPercent'] ?? null;
         $current = (int) ($stat['current'] ?? 0);
+        // "4 added in 30 days" under a total of 4 repeats the total: shown only when it says something new.
+        $showAdded = $current !== (int) ($stat['total'] ?? 0);
         $series = array_values(array_map('intval', $stat['series'] ?? []));
         $showTrend = $rowTrend;
         $points = '';
@@ -65,30 +68,33 @@
         @if ($calm && ! $stat['total'])
             {{-- The caption says what the zero counts. --}}
             <p class="mt-3 h-5 text-xs leading-5 text-gray-500 truncate dark:text-gray-400">{{ __('No :items yet', ['items' => Str::lower($stat['name'])]) }}</p>
-        @endif
-
-        {{-- A calm card with records keeps the count line (without the pill), so it is as tall as the captioned zeros beside it. --}}
-        @unless ($calm && ! $stat['total'])
-            {{-- Fixed h-5 line: a card with a delta pill is as tall as one without, so cards in a row match.
-                 Phones say "+10 · 30d" (the full phrase stays for screen readers) so count and pill fit side by side. --}}
-            <div class="flex gap-2 items-center mt-3 h-5 min-w-0 text-xs">
-                <span class="truncate {{ $current > 0 ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500' }}">
-                    <span class="font-medium tabular-nums">{{ $current > 0 ? '+'.number_format($current) : '0' }}</span>
-                    <span class="sm:hidden" aria-hidden="true"><span class="text-gray-300 dark:text-gray-600">&middot;</span> {{ __('30d') }}</span><span class="sr-only sm:not-sr-only">{{ __('in the last 30 days') }}</span>
-                </span>
+        @elseif (! $calm && ($showAdded || $delta !== null))
+            {{-- Grid rows stretch the cards to one height, so a card without these lines just ends lower. --}}
+            <div class="mt-3 space-y-0.5 text-xs leading-5" data-stat-change>
+                @if ($showAdded)
+                    <p class="truncate {{ $current > 0 ? 'text-gray-600 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400' }}">
+                        @if ($current > 0)
+                            <span class="font-medium tabular-nums text-gray-900 dark:text-gray-100">{{ number_format($current) }}</span> {{ __('added in 30 days') }}
+                        @else
+                            {{ __('None added in 30 days') }}
+                        @endif
+                    </p>
+                @endif
 
                 @if ($delta !== null)
-                    <span class="inline-flex items-center gap-0.5 ml-auto h-5 rounded-full px-1.5 font-medium shrink-0 {{ $delta > 0 ? 'bg-green-50 text-green-700 dark:bg-green-900/40 dark:text-green-400' : ($delta < 0 ? 'bg-red-50 text-red-700 dark:bg-red-900/40 dark:text-red-400' : 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300') }}"
-                        title="{{ __(':current new vs :previous in the previous 30 days', ['current' => $current, 'previous' => $stat['previous'] ?? 0]) }}">
-                        @if ($delta !== 0)
-                            <svg class="w-3 h-3 {{ $delta < 0 ? 'rotate-180' : '' }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M12 19V5M5 12l7-7 7 7" />
-                            </svg>
-                        @endif
-                        {{ abs((int) $deltaPercent) }}%
-                    </span>
+                    {{-- The change as colored text, as in the index widget strip; the words say what it compares with. --}}
+                    <p class="flex gap-x-1.5 min-w-0 whitespace-nowrap" title="{{ __(':current new vs :previous in the previous 30 days', ['current' => $current, 'previous' => $stat['previous'] ?? 0]) }}">
+                        <span class="font-medium tabular-nums shrink-0 {{ $delta > 0 ? 'text-green-700 dark:text-green-400' : ($delta < 0 ? 'text-red-700 dark:text-red-400' : 'text-gray-600 dark:text-gray-300') }}">
+                            @if ($delta !== 0)
+                                <span class="sr-only">{{ $delta > 0 ? __('Increased by') : __('Decreased by') }}</span>
+                            @endif
+                            {{ $delta > 0 ? '+' : ($delta < 0 ? '−' : '') }}{{ abs((int) $deltaPercent) }}%
+                        </span>
+                        {{-- Phones (a 140px card) take the shorter phrase so the line does not break. --}}
+                        <span class="min-w-0 text-gray-500 truncate dark:text-gray-400"><span class="sm:hidden">{{ __('vs prior 30 days') }}</span><span class="hidden sm:inline">{{ __('vs previous 30 days') }}</span></span>
+                    </p>
                 @endif
             </div>
-        @endunless
+        @endif
     </a>
 @endforeach

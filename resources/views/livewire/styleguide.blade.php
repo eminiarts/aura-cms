@@ -295,7 +295,7 @@
                     <span class="text-sm text-red-600 dark:text-red-400">The title field is required.</span>
                 </div>
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
-                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">sidebar group label — 12px · 500 · sentence case · gray-500</span>
+                    <span class="w-80 text-xs text-gray-400 shrink-0 dark:text-gray-500">sidebar group label — 12px · 500 · sentence case · gray-500 (light sidebar), gray-400 (dark sidebar)</span>
                     <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Resources</span>
                 </div>
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
@@ -559,7 +559,7 @@
             <div class="mt-4 max-w-56">
                 <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Select with colored options') }}</span>
                 <div class="flex relative items-center pr-9 pl-2 mt-2 w-full h-9 bg-white rounded-lg ring-1 shadow-xs ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10">
-                    <span class="aura-tag aura-tag-status bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300">High</span>
+                    <span class="aura-tag aura-tag-status bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-300">High</span>
                     <span class="flex absolute inset-y-0 right-0 items-center pr-2.5" aria-hidden="true">
                         <svg class="text-gray-400 size-4 dark:text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.25 6.25 8 10l3.75-3.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     </span>
@@ -651,7 +651,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">07</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Cards & Widgets') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('.aura-card is the base surface, used for forms and the few boxed surfaces: stat cards and related-record cards. Lists, record details and dashboard sections are unboxed under a hairline title. Stat cards below are the real dashboard/stats component with sample data; every card has the same anatomy: label and icon, the total with a 30-day trend beside it (the running total of new records as a line, the one place a card carries primary, a row decision: drawn on all cards when every card had records on at least three days, otherwise on none, as in this sample), then the new records in the last 30 days and the change against the 30 days before as a pill. A card without a previous period shows no pill. Phones show a 2x2 grid without the trend.') }}
+            {{ __('.aura-card is the base surface, used for forms and the few boxed surfaces: stat cards and related-record cards. Lists, record details and dashboard sections are unboxed under a hairline title. Stat cards below are the real dashboard/stats component with sample data; every card has the same anatomy: label and icon, the total with a 30-day trend beside it (the running total of new records as a line, the one place a card carries primary, a row decision: drawn on all cards when every card had records on at least three days, otherwise on none, as in this sample), then up to two 12px lines: "86 added in 30 days" (left out when it equals the total) and the change against the 30 days before as colored text, "+16% vs previous 30 days", as in the index widget strip. A card without a previous period has no change line. Phones show a 2x2 grid without the trend.') }}
         </p>
 
         <div class="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-2">
@@ -773,7 +773,7 @@
         {{-- Board column and media tiles: the two dense surfaces, both at 13px. --}}
         <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Board column (.aura-board-column-title, .aura-board-card) and media tiles (.aura-tile-ring, .aura-tile-name, .aura-tile-meta)') }}</span>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('A board column has no fill: a title of 8px status dot, name and count, then cards 8px apart; columns sit 20px apart. A card is a 13px tile with a hairline ring and the smallest shadow (hover darkens the ring): title at 500, body at gray-500 clamped to two lines, then a 20px meta row with the due date (red at 500 when overdue), the priority as colored text with a bar mark, and the 20px assignee avatar on the right. An empty column shows a dashed placeholder. A media tile is a 10:7 thumbnail under an inset hairline overlay; selected tiles draw a 2px primary ring inside the edge, no shadow and no zoom. Its caption: the name at 13px 500 (cut in the middle, keeping its last characters and the extension: "master-servi…ent.pdf"), then "type · size" at 12px.') }}</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('A board column has no fill: a title of 8px status dot, name and count, then cards 8px apart; columns sit 20px apart. A card is a tile with 16px padding, a hairline ring and the smallest shadow (hover darkens the ring): title at 14px 500, body at 13px gray-500 clamped to two lines, then a 20px meta row at 13px with the due date (red at 500 when overdue, the only red on the board), the priority as a bar mark and label (gray, an option color such as orange for High), and the 20px assignee avatar on the right. An empty column shows a dashed placeholder. A media tile is a 10:7 thumbnail under an inset hairline overlay; selected tiles draw a 2px primary ring inside the edge, no shadow and no zoom. Its caption: the name at 13px 500 (cut in the middle, keeping its last characters and the extension: "master-servi…ent.pdf"), then "type · size" at 12px.') }}</p>
             <div class="grid grid-cols-1 gap-8 mt-4 md:grid-cols-[16rem_minmax(0,1fr)]">
                 <div>
                     <h3 class="aura-board-column-title">
@@ -787,7 +787,7 @@
                             <p class="aura-board-card-body line-clamp-2">Move existing attachments to object storage and update the disk configuration for every team.</p>
                             <div class="aura-board-card-meta">
                                 <span class="inline-flex gap-1 items-center tabular-nums"><svg class="text-gray-400 size-3.5 shrink-0 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>Nov 14</span>
-                                <span class="inline-flex gap-1 items-center font-medium text-amber-700 dark:text-amber-300"><svg class="size-3.5 shrink-0" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="9" width="2.5" height="3" rx="0.75" class="fill-current" /><rect x="5" y="5" width="2.5" height="7" rx="0.75" class="fill-current" /><rect x="9" y="1" width="2.5" height="11" rx="0.75" class="fill-current opacity-25" /></svg>Medium</span>
+                                <span class="inline-flex gap-1 items-center font-medium text-gray-600 dark:text-gray-300"><svg class="size-3.5 shrink-0" viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="9" width="2.5" height="3" rx="0.75" class="fill-current" /><rect x="5" y="5" width="2.5" height="7" rx="0.75" class="fill-current" /><rect x="9" y="1" width="2.5" height="11" rx="0.75" class="fill-current opacity-25" /></svg>Medium</span>
                                 <x-aura::avatar name="Enes Emini" shape="circle" size="xs" class="ml-auto" />
                             </div>
                         </a>

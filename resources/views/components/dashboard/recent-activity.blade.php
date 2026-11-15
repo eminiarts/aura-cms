@@ -22,7 +22,7 @@
                         <span class="flex-1 min-w-0 text-sm font-medium text-gray-900 truncate dark:text-white">{{ $item['title'] }}</span>
                         <span class="hidden text-sm text-gray-500 shrink-0 sm:block dark:text-gray-400">{{ $item['resource'] }}</span>
                         @if ($item['updated_at'])
-                            <span class="w-24 text-right shrink-0 aura-meta" title="{{ $item['updated_at']->toDayDateTimeString() }}">{{ $item['updated_at']->diffForHumans(['short' => true]) }}</span>
+                            <span class="w-24 text-right shrink-0 aura-meta" title="{{ $item['updated_at']->toDayDateTimeString() }}">{{ $item['updated_at']->diffForHumans() }}</span>
                         @endif
                     </a>
                 </li>
