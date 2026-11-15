@@ -34,6 +34,6 @@
         @endif
     @else
     {{-- One line on purpose: whitespace-pre-line would render the template's own line breaks as a blank first line. --}}
-    <div @if($tooltip) title="{{ $tooltip }}" @endif class="{{ $keepsLines ? 'whitespace-pre-line' : '' }} {{ $singleLine ? 'break-words [overflow-wrap:anywhere] sm:truncate' : 'break-words [overflow-wrap:anywhere]' }} min-w-0 text-sm text-gray-900 dark:text-gray-100">@if(empty($value))<span class="text-gray-400 dark:text-gray-500">–</span>@else{!! $keepsLines ? trim((string) $value) : $value !!}@endif</div>
+    <div @if($tooltip) title="{{ $tooltip }}" @endif class="{{ $keepsLines ? 'whitespace-pre-line' : '' }} {{ $singleLine ? 'break-words [overflow-wrap:anywhere] sm:truncate' : 'break-words [overflow-wrap:anywhere]' }} min-w-0 text-sm text-gray-900 aura-view-value dark:text-gray-100">@if(empty($value))<span class="text-gray-400 dark:text-gray-500">–</span>@else{!! $keepsLines ? trim((string) $value) : $value !!}@endif</div>
     @endif
 </x-aura::fields.wrapper>

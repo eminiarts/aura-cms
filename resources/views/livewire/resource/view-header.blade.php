@@ -1,6 +1,11 @@
 @php
     // Key fields promoted under the title: a number large and tabular, a status as its tag.
     $facts = \Aura\Base\RecordLayout\RecordViewSections::header($this->viewFields, $model);
+    // Computed facts (a company's open pipeline) from the resource's optional recordHighlights(): each
+    // ['label' => …, 'value' => string or Htmlable], after the field facts, three facts in all.
+    $highlights = method_exists($model, 'recordHighlights') ? array_values(array_filter((array) $model->recordHighlights(), fn ($item) => is_array($item) && isset($item['label']))) : [];
+    $highlights = array_slice($highlights, 0, max(0, 3 - count($facts)));
+    $recordTemplate ??= false;
     $canEdit = Route::has('aura.' . $slug . '.edit') && auth()->user()?->can('update', $model);
     // The actions menu sits in the title row (a 36px "more" button beside the pencil on phones, as on the
     // edit header); a resource that shows its actions as buttons keeps them in the action row.
@@ -21,6 +26,9 @@
             {{-- The record is the subject of the page: its avatar, resource name as eyebrow, record title as H1. --}}
             @if ($model->avatarShape())
                 <x-aura::avatar :record="$model" size="lg" />
+            @elseif ($recordTemplate && filled($model->getIcon()))
+                {{-- The record template keeps the 40px tile for records without an avatar: the resource icon. --}}
+                <span class="aura-record-icon-tile" aria-hidden="true">{!! $model->getIcon() !!}</span>
             @endif
             <div class="min-w-0">
                 <p class="aura-eyebrow">{{ __($model->singularName()) }}</p>
@@ -72,7 +80,7 @@
         </div>
     </div>
 
-    @if ($facts !== [])
+    @if ($facts !== [] || $highlights !== [])
         <div class="aura-record-facts sm:mt-5" data-record-facts>
             @foreach ($facts as $fact)
                 @php
@@ -97,8 +105,14 @@
                     @elseif ($instance instanceof \Aura\Base\Fields\Number)
                         <span class="aura-record-fact-number">{!! \Aura\Base\Fields\Number::unitMarkup($fact, $value) !!}</span>
                     @else
-                        <span class="aura-record-fact-value">{!! $value !!}</span>
+                        <span @class(['aura-record-fact-value', 'aura-record-fact-text' => $recordTemplate && ! ($instance instanceof \Aura\Base\Fields\BelongsTo)])>{!! $value !!}</span>
                     @endif
+                </div>
+            @endforeach
+            @foreach ($highlights as $highlight)
+                <div class="aura-record-fact" data-record-highlight>
+                    <span class="aura-eyebrow">{{ $highlight['label'] }}</span>
+                    <span class="aura-record-fact-number">{{ $highlight['value'] ?? '–' }}</span>
                 </div>
             @endforeach
         </div>

@@ -6,6 +6,7 @@ use Aura\Base\Fields\BelongsTo;
 use Aura\Base\Fields\Number;
 use Aura\Base\Fields\Panel;
 use Aura\Base\Fields\Status;
+use Aura\Base\Models\Activity;
 use Aura\Base\Resource;
 
 /**
@@ -21,8 +22,8 @@ use Aura\Base\Resource;
  * as before.
  *
  * A record with nothing beside its values (no embedded lists, no relation
- * cards, no rail panel) does not use the record layout at all: its view
- * takes its form's frame (formFrame()).
+ * cards, no rail panel, no activity) does not use the record layout at all:
+ * its view takes its form's frame (formFrame()).
  */
 final class RecordViewSections
 {
@@ -93,7 +94,7 @@ final class RecordViewSections
         $fields = self::withoutHeaderAvatar($fields, $model);
         $sections = self::partition($fields, $model) ?? ['details' => $fields, 'related' => []];
 
-        if ($sections['related'] !== [] || self::hasRail($sections['details']) || self::cards($fields, $model) !== []) {
+        if ($sections['related'] !== [] || self::hasRail($sections['details']) || self::recordsActivity($model) || self::cards($fields, $model) !== []) {
             return null;
         }
 
@@ -162,6 +163,15 @@ final class RecordViewSections
     }
 
     /**
+     * The record keeps a history (Aura\Base\Traits\RecordsActivity) and its table exists: the page
+     * shows an Activity section, so the record never takes its form's frame.
+     */
+    public static function recordsActivity($model): bool
+    {
+        return is_object($model) && method_exists($model, 'recordActivityAfterSave') && Activity::tableExists();
+    }
+
+    /**
      * @param  array<int, array<string, mixed>>  $fields  Output of Resource::viewFields().
      * @param  array<int, string>  $shownElsewhere  Slugs the page already shows (header facts, relation cards).
      * @return array{details: array<int, array<string, mixed>>, related: array<int, array<string, mixed>>}
@@ -182,6 +192,28 @@ final class RecordViewSections
         }
 
         return $sections;
+    }
+
+    /**
+     * The record template: header with facts, a main column (body, related lists, activity) and a
+     * right rail with the narrow "Properties" panel and the meta line. It applies when a narrow panel
+     * (isRailPanel()) sits beside other values, related lists or an activity history, once the
+     * header facts are taken out. Trees with tabs and records without a narrow panel keep their
+     * layouts.
+     *
+     * @param  array<int, array<string, mixed>>  $fields  Output of Resource::viewFields().
+     */
+    public static function template(array $fields, $model): bool
+    {
+        $sections = self::partition($fields, $model, array_column(self::header($fields, $model), 'slug'));
+
+        if ($sections === null || ! collect($sections['details'])->contains(fn ($field) => self::isRailPanel($field))) {
+            return false;
+        }
+
+        return collect($sections['details'])->contains(fn ($field) => ! self::isRailPanel($field))
+            || $sections['related'] !== []
+            || self::recordsActivity($model);
     }
 
     /**

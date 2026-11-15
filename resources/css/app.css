@@ -695,9 +695,112 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
 
 @screen lg {
     .aura-record-rail .aura-view-row {
-        grid-template-columns: 6.5rem minmax(0, 1fr);
+        grid-template-columns: 7rem minmax(0, 1fr);
         column-gap: 0.75rem;
     }
+}
+
+/* Record template (RecordViewSections::template(), data-record-template): company, contact, deal and task
+   pages share one frame. Header: a 40px tile (the avatar, or the resource icon on a tinted square), eyebrow,
+   title, then up to three facts, 13px label over a 20px/600 tabular value. */
+.aura-record-icon-tile {
+    @apply flex size-10 shrink-0 items-center justify-center bg-gray-50 text-gray-500 ring-1 ring-inset ring-gray-950/10 dark:bg-white/5 dark:text-gray-400 dark:ring-white/10;
+    border-radius: var(--aura-panel-radius, 0.5rem);
+}
+
+.aura-record-icon-tile svg {
+    @apply size-5;
+}
+
+.aura-record-template .aura-record-fact-number,
+.aura-record-fact-text {
+    @apply text-xl font-semibold tabular-nums leading-7 text-gray-900 dark:text-white;
+}
+
+.aura-record-template .aura-record-fact-value {
+    min-height: 1.75rem;
+}
+
+/* Phones: the facts form two columns, so a third fact starts the next row without a divider before it. */
+@media (max-width: 639.98px) {
+    .aura-record-template .aura-record-facts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 1.25rem;
+        row-gap: 1rem;
+    }
+
+    .aura-record-template .aura-record-fact:nth-child(odd) {
+        border-left: 0;
+        padding-left: 0;
+    }
+
+    .aura-record-template .aura-record-fact:nth-child(even) {
+        padding-left: 1.25rem;
+    }
+}
+
+/* An empty body is one quiet link to the form. */
+.aura-record-body-add {
+    @apply inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors duration-150 hover:text-gray-900 focus:outline-none focus-visible:underline dark:text-gray-400 dark:hover:text-white;
+}
+
+/* Rail values wrap instead of truncating: the 20rem column has no room for a tooltip-only value. */
+.aura-record-template .aura-record-rail .aura-view-value {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+/* Activity (components/resource/activity): one row per change, the actor's 24px avatar on a 1px line
+   that joins the avatars, the sentence in 14px, the time right in 13px (under the sentence on phones). */
+.aura-activity-item {
+    @apply relative flex gap-3 pb-4;
+}
+
+.aura-activity-item:not(:last-child)::before {
+    @apply absolute w-px bg-gray-200 dark:bg-white/10;
+    content: "";
+    left: 0.71875rem;
+    top: 1.75rem;
+    bottom: 0.25rem;
+}
+
+.aura-activity-item:last-child,
+.aura-activity-item-last {
+    padding-bottom: 0;
+}
+
+.aura-activity-item.aura-activity-item-last::before {
+    display: none;
+}
+
+.aura-activity-avatar {
+    @apply flex h-6 shrink-0 items-center;
+}
+
+.aura-activity-body {
+    @apply flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-6;
+}
+
+.aura-activity-text {
+    @apply min-w-0 text-sm leading-6 text-gray-600 dark:text-gray-300;
+}
+
+.aura-activity-strong {
+    @apply font-medium text-gray-900 dark:text-white;
+}
+
+.aura-activity-value {
+    @apply text-gray-900 dark:text-gray-100;
+}
+
+.aura-activity-time {
+    @apply shrink-0 whitespace-nowrap text-[13px] leading-5 tabular-nums text-gray-500 sm:leading-6 dark:text-gray-400;
+}
+
+.aura-activity-more {
+    @apply ml-9 mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none focus-visible:underline dark:text-gray-300 dark:hover:text-white;
 }
 
 /* Phones: the list toolbar's controls are 44px touch targets (search, icon buttons, labelled Filters, the
@@ -720,7 +823,7 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
 /* Rail properties are one 44px row each, label and value centred, whether the value is text, a tag or
    an avatar link (baseline alignment made a tag row 46px and a text row 41px). */
 .aura-record-rail .aura-view-row {
-    min-height: 2.75rem;
+    min-height: 2.5rem;
     padding-top: 0.375rem;
     padding-bottom: 0.375rem;
     align-items: center;

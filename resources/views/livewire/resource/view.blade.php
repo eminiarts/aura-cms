@@ -7,9 +7,13 @@
         // left-aligned column, tabbed records included (Edit ends where Save ends on the form); tabs and
         // panels look as on the form.
         $formFrame = $recordLayout->hasPanels() ? null : \Aura\Base\RecordLayout\RecordViewSections::formFrame($this->viewFields, $model);
+        // A record with a narrow "Properties" panel takes the record template (header facts, main column,
+        // Properties rail); view-header and default-main read the same flag.
+        $recordTemplate = ! $inModal && $formFrame === null && ! $recordLayout->hasPanels()
+            && \Aura\Base\RecordLayout\RecordViewSections::template($this->viewFields, $model);
     @endphp
 
-    <div @class(['max-w-3xl' => $formFrame !== null && ! ($formFrame['rail'] ?? false) && ! $inModal]) data-form-body>
+    <div @class(['max-w-3xl' => $formFrame !== null && ! ($formFrame['rail'] ?? false) && ! $inModal, 'aura-record-template' => $recordTemplate]) data-form-body @if ($recordTemplate) data-record-template @endif>
 
     @if(!$inModal)
     <x-aura::breadcrumbs>
