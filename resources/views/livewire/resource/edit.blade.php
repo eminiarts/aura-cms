@@ -2,8 +2,9 @@
     @section('title', __('Edit :resource', ['resource' => __($model->singularName())]))
 
     @php
-        // A form without a right rail (simple or tabbed) keeps a readable width (breadcrumb and header with it, so Save
-        // stays at the form's edge); a simple form also loses its lone panel heading.
+        // A form without a right rail (simple or tabbed) keeps a readable width for its body, left-aligned at the
+        // content edge; breadcrumb and header span the page as on list pages, so Save sits at the right content
+        // edge where Edit sits on the record view. A simple form also loses its lone panel heading.
         $formSections = \Aura\Base\RecordLayout\RecordFormSections::arrange($this->editFields);
         // Cancel leaves the form for the record view, or for the list when the record has no view page.
         $cancelUrl = (Route::has('aura.' . $model->getSlug() . '.view') && auth()->user()?->can('view', $model))
@@ -11,7 +12,6 @@
             : (Route::has('aura.' . $model->getSlug() . '.index') ? route('aura.' . $model->getSlug() . '.index') : null);
     @endphp
 
-    <div @class(['mx-auto max-w-3xl' => ! $formSections['rail'] && ! $inModal])>
     {{ app('aura')::injectView('post_edit_breadcrumbs_before') }}
 
     @if (!$inModal)
@@ -37,6 +37,8 @@
     {{ app('aura')::injectView('post_edit_breadcrumbs_after') }}
 
     @include($model->editHeaderView())
+
+    <div @class(['max-w-3xl' => ! $formSections['rail'] && ! $inModal]) data-form-body>
 
     @if ($model::usesTitle())
         <div class="mb-4">

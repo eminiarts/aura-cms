@@ -18,19 +18,19 @@
          providers: section title and the setup note, then one row per provider. --}}
     <div class="overflow-hidden bg-white rounded-panel ring-1 ring-aura-edge dark:bg-gray-800">
         @if($this->providers() === [])
-            <div class="p-[calc(var(--aura-panel-padding,1.25rem)+0.5rem)]" data-ai-providers-empty>
+            <div class="p-5 sm:p-[calc(var(--aura-panel-padding,1.25rem)+0.5rem)]" data-ai-providers-empty>
                 <h2 class="aura-section-title">{{ __('No AI providers configured') }}</h2>
                 <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ __('Add provider credentials to the application environment to enable AI features.') }}</p>
                 <p class="aura-code-note mt-3 text-[13px] leading-5 text-gray-500 dark:text-gray-400">{!! $setupNote !!}</p>
             </div>
         @else
-            <div class="px-[calc(var(--aura-panel-padding,1.25rem)+0.5rem)] py-4 border-b border-gray-950/[0.06] dark:border-white/10">
+            <div class="px-5 sm:px-[calc(var(--aura-panel-padding,1.25rem)+0.5rem)] py-4 border-b border-gray-950/[0.06] dark:border-white/10">
                 <h2 class="aura-section-title">{{ __('Configured providers') }}</h2>
                 <p class="aura-code-note mt-1 text-sm text-gray-500 dark:text-gray-400">{!! $setupNote !!}</p>
             </div>
             <div class="divide-y divide-gray-950/[0.06] dark:divide-white/10">
                 @foreach($this->providers() as $provider)
-                    <div class="flex flex-col gap-4 px-[calc(var(--aura-panel-padding,1.25rem)+0.5rem)] py-4 lg:flex-row lg:items-center lg:justify-between" wire:key="ai-provider-{{ $provider['name'] }}">
+                    <div class="flex flex-col gap-4 px-5 sm:px-[calc(var(--aura-panel-padding,1.25rem)+0.5rem)] py-4 lg:flex-row lg:items-center lg:justify-between" wire:key="ai-provider-{{ $provider['name'] }}">
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
                                 <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $provider['label'] }}</p>

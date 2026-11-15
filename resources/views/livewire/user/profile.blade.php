@@ -1,5 +1,6 @@
-{{-- The profile is a form: the readable width of the resource forms (max-w-3xl), header and Save with it. --}}
-<div class="mx-auto max-w-3xl">
+{{-- The profile is a form: breadcrumb and header span the page (Save at the right content edge), the
+     body keeps the resource forms' readable width (max-w-3xl, left-aligned). --}}
+<div>
     @section('title', 'Profile')
 
     {{ app('aura')::injectView('profile_before_header') }}
@@ -28,6 +29,8 @@
 
     {{ app('aura')::injectView('profile_after_header') }}
 
+    <div class="max-w-3xl" data-form-body>
+
     <x-aura::validation-errors />
 
     {{-- Same field gutter as the edit page: sections bring px-2, so tabs and cards line up with the title. --}}
@@ -51,6 +54,7 @@
         </div>
     </x-aura::fields.conditions>
     @endforeach
+    </div>
     </div>
 
     @include('aura::livewire.resource.form-bar', ['cancelUrl' => null])

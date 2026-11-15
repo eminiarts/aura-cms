@@ -6,6 +6,8 @@ use Livewire\Component;
 
 class PluginsPage extends Component
 {
+    public const CORE_PACKAGE = 'eminiarts/aura-cms';
+
     public $installedPackages = [];
 
     public function getInstalledPackages()
@@ -95,17 +97,20 @@ class PluginsPage extends Component
 
     public function render()
     {
-        // Every installed package lands in exactly one section.
-        [$aura, $other] = collect($this->installedPackages)
+        // Every installed package lands in exactly one place. The core package is the CMS itself, not a
+        // plugin: it shows as the page meta ("Aura CMS 1.x-dev") instead of a row.
+        $packages = collect($this->installedPackages);
+        $core = $packages->pull(static::CORE_PACKAGE);
+
+        [$aura, $other] = $packages
             ->partition(fn ($package, $name) => static::isAuraPackage($name, $package['type'] ?? null));
 
         return view('aura::livewire.plugins-page', [
+            'coreVersion' => $core['version'] ?? null,
             // The page title counts Aura plugins; other Composer packages count in their own section.
             'pluginCount' => $aura->count(),
-            'sections' => array_filter([
-                __('Aura plugins') => $aura->all(),
-                __('Other packages') => $other->all(),
-            ]),
+            'plugins' => $aura->all(),
+            'otherPackages' => $other->all(),
         ])->layout('aura::components.layout.app');
     }
 }

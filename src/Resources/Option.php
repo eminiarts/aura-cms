@@ -95,8 +95,9 @@ class Option extends Resource
                 'name' => 'Value',
                 'type' => 'Aura\\Base\\Fields\\Json',
                 'validation' => 'required|json',
-                // Lists show it as a one-line mono preview (table/row).
+                // Lists show it in words ("Empty", "On", "3 settings", Json::summary()), the JSON in the tooltip.
                 'on_index' => true,
+                'list_summary' => true,
                 'slug' => 'value',
                 'decode' => false,
                 'style' => [

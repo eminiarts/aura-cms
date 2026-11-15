@@ -43,7 +43,7 @@
         <div class="py-2 sm:grid sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-x-6 sm:items-baseline aura-view-row">
             <div class="flex gap-1.5 items-center mb-1 min-w-0 sm:mb-0">
                 @if ($label && $showLabel)
-                    <span class="text-sm text-gray-500 truncate dark:text-gray-400 aura-view-label">{{ $label }}</span>
+                    <span class="text-sm text-gray-500 truncate dark:text-gray-300 aura-view-label">{{ $label }}</span>
                 @endif
 
                 {{-- No help marker here: instructions explain how to fill a field, so they belong to the form. --}}

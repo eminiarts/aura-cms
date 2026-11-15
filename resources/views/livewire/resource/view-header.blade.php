@@ -28,7 +28,7 @@
             </div>
 
             @if ($actionsMenu)
-                <div class="ml-auto shrink-0 sm:-mr-2">
+                <div class="ml-auto shrink-0 sm:-mr-2 aura-record-title-action">
                     @include('aura::livewire.resource.actions', ['iconTriggerOnPhones' => true])
                 </div>
             @endif
@@ -36,7 +36,7 @@
             {{-- Phones: Edit is a 36px pencil in the title row, so the header has no action band of its own. --}}
             @if ($canEdit)
                 <x-aura::button.border size="icon" href="{{ route('aura.' . $slug . '.edit', $model->id) }}"
-                    class="shrink-0 sm:hidden {{ $actionsMenu ? '' : 'ml-auto' }}" aria-label="{{ __('Edit') }}"
+                    class="shrink-0 sm:hidden aura-record-title-action {{ $actionsMenu ? '' : 'ml-auto' }}" aria-label="{{ __('Edit') }}"
                     x-data x-init="tippy($el, { content: @js(__('Edit')), arrow: false, theme: 'aura', placement: 'bottom', offset: [0, 8] })">
                     <x-aura::icon.edit class="size-4" aria-hidden="true" />
                 </x-aura::button.border>

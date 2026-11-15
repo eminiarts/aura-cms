@@ -18,6 +18,15 @@
 
         <x-slot name="content">
             <div role="none">
+                {{-- Phones: the column chooser opens from here (components/table/settings, phoneMenu 'actions'). --}}
+                @if ($columnsInActionsMenu ?? false)
+                    <div class="sm:hidden">
+                        <button type="button" x-on:click="setTimeout(() => window.dispatchEvent(new CustomEvent('aura-table-columns')))" class="w-full {{ $itemClass }}" role="menuitem" tabindex="-1">
+                            {{ __('Columns') }}
+                        </button>
+                        <div class="-mx-1 my-1 h-px bg-gray-950/5 dark:bg-white/10" role="separator"></div>
+                    </div>
+                @endif
                 @if($this->bulk_actions)
                     @foreach($this->bulk_actions as $action => $data)
                         @if(is_array($data) && isset($data['modal']))

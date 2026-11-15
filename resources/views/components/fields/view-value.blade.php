@@ -2,8 +2,9 @@
     @php
         $value = $this->model->display($field['slug']);
         $instance = $field['field'] ?? null;
-        // Single-line values (emails, URLs, phone numbers, slugs, short text) stay on one line and truncate
-        // in a narrow details column, with the full value in the tooltip. A Textarea keeps its lines and
+        // Single-line values (emails, URLs, phone numbers, slugs, short text) stay on one line from sm and
+        // truncate in a narrow details column, with the full value in the tooltip; on phones, where there is
+        // no tooltip, they wrap anywhere so the whole value shows. A Textarea keeps its lines and
         // wraps: it is the one field whose value is a paragraph. Everything else (tags, relations) wraps,
         // with [overflow-wrap:anywhere] breaking a single long token where no space or hyphen is.
         $keepsLines = $instance instanceof \Aura\Base\Fields\Textarea;
@@ -33,6 +34,6 @@
         @endif
     @else
     {{-- One line on purpose: whitespace-pre-line would render the template's own line breaks as a blank first line. --}}
-    <div @if($tooltip) title="{{ $tooltip }}" @endif class="{{ $keepsLines ? 'whitespace-pre-line' : '' }} {{ $singleLine ? 'truncate' : 'break-words [overflow-wrap:anywhere]' }} min-w-0 text-sm text-gray-900 dark:text-gray-100">@if(empty($value))<span class="text-gray-400 dark:text-gray-500">–</span>@else{!! $keepsLines ? trim((string) $value) : $value !!}@endif</div>
+    <div @if($tooltip) title="{{ $tooltip }}" @endif class="{{ $keepsLines ? 'whitespace-pre-line' : '' }} {{ $singleLine ? 'break-words [overflow-wrap:anywhere] sm:truncate' : 'break-words [overflow-wrap:anywhere]' }} min-w-0 text-sm text-gray-900 dark:text-gray-100">@if(empty($value))<span class="text-gray-400 dark:text-gray-500">–</span>@else{!! $keepsLines ? trim((string) $value) : $value !!}@endif</div>
     @endif
 </x-aura::fields.wrapper>

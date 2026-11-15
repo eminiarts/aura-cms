@@ -53,7 +53,7 @@
                         </a>
                     </div>
 
-                    <div class="mt-8 w-full px-6 py-8 sm:px-10 sm:py-10 rounded-2xl ring-1 backdrop-blur-xl bg-white/95 ring-gray-950/10 shadow-xl shadow-gray-950/[0.08] dark:bg-gray-900/90 dark:ring-white/10 dark:shadow-black/40">
+                    <div class="aura-auth mt-8 w-full px-6 py-8 sm:px-10 sm:py-10 rounded-2xl ring-1 backdrop-blur-xl bg-white/95 ring-gray-950/10 shadow-xl shadow-gray-950/[0.08] dark:bg-gray-900/90 dark:ring-white/10 dark:shadow-black/40">
                         {{ $slot }}
                     </div>
 
@@ -136,7 +136,7 @@
                 </div>
 
                 <div class="flex flex-1 justify-center items-start pt-14 pb-12 lg:items-center lg:py-12">
-                    <div class="w-full max-w-sm">
+                    <div class="w-full max-w-sm aura-auth">
                         {{ $slot }}
                     </div>
                 </div>

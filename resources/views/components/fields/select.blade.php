@@ -70,7 +70,7 @@
           <span x-show="is(@js($choice['key']))" x-cloak class="aura-tag {{ $choice['color'] ? 'aura-tag-status '.$choice['color'] : '' }}">{{ $choice['label'] }}</span>
         @endif
       @endforeach
-      <span class="flex absolute inset-y-0 right-0 items-center pr-2.5 pointer-events-none" aria-hidden="true">
+      <span class="flex absolute inset-y-0 right-0 items-center pr-3 pointer-events-none" aria-hidden="true">
         <x-aura::icon.caret direction="down" class="text-gray-500 size-4 dark:text-gray-400" />
       </span>
     </button>
@@ -143,7 +143,7 @@
 @endforeach
     </select>
 
-    <div class="flex absolute inset-y-0 right-0 items-center pr-2.5 pointer-events-none" aria-hidden="true">
+    <div class="flex absolute inset-y-0 right-0 items-center pr-3 pointer-events-none" aria-hidden="true">
       <x-aura::icon.caret direction="down" class="size-4 text-gray-500 dark:text-gray-400" />
     </div>
   </div>

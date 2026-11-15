@@ -15,10 +15,8 @@
             $isRelationTable = (bool) optional(optional($this)->field)['name'];
             // Record count (after search and filters) beside the title, on the page and on relation sections alike.
             $rowCount = isset($rows) && method_exists($rows, 'total') ? $rows->total() : null;
+            // The create button stays in the title row on an empty list too; the empty block only words it.
             $createLabel = __('New :resource', ['resource' => Str::lower(__($model->singularName()))]);
-            // A page list without any records shows its create button in the empty state (list-view), not twice.
-            $createInEmptyState = ! $isRelationTable && ($collectionIsEmpty ?? false) && ($currentView ?? null) === 'list'
-                && ! $this->settings['create_in_modal'] && $this->createLink;
         @endphp
         {{-- A relation section's row keeps the 32px button height without a button too, so its title sits at the same height. --}}
         {{-- The page's create button keeps its object ("New company") while it fits beside the title and reads
@@ -56,7 +54,7 @@
             @endif
 
             @can('create', $model)
-                @if ($this->settings['create'] && ! $createInEmptyState)
+                @if ($this->settings['create'])
                     {{-- A page's create button takes the width the title leaves (it decides there whether its full label fits). --}}
                     <div class="create-resource {{ $isRelationTable ? 'shrink-0' : 'flex-1' }}">
                         <div>

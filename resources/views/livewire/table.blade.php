@@ -209,6 +209,9 @@
             @php
                 $hasViewSwitch = $model->tableGridView() || ($this->resolvedKanbanConfiguration()['enabled'] ?? false) || $model->tableKanbanView();
                 $twoRowsOnPhones = $hasViewSwitch && ($this->settings['settings'] || $this->settings['filters']);
+                $columnsInActionsMenu = $this->settings['settings'] && $currentView == 'list' && $model->showTableSettings()
+                    && $this->settings['bulk_actions'] && $this->bulkActions
+                    && ($this->settings['views']['bulk_actions'] ?? null) === 'aura::components.table.bulk-actions';
             @endphp
             <div @class(['flex gap-2 items-center w-full aura-table-toolbar', 'max-sm:flex-wrap max-sm:gap-y-3' => $twoRowsOnPhones])>
 
@@ -225,7 +228,7 @@
                                 </svg>
                             </div>
                             <input type="text" id="table-search"
-                                class="block h-9 w-full py-2 pl-9 pr-3 text-base sm:text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 dark:placeholder:text-gray-400 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"
+                                class="block h-9 w-full py-2 pl-9 pr-3 text-base sm:text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-500 dark:placeholder:text-gray-400 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"
                                 placeholder="{{ __('Search :resources…', ['resources' => Str::lower(__($model->pluralName()))]) }}" wire:model.live.debounce="search">
 
                         </div>
@@ -243,7 +246,10 @@
 
                         @if ($this->settings['settings'])
                             @if ($currentView == 'list' && $model->showTableSettings())
-                                @include('aura::components.table.settings')
+                                {{-- Phones: Columns is not a toolbar button of its own. With an actions menu it
+                                     becomes an item there (components/table/bulk-actions); without one its
+                                     trigger is the "more" button. --}}
+                                @include('aura::components.table.settings', ['phoneMenu' => $columnsInActionsMenu ? 'actions' : 'more'])
                             @endif
                         @endif
 

@@ -1,4 +1,6 @@
-@props(['cols' => null, 'create' => []])
+{{-- splitOnPhones: below lg the block dissolves into the dashboard grid (contents), the create actions
+     take order-1 and the workspace links order-3, so the caller can place its own blocks between them. --}}
+@props(['cols' => null, 'create' => [], 'splitOnPhones' => false])
 
 @php
     $colSpan = match($cols) {
@@ -25,10 +27,13 @@
 
     // "New …" links (label, url) lead; the admin links follow under a small "Workspace" label.
     $create = collect($create)->filter(fn ($action) => filled($action['url'] ?? null))->values();
+    // Without create actions there is nothing to split: the workspace links stay under the title.
+    $splitOnPhones = $splitOnPhones && $create->isNotEmpty() && $hasAdmin;
 @endphp
 
 @if ($create->isNotEmpty() || $hasAdmin)
-<div {{ $attributes->merge(['class' => trim("{$colSpan} min-w-0")]) }} data-dashboard-quick-actions>
+<div {{ $attributes->merge(['class' => trim("{$colSpan} min-w-0".($splitOnPhones ? ' max-lg:contents' : ''))]) }} data-dashboard-quick-actions>
+    <div @class(['min-w-0', 'col-span-12 order-1 lg:order-none' => $splitOnPhones])>
     <h2 class="pb-2 border-b border-gray-200 aura-section-title dark:border-white/10">{{ __('Quick actions') }}</h2>
 
     @if ($create->isNotEmpty())
@@ -42,11 +47,18 @@
         </div>
     @endif
 
+    </div>
+
     @if ($hasAdmin)
-    @if ($create->isNotEmpty())
+    <div @class(['min-w-0', 'col-span-12 order-3 lg:order-none' => $splitOnPhones]) data-dashboard-workspace>
+    @if ($splitOnPhones)
+        {{-- On its own below lg the group gets a section title; beside the create actions a small label. --}}
+        <h2 class="pb-2 border-b border-gray-200 lg:hidden aura-section-title dark:border-white/10">{{ __('Workspace') }}</h2>
+        <p class="hidden mt-5 mb-1 text-xs font-medium text-gray-500 lg:block dark:text-gray-400">{{ __('Workspace') }}</p>
+    @elseif ($create->isNotEmpty())
         <p class="mt-5 mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">{{ __('Workspace') }}</p>
     @endif
-    <div class="flex flex-col gap-0.5 -mx-2 {{ $create->isNotEmpty() ? '' : 'mt-2' }}">
+    <div @class(['flex flex-col gap-0.5 -mx-2', 'mt-2' => $create->isEmpty() || $splitOnPhones, 'lg:mt-0' => $splitOnPhones])>
         @if ($canCreateResource)
             <button type="button" onclick="Livewire.dispatch('openModal', { component: 'aura::create-resource' })" class="{{ $rowClass }}">
                 <svg class="{{ $iconClass }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" color="currentColor" fill="none" aria-hidden="true">
@@ -90,6 +102,7 @@
                 <span class="truncate">{{ __('Plugins') }}</span>
             </a>
         @endif
+    </div>
     </div>
     @endif
 </div>

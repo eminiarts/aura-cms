@@ -93,6 +93,12 @@ class Role extends Resource
      * writes (which fire no model events) so a Shadow or catalog role created or
      * deleted mid-request takes effect on the next permission check.
      */
+    // A role is a set of permissions, not an entity: no initials tile.
+    public function avatarShape(): ?string
+    {
+        return null;
+    }
+
     public static function bumpCatalogVersion(): void
     {
         static::$catalogVersion++;

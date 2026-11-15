@@ -12,7 +12,7 @@
                 aria-label="{{ $bookmarkLabel }}"
                 aria-pressed="{{ $this->isBookmarked ? 'true' : 'false' }}"
                 class="flex justify-center items-center w-6 h-6 rounded transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-                :class="{'text-primary-600 dark:text-primary-400': isBookmarked, 'text-gray-300 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-400': !isBookmarked }">
+                :class="{'text-primary-600 dark:text-primary-400': isBookmarked, 'text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200': !isBookmarked }">
 
             {{-- 16px, the size of the trail's home icon beside it. --}}
             @if(!$this->isBookmarked)

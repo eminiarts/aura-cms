@@ -27,7 +27,7 @@
         {{ app('aura')::injectView('post_edit_title_after') }}
 
         @if ($actionsMenu)
-            <div class="ml-auto shrink-0 sm:-mr-2">
+            <div class="ml-auto shrink-0 sm:-mr-2 aura-record-title-action">
                 @include('aura::livewire.resource.actions', ['iconTriggerOnPhones' => true])
             </div>
         @endif
@@ -40,9 +40,10 @@
         @endif
 
         @if ($cancelUrl)
-            <x-aura::button.transparent :href="$cancelUrl" class="hidden sm:inline-flex">
+            {{-- Cancel is an outline secondary button, as Edit on the record view. --}}
+            <x-aura::button.border :href="$cancelUrl" class="hidden sm:inline-flex">
                 {{ __('Cancel') }}
-            </x-aura::button.transparent>
+            </x-aura::button.border>
         @endif
 
         <div class="hidden sm:block save-resource">

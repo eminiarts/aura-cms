@@ -5,8 +5,8 @@
 
     $btnBase = 'inline-flex items-center justify-center h-8 text-sm font-medium rounded-control transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50';
     $btnIdle = 'text-gray-600 hover:bg-gray-950/5 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white';
-    // The current page is no box: its number in primary over the lying mark (.aura-mark-x).
-    $btnCurrent = 'relative font-semibold text-primary-700 dark:text-primary-300';
+    // The current page: its number in primary on a primary-50 box at the control radius.
+    $btnCurrent = 'font-semibold text-primary-700 bg-primary-50 dark:text-primary-300 dark:bg-primary-400/15';
     $btnDisabled = 'text-gray-400 dark:text-gray-500 cursor-default';
 @endphp
 
@@ -120,7 +120,7 @@
                         @if (is_string($page))
                             <span class="{{ $btnBase }} min-w-8 px-1 text-gray-400 cursor-default dark:text-gray-500" aria-hidden="true">{{ $page }}</span>
                         @elseif ($page == $current)
-                            <span class="{{ $btnBase }} {{ $btnCurrent }} min-w-8 px-2 tabular-nums" aria-current="page">{{ $page }}<span class="absolute bottom-0.5 left-1/2 w-4 -translate-x-1/2 aura-mark-x bg-primary-600 dark:bg-primary-400" aria-hidden="true"></span></span>
+                            <span class="{{ $btnBase }} {{ $btnCurrent }} min-w-8 px-2 tabular-nums" aria-current="page">{{ $page }}</span>
                         @else
                             <button type="button" wire:click="gotoPage({{ $page }}, '{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} {{ $btnIdle }} min-w-8 px-2 tabular-nums" aria-label="{{ __('Go to page :page', ['page' => $page]) }}">
                                 {{ $page }}

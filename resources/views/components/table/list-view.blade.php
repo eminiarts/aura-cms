@@ -25,7 +25,8 @@
 
         @if ($isEmpty)
             {{-- An empty table is still a table: from sm its real column header (no bulk checkbox, no sort),
-                 then one left-aligned block between hairlines, a section title, one line and the action.
+                 then one left-aligned block between hairlines, a section title and one line (the create
+                 button stays in the page header, so there is one).
                  Phones get the same block without the header. Every empty list takes this shape: no
                  records yet, nothing matching the search or filters, an empty relation list. --}}
             @if ($this->headers && $visibleColumnKeys->isNotEmpty())
@@ -59,19 +60,6 @@
 
                     @unless ($isRelationTable || $emptyView)
                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Create the first one to get started.') }}</p>
-
-                        @can('create', $tableModel)
-                            @if ($this->settings['create'] && ! $this->settings['create_in_modal'] && $this->createLink)
-                                <div class="mt-4">
-                                    <x-aura::button href="{{ $this->createLink }}">
-                                        <x-slot:icon>
-                                            <x-aura::icon icon="plus" />
-                                        </x-slot>
-                                        <span>{{ __('New :resource', ['resource' => $singularLabel]) }}</span>
-                                    </x-aura::button>
-                                </div>
-                            @endif
-                        @endcan
                     @endunless
                 @endif
             </div>

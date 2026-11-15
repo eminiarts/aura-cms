@@ -1,7 +1,7 @@
 {{--
     Entity avatar: the record's image when it has one, otherwise its initials
-    on the record's tint (avatarTone(); primary unless the resource returns more
-    tones). Pass a resource record, or name/shape/tone directly for specimens. Sizes: xs 20px (relation links), sm 24px (table
+    on the record's tint (avatarTone(), one of the resource's avatarTones()).
+    Pass a resource record, or name/shape/tone directly for specimens. Sizes: xs 20px (relation links), sm 24px (table
     rows), md 28px (stacked lists), lg 40px (record header). Every size shows
     the same initials.
 --}}

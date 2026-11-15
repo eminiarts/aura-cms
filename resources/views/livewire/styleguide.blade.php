@@ -312,7 +312,7 @@
                 <span class="flex gap-2 items-center text-sm text-gray-600 dark:text-gray-300"><span class="block h-5 aura-mark bg-primary-600 dark:bg-primary-400"></span>.aura-mark — 3px, ends cut at 60° (--aura-mark-clip), one leg of the wordmark</span>
             </div>
             <ul class="grid grid-cols-1 gap-x-6 gap-y-1 mt-3 text-sm text-gray-600 sm:grid-cols-2 dark:text-gray-300">
-                <li>{{ __('Position: the mark (.aura-mark) on the active navigation item and on selected rows, the selected tab, the current page in the pager') }}</li>
+                <li>{{ __('Position: the mark (.aura-mark) on the active navigation item (a bar of its own, 4px before the pill) and on selected rows, the selected tab') }}</li>
                 <li>{{ __('Action: the one primary button per screen (create and save; a view page has none)') }}</li>
                 <li>{{ __('Checked controls, focus rings, text links in auth and settings copy') }}</li>
                 <li>{{ __('Live figures: dashboard trend lines and the "added in 30 days" count') }}</li>
@@ -612,14 +612,14 @@
                 </a>
             </div>
             <div class="aura-code-note mt-4 text-sm text-gray-500 dark:text-gray-400">
-                {{-- .aura-code: a path or command inside running text (plugins page, AI settings). Inside
-                     .aura-code-note each chip becomes a block on its own line on phones. --}}
+                {{-- .aura-code: a path or command inside running text (plugins page, AI settings), inline on
+                     every viewport, 2px 6px padding; a long chip wraps anywhere. --}}
                 Run <code class="aura-code">php artisan config:cache</code> after changing <code class="aura-code">config/ai.php</code>.
             </div>
         </div>
 
         <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
-            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Entity avatars (x-aura::avatar): sizes xs 20 (relation chips, 10px initials), sm 24 (table rows, 11px initials), md 28, lg 40; primary-50 tint, primary-700 initials and a 1px inset edge in the hue (dark primary-400/15, primary-300) by default; a passed tone or a resource\'s own avatarTones() still picks another family (second row); gray for icon tiles') }}</span>
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Entity avatars (x-aura::avatar): sizes xs 20 (relation chips, 10px initials), sm 24 (table rows, 11px initials), md 28, lg 40; a -50 tint, -700 initials and a 1px inset edge in the hue (dark -400/15, -300), the hue picked from the record key over avatarTones() (indigo, lime, pink, cyan, purple, rose, violet, fuchsia; second row); primary for apps that return [\'primary\']; gray for icon tiles; no tile for config records (roles, permissions)') }}</span>
             <div class="flex flex-wrap gap-4 items-center mt-4">
                 @foreach (['xs', 'sm', 'md', 'lg'] as $size)
                     <x-aura::avatar name="Atlas Components" shape="square" :size="$size" />
@@ -916,7 +916,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">08</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Table') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('The resource index table. No card around it: a header hairline, row dividers and a closing hairline carry the list. Headings use the real table.heading component (sentence case, 13px medium gray-600) and lead with a 14px gray-400 mark for the column\'s value type (email, phone, number, date, status, select, boolean, image, relation; table/column-icon from the field class). Plain text columns (text, textarea, slug, rich text) carry no mark: text is the default, a mark there is noise. A number column is right-aligned: the mark still leads the label and the sort arrow moves in front, so the label stays flush with the figures below; rows are a faithful specimen of table/row (the live rows are Livewire-bound). First column: entity avatar (24px, when the resource has one) plus the record name, 500 gray-900, linked to the record; other cells 400 gray-600, numerals tabular, empty cells show a dash. The page title carries the record count. With a pointer, the whole row opens the record and the row actions (gray-500) appear on hover; on touch they are always visible. Row hover (the row-hover: variant) waits until the pointer has moved, so a page that loads under a resting cursor shows no highlighted row. Related lists on record pages use the same rows. Second row shows the selected state: a primary tint and the mark (.aura-mark, one Λ leg) on its left edge. Row height follows the density setting (--aura-row-padding-y: 10px comfortable, 44px rows; 6px compact). A number\'s unit (prefix or suffix, "CHF") sits in .aura-num-unit: 0.85em, 400, gray-500. A boolean column with a date column named after it ("Published" and "Published at") shows a word, "Published" (gray-700) or "Not published" (gray-500), as the phone list does, instead of a check. Header line, row dividers and the closing line use --aura-hairline. An empty list is still a table, see below.') }}
+            {{ __('The resource index table. No card around it: a header hairline, row dividers and a closing hairline carry the list. Headings use the real table.heading component (sentence case, 13px medium gray-600) and lead with a 14px gray-400 mark for the column\'s value type on every typed column (text as a T, email, phone, number, date, status, select, boolean, image, relation; table/column-icon from the field class), so a header never mixes marked and bare labels. A number column is right-aligned: the mark still leads the label and the sort arrow moves in front, so the label stays flush with the figures below; rows are a faithful specimen of table/row (the live rows are Livewire-bound). First column: entity avatar (24px, when the resource has one) plus the record name, 500 gray-900, linked to the record; other cells 400 gray-600, numerals tabular, empty cells show a dash. The page title carries the record count. With a pointer, the whole row opens the record and the row actions (gray-500) appear on hover; on touch they are always visible. Row hover (the row-hover: variant) waits until the pointer has moved, so a page that loads under a resting cursor shows no highlighted row. Related lists on record pages use the same rows. Second row shows the selected state: a primary tint and the mark (.aura-mark, one Λ leg) on its left edge. Row height follows the density setting (--aura-row-padding-y: 10px comfortable, 44px rows; 6px compact). A number\'s unit (prefix or suffix, "CHF") sits in .aura-num-unit: 0.85em, 400, gray-500. A boolean column with a date column named after it ("Published" and "Published at") shows a word, "Published" (gray-700) or "Not published" (gray-500), as the phone list does, instead of a check. Header line, row dividers and the closing line use --aura-hairline. An empty list is still a table, see below.') }}
         </p>
 
         {{-- Filter tabs (specimen of table/filter-tabs) --}}
@@ -998,8 +998,8 @@
                     <span class="inline-flex items-center justify-center h-8 w-8 rounded-control text-gray-300 dark:text-gray-600">
                         <x-aura::icon.caret direction="left" class="size-4" />
                     </span>
-                    {{-- Current page: no box, the number in primary over the lying mark (.aura-mark-x). --}}
-                    <span class="inline-flex relative items-center justify-center h-8 min-w-8 px-2 text-sm font-semibold tabular-nums rounded-control text-primary-700 dark:text-primary-300" aria-current="page">1<span class="absolute bottom-0.5 left-1/2 w-4 -translate-x-1/2 aura-mark-x bg-primary-600 dark:bg-primary-400" aria-hidden="true"></span></span>
+                    {{-- Current page: the number in primary on a primary-50 box (dark primary-400/15) at the control radius. --}}
+                    <span class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-semibold tabular-nums rounded-control text-primary-700 bg-primary-50 dark:text-primary-300 dark:bg-primary-400/15" aria-current="page">1</span>
                     <button type="button" class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">2</button>
                     <button type="button" class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">3</button>
                     {{-- Long lists collapse to the first pages, one "…" and the last page. --}}
@@ -1082,7 +1082,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">09</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Sidebar') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Real navigation.item / navigation.heading components inside the three sidebar themes (config: sidebar-type). Standard size: 32px items, 13px medium labels, 18px icons at 1.5 stroke; group labels 12px medium in sentence case. Every sidebar type marks the active item with the mark (.aura-mark, one Λ leg, 3px with 60° cuts) on its left edge plus a tint: white on the primary sidebar, primary-600 on the light one, primary-400 on the dark one, whose surface is gray-900 of the chosen gray palette rather than a fixed near-black. The first item shows the active state.') }}
+            {{ __('Real navigation.item / navigation.heading components inside the three sidebar themes (config: sidebar-type). Standard size: 32px items, 13px medium labels, 18px icons at 1.5 stroke; group labels 12px medium in sentence case. Every sidebar type marks the active item with the mark (.aura-mark, one Λ leg, 3px with 60° cuts) 4px before its tinted pill: white on the primary sidebar, primary-600 on the light one, primary-400 on the dark one, whose surface is gray-900 of the chosen gray palette rather than a fixed near-black. The first item shows the active state.') }}
         </p>
 
         <div class="grid grid-cols-1 gap-4 mt-6 md:grid-cols-3">
