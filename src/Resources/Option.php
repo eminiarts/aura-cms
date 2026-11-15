@@ -95,12 +95,23 @@ class Option extends Resource
                 'name' => 'Value',
                 'type' => 'Aura\\Base\\Fields\\Json',
                 'validation' => 'required|json',
-                'on_index' => false,
+                // Lists show it as a one-line mono preview (table/row).
+                'on_index' => true,
                 'slug' => 'value',
                 'decode' => false,
                 'style' => [
                     'width' => '100',
                 ],
+            ],
+            [
+                // List only: the record page carries the date in its meta line.
+                'name' => 'Updated',
+                'type' => 'Aura\\Base\\Fields\\Datetime',
+                'slug' => 'updated_at',
+                'display_format' => 'M j, Y',
+                'on_index' => true,
+                'on_forms' => false,
+                'on_view' => false,
             ],
         ];
     }

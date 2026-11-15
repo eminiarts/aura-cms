@@ -3,6 +3,8 @@
 namespace Aura\Base\Livewire;
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Settings\SettingsPageAuthorizer;
+use Aura\Base\Settings\SettingsRegistry;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
@@ -19,7 +21,30 @@ class Dashboard extends Component
             'recentItems' => $isEmptyWorkspace ? collect() : $this->recentItems($resources),
             'recentMedia' => $this->recentMedia(),
             'isEmptyWorkspace' => $isEmptyWorkspace,
+            // The developer docs go to the people who also see the workspace links.
+            'showDocs' => in_array(true, static::workspaceLinks(auth()->user()), true),
         ])->layout('aura::components.layout.app');
+    }
+
+    /**
+     * Which workspace links the user may open, with the checks the targets themselves run
+     * (CreateResource and PluginsPage mount, the settings page authorizer, the team edit policy).
+     *
+     * @return array{createResource: bool, settings: bool, editTeam: bool, plugins: bool}
+     */
+    public static function workspaceLinks($user): array
+    {
+        $isSuperAdmin = (bool) $user?->isSuperAdmin();
+        $generalSettings = app(SettingsRegistry::class)->page('general');
+        $team = config('aura.teams') ? $user?->currentTeam : null;
+
+        return [
+            'createResource' => config('aura.features.create_resource') && ! app()->environment('production') && $isSuperAdmin,
+            'settings' => (bool) (config('aura.features.settings') && $generalSettings
+                && app(SettingsPageAuthorizer::class)->canView($generalSettings, $user)),
+            'editTeam' => (bool) ($team && $user->can('update', $team)),
+            'plugins' => config('aura.features.plugins') && $isSuperAdmin,
+        ];
     }
 
     protected function accessibleAppResources()
@@ -32,7 +57,12 @@ class Dashboard extends Component
             ->reverse()
             ->unique(fn ($resource) => class_basename($resource))
             ->reverse()
-            ->sortBy(fn ($resource) => $resource::getSort())
+            // The app's own resources lead the stat cards and "New …" links; the package's base
+            // resources (users, teams, … from config('aura.resources')) follow, then sort order.
+            ->sortBy([
+                fn ($a, $b) => $this->isBaseResource($a) <=> $this->isBaseResource($b),
+                fn ($a, $b) => $a::getSort() <=> $b::getSort(),
+            ])
             ->values();
     }
 
@@ -53,6 +83,11 @@ class Dashboard extends Component
             ])
             ->filter(fn ($action) => $action['url'])
             ->values();
+    }
+
+    protected function isBaseResource($resource): bool
+    {
+        return in_array(get_class($resource), array_values(config('aura.resources', [])), true);
     }
 
     /**

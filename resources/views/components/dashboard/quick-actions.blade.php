@@ -12,18 +12,15 @@
     $rowClass = 'flex gap-2.5 items-center px-2 w-full h-8 text-sm text-left text-gray-700 rounded-md transition-colors duration-150 group hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.04] dark:hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
     $iconClass = 'size-4 shrink-0 text-gray-400 transition-colors duration-150 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300';
 
-    // Each action shows only to users the target lets in, with the checks the target itself runs
-    // (CreateResource and PluginsPage mount, the settings page authorizer, the team edit policy).
+    // Each action shows only to users the target lets in (see Dashboard::workspaceLinks()).
     $user = auth()->user();
-    $isSuperAdmin = (bool) $user?->isSuperAdmin();
-    $generalSettings = app(\Aura\Base\Settings\SettingsRegistry::class)->page('general');
     $team = config('aura.teams') ? $user?->currentTeam : null;
+    $links = \Aura\Base\Livewire\Dashboard::workspaceLinks($user);
 
-    $canCreateResource = config('aura.features.create_resource') && ! app()->environment('production') && $isSuperAdmin;
-    $canSettings = config('aura.features.settings') && $generalSettings
-        && app(\Aura\Base\Settings\SettingsPageAuthorizer::class)->canView($generalSettings, $user);
-    $canEditTeam = $team && $user->can('update', $team);
-    $canPlugins = config('aura.features.plugins') && $isSuperAdmin;
+    $canCreateResource = $links['createResource'];
+    $canSettings = $links['settings'];
+    $canEditTeam = $links['editTeam'];
+    $canPlugins = $links['plugins'];
     $hasAdmin = $canCreateResource || $canSettings || $canEditTeam || $canPlugins;
 
     // "New …" links (label, url) lead; the admin links follow under a small "Workspace" label.

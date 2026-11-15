@@ -259,10 +259,11 @@ class Role extends Resource
                 'on_view' => true,
             ],
             [
-                'name' => 'Admin',
+                // Label only; the stored slug stays super_admin.
+                'name' => 'Full access',
                 'slug' => 'super_admin',
                 'type' => 'Aura\Base\Fields\Boolean',
-                'instructions' => 'Admins have access to all permissions and can manage other users.',
+                'instructions' => 'Grants every permission in this team.',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',

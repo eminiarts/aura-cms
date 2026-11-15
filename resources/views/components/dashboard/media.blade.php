@@ -11,7 +11,8 @@
         </a>
     </div>
 
-    <div class="grid grid-cols-4 gap-3 mt-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12">
+    {{-- From sm the tiles keep about 88px whatever column they sit in (the dashboard's wide column or full width). --}}
+    <div class="grid grid-cols-4 gap-3 mt-4 sm:grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))]">
         @foreach ($media as $file)
             <a href="{{ $file->viewUrl() ?? route('aura.attachment.index') }}" wire:navigate title="{{ $file->name }}"
                 class="block overflow-hidden relative rounded-lg ring-1 transition duration-150 aspect-square ring-gray-950/10 dark:ring-white/10 group hover:ring-gray-950/25 dark:hover:ring-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">

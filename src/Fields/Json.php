@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Fields;
 
+use Illuminate\Support\Str;
+
 class Json extends Field
 {
     public $edit = 'aura::fields.json';
@@ -83,6 +85,31 @@ class Json extends Field
         );
 
         return $json === false ? '' : $json;
+    }
+
+    /**
+     * A JSON value as one mono line for lists: a string as it is, anything else as compact JSON, cut at
+     * $limit characters, the full text (up to 500) in the tooltip. Escaped. Null for a field with its own
+     * display (closure or display_view), which keeps it.
+     */
+    public static function listPreview(array $field, $model, int $limit = 60): ?string
+    {
+        if (isset($field['display']) || isset($field['display_view'])) {
+            return null;
+        }
+
+        $value = $model->{$field['slug']};
+
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $text = is_string($value)
+            ? $value
+            : (string) json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+
+        return '<span class="block max-w-md font-mono text-xs text-gray-600 truncate dark:text-gray-400" title="'.e(Str::limit($text, 500)).'">'
+            .e(Str::limit($text, $limit)).'</span>';
     }
 
     // public function getFields()

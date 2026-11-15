@@ -100,6 +100,8 @@ class PluginsPage extends Component
             ->partition(fn ($package, $name) => static::isAuraPackage($name, $package['type'] ?? null));
 
         return view('aura::livewire.plugins-page', [
+            // The page title counts Aura plugins; other Composer packages count in their own section.
+            'pluginCount' => $aura->count(),
             'sections' => array_filter([
                 __('Aura plugins') => $aura->all(),
                 __('Other packages') => $other->all(),

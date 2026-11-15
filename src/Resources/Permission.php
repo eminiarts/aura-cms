@@ -45,8 +45,11 @@ class Permission extends Resource
     }
 
     /**
-     * A generated permission name or group in sentence case: "View Any Media Library" is "View any media
-     * library", "Media-Folders" is "Media folders". Words in capitals (API) keep them. Display only.
+     * A generated permission name or group in sentence case: "View Any Media Library" is "View all media
+     * library", "Media-Folders" is "Media folders". Words in capitals (API) keep them. The policy terms of
+     * the generated names read as what they grant (GenerateResourcePermissions, ResourcePolicy): viewAny is
+     * "View all …", forceDelete "Permanently delete …", and scope, which limits view, update and delete to
+     * the records the user owns (user_id), "Limit … to own records". Display only.
      */
     public static function displayLabel(?string $value): string
     {
@@ -57,7 +60,16 @@ class Permission extends Resource
             $words,
         );
 
-        return Str::ucfirst(implode(' ', $words));
+        $label = implode(' ', $words);
+
+        $label = match (true) {
+            str_starts_with($label, 'view any ') => 'view all '.substr($label, 9),
+            str_starts_with($label, 'force delete ') => 'permanently delete '.substr($label, 13),
+            str_starts_with($label, 'scope ') => 'limit '.substr($label, 6).' to own records',
+            default => $label,
+        };
+
+        return Str::ucfirst($label);
     }
 
     /** Escaped: views print display values raw. */

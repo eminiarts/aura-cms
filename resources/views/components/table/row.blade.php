@@ -44,7 +44,11 @@
     @foreach ($this->headers as $key => $column)
         @if (optional($this->columns)[$key])
             @php
-                $display = $row->display($key);
+                $columnField = ($tableModel ?? $this->model)->fieldBySlug($key) ?? [];
+                // A JSON value reads as one mono line (Json::listPreview()), not as collapsed pretty-printed JSON.
+                $display = (($columnTypes[$key] ?? null) === 'Aura\\Base\\Fields\\Json' && $columnField
+                    ? \Aura\Base\Fields\Json::listPreview($columnField, $row) ?? $row->display($key)
+                    : $row->display($key));
                 // Empty cells show the same dash as empty view values.
                 $displayIsEmpty = $display === null || $display === '' || (is_string($display) && trim($display) === '');
                 $columnType = $columnTypes[$key] ?? null;
@@ -52,6 +56,14 @@
                 if ($columnType === 'Aura\\Base\\Fields\\Number') {
                     $display = \Aura\Base\Fields\Number::unitMarkup(($tableModel ?? $this->model)->fieldBySlug($key) ?? [], $display);
                 }
+                // A Boolean column with a date column named after it ("Published" and "Published at") reads as a
+                // word, "Published" or "Not published", as the phone list says it, instead of a check or a faint cross.
+                $isStateColumn = is_string($columnType) && is_a($columnType, \Aura\Base\Fields\Boolean::class, true)
+                    && trim((string) $column) !== ''
+                    && ! isset($columnField['display'])
+                    && collect($this->headers)->contains(fn ($label, $otherKey) => is_string($columnTypes[$otherKey] ?? null)
+                        && (is_a($columnTypes[$otherKey], \Aura\Base\Fields\Date::class, true) || is_a($columnTypes[$otherKey], \Aura\Base\Fields\Datetime::class, true))
+                        && Str::startsWith(Str::lower(trim((string) $label)), Str::lower(trim((string) $column)).' '));
                 $cellClass = match ($columnType) {
                     'Aura\\Base\\Fields\\Number' => 'text-right whitespace-nowrap',
                     'Aura\\Base\\Fields\\Phone', 'Aura\\Base\\Fields\\Date', 'Aura\\Base\\Fields\\Datetime' => 'whitespace-nowrap',
@@ -59,7 +71,13 @@
                 };
             @endphp
             <td class="px-4 py-[var(--aura-row-padding-y,0.625rem)] text-sm {{ $cellClass }} {{ $firstVisibleColumn ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300' }}">
-                @if ($displayIsEmpty)
+                @if ($isStateColumn && ! $firstVisibleColumn)
+                    @if ($row->{$key})
+                        <span class="text-gray-700 dark:text-gray-300" data-state-value="true">{{ __($column) }}</span>
+                    @else
+                        <span class="text-gray-500 dark:text-gray-400" data-state-value="false">{{ __('Not :state', ['state' => Str::lower(__($column))]) }}</span>
+                    @endif
+                @elseif ($displayIsEmpty)
                     <span class="text-gray-400 dark:text-gray-500">–</span>
                 @elseif ($firstVisibleColumn)
                     {{-- Leading column is the record: its avatar (when the resource has one), the name, and a link

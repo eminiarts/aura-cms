@@ -773,11 +773,22 @@ a.aura-record-card:focus-visible {
     width: 100% !important;
 }
 
-/* Board (kanban). Columns have no fill: a title of dot, name and count, then cards. A card is a
-   white tile with 16px padding, the panel radius and the surface edge, no shadow; the edge darkens on hover.
-   Title 14px at 500, body and meta row 13px. */
+/* Board (kanban). A column is a quiet panel (gray-50, dark white at 2%, the panel radius, 8px padding):
+   a title of dot, name and count, then cards. A card is a white tile with 16px padding, the panel radius
+   and the surface edge, no shadow; the edge darkens on hover. Title 14px at 500 and body 13px, two lines
+   each; from sm the text block keeps the height of both (.aura-board-card-text), so every card's meta row
+   sits at the same place. Meta row 24px (the assignee avatar is 24px). */
+.aura-board-column {
+    @apply bg-gray-50 p-2 dark:bg-white/[0.02];
+    border-radius: var(--aura-panel-radius, 0.5rem);
+}
+
 .aura-board-column-title {
     @apply flex items-center gap-2 px-0.5 pb-2.5 text-sm font-semibold text-gray-900 dark:text-white;
+}
+
+.aura-board-column .aura-board-column-title {
+    @apply px-1.5 pt-1 pb-2;
 }
 
 .aura-board-column-count {
@@ -798,16 +809,23 @@ a.aura-board-card:focus-visible {
     @apply outline-none ring-2 ring-primary-500;
 }
 
+/* From sm, where columns sit side by side; a phone shows one column and sizes cards to their text. */
+@media (min-width: 640px) {
+    .aura-board-card-text {
+        min-height: 5.25rem;
+    }
+}
+
 .aura-board-card-title {
-    @apply text-sm font-medium text-gray-900 dark:text-gray-100;
+    @apply line-clamp-2 text-sm font-medium text-gray-900 dark:text-gray-100;
 }
 
 .aura-board-card-body {
-    @apply mt-1 text-gray-500 dark:text-gray-400;
+    @apply mt-1 line-clamp-2 text-gray-500 dark:text-gray-400;
 }
 
 .aura-board-card-meta {
-    @apply mt-3 flex h-5 items-center gap-3 text-[13px] text-gray-500 dark:text-gray-400;
+    @apply mt-3 flex h-6 items-center gap-3 text-[13px] text-gray-500 dark:text-gray-400;
 }
 
 .aura-board-empty {

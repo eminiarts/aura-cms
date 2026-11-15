@@ -103,9 +103,11 @@
                             'row' => $row,
                             'title' => $leadsWithTitle ? trim((string) $row->title()) : '',
                             'displays' => $visibleColumnKeys->mapWithKeys(fn ($key) => [$key => $flattenLinks(
-                                ($columnTypes[$key] ?? null) === 'Aura\\Base\\Fields\\Number'
-                                    ? \Aura\Base\Fields\Number::unitMarkup($tableModel->fieldBySlug($key) ?? [], $row->display($key))
-                                    : $row->display($key)
+                                match ($columnTypes[$key] ?? null) {
+                                    'Aura\\Base\\Fields\\Number' => \Aura\Base\Fields\Number::unitMarkup($tableModel->fieldBySlug($key) ?? [], $row->display($key)),
+                                    'Aura\\Base\\Fields\\Json' => \Aura\Base\Fields\Json::listPreview($tableModel->fieldBySlug($key) ?? ['slug' => $key], $row) ?? $row->display($key),
+                                    default => $row->display($key),
+                                }
                             )]),
                         ];
                     });

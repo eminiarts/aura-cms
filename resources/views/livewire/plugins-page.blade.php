@@ -1,7 +1,8 @@
 <div>
     @section('title', __('Plugins'))
 
-    {{-- Page header as on index pages: breadcrumb from sm, title with the count, a short line under it. --}}
+    {{-- Page header as on index pages: breadcrumb from sm, title with the number of Aura plugins (each section
+         counts its own packages), a short line under it. --}}
     <div class="hidden sm:block">
         <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
@@ -13,7 +14,9 @@
         <div class="flex items-center min-h-9">
             <h1 class="aura-page-title">
                 {{ __('Plugins') }}
-                <span class="aura-page-count">{{ number_format(count($installedPackages)) }}</span>
+                @if ($pluginCount ?? 0)
+                    <span class="aura-page-count">{{ number_format($pluginCount) }}</span>
+                @endif
             </h1>
         </div>
         <p class="aura-code-note mt-1 text-sm text-gray-500 dark:text-gray-400">
