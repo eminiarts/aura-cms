@@ -880,8 +880,8 @@ class Settings extends Component
     private static function expertDefaults(): array
     {
         return [
-            'expert-panel-radius' => 12,
-            'expert-control-radius' => 8,
+            'expert-panel-radius' => 8,
+            'expert-control-radius' => 6,
             'expert-panel-padding' => 20,
             'expert-panel-small-padding' => 8,
             'expert-layout-gap' => 24,
@@ -932,7 +932,7 @@ class Settings extends Component
         $radius = match ($this->form['fields']['corner-radius'] ?? 'rounded') {
             'square' => [0, 0],
             'subtle' => [6, 4],
-            default => [12, 8],
+            default => [8, 6],
         };
         [$values['expert-panel-radius'], $values['expert-control-radius']] = $radius;
 

@@ -192,14 +192,14 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">02</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Typography') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Inter 4 variable (bundled with the package under the SIL OFL, Latin subset, optical sizing on) is the default typeface; the theme font option replaces it. Four steps carry the admin: page title, section title, body, meta. Weight 600 is reserved for titles and the leading table column, 500 for labels, buttons and nav, 400 for everything else. Numerals are tabular everywhere (body-level font-variant-numeric).') }}
+            {{ __('Inter 4 variable (bundled with the package under the SIL OFL, Latin subset, optical sizing on) is the default typeface; the theme font option replaces it. Four steps carry the admin: page title, section title, body, meta. Weight 600 is reserved for titles and the leading table column (the page title 650), 500 for labels, buttons and nav, 400 for everything else. Numerals are tabular everywhere (body-level font-variant-numeric). The bundled Inter turns on ss07, square punctuation: periods, commas and the dots on i and j take the wordmark\'s flat cuts (set in inter.css, so a replacement font is left alone).') }}
         </p>
 
-        <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Type scale') }}</span>
             <div class="mt-4 divide-y divide-gray-100 dark:divide-white/5">
                 @foreach ([
-                    ['aura-page-title', '.aura-page-title — 24px · 600 · -0.02em (--aura-tracking-display)', 'Northwind Software'],
+                    ['aura-page-title', '.aura-page-title — 24px · 650 · -0.022em', 'Northwind Software'],
                     ['aura-page-title', '.aura-page-title + .aura-page-count — list title with its record count', 'Companies <span class="aura-page-count">14</span>'],
                     ['aura-section-title', '.aura-section-title — 14px · 600', 'Contacts'],
                     ['aura-eyebrow', '.aura-eyebrow — 12px · 500 · gray-500 (resource label, view labels)', 'Company'],
@@ -207,6 +207,7 @@
                     ['aura-meta', '.aura-meta — 12px · 400 · gray-500', 'Company · 2 minutes ago'],
                     ['aura-table-header', '.aura-table-header — 12px · 500 · gray-600 (dark gray-300), sentence case', 'Created at'],
                     ['aura-stat-value', '.aura-stat-value — 30px · 600 · -0.02em · tabular', '84,500'],
+                    ['aura-record-fact-number', '.aura-record-fact-number + .aura-num-unit — the unit at 0.85em · 400 · gray-500', '<span class="aura-num-unit">CHF</span>&nbsp;84,500'],
                     ['aura-record-meta !mt-0', '.aura-record-meta — 13px · gray-600 (dark gray-400), times and author in gray-800', 'Created <time>Nov 3, 2026</time> by <span data-record-meta-author>Bajram Emini</span> <span class="aura-record-meta-sep">&middot;</span> Updated <time>4 hours ago</time>'],
                 ] as [$classes, $label, $sample])
                     <div class="flex flex-col gap-1 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-baseline sm:gap-6">
@@ -217,7 +218,7 @@
             </div>
         </div>
 
-        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Page header pattern') }}</span>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Record pages: the record title is the H1, the eyebrow names the resource on the view page ("Deal") and the task on the edit page ("Edit deal"). Create pages have no eyebrow; the H1 says "New deal" in sentence case. Every form page has a ghost Cancel left of the primary Save (on edit, Cancel returns to the record); the view page has no primary action, its Edit is a secondary button with its pencil. .aura-record-header puts the actions right of the title from sm; on phones the row dissolves into .aura-record-block and the header has no action band of its own: the view page\'s Edit becomes a 36px pencil (button size="icon", aria-label and tooltip "Edit") in the title row, and forms move Cancel and Save into .aura-form-bar, a bar on the bottom edge (safe-area aware) with a ghost Cancel and a full-width primary Save. Other resource actions stay as a right-aligned row under the title or facts strip (.aura-record-header-actions-sm hides a row that would be empty on phones). Phones also replace the breadcrumb trail with one 14px back link above the title, built from the trail\'s last link ("‹ Companies" on a record, "‹ Northwind Software" on its edit form). A simple form caps breadcrumb, header and fields at one width, so Save sits at the edge of the form. The view page promotes key fields into a facts strip under the title (.aura-record-facts: by default the first Number field, large and tabular, and the first Status field as its tag; a resource overrides the pick with recordHeaderFields()). One primary button per screen; everything else is secondary or ghost.') }}</p>
             <div class="mt-4 aura-record-block">
@@ -234,7 +235,7 @@
             <div class="aura-record-facts sm:mt-4">
                 <div class="aura-record-fact">
                     <span class="aura-eyebrow">Amount</span>
-                    <span class="aura-record-fact-number">CHF 84,500</span>
+                    <span class="aura-record-fact-number"><span class="aura-num-unit">CHF</span>&nbsp;84,500</span>
                 </div>
                 <div class="aura-record-fact">
                     <span class="aura-eyebrow">Stage</span>
@@ -260,7 +261,7 @@
             </div>
         </div>
 
-        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Recurring text styles') }}</span>
             <div class="mt-4 space-y-4">
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-6">
@@ -305,14 +306,16 @@
             </div>
         </div>
 
-        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Where the primary color appears') }}</span>
+        <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Where the primary color appears: here or act') }}</span>
+            <div class="flex gap-6 items-center mt-3">
+                <span class="flex gap-2 items-center text-sm text-gray-600 dark:text-gray-300"><span class="block h-5 aura-mark bg-primary-600 dark:bg-primary-400"></span>.aura-mark — 3px, ends cut at 60° (--aura-mark-clip), one leg of the wordmark</span>
+            </div>
             <ul class="grid grid-cols-1 gap-x-6 gap-y-1 mt-3 text-sm text-gray-600 sm:grid-cols-2 dark:text-gray-300">
-                <li>{{ __('Active navigation item (on the dark sidebar: its icon only)') }}</li>
-                <li>{{ __('The one primary button per screen (create and save; a view page has none)') }}</li>
-                <li>{{ __('Text links in auth and settings copy') }}</li>
-                <li>{{ __('Focus rings and selected rows') }}</li>
-                <li>{{ __('Dashboard trend lines') }}</li>
+                <li>{{ __('Position: the mark (.aura-mark) on the active navigation item and on selected rows, the selected tab, the current page in the pager') }}</li>
+                <li>{{ __('Action: the one primary button per screen (create and save; a view page has none)') }}</li>
+                <li>{{ __('Checked controls, focus rings, text links in auth and settings copy') }}</li>
+                <li>{{ __('Live figures: dashboard trend lines and the "added in 30 days" count') }}</li>
                 <li>{{ __('Nothing else: badges, icons and surfaces stay in the gray ramp') }}</li>
             </ul>
         </div>
@@ -329,9 +332,30 @@
             <code class="text-xs">&lt;x-aura::icon icon="…" size="xs|sm|base|lg" /&gt;</code>
         </p>
 
-        <div class="grid grid-cols-3 gap-2 mt-6 sm:grid-cols-5 lg:grid-cols-8">
+        <div class="p-6 mt-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('The caret') }}</span>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400"><code class="text-xs">&lt;x-aura::icon.caret direction="up|down|left|right|up-down" /&gt;</code> {{ __('One caret for every chevron: the wordmark\'s Λ, 60° legs, a mitered apex, flat ends, 1.5px at 16px (chevron-up, chevron-down and arrow-right draw it too). Selects, pagers, disclosure, row and card "opens", back links and native selects use it; the breadcrumb separator is a single leg; sort and delta arrows take its head.') }}</p>
+            <div class="flex flex-wrap gap-6 items-center mt-4 text-gray-600 dark:text-gray-300">
+                @foreach (['up', 'down', 'left', 'right', 'up-down'] as $direction)
+                    <span class="flex flex-col gap-2 items-center">
+                        <x-aura::icon.caret :direction="$direction" class="size-4" />
+                        <span class="text-xs text-gray-400 dark:text-gray-500">{{ $direction }}</span>
+                    </span>
+                @endforeach
+                <span class="flex flex-col gap-2 items-center">
+                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" aria-hidden="true"><path d="M5.5 12.3 10.5 3.7" /></svg>
+                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('separator') }}</span>
+                </span>
+                <span class="flex flex-col gap-2 items-center">
+                    <svg class="size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" aria-hidden="true"><path d="M8 13.5V5M5.1 8.5 8 3.5l2.9 5" /></svg>
+                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('sort') }}</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 mt-4 sm:grid-cols-5 lg:grid-cols-8">
             @foreach ($icons as $icon)
-                <div class="flex flex-col gap-2 items-center py-4 px-2 text-gray-600 bg-white rounded-lg ring-1 shadow-sm dark:text-gray-300 dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+                <div class="flex flex-col gap-2 items-center py-4 px-2 text-gray-600 bg-white rounded-panel ring-1 dark:text-gray-300 dark:bg-gray-800 ring-aura-edge">
                     <x-aura::icon :icon="$icon" size="sm" />
                     <span class="text-xs text-gray-400 truncate max-w-full dark:text-gray-500">{{ $icon }}</span>
                 </div>
@@ -350,7 +374,7 @@
             <code class="text-xs">&lt;x-aura::button&gt;</code> {{ __('with variants as sub-components and sizes via the size prop. Hierarchy: primary (solid, one per screen), secondary (button.border: white, hairline ring), ghost (button.transparent). Fixed heights: xs 28, sm 32, base 36, lg 40, xl 48px.') }}
         </p>
 
-        <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Variants') }}</span>
             <div class="flex flex-wrap gap-4 items-center mt-4">
                 <div class="flex flex-col gap-2 items-center">
@@ -384,7 +408,7 @@
             </div>
         </div>
 
-        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Sizes') }}</span>
             <div class="flex flex-wrap gap-4 items-end mt-4">
                 @foreach (['xs', 'sm', 'base', 'lg', 'xl'] as $size)
@@ -396,7 +420,7 @@
             </div>
         </div>
 
-        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('States & compositions') }}</span>
             <div class="flex flex-wrap gap-4 items-center mt-4">
                 <div class="flex flex-col gap-2 items-center">
@@ -436,7 +460,7 @@
         </p>
 
         <div class="grid grid-cols-1 gap-4 mt-6 lg:grid-cols-2">
-            <div class="p-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <div class="p-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
                 <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Text inputs') }}</span>
                 <div class="mt-4 space-y-5">
                     <x-aura::input.text label="Title" placeholder="My first post" />
@@ -454,7 +478,7 @@
                 </div>
             </div>
 
-            <div class="p-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <div class="p-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
                 <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Input types') }}</span>
                 <div class="mt-4 space-y-5">
                     <x-aura::input.email label="Email" placeholder="you@example.com" />
@@ -487,7 +511,7 @@
                 </div>
             </div>
 
-            <div class="p-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <div class="p-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
                 <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Checkboxes & radios') }}</span>
                 <div class="mt-4 space-y-3">
                     <x-aura::input.checkbox label="Unchecked" />
@@ -501,7 +525,7 @@
                 </div>
             </div>
 
-            <div class="p-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <div class="p-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
                 <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Toggles (36x20, the Boolean field uses the same switch)') }}</span>
                 <div class="mt-4 space-y-4">
                     <x-aura::input.toggle wire:model="toggleOn" labelAfter="Enabled" />
@@ -536,7 +560,7 @@
             {{ __('One tag family for enum values: 22px high, 12px medium, the same radius and padding. Neutral for option values, tinted for an option that carries a color (a Select category at -50/-700 without a dot, a Status state at -100/-800 with a dot). A tinted tag\'s ring is its own hue at -600/20% (dark -400/30%), keyed on the text color class the option names, so a yellow state gets a yellow ring and the option only names fill and text. A relation is not a tag: it reads as the related record\'s name, 14px gray-900 with its 20px avatar (both initials at 10px, the row avatar one step smaller) in front, underlined on hover, so a row with three relations stays calm. Entity avatars put initials on a tint derived from the name (square for companies and things, circle for people) and sit before record names in tables and the record header. Small rounded-full pills remain for sidebar counts and trends.') }}
         </p>
 
-        <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Tag family (.aura-tag): neutral, select color (.aura-tag-status + option color), status (+ dot); relation as a record link (.aura-record-link)') }}</span>
             <div class="flex flex-wrap gap-1.5 items-center mt-4">
                 @foreach (['Software', 'Retail', 'Finance', 'Other'] as $tag)
@@ -561,7 +585,7 @@
                 <div class="flex relative items-center pr-9 pl-2 mt-2 w-full h-9 bg-white rounded-lg ring-1 shadow-xs ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10">
                     <span class="aura-tag aura-tag-status bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-300">High</span>
                     <span class="flex absolute inset-y-0 right-0 items-center pr-2.5" aria-hidden="true">
-                        <svg class="text-gray-400 size-4 dark:text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.25 6.25 8 10l3.75-3.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                        <x-aura::icon.caret direction="down" class="text-gray-400 size-4 dark:text-gray-500" />
                     </span>
                 </div>
             </div>
@@ -593,7 +617,7 @@
             </div>
         </div>
 
-        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Entity avatars (x-aura::avatar): sizes xs 20 (relation links, 10px initials), sm 24 (table rows, 11px initials), md 28, lg 40; tone from the name over 8 families the tags do not use (indigo, purple, fuchsia, pink, rose, violet, lime, cyan)') }}</span>
             <div class="flex flex-wrap gap-4 items-center mt-4">
                 @foreach (['xs', 'sm', 'md', 'lg'] as $size)
@@ -618,7 +642,7 @@
             </div>
         </div>
 
-        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Sidebar badges (navigation/item, light-sidebar color map)') }}</span>
             <div class="flex flex-wrap gap-2 mt-4">
                 @foreach ($navBadgeColors as $color => $classes)
@@ -627,15 +651,15 @@
             </div>
         </div>
 
-        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Trend pills (dashboard/stats)') }}</span>
             <div class="flex flex-wrap gap-2 items-center mt-4">
                 <span class="inline-flex items-center gap-0.5 rounded-full bg-green-50 dark:bg-green-900/40 px-2 py-0.5 text-xs font-medium text-green-700 dark:text-green-400">
-                    <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+                    <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" aria-hidden="true"><path d="M8 14V5M4.8 8.5 8 3l3.2 5.5" /></svg>
                     12%
                 </span>
                 <span class="inline-flex items-center gap-0.5 rounded-full bg-red-50 dark:bg-red-900/40 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-400">
-                    <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7" /></svg>
+                    <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" aria-hidden="true"><path d="M8 2v9M4.8 7.5 8 13l3.2-5.5" /></svg>
                     4%
                 </span>
                 <span class="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-300">neutral</span>
@@ -657,10 +681,10 @@
         <div class="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-2">
             <div class="aura-card">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-white">.aura-card</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">p-5, rounded-xl (--aura-panel-radius), shadow-xs, ring-1 ring-gray-950/10. Dark: bg-gray-800, ring-white/10. Flat surfaces, one hairline, no stacked shadows.</p>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">p-5, --aura-panel-radius (rounded-panel: 8px with the Rounded preset), ring-1 in --aura-edge (gray-950 at 12%, white at 12% in dark mode), no shadow. Shadows stay on solid buttons and overlays. Dividers inside a surface use --aura-hairline (8%).</p>
             </div>
             <div class="flex items-center aura-card-small">
-                <p class="text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold text-gray-900 dark:text-white">.aura-card-small</span> — p-2, rounded-lg, ring-gray-950/10.</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold text-gray-900 dark:text-white">.aura-card-small</span> — p-2, --aura-control-radius (rounded-control: 6px), --aura-edge.</p>
             </div>
         </div>
 
@@ -668,7 +692,7 @@
             <x-aura::dashboard.stats :stats="$stats" />
         </div>
 
-        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Record page: details section (.aura-record-section) and related-record cards (x-aura::resource.record-card)') }}</span>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('With related records beside the values, every view panel renders as a titled section of label/value rows with hairlines; a single panel is titled "Details". From xl the sections sit in a 25rem (400px) column with the related records on the right: embedded lists, or, for a record without lists, one card per BelongsTo relation with the related record and up to three of its own list values. The column closes with the record meta line (.aura-record-meta, resource/record-meta): created date, author when the record has one, and the last update once it differs.') }}</p>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Right rail: when a record has a narrow panel (style width 33% or less, the sidebar card of its form) next to other values, the view page mirrors the form: from lg the other sections fill the main column and the narrow panels stack in a 20rem rail on the right (.aura-record-rail, 6.5rem label column), with the meta line under them. Relations in the rail stay inline record links instead of cards. On phones the rail follows the main column and keeps label-left, value-right rows (7rem label column).') }}</p>
@@ -706,7 +730,7 @@
                                 <p class="aura-eyebrow">Company</p>
                                 <p class="mt-0.5 text-sm font-semibold text-gray-900 truncate dark:text-white">Northwind Software</p>
                             </div>
-                            <svg class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
+                            <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" />
                         </div>
                         <dl class="pt-3 mt-3 space-y-1.5 border-t border-gray-100 dark:border-white/[0.06]">
                             <div class="flex gap-4 justify-between items-center text-sm"><dt class="text-gray-500 dark:text-gray-400">Website</dt><dd class="text-gray-900 dark:text-gray-100"><a href="#cards" class="aura-link">northwindsoftware.com</a></dd></div>
@@ -720,7 +744,7 @@
                                 <p class="aura-eyebrow">Contact</p>
                                 <p class="mt-0.5 text-sm font-semibold text-gray-900 truncate dark:text-white">Martina Keller</p>
                             </div>
-                            <svg class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
+                            <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" />
                         </div>
                         <dl class="pt-3 mt-3 space-y-1.5 border-t border-gray-100 dark:border-white/[0.06]">
                             <div class="flex gap-4 justify-between items-center text-sm"><dt class="text-gray-500 dark:text-gray-400">Email</dt><dd class="min-w-0 text-gray-900 truncate dark:text-gray-100">martina.keller@northwindsoftware.com</dd></div>
@@ -731,7 +755,7 @@
         </div>
 
         {{-- Read-only field grid: the record view in its form's frame, same markup as fields/wrapper in view mode. --}}
-        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Record page in its form\'s frame: read-only field grid (.aura-view-grid)') }}</span>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('A record with nothing beside its values (no embedded lists, no relation cards, no rail) mirrors its edit form: the same width (max-w-3xl for a simple record), the same tab bar, every panel the form\'s .aura-card and .aura-section-title, plain values in one card. Inside, .aura-view-grid lays out the view rows: each value at its field\'s form width (full width on phones), the 13px gray-500 label 2px above the 14px value, 16px between rows, no hairlines. A boolean reads as a check and "Yes" or a muted "No"; an empty value is a muted dash. The record meta line follows the last card at the card\'s edge.') }}</p>
             <div class="mt-4 max-w-3xl">
@@ -771,9 +795,9 @@
         </div>
 
         {{-- Board column and media tiles: the two dense surfaces, both at 13px. --}}
-        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Board column (.aura-board-column-title, .aura-board-card) and media tiles (.aura-tile-ring, .aura-tile-name, .aura-tile-meta)') }}</span>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('A board column has no fill: a title of 8px status dot, name and count, then cards 8px apart; columns sit 20px apart. A card is a tile with 16px padding, a hairline ring and the smallest shadow (hover darkens the ring): title at 14px 500, body at 13px gray-500 clamped to two lines, then a 20px meta row at 13px with the due date (red at 500 when overdue, the only red on the board), the priority as a bar mark and label (gray, an option color such as orange for High), and the 20px assignee avatar on the right. An empty column shows a dashed placeholder. A media tile is a 10:7 thumbnail under an inset hairline overlay; selected tiles draw a 2px primary ring inside the edge, no shadow and no zoom. Its caption: the name at 13px 500 (cut in the middle, keeping its last characters and the extension: "master-servi…ent.pdf"), then "type · size" at 12px.') }}</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('A board column has no fill: a title of 8px status dot, name and count, then cards 8px apart; columns sit 20px apart. A card is a tile with 16px padding, the panel radius and the surface edge (--aura-edge), no shadow (hover darkens the edge): title at 14px 500, body at 13px gray-500 clamped to two lines, then a 20px meta row at 13px with the due date (red at 500 when overdue, the only red on the board), the priority as a bar mark and label (gray, an option color such as orange for High), and the 20px assignee avatar on the right. An empty column shows a dashed placeholder. A media tile is a 10:7 thumbnail under an inset hairline overlay; selected tiles draw a 2px primary ring inside the edge, no shadow and no zoom. Its caption: the name at 13px 500 (cut in the middle, keeping its last characters and the extension: "master-servi…ent.pdf"), then "type · size" at 12px.') }}</p>
             <div class="grid grid-cols-1 gap-8 mt-4 md:grid-cols-[16rem_minmax(0,1fr)]">
                 <div>
                     <h3 class="aura-board-column-title">
@@ -838,7 +862,7 @@
                 <div class="flex gap-2 items-baseline mt-2">
                     <span class="aura-stat-value text-gray-900 dark:text-white">2,741</span>
                     <span class="inline-flex items-center gap-0.5 rounded-full bg-green-50 dark:bg-green-900/40 px-2 py-0.5 text-xs font-medium text-green-700 dark:text-green-400">
-                        <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+                        <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" aria-hidden="true"><path d="M8 14V5M4.8 8.5 8 3l3.2 5.5" /></svg>
                         8.2%
                     </span>
                 </div>
@@ -846,7 +870,7 @@
             {{-- Specimen of widgets/index on a resource index (compact): one hairline-divided strip, date range as the last cell. --}}
             <div class="sm:col-span-2">
                 <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Index widget strip (widgets, compact)') }}</span>
-                <div class="flex overflow-hidden flex-wrap gap-px mt-2 rounded-xl ring-1 shadow-xs bg-gray-950/[0.06] ring-gray-950/10 dark:bg-white/10 dark:ring-white/10">
+                <div class="flex overflow-hidden flex-wrap gap-px mt-2 rounded-panel ring-1 bg-gray-950/[0.06] ring-aura-edge dark:bg-white/10">
                     <div class="flex flex-col justify-center px-4 py-3 min-w-0 bg-white dark:bg-gray-800" style="flex: 33 1 11rem">
                         <span class="text-xs font-medium text-gray-500 truncate dark:text-gray-400">Total tasks</span>
                         <div class="flex gap-2 items-baseline mt-1">
@@ -888,7 +912,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">08</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Table') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('The resource index table. No card around it: a header hairline, row dividers and a closing hairline carry the list. Headings use the real table.heading component (sentence case, 12px medium gray-600) and lead with a 14px gray-400 mark for the column\'s value type (text, email, phone, number, date, status, relation; table/column-icon from the field class). A number column is right-aligned: the mark still leads the label and the sort arrow moves in front, so the label stays flush with the figures below; rows are a faithful specimen of table/row (the live rows are Livewire-bound). First column: entity avatar (24px, when the resource has one) plus the record name, 500 gray-900, linked to the record; other cells 400 gray-600, numerals tabular, empty cells show a dash. The page title carries the record count. With a pointer, the whole row opens the record and the row actions (gray-500) appear on hover; on touch they are always visible. Row hover (the row-hover: variant) waits until the pointer has moved, so a page that loads under a resting cursor shows no highlighted row. Related lists on record pages use the same rows. Second row shows the selected state. A resource without records shows its empty state (icon, title, one line, the create button) in a quiet panel: gray-50 at 70%, a hairline ring, rounded-xl, the full content width from the title\'s edge. A search or filter without matches, and an empty related list, keep a top hairline instead.') }}
+            {{ __('The resource index table. No card around it: a header hairline, row dividers and a closing hairline carry the list. Headings use the real table.heading component (sentence case, 12px medium gray-600) and lead with a 14px gray-400 mark for the column\'s value type (text, email, phone, number, date, status, relation; table/column-icon from the field class). A number column is right-aligned: the mark still leads the label and the sort arrow moves in front, so the label stays flush with the figures below; rows are a faithful specimen of table/row (the live rows are Livewire-bound). First column: entity avatar (24px, when the resource has one) plus the record name, 500 gray-900, linked to the record; other cells 400 gray-600, numerals tabular, empty cells show a dash. The page title carries the record count. With a pointer, the whole row opens the record and the row actions (gray-500) appear on hover; on touch they are always visible. Row hover (the row-hover: variant) waits until the pointer has moved, so a page that loads under a resting cursor shows no highlighted row. Related lists on record pages use the same rows. Second row shows the selected state: a primary tint and the mark (.aura-mark, one Λ leg) on its left edge. Row height follows the density setting (--aura-row-padding-y: 10px comfortable, 44px rows; 6px compact). A number\'s unit (prefix or suffix, "CHF") sits in .aura-num-unit: 0.85em, 400, gray-500. Header line, row dividers and the closing line use --aura-hairline. An empty list is still a table, see below.') }}
         </p>
 
         {{-- Filter tabs (specimen of table/filter-tabs) --}}
@@ -903,7 +927,7 @@
             <div class="overflow-x-auto">
                 <table class="min-w-full">
                     <thead>
-                        <tr class="border-b border-gray-200/80 dark:border-white/10">
+                        <tr class="border-b border-aura-hairline">
                             <th class="py-2.5 pr-0 pl-4 w-px">
                                 <x-aura::input.checkbox hideLabel label="Select all" />
                             </th>
@@ -915,34 +939,34 @@
                             <th class="px-3 py-2.5"><span class="sr-only">{{ __('Actions') }}</span></th>
                         </tr>
                     </thead>
-                    <tbody class="border-b divide-y divide-gray-200/60 border-gray-200/80 dark:divide-white/[0.06] dark:border-white/10">
+                    <tbody class="border-b divide-y divide-aura-hairline border-aura-hairline">
                         @foreach ($tableRows as $row)
                             <tr class="transition-colors duration-150 ease-in-out cm-table-row hover:bg-gray-50/80 dark:hover:bg-white/[0.04] {{ $row['selected'] ? 'bg-primary-50/60 dark:bg-primary-500/10' : '' }}">
-                                <td class="relative py-3 pr-0 pl-4">
+                                <td class="relative py-[var(--aura-row-padding-y,0.625rem)] pr-0 pl-4">
                                     @if ($row['selected'])
-                                        <span class="absolute inset-y-0 left-0 w-0.5 bg-primary-600" aria-hidden="true"></span>
+                                        <span class="absolute inset-y-2 left-0 aura-mark bg-primary-600 dark:bg-primary-400" aria-hidden="true"></span>
                                     @endif
                                     <x-aura::input.checkbox hideLabel :label="'Row '.$row['id']" :checked="$row['selected']" />
                                 </td>
-                                <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                                <td class="px-4 py-[var(--aura-row-padding-y,0.625rem)] text-sm font-medium text-gray-900 dark:text-white">
                                     <div class="flex gap-2.5 items-center min-w-0">
                                         <x-aura::avatar :name="$row['title']" shape="square" size="sm" />
                                         <a href="#table" class="min-w-0 truncate rounded-sm decoration-gray-400 underline-offset-[3px] transition-colors duration-150 hover:underline dark:decoration-gray-500">{{ $row['title'] }}</a>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-300">CHF {{ number_format(12450 * (int) $row['id']) }}</td>
-                                <td class="px-4 py-3 text-sm">
+                                <td class="px-4 py-[var(--aura-row-padding-y,0.625rem)] text-sm text-right text-gray-600 dark:text-gray-300"><span class="aura-num-unit">CHF</span>&nbsp;{{ number_format(12450 * (int) $row['id']) }}</td>
+                                <td class="px-4 py-[var(--aura-row-padding-y,0.625rem)] text-sm">
                                     <span class="aura-tag aura-tag-status {{ $row['statusClass'] }}">
                                         <svg class="aura-tag-dot" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>
                                         {{ $row['status'] }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                                <td class="px-4 py-[var(--aura-row-padding-y,0.625rem)] text-sm text-gray-600 dark:text-gray-300">
                                     <span class="aura-tag">
                                         <span class="aura-record-link-title">{{ $row['author'] }}</span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{{ $row['date'] }}</td>
+                                <td class="px-4 py-[var(--aura-row-padding-y,0.625rem)] text-sm text-gray-600 dark:text-gray-300">{{ $row['date'] }}</td>
                                 <td class="px-3 py-2 text-right">
                                     <x-aura::dropdown align="right" width="48">
                                         <x-slot:trigger>
@@ -964,20 +988,20 @@
             </div>
 
             {{-- Pagination (specimen of table/pagination) --}}
-            <div class="flex justify-between items-center px-6 py-3 border-t border-gray-100 dark:border-white/5">
+            <div class="flex justify-between items-center px-6 py-3 border-t border-aura-hairline">
                 <span class="text-sm text-gray-600 dark:text-gray-400">{{ __('Showing') }} <span class="font-medium text-gray-900 dark:text-white">1</span> {{ __('to') }} <span class="font-medium text-gray-900 dark:text-white">10</span> {{ __('of') }} <span class="font-medium text-gray-900 dark:text-white">104</span> {{ __('results') }}</span>
                 <div class="flex gap-1">
-                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-gray-300 dark:text-gray-600">
-                        <svg class="size-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 0 1-.02 1.06L8.832 10l3.938 3.71a.75.75 0 1 1-1.04 1.08l-4.5-4.25a.75.75 0 0 1 0-1.08l4.5-4.25a.75.75 0 0 1 1.06.02Z" clip-rule="evenodd" /></svg>
+                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-control text-gray-300 dark:text-gray-600">
+                        <x-aura::icon.caret direction="left" class="size-4" />
                     </span>
-                    <span class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg bg-primary-50 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-500/15 dark:text-primary-300 dark:ring-primary-500/20">1</span>
+                    <span class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-control bg-primary-50 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-500/15 dark:text-primary-300 dark:ring-primary-500/20">1</span>
                     <button type="button" class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">2</button>
                     <button type="button" class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">3</button>
                     {{-- Long lists collapse to the first pages, one "…" and the last page. --}}
-                    <span class="inline-flex items-center justify-center h-8 min-w-8 px-1 text-sm font-medium rounded-lg text-gray-400 dark:text-gray-500" aria-hidden="true">…</span>
+                    <span class="inline-flex items-center justify-center h-8 min-w-8 px-1 text-sm font-medium rounded-control text-gray-400 dark:text-gray-500" aria-hidden="true">…</span>
                     <button type="button" class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">11</button>
                     <button type="button" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">
-                        <svg class="size-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clip-rule="evenodd" /></svg>
+                        <x-aura::icon.caret direction="right" class="size-4" />
                     </button>
                 </div>
             </div>
@@ -987,7 +1011,7 @@
         <p class="mt-6 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
             {{ __('Below sm the default row turns into a stacked list: the first column as the primary line, the next two values as quiet meta lines, a chevron when the record can be opened. A Number and a Status column share one line, the tag left and the value right, so a deal takes three lines. Number columns are right-aligned on desktop; phone and dates do not wrap; long emails truncate with the full address as tooltip.') }}
         </p>
-        <ul class="overflow-hidden mt-3 max-w-sm bg-white rounded-xl ring-1 divide-y divide-gray-100 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10 dark:divide-white/5">
+        <ul class="overflow-hidden mt-3 max-w-sm bg-white rounded-panel ring-1 divide-y divide-aura-hairline dark:bg-gray-800 ring-aura-edge">
             @foreach (array_slice($tableRows, 0, 3) as $row)
                 <li>
                     <a href="#table" class="flex gap-3 items-center px-4 py-3">
@@ -999,7 +1023,7 @@
                                 <span class="min-w-0 truncate">{{ $row['date'] }}</span>
                             </div>
                         </div>
-                        <svg class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                        <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" />
                     </a>
                 </li>
             @endforeach
@@ -1007,16 +1031,22 @@
 
         {{-- Empty state (specimen of table/list-view) --}}
         <p class="mt-6 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Empty index: resource icon, "No {plural} yet", one helpful line and a "New {singular}" button for users who may create. No header row or select-all. Relation tables only show the title line; a search with no hits says so instead.') }}
+            {{ __('An empty table is still a table. From sm the real column header (no select-all, no sort), then one left-aligned block between hairlines (px-4 py-10): .aura-section-title, one line and the "New {singular}" button for users who may create. Phones show the same block without the header. A search or filter without hits says so in the same block; an empty related list shows only its title (py-6). A resource can word its own block in aura/{type}/empty (title, line, action), as the team invitations do.') }}
         </p>
-        <div class="overflow-hidden mt-3 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-            <div class="flex flex-col items-center px-6 py-14 text-center">
-                <div class="flex justify-center items-center mb-3 w-10 h-10 rounded-lg bg-gray-950/[0.04] text-gray-400 dark:bg-white/5 dark:text-gray-500" aria-hidden="true">
-                    <svg class="size-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg>
-                </div>
+        <div class="overflow-hidden mt-3">
+            <table class="hidden min-w-full sm:table">
+                <thead>
+                    <tr class="border-b border-aura-hairline">
+                        <x-aura::table.heading type="Aura\Base\Fields\Text">{{ __('Name') }}</x-aura::table.heading>
+                        <x-aura::table.heading type="Aura\Base\Fields\Text">{{ __('Website') }}</x-aura::table.heading>
+                        <x-aura::table.heading type="Aura\Base\Fields\Select">{{ __('Industry') }}</x-aura::table.heading>
+                    </tr>
+                </thead>
+            </table>
+            <div class="py-10 border-y border-aura-hairline sm:px-4 sm:border-t-0">
                 <h3 class="aura-section-title">{{ __('No :resources yet', ['resources' => 'companies']) }}</h3>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Create the first one to get started.') }}</p>
-                <div class="mt-5">
+                <div class="mt-4">
                     <x-aura::button href="#table">
                         <x-slot:icon><x-aura::icon icon="plus" /></x-slot>
                         <span>{{ __('New :resource', ['resource' => 'company']) }}</span>
@@ -1047,7 +1077,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">09</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Sidebar') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Real navigation.item / navigation.heading components inside the three sidebar themes (config: sidebar-type). Standard size: 32px items, 13px medium labels, 18px icons at 1.5 stroke; group labels 12px medium in sentence case. The light and primary sidebars mark the active item with a 2px hairline on its left edge; the dark sidebar, whose surface is gray-900 of the chosen gray palette rather than a fixed near-black, uses one quiet white tint with the icon in primary. The first item shows the active state.') }}
+            {{ __('Real navigation.item / navigation.heading components inside the three sidebar themes (config: sidebar-type). Standard size: 32px items, 13px medium labels, 18px icons at 1.5 stroke; group labels 12px medium in sentence case. Every sidebar type marks the active item with the mark (.aura-mark, one Λ leg, 3px with 60° cuts) on its left edge plus a tint: white on the primary sidebar, primary-600 on the light one, primary-400 on the dark one, whose surface is gray-900 of the chosen gray palette rather than a fixed near-black. The first item shows the active state.') }}
         </p>
 
         <div class="grid grid-cols-1 gap-4 mt-6 md:grid-cols-3">
@@ -1059,7 +1089,7 @@
                 <div>
                     <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ $label }}</span>
                     <div class="mt-3 open-sidebar aura-sidebar-type-{{ $type }} aura-sidebar-darkmode-type-{{ $type }}">
-                        <div class="p-3 rounded-xl border aura-sidebar-bg">
+                        <div class="p-3 rounded-panel border aura-sidebar-bg">
                             <x-aura::navigation.heading>{{ __('Resources') }}</x-aura::navigation.heading>
 
                             <div class="mt-2 space-y-1">
@@ -1099,7 +1129,7 @@
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Dropdowns & Tooltips') }}</h2>
 
         <div class="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-2">
-            <div class="p-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <div class="p-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
                 <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Dropdown') }}</span>
                 <div class="mt-4">
                     <x-aura::dropdown align="left" width="48">
@@ -1120,7 +1150,7 @@
                 </div>
             </div>
 
-            <div class="p-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <div class="p-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
                 <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Tooltip (tippy)') }}</span>
                 <div class="flex gap-4 mt-4">
                     <x-aura::tippy text="Tooltip on top" position="top">
@@ -1147,7 +1177,7 @@
             {{ __('Alpine dialog components — these open the real overlays.') }}
         </p>
 
-        <div class="flex flex-wrap gap-4 p-6 mt-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="flex flex-wrap gap-4 p-6 mt-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <x-aura::dialog>
                 <x-aura::dialog.open>
                     <x-aura::button.border>{{ __('Open modal') }}</x-aura::button.border>
@@ -1193,7 +1223,7 @@
             {{ __('Toasts are dispatched via the notify event and rendered by the notification component in the layout. The buttons fire real toasts; below is a static specimen of the toast card.') }}
         </p>
 
-        <div class="flex flex-wrap gap-4 p-6 mt-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="flex flex-wrap gap-4 p-6 mt-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <x-aura::button.light x-data x-on:click="$dispatch('notify', { type: 'success', message: 'Changes saved successfully.' })">
                 {{ __('Success toast') }}
             </x-aura::button.light>
@@ -1202,7 +1232,7 @@
             </x-aura::button.danger>
         </div>
 
-        <div class="p-6 mt-4 bg-gray-50 rounded-xl ring-1 dark:bg-white/5 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-4 bg-gray-50 rounded-panel ring-1 dark:bg-white/5 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Toast card (static specimen)') }}</span>
             <div class="mt-4 w-full max-w-sm bg-white rounded-xl shadow-lg ring-1 ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10">
                 <div class="overflow-hidden rounded-xl">
@@ -1234,7 +1264,7 @@
         </div>
 
         {{-- Inbox rows (the notifications page): the dashboard's recently-edited list with a second line. --}}
-        <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="p-6 mt-4 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Inbox rows (notifications page)') }}</span>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('An unboxed hairline list, the same row as Recently edited with a body line: a 6px primary dot in an 8px column for unread, the 28px level icon (neutral for info, tinted for success, warning and error), title and body at 14px, the relative time as .aura-meta in a fixed right column. Unread titles take the leading weight (600) in gray-900; read titles are 500 in gray-700. Row actions appear on hover from sm, in a ⋯ menu on phones.') }}</p>
             <ul class="mt-4 border-t border-gray-200 divide-y divide-gray-100 dark:border-white/10 dark:divide-white/[0.06]">
@@ -1270,7 +1300,7 @@
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Feedback & Loading') }}</h2>
 
         <div class="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-3">
-            <div class="p-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <div class="p-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
                 <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Spinner') }}</span>
                 <div class="flex gap-4 items-center mt-4 text-primary-600 dark:text-primary-400">
                     <x-aura::icon icon="loading" size="sm" />
@@ -1279,7 +1309,7 @@
                 </div>
             </div>
 
-            <div class="p-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <div class="p-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
                 <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Skeleton') }}</span>
                 <div class="mt-4 space-y-3 animate-pulse">
                     <div class="w-3/4 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
@@ -1288,7 +1318,7 @@
                 </div>
             </div>
 
-            <div class="p-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+            <div class="p-6 bg-white rounded-panel ring-1 dark:bg-gray-800 ring-aura-edge">
                 <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Inline alert') }}</span>
                 <div class="p-4 mt-4 text-sm text-gray-700 bg-gray-100 rounded-lg border border-gray-200 dark:bg-white/5 dark:text-gray-300 dark:border-white/10">
                     {{ __('Plugins are managed via Composer.') }} <code class="px-2 py-1 text-xs font-semibold text-gray-800 bg-white rounded dark:bg-gray-900 dark:text-gray-200">composer require vendor/plugin</code>
@@ -1305,25 +1335,36 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">14</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Authentication') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('The login form composition, as rendered on /login (same components on register, reset password and 2FA).') }}
+            {{ __('The auth layout (layout/login: login, register, reset password, 2FA). From lg the page splits: a 5/12 brand panel in the configured sidebar type\'s colors (primary, light or dark, each with its dark-mode type) with the wordmark top-left (w-36), the copyright bottom-left and one Λ of the wordmark outlined at 1px (white/10, gray-950/10 on a light panel), cropped by the corner and left out when a custom logo is set. The form sits beside it without a card, max-w-sm, on white (gray-950 in dark mode). Below lg: the wordmark top-left, then the form. A custom login background keeps the centered card over the image.') }}
         </p>
 
-        <div class="flex justify-center p-8 mt-6 bg-gray-50 rounded-xl ring-1 dark:bg-gray-900 ring-gray-950/10 dark:ring-white/10 sm:p-12">
-            <div class="w-full max-w-md rounded-2xl bg-white/95 backdrop-blur-xl ring-1 ring-gray-950/10 shadow-xl shadow-gray-950/[0.08] dark:bg-gray-800/90 dark:ring-white/10 dark:shadow-black/40 p-8 sm:p-10">
-                <h3 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __('Welcome back') }}</h3>
-                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('Log in to your account to continue.') }}</p>
+        <div class="overflow-hidden mt-6 bg-white rounded-panel ring-1 ring-aura-edge dark:bg-gray-950 sm:grid sm:grid-cols-12">
+            <div class="hidden sm:block sm:col-span-5 aura-sidebar-type-dark aura-sidebar-darkmode-type-dark">
+                <div class="flex overflow-hidden relative flex-col justify-between p-8 h-full aura-sidebar-bg">
+                    <div class="w-28"><x-aura::application-logo class="block w-full h-auto text-white" /></div>
+                    <svg class="absolute -right-24 -bottom-20 w-[26rem] pointer-events-none stroke-white/10" viewBox="95 0 28 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M122.214 23.7945H115.914L111.327 15.7146L108.827 11.1611L106.328 15.7146L103.418 20.7817L101.74 23.8287L95.4406 23.7945L108.827 0.17111L122.214 23.7945Z" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linejoin="miter" />
+                    </svg>
+                    <p class="relative mt-40 text-xs text-white/60">&copy; {{ date('Y') }} {{ config('app.name') }}</p>
+                </div>
+            </div>
+            <div class="flex justify-center items-center p-8 sm:col-span-7 sm:p-12">
+                <div class="w-full max-w-sm">
+                    <h3 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __('Welcome back') }}</h3>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('Log in to your account to continue.') }}</p>
 
-                <div class="mt-8 space-y-5">
-                    <x-aura::input.email label="Email" placeholder="you@example.com" />
-                    <x-aura::input.text label="Password" type="password" placeholder="••••••••" />
+                    <div class="mt-8 space-y-5">
+                        <x-aura::input.email label="Email" placeholder="you@example.com" />
+                        <x-aura::input.text label="Password" type="password" placeholder="••••••••" />
 
-                    <div class="flex justify-between items-center">
-                        <x-aura::input.checkbox label="{{ __('Remember me') }}" />
-                        <a href="#auth" class="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400">{{ __('Forgot your password?') }}</a>
-                    </div>
+                        <div class="flex justify-between items-center">
+                            <x-aura::input.checkbox label="{{ __('Remember me') }}" />
+                            <a href="#auth" class="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400">{{ __('Forgot your password?') }}</a>
+                        </div>
 
-                    <div class="pt-1">
-                        <x-aura::button block>{{ __('Log in') }}</x-aura::button>
+                        <div class="pt-1">
+                            <x-aura::button block>{{ __('Log in') }}</x-aura::button>
+                        </div>
                     </div>
                 </div>
             </div>

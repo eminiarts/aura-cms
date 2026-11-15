@@ -176,7 +176,7 @@ test('expert appearance validates colors and restores defaults', function () {
         ->set('form.fields.expert-panel-radius', 0)
         ->call('restoreExpertDefaults')
         ->assertSet('form.fields.expert-light-sidebar-background', '#1643d7')
-        ->assertSet('form.fields.expert-panel-radius', 12);
+        ->assertSet('form.fields.expert-panel-radius', 8);
 });
 
 test('expert appearance inherits the selected presets when it is enabled', function () {

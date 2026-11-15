@@ -15,7 +15,7 @@
 
         @if ($stripWidgets->isNotEmpty())
             {{-- Phones: the two first cells share a row (charts hidden), the date range takes a slim row below. --}}
-            <div class="flex overflow-hidden flex-wrap gap-px mt-4 mb-5 sm:mb-0 rounded-xl ring-1 shadow-xs bg-gray-950/[0.06] ring-gray-950/10 dark:bg-white/10 dark:ring-white/10" wire:key="widgets-strip" data-widgets-strip>
+            <div class="flex overflow-hidden flex-wrap gap-px mt-4 mb-5 sm:mb-0 rounded-panel ring-1 bg-gray-950/[0.06] ring-aura-edge dark:bg-white/10" wire:key="widgets-strip" data-widgets-strip>
                 @foreach ($stripWidgets as $key => $widget)
                     <div class="min-w-0 bg-white dark:bg-gray-800" style="flex: {{ optional(optional($widget)['style'])['width'] ?? '100' }} 1 9rem"
                         wire:key="widget-{{ $widget['slug'] }}-wrapper" id="widget-{{ $widget['slug'] }}-wrapper">

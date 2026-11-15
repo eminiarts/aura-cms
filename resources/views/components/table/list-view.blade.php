@@ -24,27 +24,29 @@
     <div class="overflow-hidden">
 
         @if ($isEmpty)
-            {{-- A page with no records at all has no toolbar above: its empty state sits in a quiet panel that
-                 spans the content width from the title's edge, so it does not float in the page. Filtered
-                 lists and relation tables keep the hairline of the list they replace. --}}
+            {{-- An empty table is still a table: from sm its real column header (no bulk checkbox, no sort),
+                 then one left-aligned block between hairlines, a section title, one line and the action.
+                 Phones get the same block without the header. Every empty list takes this shape: no
+                 records yet, nothing matching the search or filters, an empty relation list. --}}
+            @if ($this->headers && $visibleColumnKeys->isNotEmpty())
+                <div class="hidden overflow-x-auto min-w-full align-middle sm:block">
+                    <table class="min-w-full">
+                        @include($this->settings['views']['table_header'])
+                    </table>
+                </div>
+            @endif
             <div @class([
-                'flex flex-col items-center px-6 text-center',
-                'border-t border-gray-200/80 dark:border-white/10' => $isRelationTable || $isFiltered,
-                'mt-2 rounded-xl ring-1 ring-gray-950/[0.06] bg-gray-50/70 dark:bg-white/[0.02] dark:ring-white/10' => ! $isRelationTable && ! $isFiltered,
-                $isRelationTable ? 'py-8' : 'py-14',
-            ])>
+                'border-y border-aura-hairline sm:px-4',
+                'sm:border-t-0' => $this->headers && $visibleColumnKeys->isNotEmpty(),
+                $isRelationTable ? 'py-6' : 'py-10',
+            ]) data-table-empty>
                 @if ($isFiltered)
                     <h3 class="aura-section-title">{{ __('No matching :resources', ['resources' => $pluralLabel]) }}</h3>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Try a different search or clear the filters.') }}</p>
                 @else
-                    @unless ($isRelationTable)
-                        <div class="flex justify-center items-center mb-3 w-10 h-10 bg-white rounded-lg ring-1 shadow-xs ring-gray-950/[0.06] text-gray-400 dark:bg-white/5 dark:ring-white/10 dark:text-gray-500 [&>svg]:size-5" aria-hidden="true">
-                            {!! $tableModel->getIcon() !!}
-                        </div>
-                    @endunless
                     @php
                         // A resource may word its own empty page (title, line, action) in aura/{type}/empty,
-                        // like its header in aura/{type}/header; the icon box above stays shared.
+                        // like its header in aura/{type}/header; the block around it stays shared.
                         $emptyView = 'aura.'.Str::lower($tableModel->getType()).'.empty';
                         $emptyView = $isRelationTable ? null : (View::exists($emptyView) ? $emptyView : (View::exists('aura::'.$emptyView) ? 'aura::'.$emptyView : null));
                     @endphp
@@ -52,7 +54,7 @@
                     @if ($emptyView)
                         @include($emptyView)
                     @else
-                    <h3 class="aura-section-title">{{ __('No :resources yet', ['resources' => $pluralLabel]) }}</h3>
+                        <h3 class="aura-section-title">{{ __('No :resources yet', ['resources' => $pluralLabel]) }}</h3>
                     @endif
 
                     @unless ($isRelationTable || $emptyView)
@@ -60,7 +62,7 @@
 
                         @can('create', $tableModel)
                             @if ($this->settings['create'] && ! $this->settings['create_in_modal'] && $this->createLink)
-                                <div class="mt-5">
+                                <div class="mt-4">
                                     <x-aura::button href="{{ $this->createLink }}">
                                         <x-slot:icon>
                                             <x-aura::icon icon="plus" />
@@ -78,7 +80,7 @@
                 <table class="min-w-full">
                     @include($this->settings['views']['table_header'])
 
-                    <tbody class="border-b divide-y divide-gray-200/60 border-gray-200/80 dark:divide-white/[0.06] dark:border-white/10">
+                    <tbody class="border-b divide-y divide-aura-hairline border-aura-hairline">
                         @foreach ($rows as $row)
                             @include($this->settings['views']['row'])
                         @endforeach
@@ -96,11 +98,15 @@
                     $plainText = fn ($html) => is_scalar($html) ? trim(html_entity_decode(strip_tags((string) $html), ENT_QUOTES)) : '';
                     $isBlank = fn ($value) => $value === null || (is_string($value) && trim(strip_tags($value)) === '' && ! str_contains($value, '<svg'));
 
-                    $mobileRows = $rows->map(function ($row) use ($visibleColumnKeys, $flattenLinks, $leadsWithTitle) {
+                    $mobileRows = $rows->map(function ($row) use ($visibleColumnKeys, $flattenLinks, $leadsWithTitle, $columnTypes, $tableModel) {
                         return [
                             'row' => $row,
                             'title' => $leadsWithTitle ? trim((string) $row->title()) : '',
-                            'displays' => $visibleColumnKeys->mapWithKeys(fn ($key) => [$key => $flattenLinks($row->display($key))]),
+                            'displays' => $visibleColumnKeys->mapWithKeys(fn ($key) => [$key => $flattenLinks(
+                                ($columnTypes[$key] ?? null) === 'Aura\\Base\\Fields\\Number'
+                                    ? \Aura\Base\Fields\Number::unitMarkup($tableModel->fieldBySlug($key) ?? [], $row->display($key))
+                                    : $row->display($key)
+                            )]),
                         ];
                     });
 
@@ -146,7 +152,7 @@
                     $pairedKeys = ($numberKey && $statusKey) ? [$statusKey, $numberKey] : [];
                 @endphp
                 {{-- Phones: one line for the record, its relations on one line when it has several, then the same two columns on every row, one per line (a status and a number share one). --}}
-                <ul class="border-t border-b divide-y divide-gray-200/60 border-gray-200/80 sm:hidden dark:divide-white/[0.06] dark:border-white/10">
+                <ul class="border-t border-b divide-y divide-aura-hairline border-aura-hairline sm:hidden">
                     @foreach ($mobileRows as $item)
                         @php
                             $row = $item['row'];
@@ -205,9 +211,7 @@
                                     @endforeach
                                 </div>
                                 @if ($rowUrl)
-                                    <svg class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                                    </svg>
+                                    <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" />
                                 @endif
                             </{{ $rowUrl ? 'a' : 'div' }}>
                         </li>

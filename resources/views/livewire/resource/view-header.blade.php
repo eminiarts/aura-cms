@@ -95,7 +95,7 @@
                     @elseif ($isEmpty)
                         <span class="aura-record-fact-value text-gray-400 dark:text-gray-500">–</span>
                     @elseif ($instance instanceof \Aura\Base\Fields\Number)
-                        <span class="aura-record-fact-number">{!! $value !!}</span>
+                        <span class="aura-record-fact-number">{!! \Aura\Base\Fields\Number::unitMarkup($fact, $value) !!}</span>
                     @else
                         <span class="aura-record-fact-value">{!! $value !!}</span>
                     @endif

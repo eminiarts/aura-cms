@@ -56,8 +56,9 @@ body {
    reserved for titles and the leading table column, 500 for labels,
    buttons and nav, 400 for everything else. */
 .aura-page-title {
-    @apply text-2xl font-semibold text-gray-900 dark:text-white;
-    letter-spacing: var(--aura-tracking-display);
+    @apply text-2xl text-gray-900 dark:text-white;
+    font-weight: 650;
+    letter-spacing: -0.022em;
 }
 
 /* Stat value (dashboard cards): 30px, 600, tabular. Color stays on the element so a calm card can mute it. */
@@ -70,6 +71,45 @@ body {
    tracking-tight (-0.025em) pinches the round letters. Applies to page titles, stat values, fact numbers. */
 :root {
     --aura-tracking-display: -0.02em;
+
+    /* Edges. --aura-edge outlines a surface (cards, tiles, record cards), --aura-hairline divides
+       inside one (table rows, section rules). Both derive from the gray palette's darkest step. */
+    --aura-edge: rgb(var(--gray-950) / 0.12);
+    --aura-hairline: rgb(var(--gray-950) / 0.08);
+
+    /* The mark: one leg of the wordmark's Λ, a 3px bar whose ends are cut at 60 degrees. It says
+       "here" (active nav item, selected row) and is the one shape that carries primary on its own. */
+    --aura-mark-clip: polygon(0 5.2px, 100% 0, 100% calc(100% - 5.2px), 0 100%);
+}
+
+.dark {
+    --aura-edge: rgb(255 255 255 / 0.12);
+    --aura-hairline: rgb(255 255 255 / 0.08);
+}
+
+.aura-mark {
+    width: 3px;
+    clip-path: var(--aura-mark-clip);
+}
+
+/* A number's unit ("CHF" in "CHF 84,500", "%" in "12%") sits a step smaller and quieter than the figure. */
+.aura-num-unit {
+    @apply font-normal text-gray-500 dark:text-gray-400;
+    font-size: 0.85em;
+    letter-spacing: 0;
+}
+
+/* Controls (inputs, selects, textareas, icon buttons drawn with rounded-lg) take the control radius
+   from Settings > Corner radius, like .aura-button. Element plus class, so an app's own .rounded-lg,
+   loaded after Aura's CSS, does not undo it. */
+:is(input, select, textarea, button).rounded-lg {
+    border-radius: var(--aura-control-radius, 0.375rem);
+}
+
+/* Native selects keep @tailwindcss/forms' position and size but draw the Λ caret (icon/caret, down).
+   Zero added specificity, so bg-none and list boxes ([multiple], [size]) keep theirs. */
+select:where(:not([multiple], [size]:not([size="1"]))) {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='-4 -4 24 24'%3e%3cpath stroke='%236b7280' stroke-linecap='butt' stroke-linejoin='miter' stroke-width='1.7' d='M4.5 4.5 8 10.5l3.5-6'/%3e%3c/svg%3e");
 }
 
 .aura-eyebrow {
@@ -112,7 +152,7 @@ body {
 .aura-tag {
     @apply inline-flex max-w-full items-center gap-1.5 whitespace-nowrap px-1.5 text-xs font-medium leading-none ring-1 ring-inset;
     height: 1.375rem;
-    border-radius: calc(var(--aura-control-radius, 0.5rem) * 0.75);
+    border-radius: calc(var(--aura-control-radius, 0.375rem) * 0.75);
 }
 
 :where(.aura-tag) {
@@ -323,10 +363,12 @@ body {
     }
 }
 
+/* Surfaces are flat: a 1px edge, no shadow (shadows stay on solid buttons and overlays). */
 .aura-card {
-    @apply p-5 bg-white rounded-xl shadow-xs ring-1 ring-gray-950/10;
+    @apply p-5 bg-white ring-1;
+    --tw-ring-color: var(--aura-edge);
     padding: var(--aura-panel-padding, 1.25rem);
-    border-radius: var(--aura-panel-radius, 0.75rem);
+    border-radius: var(--aura-panel-radius, 0.5rem);
 }
 
 /* Record page.
@@ -539,8 +581,9 @@ body {
 /* Related-record card (a BelongsTo relation on a record without lists): avatar,
    resource name, title, then up to three of the related record's own values. */
 .aura-record-card {
-    @apply block rounded-xl bg-white p-4 shadow-xs ring-1 ring-gray-950/10 transition duration-150 dark:bg-gray-800 dark:ring-white/10;
-    border-radius: var(--aura-panel-radius, 0.75rem);
+    @apply block bg-white p-4 ring-1 transition duration-150 dark:bg-gray-800;
+    --tw-ring-color: var(--aura-edge);
+    border-radius: var(--aura-panel-radius, 0.5rem);
 }
 
 /* From sm the card's values are right-aligned: a link's hover mark keeps its space at rest and would
@@ -568,7 +611,7 @@ a.aura-record-card:focus-visible {
 }
 
 /* Board (kanban). Columns have no fill: a title of dot, name and count, then cards. A card is a
-   white tile with 16px padding, a hairline ring and the smallest shadow; the ring darkens on hover.
+   white tile with 16px padding, the panel radius and the surface edge, no shadow; the edge darkens on hover.
    Title 14px at 500, body and meta row 13px. */
 .aura-board-column-title {
     @apply flex items-center gap-2 px-0.5 pb-2.5 text-sm font-semibold text-gray-900 dark:text-white;
@@ -579,7 +622,9 @@ a.aura-record-card:focus-visible {
 }
 
 .aura-board-card {
-    @apply block rounded-lg bg-white p-4 text-[13px] leading-5 shadow-xs ring-1 ring-gray-950/[0.08] transition duration-150 dark:bg-gray-800 dark:ring-white/10;
+    @apply block bg-white p-4 text-[13px] leading-5 ring-1 transition duration-150 dark:bg-gray-800;
+    --tw-ring-color: var(--aura-edge);
+    border-radius: var(--aura-panel-radius, 0.5rem);
 }
 
 a.aura-board-card:hover {
@@ -608,9 +653,12 @@ a.aura-board-card:focus-visible {
 
 /* Media tile (attachments grid, media library). The hairline sits in an overlay above the image
    (an inset box-shadow on the box would hide under the <img>), so image and placeholder tiles get
-   the same edge; selected tiles draw a 2px primary ring inside the edge. No shadow, no zoom. */
+   the same edge; selected tiles draw a 2px primary ring inside the edge. No shadow, no zoom. The
+   ring takes the radius of the tile box it sits in. */
 .aura-tile-ring {
-    @apply pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-gray-950/[0.08] transition duration-150 dark:ring-white/10;
+    @apply pointer-events-none absolute inset-0 ring-1 ring-inset transition duration-150;
+    --tw-ring-color: var(--aura-edge);
+    border-radius: inherit;
 }
 
 @media (hover: hover) {
@@ -632,7 +680,7 @@ a.aura-board-card:focus-visible {
 }
 
 .dark .aura-card {
-    @apply bg-gray-800 ring-white/10;
+    @apply bg-gray-800;
 }
 
 /* Phones: a 12px card inset plus the 8px field gutter puts titles and
@@ -644,16 +692,17 @@ a.aura-board-card:focus-visible {
 }
 
 .aura-card-small {
-    @apply p-2 bg-white rounded-lg shadow-xs ring-1 ring-gray-950/10;
+    @apply p-2 bg-white ring-1;
+    --tw-ring-color: var(--aura-edge);
     padding: var(--aura-panel-small-padding, 0.5rem);
-    border-radius: var(--aura-control-radius, 0.5rem);
+    border-radius: var(--aura-control-radius, 0.375rem);
 }
 .dark .aura-card-small {
-    @apply bg-gray-800 ring-white/10;
+    @apply bg-gray-800;
 }
 
 .aura-button {
-    border-radius: var(--aura-control-radius, 0.5rem);
+    border-radius: var(--aura-control-radius, 0.375rem);
 }
 
 .aura-sidebar-item,
@@ -662,7 +711,7 @@ a.aura-board-card:focus-visible {
 .aura-sidebar-dropdown-collapsed,
 .aura-sidebar-search,
 .aura-sidebar-toggle {
-    border-radius: var(--aura-control-radius, 0.5rem);
+    border-radius: var(--aura-control-radius, 0.375rem);
 }
 
 .aura-sidebar .aura-sidebar-item,
@@ -1213,34 +1262,49 @@ a.aura-board-card:focus-visible {
 .aura-sidebar-type-primary .aura-sidebar-item {
     @apply text-white/80 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
 }
-/* Active item, every sidebar type: a 2px hairline on the left edge plus a tint of the accent
-   (white on the primary sidebar). The tint is the one place the sidebar carries the primary color. */
+/* Active item, every sidebar type: the mark (one Λ leg, see --aura-mark-clip) on the left edge plus a
+   tint. The mark carries the accent: white on the primary sidebar, primary-600 on the light one,
+   primary-400 on the dark one. */
+.aura-sidebar-item.is-active {
+    position: relative;
+}
+.aura-sidebar-item.is-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.375rem;
+    bottom: 0.375rem;
+    width: 3px;
+    clip-path: var(--aura-mark-clip);
+}
+
 .aura-sidebar-type-primary .aura-sidebar-item.is-active {
-    @apply relative text-white bg-white/15 hover:bg-white/15;
+    @apply text-white bg-white/15 hover:bg-white/15;
 }
 .aura-sidebar-type-primary .aura-sidebar-item.is-active::before {
-    content: "";
-    @apply absolute left-0 inset-y-1.5 w-0.5 rounded-full bg-white;
+    @apply bg-white;
 }
 
 .aura-sidebar-type-light .aura-sidebar-item {
     @apply text-gray-600 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-light .aura-sidebar-item.is-active {
-    @apply relative text-primary-700 bg-primary-50 hover:bg-primary-50;
+    @apply text-primary-700 bg-primary-50 hover:bg-primary-50;
 }
 .aura-sidebar-type-light .aura-sidebar-item.is-active::before {
-    content: "";
-    @apply absolute left-0 inset-y-1.5 w-0.5 rounded-full bg-primary-600;
+    @apply bg-primary-600;
 }
 
-/* Dark sidebar: one quiet active state, a white tint with white text and the icon in primary (no
-   edge hairline, no primary fill), so the current item reads as "here", not as a second button. */
+/* Dark sidebar: a white tint with white text, the icon and the mark in primary-400 (no primary fill),
+   so the current item reads as "here", not as a second button. */
 .aura-sidebar-type-dark .aura-sidebar-item {
     @apply text-gray-300 bg-transparent hover:text-white hover:bg-white/[0.06] focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-item.is-active {
     @apply text-white bg-white/10 hover:bg-white/10;
+}
+.aura-sidebar-type-dark .aura-sidebar-item.is-active::before {
+    @apply bg-primary-400;
 }
 
 /* Dark */
@@ -1248,22 +1312,20 @@ a.aura-board-card:focus-visible {
     @apply dark:text-white/80 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
 }
 .aura-sidebar-darkmode-type-primary .aura-sidebar-item.is-active {
-    @apply dark:relative dark:text-white dark:bg-white/15 dark:hover:bg-white/15;
+    @apply dark:text-white dark:bg-white/15 dark:hover:bg-white/15;
 }
 .aura-sidebar-darkmode-type-primary .aura-sidebar-item.is-active::before {
-    content: "";
-    @apply dark:absolute dark:left-0 dark:inset-y-1.5 dark:w-0.5 dark:rounded-full dark:bg-white;
+    @apply dark:bg-white;
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-item {
     @apply dark:text-gray-600 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-item.is-active {
-    @apply dark:relative dark:text-primary-700 dark:bg-primary-50 dark:hover:bg-primary-50;
+    @apply dark:text-primary-700 dark:bg-primary-50 dark:hover:bg-primary-50;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-item.is-active::before {
-    content: "";
-    @apply dark:absolute dark:left-0 dark:inset-y-1.5 dark:w-0.5 dark:rounded-full dark:bg-primary-600;
+    @apply dark:bg-primary-600;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-item {
@@ -1271,6 +1333,9 @@ a.aura-board-card:focus-visible {
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-item.is-active {
     @apply dark:text-white dark:bg-white/10 dark:hover:bg-white/10;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-item.is-active::before {
+    @apply dark:bg-primary-400;
 }
 
 /* .aura-sidebar-badge — theme-aware nav badge pill.

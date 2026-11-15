@@ -1,6 +1,6 @@
 @props(['cols' => 'full'])
 
-<div {{ $attributes->merge(['class' => 'col-span-12 rounded-xl bg-white dark:bg-gray-800 shadow-xs ring-1 ring-gray-950/10 dark:ring-white/10']) }}>
+<div {{ $attributes->merge(['class' => 'col-span-12 rounded-panel bg-white dark:bg-gray-800 ring-1 ring-aura-edge']) }}>
     <div class="flex flex-col items-center px-6 py-14 text-center">
         <div class="p-3 rounded-xl bg-primary-50 ring-1 ring-inset ring-primary-600/10 dark:bg-primary-900/50 dark:ring-primary-400/10">
             <svg class="size-7 text-primary-600 dark:text-primary-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">

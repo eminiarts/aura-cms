@@ -116,9 +116,7 @@
                         :class="value ? '' : 'text-gray-400 dark:text-gray-500'"
                         class="truncate"></span>
 
-                    <svg class="size-4 shrink-0 text-gray-400 dark:text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                        <path d="M4.25 6.25 8 10l3.75-3.75" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
+                    <x-aura::icon.caret direction="down" class="size-4 shrink-0 text-gray-400 dark:text-gray-500" />
                 </button>
 
                 <ul x-listbox:options x-transition.origin.top.right x-cloak

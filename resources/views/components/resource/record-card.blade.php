@@ -31,9 +31,7 @@
             @endif
         </div>
         @if ($url)
-            <svg class="w-4 h-4 text-gray-300 transition-colors duration-150 shrink-0 group-hover:text-gray-500 dark:text-gray-600 dark:group-hover:text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M6 3.5 10.5 8 6 12.5" />
-            </svg>
+            <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-300 transition-colors duration-150 shrink-0 group-hover:text-gray-500 dark:text-gray-600 dark:group-hover:text-gray-400" />
         @endif
     </div>
 

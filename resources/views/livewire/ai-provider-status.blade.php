@@ -6,7 +6,7 @@
     @endif
 
     {{-- A card in the shared look: section title and description, then one row per provider. --}}
-    <div class="overflow-hidden bg-white rounded-xl ring-1 shadow-xs ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10" style="border-radius: var(--aura-panel-radius, 0.75rem)">
+    <div class="overflow-hidden bg-white rounded-panel ring-1 ring-aura-edge dark:bg-gray-800">
         <div class="px-5 py-4 border-b border-gray-950/[0.06] dark:border-white/10">
             <h2 class="aura-section-title">{{ __('Configured providers') }}</h2>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">

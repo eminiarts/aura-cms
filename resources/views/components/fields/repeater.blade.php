@@ -12,7 +12,7 @@ if (optional($this)->model && isset($field['get']) && $field['get'] instanceof \
 <x-aura::fields.wrapper :field="$field">
 
     <div class="flex flex-col">
-        <ul role="list" class="overflow-hidden border divide-y divide-gray-100 dark:divide-gray-700 sm:rounded-xl border-gray-500/30 dark:border-gray-700">
+        <ul role="list" class="overflow-hidden border divide-y divide-gray-100 dark:divide-gray-700 sm:rounded-panel border-gray-500/30 dark:border-gray-700">
         @if(optional($values) && $values)
             {{-- @dump($this->form, $field, $values, $field['field']->transform($field, $values)) --}}
             @foreach($field['field']->transform($field, $values) as $key => $group)

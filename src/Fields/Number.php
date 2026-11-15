@@ -189,6 +189,33 @@ class Number extends Field
         return $value;
     }
 
+    /**
+     * Mark the unit of a displayed value ("CHF" in "CHF 84,500") as .aura-num-unit, for views that show
+     * the value as a figure (table cell, record fact, view value). display() stays plain text: it feeds
+     * exports, search and titles too. Leaves anything that does not start or end with the unit alone.
+     *
+     * @param  array<string, mixed>  $field
+     */
+    public static function unitMarkup(array $field, mixed $display): mixed
+    {
+        if (! is_string($display) || $display === '') {
+            return $display;
+        }
+
+        $prefix = (string) ($field['prefix'] ?? '');
+        $suffix = (string) ($field['suffix'] ?? '');
+
+        if ($prefix !== '' && str_starts_with($display, $prefix)) {
+            $display = '<span class="aura-num-unit">'.$prefix.'</span>'.substr($display, strlen($prefix));
+        }
+
+        if ($suffix !== '' && str_ends_with($display, $suffix)) {
+            $display = substr($display, 0, -strlen($suffix)).'<span class="aura-num-unit">'.$suffix.'</span>';
+        }
+
+        return $display;
+    }
+
     public function value($value)
     {
         return (int) $value;

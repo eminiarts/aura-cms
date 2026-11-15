@@ -28,11 +28,11 @@
 
             <span class="flex items-center justify-center w-3.5 h-3.5 shrink-0 {{ $alignRight ? 'order-first -mr-0.5' : '-ml-0.5' }}" aria-hidden="true">
                 @if ($direction === 'asc' || $direction === 'desc')
-                    {{-- Active sort: one arrow that flips via rotation --}}
-                    <svg class="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 transition-transform duration-200 {{ $direction === 'desc' ? 'rotate-180' : '' }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.5v-9M4.5 7 8 3.5 11.5 7" /></svg>
+                    {{-- Active sort: one arrow with the caret's Λ head (60 degrees, mitered), flipped via rotation --}}
+                    <svg class="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 transition-transform duration-200 {{ $direction === 'desc' ? 'rotate-180' : '' }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter"><path d="M8 13.5V5M5.1 8.5 8 3.5l2.9 5" /></svg>
                 @else
                     {{-- Unsorted: muted arrow revealed on hover --}}
-                    <svg class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity duration-150" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.5v-9M4.5 7 8 3.5 11.5 7" /></svg>
+                    <svg class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity duration-150" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter"><path d="M8 13.5V5M5.1 8.5 8 3.5l2.9 5" /></svg>
                 @endif
             </span>
         </button>

@@ -34,44 +34,99 @@
         </script>
     @endif
 
-    <div class="isolate relative bg-bottom bg-no-repeat bg-cover"
-        @if ($loginBgUrl && $loginBgDarkUrl)
-            style="background-image: url('{{ $loginBgUrl }}');"
-            data-darkmode-image="{{ $loginBgDarkUrl }}"
-        @elseif ($loginBgUrl)
-            style="background-image: url('{{ $loginBgUrl }}');"
-        @elseif ($loginBgDarkUrl)
-            style="background-image: url('{{ $loginBgDarkUrl }}');"
-        @endif
-    >
-        @unless ($hasCustomBg)
-            <div aria-hidden="true" class="overflow-hidden absolute inset-0 -z-10 pointer-events-none">
-                <div class="absolute inset-x-0 top-0 h-96 bg-gradient-to-b to-transparent from-white dark:from-white/[0.04]"></div>
-                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[64rem] h-[32rem] rounded-full opacity-60 blur-3xl bg-gradient-to-b from-primary-100/60 to-transparent dark:from-primary-500/[0.07] dark:opacity-100"></div>
-            </div>
-        @endunless
+    @if ($hasCustomBg)
+        <div class="isolate relative bg-bottom bg-no-repeat bg-cover"
+            @if ($loginBgUrl && $loginBgDarkUrl)
+                style="background-image: url('{{ $loginBgUrl }}');"
+                data-darkmode-image="{{ $loginBgDarkUrl }}"
+            @elseif ($loginBgUrl)
+                style="background-image: url('{{ $loginBgUrl }}');"
+            @elseif ($loginBgDarkUrl)
+                style="background-image: url('{{ $loginBgDarkUrl }}');"
+            @endif
+        >
+            <main class="flex relative flex-col justify-center items-center px-6 py-12 min-h-screen">
+                <div class="w-full sm:max-w-md">
+                    <div class="flex justify-center">
+                        <a href="/" class="block w-32 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                            <x-dynamic-component :component="config('aura.views.logo')" />
+                        </a>
+                    </div>
 
-        <main class="flex relative flex-col justify-center items-center px-6 py-12 min-h-screen">
-            <div class="w-full sm:max-w-md">
-                <div class="flex justify-center">
-                    <a href="/" class="block w-32 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
-                        <x-dynamic-component :component="config('aura.views.logo')" />
+                    <div class="mt-8 w-full px-6 py-8 sm:px-10 sm:py-10 rounded-2xl ring-1 backdrop-blur-xl bg-white/95 ring-gray-950/10 shadow-xl shadow-gray-950/[0.08] dark:bg-gray-900/90 dark:ring-white/10 dark:shadow-black/40">
+                        {{ $slot }}
+                    </div>
+
+                    <p class="mt-8 text-xs text-center text-gray-400 dark:text-gray-500">
+                        &copy; {{ date('Y') }} {{ config('app.name') }}
+                    </p>
+                </div>
+            </main>
+        </div>
+    @else
+        @php
+            // From lg the page is split: a brand panel in the sidebar's own colors (sidebar type and its
+            // dark-mode type from Settings) and the form beside it, no card. Below lg: wordmark, then form.
+            $themeSettings = app('aura')::getOption('settings') ?? [];
+            $sidebarType = $themeSettings['sidebar-type'] ?? config('aura.theme.sidebar-type', 'dark');
+            $sidebarDarkType = $themeSettings['sidebar-darkmode-type'] ?? config('aura.theme.sidebar-darkmode-type', 'dark');
+            $panelOnLight = $sidebarType === 'light';
+            $panelOnLightDark = $sidebarDarkType === 'light';
+            // The Λ outline repeats Aura's own wordmark: with a custom logo it would be a stranger's mark.
+            $customLogo = config('aura.views.logo') !== 'aura::application-logo'
+                || filled($themeSettings['logo'] ?? null)
+                || filled($themeSettings['logo-darkmode'] ?? null);
+        @endphp
+
+        <div class="min-h-screen bg-white lg:grid lg:grid-cols-12 dark:bg-gray-950">
+            <aside class="hidden lg:block lg:col-span-5 aura-sidebar-type-{{ $sidebarType }} aura-sidebar-darkmode-type-{{ $sidebarDarkType }}">
+                <div class="flex overflow-hidden relative flex-col justify-between p-10 h-full aura-sidebar-bg">
+                    @php
+                        $wordmarkColor = ($panelOnLight ? 'text-gray-900' : 'text-white').' '.($panelOnLightDark ? 'dark:text-gray-900' : 'dark:text-white');
+                    @endphp
+                    <a href="/" class="relative block w-36 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                        <x-dynamic-component :component="config('aura.views.logo')" class="block w-full h-auto {{ $wordmarkColor }}" />
+                    </a>
+
+                    @unless ($customLogo)
+                        {{-- One Λ of the wordmark, outlined at 1px and cropped by the panel's corner. --}}
+                        <svg @class([
+                                'absolute -right-32 -bottom-24 w-[36rem] pointer-events-none',
+                                $panelOnLight ? 'stroke-gray-950/10' : 'stroke-white/10',
+                                $panelOnLightDark ? 'dark:stroke-gray-950/10' : 'dark:stroke-white/10',
+                            ]) viewBox="95 0 28 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M122.214 23.7945H115.914L111.327 15.7146L108.827 11.1611L106.328 15.7146L103.418 20.7817L101.74 23.8287L95.4406 23.7945L108.827 0.17111L122.214 23.7945Z" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linejoin="miter" />
+                        </svg>
+                    @endunless
+
+                    <p @class([
+                        'relative text-xs',
+                        $panelOnLight ? 'text-gray-500' : 'text-white/60',
+                        $panelOnLightDark ? 'dark:text-gray-500' : 'dark:text-white/60',
+                    ])>
+                        &copy; {{ date('Y') }} {{ config('app.name') }}
+                    </p>
+                </div>
+            </aside>
+
+            <main class="flex flex-col px-6 py-6 min-h-screen sm:px-10 sm:py-8 lg:col-span-7">
+                <div class="lg:hidden">
+                    <a href="/" class="block w-28 rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                        <x-dynamic-component :component="config('aura.views.logo')" class="block w-full h-auto text-gray-900 dark:text-white" />
                     </a>
                 </div>
 
-                <div @class([
-                    'mt-8 w-full px-6 py-8 sm:px-10 sm:py-10 rounded-2xl ring-1',
-                    'bg-white ring-gray-950/10 shadow-xl shadow-gray-950/[0.04] dark:bg-gray-900 dark:ring-white/10 dark:shadow-black/30' => ! $hasCustomBg,
-                    'backdrop-blur-xl bg-white/95 ring-gray-950/10 shadow-xl shadow-gray-950/[0.08] dark:bg-gray-900/90 dark:ring-white/10 dark:shadow-black/40' => $hasCustomBg,
-                ])>
-                    {{ $slot }}
+                <div class="flex flex-1 justify-center items-start pt-14 pb-12 lg:items-center lg:py-12">
+                    <div class="w-full max-w-sm">
+                        {{ $slot }}
+                    </div>
                 </div>
 
-                <p class="mt-8 text-xs text-center text-gray-400 dark:text-gray-500">
+                <p class="text-xs text-gray-400 lg:hidden dark:text-gray-500">
                     &copy; {{ date('Y') }} {{ config('app.name') }}
                 </p>
-            </div>
-        </main>
-    </div>
+            </main>
+        </div>
+    @endif
 </body>
 </html>

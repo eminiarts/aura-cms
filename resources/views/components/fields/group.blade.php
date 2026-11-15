@@ -23,7 +23,7 @@ $model = $this->model;
 <div class="px-2" id="resource-field-{{ Str::slug(optional($field)['slug']) }}-wrapper">
   <div @class([
     'p-0' => ($field['variant'] ?? null) !== 'section',
-    'p-4 mb-6 rounded-xl border border-gray-200/80 bg-gray-50/60 dark:border-gray-700/80 dark:bg-gray-900/40' => ($field['variant'] ?? null) === 'section',
+    'p-4 mb-6 rounded-panel border border-gray-200/80 bg-gray-50/60 dark:border-gray-700/80 dark:bg-gray-900/40' => ($field['variant'] ?? null) === 'section',
   ])>
     @if(($field['variant'] ?? null) === 'section')
       <div class="px-2 mb-4">

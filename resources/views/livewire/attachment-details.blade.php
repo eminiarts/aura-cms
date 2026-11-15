@@ -73,7 +73,7 @@
                             class="p-1.5 text-gray-500 rounded-md hover:text-gray-900 hover:bg-gray-100 disabled:opacity-40 disabled:pointer-events-none dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800"
                             aria-label="{{ __('Previous attachment') }}"
                         >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
+                            <x-aura::icon.caret direction="left" class="w-5 h-5" />
                         </button>
                         <button
                             type="button"
@@ -82,7 +82,7 @@
                             class="p-1.5 text-gray-500 rounded-md hover:text-gray-900 hover:bg-gray-100 disabled:opacity-40 disabled:pointer-events-none dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800"
                             aria-label="{{ __('Next attachment') }}"
                         >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+                            <x-aura::icon.caret direction="right" class="w-5 h-5" />
                         </button>
                     @endif
 

@@ -17,6 +17,10 @@
         // A boolean reads as a word on the record page: a small check and "Yes", or a muted "No". Lists keep
         // Boolean::display()'s icons; a field with its own display callback keeps that.
         $isBoolean = $instance instanceof \Aura\Base\Fields\Boolean && ! isset($field['display']);
+        // A number's unit (prefix or suffix) reads quieter than the figure.
+        if ($instance instanceof \Aura\Base\Fields\Number) {
+            $value = \Aura\Base\Fields\Number::unitMarkup($field, $value);
+        }
     @endphp
     @if ($isBoolean)
         @if ($this->model->{$field['slug']})

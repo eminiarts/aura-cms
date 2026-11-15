@@ -18,7 +18,7 @@
 
         @continue(! ($column['visible'] ?? true) || (! $showEmptyColumns && $columnRows->isEmpty()))
 
-        <section class="kanban-column w-80 flex-shrink-0 rounded-xl bg-gray-950/[0.04] p-4 dark:bg-white/5"
+        <section class="kanban-column w-80 flex-shrink-0 rounded-panel bg-gray-950/[0.04] p-4 dark:bg-white/5"
             data-kanban-column="{{ $columnKey }}"
             wire:key="kanban-column-{{ $model->getType() }}-{{ $columnKey }}">
             <h3 class="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">

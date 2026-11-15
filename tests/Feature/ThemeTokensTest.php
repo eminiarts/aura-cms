@@ -69,7 +69,7 @@ test('expert tokens override presets only while expert mode is enabled', functio
 
     $settings['appearance-expert-mode'] = false;
 
-    expect(ThemeTokens::design($settings)['--aura-panel-radius'])->toBe('0.75rem')
+    expect(ThemeTokens::design($settings)['--aura-panel-radius'])->toBe('0.5rem')
         ->and(ThemeTokens::colors($settings, 'light')['background'])->toBe('255 255 255')
         ->and(ThemeTokens::sidebarColors($settings, 'light'))->toBe([]);
 });

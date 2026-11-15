@@ -442,9 +442,7 @@
                     </template>
 
                     <div class="flex absolute inset-y-0 right-0 items-center pr-2.5 pointer-events-none shrink-0" aria-hidden="true">
-                        <svg class="text-gray-400 size-4 dark:text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M4.25 6.25 8 10l3.75-3.75" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
+                        <x-aura::icon.caret direction="down" class="text-gray-400 size-4 dark:text-gray-500" />
                     </div>
                 </div>
             </button>

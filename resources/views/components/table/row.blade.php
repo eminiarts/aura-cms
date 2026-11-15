@@ -25,8 +25,9 @@
 
     @if ($this->settings['selectable'])
         <x-aura::table.cell class="relative pr-0">
+            {{-- A selected row carries the mark (one Λ leg), like the active sidebar item. --}}
             <span x-show="selected.includes('{{ $row->id }}')" x-cloak
-                  class="absolute inset-y-0 left-0 w-0.5 bg-primary-600" aria-hidden="true"></span>
+                  class="absolute inset-y-2 left-0 aura-mark bg-primary-600 dark:bg-primary-400" aria-hidden="true"></span>
             <x-aura::input.checkbox
     id="checkbox_{{ $row->id }}"
     x-bind:checked="selected.includes({{ $row->id }})"
@@ -47,13 +48,17 @@
                 // Empty cells show the same dash as empty view values.
                 $displayIsEmpty = $display === null || $display === '' || (is_string($display) && trim($display) === '');
                 $columnType = $columnTypes[$key] ?? null;
+                // A number's unit (prefix or suffix) reads quieter than the figure.
+                if ($columnType === 'Aura\\Base\\Fields\\Number') {
+                    $display = \Aura\Base\Fields\Number::unitMarkup(($tableModel ?? $this->model)->fieldBySlug($key) ?? [], $display);
+                }
                 $cellClass = match ($columnType) {
                     'Aura\\Base\\Fields\\Number' => 'text-right whitespace-nowrap',
                     'Aura\\Base\\Fields\\Phone', 'Aura\\Base\\Fields\\Date', 'Aura\\Base\\Fields\\Datetime' => 'whitespace-nowrap',
                     default => '',
                 };
             @endphp
-            <td class="px-4 py-3 text-sm {{ $cellClass }} {{ $firstVisibleColumn ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300' }}">
+            <td class="px-4 py-[var(--aura-row-padding-y,0.625rem)] text-sm {{ $cellClass }} {{ $firstVisibleColumn ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300' }}">
                 @if ($displayIsEmpty)
                     <span class="text-gray-400 dark:text-gray-500">–</span>
                 @elseif ($firstVisibleColumn)

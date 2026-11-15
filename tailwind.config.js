@@ -62,6 +62,9 @@ module.exports = {
                     danger: withOpacityValue('--aura-color-danger'),
                     white: withOpacityValue('--aura-color-white'),
                     black: withOpacityValue('--aura-color-black'),
+                    // Surface outline and inner divider (app.css :root), already carrying their alpha.
+                    edge: 'var(--aura-edge)',
+                    hairline: 'var(--aura-hairline)',
                 },
                 sidebar: {
                     'bg' : withOpacityValue('--sidebar-bg'),
@@ -106,6 +109,11 @@ module.exports = {
             },
             fontSize: {
                 '2xs': '0.67rem',
+            },
+            // The theme radii (Settings > Corner radius): rounded-panel for surfaces, rounded-control for controls.
+            borderRadius: {
+                panel: 'var(--aura-panel-radius, 0.5rem)',
+                control: 'var(--aura-control-radius, 0.375rem)',
             },
             boxShadow: {
                 'xs': '0px 1px 2px rgba(0, 8, 24, 0.05)',

@@ -1,7 +1,8 @@
 @props(['stats', 'calm' => false])
 
 {{-- One anatomy for every card: label and icon, the total with a 30-day trend beside it, then up to two
-     quiet lines: "8 added in 30 days" (left out when it equals the total, all records are new) and the
+     quiet lines: "8 added in 30 days" (the count in primary, a live figure; left out when it equals the
+     total, all records are new) and the
      change against the 30 days before, "+33% vs previous 30 days", in the index widget strip's colored
      text (only with a previous period to compare against).
      The trend is the running total of new records. It is a row decision: drawn on every card when
@@ -46,7 +47,7 @@
         }
     @endphp
     <a href="{{ $stat['url'] }}" wire:navigate
-        class="flex relative flex-col col-span-6 p-4 min-w-0 rounded-xl ring-1 shadow-xs transition duration-150 sm:p-5 xl:col-span-3 bg-white dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10 hover:ring-gray-950/20 dark:hover:ring-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 group" data-stat-card>
+        class="flex relative flex-col col-span-6 p-4 min-w-0 rounded-panel ring-1 transition duration-150 sm:p-5 xl:col-span-3 bg-white dark:bg-gray-800 ring-aura-edge hover:ring-gray-950/20 dark:hover:ring-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 group" data-stat-card>
         <div class="flex gap-3 justify-between items-center">
             <span class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">{{ $stat['name'] }}</span>
             <span class="text-gray-400 transition-colors duration-150 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 [&>svg]:size-4 shrink-0" aria-hidden="true">
@@ -74,7 +75,7 @@
                 @if ($showAdded)
                     <p class="truncate {{ $current > 0 ? 'text-gray-600 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400' }}">
                         @if ($current > 0)
-                            <span class="font-medium tabular-nums text-gray-900 dark:text-gray-100">{{ number_format($current) }}</span> {{ __('added in 30 days') }}
+                            <span class="font-medium tabular-nums text-primary-700 dark:text-primary-300">{{ number_format($current) }}</span> {{ __('added in 30 days') }}
                         @else
                             {{ __('None added in 30 days') }}
                         @endif

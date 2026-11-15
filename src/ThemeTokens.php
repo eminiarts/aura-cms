@@ -155,12 +155,14 @@ final class ThemeTokens
                 '--aura-panel-small-padding' => '0.375rem',
                 '--aura-layout-gap' => '1rem',
                 '--aura-section-gap' => '0.75rem',
+                '--aura-row-padding-y' => '0.375rem',
             ],
             default => [
                 '--aura-panel-padding' => '1.25rem',
                 '--aura-panel-small-padding' => '0.5rem',
                 '--aura-layout-gap' => '1.5rem',
                 '--aura-section-gap' => '1rem',
+                '--aura-row-padding-y' => '0.625rem',
             ],
         };
 
@@ -173,9 +175,10 @@ final class ThemeTokens
                 '--aura-panel-radius' => '0.375rem',
                 '--aura-control-radius' => '0.25rem',
             ],
+            // Rounded: 8px panels, 6px controls (chips take three quarters of the control radius).
             default => [
-                '--aura-panel-radius' => '0.75rem',
-                '--aura-control-radius' => '0.5rem',
+                '--aura-panel-radius' => '0.5rem',
+                '--aura-control-radius' => '0.375rem',
             ],
         };
 
