@@ -217,17 +217,19 @@
 
         <div class="mt-4">
 
-            {{-- Toolbar. Phones: three rows, the full-width search, the type segment on its own row
-                 (scrolls sideways when it is wider than the phone), then the date filter left and
-                 the view switch, Filters, Columns and Actions right. From sm the wrappers dissolve
-                 (sm:contents) into one wrapping row: search and quick filters left, the controls
-                 right (sm:order keeps view switch, Columns, Filters, Actions). The type set stays on
-                 one line: when the segmented control no longer fits (the toolbar wraps), it
-                 collapses into a dropdown; phones keep the segment and scroll it instead. --}}
+            {{-- Toolbar, one vocabulary with the media library grid page (plugins): a 14rem search, the type
+                 segment, the date filter, then from the right edge inwards the view switch, Actions, Filters
+                 and Columns. Phones: the full-width search, then the type segment (scrolls sideways, 16px end
+                 padding) with the view switch and one options button beside it; the options button opens a
+                 row with the date filter, Columns, Filters and Actions. From sm the wrappers dissolve
+                 (sm:contents) into one wrapping row (sm:order and a spacer put the controls right). The
+                 type set stays on one line: when the segmented control no longer fits (the toolbar wraps),
+                 it collapses into a dropdown; phones keep the segment and scroll it instead. --}}
             <div
-                class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
+                class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-2 sm:items-center"
                 x-data="{
                     compact: false,
+                    tools: false,
                     wrapped(el) { return !!el && el.offsetHeight > 52 },
                     check() {
                         if (window.matchMedia('(max-width: 639px)').matches) {
@@ -263,8 +265,8 @@
             >
 
                 @if ($this->settings['search'])
-                    {{-- The search of the other index pages: same field, up to 24rem wide. --}}
-                    <div class="w-full sm:flex-1 sm:min-w-[14rem] md:max-w-sm">
+                    {{-- The media pages' search: 14rem from sm, as on the media library grid page. --}}
+                    <div class="w-full sm:w-56 sm:shrink-0">
                         <label for="table-search" class="sr-only">{{ __('Search') }}</label>
                         <div class="relative">
                             <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
@@ -282,23 +284,28 @@
                     </div>
                 @endif
 
-                {{-- Phone row 2: the type segment, scrolling sideways. The 1px vertical padding keeps
-                     the buttons' rings inside the scroll box. --}}
-                <div class="flex py-px -my-px min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:contents" data-media-quick-filters>
-                        @php
-                            $activeType = $this->quickFilters['type'] ?? null;
-                            $activeMonth = $this->quickFilters['month'] ?? null;
-                            $uploadMonths = $model::uploadMonths();
+                @php
+                    $activeType = $this->quickFilters['type'] ?? null;
+                    $activeMonth = $this->quickFilters['month'] ?? null;
+                    $uploadMonths = $model::uploadMonths();
 
-                            $segmentBase = 'px-3 py-1 text-sm font-medium rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
-                            $segmentActive = 'bg-white text-gray-900 shadow-xs ring-1 ring-gray-950/[0.07] dark:bg-gray-700 dark:text-white dark:ring-white/10';
-                            $segmentIdle = 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200';
-                        @endphp
+                    $segmentBase = 'px-2.5 py-1 text-sm font-medium rounded-md whitespace-nowrap transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
+                    $segmentActive = 'bg-white text-gray-900 shadow-xs ring-1 ring-gray-950/[0.07] dark:bg-gray-700 dark:text-white dark:ring-white/10';
+                    $segmentIdle = 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200';
+                    $toolSelect = 'h-9 pl-3 pr-9 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700';
+                    $hasTools = count($uploadMonths) || ($this->settings['table_before'] && ! empty($this->userFilters)) || $this->settings['filters']
+                        || ($this->settings['settings'] && $model->showTableSettings()) || $this->settings['bulk_actions'];
+                @endphp
 
+                {{-- Phone row 2: the type segment (scrolls sideways; the 1px vertical padding keeps the buttons'
+                     rings inside the scroll box), the view switch and the options button. --}}
+                <div class="flex gap-2 items-center min-w-0 sm:contents">
+                    <div class="flex flex-1 py-px -my-px pr-4 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:contents" data-media-quick-filters>
                         <div
                             x-ref="segment"
                             x-show="!compact"
                             class="inline-flex gap-0.5 isolate items-center p-0.5 rounded-lg shrink-0 bg-gray-950/[0.04] dark:bg-white/5"
+                            role="group" aria-label="{{ __('Media type') }}"
                         >
                             <button
                                 type="button"
@@ -330,22 +337,50 @@
                             wire:change="setQuickFilter('type', $event.target.value)"
                             data-type-dropdown
                             aria-label="{{ __('Media type') }}"
-                            class="px-3 py-1.5 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none shrink-0 border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
+                            class="shrink-0 {{ $toolSelect }}"
                         >
                             <option value="" @selected($activeType === null)>{{ __('All types') }}</option>
                             @foreach ($model::MEDIA_TYPES as $typeKey => $typeLabel)
                                 <option value="{{ $typeKey }}" @selected($activeType === $typeKey)>{{ __($typeLabel) }}</option>
                             @endforeach
                         </select>
+                    </div>
+
+                    @if ($this->settings['settings'] || $this->settings['filters'])
+                        {{-- The view switch closes the row on the right, as on the media library grid page. --}}
+                        <div class="shrink-0 sm:order-5">
+                            @include('aura::components.table.switch-view')
+                        </div>
+                    @endif
+
+                    @if ($hasTools)
+                        <button type="button" x-on:click="tools = ! tools" x-bind:aria-expanded="tools ? 'true' : 'false'"
+                            class="inline-flex relative justify-center items-center w-9 h-9 text-gray-500 bg-white rounded-lg ring-1 shadow-xs transition-colors duration-150 shrink-0 sm:hidden ring-gray-950/10 hover:text-gray-900 dark:bg-gray-800 dark:text-gray-400 dark:ring-white/10 dark:hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                            x-bind:class="{ 'text-gray-900 dark:text-white': tools }"
+                            title="{{ __('Filters and options') }}" aria-label="{{ __('Filters and options') }}" data-media-tools-toggle>
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                                <path d="M3 7h11M18 7h3M3 17h3M10 17h11" />
+                                <circle cx="16" cy="7" r="2" />
+                                <circle cx="8" cy="17" r="2" />
+                            </svg>
+                            @if ($activeMonth)
+                                <span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary-500" aria-hidden="true"></span>
+                            @endif
+                        </button>
+                    @endif
                 </div>
 
-                {{-- Phone row 3: date left, the view and list controls right. --}}
-                <div class="flex gap-2 items-center min-w-0 sm:contents">
+                {{-- Pushes the list controls to the right edge from sm. --}}
+                <div class="hidden sm:block sm:flex-1 sm:order-1" aria-hidden="true"></div>
+
+                {{-- Phone row 3, behind the options button: date left, Columns, Filters and Actions right. --}}
+                <div class="flex gap-2 items-center min-w-0 max-sm:hidden sm:contents" x-bind:class="{ 'max-sm:hidden': ! tools }" data-media-tools>
                         @if (count($uploadMonths))
                             <select
                                 wire:change="setQuickFilter('month', $event.target.value)"
                                 data-month-filter
-                                class="px-3 py-1.5 min-w-[7.5rem] text-sm text-gray-600 bg-white rounded-lg border transition appearance-none max-sm:flex-1 sm:shrink-0 border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
+                                aria-label="{{ __('Upload date') }}"
+                                class="min-w-[7.5rem] max-sm:flex-1 sm:shrink-0 {{ $toolSelect }}"
                             >
                                 <option value="" @selected($activeMonth === null)>{{ __('All dates') }}</option>
                                 @foreach ($uploadMonths as $month)
@@ -366,17 +401,11 @@
                             />
                         @endif
 
-                        @if ($this->settings['settings'] || $this->settings['filters'])
-                            <div class="ml-auto shrink-0 sm:order-1">
-                                @include('aura::components.table.switch-view')
+                        {{-- The media toolbar's controls are h-9; resource tables use h-10. --}}
+                        @if ($this->settings['filters'])
+                            <div class="shrink-0 sm:order-3">
+                                @include($this->settings['views']['filter'], ['controlHeight' => 'h-9'])
                             </div>
-
-                            {{-- The media toolbar's controls are h-9; resource tables use h-10. --}}
-                            @if ($this->settings['filters'])
-                                <div class="shrink-0 sm:order-3">
-                                    @include($this->settings['views']['filter'], ['controlHeight' => 'h-9'])
-                                </div>
-                            @endif
                         @endif
 
                     @if ($this->settings['settings'])

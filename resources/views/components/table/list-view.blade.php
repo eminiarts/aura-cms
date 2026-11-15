@@ -124,12 +124,30 @@
                         ->values();
                     $relationKeys = $relationKeys->count() > 1 ? $relationKeys : collect();
 
+                    // A Boolean column with a date column named after it ("Published" and "Published at") reads as one
+                    // state line on phones, "Published · Sep 6, 2026" or "Not published", instead of a bare check icon.
+                    $isType = fn ($key, $class) => is_string($columnTypes[$key] ?? null) && is_a($columnTypes[$key], $class, true);
+                    $columnLabel = fn ($key) => trim((string) ($this->headers[$key] ?? ''));
+                    $stateKeys = null;
+                    foreach ($visibleColumnKeys as $index => $boolKey) {
+                        if ((! $leadsWithTitle && $index === 0) || ! $isType($boolKey, \Aura\Base\Fields\Boolean::class) || $columnLabel($boolKey) === '') {
+                            continue;
+                        }
+                        $dateKey = $visibleColumnKeys->first(fn ($key) => ($isType($key, \Aura\Base\Fields\Date::class) || $isType($key, \Aura\Base\Fields\Datetime::class))
+                            && Str::startsWith(Str::lower($columnLabel($key)), Str::lower($columnLabel($boolKey)).' '));
+                        if ($dateKey) {
+                            $stateKeys = [$boolKey, $dateKey];
+                            break;
+                        }
+                    }
+
                     // The meta lines show the same columns on every row: the two most filled other columns on this page
                     // (in column order), so one row cannot show a company where the next shows a phone number.
                     // Columns the record name already contains (first and last name) and the leading column stay out.
                     $metaKeys = $visibleColumnKeys
                         ->reject(fn ($key, $index) => ! $leadsWithTitle && $index === 0)
                         ->reject(fn ($key) => $relationKeys->contains($key))
+                        ->reject(fn ($key) => in_array($key, $stateKeys ?? [], true))
                         ->reject(fn ($key) => $leadsWithTitle && $mobileRows->every(function ($item) use ($key, $plainText) {
                             $text = $plainText($item['displays'][$key]);
 
@@ -151,7 +169,7 @@
                     $statusKey = $metaKeyOfType(\Aura\Base\Fields\Status::class);
                     $pairedKeys = ($numberKey && $statusKey) ? [$statusKey, $numberKey] : [];
                 @endphp
-                {{-- Phones: one line for the record, its relations on one line when it has several, then the same two columns on every row, one per line (a status and a number share one). --}}
+                {{-- Phones: one line for the record, its relations on one line when it has several, then the same two columns on every row (a status and a number share one line), then a Boolean state with its date. --}}
                 <ul class="border-t border-b divide-y divide-aura-hairline border-aura-hairline sm:hidden">
                     @foreach ($mobileRows as $item)
                         @php
@@ -202,7 +220,9 @@
                                          onto a second line only when they do not fit (.aura-dot-list drops the dot at a line start).
                                          Blank values drop out; a row with none keeps one line as a dash. --}}
                                     @if ($metaValues->isNotEmpty())
-                                        @php($filledMeta = $metaValues->reject(fn ($value) => $isBlank($value)))
+                                        @php
+                                            $filledMeta = $metaValues->reject(fn ($value) => $isBlank($value));
+                                        @endphp
                                         <div class="mt-0.5 text-sm text-gray-500 dark:text-gray-400 [&_.aura-link]:text-inherit [&_.aura-record-link]:text-inherit" data-mobile-row-meta>
                                             @if ($filledMeta->isEmpty())
                                                 <div class="h-5 text-gray-400 dark:text-gray-500">–</div>
@@ -212,6 +232,20 @@
                                                         <span class="aura-dot-list-item"><span class="min-w-0 truncate">{!! $metaValue !!}</span></span>
                                                     @endforeach
                                                 </div>
+                                            @endif
+                                        </div>
+                                    @endif
+                                    @if ($stateKeys)
+                                        @php
+                                            [$stateBool, $stateDate] = $stateKeys;
+                                            $stateOn = (bool) $row->{$stateBool};
+                                            $stateDateText = $stateOn ? $plainText($displays[$stateDate]) : '';
+                                        @endphp
+                                        <div class="mt-0.5 text-sm text-gray-500 truncate dark:text-gray-400" data-mobile-row-state>
+                                            @if ($stateOn)
+                                                <span class="text-gray-700 dark:text-gray-300">{{ $columnLabel($stateBool) }}</span>@if ($stateDateText !== '' && $stateDateText !== '–') &middot; {{ $stateDateText }}@endif
+                                            @else
+                                                {{ __('Not :state', ['state' => Str::lower($columnLabel($stateBool))]) }}
                                             @endif
                                         </div>
                                     @endif

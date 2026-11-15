@@ -1,13 +1,15 @@
 @if ($compact)
 {{-- Compact (index strip): 12px name over a 20px value, the change as quiet colored text. --}}
-<div class="flex flex-col justify-center px-4 py-3 h-full min-w-0" @if (!$isCached) wire:init="loadWidget" @endif wire:key="value-widget-{{ $widget['slug'] ?? '' }}">
+<div class="flex flex-col justify-center px-3 py-3 h-full min-w-0 sm:px-4" @if (!$isCached) wire:init="loadWidget" @endif wire:key="value-widget-{{ $widget['slug'] ?? '' }}">
     @if($loaded)
         @php
             $hasPrevious = optional($widget)['previous'] !== false
                 && (float) str_replace("'", '', $this->values['previous'] ?? '0') != 0.0;
         @endphp
-        <span class="text-xs font-medium text-gray-500 truncate dark:text-gray-400">{{ $this->title() }}</span>
-        {{-- The change names what it compares against ("+50% vs previous 30 days"); phones put the words on a line of their own. --}}
+        {{-- Phones fit three cells to a row: the name may take two lines there. --}}
+        <span class="text-xs font-medium text-gray-500 dark:text-gray-400 line-clamp-2 sm:line-clamp-none sm:truncate">{{ $this->title() }}</span>
+        {{-- The change names what it compares against ("+50% vs previous 30 days"). Phones keep the figure only (the
+             words stay for screen readers): the range select above the strip names the period. --}}
         <div class="flex flex-wrap gap-x-2 items-baseline mt-1 min-w-0">
             <span class="text-xl font-semibold tracking-tight tabular-nums text-gray-900 shrink-0 dark:text-white">{{ $this->values['current'] ?? 'N/A' }}</span>
             @if($hasPrevious)
@@ -16,7 +18,7 @@
                     {{ $this->values['change'] >= 0 ? '+' : '' }}{{ $this->values['change'] }}%
                 </span>
                 @if ($this->comparisonLabel())
-                    <span class="min-w-0 text-xs text-gray-500 truncate max-sm:w-full dark:text-gray-400">{{ $this->comparisonLabel() }}</span>
+                    <span class="min-w-0 text-xs text-gray-500 truncate max-sm:sr-only dark:text-gray-400">{{ $this->comparisonLabel() }}</span>
                 @endif
             @endif
         </div>

@@ -64,7 +64,7 @@ document.addEventListener('livewire:init', () => {
     }
   }))
 
-  // x-file-name: a file name that does not fit loses characters from the middle of its base name and
+  // x-file-name: a file name that does not fit (one line, or --aura-file-name-lines) loses characters from the middle of its base name and
   // keeps the base's last three characters with the extension, "proposal-nort…erp.pdf": one ellipsis,
   // never right before the extension's dot ("….pdf" reads as four dots). CSS ellipsis cannot keep a
   // suffix, and a flex pair (truncated base + extension) leaves a gap after the ellipsis. The element holds
@@ -75,8 +75,15 @@ document.addEventListener('livewire:init', () => {
     let shown = full;
 
     // Sub-pixel widths: scrollWidth rounds, so a name 0.4px too wide would pass and get a second, CSS ellipsis.
+    // An element that may wrap (--aura-file-name-lines above 1, e.g. grid tiles on phones) fits when its
+    // text stays within that many lines.
     const range = document.createRange();
     const fits = () => {
+      const style = getComputedStyle(el);
+      const lines = parseFloat(style.getPropertyValue('--aura-file-name-lines')) || 1;
+      if (lines > 1) {
+        return el.scrollHeight <= parseFloat(style.lineHeight) * lines + 1;
+      }
       range.selectNodeContents(el);
       return range.getBoundingClientRect().width <= el.getBoundingClientRect().width;
     };

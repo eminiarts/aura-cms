@@ -61,9 +61,9 @@ body {
     letter-spacing: -0.022em;
 }
 
-/* Stat value (dashboard cards): 30px, 600, tabular. Color stays on the element so a calm card can mute it. */
+/* Stat value (dashboard cards): 28px, 600, tabular. Color stays on the element so a calm card can mute it. */
 .aura-stat-value {
-    @apply text-3xl font-semibold leading-none;
+    @apply text-[1.75rem] font-semibold leading-none tabular-nums;
     letter-spacing: var(--aura-tracking-display);
 }
 
@@ -760,6 +760,18 @@ a.aura-board-card:focus-visible {
 
 .aura-tile-name {
     @apply truncate text-[13px] font-medium leading-5 text-gray-900 dark:text-gray-100;
+}
+
+/* Phones: a tile name may take two lines before x-file-name shortens it in the middle (extension kept);
+   the directive reads the line count from --aura-file-name-lines. */
+@media (max-width: 639.98px) {
+    .aura-tile-name {
+        --aura-file-name-lines: 2;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        text-overflow: clip;
+        max-height: 2.5rem;
+    }
 }
 
 .aura-tile-meta {

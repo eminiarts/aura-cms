@@ -11,7 +11,8 @@
   $disabled = $field['field']->isDisabled($this->form, $field);
 
   // Options that name a color (['key', 'value', 'color']) show as tags in the trigger and the list, the
-  // same tag the board, list and record view show. Plain and grouped options keep the native select.
+  // same tag the board, list and record view show (or the field's display_view rendering, see below).
+  // Plain and grouped options keep the native select.
   $tagOptions = collect($options)->isNotEmpty()
     && collect($options)->every(fn ($option) => is_array($option) && isset($option['key'], $option['value']))
     && collect($options)->contains(fn ($option) => ! empty($option['color']));
@@ -21,7 +22,15 @@
   @if ($tagOptions)
   @php
     // The empty choice clears an optional value; a required field has nothing to clear to.
-    $choices = collect($options)->map(fn ($option) => ['key' => (string) $option['key'], 'label' => __($option['value']), 'color' => $option['color'] ?? null])->values();
+    // A field with a display_view (the board, list and record view rendering of a value, e.g. a priority's bar
+    // mark) shows that rendering in the trigger and the list too, so a value reads the same while editing.
+    $displayView = optional($field)['display_view'];
+    $choices = collect($options)->map(fn ($option) => [
+      'key' => (string) $option['key'],
+      'label' => __($option['value']),
+      'color' => $option['color'] ?? null,
+      'html' => $displayView ? trim(view($displayView, ['row' => $this->model ?? null, 'field' => $field, 'value' => $option['key']])->render()) : '',
+    ])->values();
     $keys = ($required ? collect() : collect([''])) ->merge($choices->pluck('key'))->values();
   @endphp
   <div class="relative" wire:ignore data-select-tags
@@ -55,7 +64,11 @@
       class="flex relative items-center pr-9 pl-2 w-full h-9 text-left bg-white rounded-lg ring-1 shadow-xs transition duration-150 cursor-default sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 dark:bg-gray-950/40 dark:ring-white/15 dark:hover:ring-white/25 dark:disabled:bg-gray-800/50">
       <span x-show="is('')" class="pl-1 text-base text-gray-400 truncate sm:text-sm dark:text-gray-500">{{ $placeholder }}</span>
       @foreach ($choices as $choice)
-        <span x-show="is(@js($choice['key']))" x-cloak class="aura-tag {{ $choice['color'] ? 'aura-tag-status '.$choice['color'] : '' }}">{{ $choice['label'] }}</span>
+        @if ($choice['html'] !== '')
+          <span x-show="is(@js($choice['key']))" x-cloak class="flex items-center pl-1 min-w-0 text-sm">{!! $choice['html'] !!}</span>
+        @else
+          <span x-show="is(@js($choice['key']))" x-cloak class="aura-tag {{ $choice['color'] ? 'aura-tag-status '.$choice['color'] : '' }}">{{ $choice['label'] }}</span>
+        @endif
       @endforeach
       <span class="flex absolute inset-y-0 right-0 items-center pr-2.5 pointer-events-none" aria-hidden="true">
         <x-aura::icon.caret direction="down" class="text-gray-500 size-4 dark:text-gray-400" />
@@ -82,7 +95,11 @@
         <li role="option" :aria-selected="is(@js($choice['key']))" x-on:click="choose(@js($choice['key']))" x-on:mousemove="active = {{ $position }}"
           :class="active === {{ $position }} && 'bg-gray-950/[0.04] dark:bg-white/5'"
           class="flex justify-between items-center px-2 h-8 rounded-md cursor-default select-none">
-          <span class="aura-tag {{ $choice['color'] ? 'aura-tag-status '.$choice['color'] : '' }}">{{ $choice['label'] }}</span>
+          @if ($choice['html'] !== '')
+            <span class="flex items-center min-w-0 text-sm">{!! $choice['html'] !!}</span>
+          @else
+            <span class="aura-tag {{ $choice['color'] ? 'aura-tag-status '.$choice['color'] : '' }}">{{ $choice['label'] }}</span>
+          @endif
           <svg x-show="is(@js($choice['key']))" class="text-primary-600 size-4 shrink-0 dark:text-primary-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
             <path d="m3.5 8.5 3 3 6-7" stroke-linecap="round" stroke-linejoin="round" />
           </svg>

@@ -206,7 +206,7 @@
                     ['aura-body', '.aura-body — 14px · 400 · gray-700', 'The quick brown fox jumps over the lazy dog'],
                     ['aura-meta', '.aura-meta — 12px · 400 · gray-500', 'Company · 2 minutes ago'],
                     ['aura-table-header', '.aura-table-header — 13px · 500 · gray-600 (dark gray-300), sentence case', 'Created at'],
-                    ['aura-stat-value', '.aura-stat-value — 30px · 600 · -0.02em · tabular', '84,500'],
+                    ['aura-stat-value', '.aura-stat-value — 28px · 600 · -0.02em · tabular', '84,500'],
                     ['aura-record-fact-number', '.aura-record-fact-number + .aura-num-unit — the unit at 0.85em · 400 · gray-500', '<span class="aura-num-unit">CHF</span>&nbsp;84,500'],
                     ['aura-record-meta !mt-0', '.aura-record-meta — 13px · gray-600 (dark gray-400), times and author in gray-800', 'Created <time>Nov 3, 2026</time> by <span data-record-meta-author>Bajram Emini</span> <span class="aura-record-meta-sep">&middot;</span> Updated <time>4 hours ago</time>'],
                 ] as [$classes, $label, $sample])

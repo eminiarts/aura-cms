@@ -3,6 +3,7 @@
 namespace Aura\Base\Livewire;
 
 use Aura\Base\Facades\Aura;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 class Dashboard extends Component
@@ -14,6 +15,7 @@ class Dashboard extends Component
 
         return view('aura::livewire.dashboard', [
             'stats' => $this->stats($resources),
+            'createActions' => $this->createActions($resources),
             'recentItems' => $isEmptyWorkspace ? collect() : $this->recentItems($resources),
             'recentMedia' => $this->recentMedia(),
             'isEmptyWorkspace' => $isEmptyWorkspace,
@@ -31,6 +33,25 @@ class Dashboard extends Component
             ->unique(fn ($resource) => class_basename($resource))
             ->reverse()
             ->sortBy(fn ($resource) => $resource::getSort())
+            ->values();
+    }
+
+    /**
+     * "New …" links for the stat card resources the viewer may create and that have a create page.
+     */
+    protected function createActions($resources)
+    {
+        $user = auth()->user();
+
+        return $resources->take(4)
+            ->filter(fn ($resource) => $user->can('create', $resource))
+            ->map(fn ($resource) => [
+                'label' => __('New :resource', ['resource' => Str::lower(__($resource->singularName()))]),
+                'url' => $resource->createUrl(),
+                // The viewer's own account is in every workspace, so an empty workspace does not lead with it.
+                'isUser' => $resource->getTable() === $user->getTable(),
+            ])
+            ->filter(fn ($action) => $action['url'])
             ->values();
     }
 

@@ -1,4 +1,4 @@
-@props(['cols' => null])
+@props(['cols' => null, 'create' => []])
 
 @php
     $colSpan = match($cols) {
@@ -24,13 +24,32 @@
         && app(\Aura\Base\Settings\SettingsPageAuthorizer::class)->canView($generalSettings, $user);
     $canEditTeam = $team && $user->can('update', $team);
     $canPlugins = config('aura.features.plugins') && $isSuperAdmin;
+    $hasAdmin = $canCreateResource || $canSettings || $canEditTeam || $canPlugins;
+
+    // "New …" links (label, url) lead; the admin links follow under a small "Workspace" label.
+    $create = collect($create)->filter(fn ($action) => filled($action['url'] ?? null))->values();
 @endphp
 
-@if ($canCreateResource || $canSettings || $canEditTeam || $canPlugins)
+@if ($create->isNotEmpty() || $hasAdmin)
 <div {{ $attributes->merge(['class' => trim("{$colSpan} min-w-0")]) }} data-dashboard-quick-actions>
     <h2 class="pb-2 border-b border-gray-200 aura-section-title dark:border-white/10">{{ __('Quick actions') }}</h2>
 
-    <div class="flex flex-col gap-0.5 mt-2 -mx-2">
+    @if ($create->isNotEmpty())
+        <div class="flex flex-col gap-0.5 mt-2 -mx-2" data-dashboard-create-actions>
+            @foreach ($create as $action)
+                <a href="{{ $action['url'] }}" wire:navigate class="{{ $rowClass }}">
+                    <x-aura::icon.plus class="{{ $iconClass }}" aria-hidden="true" />
+                    <span class="truncate">{{ $action['label'] }}</span>
+                </a>
+            @endforeach
+        </div>
+    @endif
+
+    @if ($hasAdmin)
+    @if ($create->isNotEmpty())
+        <p class="mt-5 mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">{{ __('Workspace') }}</p>
+    @endif
+    <div class="flex flex-col gap-0.5 -mx-2 {{ $create->isNotEmpty() ? '' : 'mt-2' }}">
         @if ($canCreateResource)
             <button type="button" onclick="Livewire.dispatch('openModal', { component: 'aura::create-resource' })" class="{{ $rowClass }}">
                 <svg class="{{ $iconClass }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" color="currentColor" fill="none" aria-hidden="true">
@@ -75,5 +94,6 @@
             </a>
         @endif
     </div>
+    @endif
 </div>
 @endif
