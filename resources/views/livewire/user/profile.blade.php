@@ -5,16 +5,12 @@
 
     {{ app('aura')::injectView('profile_before_header') }}
 
-    {{-- Page header as on index pages: breadcrumb from sm, then the title row with the action. --}}
-    <div class="hidden sm:block">
-        <x-aura::breadcrumbs>
-            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
-            <x-aura::breadcrumbs.li title="{{ __('Profile') }}" />
-        </x-aura::breadcrumbs>
-    </div>
-
-    <div class="flex gap-4 justify-between items-center mt-1 mb-6 sm:mt-8 sm:mb-8 sm:min-h-[3.375rem] sm:items-end">
-        <h1 class="aura-page-title">{{ __('Profile') }}</h1>
+    {{-- Page header as on index pages. The profile is a top-level page: no trail, the bookmark beside the title. --}}
+    <div class="flex gap-4 justify-between items-center mt-1 mb-6 sm:mt-0 sm:mb-8 sm:min-h-[3.375rem] sm:items-end">
+        <div class="flex gap-1 items-center min-w-0">
+            <h1 class="aura-page-title">{{ __('Profile') }}</h1>
+            <x-aura::page-bookmark />
+        </div>
 
         {{-- Phones save from the bar on the bottom edge, as on resource forms and settings. --}}
         <div class="shrink-0 max-sm:hidden">

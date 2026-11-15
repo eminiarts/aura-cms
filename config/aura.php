@@ -183,8 +183,12 @@ return [
         // (passed through __()), false hides it.
         'login-line' => null,
 
+        // One quieter line under the login line ("Companies, contacts and deals for your team."),
+        // passed through __(). null shows none.
+        'login-subline' => null,
+
         // Product image on the login brand panel (lg and up): a path under public/ or a URL, or
-        // ['light' => …, 'dark' => …] for one per color scheme. It sits under the login line and
+        // ['light' => …, 'dark' => …] for one per color scheme. It starts 48px under the login line and
         // bleeds off the panel's right and bottom edge. null keeps the outlined Λ.
         'login-image' => null,
 

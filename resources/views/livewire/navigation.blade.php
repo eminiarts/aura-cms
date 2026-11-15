@@ -54,10 +54,7 @@
             <div class="flex items-center gap-1">
                 @if(config('aura.features.global_search'))
                     <button type="button" x-on:click="$dispatch('search')" class="inline-flex justify-center items-center w-10 h-10 text-gray-700 rounded-lg transition-colors duration-150 hover:bg-gray-950/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-200 dark:hover:bg-white/[0.06]">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="m19 19-3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                            <circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></circle>
-                        </svg>
+                        <x-aura::icon.search class="w-5 h-5" aria-hidden="true" />
                         <span class="sr-only">{{ __('Search') }}</span>
                     </button>
                 @endif
@@ -149,12 +146,7 @@
                         @if(config('aura.features.global_search'))
                             <button type="button" @click="$dispatch('search')"
                                     class="hidden items-center py-1.5 pr-3 pl-2.5 w-full text-sm leading-6 rounded-lg ring-1 shadow-sm aura-sidebar-search lg:flex">
-                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true" class="flex-none mr-2.5 w-5 h-5">
-                                    <path d="m19 19-3.5-3.5" stroke="currentColor" stroke-width="2"
-                                          stroke-linecap="round" stroke-linejoin="round"></path>
-                                    <circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round"></circle>
-                                </svg>
+                                <x-aura::icon.search class="flex-none mr-2.5 w-5 h-5" aria-hidden="true" />
                                 {{-- The collapsed rail keeps the icon only. --}}
                                 <span class="hide-collapsed">{{ __('Search') }}</span>
                                 <span class="flex-none pl-3 ml-auto font-medium text-2xs opacity-80 hide-collapsed">⌘K</span>
@@ -190,12 +182,11 @@
                         <div class="flex justify-between items-center pb-20 w-full md:pb-0">
                             <x-aura::navigation.team-switcher>
                                 <x-slot:title>
-                                    {{-- User card: 32px avatar, name, current team. --}}
+                                    {{-- User card: the user's avatar as everywhere else (x-aura::avatar, 28px), name, current team. --}}
                                     <div class="block min-w-0 flex-1 group">
                                         <div class="flex min-w-0 items-center">
                                             <div class="shrink-0">
-                                                <img class="inline-block object-cover w-8 h-8 rounded-full ring-1 ring-inset aura-sidebar-avatar"
-                                                     src="{{ auth()->user()->avatarUrl }}" alt="">
+                                                <x-aura::avatar :record="auth()->user()" size="md" class="flex" />
                                             </div>
                                             <div class="ml-2.5 min-w-0 hide-collapsed">
                                                 <p class="truncate text-[13px] leading-4 font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
@@ -231,8 +222,7 @@
                                     <div class="block min-w-0 flex-1 group">
                                         <div class="flex min-w-0 items-center">
                                             <div class="shrink-0">
-                                                <img class="inline-block object-cover w-8 h-8 rounded-full ring-1 ring-inset aura-sidebar-avatar"
-                                                    src="{{ auth()->user()->avatarUrl }}" alt="">
+                                                <x-aura::avatar :record="auth()->user()" size="md" class="flex" />
                                             </div>
                                             <div class="ml-2.5 min-w-0 hide-collapsed">
                                                 <p class="truncate text-[13px] leading-4 font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>

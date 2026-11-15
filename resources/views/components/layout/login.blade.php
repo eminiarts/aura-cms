@@ -79,6 +79,8 @@
             // aura.theme.login-line: null shows the default line, a string replaces it, false hides it.
             $loginLine = config('aura.theme.login-line');
             $loginLine = $loginLine === false ? null : __(is_string($loginLine) && $loginLine !== '' ? $loginLine : 'Every record in one place.');
+            // aura.theme.login-subline: one quieter line under it, none by default.
+            $loginSubline = filled(config('aura.theme.login-subline')) ? __(config('aura.theme.login-subline')) : null;
             // The mark before the line takes the active sidebar item's mark color.
             $markColor = ['light' => 'bg-primary-600', 'primary' => 'bg-white', 'dark' => 'bg-primary-400'][$sidebarType] ?? 'bg-primary-400';
             $markDarkColor = ['light' => 'dark:bg-primary-600', 'primary' => 'dark:bg-white', 'dark' => 'dark:bg-primary-400'][$sidebarDarkType] ?? 'dark:bg-primary-400';
@@ -102,15 +104,40 @@
                         <x-dynamic-component :component="config('aura.views.logo')" class="block w-full h-auto {{ $wordmarkColor }}" />
                     </a>
 
-                    @if ($loginImageLight)
-                        {{-- The product: 720px wide from the panel's left padding, below the login line, bleeding off
-                             the right and bottom edge. The dark-scheme image swaps in with the dark class. --}}
-                        <img src="{{ $loginImageLight }}" alt="" aria-hidden="true" data-login-image
-                            @class(['absolute left-10 top-[44%] w-[720px] max-w-none rounded-tl-xl ring-1 shadow-2xl ring-white/10 shadow-black/40 pointer-events-none select-none', 'dark:hidden' => $loginImageDark !== $loginImageLight])>
-                        @if ($loginImageDark !== $loginImageLight)
-                            <img src="{{ $loginImageDark }}" alt="" aria-hidden="true" data-login-image-dark
-                                class="hidden absolute left-10 top-[44%] w-[720px] max-w-none rounded-tl-xl ring-1 shadow-2xl ring-white/10 shadow-black/40 pointer-events-none select-none dark:block">
+                    {{-- The line (and its subline) in the top third; with a product image the image follows 48px
+                         below it, 720px wide from the panel's left padding, bleeding off the right and bottom edge
+                         (the dark-scheme image swaps in with the dark class). Without one, the outlined Λ. --}}
+                    <div @class(['relative', 'mt-[12vh]' => $loginImageLight, 'mt-auto' => ! $loginImageLight])>
+                        @if ($loginLine)
+                            <div class="flex gap-3 items-start" data-login-line>
+                                <span class="mt-1 w-[3px] h-6 shrink-0 {{ $markColor }} {{ $markDarkColor }}" aria-hidden="true"></span>
+                                <div>
+                                    <p @class([
+                                        'max-w-sm text-2xl leading-8',
+                                        $panelOnLight ? 'text-gray-900' : 'text-white',
+                                        $panelOnLightDark ? 'dark:text-gray-900' : 'dark:text-white',
+                                    ]) style="font-weight: 650; letter-spacing: -0.022em">{{ $loginLine }}</p>
+                                    @if ($loginSubline)
+                                        <p @class([
+                                            'mt-2 max-w-sm text-[15px] leading-6',
+                                            $panelOnLight ? 'text-gray-600' : 'text-white/70',
+                                            $panelOnLightDark ? 'dark:text-gray-600' : 'dark:text-white/70',
+                                        ]) data-login-subline>{{ $loginSubline }}</p>
+                                    @endif
+                                </div>
+                            </div>
                         @endif
+                    </div>
+
+                    @if ($loginImageLight)
+                        <div class="relative flex-1 mt-12 min-h-0" data-login-image-frame>
+                            <img src="{{ $loginImageLight }}" alt="" aria-hidden="true" data-login-image
+                                @class(['absolute top-0 left-0 w-[720px] max-w-none rounded-tl-xl ring-1 shadow-2xl ring-white/10 shadow-black/40 pointer-events-none select-none', 'dark:hidden' => $loginImageDark !== $loginImageLight])>
+                            @if ($loginImageDark !== $loginImageLight)
+                                <img src="{{ $loginImageDark }}" alt="" aria-hidden="true" data-login-image-dark
+                                    class="hidden absolute top-0 left-0 w-[720px] max-w-none rounded-tl-xl ring-1 shadow-2xl ring-white/10 shadow-black/40 pointer-events-none select-none dark:block">
+                            @endif
+                        </div>
                     @elseif (! $customLogo)
                         {{-- One Λ of the wordmark, outlined at 1px and cropped by the panel's corner. --}}
                         <x-aura::icon.apex-outline :class="\Illuminate\Support\Arr::toCssClasses([
@@ -119,28 +146,6 @@
                             $panelOnLightDark ? 'dark:stroke-gray-950/10' : 'dark:stroke-white/10',
                         ])" />
                     @endif
-
-                    {{-- With a product image the line moves up to the top third, above the image. --}}
-                    <div @class(['relative', 'mt-[12vh] mb-auto' => $loginImageLight])>
-                        @if ($loginLine)
-                            <div class="flex gap-3 items-start mb-6" data-login-line>
-                                <span class="mt-1 w-[3px] h-6 shrink-0 {{ $markColor }} {{ $markDarkColor }}" aria-hidden="true"></span>
-                                <p @class([
-                                    'max-w-xs text-2xl leading-8',
-                                    $panelOnLight ? 'text-gray-900' : 'text-white',
-                                    $panelOnLightDark ? 'dark:text-gray-900' : 'dark:text-white',
-                                ]) style="font-weight: 650; letter-spacing: -0.022em">{{ $loginLine }}</p>
-                            </div>
-                        @endif
-
-                        <p @class([
-                            'text-xs',
-                            $panelOnLight ? 'text-gray-500' : 'text-white/60',
-                            $panelOnLightDark ? 'dark:text-gray-500' : 'dark:text-white/60',
-                        ])>
-                            &copy; {{ date('Y') }} {{ config('app.name') }}
-                        </p>
-                    </div>
                 </div>
             </aside>
 
@@ -157,7 +162,8 @@
                     </div>
                 </div>
 
-                <p class="text-xs text-gray-400 lg:hidden dark:text-gray-500">
+                {{-- The copyright closes the form side on every screen, under the form's column, so the brand panel holds only the brand. --}}
+                <p class="mx-auto w-full max-w-sm text-xs text-gray-400 dark:text-gray-500" data-login-copyright>
                     &copy; {{ date('Y') }} {{ config('app.name') }}
                 </p>
             </main>

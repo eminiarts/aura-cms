@@ -5,8 +5,9 @@
 @endphp
 
 <x-aura::fields.wrapper :field="$field">
-    {{-- 8px between options, so a choice list keeps the rhythm of the rest of the form (12px with option pictures). --}}
-    <div @class(['flex flex-col py-0.5', 'gap-3' => $hasPreviews, 'gap-2' => ! $hasPreviews])>
+    {{-- 8px between options, so a choice list keeps the rhythm of the rest of the form (12px with option pictures).
+         Phones set options with pictures side by side, three to a row, each picture above its radio and label. --}}
+    <div @class(['flex flex-col py-0.5', 'gap-3 max-sm:grid max-sm:grid-cols-3' => $hasPreviews, 'gap-2' => ! $hasPreviews])>
     @foreach(optional($field)['options'] as $key => $option)
 
         @if (is_array($option))

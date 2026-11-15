@@ -6,6 +6,7 @@ use Aura\Base\Models\Post;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 class Option extends Resource
@@ -119,6 +120,12 @@ class Option extends Resource
     public static function getWidgets(): array
     {
         return [];
+    }
+
+    /** Options are part of the settings: the list reads "Settings / Options". */
+    public function indexBreadcrumbParent(): ?array
+    {
+        return Route::has('aura.settings') ? ['title' => __('Settings'), 'href' => route('aura.settings')] : null;
     }
 
     /**

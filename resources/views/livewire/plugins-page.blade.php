@@ -1,14 +1,15 @@
 <div>
     @section('title', __('Plugins'))
 
-    {{-- Page header as on index pages: breadcrumb from sm, title with the number of Aura plugins, the
-         installed Aura CMS version under it. --}}
-    <div class="hidden sm:block">
-        <x-aura::breadcrumbs>
-            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
-            <x-aura::breadcrumbs.li :title="__('Plugins')" />
-        </x-aura::breadcrumbs>
-    </div>
+    {{-- Page header as on index pages: the trail "Settings / Plugins" from sm (a back link to Settings on
+         phones), title with the number of Aura plugins, the installed Aura CMS version under it. --}}
+    <x-aura::breadcrumbs>
+        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
+        @if (Route::has('aura.settings'))
+            <x-aura::breadcrumbs.li :href="route('aura.settings')" :title="__('Settings')" />
+        @endif
+        <x-aura::breadcrumbs.li :title="__('Plugins')" />
+    </x-aura::breadcrumbs>
 
     {{-- The title sits in the 54px band every page title shares; the version line goes under it. --}}
     <div class="flex items-center mt-1 min-h-9 sm:mt-8 sm:items-end sm:min-h-[3.375rem]">

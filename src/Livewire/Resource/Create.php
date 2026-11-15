@@ -190,7 +190,8 @@ class Create extends Component
         foreach ($fields as $field) {
             $slug = $field['slug'] ?? null;
 
-            if (! $slug) {
+            // A computed list value (a count or sum) has nothing to enter or save.
+            if (! $slug || ! empty($field['computed'])) {
                 continue;
             }
 
@@ -244,7 +245,7 @@ class Create extends Component
 
         $attributes = $fields
             ->only($allowed->all())
-            ->except(['id', 'type', 'team_id', 'user_id', 'current_team_id'])
+            ->except(['id', 'type', 'team_id', 'user_id', 'current_team_id', ...$this->model->computedFieldSlugs()])
             ->all();
 
         return $this->dehydrateCustomTableFormFields($attributes);

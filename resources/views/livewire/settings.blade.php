@@ -4,24 +4,26 @@
 <div class="max-w-3xl" data-form-body>
     @section('title', 'Edit Settings')
 
-    {{-- Page header as on index pages: the trail (a back link on phones), then title, description and actions. --}}
-    <x-aura::breadcrumbs>
-        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
-        @if($page === 'general')
-            <x-aura::breadcrumbs.li :title="__('Settings')" />
-        @else
+    {{-- Page header as on index pages. General settings are a top-level page: no trail, the bookmark beside
+         the title. The other settings pages read "Settings / AI" (a back link to Settings on phones). --}}
+    @if($page !== 'general')
+        <x-aura::breadcrumbs>
+            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
             <x-aura::breadcrumbs.li :href="route('aura.settings')" :title="__('Settings')" />
             <x-aura::breadcrumbs.li :title="__($this->settingsPage()->title)" />
-        @endif
-    </x-aura::breadcrumbs>
+        </x-aura::breadcrumbs>
+    @endif
 
     @php
         $settingsDescription = $this->settingsPage()->description;
     @endphp
     {{-- The title sits in the 54px band every page title shares; a description goes under the row. --}}
-    <div @class(['flex gap-4 justify-between items-center mt-1 sm:mt-8 sm:min-h-[3.375rem] sm:items-end', 'mb-6 sm:mb-8' => blank($settingsDescription)])>
-        <div class="min-w-0">
+    <div @class(['flex gap-4 justify-between items-center mt-1 sm:min-h-[3.375rem] sm:items-end', 'sm:mt-0' => $page === 'general', 'sm:mt-8' => $page !== 'general', 'mb-6 sm:mb-8' => blank($settingsDescription)])>
+        <div class="flex gap-1 items-center min-w-0">
             <h1 class="aura-page-title">{{ $page === 'general' ? __('Settings') : __($this->settingsPage()->title) }}</h1>
+            @if($page === 'general')
+                <x-aura::page-bookmark />
+            @endif
         </div>
 
         @if($canUpdate)

@@ -23,12 +23,46 @@
     {{-- No card around the list: a header hairline, row dividers and a closing hairline carry the table. --}}
     <div class="overflow-hidden">
 
-        @if ($isEmpty)
-            {{-- An empty table is still a table: from sm its real column header (no bulk checkbox, no sort),
-                 then one left-aligned block between hairlines, a section title and one line (the create
-                 button stays in the page header, so there is one).
-                 Phones get the same block without the header. Every empty list takes this shape: no
-                 records yet, nothing matching the search or filters, an empty relation list. --}}
+        @if ($isEmpty && ! $isFiltered && ! $isRelationTable)
+            @php
+                // A resource may word its own empty page (title, line, action) in aura/{type}/empty,
+                // like its header in aura/{type}/header; the block around it stays shared.
+                $emptyView = 'aura.'.Str::lower($tableModel->getType()).'.empty';
+                $emptyView = View::exists($emptyView) ? $emptyView : (View::exists('aura::'.$emptyView) ? 'aura::'.$emptyView : null);
+                $emptyIcon = method_exists($tableModel, 'getIcon') ? trim((string) $tableModel->getIcon()) : '';
+            @endphp
+            {{-- A list page without records: one centred block between hairlines, no column header and no
+                 toolbar (nothing to search or arrange yet): the resource's icon on a 40px tile, a section title,
+                 one line and the one create button (the page header leaves it out while the list is empty). --}}
+            <div class="flex flex-col items-center px-4 py-16 text-center border-y border-aura-hairline" data-table-empty data-table-empty-page>
+                @if ($emptyIcon !== '')
+                    <span class="mb-4 aura-empty-icon" aria-hidden="true">{!! $emptyIcon !!}</span>
+                @endif
+
+                @if ($emptyView)
+                    @include($emptyView)
+                @else
+                    <h3 class="aura-section-title">{{ __('No :resources yet', ['resources' => $pluralLabel]) }}</h3>
+                    <p class="mt-1 max-w-sm text-sm text-gray-500 dark:text-gray-400">{{ __('Create the first one to get started.') }}</p>
+
+                    @can('create', $tableModel)
+                        @if ($this->settings['create'] && $this->createLink && ! $this->settings['create_in_modal'])
+                            <div class="mt-5">
+                                <x-aura::button :href="$this->createLink">
+                                    <x-slot:icon>
+                                        <x-aura::icon icon="plus" />
+                                    </x-slot>
+                                    <span>{{ __('New :resource', ['resource' => $singularLabel]) }}</span>
+                                </x-aura::button>
+                            </div>
+                        @endif
+                    @endcan
+                @endif
+            </div>
+        @elseif ($isEmpty)
+            {{-- No matches for a search or filter, or an empty related list: from sm the real column header
+                 (no bulk checkbox, no sort), then one left-aligned block between hairlines, a section title and
+                 one line (a related list: the title only). Phones get the same block without the header. --}}
             @if ($this->headers && $visibleColumnKeys->isNotEmpty())
                 <div class="hidden overflow-x-auto min-w-full align-middle sm:block">
                     <table class="min-w-full">
@@ -45,22 +79,7 @@
                     <h3 class="aura-section-title">{{ __('No matching :resources', ['resources' => $pluralLabel]) }}</h3>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Try a different search or clear the filters.') }}</p>
                 @else
-                    @php
-                        // A resource may word its own empty page (title, line, action) in aura/{type}/empty,
-                        // like its header in aura/{type}/header; the block around it stays shared.
-                        $emptyView = 'aura.'.Str::lower($tableModel->getType()).'.empty';
-                        $emptyView = $isRelationTable ? null : (View::exists($emptyView) ? $emptyView : (View::exists('aura::'.$emptyView) ? 'aura::'.$emptyView : null));
-                    @endphp
-
-                    @if ($emptyView)
-                        @include($emptyView)
-                    @else
-                        <h3 class="aura-section-title">{{ __('No :resources yet', ['resources' => $pluralLabel]) }}</h3>
-                    @endif
-
-                    @unless ($isRelationTable || $emptyView)
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Create the first one to get started.') }}</p>
-                    @endunless
+                    <h3 class="aura-section-title">{{ __('No :resources yet', ['resources' => $pluralLabel]) }}</h3>
                 @endif
             </div>
         @else

@@ -324,6 +324,18 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return $team ? e($team->name) : $value;
     }
 
+    /** The user's teams as one line ("CRM Demo, Empty Team"), from the relation the list page eager loads. */
+    public static function displayTeamListField($value, $model): ?string
+    {
+        if (! config('aura.teams') || ! $model->exists || ! Gate::allows(self::GLOBAL_ADMIN_GATE)) {
+            return null;
+        }
+
+        $teams = $model->relationLoaded('teams') ? $model->getRelation('teams') : $model->teams()->get();
+
+        return $teams->unique('id')->sortBy('name')->pluck('name')->map(fn ($name) => e($name))->implode(', ');
+    }
+
     public function getAvatarUrlAttribute()
     {
         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
@@ -416,6 +428,19 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'style' => [
                     'width' => '50',
                 ],
+            ],
+            [
+                // List only, for global admins with teams on (getTableHeaders()): the teams a user belongs to,
+                // eager loaded with the page (indexQuery()). Everyone else lists the members of one team.
+                'name' => 'Teams',
+                'slug' => 'team_list',
+                'computed' => true,
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'on_index' => true,
+                'on_forms' => false,
+                'on_view' => false,
+                'searchable' => false,
+                'display' => [self::class, 'displayTeamListField'],
             ],
             [
                 'name' => 'Password',
@@ -597,6 +622,18 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return $fields;
     }
 
+    /** The Teams column only where a list holds users of several teams: teams on, a global admin looking. */
+    public function getTableHeaders()
+    {
+        $headers = parent::getTableHeaders();
+
+        if (! config('aura.teams') || ! Auth::check() || ! Gate::allows(self::GLOBAL_ADMIN_GATE)) {
+            $headers->forget('team_list');
+        }
+
+        return $headers;
+    }
+
     public function getTeams()
     {
         if (! config('aura.teams')) {
@@ -762,6 +799,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function indexQuery($query)
     {
         if (config('aura.teams')) {
+            // The Teams column (global admins only) reads the eager-loaded relation: no query per row.
+            if (Auth::check() && Gate::allows(self::GLOBAL_ADMIN_GATE)) {
+                $query->with('teams:id,name');
+            }
+
             // A Global Admin transcends the tenant boundary: the Users index
             // lists every user — including users with no Membership at all
             // (e.g. orphaned by a team deletion), who must stay reachable for

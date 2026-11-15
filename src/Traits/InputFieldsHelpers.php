@@ -17,6 +17,15 @@ trait InputFieldsHelpers
 
     protected static $mappedFields = [];
 
+    /**
+     * Slugs of list-only values the resource computes for its index (a count or sum in indexQuery()), marked
+     * 'computed' => true. Forms never initialise or save them: there is no column to write.
+     */
+    public function computedFieldSlugs(): array
+    {
+        return $this->inputFields()->filter(fn ($field) => ! empty($field['computed']))->pluck('slug')->values()->all();
+    }
+
     public function fieldBySlug($slug)
     {
 

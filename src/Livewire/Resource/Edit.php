@@ -246,7 +246,7 @@ class Edit extends Component
 
         $attributes = $fields
             ->only($allowed->all())
-            ->except(['id', 'type', 'team_id', 'user_id', 'current_team_id'])
+            ->except(['id', 'type', 'team_id', 'user_id', 'current_team_id', ...$this->model->computedFieldSlugs()])
             ->all();
 
         return $this->dehydrateCustomTableFormFields($attributes);

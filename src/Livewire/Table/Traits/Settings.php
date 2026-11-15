@@ -48,6 +48,9 @@ trait Settings
             // The resource index page turns this on: the resource's widgets() strip between the page
             // header and the toolbar (components/table/widgets).
             'widgets' => false,
+            // The resource index page turns this on when it has no breadcrumb trail (a top-level page): the
+            // bookmark toggle beside the page title, and the title row starts at the top of the page.
+            'page_bookmark' => false,
             'views' => [
                 'table' => 'aura::components.table.index',
                 'list' => $this->model->tableView(),

@@ -18,8 +18,7 @@
 @endphp
 <div class="grid grid-cols-12 gap-x-6 gap-y-8 lg:gap-x-10">
 
-    <x-aura::dashboard.breadcrumbs cols="full" />
-
+    {{-- A top-level page: no breadcrumb trail; the greeting carries the bookmark (dashboard.welcome). --}}
     <x-aura::dashboard.welcome cols="full" :empty="$isEmptyWorkspace ?? false" />
 
     @if ($statsSlot !== '' && ! $appSections && ($isEmptyWorkspace ?? false))

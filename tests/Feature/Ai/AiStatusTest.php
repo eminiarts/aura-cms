@@ -48,7 +48,7 @@ test('no environment configuration leaves AI unavailable', function () {
 
     Livewire::test(Settings::class, ['page' => 'ai'])
         ->assertSet('canUpdate', false)
-        ->assertSee('No AI providers configured')
+        ->assertSee('AI features are not set up')
         ->assertDontSee('Save')
         ->call('save')
         ->assertForbidden();
@@ -162,7 +162,7 @@ test('a global admin without a current team can open the AI status page', functi
     // Read-only status pages load no team settings, so no current team is needed.
     Livewire::test(Settings::class, ['page' => 'ai'])
         ->assertOk()
-        ->assertSee('No AI providers configured');
+        ->assertSee('AI features are not set up');
 });
 
 test('provider availability follows what the SDK needs to prompt', function (array $provider, bool $isDefault, bool $configured) {

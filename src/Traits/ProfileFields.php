@@ -97,7 +97,7 @@ trait ProfileFields
             ],
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => '2FA',
+                'name' => 'Two-factor',
                 'slug' => '2fa',
                 'global' => true,
             ],

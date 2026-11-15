@@ -254,6 +254,17 @@ class Role extends Resource
                 ],
             ],
             [
+                // List only: the members holding the role in this team, counted in indexQuery().
+                'name' => 'Users',
+                'slug' => 'users_count',
+                'computed' => true,
+                'type' => 'Aura\\Base\\Fields\\Number',
+                'on_index' => true,
+                'on_forms' => false,
+                'on_view' => false,
+                'searchable' => false,
+            ],
+            [
                 'name' => 'Description',
                 'slug' => 'description',
                 'type' => 'Aura\\Base\\Fields\\Textarea',
@@ -359,10 +370,14 @@ class Role extends Resource
     public function indexQuery($query, $table = null)
     {
         if (config('aura.teams')) {
-            $query->shadowResolved(static::currentTeamIdForResolution());
+            $teamId = static::currentTeamIdForResolution();
+            $query->shadowResolved($teamId);
+
+            // The Users column: members holding the role in this team, one subquery for the page.
+            return $query->withCount(['users as users_count' => fn ($users) => $users->where('user_role.team_id', $teamId)]);
         }
 
-        return $query;
+        return $query->withCount('users as users_count');
     }
 
     /**

@@ -449,6 +449,15 @@ select:where(:not([multiple], [size]:not([size="1"]))) {
    orange, teal, gray, yellow, green, red belong to status and category chips), so an
    avatar never echoes the tag beside it. tone-primary follows the palette for apps that
    return ['primary']; the other tone classes stay for callers that pass a tone. */
+/* Empty list page: the resource's icon on a 40px tile above the empty block's title (components/table/list-view). */
+.aura-empty-icon {
+    @apply inline-flex size-10 items-center justify-center rounded-control bg-gray-50 text-gray-500 ring-1 ring-inset ring-gray-950/[0.06] dark:bg-white/5 dark:text-gray-400 dark:ring-white/10;
+}
+
+.aura-empty-icon svg {
+    @apply size-5;
+}
+
 .aura-avatar {
     @apply inline-flex shrink-0 select-none items-center justify-center overflow-hidden uppercase leading-none;
     font-weight: 650;

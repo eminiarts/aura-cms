@@ -149,6 +149,15 @@ trait AuraResourceIdentity
         return static::$type;
     }
 
+    /**
+     * The page the list page sits under, as ['title' => …, 'href' => …], or null. A list page with a parent
+     * shows the trail "Parent / List"; without one it is a top-level page: no trail, the bookmark beside the title.
+     */
+    public function indexBreadcrumbParent(): ?array
+    {
+        return null;
+    }
+
     /** Optional one-line description under the list page title. */
     public function indexDescription(): ?string
     {

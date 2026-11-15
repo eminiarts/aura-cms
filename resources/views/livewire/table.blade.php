@@ -187,6 +187,9 @@
             $collectionIsEmpty = $currentView !== 'kanban' && $rows->total() === 0
                 && blank($this->search ?? null) && blank($this->selectedFilter ?? null)
                 && empty(data_get($this->filters ?? [], 'custom'));
+            // An empty list page (not a related list) is one centred block with the create button
+            // (components/table/list-view): the header holds no create button, the toolbar waits for records.
+            $emptyPage = $collectionIsEmpty && ! optional(optional($this)->field)['name'];
         @endphp
 
         @include($this->settings['views']['header'])
@@ -196,11 +199,10 @@
         @endif
 
         @php
-            // An empty list keeps its toolbar row: the search where it always is and the "more" menu (Edit resource)
-            // at the toolbar's right end; only the controls that arrange records (view switch, columns, filters,
-            // bulk actions) stay away until there is something to arrange.
-            $hasToolbar = $this->settings['search'] || $this->settings['settings'] || $this->settings['filters']
-                || ($this->settings['bulk_actions'] && $this->bulkActions);
+            // A list without records has no toolbar: nothing to search, arrange or filter yet. An empty related
+            // list keeps its search only when it has one; its arranging controls wait as well.
+            $hasToolbar = ! $emptyPage && ($this->settings['search'] || $this->settings['settings'] || $this->settings['filters']
+                || ($this->settings['bulk_actions'] && $this->bulkActions));
         @endphp
 
         <div @class(['mt-4' => $hasToolbar])>
@@ -223,12 +225,7 @@
                         <label for="table-search" class="sr-only">{{ __('Search') }}</label>
                         <div class="relative">
                             <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
-                                <svg class="w-4 h-4 text-gray-400" fill="currentColor"
-                                    viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd"
-                                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                        clip-rule="evenodd"></path>
-                                </svg>
+                                <x-aura::icon.search class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" />
                             </div>
                             <input type="text" id="table-search"
                                 class="block h-9 w-full py-2 pl-9 pr-3 text-base sm:text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-500 dark:placeholder:text-gray-400 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"

@@ -18,10 +18,21 @@
          providers: section title and the setup note, then one row per provider. --}}
     <div class="overflow-hidden bg-white rounded-panel ring-1 ring-aura-edge dark:bg-gray-800">
         @if($this->providers() === [])
+            {{-- Without providers the card speaks to whoever opens it: what is missing and who sets it up. The
+                 developer setup (environment, config cache) waits in a closed disclosure. --}}
             <div class="p-5 sm:p-[calc(var(--aura-panel-padding,1.25rem)+0.5rem)]" data-ai-providers-empty>
-                <h2 class="aura-section-title">{{ __('No AI providers configured') }}</h2>
-                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ __('Add provider credentials to the application environment to enable AI features.') }}</p>
-                <p class="aura-code-note mt-3 text-[13px] leading-5 text-gray-500 dark:text-gray-400">{!! $setupNote !!}</p>
+                <h2 class="aura-section-title">{{ __('AI features are not set up') }}</h2>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ __('Ask an administrator to connect a provider.') }}</p>
+                <details class="mt-4 group" data-ai-setup>
+                    <summary class="inline-flex gap-1 items-center text-sm font-medium text-gray-700 rounded-sm cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-300 dark:hover:text-white">
+                        <x-aura::icon.caret direction="right" class="size-4 text-gray-500 transition-transform duration-150 group-open:rotate-90 dark:text-gray-400" />
+                        {{ __('Developer setup') }}
+                    </summary>
+                    <div class="mt-2 pl-5">
+                        <p class="text-sm text-gray-600 dark:text-gray-300">{{ __('Add provider credentials to the application environment to enable AI features.') }}</p>
+                        <p class="aura-code-note mt-2 text-[13px] leading-5 text-gray-500 dark:text-gray-400">{!! $setupNote !!}</p>
+                    </div>
+                </details>
             </div>
         @else
             <div class="px-5 sm:px-[calc(var(--aura-panel-padding,1.25rem)+0.5rem)] py-4 border-b border-gray-950/[0.06] dark:border-white/10">

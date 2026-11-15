@@ -152,7 +152,9 @@ it('forgets cached option values when an option is saved', function () {
 
     expect(Cache::has('team.1.settings'))->toBeFalse()
         ->and(Cache::has('aura.team.1.settings'))->toBeFalse()
-        ->and(Cache::has('1.aura.settings'))->toBeFalse()
+        // The edit page re-reads the settings while it renders (the breadcrumb's home mark), so this key may
+        // hold the fresh value again; it must not hold the stale one.
+        ->and(Cache::get('1.aura.settings'))->not->toBe('stale')
         ->and(Cache::has('team.1.*'))->toBeFalse()
         ->and($option->fresh()->value)->toBe(['color-palette' => 'blue']);
 });
