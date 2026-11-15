@@ -2,7 +2,8 @@
     @section('title', __('Edit :resource', ['resource' => __($model->singularName())]))
 
     @php
-        // A simple form keeps a readable width (breadcrumb and header with it, so Save stays at the form's edge) and loses its lone panel heading.
+        // A form without a right rail (simple or tabbed) keeps a readable width (breadcrumb and header with it, so Save
+        // stays at the form's edge); a simple form also loses its lone panel heading.
         $formSections = \Aura\Base\RecordLayout\RecordFormSections::arrange($this->editFields);
         // Cancel leaves the form for the record view, or for the list when the record has no view page.
         $cancelUrl = (Route::has('aura.' . $model->getSlug() . '.view') && auth()->user()?->can('view', $model))
@@ -10,7 +11,7 @@
             : (Route::has('aura.' . $model->getSlug() . '.index') ? route('aura.' . $model->getSlug() . '.index') : null);
     @endphp
 
-    <div @class(['max-w-3xl' => $formSections['single'] && ! $inModal])>
+    <div @class(['max-w-3xl' => ! $formSections['rail'] && ! $inModal])>
     {{ app('aura')::injectView('post_edit_breadcrumbs_before') }}
 
     @if (!$inModal)
@@ -49,11 +50,8 @@
     @php
         // A narrow panel (style width up to 33%, the sidebar card) beside other fields becomes a right rail
         // from lg, the same 20rem column as on the record view, so edit and view read as one page.
-        $isRailPanel = fn ($field) => ($field['field'] ?? null) instanceof \Aura\Base\Fields\Panel
-            && is_numeric($field['style']['width'] ?? null) && (float) $field['style']['width'] <= 33;
-        $useRail = ! $inModal && ! $formSections['single']
-            && collect($formSections['fields'])->contains($isRailPanel)
-            && collect($formSections['fields'])->contains(fn ($field) => ! $isRailPanel($field));
+        $isRailPanel = fn ($field) => \Aura\Base\RecordLayout\RecordViewSections::isRailPanel($field);
+        $useRail = ! $inModal && $formSections['rail'];
     @endphp
 
     <div class="grid grid-cols-1 gap-6 mt-4 aura-edit-post-container sm:grid-cols-3" x-data="{

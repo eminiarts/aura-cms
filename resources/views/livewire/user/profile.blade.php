@@ -1,4 +1,5 @@
-<div>
+{{-- The profile is a form: the readable width of the resource forms (max-w-3xl), header and Save with it. --}}
+<div class="max-w-3xl">
     @section('title', 'Profile')
 
     {{ app('aura')::injectView('profile_before_header') }}

@@ -14,10 +14,9 @@ test('users without an avatar display first and last name initials', function ()
 
     expect($user->getInitials())->toBe('DU')
         ->and($html)->toContain('DU')
-        ->and($html)->toContain('h-10 w-10')
-        ->and($html)->toContain('rounded-full')
-        ->and($html)->toContain('items-center')
-        ->and($html)->toContain('justify-center');
+        ->and($html)->toContain('aura-avatar-lg')
+        ->and($html)->toContain('aura-avatar-circle')
+        ->and($html)->toContain('aura-avatar-tone-'.$user->avatarTone());
 });
 
 test('a user with one available name displays one initial', function () {

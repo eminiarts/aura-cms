@@ -2,8 +2,12 @@
     // Key fields promoted under the title: a number large and tabular, a status as its tag.
     $facts = \Aura\Base\RecordLayout\RecordViewSections::header($this->viewFields, $model);
     $canEdit = Route::has('aura.' . $slug . '.edit') && auth()->user()?->can('update', $model);
+    // The actions menu sits in the title row (a 36px "more" button beside the pencil on phones, as on the
+    // edit header); a resource that shows its actions as buttons keeps them in the action row.
+    $actionButtons = count($this->actions) && $this->model::$showActionsAsButtons;
+    $actionsMenu = count($this->actions) && ! $actionButtons;
     // Without other actions the phone action row would only hold Edit, which moves into the title row.
-    $hasPhoneActions = $recordLayout->panels(\Aura\Base\RecordLayout\RecordLayoutRegion::HeaderActions) !== [] || count($this->actions);
+    $hasPhoneActions = $recordLayout->panels(\Aura\Base\RecordLayout\RecordLayoutRegion::HeaderActions) !== [] || $actionButtons;
 @endphp
 
 {{-- The same spacing as the edit and create headers, so avatar, eyebrow and title stay put when switching. --}}
@@ -23,10 +27,16 @@
                 <h1 class="mt-0.5 break-words aura-page-title line-clamp-2 sm:line-clamp-1" title="{{ $model->title() }}">{{ $model->title() }}</h1>
             </div>
 
+            @if ($actionsMenu)
+                <div class="ml-auto shrink-0 sm:-mr-2">
+                    @include('aura::livewire.resource.actions', ['iconTriggerOnPhones' => true])
+                </div>
+            @endif
+
             {{-- Phones: Edit is a 36px pencil in the title row, so the header has no action band of its own. --}}
             @if ($canEdit)
                 <x-aura::button.border size="icon" href="{{ route('aura.' . $slug . '.edit', $model->id) }}"
-                    class="ml-auto shrink-0 sm:hidden" aria-label="{{ __('Edit') }}"
+                    class="shrink-0 sm:hidden {{ $actionsMenu ? '' : 'ml-auto' }}" aria-label="{{ __('Edit') }}"
                     x-data x-init="tippy($el, { content: @js(__('Edit')), arrow: false, theme: 'aura', placement: 'bottom', offset: [0, 8] })">
                     <x-aura::icon.edit class="size-4" aria-hidden="true" />
                 </x-aura::button.border>
@@ -46,7 +56,9 @@
                 </div>
             @endif
 
-            @include('aura::livewire.resource.actions')
+            @if ($actionButtons)
+                @include('aura::livewire.resource.actions')
+            @endif
 
             {{-- A reading page has no primary action: Edit is a secondary button with its pencil. --}}
             @if ($canEdit)

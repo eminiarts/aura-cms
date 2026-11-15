@@ -3,12 +3,12 @@
 
     @php
         // A record with nothing beside its values (no related lists, relation cards or rail) takes its form's
-        // frame, so view and edit read as one page: a simple record keeps the form's readable width (breadcrumb
-        // and header with it, so Edit sits where Save sits), tabs and panels look as on the form.
+        // frame, so view and edit read as one page: it keeps the form's readable width, tabbed records included
+        // (breadcrumb and header with it, so Edit sits where Save sits), tabs and panels look as on the form.
         $formFrame = $recordLayout->hasPanels() ? null : \Aura\Base\RecordLayout\RecordViewSections::formFrame($this->viewFields, $model);
     @endphp
 
-    <div @class(['max-w-3xl' => ($formFrame['single'] ?? false) && ! $inModal])>
+    <div @class(['max-w-3xl' => $formFrame !== null && ! ($formFrame['rail'] ?? false) && ! $inModal])>
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />

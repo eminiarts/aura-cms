@@ -1,7 +1,12 @@
 {{-- "Edit resource" on a resource index page: a "more" button the size of the table controls opens a small menu
      with the labelled link, so a developer tool does not compete with the list controls. Desktop only: the
-     resource editor is a builder, not a phone tool. --}}
-@if (($this->settings['resource_editor'] ?? false) && config('aura.features.resource_editor') && $model->isAppResource())
+     resource editor is a builder, not a phone tool. A table with bulk actions puts the link into its actions
+     menu instead (components/table/bulk-actions), so the toolbar keeps one overflow button. --}}
+@php
+    $inBulkActionsMenu = ($this->settings['bulk_actions'] ?? false) && $this->bulkActions
+        && ($this->settings['views']['bulk_actions'] ?? null) === 'aura::components.table.bulk-actions';
+@endphp
+@if (! $inBulkActionsMenu && ($this->settings['resource_editor'] ?? false) && config('aura.features.resource_editor') && $model->isAppResource())
     <div class="hidden sm:block shrink-0" data-resource-editor-button>
         <x-aura::dropdown align="right" width="w-44">
             <x-slot name="trigger">

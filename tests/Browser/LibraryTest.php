@@ -126,7 +126,7 @@ test('bulk selection deletes multiple attachments', function () {
 
     // The selection lives client-side until the next Livewire request —
     // the bulk action itself carries it to the server.
-    $page->click('Actions')->wait(1);
+    $page->click('.bulk-actions button[aria-label="Actions"]')->wait(1);
     $page->click('Delete')->wait(2);
 
     expect(Attachment::query()->find($first->id))->toBeNull()

@@ -296,6 +296,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return view('aura::components.user-avatar-fallback', [
             'initials' => $this->getInitials(),
             'name' => $this->getAttribute('name'),
+            // The record's own tint, so the avatar field matches the header and row avatars.
+            'tone' => $this->avatarTone(),
         ])->render();
     }
 

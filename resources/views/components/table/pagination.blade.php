@@ -75,25 +75,55 @@
                     </button>
                 @endif
 
-                {{-- Page numbers (LengthAwarePaginator only) --}}
-                @if (isset($elements))
-                    @foreach ($elements as $element)
-                        {{-- "Three Dots" separator --}}
-                        @if (is_string($element))
-                            <span class="{{ $btnBase }} {{ $btnDisabled }} min-w-8 px-1" aria-disabled="true">{{ $element }}</span>
-                        @endif
+                {{-- Page numbers (LengthAwarePaginator only): the first and last page, the current page with its
+                     neighbours, and one "…" per gap ("1 2 3 … 11"), so a long list never spells out every page.
+                     A gap of a single page shows that page instead of the dots. --}}
+                @if ($isLengthAware && method_exists($paginator, 'lastPage'))
+                    @php
+                        $current = $paginator->currentPage();
+                        $last = $paginator->lastPage();
 
-                        {{-- Array of page links --}}
-                        @if (is_array($element))
-                            @foreach ($element as $page => $url)
-                                @if ($page == $paginator->currentPage())
-                                    <span class="{{ $btnBase }} {{ $btnCurrent }} min-w-8 px-2" aria-current="page">{{ $page }}</span>
-                                @else
-                                    <button type="button" wire:click="gotoPage({{ $page }}, '{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} {{ $btnIdle }} min-w-8 px-2" aria-label="{{ __('Go to page :page', ['page' => $page]) }}">
-                                        {{ $page }}
-                                    </button>
-                                @endif
-                            @endforeach
+                        if ($last <= 7) {
+                            $pages = range(1, $last);
+                        } else {
+                            $pages = [1, $last, $current - 1, $current, $current + 1];
+
+                            if ($current <= 3) {
+                                array_push($pages, 2, 3);
+                            }
+
+                            if ($current >= $last - 2) {
+                                array_push($pages, $last - 1, $last - 2);
+                            }
+
+                            $pages = array_values(array_unique(array_filter($pages, fn ($page) => $page >= 1 && $page <= $last)));
+                            sort($pages);
+                        }
+
+                        $pageItems = [];
+                        $previous = null;
+
+                        foreach ($pages as $page) {
+                            if ($previous !== null && $page - $previous === 2) {
+                                $pageItems[] = $previous + 1;
+                            } elseif ($previous !== null && $page - $previous > 2) {
+                                $pageItems[] = '…';
+                            }
+
+                            $pageItems[] = $page;
+                            $previous = $page;
+                        }
+                    @endphp
+
+                    @foreach ($pageItems as $page)
+                        @if (is_string($page))
+                            <span class="{{ $btnBase }} min-w-8 px-1 text-gray-400 cursor-default dark:text-gray-500" aria-hidden="true">{{ $page }}</span>
+                        @elseif ($page == $current)
+                            <span class="{{ $btnBase }} {{ $btnCurrent }} min-w-8 px-2" aria-current="page">{{ $page }}</span>
+                        @else
+                            <button type="button" wire:click="gotoPage({{ $page }}, '{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} {{ $btnIdle }} min-w-8 px-2 tabular-nums" aria-label="{{ __('Go to page :page', ['page' => $page]) }}">
+                                {{ $page }}
+                            </button>
                         @endif
                     @endforeach
                 @endif

@@ -10,7 +10,7 @@
     $alignRight = $align === 'right';
 @endphp
 
-{{-- A heading names the column and, when the field class is passed, leads with a 12px mark for its
+{{-- A heading names the column and, when the field class is passed, leads with a 14px mark for its
      value type. A right-aligned column keeps the same order (mark, label) pushed to the right edge
      and puts the sort arrow in front, so the label stays flush with the numbers below it. --}}
 <th
@@ -22,7 +22,7 @@
             <span class="table-heading">{{ $slot }}</span>
         </span>
     @else
-        <button type="button" {{ $attributes->except('class') }} class="group inline-flex items-center gap-x-1.5 -mx-2 px-2 py-1 rounded-md aura-table-header leading-4 whitespace-nowrap {{ $alignRight ? 'justify-end text-right' : 'text-left' }} transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 {{ $direction ? '!text-gray-900 dark:!text-white' : 'hover:text-gray-700 dark:hover:text-gray-200' }}">
+        <button type="button" {{ $attributes->except('class') }} class="group inline-flex items-center gap-x-1.5 -mx-2 px-2 py-1 rounded-md aura-table-header leading-4 whitespace-nowrap {{ $alignRight ? 'justify-end text-right' : 'text-left' }} transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 {{ $direction ? '!text-gray-900 dark:!text-white' : 'hover:text-gray-900 dark:hover:text-white' }}">
             <x-aura::table.column-icon :type="$type" />
             <span class="table-heading">{{ $slot }}</span>
 

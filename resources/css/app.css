@@ -89,7 +89,7 @@ body {
 }
 
 .aura-table-header {
-    @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+    @apply text-xs font-medium text-gray-600 dark:text-gray-300;
 }
 
 /* Section count next to a section title ("Contacts 12"). */
@@ -415,12 +415,12 @@ body {
    quiet .aura-meta sentence under the details column (or under the related records when the
    record has no details column). Each time carries its full timestamp as a tooltip. */
 .aura-record-meta {
-    @apply mt-5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-500 dark:text-gray-400;
+    @apply mt-5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] leading-5 text-gray-600 dark:text-gray-400;
 }
 
 .aura-record-meta time,
 .aura-record-meta [data-record-meta-author] {
-    @apply text-gray-700 dark:text-gray-300;
+    @apply text-gray-800 dark:text-gray-200;
 }
 
 .aura-record-meta-sep {
@@ -491,6 +491,21 @@ body {
     .aura-record-rail .aura-view-row {
         grid-template-columns: 6.5rem minmax(0, 1fr);
         column-gap: 0.75rem;
+    }
+}
+
+/* Phones: the rail's short properties (status, priority, dates, people) stay label-left, value-right rows,
+   a property list rather than stacked label-over-value blocks. */
+@media (max-width: 639.98px) {
+    .aura-record-rail .aura-view-row {
+        display: grid;
+        grid-template-columns: 7rem minmax(0, 1fr);
+        column-gap: 0.75rem;
+        align-items: baseline;
+    }
+
+    .aura-record-rail .aura-view-row > :first-child {
+        margin-bottom: 0;
     }
 }
 

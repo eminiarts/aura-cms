@@ -52,7 +52,7 @@
       x-on:keydown.arrow-down.prevent="show()"
       x-on:keydown.arrow-up.prevent="show()"
       aria-haspopup="listbox" :aria-expanded="open"
-      class="flex relative items-center pr-9 pl-2 w-full h-9 text-left bg-white rounded-lg ring-1 shadow-xs transition duration-150 cursor-default sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 dark:bg-gray-800 dark:ring-white/10 dark:hover:ring-white/20 dark:disabled:bg-gray-800/50">
+      class="flex relative items-center pr-9 pl-2 w-full h-9 text-left bg-white rounded-lg ring-1 shadow-xs transition duration-150 cursor-default sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 dark:bg-gray-950/40 dark:ring-white/15 dark:hover:ring-white/25 dark:disabled:bg-gray-800/50">
       <span x-show="is('')" class="pl-1 text-base text-gray-400 truncate sm:text-sm dark:text-gray-500">{{ $placeholder }}</span>
       @foreach ($choices as $choice)
         <span x-show="is(@js($choice['key']))" x-cloak class="aura-tag {{ $choice['color'] ? 'aura-tag-status '.$choice['color'] : '' }}">{{ $choice['label'] }}</span>
@@ -104,7 +104,7 @@
       wire:model="form.fields.{{ optional($field)['slug'] }}"
       @endif
       id="aura_field_{{ optional($field)['slug'] }}"
-    error="form.fields.{{ optional($field)['slug'] }}" name="post_fields_{{ optional($field)['slug'] }}" id="post_fields_{{ optional($field)['slug'] }}" class="block py-0 pr-9 pl-3 w-full h-9 text-base text-gray-900 bg-white bg-none rounded-lg border-0 ring-1 shadow-xs transition duration-150 appearance-none sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 dark:hover:ring-white/20 dark:disabled:bg-gray-800/50 [&:has(option[value='']:checked)]:text-gray-400 dark:[&:has(option[value='']:checked)]:text-gray-500 [&_option]:text-gray-900 dark:[&_option]:text-gray-100">
+    error="form.fields.{{ optional($field)['slug'] }}" name="post_fields_{{ optional($field)['slug'] }}" id="post_fields_{{ optional($field)['slug'] }}" class="block py-0 pr-9 pl-3 w-full h-9 text-base text-gray-900 bg-white bg-none rounded-lg border-0 ring-1 shadow-xs transition duration-150 appearance-none sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:bg-gray-950/40 dark:text-gray-100 dark:ring-white/15 dark:hover:ring-white/25 dark:disabled:bg-gray-800/50 [&:has(option[value='']:checked)]:text-gray-400 dark:[&:has(option[value='']:checked)]:text-gray-500 [&_option]:text-gray-900 dark:[&_option]:text-gray-100">
 
     <option  value="">{{ $placeholder }}</option>
 

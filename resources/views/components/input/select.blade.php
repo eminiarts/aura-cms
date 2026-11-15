@@ -15,7 +15,7 @@
             'block w-full appearance-none border-0 bg-white bg-none text-gray-900 shadow-xs',
             'ring-1 ring-gray-950/10 transition duration-150 hover:ring-gray-950/20',
             'focus:outline-none focus:ring-2 focus:ring-primary-500',
-            'dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 dark:hover:ring-white/20',
+            'dark:bg-gray-950/40 dark:text-gray-100 dark:ring-white/15 dark:hover:ring-white/25',
             'disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-950/10',
             'dark:disabled:bg-gray-800/50 dark:disabled:text-gray-500 dark:disabled:ring-white/5',
             'h-9 pl-3 pr-9 py-0 rounded-lg text-base sm:text-sm' => $size === 'default',

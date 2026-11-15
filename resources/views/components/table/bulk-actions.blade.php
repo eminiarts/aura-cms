@@ -1,58 +1,52 @@
-{{-- Actions --}}
+{{-- Actions: one "more" icon button the size of the table controls, the same trigger every index page uses
+     for its overflow menu. The resource editor link (desktop only) joins this menu, so a page never shows
+     two overflow buttons (components/table/resource-editor-button stays away when this menu renders). --}}
 @if($this->bulkActions)
-<div class="bulk-actions z-10">
-    <div class="relative ml-1">
-        <x-aura::dropdown align="right" width="60">
+@php
+    $itemClass = 'flex items-center px-3 py-1.5 text-sm text-gray-700 rounded-md transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5';
+    $withEditorLink = ($this->settings['resource_editor'] ?? false) && config('aura.features.resource_editor') && $model->isAppResource();
+@endphp
+<div class="bulk-actions z-10 shrink-0">
+    <x-aura::dropdown align="right" width="w-60">
         <x-slot name="trigger">
-            <span class="inline-flex rounded-lg">
-                <button type="button"
-                class="inline-flex gap-1.5 items-center h-9 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white rounded-lg ring-1 shadow-xs transition-colors duration-150 ring-gray-950/10 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:ring-white/10 dark:hover:bg-gray-700/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
-                {{ __('Actions') }}
+            <x-aura::button.border type="button" class="w-9 !px-0 [&>span:first-child]:ml-0" title="{{ __('Actions') }}" aria-label="{{ __('Actions') }}" aria-haspopup="menu">
+                <x-slot:icon>
+                    <x-aura::icon.dots />
+                </x-slot>
+            </x-aura::button.border>
+        </x-slot>
 
+        <x-slot name="content">
+            <div role="none">
+                @if($this->bulk_actions)
+                    @foreach($this->bulk_actions as $action => $data)
+                        @if(is_array($data) && isset($data['modal']))
+                            <a wire:click="openBulkActionModal('{{ $action }}', {{json_encode($data)}})" class="{{ $itemClass }}" role="menuitem" tabindex="-1">
+                                {{ $data['label'] }}
+                            </a>
+                        @elseif(is_array($data) && optional($data)['method'] == 'collection')
+                            <a wire:click="bulkCollectionAction('{{ $action }}', {{json_encode($data)}})" class="{{ $itemClass }}" role="menuitem" tabindex="-1">
+                                {{ $data['label'] }}
+                            </a>
+                        @else
+                            <a wire:click="bulkAction('{{ $action }}')" class="{{ $itemClass }}" role="menuitem" tabindex="-1">
+                                {{ is_array($data) ? $data['label'] : $data }}
+                            </a>
+                        @endif
+                    @endforeach
+                @endif
 
-                <svg class="-mr-0.5 w-4 h-4 text-gray-400 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd"
-                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                clip-rule="evenodd" />
-            </svg>
-        </button>
-    </span>
-</x-slot>
-
-<x-slot name="content">
-    <div class="p-1 w-60">
-        <div role="none">
-            @if($this->bulk_actions)
-                @foreach($this->bulk_actions as $action => $data)
-                    @if(is_array($data) && isset($data['modal']))
-                    <!-- if it's an array and has a modal, then open the modal -->
-                    <a wire:click="openBulkActionModal('{{ $action }}', {{json_encode($data)}})"
-                    class="flex items-center px-3 py-1.5 text-sm text-gray-700 rounded-md transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
-                    role="menuitem" tabindex="-1" id="menu-item-6">
-                        {{ $data['label'] }}
-                    </a>
-                    @elseif(is_array($data) && optional($data)['method'] == 'collection')
-                        <!-- call collection action on model -->
-                        <a wire:click="bulkCollectionAction('{{ $action }}', {{json_encode($data)}})"
-                            class="flex items-center px-3 py-1.5 text-sm text-gray-700 rounded-md transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
-                            role="menuitem" tabindex="-1" id="menu-item-6">
-                            {{ $data['label'] }}
+                @if ($withEditorLink)
+                    <div class="hidden sm:block" data-resource-editor-button>
+                        <div class="-mx-1 my-1 h-px bg-gray-950/5 dark:bg-white/10" role="separator"></div>
+                        <a href="{{ route('aura.resource.editor', $model::getSlug()) }}" class="gap-2 {{ $itemClass }}" role="menuitem" tabindex="-1">
+                            <x-aura::icon icon="cog" size="xs" class="text-gray-400 dark:text-gray-500" />
+                            {{ __('Edit resource') }}
                         </a>
-                    @else
-                    <!-- if it's not an array, it's a string, so keep the old behavior -->
-                    <a wire:click="bulkAction('{{ $action }}')"
-                        class="flex items-center px-3 py-1.5 text-sm text-gray-700 rounded-md transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
-                        role="menuitem" tabindex="-1" id="menu-item-6">
-                        {{ is_array($data) ? $data['label'] : $data }}
-                    </a>
-                    @endif
-                @endforeach
-            @endif
-        </div>
-    </div>
-</x-slot>
-</x-aura::dropdown>
-</div>
+                    </div>
+                @endif
+            </div>
+        </x-slot>
+    </x-aura::dropdown>
 </div>
 @endif

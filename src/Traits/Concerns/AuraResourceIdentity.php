@@ -83,13 +83,21 @@ trait AuraResourceIdentity
     }
 
     /**
-     * Tint derived from the title, so the same record always gets the same color. A trailing
-     * " (#id)" (Role, the generic fallback title) is left out, as in the initials: the tint
-     * follows the name, so "Admin (#1)" and "Admin (#2)" share it.
+     * The record's tint, the same wherever the record shows (header, rows, chips, its avatar
+     * field). A numeric key picks the tone by modulo, so consecutive records walk through the
+     * palette and a list shows an even mix; a hash of a short name list clusters. Records
+     * without a numeric key (unsaved, string keys) fall back to a hash of the title, a trailing
+     * " (#id)" left out as in the initials.
      */
     public function avatarTone(): string
     {
         $tones = static::avatarTones();
+        $key = $this->getKey();
+
+        if (is_int($key) || (is_string($key) && ctype_digit($key))) {
+            return $tones[(int) $key % count($tones)];
+        }
+
         $name = preg_replace('/\s*\(#\d+\)$/u', '', trim((string) $this->title()));
 
         return $tones[crc32(Str::lower(trim($name))) % count($tones)];
@@ -99,11 +107,12 @@ trait AuraResourceIdentity
      * Tints an avatar may use: eight Tailwind families the status and category
      * tags do not use (those hold blue, orange, teal, gray, yellow, green and
      * red). The warm band stays with the tags, so an avatar never echoes the
-     * chip in its row. Red stays reserved for errors.
+     * chip in its row. Red stays reserved for errors. The order alternates
+     * cool and warm hues, so neighbouring keys never get two near-identical tints.
      */
     public static function avatarTones(): array
     {
-        return ['indigo', 'purple', 'fuchsia', 'pink', 'rose', 'violet', 'lime', 'cyan'];
+        return ['indigo', 'lime', 'pink', 'cyan', 'purple', 'rose', 'violet', 'fuchsia'];
     }
 
     public static function getName(): ?string

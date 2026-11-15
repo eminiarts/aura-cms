@@ -44,15 +44,15 @@
         </div>
 
         <div class="flex justify-between items-center">
-            <!-- Remember Me -->
-            <label for="remember_me" class="inline-flex gap-2 items-center">
-                <input id="remember_me" type="checkbox" class="w-4 h-4 rounded border-gray-300 shadow-xs text-primary-600 focus:ring-primary-500 dark:border-white/20 dark:bg-gray-800 dark:checked:bg-primary-600 dark:focus:ring-offset-gray-900" name="remember">
+            <!-- Remember Me: the whole label is the tap target, a 44px row on phones. -->
+            <label for="remember_me" class="inline-flex gap-2 items-center pr-3 -my-1 min-h-11 cursor-pointer sm:my-0 sm:min-h-0">
+                <input id="remember_me" type="checkbox" class="w-4 h-4 rounded border-gray-300 shadow-xs cursor-pointer text-primary-600 focus:ring-primary-500 dark:border-gray-500 dark:bg-gray-950/40 dark:checked:bg-primary-600 dark:focus:ring-offset-gray-900" name="remember">
                 <span class="text-sm text-gray-600 select-none dark:text-gray-300">{{ __('Remember me') }}</span>
             </label>
 
             <!-- Forgot Password? -->
             @if (Route::has('aura.password.request'))
-                <a class="text-sm font-medium rounded-md text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-900" href="{{ route('aura.password.request') }}">
+                <a class="inline-flex items-center -my-1 min-h-11 text-sm font-medium rounded-md sm:my-0 sm:min-h-0 text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-900" href="{{ route('aura.password.request') }}">
                     {{ __('Forgot your password?') }}
                 </a>
             @endif

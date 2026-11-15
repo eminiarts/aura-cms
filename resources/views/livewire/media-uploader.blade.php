@@ -315,20 +315,27 @@
             />
         @endif
 
-        {{-- Media Manager button (field edit views) --}}
+        {{-- Media Manager button (field edit views): a secondary outline button that names what it picks
+             ("Choose image", "Choose files"); the field view puts the current value's preview beside it. --}}
         @if ($button && ! $disabled)
-            <div class="z-[2] relative mt-2">
-                <x-aura::button.light
+            @php
+                $pickerNoun = str_ends_with((string) ($field['type'] ?? ''), '\\File') ? 'file' : 'image';
+                $pickerLabel = (int) ($field['max_files'] ?? 0) > 1
+                    ? ($pickerNoun === 'file' ? __('Choose files') : __('Choose images'))
+                    : ($pickerNoun === 'file' ? __('Choose file') : __('Choose image'));
+            @endphp
+            <div class="z-[2] relative">
+                <x-aura::button.border
                     data-media-picker-button="{{ $field['slug'] }}"
                     wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { model: {{ json_encode($for) }}, slug: '{{ $field['slug'] }}', selected: {{ json_encode($selected) }} }})">
                     <x-slot:icon>
-                        <x-aura::icon icon="media" class="" />
+                        <x-aura::icon icon="media" class="text-gray-500 dark:text-gray-400" />
                     </x-slot>
-                    <span>{{ __('Media library') }}</span>
-                </x-aura::button.light>
+                    <span>{{ $pickerLabel }}</span>
+                </x-aura::button.border>
             </div>
         @elseif ($disabled)
-            <div class="mt-2">
+            <div>
                 <x-aura::button.light disabled>
                     <x-slot:icon>
                         <x-aura::icon icon="media" class="" />

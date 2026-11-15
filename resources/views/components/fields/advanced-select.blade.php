@@ -373,7 +373,7 @@
             <label class="sr-only">{{ __('Select entry') }}</label>
             {{-- Same trigger as the other selects (BelongsTo, Select): 36px, hairline ring, chevron; chips wrap and grow it. --}}
             <button type="button"
-                class="flex relative justify-between items-center py-1 pr-9 pl-3 w-full min-h-9 text-base text-left text-gray-900 bg-white rounded-lg ring-1 shadow-xs transition duration-150 appearance-none sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 dark:hover:ring-white/20"
+                class="flex relative justify-between items-center py-1 pr-9 pl-3 w-full min-h-9 text-base text-left text-gray-900 bg-white rounded-lg ring-1 shadow-xs transition duration-150 appearance-none sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-950/40 dark:text-gray-100 dark:ring-white/15 dark:hover:ring-white/25"
                 x-ref="listboxButton" @click="toggleListbox">
 
                 <div class="flex items-center w-full">
