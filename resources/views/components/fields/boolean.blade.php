@@ -35,7 +35,7 @@
         @if($booleanLabel || $booleanHelp)
             <div class="min-w-0 text-sm leading-5" :class="disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'" @click="!disabled && (value = !value)">
                 @if($booleanLabel)
-                    <span :id="$id('boolean')" class="block font-medium text-gray-700 dark:text-gray-200">{{ $booleanLabel }}@if($booleanRequired)<span class="ml-0.5 text-gray-400 dark:text-gray-500" aria-hidden="true">*</span>@endif</span>
+                    <span :id="$id('boolean')" class="block font-medium text-gray-700 dark:text-gray-200">{{ $booleanLabel }}@if($booleanRequired)<span class="ml-0.5 text-primary-600 dark:text-primary-400" aria-hidden="true">*</span>@endif</span>
                 @endif
                 @if($booleanHelp)
                     <span :id="$id('boolean-help')" class="block mt-0.5 max-w-[35rem] text-gray-500 dark:text-gray-400">{{ __($booleanHelp) }}</span>

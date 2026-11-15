@@ -15,11 +15,11 @@
     <div class="grid grid-cols-4 gap-3 mt-4 sm:grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))]">
         @foreach ($media as $file)
             <a href="{{ $file->viewUrl() ?? route('aura.attachment.index') }}" wire:navigate title="{{ $file->name }}"
-                class="block overflow-hidden relative rounded-lg ring-1 transition duration-150 aspect-square ring-gray-950/10 dark:ring-white/10 group hover:ring-gray-950/25 dark:hover:ring-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                class="block overflow-hidden relative rounded-lg transition duration-150 aspect-square group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                 @if ($file->isImage())
                     <img src="{{ $file->path('thumbnail') }}" alt="{{ $file->name }}" loading="lazy" class="object-cover w-full h-full" />
                 @else
-                    <div class="flex flex-col gap-1 justify-center items-center w-full h-full bg-gray-50 dark:bg-gray-700/50">
+                    <div class="flex flex-col gap-1 justify-center items-center w-full h-full bg-gray-100 dark:bg-gray-800">
                         <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                             <path d="M14 2.5V7C14 7.55228 14.4477 8 15 8H19.5" stroke-linecap="round" stroke-linejoin="round" />
                             <path d="M19.5 8.5V17C19.5 19.2091 19.2091 21.5 16 21.5H8C4.79086 21.5 4.5 19.2091 4.5 17V7C4.5 4.79086 4.79086 2.5 8 2.5H13.5L19.5 8.5Z" stroke-linecap="round" stroke-linejoin="round" />
@@ -27,6 +27,9 @@
                         <span class="px-1 text-[10px] font-medium text-gray-500 dark:text-gray-400 truncate max-w-full">{{ $file->readable_mime_type }}</span>
                     </div>
                 @endif
+                {{-- The media library's tile edge (.aura-tile-ring, --aura-edge), drawn inside above the thumbnail,
+                     so a file tile keeps a visible 1px edge on the dark canvas too. --}}
+                <span class="aura-tile-ring" aria-hidden="true"></span>
             </a>
         @endforeach
     </div>

@@ -31,10 +31,18 @@
 
     {{-- On the page the actions take the width the title leaves, so the create button can decide whether
          "New user" fits (table/create-button); in a record section they keep their size. "Invite user" is
-         the secondary action: an outline button right before "New user" from sm, on phones the one item of
-         a "more" menu after it, so the title row keeps one primary button. --}}
+         the secondary action: an outline button right before "New user" from sm; on phones it leads the
+         toolbar's actions menu (aura/user/actions-menu), so the page shows one "more" button. Without that
+         menu (no bulk actions, no records yet) the title row keeps a "more" menu of its own after New user. --}}
     @php
         $canInvite = config('aura.auth.user_invitations');
+        // The toolbar has a phone "more" menu when it renders the actions menu or, without bulk actions, the
+        // Columns menu (components/table/settings, phoneMenu 'more'); both lead with aura/user/actions-menu.
+        $inviteInActionsMenu = ! ($collectionIsEmpty ?? false) && (
+            ($this->settings['bulk_actions'] && $this->bulkActions
+                && ($this->settings['views']['bulk_actions'] ?? null) === 'aura::components.table.bulk-actions')
+            || ($this->settings['settings'] && $this->currentView === 'list' && $this->model->showTableSettings())
+        );
     @endphp
     <div class="flex gap-2 items-center {{ $isRelationTable ? 'shrink-0' : 'flex-1 justify-end' }}">
         @if ($canInvite)
@@ -95,7 +103,7 @@
             </div>
         @endif
 
-        @if ($canInvite && ! $isRelationTable)
+        @if ($canInvite && ! $isRelationTable && ! $inviteInActionsMenu)
             <div class="shrink-0 sm:hidden" data-invite-user-menu>
                 <x-aura::dropdown align="right" width="w-44">
                     <x-slot name="trigger">

@@ -1,9 +1,12 @@
 @props(['stats', 'calm' => false])
 
 {{-- One anatomy for every card: label and icon, the total with a 30-day trend beside it, then one footer line
-     on every card: what the last 30 days added ("8 added in 30 days", the count in primary as a live figure),
-     with the change against the 30 days before right-aligned on the same line ("+33%", the figure colored,
-     "vs previous 30 days" in its tooltip; only with a previous period). Every card has the same height.
+     on every card: what the last 30 days added, never repeating the total ("All added in the last 30 days"
+     when every record is new, else "8 added in the last 30 days", the count in the caption's gray), with the
+     change against the 30 days before right-aligned on the same line ("+33%", the figure colored, "vs previous
+     30 days" in its tooltip; only with a previous period). Phones say "in 30 days" and put the change on a
+     second line; when one card in the row has a change, every footer keeps that second line, so the cards
+     keep one height.
      The trend is the running total of new records. It is a row decision: drawn on every card when
      each card had records on at least three days of the month, otherwise on none, so the row never
      mixes charted and bare cards. Calm cards (an empty workspace) keep label and total only; a zero
@@ -11,6 +14,7 @@
 @php
     $qualifies = fn ($stat) => $stat['showSparkline'] ?? (count(array_filter(array_map('intval', $stat['series'] ?? []))) >= 3);
     $rowTrend = ! $calm && collect($stats)->isNotEmpty() && collect($stats)->every($qualifies);
+    $rowHasDelta = ! $calm && collect($stats)->contains(fn ($stat) => ($stat['delta'] ?? null) !== null);
     $chartWidth = 112;
     $chartHeight = 28;
 @endphp
@@ -64,13 +68,15 @@
         </div>
 
         @unless ($calm)
-            {{-- A 2x2 phone card cannot always hold both: the change then wraps under the count, still right-aligned. --}}
-            <p class="flex flex-wrap gap-x-2 justify-between items-baseline mt-3 min-w-0 text-xs leading-5 text-gray-600 dark:text-gray-300" data-stat-change>
-                <span class="whitespace-nowrap">
-                    <span @class(['font-medium tabular-nums', 'text-primary-700 dark:text-primary-300' => $current > 0])>{{ number_format($current) }}</span> {{ __('added in 30 days') }}
-                </span>
+            <p @class(['flex flex-col gap-x-2 mt-3 min-w-0 text-xs leading-5 text-gray-600 sm:flex-row sm:flex-wrap sm:justify-between sm:items-baseline dark:text-gray-300', 'max-sm:min-h-10' => $rowHasDelta]) data-stat-change>
+                @php
+                    $allNew = $total > 0 && $current === $total;
+                    $count = number_format($current);
+                @endphp
+                <span class="tabular-nums sm:hidden">{{ $allNew ? __('All added in 30 days') : __(':count added in 30 days', ['count' => $count]) }}</span>
+                <span class="tabular-nums max-sm:hidden">{{ $allNew ? __('All added in the last 30 days') : __(':count added in the last 30 days', ['count' => $count]) }}</span>
                 @if ($delta !== null)
-                    <span class="ml-auto font-medium tabular-nums whitespace-nowrap {{ $delta > 0 ? 'text-green-700 dark:text-green-400' : ($delta < 0 ? 'text-red-700 dark:text-red-400' : 'text-gray-700 dark:text-gray-300') }}" title="{{ __('vs previous 30 days') }}">
+                    <span class="font-medium tabular-nums whitespace-nowrap sm:ml-auto {{ $delta > 0 ? 'text-green-700 dark:text-green-400' : ($delta < 0 ? 'text-red-700 dark:text-red-400' : 'text-gray-700 dark:text-gray-300') }}" title="{{ __('vs previous 30 days') }}">
                         @if ($delta !== 0)
                             <span class="sr-only">{{ $delta > 0 ? __('Increased by') : __('Decreased by') }}</span>
                         @endif

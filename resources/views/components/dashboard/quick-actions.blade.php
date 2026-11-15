@@ -32,7 +32,9 @@
 @endphp
 
 @if ($create->isNotEmpty() || $hasAdmin)
-<div {{ $attributes->merge(['class' => trim("{$colSpan} min-w-0".($splitOnPhones ? ' max-lg:contents' : ''))]) }} data-dashboard-quick-actions>
+{{-- Without cols the block sits in the dashboard's side column, which dissolves into the 12-column grid
+     below lg: unsplit, it spans the full row there and follows the stats, where the create actions go. --}}
+<div {{ $attributes->merge(['class' => trim("{$colSpan} min-w-0".($splitOnPhones ? ' max-lg:contents' : ($colSpan === '' ? ' max-lg:col-span-12 max-lg:order-1' : '')))]) }} data-dashboard-quick-actions>
     <div @class(['min-w-0', 'col-span-12 order-1 lg:order-none' => $splitOnPhones])>
     <h2 class="pb-2 border-b border-gray-200 aura-section-title dark:border-white/10">{{ __('Quick actions') }}</h2>
 

@@ -18,6 +18,7 @@
 
         <x-slot name="content">
             <div role="none">
+                @include('aura::components.table.actions-menu-items', ['itemClass' => $itemClass])
                 {{-- Phones: the column chooser opens from here (components/table/settings, phoneMenu 'actions'). --}}
                 @if ($columnsInActionsMenu ?? false)
                     <div class="sm:hidden">

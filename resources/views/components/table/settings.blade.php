@@ -22,6 +22,11 @@
 
         <x-slot name="content">
             <div class="w-60">
+                @if ($phoneMenu === 'more')
+                    <div class="px-2 pt-2 sm:hidden" x-on:click="open = false">
+                        @include('aura::components.table.actions-menu-items', ['itemClass' => 'flex items-center px-3 py-1.5 text-sm text-gray-700 rounded-md transition-colors duration-150 cursor-pointer hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5'])
+                    </div>
+                @endif
                 @if ($phoneMenu)
                     <p class="px-4 pt-3 pb-1 text-xs font-medium text-gray-500 sm:hidden dark:text-gray-400">{{ __('Columns') }}</p>
                 @endif

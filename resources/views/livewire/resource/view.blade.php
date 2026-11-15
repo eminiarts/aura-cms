@@ -3,11 +3,13 @@
 
     @php
         // A record with nothing beside its values (no related lists, relation cards or rail) takes its form's
-        // frame, so view and edit read as one page: its body keeps the form's readable width, tabbed records
-        // included, while breadcrumb and header span the page (Edit sits where Save sits on the form); tabs
-        // and panels look as on the form.
+        // frame, so view and edit read as one page: breadcrumb, header and values share the form's readable,
+        // left-aligned column, tabbed records included (Edit ends where Save ends on the form); tabs and
+        // panels look as on the form.
         $formFrame = $recordLayout->hasPanels() ? null : \Aura\Base\RecordLayout\RecordViewSections::formFrame($this->viewFields, $model);
     @endphp
+
+    <div @class(['max-w-3xl' => $formFrame !== null && ! ($formFrame['rail'] ?? false) && ! $inModal]) data-form-body>
 
     @if(!$inModal)
     <x-aura::breadcrumbs>
@@ -22,8 +24,6 @@
     @endif
 
     @include($model->viewHeaderView())
-
-    <div @class(['max-w-3xl' => $formFrame !== null && ! ($formFrame['rail'] ?? false) && ! $inModal]) data-form-body>
 
     @if ($recordLayout->hasPanels())
         @include('aura::livewire.resource.record-layout.layout')

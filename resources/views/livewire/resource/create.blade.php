@@ -3,14 +3,15 @@
     // A new record has no title yet, so the H1 says "New deal" (sentence case, acronyms kept) and there is no eyebrow.
     $newRecordTitle = __('New :resource', ['resource' => \Aura\Base\RecordLayout\RecordFormSections::inSentence(__($model->singularName()))]);
     $indexUrl = Route::has('aura.' . $model->getSlug() . '.index') ? route('aura.' . $model->getSlug() . '.index') : null;
-    // A form without a right rail (simple or tabbed) keeps a readable width for its body, left-aligned at the
-    // content edge; breadcrumb and header span the page, so Save sits at the right content edge as on edit.
+    // A form without a right rail (simple or tabbed) is one readable, left-aligned column (max-w-3xl):
+    // breadcrumb, header and fields share it, so Cancel and Save end at the form's right edge, as on edit.
     // A simple form also loses its lone panel heading.
     $formSections = \Aura\Base\RecordLayout\RecordFormSections::arrange($this->createFields);
 @endphp
 <div class="">
     @section('title', $newRecordTitle)
 
+    <div @class(['max-w-3xl' => ! $formSections['rail'] && ! $inModal]) data-form-body>
 
     @if(!$inModal)
     <x-aura::breadcrumbs>
@@ -47,7 +48,6 @@
     </div>
     </div>
 
-    <div @class(['max-w-3xl' => ! $formSections['rail'] && ! $inModal]) data-form-body>
     @if($model::usesTitle())
     <div class="mb-4">
         <x-aura::fields.wrapper :field="['slug' => 'title']" wrapperClass="" class="-mx-4">

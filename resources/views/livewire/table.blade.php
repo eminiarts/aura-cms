@@ -196,8 +196,11 @@
         @endif
 
         @php
-            $hasToolbar = ! $collectionIsEmpty && ($this->settings['search'] || $this->settings['settings'] || $this->settings['filters']
-                || ($this->settings['bulk_actions'] && $this->bulkActions));
+            // An empty list keeps its toolbar row: the search where it always is and the "more" menu (Edit resource)
+            // at the toolbar's right end; only the controls that arrange records (view switch, columns, filters,
+            // bulk actions) stay away until there is something to arrange.
+            $hasToolbar = $this->settings['search'] || $this->settings['settings'] || $this->settings['filters']
+                || ($this->settings['bulk_actions'] && $this->bulkActions);
         @endphp
 
         <div @class(['mt-4' => $hasToolbar])>
@@ -208,7 +211,7 @@
             @if ($hasToolbar)
             @php
                 $hasViewSwitch = $model->tableGridView() || ($this->resolvedKanbanConfiguration()['enabled'] ?? false) || $model->tableKanbanView();
-                $twoRowsOnPhones = $hasViewSwitch && ($this->settings['settings'] || $this->settings['filters']);
+                $twoRowsOnPhones = ! $collectionIsEmpty && $hasViewSwitch && ($this->settings['settings'] || $this->settings['filters']);
                 $columnsInActionsMenu = $this->settings['settings'] && $currentView == 'list' && $model->showTableSettings()
                     && $this->settings['bulk_actions'] && $this->bulkActions
                     && ($this->settings['views']['bulk_actions'] ?? null) === 'aura::components.table.bulk-actions';
@@ -235,7 +238,12 @@
                     </div>
                 @endif
 
-                <div @class(['flex gap-2 items-center ml-auto shrink-0', 'max-sm:w-full' => $twoRowsOnPhones])>
+                {{-- An empty list's controls hold only the desktop "more" menu: phones drop the wrapper, so the search reaches the edge. --}}
+                <div @class(['flex gap-2 items-center ml-auto shrink-0', 'max-sm:w-full' => $twoRowsOnPhones, 'max-sm:hidden' => $collectionIsEmpty])>
+
+                    @if ($collectionIsEmpty)
+                        @include('aura::components.table.resource-editor-button', ['standalone' => true])
+                    @else
 
                     {{-- Columns --}}
                     @if ($this->settings['settings'] || $this->settings['filters'])
@@ -272,6 +280,7 @@
                     @endif
 
                     @include('aura::components.table.resource-editor-button')
+                    @endif
                 </div>
             </div>
             @endif

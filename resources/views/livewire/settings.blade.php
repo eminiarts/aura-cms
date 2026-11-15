@@ -1,7 +1,7 @@
-{{-- Settings are a form: breadcrumb and header span the page (Save at the right content edge, as on
-     resource forms), the body keeps the forms' readable width (max-w-3xl, left-aligned), so short
-     controls do not stretch into half-empty cards. --}}
-<div>
+{{-- Settings are a form: one readable, left-aligned column (max-w-3xl) as on the resource forms, breadcrumb
+     and header included, so Save ends at the form's right edge and short controls do not stretch into
+     half-empty cards. --}}
+<div class="max-w-3xl" data-form-body>
     @section('title', 'Edit Settings')
 
     {{-- Page header as on index pages: the trail (a back link on phones), then title, description and actions. --}}
@@ -132,7 +132,6 @@
 
     {{-- Same field gutter as the edit page: panels bring px-2, so their cards line up with the title.
          A block, not flex, so the cards' bottom margins keep collapsing into one section gap. --}}
-    <div class="max-w-3xl" data-form-body>
     <div class="-mx-2">
     @foreach($this->fieldsForView as $key => $field)
         <style>
@@ -160,7 +159,6 @@
             </div>
         @endcheckCondition
     @endforeach
-    </div>
     </div>
 
     @if($canUpdate)

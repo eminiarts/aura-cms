@@ -159,7 +159,7 @@
                     $statusKey = $metaKeyOfType(\Aura\Base\Fields\Status::class);
                     $pairedKeys = ($numberKey && $statusKey) ? [$statusKey, $numberKey] : [];
                 @endphp
-                {{-- Phones: one line for the record, its relations on one line when it has several, then the same two columns on every row (a status and a number share one line); a Boolean state with its date joins the meta line, its row's tags then sit on the title line. --}}
+                {{-- Phones: one line for the record, its relations on one line when it has several, then the same two columns on every row (a status and a number share one line); a Boolean state with its date joins the meta line, its row's tags lead that line and the title gets the full width, up to two lines. --}}
                 <ul class="border-t border-b divide-y divide-aura-hairline border-aura-hairline sm:hidden">
                     @foreach ($mobileRows as $item)
                         @php
@@ -172,9 +172,9 @@
                             $relationLine = $relationKeys->map(fn ($key) => $relationName($displays[$key]))->filter(fn ($name) => $name !== '')->implode(' · ');
                             $rowUrl = auth()->user()?->can('view', $row) ? $row->viewUrl() : null;
 
-                            // A row with a state line keeps two lines: its tags (a category) sit on the title line, and
-                            // the state joins the plain meta line as "1.8.0 · Jul 12, 2026": the date when the state is
-                            // on, the label when it has no date, "Not published" when it is off.
+                            // A row with a state line: its tags (a category) lead the meta line, the state joins it as
+                            // "Release 1.8.0 · Jul 12, 2026" (the date when the state is on, the label when it has no
+                            // date, "Not published" when it is off), so the title keeps the full width, up to two lines.
                             $titleTags = collect();
                             if ($stateKeys) {
                                 $isTag = fn ($value) => preg_match('/class=["\'][^"\']*\baura-tag\b/', (string) $value) === 1;
@@ -197,17 +197,11 @@
                                     <x-aura::avatar :record="$row" size="md" />
                                 @endif
                                 <div class="flex-1 min-w-0">
-                                    <div @class(['text-sm font-medium text-gray-900 dark:text-white', 'truncate' => $titleTags->isEmpty(), 'flex gap-2 items-center min-w-0' => $titleTags->isNotEmpty()])>
-                                        @if ($titleTags->isNotEmpty())<span class="min-w-0 truncate">@endif
+                                    <div @class(['text-sm font-medium text-gray-900 dark:text-white', 'truncate' => ! $stateKeys, 'line-clamp-2 break-words' => (bool) $stateKeys])>
                                         @if ($primary === null || $primary === '')
                                             <span class="text-gray-400 dark:text-gray-500">–</span>
                                         @else
                                             {!! $primary !!}
-                                        @endif
-                                        @if ($titleTags->isNotEmpty())</span>
-                                            @foreach ($titleTags as $titleTag)
-                                                <span class="flex shrink-0 font-normal" data-mobile-row-tag>{!! $titleTag !!}</span>
-                                            @endforeach
                                         @endif
                                     </div>
                                     @if ($relationKeys->isNotEmpty())
@@ -239,8 +233,15 @@
                                             $filledMeta = $metaValues->reject(fn ($value) => $isBlank($value));
                                         @endphp
                                         <div class="mt-0.5 text-sm text-gray-500 dark:text-gray-400 [&_.aura-link]:text-inherit [&_.aura-record-link]:text-inherit" data-mobile-row-meta>
-                                            @if ($filledMeta->isEmpty())
+                                            @if ($filledMeta->isEmpty() && $titleTags->isEmpty())
                                                 <div class="h-5 text-gray-400 dark:text-gray-500">–</div>
+                                            @elseif ($titleTags->isNotEmpty())
+                                                <div class="flex gap-2 items-center min-w-0">
+                                                    @foreach ($titleTags as $titleTag)
+                                                        <span class="flex shrink-0" data-mobile-row-tag>{!! $titleTag !!}</span>
+                                                    @endforeach
+                                                    <span class="min-w-0 truncate">{!! $filledMeta->map(fn ($value) => (string) $value)->implode(' · ') !!}</span>
+                                                </div>
                                             @else
                                                 <div class="aura-dot-list">
                                                     @foreach ($filledMeta as $metaValue)
