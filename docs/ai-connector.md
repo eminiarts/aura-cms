@@ -42,9 +42,9 @@ This sets `aura.ai.enabled` to `false`. `AiStatus::configured()` then returns `f
 
 ## Provider status
 
-Global Admins can open `/admin/settings/ai` to see which providers are configured, which one is the default, and whether credentials are present. The page never renders credential values and has no editable inputs or Save action. A connection test sends a short prompt through the selected Laravel AI provider and redacts configured credentials from errors.
+There is no settings page for AI providers: they are configured only through the environment and `config/ai.php`. To check them from code, use `AiStatus`. `providers()` lists each provider with its driver, whether credentials are present, whether it is usable, and whether it is the default; it never returns credential values. `test($provider)` sends a short prompt through that provider and redacts configured credentials from errors.
 
-After changing environment values in production, rebuild or clear the configuration cache before checking this page.
+After changing environment values in production, rebuild or clear the configuration cache.
 
 ## Use the SDK directly
 
