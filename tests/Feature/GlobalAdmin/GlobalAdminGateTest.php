@@ -1,6 +1,5 @@
 <?php
 
-use Aura\Base\Fields\GlobalAdmin;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Policies\TeamPolicy;
 use Aura\Base\Resources\Role;
@@ -31,31 +30,20 @@ function teamMember(Team $team): User
     return $target->refresh();
 }
 
-describe('the global_admin field on the user form', function () {
-    it('exposes the GlobalAdmin field type, on forms and out of the index', function () {
-        $field = collect((new User)->getFields())->firstWhere('slug', 'global_admin');
-
-        expect($field)->not->toBeNull()
-            ->and($field['type'])->toBe(GlobalAdmin::class)
-            ->and($field['on_forms'])->toBeTrue()
-            ->and($field['on_index'])->toBeFalse();
-    });
-});
-
 describe('the package AuraGlobalAdmin gate', function () {
-    it('allows a user whose global_admin flag is true', function () {
+    it('allows a user whose email is listed in config', function () {
         $ga = createGlobalAdmin();
 
         expect(Gate::forUser($ga)->allows('AuraGlobalAdmin'))->toBeTrue();
     });
 
-    it('denies a user whose global_admin flag is false', function () {
+    it('denies an unlisted user', function () {
         $plain = User::factory()->create();
 
         expect(Gate::forUser($plain)->allows('AuraGlobalAdmin'))->toBeFalse();
     });
 
-    it('reflects the flag through the acting-user entry point', function () {
+    it('reflects config through the acting-user entry point', function () {
         $ga = createGlobalAdmin();
         $plain = User::factory()->create();
 
@@ -74,17 +62,17 @@ describe('the package AuraGlobalAdmin gate', function () {
 });
 
 describe('host override of the gate', function () {
-    it('lets a host redefinition win over the package default (deny a flagged user)', function () {
+    it('lets a host redefinition win over the package default (deny a listed user)', function () {
         $ga = createGlobalAdmin();
 
-        // The package default would allow this flagged user; a later host
+        // The package default would allow this listed user; a later host
         // Gate::define replaces it (app providers boot after package providers).
         Gate::define('AuraGlobalAdmin', fn ($user) => false);
 
         expect(Gate::forUser($ga)->allows('AuraGlobalAdmin'))->toBeFalse();
     });
 
-    it('lets a host redefinition win over the package default (allow an unflagged user)', function () {
+    it('lets a host redefinition win over the package default (allow an unlisted user)', function () {
         $plain = User::factory()->create();
 
         Gate::define('AuraGlobalAdmin', fn ($user) => true);
@@ -119,7 +107,7 @@ describe('TeamPolicy bypasses become live for Global Admins', function () {
         expect($this->policy->addTeamMember($ga, $this->team))->toBeTrue();
     });
 
-    it('refuses a non-member non-super-admin with the flag off', function () {
+    it('refuses a non-member non-Super-Admin whose email is unlisted', function () {
         $plain = User::factory()->create();
         $this->actingAs($plain);
 
@@ -131,7 +119,7 @@ describe('TeamPolicy bypasses become live for Global Admins', function () {
     });
 });
 
-describe('impersonation authorization keys off the flag', function () {
+describe('impersonation authorization keys off the gate', function () {
     it('evaluates canImpersonate/canBeImpersonated on the right user, not the actor', function () {
         $ga = createGlobalAdmin();
         $plain = User::factory()->create();
@@ -158,7 +146,7 @@ describe('impersonation authorization keys off the flag', function () {
     });
 
     it('refuses a non-Global-Admin actor', function () {
-        $actor = User::factory()->create(); // flag off
+        $actor = User::factory()->create(); // email unlisted
         $target = User::factory()->create();
         $this->actingAs($actor);
 
@@ -176,7 +164,7 @@ describe('impersonation authorization keys off the flag', function () {
     });
 });
 
-describe('the flag cannot be self-granted (escalation guards)', function () {
+describe('UI payloads cannot grant Global Admin', function () {
     it('ignores global_admin passed to mass assignment', function () {
         $this->actingAs(createSuperAdmin()); // a Super Admin, but NOT a Global Admin
 
@@ -189,7 +177,7 @@ describe('the flag cannot be self-granted (escalation guards)', function () {
             ],
         ]);
 
-        expect($user->fresh()->global_admin)->toBeFalse();
+        expect($user->fresh()->isAuraGlobalAdmin())->toBeFalse();
     });
 
     it('ignores global_admin injected through the fields payload', function () {
@@ -204,7 +192,7 @@ describe('the flag cannot be self-granted (escalation guards)', function () {
             ],
         ]);
 
-        expect($user->fresh()->global_admin)->toBeFalse();
+        expect($user->fresh()->isAuraGlobalAdmin())->toBeFalse();
     });
 
     it('ignores a guest attempting mass assignment', function () {
@@ -219,7 +207,7 @@ describe('the flag cannot be self-granted (escalation guards)', function () {
             ],
         ]);
 
-        expect($user->fresh()->global_admin)->toBeFalse();
+        expect($user->fresh()->isAuraGlobalAdmin())->toBeFalse();
     });
 
     it('refuses a non-Global-Admin toggling the flag through the user form', function () {
@@ -233,7 +221,7 @@ describe('the flag cannot be self-granted (escalation guards)', function () {
             ->call('save')
             ->assertHasNoErrors();
 
-        expect($target->fresh()->global_admin)->toBeFalse();
+        expect($target->fresh()->isAuraGlobalAdmin())->toBeFalse();
     })->skip(fn () => ! config('aura.teams'), 'Uses the team-scoped user form.');
 
     it('never produces a Global Admin through registration, even with an injected payload', function () {
@@ -253,7 +241,7 @@ describe('the flag cannot be self-granted (escalation guards)', function () {
         $user = User::where('email', 'registrant@example.com')->first();
 
         expect($user)->not->toBeNull()
-            ->and($user->global_admin)->toBeFalse();
+            ->and($user->isAuraGlobalAdmin())->toBeFalse();
     })->skip(fn () => ! config('aura.teams'), 'Team registration flow requires teams enabled.');
 
     it('never produces a Global Admin through invitation registration', function () {
@@ -282,7 +270,7 @@ describe('the flag cannot be self-granted (escalation guards)', function () {
         $user = User::where('email', 'invited@example.com')->first();
 
         expect($user)->not->toBeNull()
-            ->and($user->global_admin)->toBeFalse();
+            ->and($user->isAuraGlobalAdmin())->toBeFalse();
     })->skip(fn () => ! config('aura.teams'), 'Invitations are teams-on only.');
 
     it('never grants Global Admin when an existing user accepts an invitation with the flag injected', function () {
@@ -315,32 +303,6 @@ describe('the flag cannot be self-granted (escalation guards)', function () {
 
         // The accept path ran (membership attached) but the flag was ignored.
         expect($existing->teams()->whereKey($team->id)->exists())->toBeTrue()
-            ->and($existing->global_admin)->toBeFalse();
+            ->and($existing->isAuraGlobalAdmin())->toBeFalse();
     })->skip(fn () => ! config('aura.teams'), 'Invitations are teams-on only.');
-});
-
-describe('a Global Admin can grant and revoke the flag', function () {
-    it('lets a Global Admin toggle another user\'s flag through the form', function () {
-        $ga = createSuperAdmin();
-        $ga->forceFill(['global_admin' => true])->saveQuietly();
-        $this->actingAs($ga->refresh());
-
-        $target = teamMember($ga->currentTeam);
-
-        // Grant.
-        livewire(Edit::class, ['slug' => 'user', 'id' => $target->id])
-            ->set('form.fields.global_admin', true)
-            ->call('save')
-            ->assertHasNoErrors();
-
-        expect($target->fresh()->global_admin)->toBeTrue();
-
-        // Revoke.
-        livewire(Edit::class, ['slug' => 'user', 'id' => $target->id])
-            ->set('form.fields.global_admin', false)
-            ->call('save')
-            ->assertHasNoErrors();
-
-        expect($target->fresh()->global_admin)->toBeFalse();
-    })->skip(fn () => ! config('aura.teams'), 'Uses the team-scoped user form.');
 });

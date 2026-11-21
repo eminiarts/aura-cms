@@ -56,7 +56,7 @@ The package migration creates these team columns when teams are enabled:
 
 | Area | Teams-on schema | Teams-off schema |
 | --- | --- | --- |
-| Users | `users.current_team_id` and `users.global_admin` | `users.global_admin` only |
+| Users | `users.current_team_id` | No team columns |
 | Teams | `teams` table | No `teams` table |
 | Resources | `posts.team_id` | No `posts.team_id` |
 | Roles and permissions | `team_id` on `roles` and `permissions` | No `team_id` columns |
@@ -65,7 +65,7 @@ The package migration creates these team columns when teams are enabled:
 
 Teams have a dedicated database table. Invitations use the shared `posts` table with the `teaminvitation` resource type. Aura does not create a separate `team_invitations` table.
 
-Aura registers the team and invitation resources only when teams are enabled. The `global_admin` column exists in both modes because this status applies across the installation.
+Aura registers the team and invitation resources only when teams are enabled. Global Admins are configured through `aura.global_admin.emails` in both modes.
 
 ### Replace the built-in resources
 
@@ -143,7 +143,7 @@ The `aura.current-team.update` route accepts `PUT /current-team`. It looks up th
 $user->currentTeam;          // The Team in current_team_id, or null
 $user->current_team_id;      // int|null
 $user->teams;                // Membership Teams
-$user->getTeams();           // Cached Team list, or every Team for a Global Admin
+$user->getTeams();           // Cached list of teams the user belongs to
 $user->belongsToTeam($team); // Membership check
 $user->isCurrentTeam($team); // Current-team check
 $user->ownsTeam($team);      // Owner check using teams.user_id
@@ -167,7 +167,7 @@ See [Roles and Permissions](/docs/roles-permissions) for the role catalog, permi
 
 ### Global admin and team super admin
 
-Global admin status comes from the `users.global_admin` flag and the `AuraGlobalAdmin` gate. It is independent of team membership and the super admin flag on a role.
+Global Admin status comes from `aura.global_admin.emails` and the `AuraGlobalAdmin` gate. It is independent of team membership and the super admin flag on a role.
 
 A team super admin has an effective role with `super_admin = true` in the current team. That role grants blanket access through resource policies within that team. It grants no access to other teams.
 
@@ -358,7 +358,7 @@ With `aura.teams` set to false before installation:
 - Roles form one flat catalog. There are no shared versus team roles, team overrides, membership team IDs, or `is_global` distinction.
 - Public registration does not ask for a team and assigns the seeded `user` role.
 - `php artisan aura:user` assigns the seeded `admin` role.
-- The `global_admin` flag remains independent of roles. It does not allow team visits because no teams exist.
+- The configured Global Admin email list remains independent of roles. It does not allow team visits because no teams exist.
 
 Use the [Teams-off installation steps](/docs/installation#without-teams) when the public beta requires the split setup. Do not change the setting after the schema exists without a deliberate migration and data plan.
 

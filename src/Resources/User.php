@@ -3,9 +3,11 @@
 namespace Aura\Base\Resources;
 
 use Aura\Base\Database\Factories\UserFactory;
+use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Image;
 use Aura\Base\Resource;
 use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
+use Aura\Base\Support\GlobalAdminEmails;
 use Aura\Base\Traits\ProfileFields;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\MustVerifyEmail;
@@ -26,6 +28,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Lab404\Impersonate\Models\Impersonate;
 use Lab404\Impersonate\Services\ImpersonateManager;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -49,11 +52,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public const GLOBAL_ADMIN_GATE = 'AuraGlobalAdmin';
 
-    /**
-     * Shared cache key for the Global Admin team switcher list (identical for
-     * every Global Admin; invalidated on team create/rename/delete).
-     */
-    public const GLOBAL_ADMIN_TEAMS_CACHE_KEY = 'aura.global_admin.teams';
+    public static array $areas = ['team', 'global'];
 
     public static $customTable = true;
 
@@ -78,7 +77,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'global_admin' => 'boolean',
         // 'password' => 'hashed',
     ];
 
@@ -407,26 +405,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 ],
             ],
             [
-                'name' => 'Global Admin',
-                'slug' => 'global_admin',
-                'type' => 'Aura\\Base\\Fields\\GlobalAdmin',
-                'instructions' => 'Instance-level operator with access across all teams. Only a Global Admin can grant or revoke this.',
-                'validation' => '',
-                'default' => false,
-                'on_index' => false,
-                'on_forms' => true,
-                'on_view' => true,
-                // Client-advisory only: the field is shown to Global Admins so
-                // they can toggle it. The authoritative guard lives server-side
-                // in the GlobalAdmin field's saved() escalation check.
-                'conditional_logic' => function ($model, $post) {
-                    return auth()->check() && Gate::allows('AuraGlobalAdmin');
-                },
-                'style' => [
-                    'width' => '50',
-                ],
-            ],
-            [
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Teams',
                 'slug' => 'tab-Teams',
@@ -577,31 +555,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             return collect();
         }
 
-        $teamClass = config('aura.resources.team');
-
-        // Cache IDs only — never Eloquent Collections. With
-        // cache.serializable_classes=false, model/collection payloads become
-        // __PHP_Incomplete_Class and the team switcher fatals on ->count().
-        if ($this->isAuraGlobalAdmin()) {
-            $ids = Cache::remember(self::GLOBAL_ADMIN_TEAMS_CACHE_KEY, now()->addHour(), function () use ($teamClass) {
-                return $teamClass::withoutGlobalScopes()->orderBy('id')->pluck('id')->all();
-            });
-
-            if (! is_array($ids) || $ids === []) {
-                if (! is_array($ids)) {
-                    Cache::forget(self::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
-                }
-
-                return $teamClass::withoutGlobalScopes()->newCollection();
-            }
-
-            return $teamClass::withoutGlobalScopes()
-                ->with('meta')
-                ->whereIn((new $teamClass)->getKeyName(), $ids)
-                ->orderBy('id')
-                ->get();
-        }
-
         $ids = Cache::remember('user.'.$this->id.'.teams', now()->addHour(), function () {
             return $this->teams()->pluck('teams.id')->all();
         });
@@ -736,14 +689,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function indexQuery($query)
     {
         if (config('aura.teams')) {
-            // A Global Admin transcends the tenant boundary: the Users index
-            // lists every user — including users with no Membership at all
-            // (e.g. orphaned by a team deletion), who must stay reachable for
-            // an instance operator. (TeamScope's users branch grants the
-            // matching cross-team bypass; both seams must relax together or
-            // the index would re-restrict.) The gate is consulted directly since
-            // the authenticated user is loosely typed here.
-            if (Auth::check() && Gate::allows(self::GLOBAL_ADMIN_GATE)) {
+            // Cross-team Users queries belong to the global area. Non-HTTP
+            // callers retain the existing bypass.
+            if (Aura::area() !== 'team' && Auth::check() && Gate::allows(self::GLOBAL_ADMIN_GATE)) {
                 return $query;
             }
 
@@ -756,7 +704,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             });
         }
 
-        return $query->whereHas('roles');
+        return Aura::area() === 'global' && Auth::check() && Gate::allows(self::GLOBAL_ADMIN_GATE)
+            ? $query : $query->whereHas('roles');
     }
 
     /**
@@ -938,6 +887,23 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     protected static function booted()
     {
         parent::booted();
+
+        static::saving(function (User $user): void {
+            $actor = auth()->user();
+
+            if ($actor instanceof self && $actor->isDirty('email')) {
+                $actor = clone $actor;
+                // The edited address cannot authorize its own takeover.
+                $actor->setAttribute('email', $actor->getRawOriginal('email'));
+            }
+
+            if (! GlobalAdminEmails::isTrustedCreation()
+                && (! $user->exists || $user->isDirty('email'))
+                && GlobalAdminEmails::contains((string) $user->getAttribute('email'))
+                && (! $actor || ! Gate::forUser($actor)->allows(self::GLOBAL_ADMIN_GATE))) {
+                throw ValidationException::withMessages(['email' => __('This email address cannot be used.')]);
+            }
+        });
 
         static::saved(function ($user) {
             if ($user->wasChanged('current_team_id')) {

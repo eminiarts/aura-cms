@@ -218,7 +218,7 @@
                                                 </div>
 
                                                 <div class="overflow-hidden flex-1 whitespace-nowrap text-ellipsis">
-                                                    <a class="block overflow-hidden text-ellipsis" href="{{ route('aura.' . $result->getSlug() . '.view', ['id' => $result->id]) }}">
+                                                    <a class="block overflow-hidden text-ellipsis" href="{{ route(\Aura\Base\Facades\Aura::resourceRouteName($result->getSlug(), 'view'), ['id' => $result->id]) }}">
                                                         #{{ $result->id }} {{ $result->title() }}
                                                     </a>
                                                 </div>

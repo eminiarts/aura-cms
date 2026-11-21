@@ -22,7 +22,7 @@ class Index extends Component
     public function mount($slug = null)
     {
         // Get the slug from parameter or current route
-        $this->slug = $slug ?? explode('.', request()->route()->getName())[1] ?? null;
+        $this->slug = $slug ?? request()->route()?->parameter('slug');
 
         $this->resource = Aura::findResourceBySlug($this->slug);
 

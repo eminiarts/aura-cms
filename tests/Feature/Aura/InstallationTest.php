@@ -48,6 +48,42 @@ describe('installation commands', function () {
         expect(end($calls))->toBe($failedCommand);
     })->with(['aura:extend-user-model', 'aura:install-config', 'migrate', 'aura:user', 'storage:link']);
 
+    it('creates the first user interactively without unknown installer options', function () {
+        $calls = [];
+        $this->app->usePublicPath(sys_get_temp_dir().'/aura-install-'.bin2hex(random_bytes(8)));
+
+        foreach (['vendor:publish', 'aura:extend-user-model', 'aura:user', 'storage:link'] as $name) {
+            $command = new class($name, $calls) extends Command
+            {
+                public function __construct(string $name, private array &$calls)
+                {
+                    parent::__construct();
+                    $this->setName($name);
+                    $this->ignoreValidationErrors();
+                }
+
+                public function handle(): int
+                {
+                    $this->calls[] = $this->getName();
+
+                    return self::SUCCESS;
+                }
+            };
+
+            $this->app->make(Kernel::class)->registerCommand($command);
+        }
+
+        $this->artisan('aura:install')
+            ->expectsConfirmation('Would you like to star our repo on GitHub?', false)
+            ->expectsConfirmation('Do you want to modify the aura configuration?', false)
+            ->expectsConfirmation('Do you want to run the migrations?', false)
+            ->expectsConfirmation('Do you want to create a user?', 'yes')
+            ->expectsOutputToContain('Next steps:')
+            ->assertSuccessful();
+
+        expect($calls)->toContain('aura:user');
+    });
+
     it('is visible in the artisan command list with a description of what it does', function () {
         $command = Artisan::all()['aura:install'];
 

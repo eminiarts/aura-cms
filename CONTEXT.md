@@ -21,8 +21,12 @@ A supported operating mode in which the team feature is disabled and the install
 _Avoid_: single-tenant mode, no-teams
 
 **Global Admin**:
-A user with instance-level administrative status. Transcends the tenant boundary: sees and manages all teams and all users, and may enter any team without being a member. Distinct from a Super Admin, whose power is confined to one team.
+A user defined in configuration as an instance-level operator. Transcends the tenant boundary: sees and manages all teams and all users, and may enter any team without being a member. Distinct from a Super Admin, whose power is confined to one team.
 _Avoid_: super admin, root user, owner
+
+**Global Area**:
+The URL-defined area for Global Admin work. The team area is everything else.
+_Avoid_: super admin mode, session mode
 
 **Super Admin**:
 A role-level grant of every permission within the single team where the role is held. Says nothing about other teams.

@@ -336,7 +336,7 @@ Enable `aura.features.global_search` to include global search in the application
 
 ## Resource editor and widgets
 
-The resource editor is available in local and testing environments when `aura.features.resource_editor` is enabled. Its route, `aura.resource.editor`, requires a super admin. The editor refuses vendor resources and resources whose field definitions contain closures. It opens the field editor in a slide-over through the `openSlideOver` event.
+The resource editor is available in local and testing environments when `aura.features.resource_editor` is enabled. Its route, `aura.global.resource.editor`, requires a Global Admin. The editor refuses vendor resources and resources whose field definitions contain closures. It opens the field editor in a slide-over through the `openSlideOver` event.
 
 The resource generator modal, `aura::create-resource`, requires a super admin and cannot run in production. The editor uses `aura::choose-template` to let the user pick a template. The plugins page and styleguide are separate admin pages with their own routes.
 

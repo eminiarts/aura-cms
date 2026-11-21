@@ -13,6 +13,11 @@ use Aura\Base\Resources\TeamInvitation;
 use Aura\Base\Resources\User;
 
 return [
+    'global_admin' => [
+        'path' => 'global',
+        'emails' => array_values(array_filter(array_map('trim', explode(',', (string) env('AURA_GLOBAL_ADMINS', ''))))),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Path

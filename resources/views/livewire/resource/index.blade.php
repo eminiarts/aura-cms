@@ -12,9 +12,9 @@
         </x-aura::breadcrumbs>
 
         <div>
-            @if (config('aura.features.resource_editor'))
+            @if (config('aura.features.resource_editor') && \Illuminate\Support\Facades\Gate::allows('AuraGlobalAdmin'))
                     @if ($resource->isAppResource())
-                        <x-aura::button.transparent :href="route('aura.resource.editor', $slug)" size="">
+                        <x-aura::button.transparent :href="route('aura.global.resource.editor', $slug)" size="">
                             <x-aura::icon icon="cog" class="mr-2" />
                             {{ __('Edit Resource') }}
                         </x-aura::button.transparent>

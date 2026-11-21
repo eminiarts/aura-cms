@@ -258,7 +258,7 @@ Page routes use the names `aura.{slug}.index`, `aura.{slug}.create`, `aura.{slug
 Aura uses several distinct concepts in permission tests:
 
 - A super admin role grants every permission in the current team through its `super_admin` flag.
-- A global admin user can cross team boundaries. This access comes from `users.global_admin`, independently of the super admin role.
+- A global admin user can cross team boundaries. This access comes from `aura.global_admin.emails`, independently of the Super Admin role. Cross-team Users queries require the global area.
 - A global role has no team and belongs to the role catalog. A team role belongs to one team through its `team_id`.
 - Membership links a user to a team through a pivot row with one role. A global admin who enters a team without that row is visiting it and does not become a member.
 
@@ -300,7 +300,7 @@ expect($this->user->hasPermission('viewAny-article'))->toBeTrue();
 
 When teams are enabled, assign the role with `syncWithPivotValues()` to include the team ID on the pivot row. With teams disabled, use `sync()` because the pivot table has no team column.
 
-To test global admin access, set the flag in a trusted fixture with `forceFill(['global_admin' => true])->saveQuietly()`. This field is intentionally protected from mass assignment.
+To test Global Admin access, create the user first and add their email to `config('aura.global_admin.emails')`. No database field grants this access.
 
 ## Test uploads
 

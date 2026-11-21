@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Livewire;
 
+use Aura\Base\Facades\Aura;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Gate;
@@ -95,12 +96,12 @@ class GlobalSearch extends Component
 
         $searchResults = $searchResults->flatten()->map(function ($item) {
             if ($item instanceof User) {
-                $item['view_url'] = route('aura.user.view', ['id' => $item->id]);
+                $item['view_url'] = route(Aura::resourceRouteName('user', 'view'), ['id' => $item->id]);
             } elseif ($item instanceof Resource) {
                 $item['type'] = $item->getType();
-                $item['view_url'] = route('aura.'.$item->getSlug().'.view', ['id' => $item->getKey()]);
+                $item['view_url'] = route(Aura::resourceRouteName($item->getSlug(), 'view'), ['id' => $item->getKey()]);
             } else {
-                $item['view_url'] = route('aura.user.view', ['id' => $item->id]);
+                $item['view_url'] = route(Aura::resourceRouteName('user', 'view'), ['id' => $item->id]);
             }
 
             return $item;

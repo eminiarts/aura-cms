@@ -148,14 +148,14 @@ test('only global admins can view or test AI provider status', function () {
 function globalAdminWithTeam(): User
 {
     $user = createSuperAdmin();
-    $user->forceFill(['global_admin' => true])->saveQuietly();
+    config(['aura.global_admin.emails' => [$user->email]]);
 
     return $user->refresh();
 }
 
 test('a global admin without a current team can open the AI status page', function () {
     $admin = User::factory()->create(config('aura.teams') ? ['current_team_id' => null] : []);
-    $admin->forceFill(['global_admin' => true])->saveQuietly();
+    config(['aura.global_admin.emails' => [$admin->email]]);
 
     $this->actingAs($admin->refresh());
 

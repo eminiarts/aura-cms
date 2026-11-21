@@ -12,10 +12,36 @@ use Illuminate\Auth\Access\Response;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 
 class ResourcePolicy implements ScopesMediaVisibility
 {
     use HandlesAuthorization;
+
+    /**
+     * Instance-level boundaries every entry point shares (pages, modals, the
+     * fields endpoint, search): resources that live only in the Global Area,
+     * and Global Admin accounts, are out of reach for anyone who is not a
+     * Global Admin, including team Super Admins with blanket access.
+     */
+    public function before($user, string $ability, $resource = null): ?bool
+    {
+        if (Gate::forUser($user)->allows(User::GLOBAL_ADMIN_GATE)) {
+            return null;
+        }
+
+        if (is_a($resource, Resource::class, true) && ! in_array('team', $resource::$areas, true)) {
+            return false;
+        }
+
+        if ($resource instanceof User && $resource->exists
+            && in_array($ability, ['update', 'delete', 'forceDelete', 'restore'], true)
+            && $resource->isAuraGlobalAdmin()) {
+            return false;
+        }
+
+        return null;
+    }
 
     /**
      * Determine whether the user can create models.

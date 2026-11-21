@@ -134,7 +134,7 @@ it('registers the invited account with exactly the carried role and consumes the
 
     $user = User::where('email', 'invitee@example.test')->sole();
     expect($user->roles->modelKeys())->toBe([$this->role->id])
-        ->and($user->global_admin)->toBeFalse()
+        ->and($user->isAuraGlobalAdmin())->toBeFalse()
         ->and(Hash::check('password', $user->password))->toBeTrue()
         ->and(UserInvitation::find($invitation->id))->toBeNull();
     $this->assertAuthenticatedAs($user);

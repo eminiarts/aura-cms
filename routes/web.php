@@ -5,7 +5,7 @@ use Aura\Base\Http\Controllers\Api\FieldsController;
 use Aura\Base\Http\Controllers\ImageController;
 use Aura\Base\Http\Controllers\PublishAssetsController;
 use Aura\Base\Http\Middleware\EnsureResourceEditorEnabled;
-use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
+use Aura\Base\Http\Middleware\RedirectTeamlessGlobalAdmin;
 use Aura\Base\Livewire\PluginsPage;
 use Aura\Base\Livewire\ResourceEditor;
 use Aura\Base\Livewire\Styleguide;
@@ -29,7 +29,7 @@ Route::domain(config('aura.domain'))
 
         Route::prefix(config('aura.path'))->group(function () {
 
-            Route::get('/', config('aura.components.dashboard'))->name('dashboard');
+            Route::get('/', config('aura.components.dashboard'))->middleware(RedirectTeamlessGlobalAdmin::class)->name('dashboard');
 
             Route::post('/assets/publish', PublishAssetsController::class)->name('assets.publish');
 
@@ -41,37 +41,23 @@ Route::domain(config('aura.domain'))
             Route::get('/settings', config('aura.components.settings'))->name('settings');
             Route::get('/settings/{page}', config('aura.components.settings'))->name('settings.page');
 
-            Route::get('/plugins', PluginsPage::class)->name('plugins');
+            Route::prefix(config('aura.global_admin.path'))->name('global.')
+                ->middleware('can:AuraGlobalAdmin')->group(function () {
+                    Route::get('/', fn () => redirect()->route(Aura::resourceRouteName(app(config(config('aura.teams') ? 'aura.resources.team' : 'aura.resources.user'))->getSlug())))
+                        ->defaults('aura_area', 'global')->name('index');
+                    Route::get('/plugins', PluginsPage::class)->defaults('aura_area', 'global')->name('plugins');
+                    Route::get('/resources/{slug}/editor', ResourceEditor::class)
+                        ->defaults('aura_area', 'global')->middleware(EnsureResourceEditorEnabled::class)->name('resource.editor');
+                });
 
             Route::get('/styleguide', Styleguide::class)->name('styleguide');
-
             Route::get('/img/{path}', ImageController::class)->where('path', '.*')->name('image');
-
-            Route::get('/resources/{slug}/editor', ResourceEditor::class)
-                ->middleware(EnsureResourceEditorEnabled::class)
-                ->name('resource.editor');
-
-            foreach (Aura::getResources() as $resource) {
-
-                if (! class_exists($resource)) {
-                    continue;
-                }
-
-                $slug = app($resource)->getSlug();
-
-                // Attachment uses a dedicated media index and deliberately has no
-                // generic create/edit/view routes (see AttachmentIndex).
-                if ($slug === 'attachment') {
-                    continue;
-                }
-
-                Route::get("/{$slug}", $resource::indexComponent())->name("{$slug}.index");
-                Route::get("/{$slug}/create", $resource::createComponent())->name("{$slug}.create");
-                Route::get("/{$slug}/{id}/edit", $resource::editComponent())->name("{$slug}.edit");
-                Route::get("/{$slug}/{id}", $resource::viewComponent())->name("{$slug}.view");
-            }
-
-            Route::get('/attachment', AttachmentIndex::class)->name('attachment.index');
 
         });
     });
+
+foreach (Aura::getResources() as $resource) {
+    if (class_exists($resource)) {
+        Aura::registerRoutes(app($resource)->getSlug(), $resource);
+    }
+}

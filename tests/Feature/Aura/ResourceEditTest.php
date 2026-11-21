@@ -33,7 +33,7 @@ test('resource in app can be edited', function () {
     $this->assertTrue($appResource->isAppResource());
     $this->assertFalse($appResource->isVendorResource());
 
-    createSuperAdmin();
+    $this->actingAs(createGlobalAdmin());
 
     Aura::fake();
     Aura::setModel($appResource);
@@ -42,7 +42,7 @@ test('resource in app can be edited', function () {
     config(['aura.features.resource_editor' => true]);
 
     // visit edit resource page
-    $response = $this->get(route('aura.resource.editor', 'resource'));
+    $response = $this->get(route('aura.global.resource.editor', 'resource'));
 
     $response->assertOk();
 });
@@ -53,7 +53,7 @@ test('vendor resource can not be edited', function () {
     $this->assertFalse($userResource->isAppResource());
     $this->assertTrue($userResource->isVendorResource());
 
-    createSuperAdmin();
+    $this->actingAs(createGlobalAdmin());
 
     Aura::fake();
     Aura::setModel($userResource);
@@ -62,7 +62,7 @@ test('vendor resource can not be edited', function () {
     config(['aura.features.resource_editor' => true]);
 
     // visit edit resource page
-    $response = $this->get(route('aura.resource.editor', 'user'));
+    $response = $this->get(route('aura.global.resource.editor', 'user'));
 
     $response->assertForbidden();
 
@@ -76,7 +76,7 @@ test('edit resource should not be allowed', function () {
 });
 
 test('edit resource can be turned off in config', function () {
-    createSuperAdmin();
+    $this->actingAs(createGlobalAdmin());
 
     config(['aura.features.resource_editor' => false]);
 
@@ -85,14 +85,14 @@ test('edit resource can be turned off in config', function () {
     $this->assertFalse($config);
 
     // visit edit resource page
-    $response = $this->get(route('aura.resource.editor', 'user'));
+    $response = $this->get(route('aura.global.resource.editor', 'user'));
 
     $response->assertStatus(404);
 });
 
 test('edit resource can be turned on in config', function () {
     // Create a super admin user
-    $superAdmin = createSuperAdmin();
+    $superAdmin = createGlobalAdmin();
     $this->actingAs($superAdmin);
 
     // Enable the resource editor feature
@@ -105,14 +105,14 @@ test('edit resource can be turned on in config', function () {
 
 test('edit resource should not be available for vendor resources', function () {
     // Create a super admin user
-    $superAdmin = createSuperAdmin();
+    $superAdmin = createGlobalAdmin();
     $this->actingAs($superAdmin);
 
     // Enable the resource editor feature
     config(['aura.features.resource_editor' => true]);
 
     // visit edit resource page
-    $response = $this->get(route('aura.resource.editor', 'user'));
+    $response = $this->get(route('aura.global.resource.editor', 'user'));
 
     $response->assertForbidden();
 });
@@ -121,9 +121,9 @@ test('edit resource should not be available in production', function () {
     $this->app->detectEnvironment(fn () => 'production');
     config(['aura.features.resource_editor' => true]);
 
-    createSuperAdmin();
+    $this->actingAs(createGlobalAdmin());
 
-    $this->get(route('aura.resource.editor', 'user'))
+    $this->get(route('aura.global.resource.editor', 'user'))
         ->assertNotFound();
 });
 
@@ -131,14 +131,14 @@ test('edit resource should not be available in staging', function () {
     $this->app->detectEnvironment(fn () => 'staging');
     config(['aura.features.resource_editor' => true]);
 
-    createSuperAdmin();
+    $this->actingAs(createGlobalAdmin());
 
-    $this->get(route('aura.resource.editor', 'user'))
+    $this->get(route('aura.global.resource.editor', 'user'))
         ->assertNotFound();
 });
 
 test('singleAction only invokes declared resource editor actions', function () {
-    createSuperAdmin();
+    $this->actingAs(createGlobalAdmin());
 
     config(['aura.features.resource_editor' => true]);
 

@@ -190,7 +190,7 @@ The invitation mailable currently decides whether an address belongs to an exist
 
 ### Team and membership boundaries
 
-A Super Admin has elevated permissions within the current team. A Global Admin has instance-wide access, evaluated by the `AuraGlobalAdmin` gate, and can enter any team without a membership. Other users must already belong to a team before they can switch to it.
+A Super Admin has elevated permissions within the current team. A Global Admin is defined in `aura.global_admin.emails` and has instance-wide access, evaluated by the `AuraGlobalAdmin` gate, and can enter any team without a membership. Other users must already belong to a team before they can switch to it.
 
 Creating a team requires Global Admin access, with both `Team::$createEnabled` and `auth.create_teams` set to `true`. A team's Super Admin role alone does not grant permission to create teams.
 

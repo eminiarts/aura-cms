@@ -18,8 +18,8 @@
         @include('aura::livewire.resource.actions')
 
         @can('update', $model)
-            @if(Route::has('aura.' . $slug . '.edit'))
-                <x-aura::button href="{{ route('aura.' . $slug . '.edit', $model->id) }}">
+            @if(Route::has(\Aura\Base\Facades\Aura::resourceRouteName($model->getSlug(), 'edit')))
+                <x-aura::button href="{{ route(\Aura\Base\Facades\Aura::resourceRouteName($model->getSlug(), 'edit'), $model->id) }}">
                     {{ __('Edit') }}
                 </x-aura::button>
             @endif

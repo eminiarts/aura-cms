@@ -78,15 +78,10 @@ function globalAdminRole(): ?Role
         ->first();
 }
 
-/**
- * Promote a fresh user to Global Admin the trusted way: a direct,
- * pipeline-bypassing write (`saveQuietly`), the same posture the CLI bootstrap
- * uses. The flag is never granted through a user-facing write path in tests.
- */
 function createGlobalAdmin(array $attributes = []): User
 {
     $user = User::factory()->create($attributes);
-    $user->forceFill(['global_admin' => true])->saveQuietly();
+    config(['aura.global_admin.emails' => [...config('aura.global_admin.emails', []), $user->email]]);
 
     return $user->refresh();
 }

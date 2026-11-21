@@ -53,10 +53,10 @@ Aura uses Laravel's cache manager. Ordinary page rendering does not require a pa
 | Data | Reader | Key and default lifetime |
 | --- | --- | --- |
 | Named Aura settings | `Aura::getOption($name)` | `{team_id}.aura.{name}` with a current team, or `aura.{name}` without one. One hour. |
-| Navigation | `Aura::navigation()` | `user-{id}-{team_id}-navigation-{resource-list-hash}`. 3,600 seconds. |
+| Navigation | `Aura::navigation()` | `user-{id}-{area}-{team_id}-navigation-{resource-list-hash}`. Global-area keys omit the team ID. 3,600 seconds. |
 | Template discovery | `Aura::templates()` | `aura.templates`. One hour. |
 | User option values | `User::getOption()` and convenience readers | `user.{id}.{option}`, `user.{id}.bookmarks`, `user.{id}.columns.{resource}`, `user.{id}.sidebar`, and `user.{id}.sidebarToggled`. One hour. |
-| User team IDs | `User::getTeams()` | `user.{id}.teams`. One hour. Global Admins use the shared `aura.global_admin.teams` key. |
+| User team IDs | `User::getTeams()` | `user.{id}.teams`. One hour. Includes only Membership teams for every user. |
 | Current team ID | `TeamScope` | `user_{id}_current_team_id`. Stored forever only after a non-null team ID is found. |
 | Value, pie, and donut widget results | The `getValuesProperty()` methods | An MD5 key built from team ID, resource type, widget slug, start, and end. The default duration is 60 seconds, or `widget.cache.duration`. |
 
