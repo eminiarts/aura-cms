@@ -46,10 +46,34 @@
     }
 }
 
-.aura-card {
-    @apply p-5 bg-white rounded-xl shadow-sm ring-1 ring-gray-950/10;
+/*
+ * Token-driven properties: each one is set by exactly one rule below and never by a utility class
+ * in the markup. The doubled class (specificity 0,2,0) keeps the token ahead of equal-specificity
+ * utilities such as .rounded-lg or .p-4 from a host stylesheet that loads after Aura's CSS. Inside
+ * Aura's own build these rules already come after the utilities, so the result does not change.
+ */
+.aura-card.aura-card {
     padding: var(--aura-panel-padding, 1.25rem);
     border-radius: var(--aura-panel-radius, 0.75rem);
+}
+
+.aura-card-small.aura-card-small {
+    padding: var(--aura-panel-small-padding, 0.5rem);
+    border-radius: var(--aura-control-radius, 0.5rem);
+}
+
+.aura-button.aura-button,
+.aura-sidebar-item.aura-sidebar-item,
+.aura-sidebar-dropdown-button.aura-sidebar-dropdown-button,
+.aura-sidebar-dropdown-button-expanded.aura-sidebar-dropdown-button-expanded,
+.aura-sidebar-dropdown-collapsed.aura-sidebar-dropdown-collapsed,
+.aura-sidebar-search.aura-sidebar-search,
+.aura-sidebar-toggle.aura-sidebar-toggle {
+    border-radius: var(--aura-control-radius, 0.5rem);
+}
+
+.aura-card {
+    @apply bg-white shadow-sm ring-1 ring-gray-950/10;
 }
 
 .dark .aura-card {
@@ -57,25 +81,10 @@
 }
 
 .aura-card-small {
-    @apply p-2 bg-white rounded-lg shadow-sm ring-1 ring-gray-950/10;
-    padding: var(--aura-panel-small-padding, 0.5rem);
-    border-radius: var(--aura-control-radius, 0.5rem);
+    @apply bg-white shadow-sm ring-1 ring-gray-950/10;
 }
 .dark .aura-card-small {
     @apply bg-gray-800 ring-white/10;
-}
-
-.aura-button {
-    border-radius: var(--aura-control-radius, 0.5rem);
-}
-
-.aura-sidebar-item,
-.aura-sidebar-dropdown-button,
-.aura-sidebar-dropdown-button-expanded,
-.aura-sidebar-dropdown-collapsed,
-.aura-sidebar-search,
-.aura-sidebar-toggle {
-    border-radius: var(--aura-control-radius, 0.5rem);
 }
 
 .aura-sidebar .aura-sidebar-item,
@@ -98,7 +107,7 @@
     margin-bottom: 0.125rem;
 }
 
-.aura-sidebar-groups {
+.aura-sidebar-groups.aura-sidebar-groups {
     gap: var(--aura-sidebar-group-gap, 0.25rem);
 }
 
@@ -108,6 +117,31 @@
 
 .aura-sidebar-size-dense .aura-sidebar-footer {
     min-height: 3.75rem;
+}
+
+
+/*
+ * Layouts that switch at a breakpoint or in dark mode use a component class instead of utility
+ * pairs such as "flex-col md:flex-row" or "border-gray-200 dark:border-gray-700". A host stylesheet
+ * loaded after Aura's re-declares the base utility (.flex-col, .w-full, .border-gray-200/80) with the
+ * same specificity and would beat Aura's md: and dark: variant. See docs/themes.md.
+ */
+.aura-table-toolbar {
+    @apply flex flex-col gap-3 w-full md:flex-row md:items-center md:justify-between;
+}
+.aura-table-toolbar-search {
+    @apply w-full md:w-64 md:shrink-0;
+}
+.aura-table-toolbar-actions {
+    @apply flex justify-end items-center w-full md:w-auto;
+}
+
+/* Group field, variant "section": the framed sub-panel on the Settings page. */
+.aura-group-section {
+    @apply border-gray-200/80 bg-gray-50/60;
+}
+.dark .aura-group-section {
+    @apply border-gray-700/80 bg-gray-900/40;
 }
 
 

@@ -126,7 +126,7 @@
                     </div>
                 </div>
             @endforeach
-            <p class="text-xs text-gray-400 dark:text-gray-500">{{ __('Panels (.aura-card) and buttons (.aura-button) follow the preset. The input keeps rounded-lg (8px) in every preset. If buttons stay rounded here, a stylesheet loaded after Aura\'s re-declares rounded-lg and wins over .aura-button.') }}</p>
+            <p class="text-xs text-gray-400 dark:text-gray-500">{{ __('Panels (.aura-card) and buttons (.aura-button) follow the preset. The input keeps rounded-lg (8px) in every preset. A host stylesheet loaded after Aura\'s cannot override the token radius or padding.') }}</p>
         </div>
     </div>
 

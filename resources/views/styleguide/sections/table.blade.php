@@ -20,8 +20,8 @@
 @endphp
 
 {{-- Toolbar (specimen of livewire/table.blade.php) --}}
-<div class="flex flex-col gap-3 mt-6 w-full md:flex-row md:items-center md:justify-between" data-table-part="toolbar" x-data="{ toggleFilters() {} }">
-    <div class="w-full md:w-64 md:shrink-0">
+<div class="mt-6 aura-table-toolbar" data-table-part="toolbar" x-data="{ toggleFilters() {} }">
+    <div class="aura-table-toolbar-search">
         <div class="relative">
             <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
                 <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path></svg>
@@ -29,7 +29,7 @@
             <input type="text" class="block h-10 w-full py-2 pl-9 pr-3 text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 dark:placeholder:text-gray-500 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]" placeholder="{{ __('Search for items') }}">
         </div>
     </div>
-    <div class="flex justify-end items-center space-x-4 w-full md:w-auto">
+    <div class="space-x-4 aura-table-toolbar-actions">
         <div class="flex space-x-2">
             <div class="inline-flex isolate gap-0.5 items-center p-0.5 rounded-lg bg-gray-950/[0.04] dark:bg-white/5">
                 <button type="button" class="inline-flex relative items-center p-1.5 rounded-md {{ $segmentActive }}"><span class="sr-only">{{ __('List view') }}</span><x-aura::icon icon="list" size="sm" /></button>

@@ -500,6 +500,50 @@ shipped config maps `aura.*`, `sidebar.*`, and primary and gray shades
 `25` through `900`. It emits the `950` CSS variables, but it does not map
 `primary-950` or `gray-950` to Tailwind classes by default.
 
+### Host stylesheets on Aura pages
+
+Aura's stylesheet is a complete Tailwind build. When a host also loads its own
+Tailwind build on Aura pages, two builds share one page, and for two selectors
+with the same specificity the stylesheet that loads later wins. A published
+`layout/app.blade.php` that calls `@vite(...)` after `@auraStyles` loads the
+host CSS last.
+
+Aura protects the theme tokens against this:
+
+- The rules for `.aura-card`, `.aura-card-small`, `.aura-button`, the sidebar
+  items, dropdown triggers, search and collapse toggles, and
+  `.aura-sidebar-groups` use a doubled class (`.aura-button.aura-button`). A
+  host `.rounded-lg` or `.p-4` cannot override the radius, padding, or gap of
+  the Advanced appearance presets.
+- These elements carry no `rounded-*` or padding utility that competes with
+  the token rule.
+
+Aura cannot protect its responsive and dark variants. A host base utility
+beats an Aura `md:` or `dark:` variant of the same property: host `.flex-col`
+beats Aura's `md:flex-row`, `.grid-cols-1` beats `sm:grid-cols-2`, and
+`.bg-white` beats `dark:bg-gray-800`. Media queries add no specificity, and
+Aura's `dark:` variant compiles to `:where(.dark, .dark *)`, which adds none
+either. The problem shows up when the host build has the base class but not
+the variant, for example after an Aura update when the host CSS was not
+rebuilt. The table toolbar (`.aura-table-toolbar`) and the Settings sub-panels
+(`.aura-group-section`) use component classes instead of utility pairs, so a
+host stylesheet cannot stack the toolbar or keep a light border in dark mode.
+
+Recommended host setup:
+
+1. Do not load the host's front-end build on Aura pages. Put admin-only CSS in
+   `resources/views/components/layouts/aura-head.blade.php`. Aura includes
+   that view in the head before its own stylesheet, so Aura wins every tie.
+2. If you publish the layout, keep the host `@vite(...)` call before
+   `@auraStyles`. Use `@push('styles')` only for CSS that must override Aura.
+3. If the host CSS has to load after Aura's, scope it so it cannot match
+   Aura's markup: a Tailwind `prefix` (for example `tw-`) or the `important`
+   selector strategy with a root element of your own pages. If its `content`
+   scans Aura's views instead, rebuild it after every Aura update.
+
+A host on Tailwind 4 is not affected by load order: Tailwind 4 puts its
+utilities in a cascade layer, and Aura's unlayered rules win over layered ones.
+
 ## Focused source references
 
 For implementation details, start with the files relevant to your change:

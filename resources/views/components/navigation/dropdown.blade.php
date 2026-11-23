@@ -37,7 +37,7 @@
             <button
                     x-on:click="expanded = !expanded"
                     :aria-expanded="expanded.toString()"
-                    class="{{ $compactClass }} group flex justify-between items-center w-full rounded-lg transition-colors duration-150"
+                    class="{{ $compactClass }} group flex justify-between items-center w-full transition-colors duration-150"
                     :class="expanded ? 'aura-sidebar-dropdown-button-expanded' : 'aura-sidebar-dropdown-button'"
             >
                 <div class="flex items-center ml-0 font-medium {{ $fontClass }}">
@@ -73,7 +73,7 @@
             interactive: true,
             })" x-ref="this">
             <button
-                    class="group flex justify-center items-center py-2 w-full rounded-lg transition-colors duration-150 aura-sidebar-dropdown-collapsed"
+                    class="group flex justify-center items-center py-2 w-full transition-colors duration-150 aura-sidebar-dropdown-collapsed"
             >
                 <div class="flex items-center ml-0 space-x-2.5 text-sm font-medium">
                     <div class="flex items-center ml-0 space-x-2.5 text-sm font-medium">

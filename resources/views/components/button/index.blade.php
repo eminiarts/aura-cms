@@ -21,12 +21,12 @@ if ($block) {
 }
 
 $sizes = [
-  'icon-xs' => 'gap-1 p-1 text-xs font-medium rounded-md',
-  'xs' => 'gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md',
-  'sm' => 'gap-1.5 px-3 py-1.5 text-sm leading-5 font-medium rounded-lg',
-  'base' => 'gap-2 px-4 py-2 text-sm font-medium rounded-lg',
-  'lg' => 'gap-2 px-4 py-2.5 text-base font-medium rounded-lg',
-  'xl' => 'gap-2.5 px-5 py-3 text-lg font-medium rounded-xl',
+  'icon-xs' => 'gap-1 p-1 text-xs font-medium',
+  'xs' => 'gap-1.5 px-2.5 py-1.5 text-xs font-medium',
+  'sm' => 'gap-1.5 px-3 py-1.5 text-sm leading-5 font-medium',
+  'base' => 'gap-2 px-4 py-2 text-sm font-medium',
+  'lg' => 'gap-2 px-4 py-2.5 text-base font-medium',
+  'xl' => 'gap-2.5 px-5 py-3 text-lg font-medium',
 ];
 $iconSizes = [
   'icon-xs' => 'w-4',

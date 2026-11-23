@@ -188,10 +188,10 @@
 
         <div class="mt-4">
 
-            <div class="flex w-full flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div class="aura-table-toolbar">
 
                 @if ($this->settings['search'])
-                    <div class="w-full md:w-64 md:shrink-0">
+                    <div class="aura-table-toolbar-search">
                         <label for="table-search" class="sr-only">{{ __('Search') }}</label>
                         <div class="relative">
                             <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
@@ -210,7 +210,7 @@
                     </div>
                 @endif
 
-                <div class="flex w-full items-center justify-end space-x-4 md:w-auto">
+                <div class="aura-table-toolbar-actions space-x-4">
 
                     {{-- Columns --}}
                     @if ($this->settings['settings'] || $this->settings['filters'])

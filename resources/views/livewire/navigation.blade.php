@@ -99,7 +99,7 @@
                                 <button
                                     @click="toggleSidebar()"
                                     type="button"
-                                    class="inline-flex relative justify-center items-center w-6 h-6 text-sm font-semibold rounded-lg shadow-none select-none focus:outline-none focus:ring-2 aura-sidebar-toggle"
+                                    class="inline-flex relative justify-center items-center w-6 h-6 text-sm font-semibold shadow-none select-none focus:outline-none focus:ring-2 aura-sidebar-toggle"
                                 >
                                     <div>
                                         <x-aura::icon icon="minus" size="sm"/>
@@ -112,7 +112,7 @@
                                     <button
                                         @click="toggleSidebar()"
                                         type="button"
-                                        class="inline-flex relative justify-center items-center w-6 h-6 text-sm font-semibold rounded-lg shadow-none select-none focus:outline-none focus:ring-2 aura-sidebar-toggle"
+                                        class="inline-flex relative justify-center items-center w-6 h-6 text-sm font-semibold shadow-none select-none focus:outline-none focus:ring-2 aura-sidebar-toggle"
                                     >
                                         <div>
                                             <x-aura::icon icon="plus" size="sm"/>
@@ -125,7 +125,7 @@
 
                         @if(config('aura.features.global_search'))
                             <button type="button" @click="$dispatch('search')"
-                                    class="hidden items-center py-1.5 pr-3 pl-2.5 w-full text-sm leading-6 rounded-lg ring-1 shadow-sm aura-sidebar-search lg:flex">
+                                    class="hidden items-center py-1.5 pr-3 pl-2.5 w-full text-sm leading-6 ring-1 shadow-sm aura-sidebar-search lg:flex">
                                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true" class="flex-none mr-2.5 w-5 h-5">
                                     <path d="m19 19-3.5-3.5" stroke="currentColor" stroke-width="2"
                                           stroke-linecap="round" stroke-linejoin="round"></path>
