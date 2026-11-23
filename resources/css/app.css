@@ -243,6 +243,265 @@
     border-radius: inherit;
 }
 
+/*
+ * Field surface: one look for every field (input, select, textarea, tags, advanced-select,
+ * belongsTo, status, date pickers, code/json, the table search and the widget filters), light and
+ * dark. The markup sets size and padding only; colours, the boundary and every state come from
+ * here, so a host stylesheet loaded after Aura's cannot change them either.
+ * - The boundary is a 1px ring (box-shadow), never a border, so it never changes the height.
+ * - Dark: a darker well (gray-900) in the gray-800 card, with a gray-500 ring (3:1 against the card).
+ * - Disabled is a fill, not a fade: gray-50 / gray-500 text (dark: white/5 / gray-400), full opacity.
+ * - Error: .aura-field-invalid on a wrapper (fields/wrapper, input/wrapper) or aria-invalid="true"
+ *   on the control turns the ring red, also on hover and focus.
+ * States set custom properties only, so the last matching state wins at equal specificity.
+ */
+.aura-field.aura-field {
+    --aura-field-bg: rgb(var(--aura-color-white, 255 255 255));
+    --aura-field-text: rgb(var(--gray-900));
+    --aura-field-placeholder: rgb(var(--gray-400));
+    --aura-field-ring: rgb(var(--gray-950) / 0.1);
+    --aura-field-ring-hover: rgb(var(--gray-950) / 0.2);
+    --aura-field-ring-focus: rgb(var(--primary-500));
+    --aura-field-disabled-bg: rgb(var(--gray-50));
+    --aura-field-disabled-text: rgb(var(--gray-500));
+    --aura-field-addon-bg: rgb(var(--gray-50));
+    --aura-field-addon-text: rgb(var(--gray-500));
+    --aura-field-ring-current: var(--aura-field-ring);
+    --aura-field-ring-width: 1px;
+    border-width: 0;
+    background-color: var(--aura-field-bg);
+    color: var(--aura-field-text);
+    color-scheme: light;
+    box-shadow: 0 0 0 var(--aura-field-ring-width) var(--aura-field-invalid-ring, var(--aura-field-ring-current)), 0 1px 2px rgba(0, 8, 24, 0.05);
+    transition-property: color, background-color, box-shadow;
+    transition-duration: 150ms;
+}
+.dark .aura-field.aura-field {
+    --aura-field-bg: rgb(var(--gray-900));
+    --aura-field-text: rgb(var(--gray-100));
+    --aura-field-placeholder: rgb(var(--gray-500));
+    --aura-field-ring: rgb(var(--gray-500));
+    --aura-field-ring-hover: rgb(var(--gray-400));
+    --aura-field-ring-focus: rgb(var(--primary-500));
+    --aura-field-disabled-bg: rgb(var(--aura-color-white, 255 255 255) / 0.05);
+    --aura-field-disabled-text: rgb(var(--gray-400));
+    --aura-field-addon-bg: rgb(var(--gray-800));
+    --aura-field-addon-text: rgb(var(--gray-400));
+    color-scheme: dark;
+}
+.aura-field.aura-field::placeholder {
+    color: var(--aura-field-placeholder);
+    opacity: 1;
+}
+.aura-field.aura-field:hover {
+    --aura-field-ring-current: var(--aura-field-ring-hover);
+}
+.aura-field.aura-field:focus,
+.aura-field.aura-field:focus-within,
+.aura-field.aura-field.tagify--focus {
+    --aura-field-ring-current: var(--aura-field-ring-focus);
+    --aura-field-ring-width: 2px;
+    outline: none;
+}
+.aura-field.aura-field:disabled,
+.aura-field.aura-field[disabled],
+.aura-field.aura-field[readonly].tagify {
+    --aura-field-ring-current: var(--aura-field-ring);
+    --aura-field-ring-width: 1px;
+    background-color: var(--aura-field-disabled-bg);
+    color: var(--aura-field-disabled-text);
+    -webkit-text-fill-color: var(--aura-field-disabled-text);
+    cursor: not-allowed;
+    opacity: 1;
+    filter: none;
+}
+.aura-field-invalid,
+.aura-field.aura-field[aria-invalid="true"] {
+    --aura-field-invalid-ring: theme('colors.red.600');
+}
+.dark .aura-field-invalid,
+.dark .aura-field.aura-field[aria-invalid="true"] {
+    --aura-field-invalid-ring: theme('colors.red.400');
+}
+
+/* Placeholder text drawn by a custom control (advanced-select), not by ::placeholder. */
+.aura-field-placeholder {
+    color: var(--aura-field-placeholder);
+}
+
+/* Prefix and suffix addons beside a field (input.text, input.textarea). */
+.aura-field-addon.aura-field-addon {
+    background-color: var(--aura-field-addon-bg);
+    color: var(--aura-field-addon-text);
+}
+
+/* The validation message under a field: red-600 (4.8:1 on white), red-400 in dark (5.3:1 on gray-800). */
+.aura-field-error {
+    @apply mt-1 block text-sm font-normal;
+    color: theme('colors.red.600');
+}
+.dark .aura-field-error {
+    color: theme('colors.red.400');
+}
+
+/*
+ * Tags (Tagify copies the input's classes onto its <tags> element, so it is an .aura-field):
+ * the placeholder, the typed text, the chips and the dropdown follow the field and chip colours.
+ */
+.tagify.aura-field {
+    --placeholder-color: var(--aura-field-placeholder);
+    --placeholder-color-focus: var(--aura-field-placeholder);
+    --input-color: var(--aura-field-text);
+    --tag-border-radius: 9999px;
+    --tag-bg: rgb(var(--gray-100));
+    --tag-hover: rgb(var(--gray-200));
+    --tag-text-color: rgb(var(--gray-700));
+    --tag-text-color--edit: rgb(var(--gray-900));
+    --tag-remove-btn-color: rgb(var(--gray-500));
+    --tags-disabled-bg: var(--aura-field-disabled-bg);
+}
+.dark .tagify.aura-field {
+    --tag-bg: rgb(var(--gray-700));
+    --tag-hover: rgb(var(--gray-600));
+    --tag-text-color: rgb(var(--gray-200));
+    --tag-text-color--edit: rgb(var(--gray-100));
+    --tag-remove-btn-color: rgb(var(--gray-300));
+}
+.dark {
+    --tagify-dd-bg-color: rgb(var(--gray-800));
+    --tagify-dd-text-color: rgb(var(--gray-100));
+    --tagify-dd-color-primary: rgb(var(--primary-600));
+}
+.dark .tagify__dropdown__wrapper {
+    border-color: rgb(var(--aura-color-white, 255 255 255) / 0.1);
+}
+
+/*
+ * Chips: the selected entries of an advanced-select (view, index and edit) and the tags. Same
+ * look as the neutral status pill in the style guide; .aura-chip-primary is the edit-mode chip.
+ */
+.aura-chip {
+    @apply bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-950/10;
+}
+.dark .aura-chip {
+    @apply bg-gray-700 text-gray-200 ring-white/10;
+}
+.aura-chip-primary {
+    @apply bg-primary-100 text-primary-800 ring-1 ring-inset ring-primary-600/20;
+}
+.dark .aura-chip-primary {
+    @apply bg-primary-500/20 text-primary-200 ring-primary-400/30;
+}
+.aura-chip-remove {
+    @apply text-primary-400;
+}
+.dark .aura-chip-remove {
+    @apply text-primary-300;
+}
+/* The round placeholder where a chip or an option has no thumbnail. */
+.aura-chip-avatar {
+    @apply bg-gray-300;
+}
+.dark .aura-chip-avatar {
+    @apply bg-gray-500;
+}
+
+/*
+ * Toggle switch (input.toggle, the Boolean field, the slug lock). The off track is gray-200 in light
+ * and gray-500 in dark (3:1 against the gray-800 card); on is primary-600 (primary-500 in dark,
+ * 3.4:1). State: aria-checked="true".
+ */
+.aura-toggle {
+    @apply bg-gray-200;
+}
+.dark .aura-toggle {
+    @apply bg-gray-500;
+}
+.aura-toggle[aria-checked="true"] {
+    @apply bg-primary-600;
+}
+.dark .aura-toggle[aria-checked="true"] {
+    @apply bg-primary-500;
+}
+
+/*
+ * Underline tabs (fields/tabs and the resource editor). Active: primary-700 / primary-400 in dark.
+ * Idle: gray-500 / gray-400, and hover is always one step stronger (gray-700 / gray-200).
+ */
+.aura-tab {
+    @apply border-transparent text-gray-500 transition-colors duration-150;
+}
+.aura-tab:hover {
+    @apply border-gray-500/30 text-gray-700;
+}
+.dark .aura-tab {
+    @apply text-gray-400;
+}
+.dark .aura-tab:hover {
+    @apply border-gray-500 text-gray-200;
+}
+.aura-tab.aura-tab-active,
+.aura-tab.aura-tab-active:hover {
+    @apply border-primary-600 text-primary-700;
+}
+.dark .aura-tab.aura-tab-active,
+.dark .aura-tab.aura-tab-active:hover {
+    @apply border-primary-400 text-primary-400;
+}
+.aura-tab.aura-tab-error,
+.aura-tab.aura-tab-error:hover {
+    @apply border-red-600 text-red-600;
+}
+.dark .aura-tab.aura-tab-error,
+.dark .aura-tab.aura-tab-error:hover {
+    @apply border-red-400 text-red-400;
+}
+
+/*
+ * The light button in dark mode: a primary-400/15 tint with a primary-200 label (7.8:1). Disabled
+ * fades to 50% like every button, which keeps the label at about 3:1 instead of 2.7:1 and the
+ * button readable on the card.
+ */
+.dark .aura-button-light {
+    @apply text-primary-200 bg-primary-400/15;
+}
+.dark .aura-button-light:hover {
+    @apply bg-primary-400/25;
+}
+.dark .aura-button-light:active {
+    @apply bg-primary-400/30;
+}
+
+/*
+ * Inline alerts (2FA status, the Plugins notice, recovery codes). A tinted fill with a ring, so the
+ * box stays visible inside a card and on the page in dark mode.
+ */
+.aura-alert {
+    @apply p-4 text-sm bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-950/10;
+}
+.dark .aura-alert {
+    @apply bg-white/5 text-gray-300 ring-white/10;
+}
+.aura-alert-success {
+    @apply bg-green-50 text-green-800 ring-green-600/20;
+}
+.dark .aura-alert-success {
+    @apply bg-green-500/10 text-green-300 ring-green-500/25;
+}
+.aura-alert-warning {
+    @apply bg-yellow-50 text-yellow-800 ring-yellow-600/20;
+}
+.dark .aura-alert-warning {
+    @apply bg-yellow-400/10 text-yellow-200 ring-yellow-400/25;
+}
+.aura-alert-danger {
+    @apply bg-red-50 text-red-800 ring-red-600/20;
+}
+.dark .aura-alert-danger {
+    @apply bg-red-500/10 text-red-300 ring-red-500/25;
+}
+
+
 .aura-card {
     @apply bg-white shadow-sm ring-1 ring-gray-950/10;
 }

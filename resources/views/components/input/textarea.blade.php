@@ -3,8 +3,13 @@
   'prefix' => false,
   'size' => 'base',
   'class' => '',
-  'label' => false
+  'label' => false,
+  'error' => null,
 ])
+
+@php
+  $invalid = $error && isset($errors) && $errors->has($error);
+@endphp
 
 
 <div class="w-full">
@@ -13,16 +18,17 @@
   @endif
   <div class="flex aura-field-group">
     @if ($prefix)
-      <span class="aura-field inline-flex items-center whitespace-nowrap bg-gray-50 text-gray-500 shadow-xs ring-1 ring-gray-950/10 dark:bg-white/5 dark:text-gray-400 dark:ring-white/10 {{ $size === 'xs' ? 'px-2 text-xs' : 'px-3 text-sm' }}">
+      <span class="aura-field aura-field-addon inline-flex items-center whitespace-nowrap {{ $size === 'xs' ? 'px-2 text-xs' : 'px-3 text-sm' }}">
           {{ $prefix }}
       </span>
     @endif
-    <textarea {{ $attributes->merge(['class' => $class . ' aura-field w-full appearance-none border-0 bg-white text-gray-900 placeholder:text-gray-400 shadow-xs ring-1 ring-gray-950/10 transition duration-150 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:ring-white/10 dark:hover:ring-white/20 dark:disabled:bg-gray-800/50 dark:disabled:text-gray-500 dark:disabled:ring-white/5 z-[1]' .
-    ($size === 'xs' ? ' px-2 py-1 text-xs' : ' px-3 py-2 text-sm')
+    <textarea {{ $attributes->merge(['class' => $class . ' aura-field block w-full appearance-none z-[1]' .
+    ($size === 'xs' ? ' px-2 py-1 text-xs' : ' px-3 py-2 text-sm'),
+    'aria-invalid' => $invalid ? 'true' : null,
     ]) }}></textarea>
 
     @if ($suffix)
-      <span class="aura-field inline-flex items-center whitespace-nowrap bg-gray-50 text-gray-500 shadow-xs ring-1 ring-gray-950/10 dark:bg-white/5 dark:text-gray-400 dark:ring-white/10 {{ $size === 'xs' ? 'px-2 text-xs' : 'px-3 text-sm' }}">
+      <span class="aura-field aura-field-addon inline-flex items-center whitespace-nowrap {{ $size === 'xs' ? 'px-2 text-xs' : 'px-3 text-sm' }}">
           {{ $suffix }}
       </span>
     @endif

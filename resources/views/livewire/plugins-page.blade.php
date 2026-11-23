@@ -1,32 +1,55 @@
 <div>
-    <div class="my-8">
-        <div class="p-4 text-sm text-gray-700 bg-gray-100 border border-gray-200 rounded-lg">
-            Plugins are managed via Composer. Run <code class="px-2 py-1 text-xs font-semibold text-gray-800 bg-white rounded">composer require vendor/plugin</code> to install or update plugins.
-        </div>
+    @section('title', __('Plugins'))
+
+    <div class="mb-6">
+        <x-aura::breadcrumbs>
+            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
+            <x-aura::breadcrumbs.li :title="__('Plugins')" />
+        </x-aura::breadcrumbs>
     </div>
 
-    <table class="w-full table-auto">
-        <thead>
-            <tr class="text-gray-700 bg-gray-200">
-                <th class="px-4 py-2">Package</th>
-                <th class="px-4 py-2">Version</th>
-                <th class="px-4 py-2">Description</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($installedPackages as $name => $package)
-                <tr
-                    @if (in_array('laravel', $package['keywords']))
-                        class="bg-gray-50"
-                    @endif
-                >
-                    <td class="px-4 py-2 border">{{ $name }}</td>
-                    <td class="px-4 py-2 border">
-                        <span class="inline-block px-3 py-1 mr-2 text-sm font-semibold rounded-full text-primary-800 bg-primary-100">{{ $package['version'] }}</span>
-                    </td>
-                    <td class="px-4 py-2 border text-sm text-gray-700">{{ $package['description'] ?: 'No description available.' }}</td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
+    <div class="mb-6">
+        <h1 class="mb-2 text-2xl font-semibold">{{ __('Plugins') }}</h1>
+    </div>
+
+    <div class="mb-6 aura-alert aura-radius-control">
+        {{ __('Plugins are managed via Composer. Run') }}
+        <code class="px-1.5 py-0.5 text-xs font-semibold aura-chip aura-radius-control">composer require vendor/plugin</code>
+        {{ __('to install or update plugins.') }}
+    </div>
+
+    {{-- The table card of the resource index (table/list-view): panel radius, header row, row dividers. --}}
+    <div class="aura-table-card aura-radius-panel overflow-hidden bg-white ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10" data-plugins-table>
+        <div class="overflow-x-auto min-w-full align-middle">
+            <table class="min-w-full">
+                <thead>
+                    <tr class="bg-gray-50/80 dark:bg-white/[0.03] border-b border-gray-200/80 dark:border-white/10">
+                        <x-aura::table.heading>{{ __('Package') }}</x-aura::table.heading>
+                        <x-aura::table.heading>{{ __('Version') }}</x-aura::table.heading>
+                        <x-aura::table.heading>{{ __('Description') }}</x-aura::table.heading>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                    @forelse ($installedPackages as $name => $package)
+                        <tr class="transition-colors duration-150 hover:bg-gray-50/80 dark:hover:bg-white/[0.04]">
+                            <td class="px-6 py-3 text-sm font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                {{ $name }}
+                                @if (in_array('laravel', $package['keywords']))
+                                    <span class="inline-flex items-center px-2 py-0.5 ml-2 text-xs font-medium rounded-full aura-chip">Laravel</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-3 text-sm whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-medium whitespace-nowrap rounded-full aura-chip-primary">{{ $package['version'] }}</span>
+                            </td>
+                            <td class="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">{{ $package['description'] ?: __('No description available.') }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="3" class="px-6 py-10 text-sm text-center text-gray-500 dark:text-gray-400">{{ __('No packages found.') }}</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>

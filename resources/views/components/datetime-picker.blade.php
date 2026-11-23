@@ -80,7 +80,7 @@
                 placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"
                 wire:model="form.fields.{{ optional($field)['slug'] }}" @endif
                 x-ref="input" @if ($field['field']->isDisabled($this->form, $field)) disabled @endif
-                class="aura-field aura-control-base px-3 w-full text-sm bg-white border appearance-none cursor-pointer hover:bg-gray-50 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed border-gray-500/30 dark:border-gray-700 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900" />
+                class="aura-field aura-control-base px-3 w-full text-sm appearance-none cursor-pointer" />
         </div>
     @endif
 </x-aura::fields.wrapper>

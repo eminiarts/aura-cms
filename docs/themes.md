@@ -584,6 +584,13 @@ the variant, for example after an Aura update when the host CSS was not
 rebuilt. The table toolbar (`.aura-table-toolbar`) and the Settings sub-panels
 (`.aura-group-section`) use component classes instead of utility pairs, so a
 host stylesheet cannot stack the toolbar or keep a light border in dark mode.
+The same goes for the light and dark colours of fields (`.aura-field`: surface,
+ring, placeholder, hover, focus, disabled, and the error ring from
+`.aura-field-invalid` or `aria-invalid="true"`), the validation message
+(`.aura-field-error`), chips (`.aura-chip`, `.aura-chip-primary`), toggles
+(`.aura-toggle`, state from `aria-checked`), underline tabs (`.aura-tab`,
+`.aura-tab-active`, `.aura-tab-error`), inline alerts (`.aura-alert`,
+`-success`, `-warning`, `-danger`) and the dark style of `button.light`.
 
 Recommended host setup:
 

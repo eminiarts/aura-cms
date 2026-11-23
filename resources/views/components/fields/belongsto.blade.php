@@ -108,11 +108,7 @@
 
                 <button x-listbox:button :disabled="disabled"
                     x-ref="button"
-                    class="
-                        aura-field aura-control-base text-sm shadow-xs border border-gray-500/30 appearance-none px-3 focus:outline-none w-full ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:dark:bg-gray-800 bg-white dark:bg-gray-900 dark:border-gray-700 z-[1]
-
-                        flex items-center justify-between gap-2 relative
-                    ">
+                    class="aura-field aura-control-base text-sm appearance-none px-3 w-full z-[1] flex items-center justify-between gap-2 relative">
                     <span x-text="value ? findItem(value) : '{{ __($field['placeholder'] ?? __('Select')) }}'"
                         class="truncate"></span>
 

@@ -34,6 +34,22 @@
 </div>
 
 <div class="mt-4 aura-card">
+    <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Chips (advanced-select, tags)') }}</span>
+    <div class="flex flex-wrap gap-2 items-center mt-4">
+        <span class="flex items-center px-1 py-1 rounded-full aura-chip">
+            <span class="w-6 h-6 rounded-full aura-chip-avatar"></span>
+            <span class="px-2 text-sm font-medium">Mara Voss</span>
+        </span>
+        <span class="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full aura-chip">Science Fiction</span>
+        <span class="inline-flex gap-1 items-center py-0.5 pr-2 pl-2 text-xs font-medium leading-4 rounded-full aura-chip-primary">
+            Drama
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 aura-chip-remove" aria-hidden="true"><path fill-rule="evenodd" d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+        </span>
+    </div>
+    <p class="mt-4 text-xs text-gray-400 dark:text-gray-500">{{ __('.aura-chip: the selected entries on view and index pages, the neutral status pill colours. .aura-chip-primary: the chips inside the edit field. Both have a dark style (gray-700 / primary-500/20).') }}</p>
+</div>
+
+<div class="mt-4 aura-card">
     <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Sidebar badges (navigation/item, light-sidebar color map)') }}</span>
     <div class="flex flex-wrap gap-2 mt-4">
         @foreach ($navBadgeColors as $color => $classes)

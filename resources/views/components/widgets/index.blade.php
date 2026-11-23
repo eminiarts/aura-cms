@@ -4,15 +4,15 @@
         <div class="flex flex-wrap gap-2 justify-end items-center mt-4" wire:key="widgets-filter">
             @if($selected === 'custom')
                 <input type="date" id="widgets-date-start" wire:model.live="start"
-                    class="aura-field aura-control-sm pr-2 pl-3 text-sm text-gray-700 bg-white border-0 ring-1 shadow-sm ring-gray-950/10 dark:bg-gray-800 dark:text-gray-200 dark:ring-white/10 focus:ring-2 focus:ring-primary-500">
+                    class="aura-field aura-control-sm pr-2 pl-3 text-sm">
                 <span class="text-sm text-gray-400">&ndash;</span>
                 <input type="date" id="widgets-date-end" wire:model.live="end"
-                    class="aura-field aura-control-sm pr-2 pl-3 text-sm text-gray-700 bg-white border-0 ring-1 shadow-sm ring-gray-950/10 dark:bg-gray-800 dark:text-gray-200 dark:ring-white/10 focus:ring-2 focus:ring-primary-500">
+                    class="aura-field aura-control-sm pr-2 pl-3 text-sm">
             @endif
 
             <label for="widgets-date-range" class="sr-only">{{ __('Date range') }}</label>
             <select id="widgets-date-range" wire:model.live="selected"
-                class="aura-field aura-control-sm pr-8 pl-3 text-sm font-medium text-gray-700 bg-white border-0 ring-1 shadow-sm ring-gray-950/10 dark:bg-gray-800 dark:text-gray-200 dark:ring-white/10 focus:ring-2 focus:ring-primary-500">
+                class="aura-field aura-control-sm pr-8 pl-3 text-sm font-medium">
                 @foreach(collect($model->widgetSettings['options'])->except('all') as $key => $label)
                     <option value="{{ $key }}">{{ __($label) }}</option>
                 @endforeach

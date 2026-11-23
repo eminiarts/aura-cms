@@ -594,7 +594,7 @@
             <div class="c-8 col"><div class="frame captioned rows-2" style="flex-grow:1016"><div class="fit" style="--ar:2368/936;--arn:2.5299;max-width:1894px"><figure class="shot split" style="background:linear-gradient(90deg, rgb(255, 255, 255) 50%, rgb(15, 23, 42) 50%)"><img src="assets/screens/forms-light.png" alt="forms, light mode" style="top:-131.197%;height:309.188%"><img class="half" src="assets/screens/forms-dark.png" alt="forms, dark mode" style="top:-131.197%;height:309.188%"></figure><span class="mode-l">Light</span><span class="mode-d">Dark</span></div></div></div>
             <div class="c-4 stack" style="padding-left:16px">
                 <div><div class="h4">Label above, always</div><p class="note">14 px medium. A required field says so in the label, not only in the error.</p></div>
-                <div><div class="h4">Error under the field, in words</div><p class="note">What is wrong and how to fix it. Today two styles exist (red-500 semibold, red-600 normal); red-500 is 3.8:1, below AA. Keep red-600.</p></div>
+                <div><div class="h4">Error under the field, in words</div><p class="note">What is wrong and how to fix it. One style everywhere: text-sm, red-600 (red-400 in dark), AA on the card.</p></div>
                 <div><div class="h4">Disabled is a fill, not a fade</div><p class="note">gray-50 background and gray-500 text, so the value stays readable.</p></div>
                 <div><div class="h4">A select is an input</div><p class="note">Same ring, same height, same radius, plus a chevron. Checkboxes, radios and toggles use primary-600 when on.</p></div>
             </div>
@@ -910,7 +910,7 @@
             <div class="c-9 col"><div class="frame rows-1" style="flex-grow:1228"><div class="fit" style="--ar:2368/1228;--arn:1.9283;max-width:1894px"><figure class="shot light" style="background:rgb(255, 255, 255)"><img src="assets/screens/forms-light.png" alt="forms, light mode" style="top:0.000%;height:235.668%"></figure></div></div></div>
             <div class="c-3 stack">
                 <div><div class="h4">Disabled is a fill</div><p class="note">Fields go gray-50 with gray-500 text, so the value stays readable.</p></div>
-                <div><div class="h4">Error marks the field too</div><p class="note">Today only the message turns red. Add a danger ring, and keep the message: what is wrong, how to fix it.</p></div>
+                <div><div class="h4">Error marks the field too</div><p class="note">The field gets a red ring (red-600, red-400 in dark) that stays on hover and focus, and the message says what is wrong and how to fix it.</p></div>
                 <div><div class="h4">Empty is a state, not a blank</div><p class="note">Tables and lists show an icon, one line and the next step where the rows would be.</p></div>
                 <div><div class="h4">Loading: skeleton, then content</div><p class="note">Skeletons match the size of what loads, so nothing jumps.</p></div>
             </div>
@@ -941,8 +941,8 @@
                 <div class="stack mt-24">
                     <div><div class="h4">Controls did not share a height</div><p class="note">Settled: <code>--aura-control-height</code>, xs 28 · sm 32 · base 36 · lg 44, for buttons, inputs and selects alike.</p></div>
                     <div><div class="h4">Inputs ignored the corner setting</div><p class="note">Settled: fields follow <code>--aura-control-radius</code> like buttons.</p></div>
-                    <div><div class="h4">Semantic colours are unused</div><p class="note">Components use Tailwind green, red and yellow, not <code>--aura-color-*</code>. Error text comes in two reds; red-500 is 3.8:1, below AA.</p></div>
-                    <div><div class="h4">Small drifts</div><p class="note">Form and editor tabs use different dark-mode blues; <code>button</code> and <code>button.primary</code> look the same; icons mix stroke 1.5 and 2.</p></div>
+                    <div><div class="h4">Semantic colours are unused</div><p class="note">Components use Tailwind green, red and yellow, not <code>--aura-color-*</code>. Error text is one red now (red-600 / red-400).</p></div>
+                    <div><div class="h4">Small drifts</div><p class="note"><code>button</code> and <code>button.primary</code> look the same; icons mix stroke 1.5 and 2.</p></div>
                 </div>
             </div>
         </div>

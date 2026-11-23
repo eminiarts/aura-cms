@@ -58,7 +58,7 @@
         </table>
     </div>
     <p class="mt-4 text-xs text-gray-400 dark:text-gray-500">
-        {{ __('Loading uses the Settings page pattern: icon.loading inside a disabled button. The spinner is hard-coded white with a light track (mr-3 text-white), so it disappears on light, border and transparent buttons.') }}
+        {{ __('Loading uses the Settings page pattern: icon.loading inside a disabled button. The spinner is drawn in currentColor with a 25% track, so it takes the label colour of every variant.') }}
     </p>
 </div>
 

@@ -39,7 +39,7 @@
         </div>
         <div class="grid gap-1 sm:grid-cols-[16rem_1fr] sm:items-baseline sm:gap-6">
             <span class="text-xs text-gray-400 dark:text-gray-500">validation error (fields/wrapper)</span>
-            <span class="text-sm font-semibold text-red-500">The title field is required.</span>
+            <span class="text-sm aura-field-error">The title field is required.</span>
         </div>
         <div class="grid gap-1 sm:grid-cols-[16rem_1fr] sm:items-baseline sm:gap-6">
             <span class="text-xs text-gray-400 dark:text-gray-500">sidebar heading</span>

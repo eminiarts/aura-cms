@@ -4,22 +4,22 @@
     </h3>
 
     <div>
-        <h3 class="text-lg font-medium text-gray-900">
+        {{-- Status: .aura-alert-* keeps a tinted, ringed box inside a card and on the page, in dark mode too. --}}
+        <div>
             @if ($this->enabled)
 
-                <div class="p-4 my-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400"
-                    role="alert">
+                <div class="my-4 aura-alert aura-alert-success aura-radius-control" role="alert">
                     <div class="flex items-start">
                         <div class="flex-shrink-0">
                             <!-- Heroicon name: outline/check-circle -->
-                            <svg class="h-6 w-6 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none"
                                 viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                         <div class="ml-3 w-0 flex-1 pt-0.5">
-                            <p class="text-sm font-medium text-gray-900">
+                            <p class="text-sm font-medium">
                                 @if ($showingConfirmation)
                                     {{ __('Please scan the QR-Code with your Authenticator App and confirm the Code to enable 2FA.') }}
                                 @else
@@ -31,13 +31,12 @@
                     </div>
                 </div>
             @else
-                <div class="p-4 my-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300"
-                    role="alert">
+                <div class="my-4 aura-alert aura-alert-warning aura-radius-control" role="alert">
                     {{ __('You have not enabled two factor authentication.') }}
                 </div>
 
             @endif
-        </h3>
+        </div>
 
         <div class="mt-3 max-w-xl text-sm">
             <p>
@@ -84,7 +83,7 @@
                     </p>
                 </div>
 
-                <div class="grid gap-1 max-w-xl mt-4 px-4 py-4 font-mono text-sm bg-gray-100 rounded-lg">
+                <div class="grid gap-1 max-w-xl mt-4 font-mono aura-alert aura-radius-control">
                     @foreach (json_decode(decrypt($this->user->two_factor_recovery_codes), true) as $code)
                         <div>{{ $code }}</div>
                     @endforeach

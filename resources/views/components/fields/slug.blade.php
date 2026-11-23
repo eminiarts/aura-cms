@@ -86,12 +86,11 @@
 
         @if(optional($field)['custom'])
         <div class="flex flex-col custom-slug">
-            <button x-ref="toggle" @click="toggleCustom()" type="button" role="switch" :aria-checked="custom"
+            <button x-ref="toggle" @click="toggleCustom()" type="button" role="switch" :aria-checked="custom ? 'true' : 'false'"
                 :aria-labelledby="$id('boolean')"
-                :class="custom ? 'bg-primary-600 border border-primary-900/50 dark:border-gray-900' : 'bg-gray-300 shadow-inner border border-gray-500/30'"
-                class="inline-flex relative px-0 py-1 w-14 rounded-full">
-                <span :class="custom ? 'bg-white translate-x-6' : 'bg-white translate-x-1'"
-                    class="w-6 h-6 rounded-full transition" aria-hidden="true"></span>
+                class="aura-toggle relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900">
+                <span :class="custom ? 'translate-x-[22px]' : 'translate-x-0.5'"
+                    class="pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm ring-1 ring-gray-950/10 transition-transform duration-150" aria-hidden="true"></span>
             </button>
         </div>
         @endif

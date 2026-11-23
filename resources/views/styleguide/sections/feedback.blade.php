@@ -6,7 +6,7 @@
             <x-aura::icon icon="loading" size="base" />
             <x-aura::icon icon="loading" size="lg" />
         </div>
-        <p class="mt-4 text-xs text-gray-400 dark:text-gray-500">{{ __('icon="loading". Buttons use icon.loading (white, with a light track).') }}</p>
+        <p class="mt-4 text-xs text-gray-400 dark:text-gray-500">{{ __('icon="loading". Buttons use icon.loading, drawn in currentColor like this one.') }}</p>
     </div>
 
     <div class="aura-card">
@@ -20,8 +20,14 @@
 
     <div class="aura-card">
         <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Inline alert') }}</span>
-        <div class="p-4 mt-4 text-sm text-gray-700 bg-gray-100 rounded-lg border border-gray-200 dark:bg-white/5 dark:text-gray-300 dark:border-white/10">
-            {{ __('Plugins are managed via Composer.') }} <code class="px-2 py-1 text-xs font-semibold text-gray-800 bg-white rounded dark:bg-gray-900 dark:text-gray-200">composer require vendor/plugin</code>
+        <div class="mt-4 space-y-2">
+            <div class="aura-alert aura-radius-control">
+                {{ __('Plugins are managed via Composer.') }} <code class="px-1.5 py-0.5 text-xs font-semibold aura-chip aura-radius-control">composer require vendor/plugin</code>
+            </div>
+            <div class="aura-alert aura-alert-success aura-radius-control" role="alert">{{ __('You have enabled two factor authentication.') }}</div>
+            <div class="aura-alert aura-alert-warning aura-radius-control" role="alert">{{ __('You have not enabled two factor authentication.') }}</div>
+            <div class="aura-alert aura-alert-danger aura-radius-control" role="alert">{{ __('The connection failed.') }}</div>
         </div>
+        <p class="mt-4 text-xs text-gray-400 dark:text-gray-500">{{ __('.aura-alert (+ -success, -warning, -danger): a tinted fill with a ring, so the box stays visible inside a card in dark mode.') }}</p>
     </div>
 </div>

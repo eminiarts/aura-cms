@@ -1,9 +1,10 @@
 @php
-    // Class strings copied from fields/tabs.blade.php (resource form tabs).
-    $tabBase = 'inline-flex px-4 pb-2.5 whitespace-nowrap border-b-2 font-semibold text-sm';
-    $tabActive = 'border-primary-600 text-primary-700 dark:border-primary-500 dark:text-primary-500';
-    $tabIdle = 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-500/30 dark:hover:text-gray-500 dark:hover:border-gray-600';
-    $tabError = '!text-red-500 border-red-500';
+    // Class strings copied from fields/tabs.blade.php (resource form tabs). Colours come from
+    // .aura-tab (resources/css/app.css), shared with the resource editor tabs.
+    $tabBase = 'aura-tab inline-flex px-4 pb-2.5 whitespace-nowrap border-b-2 font-semibold text-sm';
+    $tabActive = 'aura-tab-active';
+    $tabIdle = '';
+    $tabError = 'aura-tab-error';
 
     // Class strings copied from table/filter-tabs.blade.php and table/switch-view.blade.php.
     $segmentActive = 'bg-white text-gray-900 font-medium shadow-xs ring-1 ring-gray-950/[0.07] dark:bg-gray-700 dark:text-white dark:ring-white/10';
@@ -100,5 +101,5 @@
 </div>
 
 <p class="mt-4 text-xs text-gray-400 dark:text-gray-500">
-    {{ __('Form tabs and the resource editor tabs use the same underline style but differ in dark mode: fields/tabs uses dark:text-primary-500, resource-editor uses dark:text-primary-400. Idle tabs get darker on hover in dark mode (dark:hover:text-gray-500).') }}
+    {{ __('Form tabs and the resource editor tabs share .aura-tab. Active: primary-700 (primary-400 in dark) with a primary underline. Idle: gray-500 (gray-400 in dark); hover is one step brighter in both modes. A tab with errors is red-600 (red-400 in dark).') }}
 </p>

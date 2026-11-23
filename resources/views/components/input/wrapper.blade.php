@@ -7,7 +7,6 @@
 'helpIcon' => null,
 'error' => null,
 'required' => false,
-'error' => null,
 'wire',
 'name',
 ])
@@ -32,7 +31,11 @@
   </div>
 
 
-  <div class="">
+  @php
+    $invalid = $error && isset($errors) && $errors->has($error);
+  @endphp
+
+  <div @class(['aura-field-invalid' => $invalid])>
 
     @if(optional($slot))
        {{ $slot }}
@@ -41,7 +44,7 @@
     @endif
 
     @if($error)
-      @error($error) <span class="error mt-1 block text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
+      @error($error) <span class="aura-field-error error mt-1 block text-sm">{{ $message }}</span> @enderror
     @endif
 
   </div>

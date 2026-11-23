@@ -4,11 +4,15 @@
   'size' => 'base',
   'class' => '',
   'label' => false,
+  'error' => null,
 ])
 
 @php
+  // error: the validation key of this input. With an error the input gets aria-invalid, which
+  // turns the .aura-field ring red (the message itself is printed by the wrapper).
+  $invalid = $error && isset($errors) && $errors->has($error);
   // Same sizes as buttons: the height comes from .aura-control-{size} (--aura-control-height-*),
-  // the radius from .aura-field (--aura-control-radius). Sizes set padding-x and text only.
+  // the radius, colours and states from .aura-field (resources/css/app.css). Sizes set padding-x and text only.
   $size = in_array($size, ['xs', 'sm', 'base', 'lg'], true) ? $size : 'base';
   $sizeClass = [
     'xs' => 'aura-control-xs px-2 text-xs',
@@ -30,15 +34,14 @@
   @endif
   <div class="flex aura-field-group">
     @if ($prefix)
-      <span class="aura-field inline-flex items-center whitespace-nowrap bg-gray-50 text-gray-500 shadow-xs ring-1 ring-gray-950/10 dark:bg-white/5 dark:text-gray-400 dark:ring-white/10 {{ $addonClass }}">
+      <span class="aura-field aura-field-addon inline-flex items-center whitespace-nowrap {{ $addonClass }}">
           {{ $prefix }}
       </span>
     @endif
-    <input {{ $attributes->merge(['class' => $class . ' aura-field w-full appearance-none border-0 bg-white text-gray-900 placeholder:text-gray-400 shadow-xs ring-1 ring-gray-950/10 transition duration-150 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:ring-white/10 dark:hover:ring-white/20 dark:disabled:bg-gray-800/50 dark:disabled:text-gray-500 dark:disabled:ring-white/5 [color-scheme:light] dark:[color-scheme:dark] z-[1] ' . $sizeClass
-    ]) }}/>
+    <input {{ $attributes->merge(['class' => $class . ' aura-field w-full appearance-none z-[1] ' . $sizeClass, 'aria-invalid' => $invalid ? 'true' : null]) }}/>
 
     @if ($suffix)
-      <span class="aura-field inline-flex items-center whitespace-nowrap bg-gray-50 text-gray-500 shadow-xs ring-1 ring-gray-950/10 dark:bg-white/5 dark:text-gray-400 dark:ring-white/10 {{ $addonClass }}">
+      <span class="aura-field aura-field-addon inline-flex items-center whitespace-nowrap {{ $addonClass }}">
           {{ $suffix }}
       </span>
     @endif

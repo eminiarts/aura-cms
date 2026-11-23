@@ -69,7 +69,7 @@
         </table>
     </div>
     <p class="mt-4 text-xs text-gray-400 dark:text-gray-500">
-        {{ __('Error is the real fields/wrapper with a validation message. The control itself has no error ring; only the message turns red. input/wrapper prints a different message style (mt-1, font-normal, red-600/red-400).') }}
+        {{ __('One field style for every field (.aura-field): white with a gray-950/10 ring in light; in dark a gray-900 well with a gray-500 ring, 3:1 against the card. Disabled is a fill, not a fade (gray-50 / white/5 with gray-500 / gray-400 text). Error is the real fields/wrapper with a validation message: the wrapper marks the field (.aura-field-invalid), so the ring turns red (red-600, red-400 in dark) and stays red on hover and focus. fields/wrapper and input/wrapper print the same message (.aura-field-error: text-sm, red-600 / red-400).') }}
     </p>
 </div>
 

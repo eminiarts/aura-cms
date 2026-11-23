@@ -72,8 +72,8 @@
                     type="button"
                     :tabindex="isSelected($el.id) ? 0 : -1"
                     :aria-selected="isSelected($el.id)"
-                    :class="isSelected($el.id) ? 'border-primary-600 text-primary-700 dark:border-primary-500 dark:text-primary-500 whitespace-nowrap px-4 border-b-2 font-semibold text-sm' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-500/30 dark:hover:text-gray-500 dark:hover:border-gray-600 whitespace-nowrap px-4 border-b-2 font-semibold text-sm'"
-                    class="inline-flex px-4 pb-2.5 {{ $tabHasErrors ? '!text-red-500 border-red-500' : '' }}"
+                    :class="isSelected($el.id) && 'aura-tab-active'"
+                    class="aura-tab inline-flex px-4 pb-2.5 whitespace-nowrap border-b-2 font-semibold text-sm {{ $tabHasErrors ? 'aura-tab-error' : '' }}"
                     role="tab"
                 >
                     <span class="tab">{{ __($tab['name']) }}</span>

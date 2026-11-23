@@ -3,10 +3,10 @@
     $heightPill = 'inline-flex self-start px-1.5 py-0.5 text-[11px] font-semibold tabular-nums rounded bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-200 data-[sg-mismatch=true]:bg-red-100 data-[sg-mismatch=true]:text-red-700 dark:data-[sg-mismatch=true]:bg-red-500/20 dark:data-[sg-mismatch=true]:text-red-300';
     $caption = 'max-w-44 text-[11px] leading-4 text-gray-500 dark:text-gray-400';
     // The same markup as the search input in livewire/table.
-    $searchInput = 'aura-field aura-control-base block w-full pl-9 pr-3 text-sm text-gray-900 bg-white border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 dark:placeholder:text-gray-500 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]';
+    $searchInput = 'aura-field aura-control-base block w-full pl-9 pr-3 text-sm appearance-none z-[1]';
     // The same markup as the date range select and dates in widgets/index.
-    $widgetSelect = 'aura-field aura-control-sm pr-8 pl-3 text-sm font-medium text-gray-700 bg-white border-0 ring-1 shadow-sm ring-gray-950/10 dark:bg-gray-800 dark:text-gray-200 dark:ring-white/10 focus:ring-2 focus:ring-primary-500';
-    $widgetDate = 'aura-field aura-control-sm pr-2 pl-3 text-sm text-gray-700 bg-white border-0 ring-1 shadow-sm ring-gray-950/10 dark:bg-gray-800 dark:text-gray-200 dark:ring-white/10 focus:ring-2 focus:ring-primary-500 [color-scheme:light] dark:[color-scheme:dark]';
+    $widgetSelect = 'aura-field aura-control-sm pr-8 pl-3 text-sm font-medium';
+    $widgetDate = 'aura-field aura-control-sm pr-2 pl-3 text-sm';
 
     $scale = [
         'xs' => ['label' => __('Extra small'), 'variable' => '--aura-control-height-xs', 'usage' => __('Table filters, row actions')],

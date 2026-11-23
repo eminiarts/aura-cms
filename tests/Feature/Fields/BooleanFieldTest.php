@@ -85,9 +85,10 @@ describe('Boolean Field Rendering', function () {
     });
 
     test('renders toggle button styles', function () {
+        // Track colours come from .aura-toggle (resources/css/app.css), keyed on aria-checked.
         Livewire::test(Create::class, ['slug' => 'boolean'])
-            ->assertSeeHtml('bg-gray-300')
-            ->assertSeeHtml('bg-primary-600');
+            ->assertSeeHtml('aura-toggle boolean')
+            ->assertSeeHtml(':aria-checked="value ? \'true\' : \'false\'"');
     });
 });
 

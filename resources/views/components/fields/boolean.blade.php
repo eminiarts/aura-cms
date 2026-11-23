@@ -8,19 +8,13 @@
         disabled: {{ isset($field['disabled']) && $field['disabled'] ? 'true' : 'false' }}
     }"
         class="" x-id="['boolean']">
-        <button x-ref="toggle" @click="!disabled && (value = !value)" type="button" role="switch" :aria-checked="value"
+        <button x-ref="toggle" @click="!disabled && (value = !value)" type="button" role="switch" :aria-checked="value ? 'true' : 'false'"
             :aria-labelledby="$id('boolean')"
-            :class="[
-                value ? 'bg-primary-600 border border-primary-900/50 dark:border-gray-900' : 'bg-gray-300 shadow-inner border border-gray-500/30 dark:bg-gray-800',
-                disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-            ]"
+            :class="disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'"
             :disabled="disabled"
-            class="inline-flex relative px-0 py-1 w-14 rounded-full boolean focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-            <span :class="[
-                value ? 'bg-white translate-x-6' : 'bg-white translate-x-1',
-                disabled ? 'bg-white' : ''
-            ]"
-                class="w-6 h-6 rounded-full transition" aria-hidden="true"></span>
+            class="aura-toggle boolean relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900">
+            <span :class="value ? 'translate-x-[22px]' : 'translate-x-0.5'"
+                class="pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm ring-1 ring-gray-950/10 transition-transform duration-150" aria-hidden="true"></span>
         </button>
     </div>
 </x-aura::fields.wrapper>

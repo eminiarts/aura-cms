@@ -214,13 +214,13 @@ test('default view rendering when no custom views are specified', function () {
     ];
     $model->save();
 
-    // Test index view
+    // Test index view: the selected entries render as chips (dark-mode aware .aura-chip)
     Livewire::test(Index::class)
-        ->assertSee('text-gray-800');
+        ->assertSee('aura-chip');
 
     // Test view component
     Livewire::test(ResourceView::class, ['id' => $model->id])
-        ->assertSee('text-gray-800');
+        ->assertSee('aura-chip');
 });
 
 test('thumbnail with missing image shows placeholder', function () {
@@ -235,9 +235,9 @@ test('thumbnail with missing image shows placeholder', function () {
     ];
     $model->save();
 
-    // Test the index view
+    // Test the index view: the round placeholder of a chip without a thumbnail
     Livewire::test(Index::class)
-        ->assertSee('bg-gray-300');
+        ->assertSee('aura-chip-avatar');
 });
 
 test('multiple items render correctly in index view', function () {

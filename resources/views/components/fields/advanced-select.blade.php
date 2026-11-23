@@ -372,13 +372,13 @@
         <div class="relative p-0 w-full bg-transparent border-0 aura-input">
             <label class="sr-only">{{ __('Select Entry') }}</label>
             <button type="button"
-                class="aura-field aura-control-min-base relative flex items-center justify-between w-full px-3 py-px border shadow-xs appearance-none border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
+                class="aura-field aura-control-min-base relative flex items-center justify-between w-full px-3 py-px text-sm appearance-none"
                 x-ref="listboxButton" @click="toggleListbox">
 
                 <div class="flex items-center w-full">
                     <!-- Placeholder text on the left -->
                     <template x-if="!value || value.length === 0">
-                        <span class="block text-sm text-gray-500 truncate dark:text-gray-400">{{ __('Select Entry') }}</span>
+                        <span class="block text-sm truncate aura-field-placeholder">{{ __('Select Entry') }}</span>
                     </template>
 
                     <!-- Selected items -->
@@ -392,7 +392,7 @@
                             <template x-for="(item, index) in value" :key="item">
                                 {{-- <pre x-html="'item: ' + item + ', selected: ' + selectedItemMarkup(item)"></pre> --}}
 
-                                <div class="inline-flex gap-1 items-center py-0.5 pr-2 pl-1 my-0.5 mr-2 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 draggable-selectmany-item"
+                                <div class="inline-flex gap-1 items-center py-0.5 pr-2 pl-1 my-0.5 mr-2 text-xs font-medium leading-4 rounded-full aura-chip-primary draggable-selectmany-item"
                                     :data-id="item" @mousedown.prevent="startDragging(index, $event)"
                                     :class="{ 'shadow-item': index == dragIndex }">
 
@@ -410,7 +410,7 @@
                                     <!-- Small x svg -->
                                     <svg @mousedown.prevent="value = value.filter(i => i !== item)"
                                         @click.stop.prevent="value = value.filter(i => i !== item)"
-                                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 cursor-pointer text-primary-300">
+                                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 cursor-pointer aura-chip-remove">
                                         <path fill-rule="evenodd"
                                             d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z"
                                             clip-rule="evenodd" />
@@ -419,7 +419,7 @@
                             </template>
 
                             <div x-show="dragging"
-                                class="inline-flex gap-1 items-center px-2 py-0.5 mr-2 mb-2 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 dragging-item"
+                                class="inline-flex gap-1 items-center px-2 py-0.5 mr-2 mb-2 text-xs font-medium leading-4 rounded-full aura-chip-primary dragging-item"
                                 x-ref="draggingItem">
                                 <template x-if="value[dragIndex] && selectedItemMarkup(value[dragIndex]) && selectedItemMarkup(value[dragIndex]).view_selected" :key="item">
                                     <span x-html="selectedItemMarkup(value[dragIndex]).view_selected"></span>
@@ -430,7 +430,7 @@
 
                                 <!-- Small x svg -->
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                    class="-mr-1 w-4 h-4 cursor-pointer text-primary-300">
+                                    class="-mr-1 w-4 h-4 cursor-pointer aura-chip-remove">
                                     <path fill-rule="evenodd"
                                         d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z"
                                         clip-rule="evenodd" />

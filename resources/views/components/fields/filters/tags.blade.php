@@ -83,7 +83,7 @@ class=""
     x-ref="tags"
     name='tags'
     :class="{
-        'aura-field flex items-center w-full bg-white appearance-none shadow-xs border-gray-500/30 tags focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed': true,
+        'aura-field flex items-center w-full appearance-none tags': true,
         'aura-control-min-base pl-3 pr-10 py-0.5 text-sm': size === 'default',
         'aura-control-min-xs pl-0 pr-4 py-0 text-xs': size === 'xs'
     }"

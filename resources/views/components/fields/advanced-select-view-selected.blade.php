@@ -19,9 +19,9 @@
         @if($thumbnailId)
             <x-aura::image :id="$thumbnailId" alt="{{ $item->title() }}" class="object-cover w-6 h-6 rounded-full shrink-0" />
         @else
-            <div class="flex justify-center items-center w-6 h-6 bg-gray-300 rounded-full">
+            <div class="aura-chip-avatar flex justify-center items-center w-6 h-6 rounded-full">
             </div>
         @endif
     @endif
-    <span class="font-medium text-gray-800">{{ $item->title() }}</span>
+    <span class="font-medium">{{ $item->title() }}</span>
 </div>

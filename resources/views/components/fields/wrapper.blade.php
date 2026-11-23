@@ -56,15 +56,19 @@
         @endif
     </div>
 
-    <div class="">
+    @php
+        $invalid = $model && isset($errors) && $errors->has($model);
+    @endphp
+    {{-- .aura-field-invalid turns the ring of every field inside red (resources/css/app.css). --}}
+    <div @class(['aura-field-invalid' => $invalid])>
         @if (isset($slot))
             {{ $slot }}
         @else
             <x-aura::input.text :attributes="$attributes"></x-aura::input.text>
         @endif
 
-        @if ($model && $errors->has($model))
-            <span class="text-sm font-semibold text-red-500 error">{{ $errors->first($model) }}</span>
+        @if ($invalid)
+            <span class="aura-field-error error mt-1 block text-sm">{{ $errors->first($model) }}</span>
         @endif
 
     </div>

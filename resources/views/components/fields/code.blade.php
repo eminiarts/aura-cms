@@ -1,6 +1,6 @@
 <x-aura::fields.wrapper :field="$field">
     <?php $uniqueId = uniqid($field['slug'] . '_'); ?>
-    <div class="aura-field overflow-hidden w-full bg-white border appearance-none border-gray-500/30 shadow-xs focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900">
+    <div class="aura-field overflow-hidden w-full appearance-none">
         <div>
             <div
                 x-data="{

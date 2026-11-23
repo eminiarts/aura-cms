@@ -6,7 +6,7 @@
 
 <div>
 
-  @error($validation) <span class="text-sm font-semibold text-red-500 error">{{ $message }}</span> @enderror
+  @error($validation) <span class="aura-field-error error mt-1 block text-sm">{{ $message }}</span> @enderror
 
   @if (optional($field)['field']->group)
     <div class="aura-card aura-layout-panel">

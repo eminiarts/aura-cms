@@ -36,10 +36,9 @@
         @click="toggle()"
         type="button"
         role="switch"
-        :aria-checked="value"
+        :aria-checked="value ? 'true' : 'false'"
         :aria-labelledby="$id('toggle-label')"
-        :class="value ? 'bg-primary-600' : 'bg-gray-200 dark:bg-white/10'"
-        class="ml-3 relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
+        class="aura-toggle ml-3 relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
     >
         <span
             :class="value ? 'translate-x-[22px]' : 'translate-x-0.5'"

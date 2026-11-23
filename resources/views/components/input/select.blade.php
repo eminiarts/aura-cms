@@ -5,6 +5,7 @@
     'selected' => null,
     'placeholder' => null,
     'size' => 'base',
+    'error' => null,
 ])
 
 @php
@@ -12,19 +13,17 @@
     $size = $size === 'default' ? 'base' : $size;
     $size = in_array($size, ['xs', 'sm', 'base', 'lg'], true) ? $size : 'base';
     $compact = $size === 'xs';
+    $invalid = $error && isset($errors) && $errors->has($error);
 @endphp
 
 <div class="relative">
     <select
         name="{{ $name }}"
         id="{{ $id ?? $name }}"
+        @if ($invalid) aria-invalid="true" @endif
         {{ $attributes->class([
-            'aura-field aura-control-'.$size.' block w-full appearance-none border-0 bg-white text-gray-900 shadow-xs',
-            'ring-1 ring-gray-950/10 transition duration-150 hover:ring-gray-950/20',
-            'focus:outline-none focus:ring-2 focus:ring-primary-500',
-            'dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 dark:hover:ring-white/20',
-            'disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-950/10',
-            'dark:disabled:bg-gray-800/50 dark:disabled:text-gray-500 dark:disabled:ring-white/5',
+            // Colours, ring and states come from .aura-field (resources/css/app.css).
+            'aura-field aura-control-'.$size.' block w-full appearance-none',
             'pl-3 pr-9 text-sm' => in_array($size, ['sm', 'base'], true),
             'pl-4 pr-10 text-base' => $size === 'lg',
             'pl-2 pr-7 text-xs' => $compact,

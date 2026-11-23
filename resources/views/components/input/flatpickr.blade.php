@@ -20,6 +20,6 @@ $options = array_merge([
         x-ref="input"
         x-bind:value="value"
         type="text"
-        {{ $attributes->merge(['class' => 'aura-field aura-control-base w-full text-sm border-gray-500/30 focus:border-cyan-600 focus:ring focus:ring-cyan-600 focus:ring-opacity-50 shadow-sm']) }}
+        {{ $attributes->merge(['class' => 'aura-field aura-control-base w-full text-sm']) }}
     />
 </div>

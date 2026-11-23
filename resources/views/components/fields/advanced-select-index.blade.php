@@ -38,16 +38,16 @@
                     $thumbnailId = $thumbnailValue;
                 }
             @endphp
-            <div class="flex items-center px-1 py-1 bg-gray-100 rounded-full">
+            <div class="aura-chip flex items-center px-1 py-1 rounded-full">
                 @if($thumbnailField)
                     @if($thumbnailId)
                         <x-aura::image :id="$thumbnailId" alt="{{ $item->title() }}" class="thumbnail-image object-cover w-6 h-6 rounded-full shrink-0" />
                     @else
-                        <div class="flex justify-center items-center w-6 h-6 bg-gray-300 rounded-full">
+                        <div class="aura-chip-avatar flex justify-center items-center w-6 h-6 rounded-full">
                         </div>
                     @endif
                 @endif
-                <span class="px-2 text-sm font-medium text-gray-800 truncate">{{ $item->title() }}</span>
+                <span class="px-2 text-sm font-medium truncate">{{ $item->title() }}</span>
             </div>
         @endif
     @endforeach
