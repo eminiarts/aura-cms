@@ -11,7 +11,7 @@ beforeEach(function () {
 });
 
 const STYLEGUIDE_SECTIONS = [
-    'tokens', 'colors', 'typography', 'icons', 'buttons', 'forms', 'sizing', 'badges', 'cards', 'charts',
+    'tokens', 'colors', 'typography', 'icons', 'buttons', 'forms', 'fields', 'sizing', 'badges', 'cards', 'charts',
     'table', 'tabs', 'navigation', 'menus', 'popovers', 'overlays', 'notifications', 'feedback', 'auth',
 ];
 
@@ -148,11 +148,28 @@ test('form error specimen uses the real field wrapper message', function () {
         ->assertSee('The slug may only contain letters, numbers and dashes.');
 });
 
-test('table pagination uses the real pagination view and changes page', function () {
+test('the table section embeds the real resource table, not a static copy', function () {
     livewire(Styleguide::class, ['section' => 'table'])
-        ->assertSee('aria-current="page">1</span>', false)
-        ->call('gotoPage', 3)
-        ->assertSee('aria-current="page">3</span>', false);
+        ->assertSeeHtml('data-table-part="live"')
+        ->assertSeeLivewire('aura::table')
+        ->assertSeeHtml('data-table-part="empty"');
+});
+
+test('the fields section renders the real field views and lists every field type', function () {
+    $component = new Styleguide;
+    $catalogue = collect($component->fieldCatalogue())->flatMap(fn (array $types) => array_keys($types))->sort()->values()->all();
+    $fieldClasses = collect(glob(dirname(__DIR__, 2).'/src/Fields/*.php'))
+        ->map(fn (string $path) => basename($path, '.php'))
+        ->reject(fn (string $name) => $name === 'Field')
+        ->sort()->values()->all();
+
+    expect($catalogue)->toBe($fieldClasses);
+
+    $test = livewire(Styleguide::class, ['section' => 'fields']);
+
+    foreach (collect($component->fieldSpecimens())->flatten(1) as $field) {
+        $test->assertSeeHtml('id="resource-field-'.str_replace('_', '-', $field['slug']).'-wrapper"');
+    }
 });
 
 test('charts render the real widget views with demo values', function () {

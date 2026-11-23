@@ -2,11 +2,10 @@
 
 namespace Aura\Base\Livewire;
 
+use Aura\Base\Fields;
 use Aura\Base\ThemeTokens;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Url;
 use Livewire\Component;
-use Livewire\WithPagination;
 
 /**
  * The living style guide at admin/styleguide.
@@ -18,8 +17,6 @@ use Livewire\WithPagination;
  */
 class Styleguide extends Component
 {
-    use WithPagination;
-
     /**
      * Appearance setting => its presets, default first. Mirrors ThemeTokens::design().
      *
@@ -40,6 +37,31 @@ class Styleguide extends Component
     #[Url(except: '')]
     public string $density = '';
 
+    /**
+     * Values for the field specimens. The real field views bind to form.fields.{slug},
+     * as on a resource form.
+     *
+     * @var array{fields: array<string, mixed>}
+     */
+    public array $form = ['fields' => [
+        'sg_title' => 'Getting started with Aura',
+        'sg_slug' => 'getting-started-with-aura',
+        'sg_email' => 'bajram@example.com',
+        'sg_phone' => '+41 44 123 45 67',
+        'sg_number' => 42,
+        'sg_password' => '',
+        'sg_textarea' => 'Aura reads its colours, spacing and corners from the theme.',
+        'sg_select' => 'review',
+        'sg_status' => 'published',
+        'sg_radio' => 'team',
+        'sg_checkbox' => ['news'],
+        'sg_boolean' => true,
+        'sg_date' => '23.11.2026',
+        'sg_datetime' => '23.11.2026 09:30',
+        'sg_time' => '09:30',
+        'sg_color' => '#2563eb',
+    ]];
+
     #[Url(except: '')]
     public string $mode = '';
 
@@ -55,21 +77,6 @@ class Styleguide extends Component
     public bool $toggleOff = false;
 
     public bool $toggleOn = true;
-
-    /**
-     * Demo rows for the pagination specimen. Uses the real paginator so the real
-     * pagination view renders and its buttons work.
-     */
-    public function demoPaginator(): LengthAwarePaginator
-    {
-        return new LengthAwarePaginator(
-            items: range(1, 4),
-            total: 42,
-            perPage: 4,
-            currentPage: $this->getPage(),
-            options: ['path' => route('aura.styleguide'), 'pageName' => 'page'],
-        );
-    }
 
     /**
      * Each appearance setting with the CSS variables it writes and their value per preset, plus
@@ -131,6 +138,70 @@ class Styleguide extends Component
                     'usedBy' => $usedBy[$variable] ?? '',
                 ]])->all(),
             ];
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Every field type, grouped, with the component that renders it on a form. Shown as
+     * the field catalogue; the types with a live specimen are marked.
+     *
+     * @return array<string, array<string, string>>
+     */
+    public function fieldCatalogue(): array
+    {
+        return [
+            __('Text') => ['Text' => 'input', 'Textarea' => 'input', 'Email' => 'input', 'Phone' => 'input', 'Number' => 'input', 'Password' => 'input', 'Slug' => 'input + lock', 'Wysiwyg' => 'editor', 'Code' => 'editor', 'Json' => 'editor'],
+            __('Choice') => ['Select' => 'select', 'Status' => 'listbox + pill', 'Radio' => 'radios', 'Checkbox' => 'checkboxes', 'Boolean' => 'toggle', 'Tags' => 'chips', 'AdvancedSelect' => 'search + chips'],
+            __('Date, time and colour') => ['Date' => 'date picker', 'Datetime' => 'date picker', 'Time' => 'input', 'Color' => 'input + swatch'],
+            __('Relations') => ['BelongsTo' => 'search select', 'BelongsToMany' => 'table', 'HasMany' => 'table', 'HasOne' => 'table', 'Roles' => 'select', 'UserTeams' => 'list', 'Permissions' => 'matrix'],
+            __('Media') => ['Image' => 'media picker', 'File' => 'media picker', 'Embed' => 'input + preview'],
+            __('Layout') => ['Panel' => 'card', 'Tabs' => 'tabs', 'Tab' => 'tab', 'Group' => 'sub-panel', 'Repeater' => 'repeated rows', 'Heading' => 'heading', 'HorizontalLine' => 'divider'],
+            __('Special') => ['ID' => 'read-only', 'Hidden' => 'none', 'View' => 'custom view', 'ViewValue' => 'read-only', 'LivewireComponent' => 'component', 'GlobalAdmin' => 'toggle'],
+        ];
+    }
+
+    /**
+     * Live specimens of the resource fields, grouped like the field picker. Each one is
+     * the real fields/* view a resource form renders, bound to $form.
+     *
+     * @return array<string, list<array<string, mixed>>>
+     */
+    public function fieldSpecimens(): array
+    {
+        $groups = [
+            __('Text') => [
+                ['type' => Fields\Text::class, 'name' => 'Title', 'slug' => 'sg_title', 'validation' => 'required', 'style' => ['width' => 50]],
+                ['type' => Fields\Slug::class, 'name' => 'Slug', 'slug' => 'sg_slug', 'based_on' => 'sg_title', 'style' => ['width' => 50]],
+                ['type' => Fields\Email::class, 'name' => 'Email', 'slug' => 'sg_email', 'style' => ['width' => 50]],
+                ['type' => Fields\Phone::class, 'name' => 'Phone', 'slug' => 'sg_phone', 'style' => ['width' => 50]],
+                ['type' => Fields\Number::class, 'name' => 'Number', 'slug' => 'sg_number', 'instructions' => 'Help text sits in a tooltip next to the label.', 'style' => ['width' => 50]],
+                ['type' => Fields\Password::class, 'name' => 'Password', 'slug' => 'sg_password', 'style' => ['width' => 50]],
+                ['type' => Fields\Textarea::class, 'name' => 'Textarea', 'slug' => 'sg_textarea'],
+            ],
+            __('Choice') => [
+                ['type' => Fields\Select::class, 'name' => 'Select', 'slug' => 'sg_select', 'options' => ['draft' => __('Draft'), 'review' => __('In review'), 'published' => __('Published')], 'style' => ['width' => 50]],
+                ['type' => Fields\Status::class, 'name' => 'Status', 'slug' => 'sg_status', 'style' => ['width' => 50], 'options' => [
+                    ['key' => 'draft', 'value' => __('Draft'), 'color' => 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'],
+                    ['key' => 'published', 'value' => __('Published'), 'color' => 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'],
+                ]],
+                ['type' => Fields\Radio::class, 'name' => 'Radio', 'slug' => 'sg_radio', 'style' => ['width' => 33], 'options' => [['key' => 'private', 'value' => __('Only me')], ['key' => 'team', 'value' => __('My team')]]],
+                ['type' => Fields\Checkbox::class, 'name' => 'Checkbox', 'slug' => 'sg_checkbox', 'style' => ['width' => 33], 'options' => [['key' => 'news', 'value' => __('Newsletter')], ['key' => 'updates', 'value' => __('Product updates')]]],
+                ['type' => Fields\Boolean::class, 'name' => 'Boolean', 'slug' => 'sg_boolean', 'style' => ['width' => 33]],
+            ],
+            __('Date, time and colour') => [
+                ['type' => Fields\Date::class, 'name' => 'Date', 'slug' => 'sg_date', 'style' => ['width' => 25]],
+                ['type' => Fields\Datetime::class, 'name' => 'Date and time', 'slug' => 'sg_datetime', 'style' => ['width' => 25]],
+                ['type' => Fields\Time::class, 'name' => 'Time', 'slug' => 'sg_time', 'style' => ['width' => 25]],
+                ['type' => Fields\Color::class, 'name' => 'Color', 'slug' => 'sg_color', 'style' => ['width' => 25]],
+            ],
+        ];
+
+        foreach ($groups as $group => $fields) {
+            foreach ($fields as $i => $field) {
+                $groups[$group][$i]['field'] = app($field['type'])->field($field);
+            }
         }
 
         return $groups;
@@ -213,6 +284,10 @@ class Styleguide extends Component
             'forms' => [
                 'label' => __('Form controls'),
                 'description' => __('Inputs from components/input/*, sized like buttons (xs, sm, base, lg) and rounded with --aura-control-radius. Resource fields wrap them with a label, help tooltip and validation error (fields/wrapper).'),
+            ],
+            'fields' => [
+                'label' => __('Fields'),
+                'description' => __('Resource fields (src/Fields) are what a resource form is built from. Each renders one of the form controls above inside fields/wrapper: label, optional help tooltip, the control, the error. The specimens below are the real field views; the catalogue lists every field type.'),
             ],
             'sizing' => [
                 'label' => __('Control sizing'),
