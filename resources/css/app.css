@@ -69,8 +69,110 @@
 .aura-sidebar-dropdown-button-expanded.aura-sidebar-dropdown-button-expanded,
 .aura-sidebar-dropdown-collapsed.aura-sidebar-dropdown-collapsed,
 .aura-sidebar-search.aura-sidebar-search,
-.aura-sidebar-toggle.aura-sidebar-toggle {
+.aura-sidebar-toggle.aura-sidebar-toggle,
+.aura-sidebar-icon.aura-sidebar-icon,
+.aura-sidebar-child-item.aura-sidebar-child-item,
+.aura-sidebar-team-switcher.aura-sidebar-team-switcher,
+.aura-sidebar-dropdown-container-expanded.aura-sidebar-dropdown-container-expanded,
+.aura-radius-control.aura-radius-control {
     border-radius: var(--aura-control-radius, 0.5rem);
+}
+
+/*
+ * Panel radius: panels and the surfaces that float above the page (table card, modal, dropdown,
+ * popover, toast, global search, login card). Small things inside a panel (list rows, icon tiles,
+ * chips that are not pills) take .aura-radius-control instead. Pills and avatars stay round.
+ */
+.aura-radius-panel.aura-radius-panel {
+    border-radius: var(--aura-panel-radius, 0.75rem);
+}
+
+/*
+ * Segmented controls (table filter tabs, the list/grid/kanban switch): the track takes the control
+ * radius, the items inside it a radius 2px smaller so the corners stay concentric.
+ */
+.aura-segmented.aura-segmented {
+    border-radius: var(--aura-control-radius, 0.5rem);
+}
+.aura-segmented-item.aura-segmented-item {
+    border-radius: max(0px, calc(var(--aura-control-radius, 0.5rem) - 0.125rem));
+}
+
+/* Items inside a dropdown panel (p-1): 4px less than the panel radius, so the corners stay concentric. */
+.aura-dropdown-item.aura-dropdown-item {
+    border-radius: max(0px, calc(var(--aura-panel-radius, 0.75rem) - 0.25rem));
+}
+
+/* The modal is a bottom sheet on phones (top corners only) and a centred panel from sm on. */
+.aura-modal-panel.aura-modal-panel {
+    border-radius: var(--aura-panel-radius, 0.75rem) var(--aura-panel-radius, 0.75rem) 0 0;
+}
+@media (min-width: 640px) {
+    .aura-modal-panel.aura-modal-panel {
+        border-radius: var(--aura-panel-radius, 0.75rem);
+    }
+}
+
+/*
+ * Layout gutters: a row of panels, fields or widgets whose items set their own percentage width
+ * (the field "width" style). Each item is padded by half the layout gap and the row pulls itself
+ * out by the same amount, so 50% + 50% still fits, neighbours sit --aura-layout-gap apart and the
+ * outer content edges line up with the page title. Rows nest: fields inside a panel use the same
+ * gutter, so they start exactly at the panel padding.
+ */
+.aura-layout-row.aura-layout-row {
+    margin-left: calc(var(--aura-layout-gap, 1.5rem) / -2);
+    margin-right: calc(var(--aura-layout-gap, 1.5rem) / -2);
+    width: calc(100% + var(--aura-layout-gap, 1.5rem));
+}
+.aura-layout-cell.aura-layout-cell {
+    padding-left: calc(var(--aura-layout-gap, 1.5rem) / 2);
+    padding-right: calc(var(--aura-layout-gap, 1.5rem) / 2);
+}
+
+/* Space below a panel (Panel field) and between rows of widgets. */
+.aura-layout-panel.aura-layout-panel {
+    margin-bottom: var(--aura-layout-gap, 1.5rem);
+}
+.aura-widget-grid.aura-widget-grid {
+    row-gap: var(--aura-layout-gap, 1.5rem);
+    margin-bottom: var(--aura-layout-gap, 1.5rem);
+}
+
+/* CSS grids and flex stacks of panels (dashboard, record layout regions). */
+.aura-layout-grid.aura-layout-grid {
+    gap: var(--aura-layout-gap, 1.5rem);
+}
+
+/*
+ * Content that bleeds to the card edge (sparklines, the dashboard stat charts): pulls itself out
+ * by the panel padding, so it touches the card border at every density instead of overflowing it.
+ */
+.aura-card-bleed.aura-card-bleed {
+    margin-left: calc(var(--aura-panel-padding, 1.25rem) * -1);
+    margin-right: calc(var(--aura-panel-padding, 1.25rem) * -1);
+    margin-bottom: calc(var(--aura-panel-padding, 1.25rem) * -1);
+}
+
+/*
+ * Group field, variant "section" (the framed sub-panels on the Settings page): a panel inside a
+ * panel. Panel padding and radius, the section gap below it.
+ */
+.aura-group-section.aura-group-section {
+    padding: var(--aura-panel-padding, 1.25rem);
+    margin-bottom: var(--aura-section-gap, 1rem);
+    border-radius: var(--aura-panel-radius, 0.75rem);
+}
+
+/* The login card: panel radius, 1.5x the panel padding on phones and 2x from the sm breakpoint on. */
+.aura-login-card.aura-login-card {
+    padding: calc(var(--aura-panel-padding, 1.25rem) * 1.5);
+    border-radius: var(--aura-panel-radius, 0.75rem);
+}
+@media (min-width: 640px) {
+    .aura-login-card.aura-login-card {
+        padding: calc(var(--aura-panel-padding, 1.25rem) * 2);
+    }
 }
 
 /*
@@ -527,7 +629,7 @@
     @apply bg-transparent focus:outline-none focus-visible:ring-2;
 }
 .aura-sidebar-dropdown-container-expanded {
-    @apply bg-transparent rounded-lg;
+    @apply bg-transparent;
 }
 
 /* Primary Sidebar Type */
@@ -538,7 +640,7 @@
     @apply text-white bg-transparent hover:bg-white/10 focus-visible:ring-white/50;
 }
 .aura-sidebar-type-primary .aura-sidebar-dropdown-container-expanded {
-    @apply rounded-lg bg-sidebar-bg-dropdown/60;
+    @apply bg-sidebar-bg-dropdown/60;
 }
 .aura-sidebar-type-primary .aura-sidebar-dropdown-collapsed {
     @apply text-white/70 hover:text-white hover:bg-white/10;
@@ -552,7 +654,7 @@
     @apply text-gray-900 bg-transparent hover:bg-gray-950/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-light .aura-sidebar-dropdown-container-expanded {
-    @apply rounded-lg bg-gray-950/[0.03];
+    @apply bg-gray-950/[0.03];
 }
 .aura-sidebar-type-light .aura-sidebar-dropdown-collapsed {
     @apply text-gray-500 hover:text-gray-900 hover:bg-gray-950/5;
@@ -566,7 +668,7 @@
     @apply text-white bg-transparent hover:bg-white/[0.06] focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-dropdown-container-expanded {
-    @apply rounded-lg bg-white/[0.04];
+    @apply bg-white/[0.04];
 }
 .aura-sidebar-type-dark .aura-sidebar-dropdown-collapsed {
     @apply text-gray-400 hover:text-white hover:bg-white/[0.06];
@@ -582,7 +684,7 @@
 }
 
 .aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-container-expanded {
-    @apply dark:rounded-lg dark:bg-sidebar-bg-dropdown/60;
+    @apply dark:bg-sidebar-bg-dropdown/60;
 }
 
 .aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-collapsed {
@@ -599,7 +701,7 @@
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-container-expanded {
-    @apply dark:rounded-lg dark:bg-gray-950/[0.03];
+    @apply dark:bg-gray-950/[0.03];
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-collapsed {
@@ -616,7 +718,7 @@
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-container-expanded {
-    @apply dark:rounded-lg dark:bg-white/[0.04];
+    @apply dark:bg-white/[0.04];
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-collapsed {

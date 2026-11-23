@@ -1,5 +1,5 @@
 @checkCondition($this->model, $field, $this->form)
-    <div class="w-full px-2 {{ $field['style']['class'] ?? '' }}">
+    <div class="w-full aura-layout-cell {{ $field['style']['class'] ?? '' }}">
         @php
             unset($field['relation']);
             unset($field['conditional_logic']);

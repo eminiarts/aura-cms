@@ -22,8 +22,8 @@
     <div class="aura-card" data-menu-specimen="open">
         <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Open panel (static)') }}</span>
         {{-- Same wrapper classes as the open panel in dropdown.blade.php --}}
-        <div class="mt-4 w-48 rounded-lg shadow-lg">
-            <div class="p-1 bg-white rounded-lg ring-1 ring-gray-950/10 dark:ring-white/10 dark:bg-gray-800 dark:text-gray-200">
+        <div class="mt-4 w-48 aura-radius-panel shadow-lg">
+            <div class="p-1 bg-white aura-radius-panel ring-1 ring-gray-950/10 dark:ring-white/10 dark:bg-gray-800 dark:text-gray-200">
                 <x-aura::dropdown-link href="#menus">{{ __('Edit') }}</x-aura::dropdown-link>
                 <div class="sg-force-hover">
                     <x-aura::dropdown-link href="#menus">{{ __('Duplicate (hover)') }}</x-aura::dropdown-link>
@@ -31,6 +31,6 @@
                 <x-aura::dropdown-link href="#menus">{{ __('Delete') }}</x-aura::dropdown-link>
             </div>
         </div>
-        <p class="mt-4 text-xs text-gray-400 dark:text-gray-500">{{ __('The panel uses rounded-lg, not --aura-control-radius or --aura-panel-radius. There is no separator or danger item style.') }}</p>
+        <p class="mt-4 text-xs text-gray-400 dark:text-gray-500">{{ __('The panel takes --aura-panel-radius (.aura-radius-panel), the items 4px less (.aura-dropdown-item). There is no separator or danger item style.') }}</p>
     </div>
 </div>

@@ -70,7 +70,7 @@
         });
       }
     }">
-        <div x-ref="this" role="button" tabindex="0" class="flex justify-between items-center px-2 py-1.5 w-full text-sm font-medium rounded-lg cursor-pointer aura-sidebar-team-switcher">
+        <div x-ref="this" role="button" tabindex="0" class="flex justify-between items-center px-2 py-1.5 w-full text-sm font-medium cursor-pointer aura-sidebar-team-switcher">
             <span class="min-w-0 flex-1">{{ $title }}</span>
 
             <div class="ml-2 opacity-50 hide-collapsed">

@@ -34,6 +34,8 @@
     {{-- @dump($form) --}}
     {{-- @dump($this->groupedFields) --}}
 
+      {{-- Field cells pad themselves by half the layout gap; the row pulls them back to the content edge. --}}
+      <div class="aura-layout-row">
       @foreach($this->model->getGroupedFields() as $key => $field)
         <style >
         #resource-field-{{ optional($field)['slug'] }}-wrapper {
@@ -51,6 +53,7 @@
         <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" />
       </div>
       @endforeach
+      </div>
 
     @endif
   </div>

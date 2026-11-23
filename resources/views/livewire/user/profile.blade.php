@@ -29,6 +29,8 @@
 
     <x-aura::validation-errors />
 
+    {{-- Field cells pad themselves by half the layout gap; the row pulls them back to the content edge. --}}
+    <div class="aura-layout-row">
     @foreach($this->fieldsForView as $key => $field)
     <style>
         #resource-field-{{ optional($field)['slug'] }}-wrapper {
@@ -48,6 +50,7 @@
         </div>
     </x-aura::fields.conditions>
     @endforeach
+    </div>
 
 
 </div>

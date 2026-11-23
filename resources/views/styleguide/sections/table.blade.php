@@ -32,10 +32,10 @@
     <div class="space-x-4 aura-table-toolbar-actions">
         <div class="flex space-x-2">
             <div class="flex aura-control-base">
-                <div class="inline-flex isolate gap-0.5 items-stretch p-0.5 h-full rounded-lg bg-gray-950/[0.04] dark:bg-white/5">
-                    <button type="button" class="inline-flex relative justify-center items-center rounded-md aspect-square {{ $segmentActive }}"><span class="sr-only">{{ __('List view') }}</span><x-aura::icon icon="list" size="sm" /></button>
-                    <button type="button" class="inline-flex relative justify-center items-center rounded-md aspect-square {{ $segmentIdle }}"><span class="sr-only">{{ __('Grid view') }}</span><x-aura::icon icon="grid" size="sm" /></button>
-                    <button type="button" class="inline-flex relative justify-center items-center rounded-md aspect-square {{ $segmentIdle }}"><span class="sr-only">{{ __('Kanban view') }}</span><x-aura::icon icon="kanban" size="sm" /></button>
+                <div class="inline-flex isolate gap-0.5 items-stretch p-0.5 h-full aura-segmented bg-gray-950/[0.04] dark:bg-white/5">
+                    <button type="button" class="inline-flex relative justify-center items-center aura-segmented-item aspect-square {{ $segmentActive }}"><span class="sr-only">{{ __('List view') }}</span><x-aura::icon icon="list" size="sm" /></button>
+                    <button type="button" class="inline-flex relative justify-center items-center aura-segmented-item aspect-square {{ $segmentIdle }}"><span class="sr-only">{{ __('Grid view') }}</span><x-aura::icon icon="grid" size="sm" /></button>
+                    <button type="button" class="inline-flex relative justify-center items-center aura-segmented-item aspect-square {{ $segmentIdle }}"><span class="sr-only">{{ __('Kanban view') }}</span><x-aura::icon icon="kanban" size="sm" /></button>
                 </div>
             </div>
             <x-aura::button.border>
@@ -52,14 +52,14 @@
 </div>
 
 {{-- Filter tabs (specimen of table/filter-tabs) --}}
-<div class="flex flex-wrap gap-1 items-center p-1 my-4 max-w-full rounded-lg bg-gray-950/[0.04] dark:bg-white/5 w-fit" data-table-part="filter-tabs">
-    <button type="button" class="flex items-center px-3 py-1.5 space-x-2 text-sm rounded-md transition-colors duration-150 cursor-pointer {{ $segmentActive }}">{{ __('All') }}</button>
-    <button type="button" class="flex items-center px-3 py-1.5 space-x-2 text-sm rounded-md transition-colors duration-150 cursor-pointer {{ $segmentIdle }}">{{ __('My drafts') }}</button>
-    <button type="button" class="flex items-center px-3 py-1.5 space-x-2 text-sm rounded-md transition-colors duration-150 cursor-pointer {{ $segmentIdle }}">{{ __('Published') }}</button>
+<div class="flex flex-wrap gap-1 items-center p-1 my-4 max-w-full aura-segmented bg-gray-950/[0.04] dark:bg-white/5 w-fit" data-table-part="filter-tabs">
+    <button type="button" class="flex items-center px-3 py-1.5 space-x-2 text-sm aura-segmented-item transition-colors duration-150 cursor-pointer {{ $segmentActive }}">{{ __('All') }}</button>
+    <button type="button" class="flex items-center px-3 py-1.5 space-x-2 text-sm aura-segmented-item transition-colors duration-150 cursor-pointer {{ $segmentIdle }}">{{ __('My drafts') }}</button>
+    <button type="button" class="flex items-center px-3 py-1.5 space-x-2 text-sm aura-segmented-item transition-colors duration-150 cursor-pointer {{ $segmentIdle }}">{{ __('Published') }}</button>
 </div>
 
 {{-- List view (specimen of table/list-view, table-header and row). Headings are the real table.heading. --}}
-<div class="overflow-hidden bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10" data-table-part="list">
+<div class="overflow-hidden bg-white aura-radius-panel ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10" data-table-part="list">
     <div class="overflow-x-auto min-w-full align-middle">
         <table class="min-w-full">
             <thead>
@@ -126,7 +126,7 @@
     {{-- Bulk selection bar (specimen of table/bulk-select-row; floats over the table bottom in the app) --}}
     <div data-table-part="bulk-select">
         <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Selection bar') }}</span>
-        <div class="px-4 py-3 mt-3 w-full text-sm text-gray-800 rounded-xl ring-1 shadow-lg backdrop-blur-md bg-white/85 ring-gray-950/10 dark:bg-gray-800/85 dark:ring-white/10 dark:text-gray-200">
+        <div class="px-4 py-3 mt-3 w-full text-sm text-gray-800 aura-radius-panel ring-1 shadow-lg backdrop-blur-md bg-white/85 ring-gray-950/10 dark:bg-gray-800/85 dark:ring-white/10 dark:text-gray-200">
             <div class="flex justify-between items-center">
                 <div>
                     <span>{{ __('You have selected') }} <strong>1</strong> {{ __('row') }}.</span>
@@ -140,7 +140,7 @@
     {{-- Empty state (specimen of table/list-view) --}}
     <div data-table-part="empty">
         <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Empty state') }}</span>
-        <div class="overflow-hidden mt-3 bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+        <div class="overflow-hidden mt-3 bg-white aura-radius-panel ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
             <div class="flex flex-col items-center px-6 py-12 text-center">
                 <div class="flex justify-center items-center w-12 h-12 bg-gray-50 rounded-full ring-1 ring-gray-950/10 dark:bg-white/5 dark:ring-white/10">
                     <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>

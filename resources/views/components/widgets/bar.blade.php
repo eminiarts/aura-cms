@@ -133,7 +133,7 @@
               }"
               class="px-0 -mb-4 w-full"
               >
-              <div x-ref="chart" class="bg-white rounded-lg dark:bg-gray-800"></div>
+              <div x-ref="chart" class="bg-white aura-radius-control dark:bg-gray-800"></div>
           </div>
 
 
@@ -165,7 +165,7 @@
         <div class="w-8 h-4 bg-gray-100 rounded-md dark:bg-gray-700/60"></div>
     </div>
 
-    <div class="mt-6 -mx-5 -mb-5">
+    <div class="mt-6 aura-card-bleed">
       <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="w-full h-16 text-gray-100 dark:text-gray-700/60">
           <g fill="none" fill-rule="evenodd">
               <rect x="0" y="0" width="10" height="80" fill="currentColor"/>

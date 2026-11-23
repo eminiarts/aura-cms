@@ -8,11 +8,14 @@
     @elseif(View::exists('aura::' . $view))
         @include('aura::' . $view)
     @else
-        <div class="flex justify-between items-center mt-6">
+        {{-- A table nested in a form (has-many) is a section of its panel: panel-title size, not a page title. --}}
+        <div class="flex justify-between items-center {{ $this->parent ? 'mt-4' : 'mt-6' }}">
 
             @if ($this->settings['title'])
                 <div>
-                    @if (optional(optional($this)->field)['name'])
+                    @if ($this->parent && optional(optional($this)->field)['name'])
+                        <h2 class="font-semibold text-gray-900 dark:text-white">{{ __($this->field['name']) }}</h2>
+                    @elseif (optional(optional($this)->field)['name'])
                         <h1 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __($this->field['name']) }}</h1>
                     @else
                         <h1 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __($model->pluralName()) }}</h1>

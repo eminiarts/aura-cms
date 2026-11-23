@@ -63,18 +63,18 @@
     {{-- Segmented tabs (table/filter-tabs) --}}
     <div class="aura-card" x-data="{ selected: 0 }">
         <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Segmented tabs (table/filter-tabs)') }}</span>
-        <div class="flex flex-wrap gap-1 items-center p-1 mt-4 max-w-full rounded-lg bg-gray-950/[0.04] dark:bg-white/5 w-fit">
+        <div class="flex flex-wrap gap-1 items-center p-1 mt-4 max-w-full aura-segmented bg-gray-950/[0.04] dark:bg-white/5 w-fit">
             @foreach (['All', 'My drafts', 'Published'] as $index => $tab)
                 <button type="button" x-on:click="selected = {{ $index }}"
                     :class="selected === {{ $index }} ? @js($segmentActive) : @js($segmentIdle)"
-                    class="flex items-center px-3 py-1.5 space-x-2 text-sm rounded-md transition-colors duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">{{ __($tab) }}</button>
+                    class="flex items-center px-3 py-1.5 space-x-2 text-sm aura-segmented-item transition-colors duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">{{ __($tab) }}</button>
             @endforeach
         </div>
-        <div class="flex flex-wrap gap-1 items-center p-1 mt-3 max-w-full rounded-lg bg-gray-950/[0.04] dark:bg-white/5 w-fit">
-            <span class="flex items-center px-3 py-1.5 text-sm rounded-md {{ $segmentActive }}">{{ __('Active') }}</span>
-            <span class="flex items-center px-3 py-1.5 text-sm rounded-md {{ $segmentIdle }}">{{ __('Idle') }}</span>
-            <span class="sg-force-hover"><span class="flex items-center px-3 py-1.5 text-sm rounded-md {{ $segmentIdle }}">{{ __('Hover') }}</span></span>
-            <span class="sg-force-focus"><span class="flex items-center px-3 py-1.5 text-sm rounded-md focus-visible:ring-2 focus-visible:ring-primary-500 {{ $segmentIdle }}">{{ __('Focus') }}</span></span>
+        <div class="flex flex-wrap gap-1 items-center p-1 mt-3 max-w-full aura-segmented bg-gray-950/[0.04] dark:bg-white/5 w-fit">
+            <span class="flex items-center px-3 py-1.5 text-sm aura-segmented-item {{ $segmentActive }}">{{ __('Active') }}</span>
+            <span class="flex items-center px-3 py-1.5 text-sm aura-segmented-item {{ $segmentIdle }}">{{ __('Idle') }}</span>
+            <span class="sg-force-hover"><span class="flex items-center px-3 py-1.5 text-sm aura-segmented-item {{ $segmentIdle }}">{{ __('Hover') }}</span></span>
+            <span class="sg-force-focus"><span class="flex items-center px-3 py-1.5 text-sm aura-segmented-item focus-visible:ring-2 focus-visible:ring-primary-500 {{ $segmentIdle }}">{{ __('Focus') }}</span></span>
         </div>
     </div>
 
@@ -83,11 +83,11 @@
         <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('View switch (table/switch-view)') }}</span>
         <div class="mt-4">
             <div class="flex aura-control-base">
-            <div class="inline-flex isolate gap-0.5 items-stretch p-0.5 h-full rounded-lg bg-gray-950/[0.04] dark:bg-white/5">
+            <div class="inline-flex isolate gap-0.5 items-stretch p-0.5 h-full aura-segmented bg-gray-950/[0.04] dark:bg-white/5">
                 @foreach (['list' => 'List view', 'grid' => 'Grid view', 'kanban' => 'Kanban view'] as $view => $label)
                     <button type="button" x-on:click="selected = '{{ $view }}'"
                         :class="selected === '{{ $view }}' ? @js($segmentActive) : @js($segmentIdle)"
-                        class="inline-flex relative justify-center items-center rounded-md transition-colors duration-150 aspect-square focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                        class="inline-flex relative justify-center items-center aura-segmented-item transition-colors duration-150 aspect-square focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                         <span class="sr-only">{{ __($label) }}</span>
                         <x-aura::icon :icon="$view" size="sm" />
                     </button>

@@ -1,4 +1,4 @@
-@props(['field', 'wrapperClass' => 'px-4', 'showLabel' => true])
+@props(['field', 'wrapperClass' => 'aura-layout-cell', 'showLabel' => true])
 
 @php
     $label = optional($field)['name'];

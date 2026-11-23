@@ -126,16 +126,10 @@
 
 
     {{-- Each field view renders its own #resource-field-…-wrapper with its width; a second wrapper here would halve a 50% panel again. --}}
-    <div class="flex flex-wrap items-start -mx-2">
+    <div class="flex flex-wrap items-start aura-layout-row">
         @foreach($this->fieldsForView as $key => $field)
-            {{-- Flex items do not collapse margins, so the gap replaces the card's own mb-8 instead of adding to it. --}}
-            @if(optional($field)['type'] === 'Aura\\Base\\Fields\\Panel')
-                <style>
-                    #resource-field-{{ optional($field)['slug'] }}-wrapper > .aura-card {
-                        margin-bottom: var(--aura-layout-gap, 1rem);
-                    }
-                </style>
-            @elseif(optional($field)['type'] === 'Aura\\Base\\Fields\\Group')
+            {{-- Panels space themselves with --aura-layout-gap (.aura-layout-panel); top-level groups use the section gap. --}}
+            @if(optional($field)['type'] === 'Aura\\Base\\Fields\\Group')
                 <style>
                     #resource-field-{{ Str::slug(optional($field)['slug']) }}-wrapper {
                         margin-bottom: var(--aura-section-gap, 1rem);

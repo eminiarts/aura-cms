@@ -1,6 +1,8 @@
 <x-aura::slide-over key="notifications" wire:key="notifications" >
     <h1>{{ __('Notifications') }}</h1>
 
+    {{-- Field cells pad themselves by half the layout gap; the row pulls them back to the content edge. --}}
+    <div class="aura-layout-row">
     @foreach($this->fieldsForView as $key => $field)
     <style >
         #resource-field-{{ optional($field)['slug'] }}-wrapper {
@@ -20,6 +22,7 @@
         </div>
     {{-- </x-aura::fields.conditions> --}}
     @endforeach
+    </div>
 
     <x-aura::button wire:click="markAllAsRead">
         <div wire:loading>

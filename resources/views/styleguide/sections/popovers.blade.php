@@ -16,7 +16,7 @@
                 <x-slot:content>
                     <div class="p-1">
                         @foreach ($columns as $column => $visible)
-                            <label class="flex gap-2 items-center px-2 py-1.5 rounded-md transition-colors duration-150 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5">
+                            <label class="flex gap-2 items-center px-2 py-1.5 aura-dropdown-item transition-colors duration-150 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5">
                                 <x-aura::input.checkbox :checked="$visible" hideLabel :label="$column" />
                                 <span class="text-sm text-gray-700 dark:text-gray-200">{{ __($column) }}</span>
                             </label>
@@ -30,11 +30,11 @@
 
     <div class="aura-card" data-popover-specimen="open">
         <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Open popover (static)') }}</span>
-        <div class="mt-4 w-60 rounded-lg shadow-lg">
-            <div class="p-1 bg-white rounded-lg ring-1 ring-gray-950/10 dark:ring-white/10 dark:bg-gray-800 dark:text-gray-200">
+        <div class="mt-4 w-60 aura-radius-panel shadow-lg">
+            <div class="p-1 bg-white aura-radius-panel ring-1 ring-gray-950/10 dark:ring-white/10 dark:bg-gray-800 dark:text-gray-200">
                 @foreach ($columns as $column => $visible)
                     <div @class(['sg-force-hover' => $loop->index === 1])>
-                        <label class="flex gap-2 items-center px-2 py-1.5 rounded-md transition-colors duration-150 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5">
+                        <label class="flex gap-2 items-center px-2 py-1.5 aura-dropdown-item transition-colors duration-150 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5">
                             <x-aura::input.checkbox :checked="$visible" hideLabel :label="$column" />
                             <span class="text-sm text-gray-700 dark:text-gray-200">{{ __($column) }}</span>
                         </label>

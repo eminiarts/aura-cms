@@ -9,7 +9,7 @@
   @error($validation) <span class="text-sm font-semibold text-red-500 error">{{ $message }}</span> @enderror
 
   @if (optional($field)['field']->group)
-    <div class="mb-8 aura-card">
+    <div class="aura-card aura-layout-panel">
       <div class="flex justify-between mb-4 flex-start">
 
         <div class="mt-1 mr-2 shrink-0 draggable-handle">
@@ -44,12 +44,12 @@
       </div>
 
       @if (isset($field['fields']))
-        <div class="flex flex-wrap items-start -mx-4 draggable-container">
+        <div class="flex flex-wrap items-start aura-layout-row draggable-container">
           @foreach($field['fields'] as $key => $f)
             <div
               style="width: {{ optional(optional($f)['style'])['width'] ?? '100' }}%;"
               id="field_{{ optional($f)['_id'] }}"
-              class="px-4 reorder-item draggable-item resource-field-{{ optional($f)['slug'] }}-wrapper"
+              class="aura-layout-cell reorder-item draggable-item resource-field-{{ optional($f)['slug'] }}-wrapper"
             >
               @include('aura::components.resource.show-field', ['field' => $f, 'slug' => $slug])
             </div>

@@ -13,11 +13,12 @@
 </style>
 
 
-<div class="px-2" id="resource-field-{{ optional($field)['slug'] }}-wrapper">
-    <div class="{{ $field['style']['class'] ?? 'aura-card mb-8' }}">
+{{-- The gutter and the space below come from --aura-layout-gap (.aura-layout-cell, .aura-layout-panel); fields inside start at the panel padding. --}}
+<div class="aura-layout-cell aura-layout-panel" id="resource-field-{{ optional($field)['slug'] }}-wrapper">
+    <div class="{{ $field['style']['class'] ?? 'aura-card' }}">
         <div class="mb-2">
           @if(isset($field['name']) && (!isset($field['hide_title']) || $field['hide_title'] === false))
-            <div class="px-2 mt-1">
+            <div class="mt-1">
               <h2 class="font-semibold">{{ __($field['name']) }}</h2>
             </div>
           @endif

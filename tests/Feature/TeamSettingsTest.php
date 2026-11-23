@@ -30,8 +30,12 @@ test('Team Settings Component can be rendered', function () {
 });
 
 test('appearance sections have consistent spacing', function () {
+    // Panels are spaced by --aura-layout-gap (.aura-layout-row / -cell / -panel) like on every
+    // other page, not by a Settings-only margin.
     Livewire::test(Settings::class)
-        ->assertSeeHtml('margin-bottom: var(--aura-layout-gap, 1rem);');
+        ->assertSeeHtml('class="aura-layout-cell aura-layout-panel"')
+        ->assertSeeHtml('flex flex-wrap items-start aura-layout-row')
+        ->assertDontSeeHtml('> .aura-card {');
 });
 
 test('appearance choices preview on the full page and can be discarded', function () {

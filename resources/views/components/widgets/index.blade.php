@@ -19,9 +19,9 @@
             </select>
         </div>
 
-        <div class="flex flex-wrap items-stretch -mx-2 mt-4">
+        <div class="flex flex-wrap items-stretch mt-4 aura-layout-row aura-widget-grid">
             @foreach ($widgets as $key => $widget)
-                <div class="px-2 pb-4" wire:key="widget-{{ $widget['slug'] }}-wrapper" id="widget-{{ $widget['slug'] }}-wrapper">
+                <div class="aura-layout-cell" wire:key="widget-{{ $widget['slug'] }}-wrapper" id="widget-{{ $widget['slug'] }}-wrapper">
                     <style>
                         #widget-{{ $widget['slug'] }}-wrapper {
                             width: {{ optional(optional($widget)['style'])['width'] ?? '100' }}%;

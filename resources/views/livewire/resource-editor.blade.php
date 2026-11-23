@@ -67,17 +67,17 @@
                 </div>
             @endif
 
-            <div class="flex flex-wrap -mx-4">
-                <div class="px-4 mb-0 w-full md:w-1/3">
+            <div class="flex flex-wrap aura-layout-row">
+                <div class="aura-layout-cell mb-0 w-full md:w-1/3">
                     <x-aura::input.text label="Name" placeholder="Name" value="{{ $resource['type'] }}" disabled></x-aura::input>
                 </div>
 
-                <div class="px-4 mb-0 w-full md:w-1/3">
+                <div class="aura-layout-cell mb-0 w-full md:w-1/3">
                     <x-aura::input.text label="Slug" placeholder="Slug" value="{{ $resource['slug'] }}" disabled></x-aura::input>
                 </div>
 
 
-                <div class="flex items-end px-4 mb-0 w-full md:w-1/3">
+                <div class="flex items-end aura-layout-cell mb-0 w-full md:w-1/3">
                     <div class="flex-1">
                         <x-aura::input.text label="Icon" placeholder="Icon" wire:model="resource.icon"></x-aura::input>
                     </div>
@@ -89,17 +89,17 @@
                     </div>
                 </div>
 
-                <div class="flex items-end px-4 mb-0 w-full md:w-1/3">
+                <div class="flex items-end aura-layout-cell mb-0 w-full md:w-1/3">
                     <div class="flex-1">
                         <x-aura::input.text label="Group" placeholder="Group" wire:model="resource.group"></x-aura::input>
                     </div>
                 </div>
-                <div class="flex items-end px-4 mb-0 w-full md:w-1/3">
+                <div class="flex items-end aura-layout-cell mb-0 w-full md:w-1/3">
                     <div class="flex-1">
                         <x-aura::input.text label="Dropdown" placeholder="Dropdown" wire:model="resource.dropdown"></x-aura::input>
                     </div>
                 </div>
-                <div class="flex items-end px-4 mb-0 w-full md:w-1/3">
+                <div class="flex items-end aura-layout-cell mb-0 w-full md:w-1/3">
                     <div class="flex-1">
                         <x-aura::input.number label="Sort" placeholder="Sort" wire:model="resource.sort" />
                     </div>
@@ -176,12 +176,12 @@
                 }">
                     @if($this->mappedFields)
                         @foreach($this->mappedFields as $tab)
-                        <div class="flex flex-wrap -mx-2 min-w-full draggable-container reorder-item focus:outline-none" id="field_{{ $tab['_id'] }}" x-show="activeTab === {{ $loop->index }}" wire:key="resource-tab-{{ $tab['_id'] }}">
+                        <div class="flex flex-wrap aura-layout-row draggable-container reorder-item focus:outline-none" id="field_{{ $tab['_id'] }}" x-show="activeTab === {{ $loop->index }}" wire:key="resource-tab-{{ $tab['_id'] }}">
 
                             @if ( optional($tab)['fields'] )
 
                             @foreach($tab['fields'] as $field)
-                                <div class="resource-field-{{ optional($field)['slug'] }}-wrapper px-2 reorder-item draggable-item" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
+                                <div class="resource-field-{{ optional($field)['slug'] }}-wrapper aura-layout-cell reorder-item draggable-item" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
                                     <style >
                                     .resource-field-{{ optional($field)['slug'] }}-wrapper {
                                         width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
@@ -197,14 +197,14 @@
                                 </div>
 
                                 @if ($loop->last)
-                                    <div class="px-2 w-full">
+                                    <div class="aura-layout-cell w-full">
                                         <x-aura::resource.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="$this->countChildren($field)" :model="$this->slug"/>
                                     </div>
                                 @endif
                             @endforeach
 
                             @else
-                                <div x-cloak class="px-2 w-full">
+                                <div x-cloak class="aura-layout-cell w-full">
                                     <span class="text-sm font-semibold">Presets</span>
                                     <x-aura::button.transparent wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'PanelWithSidebar')">Panel with Sidebar (70/30)</x-aura::button.transparent>
                                     <x-aura::button.transparent wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'Plain')">Simple Panel with Text</x-aura::button.transparent>
@@ -236,7 +236,7 @@
 
             @if (count($this->mappedFields) > 0)
 
-                <div class="flex flex-wrap py-2 draggable-container" x-data="{
+                <div class="flex flex-wrap py-2 aura-layout-row draggable-container" x-data="{
                     init() {
                         Alpine.nextTick(() => {
                             const sortable = new window.Sortable(document.querySelectorAll('.draggable-container'), {
@@ -261,7 +261,7 @@
                 }" wire:key="resource2-fields">
 
                     @foreach($this->mappedFields as $field)
-                        <div class="px-2 reorder-item draggable-item resource-field-{{ optional($field)['slug'] }}-wrapper" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
+                        <div class="aura-layout-cell reorder-item draggable-item resource-field-{{ optional($field)['slug'] }}-wrapper" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
                             <style >
                                 .resource-field-{{ optional($field)['slug'] }}-wrapper {
                                     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
@@ -278,7 +278,7 @@
                         </div>
 
                         @if ($loop->last)
-                            <div class="px-2 w-full">
+                            <div class="aura-layout-cell w-full">
                                 <x-aura::resource.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="$this->countChildren($field)" :model="$this->slug"/>
                             </div>
                         @endif

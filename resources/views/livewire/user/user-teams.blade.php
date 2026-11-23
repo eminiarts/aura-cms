@@ -1,6 +1,6 @@
 <div class="w-full" wire:key="user-teams-{{ $userId }}">
-    <div class="p-4 bg-white rounded-lg shadow dark:bg-gray-800">
-        <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+    <div class="aura-card">
+        <h3 class="mb-4 font-semibold text-gray-900 dark:text-gray-100">
             {{ __('Team Memberships') }}
         </h3>
 

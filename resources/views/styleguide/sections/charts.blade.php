@@ -66,5 +66,5 @@
     @endforeach
 </div>
 <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
-    {{ __('On a resource dashboard the widgets sit in widgets/index with a fixed 16px gutter (-mx-2 px-2 pb-4), not --aura-layout-gap. Sparklines bleed to the card edge with a fixed -mx-5 -mb-5, which only matches the comfortable panel padding.') }}
+    {{ __('On a resource index the widgets sit in widgets/index, spaced by --aura-layout-gap (.aura-layout-row, .aura-widget-grid). Sparklines run to the card edge with .aura-card-bleed, which pulls them out by --aura-panel-padding at every density.') }}
 </p>

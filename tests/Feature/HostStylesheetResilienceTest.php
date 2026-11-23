@@ -18,6 +18,31 @@ function auraHeightUtility(): string
     return '/(?<![\w:\[-])(?:h-(?:\d+(?:\.5)?|\[[^\]]+\])|min-h-\[[^\]]+\]|py-\d+(?:\.5)?|pt-\d+(?:\.5)?|pb-\d+(?:\.5)?)(?![\w-])/';
 }
 
+function auraPaddingUtility(): string
+{
+    return '/(?<![\w:\[-])p[xytrbl]?-(?:\d+(?:\.5)?|px|\[[^\]]+\])(?![\w-])/';
+}
+
+/**
+ * Every class="…" attribute in the package views, as [relative path, class string].
+ *
+ * @return array<int, array{0: string, 1: string}>
+ */
+function auraViewClasses(): array
+{
+    $classes = [];
+
+    foreach (Finder::create()->files()->in(dirname(__DIR__, 2).'/resources/views')->name('*.blade.php') as $file) {
+        preg_match_all('/\bclass="([^"]*)"/', $file->getContents(), $matches);
+
+        foreach ($matches[1] as $class) {
+            $classes[] = [$file->getRelativePathname(), $class];
+        }
+    }
+
+    return $classes;
+}
+
 function auraBuiltCss(): string
 {
     $dist = dirname(__DIR__, 2).'/resources/dist';
@@ -80,7 +105,7 @@ test('inputs and selects share the button sizes and the field radius', function 
 })->with(['xs', 'sm', 'base', 'lg']);
 
 test('token-driven elements carry no competing radius utility in the package views', function () {
-    $tokenClass = '/(?<![\w-])aura-(?:button|field|card|card-small|sidebar-item|sidebar-dropdown-button|sidebar-dropdown-button-expanded|sidebar-dropdown-collapsed|sidebar-search|sidebar-toggle)(?![\w-])/';
+    $tokenClass = '/(?<![\w-])aura-(?:button|field|card|card-small|sidebar-item|sidebar-dropdown-button|sidebar-dropdown-button-expanded|sidebar-dropdown-collapsed|sidebar-search|sidebar-toggle|sidebar-icon|sidebar-child-item|sidebar-team-switcher|radius-panel|radius-control|modal-panel|dropdown-item|segmented|segmented-item|group-section|login-card)(?![\w-])/';
     $offenders = [];
 
     foreach (Finder::create()->files()->in(dirname(__DIR__, 2).'/resources/views')->name('*.blade.php') as $file) {
@@ -125,7 +150,9 @@ test('the built CSS sets token properties with a doubled class selector', functi
         ->toContain('.aura-control-base.aura-control-base{height:var(--aura-control-height,2.25rem);padding-top:0;padding-bottom:0}')
         ->toContain('.aura-control-lg.aura-control-lg{height:var(--aura-control-height-lg,2.75rem);padding-top:0;padding-bottom:0}')
         ->toContain('.aura-control-min-base.aura-control-min-base{min-height:var(--aura-control-height,2.25rem)}')
-        ->toContain('.aura-sidebar-toggle.aura-sidebar-toggle{border-radius:var(--aura-control-radius,.5rem)}')
+        ->toContain('.aura-sidebar-toggle.aura-sidebar-toggle,')
+        ->toContain('.aura-radius-control.aura-radius-control{border-radius:var(--aura-control-radius,.5rem)}')
+        ->toContain('.aura-radius-panel.aura-radius-panel{border-radius:var(--aura-panel-radius,.75rem)}')
         ->toContain('.aura-sidebar-groups.aura-sidebar-groups{gap:var(--aura-sidebar-group-gap,.25rem)}');
 });
 
@@ -146,4 +173,82 @@ test('the table toolbar and settings sub-panel switch layout and color through c
     expect(file_get_contents($views.'/components/fields/group.blade.php'))
         ->toContain('aura-group-section')
         ->not->toContain('dark:border-gray-700/80');
+});
+
+test('token-styled panels carry no padding utility that competes with the panel padding', function () {
+    $panelClass = '/(?<![\w-])aura-(?:card|card-small|group-section|login-card)(?![\w-])/';
+    $offenders = [];
+
+    foreach (auraViewClasses() as [$file, $class]) {
+        if (preg_match($panelClass, $class) && preg_match(auraPaddingUtility(), $class)) {
+            $offenders[] = $file.': '.$class;
+        }
+    }
+
+    expect($offenders)->toBe([]);
+});
+
+test('panel rows and cells take their gutter from the layout gap, not px/-mx utility pairs', function () {
+    $offenders = [];
+
+    foreach (auraViewClasses() as [$file, $class]) {
+        // Rows and cells own the horizontal margin and padding; grids own the gap.
+        if (preg_match('/(?<![\w-])aura-layout-(?:row|cell)(?![\w-])/', $class)
+            && preg_match('/(?<![\w:\[-])-?(?:m|p)[xlr]-(?:\d|px|\[)/', $class)) {
+            $offenders[] = $file.': '.$class;
+        }
+
+        if (preg_match('/(?<![\w-])aura-layout-grid(?![\w-])/', $class) && preg_match('/(?<![\w:-])(?:gap|space-[xy])-\d/', $class)) {
+            $offenders[] = $file.': '.$class;
+        }
+
+        // The old gutter: a wrapping row pulled out with -mx-2/-mx-4 around px-2/px-4 cells.
+        if (preg_match('/(?<![\w-])flex-wrap(?![\w-])/', $class) && preg_match('/(?<![\w:])-mx-(?:2|4)(?![\w-])/', $class)) {
+            $offenders[] = $file.': '.$class;
+        }
+    }
+
+    expect($offenders)->toBe([]);
+
+    $views = dirname(__DIR__, 2).'/resources/views/components';
+
+    expect(file_get_contents($views.'/fields/fields.blade.php'))->toContain('aura-layout-row')
+        ->and(file_get_contents($views.'/fields/wrapper.blade.php'))->toContain("'wrapperClass' => 'aura-layout-cell'")
+        ->and(file_get_contents($views.'/fields/panel.blade.php'))->toContain('class="aura-layout-cell aura-layout-panel"')->not->toContain('mb-8')
+        ->and(file_get_contents($views.'/fields/tabs.blade.php'))->toContain('aura-layout-cell')
+        ->and(file_get_contents($views.'/fields/has-many.blade.php'))->toContain('aura-layout-cell')->not->toMatch('/(?<![\w-])px-2(?![\w-])/')
+        ->and(file_get_contents($views.'/widgets/index.blade.php'))->toContain('aura-layout-row aura-widget-grid')->not->toContain('pb-4');
+});
+
+test('dashboard panels, stat cards and sparklines follow the panel tokens', function () {
+    $views = dirname(__DIR__, 2).'/resources/views';
+    $offenders = [];
+
+    foreach (Finder::create()->files()->in([$views.'/components/dashboard', $views.'/components/widgets'])->name('*.blade.php') as $file) {
+        $contents = $file->getContents();
+
+        // Panels: no fixed panel radius or padding (the old rounded-xl … p-6 wrapper and the p-5 stat card).
+        if (preg_match('/(?<![\w:-])(?:rounded-(?:lg|xl|2xl)|p-[56]|-mx-5|-mb-5)(?![\w-])/', $contents, $match)) {
+            $offenders[] = $file->getRelativePathname().': '.$match[0];
+        }
+    }
+
+    expect($offenders)->toBe([])
+        ->and(file_get_contents($views.'/livewire/dashboard.blade.php'))->toContain('aura-layout-grid')->not->toContain('gap-6')
+        ->and(file_get_contents($views.'/components/widgets/sparkline-area.blade.php'))->toContain('aura-card-bleed')
+        ->and(file_get_contents($views.'/components/widgets/sparkline-bar.blade.php'))->toContain('aura-card-bleed');
+});
+
+test('the built CSS derives gutters, bleeds and floating surfaces from the tokens', function () {
+    // Compare without whitespace: the minifier writes calc(a / -2) with spaces.
+    $css = preg_replace('/\s+/', '', auraBuiltCss());
+
+    expect($css)
+        ->toContain('.aura-layout-row.aura-layout-row{margin-left:calc(var(--aura-layout-gap,1.5rem)/-2);margin-right:calc(var(--aura-layout-gap,1.5rem)/-2);width:calc(100%+var(--aura-layout-gap,1.5rem))}')
+        ->toContain('.aura-layout-cell.aura-layout-cell{padding-left:calc(var(--aura-layout-gap,1.5rem)/2);padding-right:calc(var(--aura-layout-gap,1.5rem)/2)}')
+        ->toContain('.aura-layout-panel.aura-layout-panel{margin-bottom:var(--aura-layout-gap,1.5rem)}')
+        ->toContain('.aura-layout-grid.aura-layout-grid{gap:var(--aura-layout-gap,1.5rem)}')
+        ->toContain('.aura-card-bleed.aura-card-bleed{margin-left:calc(var(--aura-panel-padding,1.25rem)*-1);margin-right:calc(var(--aura-panel-padding,1.25rem)*-1);margin-bottom:calc(var(--aura-panel-padding,1.25rem)*-1)}')
+        ->toContain('.aura-group-section.aura-group-section{padding:var(--aura-panel-padding,1.25rem);margin-bottom:var(--aura-section-gap,1rem);border-radius:var(--aura-panel-radius,.75rem)}')
+        ->toMatch('/\.tippy-box\[data-theme~=aura-small\]\{[^}]*border-radius:var\(--aura-panel-radius,\.75rem\)/');
 });

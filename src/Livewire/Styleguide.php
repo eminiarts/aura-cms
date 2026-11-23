@@ -296,12 +296,12 @@ class Styleguide extends Component
     private function tokenUsage(): array
     {
         return [
-            '--aura-panel-padding' => '.aura-card',
+            '--aura-panel-padding' => '.aura-card, .aura-group-section, .aura-login-card, .aura-card-bleed ('.__('sparklines').')',
             '--aura-panel-small-padding' => '.aura-card-small',
-            '--aura-layout-gap' => __('Settings page panels'),
-            '--aura-section-gap' => __('Settings page groups'),
-            '--aura-panel-radius' => '.aura-card',
-            '--aura-control-radius' => '.aura-button, .aura-field, .aura-card-small, '.__('sidebar items'),
+            '--aura-layout-gap' => '.aura-layout-row/-cell ('.__('panels and fields in every form, widgets').'), .aura-layout-panel, .aura-layout-grid ('.__('dashboard, record layout').')',
+            '--aura-section-gap' => '.aura-group-section, '.__('Settings page groups'),
+            '--aura-panel-radius' => '.aura-card, .aura-radius-panel ('.__('table card, modal, dropdown, popover, toast, search').'), .aura-group-section, .aura-login-card',
+            '--aura-control-radius' => '.aura-button, .aura-field, .aura-card-small, .aura-radius-control ('.__('list rows, icon tiles').'), .aura-segmented, '.__('sidebar items'),
             '--aura-sidebar-item-height' => '.aura-sidebar .aura-sidebar-item',
             '--aura-sidebar-item-padding-x' => '.aura-sidebar .aura-sidebar-item',
             '--aura-sidebar-icon-size' => '.aura-sidebar .sidebar-item svg',

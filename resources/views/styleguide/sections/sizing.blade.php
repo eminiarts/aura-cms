@@ -108,9 +108,9 @@
             </div>
             <div class="flex flex-col gap-2 items-start" data-sg-measure>
                 <div class="flex aura-control-base" data-sg-target>
-                    <div class="inline-flex isolate gap-0.5 items-stretch p-0.5 h-full rounded-lg bg-gray-950/[0.04] dark:bg-white/5">
-                        <button type="button" class="inline-flex relative justify-center items-center text-gray-900 bg-white rounded-md ring-1 shadow-xs aspect-square ring-gray-950/[0.07] dark:bg-gray-700 dark:text-white dark:ring-white/10"><span class="sr-only">{{ __('List view') }}</span><x-aura::icon icon="list" size="sm" /></button>
-                        <button type="button" class="inline-flex relative justify-center items-center text-gray-500 rounded-md aspect-square dark:text-gray-400"><span class="sr-only">{{ __('Grid view') }}</span><x-aura::icon icon="grid" size="sm" /></button>
+                    <div class="inline-flex isolate gap-0.5 items-stretch p-0.5 h-full aura-segmented bg-gray-950/[0.04] dark:bg-white/5">
+                        <button type="button" class="inline-flex relative justify-center items-center text-gray-900 bg-white aura-segmented-item ring-1 shadow-xs aspect-square ring-gray-950/[0.07] dark:bg-gray-700 dark:text-white dark:ring-white/10"><span class="sr-only">{{ __('List view') }}</span><x-aura::icon icon="list" size="sm" /></button>
+                        <button type="button" class="inline-flex relative justify-center items-center text-gray-500 aura-segmented-item aspect-square dark:text-gray-400"><span class="sr-only">{{ __('Grid view') }}</span><x-aura::icon icon="grid" size="sm" /></button>
                     </div>
                 </div>
                 <span class="{{ $heightPill }}" data-sg-height>…</span>

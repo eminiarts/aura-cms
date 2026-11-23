@@ -37,11 +37,11 @@
 <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">{{ __('dashboard/stats with sample data.') }}</p>
 
 <div class="grid gap-4 mt-4 sm:grid-cols-2">
-    <div class="overflow-hidden bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+    <div class="overflow-hidden bg-white aura-radius-panel ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
         <div class="px-5 py-3 border-b border-gray-950/5 dark:border-white/10">
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ __('Table card') }}</h3>
         </div>
-        <p class="px-5 py-4 text-sm text-gray-500 dark:text-gray-400">{{ __('The table, modals and toasts draw their own surface with rounded-xl and do not follow --aura-panel-radius.') }}</p>
+        <p class="px-5 py-4 text-sm text-gray-500 dark:text-gray-400">{{ __('The table, modals, dropdowns and toasts draw their own surface; .aura-radius-panel gives them --aura-panel-radius.') }}</p>
     </div>
     <div class="aura-card">
         <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Loading skeleton') }}</span>

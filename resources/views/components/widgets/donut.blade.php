@@ -80,7 +80,7 @@
           }
         }
       }" class="w-full">
-          <div x-ref="chart" class="bg-white rounded-lg dark:bg-gray-800"></div>
+          <div x-ref="chart" class="bg-white aura-radius-control dark:bg-gray-800"></div>
       </div>
     </div>
   </div>

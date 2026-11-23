@@ -26,7 +26,7 @@
     @foreach ($tokenGroups as $setting => $group)
         @php($active = $group['fixed'] ? 'fixed' : ($previewed[$setting] !== '' ? $previewed[$setting] : ($savedTheme[$setting] ?? $group['default'])))
 
-        <div class="overflow-hidden bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10" data-token-group="{{ $setting }}">
+        <div class="overflow-hidden bg-white aura-radius-panel ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10" data-token-group="{{ $setting }}">
             <div class="flex flex-wrap gap-x-3 gap-y-1 items-baseline px-5 py-3 border-b border-gray-950/5 dark:border-white/10">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ $group['label'] }}</h3>
                 @if ($group['fixed'])
@@ -87,7 +87,7 @@
             {{ __('replaces any variable above with a pixel value from 0 to 96. When it is off, the presets apply unchanged and the expert values are kept for later. "Live value" shows what this page actually uses.') }}
         </p>
         <p class="mt-2">
-            {{ __('No token exists for layout gaps outside Settings, or for modal, dropdown and toast radius. Those components use fixed Tailwind classes. Control heights and the field radius: see Control sizing.') }}
+            {{ __('The layout gap spaces panels, columns and fields in every form, view and Settings page, the resource editor, the dashboard and the widget grid; content edges line up with the page title. Panels and floating surfaces (table card, modal, dropdown, popover, toast, search) take the panel radius, small things inside a panel the control radius. Control heights and the field radius: see Control sizing.') }}
         </p>
     </div>
 </div>
@@ -103,7 +103,7 @@
                         <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $preset }}</span>
                         <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('padding') }} {{ $px($tokens['--aura-panel-padding']) }} · {{ __('gap') }} {{ $px($tokens['--aura-layout-gap']) }}</span>
                     </div>
-                    <div class="grid grid-cols-2 mt-2" style="gap: var(--aura-layout-gap)">
+                    <div class="grid grid-cols-2 mt-2 aura-layout-grid">
                         @foreach ([1, 2] as $panel)
                             <div class="aura-card" style="background-color: rgb(var(--primary-500) / 0.12)">
                                 <div class="flex justify-center items-center h-10 text-xs text-gray-500 bg-white rounded-md ring-1 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-400 dark:ring-white/10">{{ __('content') }}</div>
@@ -125,7 +125,7 @@
                         <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $preset }}</span>
                         <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('panel') }} {{ $px($tokens['--aura-panel-radius']) }} · {{ __('control') }} {{ $px($tokens['--aura-control-radius']) }}</span>
                     </div>
-                    <div class="flex gap-3 items-center p-3 mt-2 aura-card">
+                    <div class="flex gap-3 items-center mt-2 aura-card">
                         <x-aura::button>{{ __('Button') }}</x-aura::button>
                         <x-aura::button.border>{{ __('Border') }}</x-aura::button.border>
                         <div class="w-28">

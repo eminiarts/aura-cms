@@ -22,19 +22,19 @@
 
     @if ($model::usesTitle())
         <div class="mb-4">
-            <x-aura::fields.wrapper :field="['slug' => 'title']" wrapperClass="" class="-mx-4">
+            <x-aura::fields.wrapper :field="['slug' => 'title']" wrapperClass="">
                 <x-aura::input.text label="Title" wire:model="post.title" error="post.title" placeholder="Title">
                 </x-aura::input.text>
             </x-aura::fields.wrapper>
         </div>
     @endif
 
-    <div class="grid gap-6 mt-4 aura-edit-post-container grid-cols-1 sm:grid-cols-3" x-data="{
+    <div class="grid mt-4 aura-layout-grid aura-edit-post-container grid-cols-1 sm:grid-cols-3" x-data="{
         model: @entangle('form'),
         init() {}
     }">
         <div class="col-span-1 mx-0 sm:col-span-3">
-            <div class="flex flex-wrap items-start -mx-2" autocomplete="off">
+            <div class="flex flex-wrap items-start aura-layout-row" autocomplete="off">
                 @foreach ($this->editFields as $key => $field)
                     @checkCondition($model, $field, $form)
                         <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" :mode="$mode"

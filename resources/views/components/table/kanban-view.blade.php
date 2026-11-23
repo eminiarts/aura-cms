@@ -18,7 +18,7 @@
 
         @continue(! ($column['visible'] ?? true) || (! $showEmptyColumns && $columnRows->isEmpty()))
 
-        <section class="kanban-column w-80 flex-shrink-0 rounded-xl bg-gray-950/[0.04] p-4 dark:bg-white/5"
+        <section class="kanban-column w-80 flex-shrink-0 aura-radius-panel bg-gray-950/[0.04] p-4 dark:bg-white/5"
             data-kanban-column="{{ $columnKey }}"
             wire:key="kanban-column-{{ $model->getType() }}-{{ $columnKey }}">
             <h3 class="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
@@ -35,7 +35,7 @@
                 @endif
 
                 @foreach ($columnRows as $row)
-                    <article class="rounded-lg bg-white p-4 shadow-xs ring-1 ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10"
+                    <article class="aura-radius-control bg-white p-4 shadow-xs ring-1 ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10"
                         data-kanban-card="{{ $row->getKey() }}"
                         wire:key="kanban-card-{{ $model->getType() }}-{{ $row->getKey() }}">
                         <div class="min-w-0">

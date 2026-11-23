@@ -307,17 +307,17 @@ variables, so one setting restyles the whole admin.
 
 | Variable | `comfortable` (default) | `compact` | Expert setting | Read by |
 | --- | --- | --- | --- | --- |
-| `--aura-panel-padding` | `1.25rem` (20px) | `1rem` (16px) | `expert-panel-padding` | `.aura-card` |
+| `--aura-panel-padding` | `1.25rem` (20px) | `1rem` (16px) | `expert-panel-padding` | `.aura-card` (panels, dashboard panels and stat cards, widgets, the user Teams card), the Settings sub-panels (`.aura-group-section`), the login card (`.aura-login-card`: 1.5× on phones, 2× from `sm`), `.aura-card-bleed` (sparklines) |
 | `--aura-panel-small-padding` | `0.5rem` (8px) | `0.375rem` (6px) | `expert-panel-small-padding` | `.aura-card-small` |
-| `--aura-layout-gap` | `1.5rem` (24px) | `1rem` (16px) | `expert-layout-gap` | Settings page panels |
-| `--aura-section-gap` | `1rem` (16px) | `0.75rem` (12px) | `expert-section-gap` | Settings page groups |
+| `--aura-layout-gap` | `1.5rem` (24px) | `1rem` (16px) | `expert-layout-gap` | Space between panels and columns: `.aura-layout-row` / `.aura-layout-cell` (panels, tabs and fields in every form, view and Settings page, the resource editor, widgets), `.aura-layout-panel` (space below a panel), `.aura-widget-grid`, `.aura-layout-grid` (dashboard, record layout regions) |
+| `--aura-section-gap` | `1rem` (16px) | `0.75rem` (12px) | `expert-section-gap` | Space below a group inside a panel: Settings sub-panels (`.aura-group-section`) and top-level Settings groups |
 
 ### Corner radius (`corner-radius`)
 
 | Variable | `rounded` (default) | `subtle` | `square` | Expert setting | Read by |
 | --- | --- | --- | --- | --- | --- |
-| `--aura-panel-radius` | `0.75rem` (12px) | `0.375rem` (6px) | `0rem` | `expert-panel-radius` | `.aura-card` |
-| `--aura-control-radius` | `0.5rem` (8px) | `0.25rem` (4px) | `0rem` | `expert-control-radius` | `.aura-button`, `.aura-field` (inputs, selects, textareas, addons, tags, date picker, code editor), `.aura-card-small`, pagination, sidebar items, search and toggle |
+| `--aura-panel-radius` | `0.75rem` (12px) | `0.375rem` (6px) | `0rem` | `expert-panel-radius` | `.aura-card`, `.aura-radius-panel` (table card, kanban column, bulk-action bar, dropdown, modal, toast, global search), the user menu popover (tippy theme `aura-small`), `.aura-group-section`, `.aura-login-card` |
+| `--aura-control-radius` | `0.5rem` (8px) | `0.25rem` (4px) | `0rem` | `expert-control-radius` | `.aura-button`, `.aura-field` (inputs, selects, textareas, addons, tags, date picker, code editor), `.aura-card-small`, pagination, `.aura-radius-control` (list rows and icon tiles inside panels, kanban cards, close and dismiss buttons, search results), segmented controls (`.aura-segmented`, items 2px smaller), sidebar items, collapsed sidebar icons, dropdown child items and container, team switcher, search and toggle |
 
 ### Sidebar size (`sidebar-size`)
 
@@ -387,16 +387,38 @@ expert values for later.
 ],
 ```
 
-### What the tokens do not cover
+### Layout gaps and alignment
 
-There is no variable for dropdown, modal and toast radius, or dashboard widget
-gaps. Those components use fixed Tailwind classes such as `rounded-lg`. Use the variables in your own
-views to follow the settings:
+Panels, tabs, tables and fields sit in rows whose items set their own
+percentage width (the field `style.width`). Each item (`.aura-layout-cell`) is
+padded by half of `--aura-layout-gap` and the row (`.aura-layout-row`) pulls
+itself out by the same amount, so two 50% panels still fit and sit one layout
+gap apart. The outer edges of the first and last item line up with the page
+title at every density. Rows nest: the fields inside a panel use the same
+gutter, so they start exactly at the panel padding, and a nested has-many table
+lines up with the fields above it.
+
+Use the classes in your own views to follow the settings:
 
 ```html
-<div class="aura-card">Panel padding and radius follow the settings.</div>
-<div style="gap: var(--aura-layout-gap)">…</div>
+<div class="flex flex-wrap aura-layout-row">
+    <div class="w-1/2 aura-layout-cell"><div class="aura-card">…</div></div>
+    <div class="w-1/2 aura-layout-cell"><div class="aura-card">…</div></div>
+</div>
+<div class="grid grid-cols-3 aura-layout-grid">…</div>
+<div class="p-4 ring-1 aura-radius-panel">A floating surface</div>
+<span class="p-2 aura-radius-control">An icon tile inside a panel</span>
 ```
+
+Panels and the surfaces that float above the page take the panel radius.
+Small things inside a panel take the control radius. Pills and avatars stay
+round.
+
+### What the tokens do not cover
+
+Plugin views (media library, notifications, blocks) and a host's own views
+use their own classes, as does a grid view that a resource defines itself.
+They follow the settings only if they use the classes above.
 
 ### Style guide
 
@@ -542,8 +564,10 @@ host CSS last.
 Aura protects the theme tokens against this:
 
 - The rules for `.aura-card`, `.aura-card-small`, `.aura-button`,
-  `.aura-field`, the `.aura-control-*` heights, the sidebar items, dropdown
-  triggers, search and collapse toggles, and `.aura-sidebar-groups` use a
+  `.aura-field`, the `.aura-control-*` heights, the layout gutters
+  (`.aura-layout-*`), `.aura-radius-panel`, `.aura-radius-control`, the
+  sidebar items, dropdown triggers, search and collapse toggles, and
+  `.aura-sidebar-groups` use a
   doubled class (`.aura-button.aura-button`). A host `.rounded-lg`, `.p-4` or
   `.h-10` cannot override the radius, padding, gap or height of the Advanced
   appearance presets.

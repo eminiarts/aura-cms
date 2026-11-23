@@ -31,20 +31,20 @@
 
     @if($model::usesTitle())
     <div class="mb-4">
-        <x-aura::fields.wrapper :field="['slug' => 'title']" wrapperClass="" class="-mx-4">
+        <x-aura::fields.wrapper :field="['slug' => 'title']" wrapperClass="">
             <x-aura::input.text wire:model="post.title" error="post.title" placeholder="Title"></x-aura::input.text>
         </x-aura::fields.wrapper>
     </div>
     @endif
 
-    <div class="grid gap-6 aura-edit-post-container grid-cols-1 sm:grid-cols-3">
+    <div class="grid aura-layout-grid aura-edit-post-container grid-cols-1 sm:grid-cols-3">
         <div class="col-span-1 sm:col-span-3">
 
             @if(!$inModal)
             <x-aura::validation-errors />
             @endif
 
-            <div class="flex flex-wrap items-start -mx-2">
+            <div class="flex flex-wrap items-start aura-layout-row">
            @foreach($this->createFields as $key => $field)
             @checkCondition($model, $field, $form)
                     <x-dynamic-component :component="$field['field']->edit()" :field="$field" wire:key="resource-field-{{ $key }}" :form="$form" :mode="$mode" />

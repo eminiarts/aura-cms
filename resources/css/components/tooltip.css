@@ -43,7 +43,7 @@
 }
 
 .dark .tippy-box[data-theme~='aura-small'] {
-  @apply px-0 py-2 text-sm font-medium text-white rounded-lg ring-1 shadow-lg backdrop-blur-xl bg-gray-700/85 ring-white/10;
+  @apply px-0 py-2 text-sm font-medium text-white ring-1 shadow-lg backdrop-blur-xl bg-gray-700/85 ring-white/10;
 }
 
 .dark .tippy-box[data-theme~='aura-small'] .tippy-content {
@@ -53,7 +53,9 @@
 .tippy-box[data-theme~='aura-small'] {
   background-color: rgba(255, 255, 255, 0.90);
   color: black;
-  @apply px-0 py-2 text-sm font-medium text-gray-700 rounded-lg ring-1 shadow-lg backdrop-blur-xl ring-gray-900/10;
+  @apply px-0 py-2 text-sm font-medium text-gray-700 ring-1 shadow-lg backdrop-blur-xl ring-gray-900/10;
+  /* A popover (user menu, team switcher): floating surface, so the panel radius. */
+  border-radius: var(--aura-panel-radius, 0.75rem);
 }
 
 .tippy-box[data-theme~='aura-small'] .tippy-content {

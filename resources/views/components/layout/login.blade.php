@@ -60,7 +60,7 @@
                 </div>
 
                 <div @class([
-                    'mt-8 w-full px-6 py-8 sm:px-10 sm:py-10 rounded-2xl ring-1',
+                    'aura-login-card mt-8 w-full ring-1',
                     'bg-white ring-gray-950/10 shadow-xl shadow-gray-950/[0.04] dark:bg-gray-900 dark:ring-white/10 dark:shadow-black/30' => ! $hasCustomBg,
                     'backdrop-blur-xl bg-white/95 ring-gray-950/10 shadow-xl shadow-gray-950/[0.08] dark:bg-gray-900/90 dark:ring-white/10 dark:shadow-black/40' => $hasCustomBg,
                 ])>

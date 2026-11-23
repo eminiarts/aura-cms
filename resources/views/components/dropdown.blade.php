@@ -38,13 +38,13 @@ switch ($width) {
             x-transition:leave="transition ease-in duration-100"
             x-transition:leave-start="transform opacity-100 scale-100"
             x-transition:leave-end="transform opacity-0 scale-95"
-            class="absolute z-10 mt-2 {{ $width }} rounded-lg shadow-lg {{ $alignmentClasses }}"
+            class="absolute z-10 mt-2 {{ $width }} aura-radius-panel shadow-lg {{ $alignmentClasses }}"
             style="display: none;"
             @if($closeOnSelect)
             @click="open = false"
             @endif
             >
-        <div class="rounded-lg ring-1 ring-gray-950/10 dark:ring-white/10 {{ $contentClasses }}">
+        <div class="aura-dropdown-panel aura-radius-panel ring-1 ring-gray-950/10 dark:ring-white/10 {{ $contentClasses }}">
             {{ $content }}
         </div>
     </div>

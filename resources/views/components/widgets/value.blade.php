@@ -68,7 +68,7 @@
                 <div class="w-1/3 h-4 bg-gray-100 rounded-md dark:bg-gray-700/60"></div>
                 <div class="w-12 h-5 bg-gray-100 rounded-full dark:bg-gray-700/60"></div>
             </div>
-            <div class="mt-4 w-24 h-9 bg-gray-100 rounded-lg dark:bg-gray-700/60"></div>
+            <div class="mt-4 w-24 h-9 bg-gray-100 aura-radius-control dark:bg-gray-700/60"></div>
         </div>
     @endif
 </div>

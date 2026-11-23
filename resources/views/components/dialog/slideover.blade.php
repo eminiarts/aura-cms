@@ -15,7 +15,7 @@
                     <!-- Close Button -->
                     <div class="absolute top-0 right-0 pt-4 pr-4 z-[3]">
                         <button type="button" x-on:click="$dialog.close()"
-                            class="flex justify-center items-center w-8 h-8 text-gray-400 rounded-lg transition duration-150 ease-out cursor-pointer hover:bg-gray-950/5 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300">
+                            class="flex justify-center items-center w-8 h-8 text-gray-400 aura-radius-control transition duration-150 ease-out cursor-pointer hover:bg-gray-950/5 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300">
                             <span class="sr-only">Close modal</span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20"
                                 fill="currentColor">

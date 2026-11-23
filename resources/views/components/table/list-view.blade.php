@@ -1,5 +1,5 @@
 <div class="flex flex-col mt-2" wire:key="table-index">
-    <div class="overflow-hidden bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
+    <div class="aura-table-card aura-radius-panel overflow-hidden bg-white ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
         <div class="overflow-x-auto min-w-full align-middle">
 
             <table class="min-w-full">

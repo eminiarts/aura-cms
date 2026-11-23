@@ -4,7 +4,7 @@
     <x-aura::validation-errors />
 
     <form wire:submit="save">
-        <div class="-mx-4 mb-4">
+        <div class="mb-4 aura-layout-row">
             @foreach ($this->fields as $key => $field)
                 <style>
                     #resource-field-{{ optional($field)['slug'] }}-wrapper {

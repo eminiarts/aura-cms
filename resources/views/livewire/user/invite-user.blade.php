@@ -6,7 +6,7 @@
         <div class="flex flex-wrap">
 
             <div class="w-full">
-                <div class="flex flex-wrap items-start -mx-4 mb-4">
+                <div class="flex flex-wrap items-start mb-4 aura-layout-row">
                     @foreach ($this->fields as $key => $field)
 
                             <x-dynamic-component :component="$field['field']->edit()" mode="edit" :field="$field" :form="$form" />
