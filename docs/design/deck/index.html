@@ -16,7 +16,7 @@
         <div style="height:40px"><svg class="logo" viewBox="0 0 123 24" fill="currentColor" role="img" aria-label="Aura"><path d="M44.5089 24C50.1237 24 54.1979 19.6519 54.1979 14.174V0H48.6173V14.174C48.6173 16.3994 47.0767 18.2825 44.5089 18.2825C41.9069 18.2825 40.4005 16.3994 40.4005 14.174V0H34.7857V14.174C34.7857 19.6519 38.8941 24 44.5089 24Z"/><path d="M72.6897 23.8117H66.9379V0.188278H77.654C83.6112 0.188278 86.5556 4.53635 86.5556 8.81595C86.5556 12.1027 84.9464 15.1498 81.8651 16.5192L86.9664 23.8117H80.2902L75.8052 17.3752V12.4108H77.2774C79.2631 12.4108 80.9065 10.8017 80.9065 8.81595C80.9065 6.69327 79.2631 5.18685 77.2774 5.18685H72.6897V23.8117Z"/><path d="M122.214 23.7945H115.914L111.327 15.7146L108.827 11.1611L106.328 15.7146L103.418 20.7817L101.74 23.8287L95.4406 23.7945L108.827 0.17111L122.214 23.7945Z"/><path d="M26.7732 23.7945H20.4736L15.8859 15.7146L13.3866 11.1611L10.8873 15.7146L7.97717 20.7817L6.29957 23.8287L0 23.7945L13.3866 0.17111L26.7732 23.7945Z"/></svg></div>
         <div style="margin-top:auto">
             <h1 class="d-l" style="max-width:1000px">Aura design guidelines</h1>
-            <p class="lead mt-32" style="max-width:640px">Version 1, November 2026. One system for every admin screen, for review before it goes into the product.</p>
+            <p class="lead mt-32" style="max-width:640px">Version 2, November 2026. One system for every admin screen, revised after the first review.</p>
         </div>
     </div>
 </section>
@@ -39,6 +39,26 @@
                 <div class="h3">Tokens before templates</div>
                 <p class="p mt-16">Colour, spacing, radius and density come from theme variables that the Settings page controls. Components read them; they do not invent their own.</p>
             </div>
+        </div>
+    </div>
+</section>
+
+<!-- Changes since v1 -->
+<section class="slide">
+    <header class="top"><span class="chap">Version 2</span><span class="num"></span></header>
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">What changed since v1</h2>
+            <p class="p">The v1 review asked for a guideline review, slides on the fields, the new table, a proper dark mode review, and fewer drifts. Each point and where it went.</p>
+        </div>
+        <div class="col mt-40" style="gap:0">
+            <div class="grid" style="border-top:1px solid var(--line);padding:14px 0"><div class="c-4 h4">Review the guidelines</div><div class="c-8 note">Every slide, the page and <code>docs/themes.md</code> checked against the code. Stale numbers fixed, one size-by-role table, open questions split into decided and to decide.</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:14px 0"><div class="c-4 h4">Slides on the fields</div><div class="c-8 note">New Fields section on the page with the real field views, plus two slides: field anatomy and all 44 field types.</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:14px 0"><div class="c-4 h4">The new table</div><div class="c-8 note">The CRM table design is merged. The page embeds the live table instead of a hand-made copy, so it cannot drift again.</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:14px 0"><div class="c-4 h4">Dark mode</div><div class="c-8 note">A measured review of every admin page in dark. Clear bugs fixed; the layer and border questions are on the Dark mode slide.</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:14px 0"><div class="c-4 h4">Control height</div><div class="c-8 note">One token for buttons, inputs, selects and pickers: 28 · 32 · 36 px. Icon buttons are square.</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:14px 0"><div class="c-4 h4">Inputs and the corner setting</div><div class="c-8 note">Every field, checkbox, menu and popover follows the corner radius, Square included.</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px 0"><div class="c-4 h4">Small drifts</div><div class="c-8 note">Content edges line up with the page title on every page. One chevron for every select, matching heights per row, table rows follow density.</div></div>
         </div>
     </div>
 </section>
@@ -79,7 +99,7 @@
             <div class="c-3 col" style="border-top:2px solid var(--ink);padding-top:28px">
                 <div class="h2" style="font-size:58px">Light and dark,<br><span class="quiet">equal.</span></div>
                 <p class="p mt-32">Every component is designed, reviewed and captured in both modes. Dark mode is not an inverted afterthought.</p>
-                <p class="note mt-auto"><b>In practice:</b> no component ships without its <code>dark:</code> classes.</p>
+                <p class="note mt-auto"><b>In practice:</b> every specimen on the page is captured in light and dark.</p>
             </div>
             <div class="c-3 col" style="border-top:2px solid var(--ink);padding-top:28px">
                 <div class="h2" style="font-size:58px">Defaults,<br><span class="quiet">visible.</span></div>
@@ -401,7 +421,7 @@
             <div class="c-4 stack" style="padding-left:24px">
                 <div><div class="h4">Body is 14 pixels</div><p class="note">Inputs, table cells, help text and buttons all use <code>text-sm</code>. Larger is for titles only.</p></div>
                 <div><div class="h4">Two weights do the work</div><p class="note">Medium for labels and buttons, semibold for titles. Bold is not used.</p></div>
-                <div><div class="h4">Capitals only for small labels</div><p class="note">Table headers and sidebar headings, tracked wide. Everything else is sentence case.</p></div>
+                <div><div class="h4">Capitals only for small labels</div><p class="note">Sidebar headings and section captions, tracked wide. Everything else is sentence case, table headings included.</p></div>
                 <div><div class="h4">A brand font is a setting</div><p class="note"><code>theme.font.family</code> and a local stylesheet replace the stack everywhere through <code>--aura-font-sans</code>.</p></div>
             </div>
         </div>
@@ -497,7 +517,7 @@
         </div>
         <div class="grid mt-48 grow">
             <div class="c-3 col"><div class="grow" style="background:var(--surface);border-radius:20px;display:flex;align-items:center;justify-content:center"><div class="ui" style="--ui:2"><div style="width:120px;height:80px;border-radius:8px;background:var(--g50)"></div></div></div><div class="h4 mt-24">Inset</div><p class="note mt-8"><code>bg-gray-50</code>, no edge. Read-only fields, code, quiet groups.</p></div>
-            <div class="c-3 col"><div class="grow" style="background:var(--surface);border-radius:20px;display:flex;align-items:center;justify-content:center"><div class="ui" style="--ui:2"><div style="width:120px;height:80px;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05),0 0 0 1px rgba(3,7,18,.1)"></div></div></div><div class="h4 mt-24">Panel</div><p class="note mt-8"><code>ring-1 ring-gray-950/10 shadow-sm</code>. Cards, tables, widgets.</p></div>
+            <div class="c-3 col"><div class="grow" style="background:var(--surface);border-radius:20px;display:flex;align-items:center;justify-content:center"><div class="ui" style="--ui:2"><div style="width:120px;height:80px;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05),0 0 0 1px rgba(3,7,18,.1)"></div></div></div><div class="h4 mt-24">Panel</div><p class="note mt-8"><code>ring-1 ring-gray-950/10 shadow-xs</code>. Cards, panels, widgets. Tables sit on the page with hairlines.</p></div>
             <div class="c-3 col"><div class="grow" style="background:var(--surface);border-radius:20px;display:flex;align-items:center;justify-content:center"><div class="ui" style="--ui:2"><div style="width:120px;height:80px;border-radius:12px;background:#fff;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1),0 0 0 1px rgba(3,7,18,.1)"></div></div></div><div class="h4 mt-24">Floating</div><p class="note mt-8"><code>shadow-lg</code> and a ring. Menus, tooltips, toasts.</p></div>
             <div class="c-3 col"><div class="grow" style="background:rgba(15,23,42,.45);border-radius:20px;display:flex;align-items:center;justify-content:center"><div class="ui" style="--ui:2"><div style="width:120px;height:80px;border-radius:12px;background:#fff;box-shadow:0 25px 50px -12px rgba(0,0,0,.25)"></div></div></div><div class="h4 mt-24">Overlay</div><p class="note mt-8">Dimmed, blurred page and <code>shadow-2xl</code>. Modals and slide-overs.</p></div>
         </div>
@@ -531,23 +551,32 @@
     <div class="body">
         <div class="head">
             <h2 class="h1">Dark is the same system, remapped</h2>
-            <p class="p">Dark mode adds the <code>dark</code> class to the page root. Setting: auto (follow the system), light or dark.</p>
+            <p class="p">The <code>dark</code> class on the page root swaps each role to its dark value. Reviewed page by page in v2, with measured contrast.</p>
         </div>
-        <div class="grid mt-48 grow">
-            <div class="c-5">
-                <table class="token-table" style="color:#fff">
+        <div class="grid mt-40 grow">
+            <div class="c-5 col">
+                <table class="token-table" style="color:#fff;font-size:17px">
                     <tr><th style="color:var(--g400)">Role</th><th style="color:var(--g400)">Light</th><th style="color:var(--g400)">Dark</th></tr>
-                    <tr><td style="border-color:var(--g800)">Page</td><td style="border-color:var(--g800)"><span class="dot" style="background:#fff"></span>white</td><td style="border-color:var(--g800)"><span class="dot" style="background:#0f172a;box-shadow:inset 0 0 0 1px #334155"></span>gray-900</td></tr>
-                    <tr><td style="border-color:var(--g800)">Panel</td><td style="border-color:var(--g800)"><span class="dot" style="background:#fff"></span>white</td><td style="border-color:var(--g800)"><span class="dot" style="background:#1e293b"></span>gray-800</td></tr>
-                    <tr><td style="border-color:var(--g800)">Edge</td><td style="border-color:var(--g800)">gray-950 / 10%</td><td style="border-color:var(--g800)">white / 10%</td></tr>
-                    <tr><td style="border-color:var(--g800)">Text</td><td style="border-color:var(--g800)">gray-900</td><td style="border-color:var(--g800)">white</td></tr>
-                    <tr><td style="border-color:var(--g800)">Secondary</td><td style="border-color:var(--g800)">gray-500</td><td style="border-color:var(--g800)">gray-400</td></tr>
-                    <tr><td style="border-color:var(--g800)">Links, accents</td><td style="border-color:var(--g800)"><span class="dot" style="background:#1f55e9"></span>primary-600</td><td style="border-color:var(--g800)"><span class="dot" style="background:#6894f6"></span>primary-400</td></tr>
-                    <tr><td style="border-color:var(--g800)">Status tint</td><td style="border-color:var(--g800)">100 fill, 700 text</td><td style="border-color:var(--g800)">900/50 fill, 400 text</td></tr>
+                    <tr><td style="border-color:var(--g800)">Page</td><td style="border-color:var(--g800)">white</td><td style="border-color:var(--g800)"><span class="dot" style="background:#0f172a;box-shadow:inset 0 0 0 1px #334155"></span>gray-900</td></tr>
+                    <tr><td style="border-color:var(--g800)">Card, menu, modal</td><td style="border-color:var(--g800)">white</td><td style="border-color:var(--g800)"><span class="dot" style="background:#1e293b"></span>gray-800</td></tr>
+                    <tr><td style="border-color:var(--g800)">Field</td><td style="border-color:var(--g800)">white, gray-950/10 ring</td><td style="border-color:var(--g800)">gray-900 well, gray-500 ring</td></tr>
+                    <tr><td style="border-color:var(--g800)">Hairline</td><td style="border-color:var(--g800)">gray-950/10</td><td style="border-color:var(--g800)">white/10</td></tr>
+                    <tr><td style="border-color:var(--g800)">Text · secondary</td><td style="border-color:var(--g800)">gray-900 · 500</td><td style="border-color:var(--g800)">white · gray-400</td></tr>
+                    <tr><td style="border-color:var(--g800)">Accent · primary button</td><td style="border-color:var(--g800)">primary-600</td><td style="border-color:var(--g800)">primary-400 · 600</td></tr>
                 </table>
-                <p class="note mt-32">Primary buttons keep primary-600 in both modes. Secondary text in dark is gray-400 on gray-900: 7.0:1.</p>
+                <div class="stack mt-32">
+                    <div><div class="h4" style="color:#fff">Fixed in v2</div><p class="note" style="color:var(--g400)">Plugins page, chips, the off toggle, 2FA alerts, the multi-select search, checkbox rings (1.9 → 3:1), menus and search panel on one surface.</p></div>
+                </div>
             </div>
-            <div class="c-7 col"><div class="frame rows-1-3" style="flex-grow:756"><div class="fit" style="--ar:2368/756;--arn:3.1323;max-width:1894px"><figure class="shot dark" style="background:rgb(15, 23, 42)"><img src="assets/screens/table-dark.png" alt="table, dark mode" style="top:0.000%;height:262.963%"></figure></div></div></div>
+            <div class="c-7 col">
+                <div class="h3" style="color:#fff">To decide</div>
+                <div class="stack mt-24">
+                    <div><div class="h4" style="color:#fff">Menus on cards</div><p class="note" style="color:var(--g400)">A card and a menu are both gray-800 (1.2:1 against the page), so a menu over a card is held only by its shadow and ring. Lift floating panels one step (gray-700)?</p></div>
+                    <div><div class="h4" style="color:#fff">One hairline, one outline</div><p class="note" style="color:var(--g400)">Dark uses white/5, white/6, white/10, gray-700 and gray-500 for edges. Row lines (white/6) are barely visible. Proposal: white/10 for every hairline, gray-500 for every control outline, buttons included.</p></div>
+                    <div><div class="h4" style="color:#fff">Neutral hue</div><p class="note" style="color:var(--g400)">Gray up to 600 is neutral, 700 to 950 is blue slate, so gray text sits on blue surfaces. One family?</p></div>
+                    <div><div class="h4" style="color:#fff">Placeholders</div><p class="note" style="color:var(--g400)">gray-500 on the gray-900 field is 3.8:1, below the 4.5:1 that text needs. Lighter, or accept it for placeholders only?</p></div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -571,12 +600,12 @@
             <p class="p"><code>&lt;x-aura::button&gt;</code>: seven variants as sub-components, five sizes, base by default. Every variant in every state, below.</p>
         </div>
         <div class="grid mt-40 grow">
-            <div class="c-9 col"><div class="frame rows-1" style="flex-grow:1092"><div class="fit" style="--ar:2368/1092;--arn:2.1685;max-width:1894px"><figure class="shot light" style="background:rgb(255, 255, 255)"><img src="assets/screens/buttons-light.png" alt="buttons, light mode" style="top:0.000%;height:167.216%"></figure></div></div></div>
+            <div class="c-9 col"><div class="frame rows-1" style="flex-grow:1060"><div class="fit" style="--ar:2368/1060;--arn:2.2340;max-width:1894px"><figure class="shot light" style="background:rgb(255, 255, 255)"><img src="assets/screens/buttons-light.png" alt="buttons, light mode" style="top:0.000%;height:169.245%"></figure></div></div></div>
             <div class="c-3 stack">
                 <div><div class="h4">One primary per view</div><p class="note">The main action is solid primary. Everything beside it is border or transparent.</p></div>
-                <div><div class="h4">Name the action</div><p class="note">A verb and its object: Create post, Save changes. Not OK, not Submit.</p></div>
+                <div><div class="h4">Name the action</div><p class="note">A verb and its object: New post, Save changes. Not OK, not Submit.</p></div>
                 <div><div class="h4">Red only for destroying</div><p class="note"><code>button.danger</code> is the quiet tint in a list, <code>button.error</code> the solid confirm in a dialog.</p></div>
-                <div><div class="h4">Base 36 px, sizes by role</div><p class="note">xs 28 in tables, sm 32 for filters and pagination, base 36 in forms and toolbars, lg 44 and xl 52 on empty states and login.</p></div>
+                <div><div class="h4">Base 36 px, sizes by role</div><p class="note">xs 28 for row actions, sm 32 for pagination and widget filters, base 36 for everything else: forms, toolbars, dialogs, login, empty states. lg and xl are reserved.</p></div>
             </div>
         </div>
     </div>
@@ -591,13 +620,53 @@
             <p class="p">The raw inputs in <code>components/input</code>. Resource fields wrap them with a label, a help tooltip and the validation error.</p>
         </div>
         <div class="grid mt-40 grow">
-            <div class="c-8 col"><div class="frame captioned rows-2" style="flex-grow:1016"><div class="fit" style="--ar:2368/936;--arn:2.5299;max-width:1894px"><figure class="shot split" style="background:linear-gradient(90deg, rgb(255, 255, 255) 50%, rgb(15, 23, 42) 50%)"><img src="assets/screens/forms-light.png" alt="forms, light mode" style="top:-131.197%;height:309.188%"><img class="half" src="assets/screens/forms-dark.png" alt="forms, dark mode" style="top:-131.197%;height:309.188%"></figure><span class="mode-l">Light</span><span class="mode-d">Dark</span></div></div></div>
+            <div class="c-8 col"><div class="frame captioned rows-2" style="flex-grow:1024"><div class="fit" style="--ar:2368/944;--arn:2.5085;max-width:1894px"><figure class="shot split" style="background:linear-gradient(90deg, rgb(255, 255, 255) 50%, rgb(15, 23, 42) 50%)"><img src="assets/screens/forms-light.png" alt="forms, light mode" style="top:-128.390%;height:305.508%"><img class="half" src="assets/screens/forms-dark.png" alt="forms, dark mode" style="top:-128.390%;height:305.508%"></figure><span class="mode-l">Light</span><span class="mode-d">Dark</span></div></div></div>
             <div class="c-4 stack" style="padding-left:16px">
                 <div><div class="h4">Label above, always</div><p class="note">14 px medium. A required field says so in the label, not only in the error.</p></div>
                 <div><div class="h4">Error under the field, in words</div><p class="note">What is wrong and how to fix it. One style everywhere: text-sm, red-600 (red-400 in dark), AA on the card.</p></div>
                 <div><div class="h4">Disabled is a fill, not a fade</div><p class="note">gray-50 background and gray-500 text, so the value stays readable.</p></div>
-                <div><div class="h4">A select is an input</div><p class="note">Same ring, same height, same radius, plus a chevron. Checkboxes, radios and toggles use primary-600 when on.</p></div>
+                <div><div class="h4">A select is an input</div><p class="note">Same ring, same height, same radius, plus a chevron. Checkboxes, radios and toggles use primary-600 when on (primary-500 in dark).</p></div>
             </div>
+        </div>
+    </div>
+</section>
+
+<!-- Fields -->
+<section class="slide">
+    <header class="top"><span class="chap">Components</span><span class="num"></span></header>
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Fields</h2>
+            <p class="p">A resource form is built from fields (<code>src/Fields</code>). Each one is the same wrapper around a form control, so a form reads as one surface.</p>
+        </div>
+        <div class="grid mt-40 grow">
+            <div class="c-8 col"><div class="frame captioned rows-1-2" style="flex-grow:1528"><div class="fit" style="--ar:2368/1448;--arn:1.6354;max-width:1894px"><figure class="shot split" style="background:linear-gradient(90deg, rgb(255, 255, 255) 50%, rgb(15, 23, 42) 50%)"><img src="assets/screens/fields-light.png" alt="fields, light mode" style="top:0.000%;height:298.343%"><img class="half" src="assets/screens/fields-dark.png" alt="fields, dark mode" style="top:0.000%;height:298.343%"></figure><span class="mode-l">Light</span><span class="mode-d">Dark</span></div></div></div>
+            <div class="c-4 stack" style="padding-left:16px">
+                <div><div class="h4">One wrapper</div><p class="note"><code>fields/wrapper</code>: label (14 px medium, * when required), help as a tooltip beside it, the control, the error. Nothing else sets spacing.</p></div>
+                <div><div class="h4">One control</div><p class="note">Text, choice and date fields reuse the inputs: <code>.aura-field</code>, 36 px, <code>--aura-control-radius</code>. A field never sets its own height, ring or corners.</p></div>
+                <div><div class="h4">One trailing mark</div><p class="note">Selects show the same 16 px chevron; date pickers a calendar, time a clock. Same colour, same inset.</p></div>
+                <div><div class="h4">Width by layout</div><p class="note">25, 33, 50 or 100 %. Neighbours sit one layout gap apart and start at the panel padding.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Field types -->
+<section class="slide soft">
+    <header class="top"><span class="chap">Components</span><span class="num"></span></header>
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Every field type</h2>
+            <p class="p">44 field types in seven groups. The control column is what the field draws on a form; on view pages and in tables every field shows its value as text.</p>
+        </div>
+        <div class="field-groups mt-40">
+            <div><div class="h4">Text</div><table class="token-table"><tr><td>Text, Email, Phone, Number, Password</td><td class="muted">input</td></tr><tr><td>Textarea</td><td class="muted">input, grows</td></tr><tr><td>Slug</td><td class="muted">input + lock</td></tr><tr><td>Wysiwyg, Code, Json</td><td class="muted">editor in a field frame</td></tr></table></div>
+            <div><div class="h4">Choice</div><table class="token-table"><tr><td>Select</td><td class="muted">select</td></tr><tr><td>Status</td><td class="muted">listbox with the status pill</td></tr><tr><td>Radio, Checkbox</td><td class="muted">radios, checkboxes</td></tr><tr><td>Boolean</td><td class="muted">toggle</td></tr><tr><td>Tags, AdvancedSelect</td><td class="muted">chips + search</td></tr></table></div>
+            <div><div class="h4">Date, time, colour</div><table class="token-table"><tr><td>Date, Datetime</td><td class="muted">picker, calendar mark</td></tr><tr><td>Time</td><td class="muted">picker, clock mark</td></tr><tr><td>Color</td><td class="muted">input + swatch</td></tr></table></div>
+            <div><div class="h4">Relations</div><table class="token-table"><tr><td>BelongsTo</td><td class="muted">search select, avatar + title</td></tr><tr><td>HasMany, HasOne, BelongsToMany</td><td class="muted">the table, as a section</td></tr><tr><td>Roles, UserTeams, Permissions</td><td class="muted">select, list, matrix</td></tr></table></div>
+            <div><div class="h4">Media</div><table class="token-table"><tr><td>Image, File</td><td class="muted">media library picker</td></tr><tr><td>Embed</td><td class="muted">input + preview</td></tr></table></div>
+            <div><div class="h4">Layout</div><table class="token-table"><tr><td>Panel</td><td class="muted">card</td></tr><tr><td>Tabs, Tab</td><td class="muted">underline tabs</td></tr><tr><td>Group, Repeater</td><td class="muted">sub-panel, repeated rows</td></tr><tr><td>Heading, HorizontalLine</td><td class="muted">heading, divider</td></tr></table></div>
+            <div><div class="h4">Special</div><table class="token-table"><tr><td>ID, ViewValue</td><td class="muted">read-only text</td></tr><tr><td>Hidden</td><td class="muted">nothing</td></tr><tr><td>View, LivewireComponent</td><td class="muted">your own view</td></tr><tr><td>GlobalAdmin</td><td class="muted">toggle</td></tr></table></div>
         </div>
     </div>
 </section>
@@ -611,15 +680,15 @@
             <p class="p">Controls that share a row share a height. Each size reads one <code>--aura-control-height</code> value; red marks a height that differs from the button beside it.</p>
         </div>
         <div class="grid mt-40 grow">
-            <div class="c-8 col g-24"><div class="frame rows-1" style="flex-grow:594"><div class="fit" style="--ar:2368/594;--arn:3.9865;max-width:1894px"><figure class="shot light" style="background:rgb(255, 255, 255)"><img src="assets/screens/sizing-light.png" alt="sizing, light mode" style="top:0.000%;height:353.535%"></figure></div></div><div class="frame rows-3-4" style="flex-grow:698"><div class="fit" style="--ar:2368/698;--arn:3.3926;max-width:1894px"><figure class="shot light" style="background:rgb(255, 255, 255)"><img src="assets/screens/sizing-light.png" alt="sizing, light mode" style="top:-139.255%;height:300.860%"></figure></div></div></div>
+            <div class="c-8 col g-24"><div class="frame rows-1" style="flex-grow:354"><div class="fit" style="--ar:2368/354;--arn:6.6893;max-width:1894px"><figure class="shot light" style="background:rgb(255, 255, 255)"><img src="assets/screens/sizing-light.png" alt="sizing, light mode" style="top:0.000%;height:799.435%"></figure></div></div><div class="frame rows-3-4" style="flex-grow:1010"><div class="fit" style="--ar:2368/1010;--arn:2.3446;max-width:1894px"><figure class="shot light" style="background:rgb(255, 255, 255)"><img src="assets/screens/sizing-light.png" alt="sizing, light mode" style="top:-97.030%;height:280.198%"></figure></div></div></div>
             <div class="c-4 col" style="padding-left:16px">
                 <span class="cap">Token: <code>--aura-control-height</code></span>
                 <table class="token-table mt-12" style="font-size:18px">
                     <tr><th>Size</th><th>Height</th><th>Used by</th></tr>
-                    <tr><td>xs</td><td class="tab">28 px</td><td class="muted">Row actions in tables</td></tr>
-                    <tr><td>sm</td><td class="tab">32 px</td><td class="muted">Filters, pagination, compact density</td></tr>
-                    <tr><td>base</td><td class="tab">36 px</td><td class="muted">Forms, dialogs, the table toolbar</td></tr>
-                    <tr><td>lg</td><td class="tab">44 px</td><td class="muted">Login, empty states</td></tr>
+                    <tr><td>xs</td><td class="tab">28 px</td><td class="muted">Row actions, selection bar</td></tr>
+                    <tr><td>sm</td><td class="tab">32 px</td><td class="muted">Pagination, widget filters</td></tr>
+                    <tr><td>base</td><td class="tab">36 px</td><td class="muted">Forms, toolbar, dialogs, login</td></tr>
+                    <tr><td>lg · xl</td><td class="tab">44 · 52</td><td class="muted">Reserved</td></tr>
                 </table>
                 <div class="stack mt-32">
                     <div><div class="h4">Inputs get the sizes buttons have</div><p class="note">Inputs and selects take xs, sm, base and lg; xs is 28 like the xs button.</p></div>
@@ -677,15 +746,15 @@
     <div class="body">
         <div class="head">
             <h2 class="h1">Tables</h2>
-            <p class="p">The resource index: toolbar, filter tabs, the table card and pagination. The second row shows the selected state.</p>
+            <p class="p">The resource index as it ships: page title with its count, one toolbar row, the list without a card, pagination. The picture is the live table on the style guide page.</p>
         </div>
         <div class="grid mt-40 grow">
-            <div class="c-9 col"><div class="frame captioned rows-1-3" style="flex-grow:836"><div class="fit" style="--ar:2368/756;--arn:3.1323;max-width:1894px"><figure class="shot split" style="background:linear-gradient(90deg, rgb(255, 255, 255) 50%, rgb(15, 23, 42) 50%)"><img src="assets/screens/table-light.png" alt="table, light mode" style="top:0.000%;height:262.963%"><img class="half" src="assets/screens/table-dark.png" alt="table, dark mode" style="top:0.000%;height:262.963%"></figure><span class="mode-l">Light</span><span class="mode-d">Dark</span></div></div></div>
+            <div class="c-9 col"><div class="frame captioned rows-1" style="flex-grow:932"><div class="fit" style="--ar:2368/852;--arn:2.7793;max-width:1894px"><figure class="shot split" style="background:linear-gradient(90deg, rgb(255, 255, 255) 50%, rgb(15, 23, 42) 50%)"><img src="assets/screens/table-light.png" alt="table, light mode" style="top:0.000%;height:288.732%"><img class="half" src="assets/screens/table-dark.png" alt="table, dark mode" style="top:0.000%;height:288.732%"></figure><span class="mode-l">Light</span><span class="mode-d">Dark</span></div></div></div>
             <div class="c-3 stack">
-                <div><div class="h4">Headers small, rows calm</div><p class="note">Headers 11 px uppercase gray-500; cells 14 px. Lines between rows, none between columns.</p></div>
-                <div><div class="h4">Selected is a tint and a bar</div><p class="note">primary-50 row and a 2 px primary edge, plus the checked box.</p></div>
-                <div><div class="h4">Status is a pill with a dot</div><p class="note">The same pill as on the badges page, so status reads the same everywhere.</p></div>
-                <div><div class="h4">Empty lives inside the card</div><p class="note">Icon, one line, one hint where the rows would be. Never an empty white box.</p></div>
+                <div><div class="h4">No card, hairlines</div><p class="note">A line under the header, between rows and at the end carry the list. No box, no lines between columns.</p></div>
+                <div><div class="h4">Headings say what a column is</div><p class="note">12 px sentence case, gray-500, with the field type&rsquo;s icon. Cells are 14 px.</p></div>
+                <div><div class="h4">Records have faces</div><p class="note">The lead column and relations show the record&rsquo;s avatar (image or initials) and its title. Circles for people, squares for everything else.</p></div>
+                <div><div class="h4">The row is the link</div><p class="note">Clicking a row opens the record; view and edit appear on hover or focus. Empty: the resource icon, one line, one action.</p></div>
             </div>
         </div>
     </div>
@@ -700,7 +769,7 @@
             <p class="p">Three shapes: status pills with a dot, sidebar counters, and trend pills on KPI cards.</p>
         </div>
         <div class="grid mt-40 grow">
-            <div class="c-9 col g-24"><div class="frame " style="flex-grow:736"><div class="fit" style="--ar:2368/736;--arn:3.2174;max-width:1894px"><figure class="shot light" style="background:rgb(255, 255, 255)"><img src="assets/screens/badges-light.png" alt="badges, light mode"></figure></div></div><div class="frame " style="flex-grow:736"><div class="fit" style="--ar:2368/736;--arn:3.2174;max-width:1894px"><figure class="shot dark" style="background:rgb(15, 23, 42)"><img src="assets/screens/badges-dark.png" alt="badges, dark mode"></figure></div></div></div>
+            <div class="c-9 col g-24"><div class="frame " style="flex-grow:1056"><div class="fit" style="--ar:2368/1056;--arn:2.2424;max-width:1894px"><figure class="shot light" style="background:rgb(255, 255, 255)"><img src="assets/screens/badges-light.png" alt="badges, light mode"></figure></div></div><div class="frame " style="flex-grow:1056"><div class="fit" style="--ar:2368/1056;--arn:2.2424;max-width:1894px"><figure class="shot dark" style="background:rgb(15, 23, 42)"><img src="assets/screens/badges-dark.png" alt="badges, dark mode"></figure></div></div></div>
             <div class="c-3 stack">
                 <div><div class="h4">One colour per status</div><p class="note">Draft gray, In review yellow, Scheduled blue, Published green, Archived purple, Failed red. Fixed across resources.</p></div>
                 <div><div class="h4">Tint fill, 700 text</div><p class="note">100 fill and 700 text in light; 900/50 fill and 400 text in dark.</p></div>
@@ -756,7 +825,7 @@
             <p class="p">Toasts come from the <code>notify</code> event and the notification component in the layout. Spinners, skeletons and inline alerts cover the rest.</p>
         </div>
         <div class="grid mt-40 grow">
-            <div class="c-9 col g-24"><div class="frame captioned " style="flex-grow:612"><div class="fit" style="--ar:2368/532;--arn:4.4511;max-width:1894px"><figure class="shot split" style="background:linear-gradient(90deg, rgb(255, 255, 255) 50%, rgb(15, 23, 42) 50%)"><img src="assets/screens/notifications-light.png" alt="notifications, light mode"><img class="half" src="assets/screens/notifications-dark.png" alt="notifications, dark mode"></figure><span class="mode-l">Light</span><span class="mode-d">Dark</span></div></div><div class="frame captioned " style="flex-grow:452"><div class="fit" style="--ar:2368/372;--arn:6.3656;max-width:1894px"><figure class="shot split" style="background:linear-gradient(90deg, rgb(255, 255, 255) 50%, rgb(15, 23, 42) 50%)"><img src="assets/screens/feedback-light.png" alt="feedback, light mode"><img class="half" src="assets/screens/feedback-dark.png" alt="feedback, dark mode"></figure><span class="mode-l">Light</span><span class="mode-d">Dark</span></div></div></div>
+            <div class="c-9 col g-24"><div class="frame captioned " style="flex-grow:612"><div class="fit" style="--ar:2368/532;--arn:4.4511;max-width:1894px"><figure class="shot split" style="background:linear-gradient(90deg, rgb(255, 255, 255) 50%, rgb(15, 23, 42) 50%)"><img src="assets/screens/notifications-light.png" alt="notifications, light mode"><img class="half" src="assets/screens/notifications-dark.png" alt="notifications, dark mode"></figure><span class="mode-l">Light</span><span class="mode-d">Dark</span></div></div><div class="frame captioned " style="flex-grow:976"><div class="fit" style="--ar:2368/896;--arn:2.6429;max-width:1894px"><figure class="shot split" style="background:linear-gradient(90deg, rgb(255, 255, 255) 50%, rgb(15, 23, 42) 50%)"><img src="assets/screens/feedback-light.png" alt="feedback, light mode"><img class="half" src="assets/screens/feedback-dark.png" alt="feedback, dark mode"></figure><span class="mode-l">Light</span><span class="mode-d">Dark</span></div></div></div>
             <div class="c-3 stack">
                 <div><div class="h4">Toasts confirm, they do not ask</div><p class="note">Saved, deleted, sent. Anything that needs a decision is a dialog.</p></div>
                 <div><div class="h4">One line, past tense</div><p class="note">“Changes saved.” The bar shows how long it stays.</p></div>
@@ -815,10 +884,10 @@
             <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Gray palette</div><div class="c-4 p"><code>--gray-25 … 950</code></div><div class="c-4 note">Text, lines, surfaces, dark mode</div></div>
             <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Font</div><div class="c-4 p"><code>--aura-font-sans</code></div><div class="c-4 note">The <code>font-sans</code> utility, everywhere</div></div>
             <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Interface density</div><div class="c-4 p">4 spacing variables</div><div class="c-4 note"><code>.aura-card</code>, <code>.aura-card-small</code>, layout gaps</div></div>
-            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Corner radius</div><div class="c-4 p"><code>--aura-panel-radius</code>, <code>--aura-control-radius</code></div><div class="c-4 note">Cards, buttons, sidebar items. Not inputs yet.</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Corner radius</div><div class="c-4 p"><code>--aura-panel-radius</code>, <code>--aura-control-radius</code></div><div class="c-4 note">Cards, buttons, fields, menus, modals, sidebar items</div></div>
             <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Sidebar size</div><div class="c-4 p">5 sidebar variables</div><div class="c-4 note">Sidebar items, icons, headings</div></div>
-            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Dark mode</div><div class="c-4 p"><code>.dark</code> class, dark <code>--aura-color-*</code></div><div class="c-4 note">Every <code>dark:</code> utility</div></div>
-            <div class="grid" style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Expert mode</div><div class="c-4 p">Pixel values for all 11 layout variables, sidebar colours per mode</div><div class="c-4 note">Overrides the presets above</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Dark mode</div><div class="c-4 p"><code>.dark</code> class, dark <code>--aura-color-*</code></div><div class="c-4 note">Component classes (<code>.aura-field</code>, chips, toggles) and <code>dark:</code> utilities</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Expert mode</div><div class="c-4 p">Pixel values for the 11 layout variables and the control height, sidebar colours per mode</div><div class="c-4 note">Overrides the presets above</div></div>
         </div>
     </div>
 </section>
@@ -870,8 +939,9 @@
             <div class="c-6 col" style="border-top:2px solid var(--p600);padding-top:28px">
                 <div class="h3 blue-t">Not a token yet</div>
                 <div class="stack mt-32">
-                    <div><div class="h4">Dropdown, modal and toast radius</div><p class="note">Fixed Tailwind classes; they ignore the corner setting.</p></div>
-                    <div><div class="h4">Type scale and shadows</div><p class="note">Tailwind defaults, plus one-offs like the 11 px table header.</p></div>
+                    <div><div class="h4">Semantic colours</div><p class="note"><code>--aura-color-*</code> exist, but components use Tailwind green, red and yellow directly.</p></div>
+                    <div><div class="h4">Type scale and shadows</div><p class="note">Tailwind defaults; a brand cannot change them in one place.</p></div>
+                    <div><div class="h4">Avatar corners</div><p class="note">Square avatars keep 4&ndash;8 px corners in the Square preset.</p></div>
                 </div>
             </div>
         </div>
@@ -887,7 +957,7 @@
             <p class="p">Default, hover, focus, disabled, error, loading and empty are designed with the control, not after it. Buttons, in dark mode:</p>
         </div>
         <div class="grid mt-40 grow">
-            <div class="c-9 col"><div class="frame rows-1" style="flex-grow:1092"><div class="fit" style="--ar:2368/1092;--arn:2.1685;max-width:1894px"><figure class="shot dark" style="background:rgb(15, 23, 42)"><img src="assets/screens/buttons-dark.png" alt="buttons, dark mode" style="top:0.000%;height:167.216%"></figure></div></div></div>
+            <div class="c-9 col"><div class="frame rows-1" style="flex-grow:1060"><div class="fit" style="--ar:2368/1060;--arn:2.2340;max-width:1894px"><figure class="shot dark" style="background:rgb(15, 23, 42)"><img src="assets/screens/buttons-dark.png" alt="buttons, dark mode" style="top:0.000%;height:169.245%"></figure></div></div></div>
             <div class="c-3 stack">
                 <div><div class="h4">Hover is one step</div><p class="note">Solid buttons move one shade (600 to 500); quiet ones get a gray-50 fill.</p></div>
                 <div><div class="h4">Focus is always visible</div><p class="note">A 2 px primary-500 ring with an offset, on keyboard focus. Never removed.</p></div>
@@ -907,7 +977,7 @@
             <p class="p">The same states on inputs, selects and textareas, in light mode. Error is the state people meet most.</p>
         </div>
         <div class="grid mt-40 grow">
-            <div class="c-9 col"><div class="frame rows-1" style="flex-grow:1228"><div class="fit" style="--ar:2368/1228;--arn:1.9283;max-width:1894px"><figure class="shot light" style="background:rgb(255, 255, 255)"><img src="assets/screens/forms-light.png" alt="forms, light mode" style="top:0.000%;height:235.668%"></figure></div></div></div>
+            <div class="c-9 col"><div class="frame rows-1" style="flex-grow:1212"><div class="fit" style="--ar:2368/1212;--arn:1.9538;max-width:1894px"><figure class="shot light" style="background:rgb(255, 255, 255)"><img src="assets/screens/forms-light.png" alt="forms, light mode" style="top:0.000%;height:237.954%"></figure></div></div></div>
             <div class="c-3 stack">
                 <div><div class="h4">Disabled is a fill</div><p class="note">Fields go gray-50 with gray-500 text, so the value stays readable.</p></div>
                 <div><div class="h4">Error marks the field too</div><p class="note">The field gets a red ring (red-600, red-400 in dark) that stays on hover and focus, and the message says what is wrong and how to fix it.</p></div>
@@ -923,26 +993,27 @@
     <header class="top"><span class="chap">Open questions</span><span class="num"></span></header>
     <div class="body">
         <div class="head">
-            <h2 class="h1">What this review should settle</h2>
-            <p class="p">Gaps named in the team meeting, and what turned up while building this deck from the live page.</p>
+            <h2 class="h1">Decided, and still to decide</h2>
+            <p class="p">What the v1 review and the page validation settled, and the design calls that need Enes and Bajram.</p>
         </div>
         <div class="grid mt-48 grow">
             <div class="c-5 col" style="border-top:2px solid var(--ink);padding-top:24px">
-                <div class="h3">Under-documented</div>
+                <div class="h3">Decided in v2</div>
                 <div class="stack mt-24">
-                    <div><div class="h4">Tabs</div><p class="note">Now on the page; which style goes where is not decided.</p></div>
-                    <div><div class="h4">Dark mode</div><p class="note">The mapping on slide 15 is not written down in the docs yet.</p></div>
-                    <div><div class="h4">Tables</div><p class="note">The parts are on the page; rules for filters, bulk actions and column settings are not.</p></div>
-                    <div><div class="h4">Advanced settings and the component library</div><p class="note">Expert mode, and a list of every Blade component with its props.</p></div>
+                    <div><div class="h4">One control height, one field radius</div><p class="note"><code>--aura-control-height</code> (28 · 32 · 36) and <code>--aura-control-radius</code> for buttons, inputs, selects and pickers.</p></div>
+                    <div><div class="h4">Tabs</div><p class="note">Underline tabs split a form; segmented tabs switch filters and views.</p></div>
+                    <div><div class="h4">Tables</div><p class="note">The card-less list with hairlines, avatars and typed headings is the resource table.</p></div>
+                    <div><div class="h4">One error style</div><p class="note">Red ring on the field, one message style (red-600 / red-400, AA).</p></div>
                 </div>
             </div>
             <div class="c-7 col" style="border-top:2px solid var(--p600);padding-top:24px;padding-left:16px">
-                <div class="h3 blue-t">Found on the page</div>
+                <div class="h3 blue-t">Needs a decision</div>
                 <div class="stack mt-24">
-                    <div><div class="h4">Controls did not share a height</div><p class="note">Settled: <code>--aura-control-height</code>, xs 28 · sm 32 · base 36 · lg 44, for buttons, inputs and selects alike.</p></div>
-                    <div><div class="h4">Inputs ignored the corner setting</div><p class="note">Settled: fields follow <code>--aura-control-radius</code> like buttons.</p></div>
-                    <div><div class="h4">Semantic colours are unused</div><p class="note">Components use Tailwind green, red and yellow, not <code>--aura-color-*</code>. Error text is one red now (red-600 / red-400).</p></div>
-                    <div><div class="h4">Small drifts</div><p class="note"><code>button</code> and <code>button.primary</code> look the same; icons mix stroke 1.5 and 2.</p></div>
+                    <div><div class="h4">One tint recipe</div><p class="note">Status pills, trend pills, chips, alerts and avatars use five fill/text pairs (100/700, 50/700, 100/800, 50/800…). Pick one for light and one for dark.</p></div>
+                    <div><div class="h4">Neutrals</div><p class="note">The default gray is Tailwind gray up to 600 and slate from 700, so dark surfaces shift hue. Keep it, or use one family?</p></div>
+                    <div><div class="h4">Disabled</div><p class="note">Fields are a fill (value stays readable), buttons fade to 50 %. Keep both, or one rule?</p></div>
+                    <div><div class="h4">Button names</div><p class="note"><code>button</code> = <code>button.primary</code>; <code>danger</code> is the tint, <code>error</code> the solid. Proposal: primary, danger, danger-light.</p></div>
+                    <div><div class="h4">Light-mode contrast</div><p class="note">Field ring (1.25:1) and the off toggle (1.24:1) are below 3:1; raising them changes the light look.</p></div>
                 </div>
             </div>
         </div>
@@ -955,7 +1026,7 @@
     <div class="body">
         <h2 class="h1">Four steps. This deck is the first.</h2>
         <div class="steps mt-64 grow">
-            <div class="next"><div class="row between baseline"><span class="n">1</span><span class="status">Now</span></div><div class="h3 mt-24">Review v1</div><p class="p mt-12">In Discord with Enes and Bajram. Each open question gets a decision or an owner.</p></div>
+            <div class="next"><div class="row between baseline"><span class="n">1</span><span class="status">Now</span></div><div class="h3 mt-24">Review v2</div><p class="p mt-12">v1 feedback is in (IVA-1524). Each question on the previous slide gets a decision or an owner.</p></div>
             <div><div class="row between baseline"><span class="n">2</span><span class="status">Next</span></div><div class="h3 mt-24">Update the application</div><p class="p mt-12">Decisions go into the components and tokens first, so every screen follows without one-off fixes.</p></div>
             <div><div class="row between baseline"><span class="n">3</span><span class="status">Then</span></div><div class="h3 mt-24">Validate every page</div><p class="p mt-12">A pass across all admin pages, light and dark, against this deck. Tracked in IVA-1515.</p></div>
             <div><div class="row between baseline"><span class="n">4</span><span class="status">Always</span></div><div class="h3 mt-24">Keep the page true</div><p class="p mt-12">The style guide page stays the source of truth. The deck is rebuilt from it with three commands.</p></div>

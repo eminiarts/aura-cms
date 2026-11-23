@@ -1,6 +1,6 @@
 {
   "base": "http://aura-demo-style-guide.test",
-  "capturedAt": "2026-11-20T07:47:06.831Z",
+  "capturedAt": "2026-11-23T14:11:05.029Z",
   "theme": "package defaults",
   "modes": {
     "light": {
@@ -17,31 +17,35 @@
       "id": "tokens",
       "title": "Design tokens",
       "width": 1184,
-      "height": 1918,
+      "height": 2417,
       "rows": [
         {
           "top": 16,
-          "bottom": 341
+          "bottom": 392
         },
         {
-          "top": 357,
-          "bottom": 564
+          "top": 408,
+          "bottom": 627
         },
         {
-          "top": 580,
-          "bottom": 964
+          "top": 643,
+          "bottom": 1019
         },
         {
-          "top": 980,
-          "bottom": 1100
+          "top": 1035,
+          "bottom": 1411
         },
         {
-          "top": 1124,
-          "bottom": 1576
+          "top": 1427,
+          "bottom": 1567
         },
         {
-          "top": 1592,
-          "bottom": 1902
+          "top": 1591,
+          "bottom": 2075
+        },
+        {
+          "top": 2091,
+          "bottom": 2401
         }
       ]
     },
@@ -105,7 +109,7 @@
       "id": "typography",
       "title": "Typography",
       "width": 1184,
-      "height": 841,
+      "height": 859,
       "rows": [
         {
           "top": 16,
@@ -113,7 +117,7 @@
         },
         {
           "top": 552,
-          "bottom": 825
+          "bottom": 843
         }
       ]
     },
@@ -161,19 +165,19 @@
       "id": "buttons",
       "title": "Buttons",
       "width": 1184,
-      "height": 914,
+      "height": 898,
       "rows": [
         {
           "top": 16,
-          "bottom": 538
+          "bottom": 522
         },
         {
-          "top": 554,
-          "bottom": 742
+          "top": 538,
+          "bottom": 726
         },
         {
-          "top": 758,
-          "bottom": 898
+          "top": 742,
+          "bottom": 882
         }
       ]
     },
@@ -181,19 +185,51 @@
       "id": "forms",
       "title": "Form controls",
       "width": 1184,
-      "height": 1447,
+      "height": 1443,
       "rows": [
         {
           "top": 16,
-          "bottom": 606
+          "bottom": 598
         },
         {
-          "top": 622,
-          "bottom": 1074
+          "top": 614,
+          "bottom": 1070
         },
         {
-          "top": 1090,
-          "bottom": 1431
+          "top": 1086,
+          "bottom": 1427
+        }
+      ]
+    },
+    {
+      "id": "fields",
+      "title": "Fields",
+      "width": 1184,
+      "height": 2160,
+      "rows": [
+        {
+          "top": 16,
+          "bottom": 456
+        },
+        {
+          "top": 480,
+          "bottom": 712
+        },
+        {
+          "top": 736,
+          "bottom": 888
+        },
+        {
+          "top": 904,
+          "bottom": 1008
+        },
+        {
+          "top": 1024,
+          "bottom": 1128
+        },
+        {
+          "top": 1144,
+          "bottom": 2144
         }
       ]
     },
@@ -201,27 +237,31 @@
       "id": "sizing",
       "title": "Control sizing",
       "width": 1184,
-      "height": 1051,
+      "height": 1416,
       "rows": [
         {
           "top": 16,
-          "bottom": 289
+          "bottom": 169
         },
         {
-          "top": 305,
-          "bottom": 478
+          "top": 185,
+          "bottom": 482
         },
         {
-          "top": 494,
-          "bottom": 646
+          "top": 498,
+          "bottom": 787
         },
         {
-          "top": 662,
-          "bottom": 827
+          "top": 803,
+          "bottom": 987
         },
         {
-          "top": 843,
-          "bottom": 1035
+          "top": 1003,
+          "bottom": 1164
+        },
+        {
+          "top": 1180,
+          "bottom": 1400
         }
       ]
     },
@@ -229,7 +269,7 @@
       "id": "badges",
       "title": "Badges & pills",
       "width": 1184,
-      "height": 368,
+      "height": 528,
       "rows": [
         {
           "top": 16,
@@ -237,11 +277,15 @@
         },
         {
           "top": 136,
-          "bottom": 236
+          "bottom": 280
         },
         {
-          "top": 252,
-          "bottom": 352
+          "top": 296,
+          "bottom": 396
+        },
+        {
+          "top": 412,
+          "bottom": 512
         }
       ]
     },
@@ -301,39 +345,47 @@
       "id": "table",
       "title": "Table",
       "width": 1184,
-      "height": 994,
+      "height": 1230,
       "rows": [
         {
           "top": 16,
-          "bottom": 56
+          "bottom": 410
         },
         {
-          "top": 72,
-          "bottom": 112
-        },
-        {
-          "top": 128,
-          "bottom": 370
-        },
-        {
-          "top": 386,
-          "bottom": 418
-        },
-        {
-          "top": 392,
-          "bottom": 412
-        },
-        {
-          "top": 448,
-          "bottom": 463
+          "top": 450,
+          "bottom": 466
         },
         {
           "top": 478,
-          "bottom": 682
+          "bottom": 518
         },
         {
-          "top": 706,
-          "bottom": 978
+          "top": 548,
+          "bottom": 563
+        },
+        {
+          "top": 578,
+          "bottom": 630
+        },
+        {
+          "top": 618,
+          "bottom": 658
+        },
+        {
+          "top": 670,
+          "bottom": 690
+        },
+        {
+          "top": 694,
+          "bottom": 714
+        },
+        {
+          "top": 734,
+          "bottom": 770
+        },
+        {
+          "top": 834,
+          "bottom": 1214
         }
       ]
     },
@@ -445,11 +497,11 @@
       "id": "feedback",
       "title": "Feedback & loading",
       "width": 1184,
-      "height": 186,
+      "height": 448,
       "rows": [
         {
           "top": 16,
-          "bottom": 170
+          "bottom": 432
         }
       ]
     },

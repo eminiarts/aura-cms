@@ -20,9 +20,9 @@
             <div class="c-9 col">{{shot:buttons,light,rows-1}}</div>
             <div class="c-3 stack">
                 <div><div class="h4">One primary per view</div><p class="note">The main action is solid primary. Everything beside it is border or transparent.</p></div>
-                <div><div class="h4">Name the action</div><p class="note">A verb and its object: Create post, Save changes. Not OK, not Submit.</p></div>
+                <div><div class="h4">Name the action</div><p class="note">A verb and its object: New post, Save changes. Not OK, not Submit.</p></div>
                 <div><div class="h4">Red only for destroying</div><p class="note"><code>button.danger</code> is the quiet tint in a list, <code>button.error</code> the solid confirm in a dialog.</p></div>
-                <div><div class="h4">Base 36 px, sizes by role</div><p class="note">xs 28 in tables, sm 32 for filters and pagination, base 36 in forms and toolbars, lg 44 and xl 52 on empty states and login.</p></div>
+                <div><div class="h4">Base 36 px, sizes by role</div><p class="note">xs 28 for row actions, sm 32 for pagination and widget filters, base 36 for everything else: forms, toolbars, dialogs, login, empty states. lg and xl are reserved.</p></div>
             </div>
         </div>
     </div>
@@ -42,7 +42,7 @@
                 <div><div class="h4">Label above, always</div><p class="note">14 px medium. A required field says so in the label, not only in the error.</p></div>
                 <div><div class="h4">Error under the field, in words</div><p class="note">What is wrong and how to fix it. One style everywhere: text-sm, red-600 (red-400 in dark), AA on the card.</p></div>
                 <div><div class="h4">Disabled is a fill, not a fade</div><p class="note">gray-50 background and gray-500 text, so the value stays readable.</p></div>
-                <div><div class="h4">A select is an input</div><p class="note">Same ring, same height, same radius, plus a chevron. Checkboxes, radios and toggles use primary-600 when on.</p></div>
+                <div><div class="h4">A select is an input</div><p class="note">Same ring, same height, same radius, plus a chevron. Checkboxes, radios and toggles use primary-600 when on (primary-500 in dark).</p></div>
             </div>
         </div>
     </div>
@@ -102,10 +102,10 @@
                 <span class="cap">Token: <code>--aura-control-height</code></span>
                 <table class="token-table mt-12" style="font-size:18px">
                     <tr><th>Size</th><th>Height</th><th>Used by</th></tr>
-                    <tr><td>xs</td><td class="tab">28 px</td><td class="muted">Row actions in tables</td></tr>
-                    <tr><td>sm</td><td class="tab">32 px</td><td class="muted">Filters, pagination, compact density</td></tr>
-                    <tr><td>base</td><td class="tab">36 px</td><td class="muted">Forms, dialogs, the table toolbar</td></tr>
-                    <tr><td>lg</td><td class="tab">44 px</td><td class="muted">Login, empty states</td></tr>
+                    <tr><td>xs</td><td class="tab">28 px</td><td class="muted">Row actions, selection bar</td></tr>
+                    <tr><td>sm</td><td class="tab">32 px</td><td class="muted">Pagination, widget filters</td></tr>
+                    <tr><td>base</td><td class="tab">36 px</td><td class="muted">Forms, toolbar, dialogs, login</td></tr>
+                    <tr><td>lg · xl</td><td class="tab">44 · 52</td><td class="muted">Reserved</td></tr>
                 </table>
                 <div class="stack mt-32">
                     <div><div class="h4">Inputs get the sizes buttons have</div><p class="note">Inputs and selects take xs, sm, base and lg; xs is 28 like the xs button.</p></div>

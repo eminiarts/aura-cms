@@ -3,26 +3,27 @@
     {{top:Open questions}}
     <div class="body">
         <div class="head">
-            <h2 class="h1">What this review should settle</h2>
-            <p class="p">Gaps named in the team meeting, and what turned up while building this deck from the live page.</p>
+            <h2 class="h1">Decided, and still to decide</h2>
+            <p class="p">What the v1 review and the page validation settled, and the design calls that need Enes and Bajram.</p>
         </div>
         <div class="grid mt-48 grow">
             <div class="c-5 col" style="border-top:2px solid var(--ink);padding-top:24px">
-                <div class="h3">Under-documented</div>
+                <div class="h3">Decided in v2</div>
                 <div class="stack mt-24">
-                    <div><div class="h4">Tabs</div><p class="note">Now on the page; which style goes where is not decided.</p></div>
-                    <div><div class="h4">Dark mode</div><p class="note">The mapping on slide 15 is not written down in the docs yet.</p></div>
-                    <div><div class="h4">Tables</div><p class="note">The parts are on the page; rules for filters, bulk actions and column settings are not.</p></div>
-                    <div><div class="h4">Advanced settings and the component library</div><p class="note">Expert mode, and a list of every Blade component with its props.</p></div>
+                    <div><div class="h4">One control height, one field radius</div><p class="note"><code>--aura-control-height</code> (28 · 32 · 36) and <code>--aura-control-radius</code> for buttons, inputs, selects and pickers.</p></div>
+                    <div><div class="h4">Tabs</div><p class="note">Underline tabs split a form; segmented tabs switch filters and views.</p></div>
+                    <div><div class="h4">Tables</div><p class="note">The card-less list with hairlines, avatars and typed headings is the resource table.</p></div>
+                    <div><div class="h4">One error style</div><p class="note">Red ring on the field, one message style (red-600 / red-400, AA).</p></div>
                 </div>
             </div>
             <div class="c-7 col" style="border-top:2px solid var(--p600);padding-top:24px;padding-left:16px">
-                <div class="h3 blue-t">Found on the page</div>
+                <div class="h3 blue-t">Needs a decision</div>
                 <div class="stack mt-24">
-                    <div><div class="h4">Controls did not share a height</div><p class="note">Settled: <code>--aura-control-height</code>, xs 28 · sm 32 · base 36 · lg 44, for buttons, inputs and selects alike.</p></div>
-                    <div><div class="h4">Inputs ignored the corner setting</div><p class="note">Settled: fields follow <code>--aura-control-radius</code> like buttons.</p></div>
-                    <div><div class="h4">Semantic colours are unused</div><p class="note">Components use Tailwind green, red and yellow, not <code>--aura-color-*</code>. Error text comes in two reds; red-500 is {{cr:#ef4444}}:1, below AA.</p></div>
-                    <div><div class="h4">Small drifts</div><p class="note"><code>button</code> and <code>button.primary</code> look the same; icons mix stroke 1.5 and 2.</p></div>
+                    <div><div class="h4">One tint recipe</div><p class="note">Status pills, trend pills, chips, alerts and avatars use five fill/text pairs (100/700, 50/700, 100/800, 50/800…). Pick one for light and one for dark.</p></div>
+                    <div><div class="h4">Neutrals</div><p class="note">The default gray is Tailwind gray up to 600 and slate from 700, so dark surfaces shift hue. Keep it, or use one family?</p></div>
+                    <div><div class="h4">Disabled</div><p class="note">Fields are a fill (value stays readable), buttons fade to 50 %. Keep both, or one rule?</p></div>
+                    <div><div class="h4">Button names</div><p class="note"><code>button</code> = <code>button.primary</code>; <code>danger</code> is the tint, <code>error</code> the solid. Proposal: primary, danger, danger-light.</p></div>
+                    <div><div class="h4">Light-mode contrast</div><p class="note">Field ring (1.25:1) and the off toggle (1.24:1) are below 3:1; raising them changes the light look.</p></div>
                 </div>
             </div>
         </div>
@@ -35,7 +36,7 @@
     <div class="body">
         <h2 class="h1">Four steps. This deck is the first.</h2>
         <div class="steps mt-64 grow">
-            <div class="next"><div class="row between baseline"><span class="n">1</span><span class="status">Now</span></div><div class="h3 mt-24">Review v1</div><p class="p mt-12">In Discord with Enes and Bajram. Each open question gets a decision or an owner.</p></div>
+            <div class="next"><div class="row between baseline"><span class="n">1</span><span class="status">Now</span></div><div class="h3 mt-24">Review v2</div><p class="p mt-12">v1 feedback is in (IVA-1524). Each question on the previous slide gets a decision or an owner.</p></div>
             <div><div class="row between baseline"><span class="n">2</span><span class="status">Next</span></div><div class="h3 mt-24">Update the application</div><p class="p mt-12">Decisions go into the components and tokens first, so every screen follows without one-off fixes.</p></div>
             <div><div class="row between baseline"><span class="n">3</span><span class="status">Then</span></div><div class="h3 mt-24">Validate every page</div><p class="p mt-12">A pass across all admin pages, light and dark, against this deck. Tracked in IVA-1515.</p></div>
             <div><div class="row between baseline"><span class="n">4</span><span class="status">Always</span></div><div class="h3 mt-24">Keep the page true</div><p class="p mt-12">The style guide page stays the source of truth. The deck is rebuilt from it with three commands.</p></div>

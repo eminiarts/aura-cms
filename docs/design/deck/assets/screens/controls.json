@@ -1,31 +1,29 @@
 {
   "light": {
     "input": {
-      "count": 25,
+      "count": 38,
       "heights": [
-        24,
-        32,
-        36,
-        36.7,
-        40
-      ]
-    },
-    "select": {
-      "count": 10,
-      "heights": [
-        24,
-        32,
-        36
-      ]
-    },
-    "button": {
-      "count": 87,
-      "heights": [
-        24,
         28,
         32,
         36,
-        40,
+        44
+      ]
+    },
+    "select": {
+      "count": 13,
+      "heights": [
+        28,
+        32,
+        36,
+        44
+      ]
+    },
+    "button": {
+      "count": 96,
+      "heights": [
+        28,
+        32,
+        36,
         44,
         52
       ]
@@ -33,31 +31,29 @@
   },
   "dark": {
     "input": {
-      "count": 25,
+      "count": 38,
       "heights": [
-        24,
-        32,
-        36,
-        36.7,
-        40
-      ]
-    },
-    "select": {
-      "count": 10,
-      "heights": [
-        24,
-        32,
-        36
-      ]
-    },
-    "button": {
-      "count": 87,
-      "heights": [
-        24,
         28,
         32,
         36,
-        40,
+        44
+      ]
+    },
+    "select": {
+      "count": 13,
+      "heights": [
+        28,
+        32,
+        36,
+        44
+      ]
+    },
+    "button": {
+      "count": 96,
+      "heights": [
+        28,
+        32,
+        36,
         44,
         52
       ]

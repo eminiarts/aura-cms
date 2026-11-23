@@ -26,10 +26,10 @@
             <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Gray palette</div><div class="c-4 p"><code>--gray-25 … 950</code></div><div class="c-4 note">Text, lines, surfaces, dark mode</div></div>
             <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Font</div><div class="c-4 p"><code>--aura-font-sans</code></div><div class="c-4 note">The <code>font-sans</code> utility, everywhere</div></div>
             <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Interface density</div><div class="c-4 p">4 spacing variables</div><div class="c-4 note"><code>.aura-card</code>, <code>.aura-card-small</code>, layout gaps</div></div>
-            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Corner radius</div><div class="c-4 p"><code>--aura-panel-radius</code>, <code>--aura-control-radius</code></div><div class="c-4 note">Cards, buttons, sidebar items. Not inputs yet.</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Corner radius</div><div class="c-4 p"><code>--aura-panel-radius</code>, <code>--aura-control-radius</code></div><div class="c-4 note">Cards, buttons, fields, menus, modals, sidebar items</div></div>
             <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Sidebar size</div><div class="c-4 p">5 sidebar variables</div><div class="c-4 note">Sidebar items, icons, headings</div></div>
-            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Dark mode</div><div class="c-4 p"><code>.dark</code> class, dark <code>--aura-color-*</code></div><div class="c-4 note">Every <code>dark:</code> utility</div></div>
-            <div class="grid" style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Expert mode</div><div class="c-4 p">Pixel values for all 11 layout variables, sidebar colours per mode</div><div class="c-4 note">Overrides the presets above</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Dark mode</div><div class="c-4 p"><code>.dark</code> class, dark <code>--aura-color-*</code></div><div class="c-4 note">Component classes (<code>.aura-field</code>, chips, toggles) and <code>dark:</code> utilities</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Expert mode</div><div class="c-4 p">Pixel values for the 11 layout variables and the control height, sidebar colours per mode</div><div class="c-4 note">Overrides the presets above</div></div>
         </div>
     </div>
 </section>
@@ -81,8 +81,9 @@
             <div class="c-6 col" style="border-top:2px solid var(--p600);padding-top:28px">
                 <div class="h3 blue-t">Not a token yet</div>
                 <div class="stack mt-32">
-                    <div><div class="h4">Dropdown, modal and toast radius</div><p class="note">Fixed Tailwind classes; they ignore the corner setting.</p></div>
-                    <div><div class="h4">Type scale and shadows</div><p class="note">Tailwind defaults, plus one-offs like the 11 px table header.</p></div>
+                    <div><div class="h4">Semantic colours</div><p class="note"><code>--aura-color-*</code> exist, but components use Tailwind green, red and yellow directly.</p></div>
+                    <div><div class="h4">Type scale and shadows</div><p class="note">Tailwind defaults; a brand cannot change them in one place.</p></div>
+                    <div><div class="h4">Avatar corners</div><p class="note">Square avatars keep 4&ndash;8 px corners in the Square preset.</p></div>
                 </div>
             </div>
         </div>
