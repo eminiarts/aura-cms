@@ -2,6 +2,7 @@
 
 use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Widgets\ValueWidget;
+use Aura\Base\Widgets\Widgets;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 
@@ -124,4 +125,48 @@ it('formats a number to 2 decimals', function () {
     expect($widget->format(2.588))->toBe('2.59');
     expect($widget->format(2))->toBe('2');
     expect($widget->format(2.00))->toBe('2');
+});
+
+enum ValueWidgetTestStatus: string
+{
+    case Active = 'active';
+}
+
+it('renders widgets whose config holds values Livewire cannot dehydrate', function () {
+    $widgets = collect([
+        [
+            'name' => 'Images',
+            'slug' => 'images_count',
+            'type' => 'Aura\\Base\\Widgets\\ValueWidget',
+            'method' => 'count',
+            'query' => fn ($query) => $query->where('title', 'like', 'Post%'),
+            'status' => ValueWidgetTestStatus::Active,
+            'label' => str('Images'),
+            'meta' => collect(['icon' => 'photo', 'callback' => fn () => null]),
+            'object' => new stdClass,
+            'cache' => 300,
+            'style' => ['width' => '25'],
+        ],
+    ]);
+
+    // Through the resource index widgets wrapper, which mounts the ValueWidget children.
+    Livewire::test(Widgets::class, ['widgets' => $widgets, 'model' => new Post])
+        ->assertOk()
+        ->assertSeeLivewire(ValueWidget::class);
+
+    // And when a widget is mounted directly.
+    $component = Livewire::test(ValueWidget::class, ['widget' => $widgets->first(), 'model' => new Post])
+        ->call('loadWidget')
+        ->assertOk()
+        ->assertSee('Images');
+
+    expect($component->get('widget'))
+        ->not->toHaveKey('query')
+        ->not->toHaveKey('object')
+        ->toMatchArray([
+            'status' => 'active',
+            'label' => 'Images',
+            'meta' => ['icon' => 'photo'],
+            'style' => ['width' => '25'],
+        ]);
 });

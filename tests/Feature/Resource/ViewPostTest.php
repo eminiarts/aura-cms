@@ -212,3 +212,22 @@ test('post view returns correct edit url', function () {
 
     expect($post->editUrl())->toBe(route('aura.post.edit', ['id' => $post->id]));
 });
+
+test('post view wraps long values instead of cutting them to one line', function () {
+    $overview = str_repeat('A rescue pilot follows a faint signal into a settlement. ', 8);
+
+    $post = Post::create([
+        'title' => 'Long Post',
+        'content' => $overview,
+        'type' => 'Post',
+        'status' => 'publish',
+    ]);
+
+    $html = $this->get(route('aura.post.view', [$post->id]))
+        ->assertOk()
+        ->assertSee(trim($overview))
+        ->getContent();
+
+    expect($html)->toContain('<div class="break-words">')
+        ->not->toContain('<div class="truncate">');
+});

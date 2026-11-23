@@ -1,7 +1,7 @@
 @php
     $storedSettings = isset($settings) && is_array($settings)
         ? $settings
-        : (app('aura')::getOption('settings') ?? []);
+        : app('aura')::appearanceSettings();
     $settings = \Aura\Base\ThemeTokens::resolve($storedSettings);
     $fontStylesheet = \Aura\Base\ThemeTokens::fontStylesheet($settings);
 @endphp

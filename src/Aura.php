@@ -62,6 +62,26 @@ class Aura
     protected array $widgets = [];
 
     /**
+     * Saved settings for the shared layouts (theme tokens, palette, dark mode).
+     *
+     * Guests (login, register, password reset) have no current team. A single-team
+     * install has one unambiguous owner of the appearance, so its settings apply;
+     * with several teams no team's settings are shown and the config theme applies.
+     */
+    public function appearanceSettings(): array
+    {
+        if (! config('aura.teams') || auth()->check()) {
+            return $this->getOption('settings') ?? [];
+        }
+
+        $teamIds = app(config('aura.resources.team'))->newQuery()->withoutGlobalScopes()->limit(2)->pluck('id');
+
+        return $teamIds->count() === 1
+            ? app(SettingsStore::class)->values(teamId: (int) $teamIds->first())
+            : [];
+    }
+
+    /**
      * Determine if Aura's published assets are up-to-date.
      *
      * Matching manifests alone are not enough — every Vite-referenced file

@@ -99,6 +99,19 @@ class AuraServiceProvider extends PackageServiceProvider
         AuraLayoutCommand::class,
     ];
 
+    /**
+     * Map config keys of older published config/aura.php files onto their current names.
+     *
+     * A host's `features` array replaces the package one, so a renamed key is simply
+     * missing there. `features.user_profile` became `features.profile`.
+     */
+    public static function applyLegacyConfigKeys(): void
+    {
+        if (! config()->has('aura.features.profile') && config()->has('aura.features.user_profile')) {
+            config(['aura.features.profile' => config('aura.features.user_profile')]);
+        }
+    }
+
     public function boot()
     {
         parent::boot();
@@ -548,6 +561,8 @@ class AuraServiceProvider extends PackageServiceProvider
     public function packageRegistered()
     {
         parent::packageRegistered();
+
+        static::applyLegacyConfigKeys();
 
         $this->app->singleton(ResourceActionRegistry::class);
         $this->app->alias(ResourceActionRegistry::class, ResourceActionRegistryContract::class);

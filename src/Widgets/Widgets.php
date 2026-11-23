@@ -21,7 +21,7 @@ class Widgets extends Component
 
     public function mount($widgets, $model)
     {
-        $this->widgets = $widgets;
+        $this->widgets = Widget::livewireSafe($widgets);
         $this->model = $model;
 
         $this->selected = $this->model->widgetSettings['default'] ?? 'all';

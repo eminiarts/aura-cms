@@ -89,6 +89,11 @@ empty array if no record exists, without falling back to global settings.
 Aura caches these reads for one hour. The layout uses the theme configuration
 as a fallback when it generates CSS.
 
+Guest pages (login, register, forgot and reset password) have no current team.
+With teams enabled and exactly one team, they use that team's saved appearance.
+With several teams they show no team's settings and use the theme
+configuration.
+
 The appearance fields (dark mode, sidebar, density, radius, palettes and the
 expert values) preview live on the Settings page. "Discard changes" restores
 the saved values; nothing is stored until you save.

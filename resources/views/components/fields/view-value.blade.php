@@ -1,5 +1,5 @@
 <x-aura::fields.wrapper :field="$field">
-    <div class="truncate">
+    <div class="break-words">
         @php
             $value = $this->model->display($field['slug']);
         @endphp
