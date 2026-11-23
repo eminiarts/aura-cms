@@ -1,0 +1,90 @@
+<!-- Part: Settings to design -->
+<section class="slide blue">
+    <div style="position:absolute;right:-80px;bottom:-40px;width:900px;height:808px;color:var(--p600)">{{mark}}</div>
+    {{top:Part three}}
+    <div class="body">
+        <h1 class="d-xl">Settings → design</h1>
+        <p class="lead mt-40" style="max-width:1000px">Appearance settings do not restyle components. They set a handful of CSS variables, and the components read those.</p>
+    </div>
+</section>
+
+<!-- How settings drive tokens -->
+<section class="slide">
+    {{top:Settings to design}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">From a setting to every screen</h2>
+            <p class="p">Package defaults, then <code>config/aura.php</code>, then the saved settings. <code>ThemeTokens</code> resolves them and the layout prints the variables on <code>:root</code>.</p>
+        </div>
+        <div class="grid mt-48 grow" style="align-content:start">
+            <div class="c-4"><span class="cap">Setting</span></div>
+            <div class="c-4"><span class="cap">Becomes</span></div>
+            <div class="c-4"><span class="cap">Read by</span></div>
+        </div>
+        <div class="col mt-16" style="gap:0">
+            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Primary palette</div><div class="c-4 p"><code>--primary-25 … 950</code>, <code>--sidebar-*</code></div><div class="c-4 note">Buttons, links, focus, selection, primary sidebar</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Gray palette</div><div class="c-4 p"><code>--gray-25 … 950</code></div><div class="c-4 note">Text, lines, surfaces, dark mode</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Font</div><div class="c-4 p"><code>--aura-font-sans</code></div><div class="c-4 note">The <code>font-sans</code> utility, everywhere</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Interface density</div><div class="c-4 p">4 spacing variables</div><div class="c-4 note"><code>.aura-card</code>, <code>.aura-card-small</code>, layout gaps</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Corner radius</div><div class="c-4 p"><code>--aura-panel-radius</code>, <code>--aura-control-radius</code></div><div class="c-4 note">Cards, buttons, sidebar items. Not inputs yet.</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Sidebar size</div><div class="c-4 p">5 sidebar variables</div><div class="c-4 note">Sidebar items, icons, headings</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Dark mode</div><div class="c-4 p"><code>.dark</code> class, dark <code>--aura-color-*</code></div><div class="c-4 note">Every <code>dark:</code> utility</div></div>
+            <div class="grid" style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0"><div class="c-4 h4">Expert mode</div><div class="c-4 p">Pixel values for all 11 layout variables, sidebar colours per mode</div><div class="c-4 note">Overrides the presets above</div></div>
+        </div>
+    </div>
+</section>
+
+<!-- Setting, variable, values -->
+<section class="slide">
+    {{top:Settings to design}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h2" style="font-size:64px">Setting, variable, values</h2>
+            <p class="p">From <code>ThemeTokens::design()</code>. The first value is the default.</p>
+        </div>
+        <table class="token-table mt-40" style="font-size:18px">
+            <tr><th style="width:240px">Setting</th><th style="width:420px">Variable</th><th>Values</th></tr>
+            <tr><td>Interface density</td><td><code>--aura-panel-padding</code></td><td class="tab">comfortable <b>20 px</b> · compact 16 px</td></tr>
+            <tr><td></td><td><code>--aura-panel-small-padding</code></td><td class="tab">comfortable <b>8 px</b> · compact 6 px</td></tr>
+            <tr><td></td><td><code>--aura-layout-gap</code></td><td class="tab">comfortable <b>24 px</b> · compact 16 px</td></tr>
+            <tr><td></td><td><code>--aura-section-gap</code></td><td class="tab">comfortable <b>16 px</b> · compact 12 px</td></tr>
+            <tr><td>Corner radius</td><td><code>--aura-panel-radius</code></td><td class="tab">rounded <b>12 px</b> · subtle 6 px · square 0</td></tr>
+            <tr><td></td><td><code>--aura-control-radius</code></td><td class="tab">rounded <b>8 px</b> · subtle 4 px · square 0</td></tr>
+            <tr><td>Sidebar size</td><td><code>--aura-sidebar-item-height</code></td><td class="tab">standard <b>36 px</b> · compact 32 px · dense 28 px</td></tr>
+            <tr><td></td><td><code>--aura-sidebar-item-padding-x</code></td><td class="tab">standard <b>12 px</b> · compact 8 px · dense 6 px</td></tr>
+            <tr><td></td><td><code>--aura-sidebar-icon-size</code></td><td class="tab">standard <b>20 px</b> · compact 18 px · dense 16 px</td></tr>
+            <tr><td></td><td><code>--aura-sidebar-group-gap</code></td><td class="tab">standard <b>4 px</b> · compact 4 px · dense 2 px</td></tr>
+            <tr><td></td><td><code>--aura-sidebar-heading-gap</code></td><td class="tab">standard <b>20 px</b> · compact 14 px · dense 10 px</td></tr>
+        </table>
+        <p class="note mt-auto">Expert mode replaces any of these with a pixel value (<code>expert-panel-radius</code> → <code>--aura-panel-radius</code>, and so on).</p>
+    </div>
+</section>
+
+<!-- Expert mode and what is not a token -->
+<section class="slide">
+    {{top:Settings to design}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Expert mode, and the gaps</h2>
+            <p class="p">Expert mode turns the presets into editable numbers and colours. Some things a team will want to change are not tokens at all yet.</p>
+        </div>
+        <div class="grid mt-48 grow">
+            <div class="c-6 col" style="border-top:2px solid var(--ink);padding-top:28px">
+                <div class="h3">What expert mode adds</div>
+                <div class="stack mt-32">
+                    <div><div class="h4">Layout in pixels</div><p class="note">All 11 layout variables, one field each. Empty fields keep the preset.</p></div>
+                    <div><div class="h4">Sidebar colours per mode</div><p class="note">Background, hover, menu, text, icon and icon hover, for light and for dark.</p></div>
+                    <div><div class="h4">Palette carried over</div><p class="note">Switching it on starts from the current palette's colours, not from Aura blue.</p></div>
+                </div>
+            </div>
+            <div class="c-6 col" style="border-top:2px solid var(--p600);padding-top:28px">
+                <div class="h3 blue-t">Not a token yet</div>
+                <div class="stack mt-32">
+                    <div><div class="h4">Control height</div><p class="note">Inputs, selects and buttons each set their own padding. See “One control height”.</p></div>
+                    <div><div class="h4">Input and select radius</div><p class="note">Hard-coded <code>rounded-lg</code>; they ignore the corner setting.</p></div>
+                    <div><div class="h4">Type scale and shadows</div><p class="note">Tailwind defaults, plus one-offs like the 11 px table header.</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

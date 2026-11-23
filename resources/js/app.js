@@ -5,6 +5,7 @@ import focus from '@alpinejs/focus';
 import ui from '@alpinejs/ui';
 
 import modal from './modal.js';
+import styleguide from './styleguide.js';
 
 import { Sortable } from '@shopify/draggable';
 import tippy from 'tippy.js';
@@ -21,6 +22,7 @@ document.addEventListener('livewire:init', () => {
   Alpine.plugin(focus);
   Alpine.plugin(ui);
   Alpine.plugin(modal);
+  Alpine.plugin(styleguide);
 
   Alpine.data('aura', () => ({
     loading: false,

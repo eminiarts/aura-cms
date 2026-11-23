@@ -219,6 +219,16 @@ final class ThemeTokens
     }
 
     /**
+     * Expert mode setting => the CSS variable it overrides (in pixels).
+     *
+     * @return array<string, string>
+     */
+    public static function designOverrides(): array
+    {
+        return self::DESIGN_OVERRIDES;
+    }
+
+    /**
      * Return the active primary and sidebar palette as editable hex values.
      *
      * @param  array<string, mixed>  $theme

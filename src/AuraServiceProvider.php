@@ -51,6 +51,7 @@ use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Livewire\Resource\ViewModal;
 use Aura\Base\Livewire\ResourceEditor;
 use Aura\Base\Livewire\Styleguide;
+use Aura\Base\Livewire\StyleguideWidget;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Livewire\TwoFactorAuthenticationForm;
 use Aura\Base\Livewire\UserTeams;
@@ -180,6 +181,7 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura::plugins-page' => PluginsPage::class,
             'aura::ai-provider-status' => AiProviderStatus::class,
             'aura::styleguide' => Styleguide::class,
+            'aura::styleguide-widget' => StyleguideWidget::class,
             'aura::choose-template' => ChooseTemplate::class,
             'aura::two-factor-authentication-form' => TwoFactorAuthenticationForm::class,
             'aura::user-two-factor-authentication-form' => TwoFactorAuthenticationForm::class,
@@ -201,6 +203,7 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura.base.livewire.plugins-page' => PluginsPage::class,
             'aura.base.livewire.ai-provider-status' => AiProviderStatus::class,
             'aura.base.livewire.styleguide' => Styleguide::class,
+            'aura.base.livewire.styleguide-widget' => StyleguideWidget::class,
             'aura.base.livewire.choose-template' => ChooseTemplate::class,
             'aura.base.livewire.two-factor-authentication-form' => TwoFactorAuthenticationForm::class,
             'aura.base.livewire.settings' => config('aura.components.settings'),

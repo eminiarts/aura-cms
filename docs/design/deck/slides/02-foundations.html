@@ -1,0 +1,261 @@
+<!-- Part: Foundations -->
+<section class="slide blue">
+    <div style="position:absolute;right:-80px;bottom:-40px;width:900px;height:808px;color:var(--p600)">{{mark}}</div>
+    {{top:Part one}}
+    <div class="body">
+        <h1 class="d-xl">Foundations</h1>
+        <p class="lead mt-40" style="max-width:980px">Colour, type, spacing and density, corners, depth, icons and dark mode. The values every component is built from.</p>
+    </div>
+</section>
+
+<!-- Colour: primary -->
+<section class="slide">
+    {{top:Colour}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">One blue that acts</h2>
+            <p class="p">The default palette is <b>aura</b>. Each shade shows its contrast against white; 600 and darker carry white text and small text on white.</p>
+        </div>
+        <div class="grow mt-48" style="min-height:0">{{scale:primary}}</div>
+        <div class="rules thin mt-40" style="--n:3">
+            <div><div class="h4">600 is the action</div><p class="note">Primary buttons, checked boxes, toggles and links. One primary button per view.</p></div>
+            <div><div class="h4">Tints mark state, not decoration</div><p class="note">50 and 100 show selection and badges. They never fill large areas.</p></div>
+            <div><div class="h4">Theme it through the scale</div><p class="note">Components use <code>primary-*</code>, never a fixed blue, so all 39 palettes work.</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- Colour: gray -->
+<section class="slide">
+    {{top:Colour}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Gray does the rest</h2>
+            <p class="p">The default gray palette is <b>slate</b>. Text, lines, fills and the dark-mode surfaces all come from this one scale.</p>
+        </div>
+        <div class="grow mt-48" style="min-height:0">{{scale:gray}}</div>
+        <div class="rules thin mt-40" style="--n:3">
+            <div><div class="h4">Text in 900, secondary in 500</div><p class="note">500 is the lightest gray for readable text on white ({{cr:#6b7280}}:1).</p></div>
+            <div><div class="h4">400 is for placeholders only</div><p class="note">At {{cr:#9ca3af}}:1 it fails as text. Use it for hints the field explains itself.</p></div>
+            <div><div class="h4">Edges are translucent</div><p class="note"><code>ring-gray-950/10</code> on light, <code>ring-white/10</code> on dark, so a ring works on any surface.</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- Colour: semantic -->
+<section class="slide">
+    {{top:Colour}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Named colours, set in config</h2>
+            <p class="p"><code>theme.colors</code> in <code>config/aura.php</code> becomes <code>--aura-color-*</code> and the Tailwind <code>aura.*</code> colours. Dark replaces them under <code>.dark</code>.</p>
+        </div>
+        <div class="grid mt-48 grow">
+            <div class="c-7">
+                <table class="token-table">
+                    <tr><th>Token</th><th>Light</th><th>Dark</th><th>Used for</th></tr>
+                    <tr><td><code>primary</code></td><td><span class="dot" style="background:#1f55e9"></span>primary-600</td><td><span class="dot" style="background:#1f55e9"></span>primary-600</td><td class="muted">Action</td></tr>
+                    <tr><td><code>background</code></td><td><span class="dot" style="background:#ffffff"></span>#ffffff</td><td><span class="dot" style="background:#09090b"></span>#09090b</td><td class="muted">Page</td></tr>
+                    <tr><td><code>panel</code></td><td><span class="dot" style="background:#fafafa"></span>#fafafa</td><td><span class="dot" style="background:#18181b"></span>#18181b</td><td class="muted">Cards, inset areas</td></tr>
+                    <tr><td><code>border</code></td><td><span class="dot" style="background:#e4e4e7"></span>#e4e4e7</td><td><span class="dot" style="background:#3f3f46"></span>#3f3f46</td><td class="muted">Lines</td></tr>
+                    <tr><td><code>text</code></td><td><span class="dot" style="background:#18181b"></span>#18181b</td><td><span class="dot" style="background:#f4f4f5"></span>#f4f4f5</td><td class="muted">Body text</td></tr>
+                    <tr><td><code>muted</code></td><td><span class="dot" style="background:#52525b"></span>#52525b</td><td><span class="dot" style="background:#a1a1aa"></span>#a1a1aa</td><td class="muted">Secondary text</td></tr>
+                    <tr><td><code>success</code></td><td><span class="dot" style="background:#16a34a"></span>#16a34a</td><td><span class="dot" style="background:#16a34a"></span>#16a34a</td><td class="muted">Saved, published</td></tr>
+                    <tr><td><code>warning</code></td><td><span class="dot" style="background:#d97706"></span>#d97706</td><td><span class="dot" style="background:#d97706"></span>#d97706</td><td class="muted">Needs attention</td></tr>
+                    <tr><td><code>danger</code></td><td><span class="dot" style="background:#dc2626"></span>#dc2626</td><td><span class="dot" style="background:#dc2626"></span>#dc2626</td><td class="muted">Errors, deleting</td></tr>
+                </table>
+            </div>
+            <div class="c-5 stack" style="padding-left:32px">
+                <div><div class="h4">Signal colours sit in a dot or a tint</div><p class="note">Success {{cr:#16a34a}}:1 and warning {{cr:#d97706}}:1 are too light for text on white. The words stay in text colour.</p></div>
+                <div><div class="h4">Not wired up yet</div><p class="note">Aura's own components still use Tailwind green, red and yellow. Moving them to these tokens is part of the rollout.</p></div>
+                <div><div class="h4">Two neutral families</div><p class="note">The semantic neutrals are zinc, the gray scale is slate. Pick one for panels and text.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Colour: palettes -->
+<section class="slide">
+    {{top:Colour}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">39 palettes, one structure</h2>
+            <p class="p">Every palette fills the same slots, so a component that uses the slots works in all of them. Each row: sidebar menu, sidebar, primary, sidebar text, sidebar icon.</p>
+        </div>
+        <div class="mt-48">{{palettes}}</div>
+        <p class="note mt-auto">Read from <code>src/ThemeTokens.php</code> when the deck is built. Gray has 14 presets of its own; both accept <code>custom</code> with 12 hex shades.</p>
+    </div>
+</section>
+
+<!-- Typography -->
+<section class="slide">
+    {{top:Typography}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">The system font, eight sizes</h2>
+            <p class="p">Aura uses the platform's own sans-serif by default and makes no font request. Shown here in that stack at 1.5 times real size.</p>
+        </div>
+        <div class="grid mt-48 grow">
+            <div class="c-8 col" style="font-family:var(--system);gap:0">
+                <div class="row baseline" style="border-top:1px solid var(--line);padding:14px 0"><span class="cap" style="width:250px;flex:none">3xl · 30/36 semibold</span><span style="font-size:45px;line-height:54px;font-weight:600;letter-spacing:-.025em">Aura CMS</span></div>
+                <div class="row baseline" style="border-top:1px solid var(--line);padding:14px 0"><span class="cap" style="width:250px;flex:none">2xl · 24/32 · page title</span><span style="font-size:36px;line-height:48px;font-weight:600;letter-spacing:-.025em">Page title</span></div>
+                <div class="row baseline" style="border-top:1px solid var(--line);padding:14px 0"><span class="cap" style="width:250px;flex:none">xl · 20/28 · section</span><span style="font-size:30px;line-height:42px;font-weight:600">Section title</span></div>
+                <div class="row baseline" style="border-top:1px solid var(--line);padding:14px 0"><span class="cap" style="width:250px;flex:none">lg · 18/28 · modal title</span><span style="font-size:27px;line-height:42px;font-weight:600">Modal title</span></div>
+                <div class="row baseline" style="border-top:1px solid var(--line);padding:14px 0"><span class="cap" style="width:250px;flex:none">base · 16/24 medium</span><span style="font-size:24px;line-height:36px;font-weight:500">The quick brown fox jumps over the lazy dog</span></div>
+                <div class="row baseline" style="border-top:1px solid var(--line);padding:14px 0"><span class="cap" style="width:250px;flex:none">sm · 14/20 · body, inputs</span><span style="font-size:21px;line-height:30px">The quick brown fox jumps over the lazy dog</span></div>
+                <div class="row baseline" style="border-top:1px solid var(--line);padding:14px 0"><span class="cap" style="width:250px;flex:none">xs · 12/16 · captions</span><span style="font-size:18px;line-height:24px">The quick brown fox jumps over the lazy dog</span></div>
+                <div class="row baseline" style="border-top:1px solid var(--line);padding:14px 0"><span class="cap" style="width:250px;flex:none">2xs · 10.7 · sidebar</span><span style="font-size:16px;line-height:22px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--g500)">Resources</span></div>
+            </div>
+            <div class="c-4 stack" style="padding-left:24px">
+                <div><div class="h4">Body is 14 pixels</div><p class="note">Inputs, table cells, help text and buttons all use <code>text-sm</code>. Larger is for titles only.</p></div>
+                <div><div class="h4">Two weights do the work</div><p class="note">Medium for labels and buttons, semibold for titles. Bold is not used.</p></div>
+                <div><div class="h4">Capitals only for small labels</div><p class="note">Table headers and sidebar headings, tracked wide. Everything else is sentence case.</p></div>
+                <div><div class="h4">A brand font is a setting</div><p class="note"><code>theme.font.family</code> and a local stylesheet replace the stack everywhere through <code>--aura-font-sans</code>.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Spacing and density -->
+<section class="slide">
+    {{top:Spacing and density}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Two densities, four variables</h2>
+            <p class="p">Interface density sets the space inside and between panels. Components read the variables, so one setting changes every screen.</p>
+        </div>
+        <div class="grid mt-48 grow">
+            <div class="c-6 col">
+                <table class="token-table">
+                    <tr><th>Variable</th><th>Comfortable</th><th>Compact</th></tr>
+                    <tr><td><code>--aura-panel-padding</code></td><td class="tab">1.25rem · 20px</td><td class="tab">1rem · 16px</td></tr>
+                    <tr><td><code>--aura-panel-small-padding</code></td><td class="tab">0.5rem · 8px</td><td class="tab">0.375rem · 6px</td></tr>
+                    <tr><td><code>--aura-layout-gap</code></td><td class="tab">1.5rem · 24px</td><td class="tab">1rem · 16px</td></tr>
+                    <tr><td><code>--aura-section-gap</code></td><td class="tab">1rem · 16px</td><td class="tab">0.75rem · 12px</td></tr>
+                </table>
+                <div class="rules thin mt-auto" style="--n:2">
+                    <div><div class="h4">Comfortable is the default</div><p class="note">Compact is for people who live in tables. Both are reviewed.</p></div>
+                    <div><div class="h4">Space comes in steps of 4</div><p class="note">Anything not covered by a variable uses the Tailwind 4-pixel scale.</p></div>
+                </div>
+            </div>
+            <div class="c-6 row g-32" style="align-items:flex-start">
+                <div class="col grow">
+                    <span class="cap">Comfortable, drawn at 2×</span>
+                    <div class="mt-16 col" style="gap:48px">
+                        <div style="border-radius:24px;background:var(--p100);padding:40px"><div style="background:#fff;border-radius:6px;height:120px;display:flex;align-items:center;justify-content:center" class="note">panel content</div></div>
+                        <div style="border-radius:24px;background:var(--p100);padding:40px"><div style="background:#fff;border-radius:6px;height:70px"></div></div>
+                    </div>
+                    <span class="note mt-12">padding 20 · gap 24</span>
+                </div>
+                <div class="col grow">
+                    <span class="cap">Compact, drawn at 2×</span>
+                    <div class="mt-16 col" style="gap:32px">
+                        <div style="border-radius:24px;background:var(--p100);padding:32px"><div style="background:#fff;border-radius:6px;height:120px;display:flex;align-items:center;justify-content:center" class="note">panel content</div></div>
+                        <div style="border-radius:24px;background:var(--p100);padding:32px"><div style="background:#fff;border-radius:6px;height:70px"></div></div>
+                    </div>
+                    <span class="note mt-12">padding 16 · gap 16</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Radius -->
+<section class="slide">
+    {{top:Corners}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Three corner styles</h2>
+            <p class="p">Corner radius sets two variables: one for panels, one for controls. The control radius is always smaller, so nested corners stay parallel.</p>
+        </div>
+        <div class="grid mt-48 grow">
+            <div class="c-4 col">
+                <div class="grow" style="background:var(--surface);border-radius:20px;display:flex;align-items:center;justify-content:center">
+                    <div class="ui" style="--ui:2"><div class="a-card" style="width:220px;border-radius:12px"><div class="a-input" style="border-radius:8px"><span class="ph">Title</span></div><div class="row g-8" style="margin-top:12px"><span class="a-btn" style="border-radius:8px">Save</span><span class="a-btn border" style="border-radius:8px">Cancel</span></div></div></div>
+                </div>
+                <div class="h3 mt-24">Rounded <span class="quiet" style="font-weight:500">default</span></div>
+                <p class="note mt-8 tab">Panel 0.75rem · 12px &nbsp;·&nbsp; control 0.5rem · 8px</p>
+            </div>
+            <div class="c-4 col">
+                <div class="grow" style="background:var(--surface);border-radius:20px;display:flex;align-items:center;justify-content:center">
+                    <div class="ui" style="--ui:2"><div class="a-card" style="width:220px;border-radius:6px"><div class="a-input" style="border-radius:4px"><span class="ph">Title</span></div><div class="row g-8" style="margin-top:12px"><span class="a-btn" style="border-radius:4px">Save</span><span class="a-btn border" style="border-radius:4px">Cancel</span></div></div></div>
+                </div>
+                <div class="h3 mt-24">Subtle</div>
+                <p class="note mt-8 tab">Panel 0.375rem · 6px &nbsp;·&nbsp; control 0.25rem · 4px</p>
+            </div>
+            <div class="c-4 col">
+                <div class="grow" style="background:var(--surface);border-radius:20px;display:flex;align-items:center;justify-content:center">
+                    <div class="ui" style="--ui:2"><div class="a-card" style="width:220px;border-radius:0"><div class="a-input" style="border-radius:0"><span class="ph">Title</span></div><div class="row g-8" style="margin-top:12px"><span class="a-btn" style="border-radius:0">Save</span><span class="a-btn border" style="border-radius:0">Cancel</span></div></div></div>
+                </div>
+                <div class="h3 mt-24">Square</div>
+                <p class="note mt-8 tab">Panel 0 &nbsp;·&nbsp; control 0</p>
+            </div>
+        </div>
+        <p class="note mt-32"><b>Gap today:</b> cards, buttons and sidebar items read <code>--aura-panel-radius</code> and <code>--aura-control-radius</code>. Inputs and selects still hard-code <code>rounded-lg</code>, so with Square the button next to a field turns square and the field does not. Drawn here as intended.</p>
+    </div>
+</section>
+
+<!-- Borders and depth -->
+<section class="slide">
+    {{top:Borders and depth}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Rings for edges, shadows for height</h2>
+            <p class="p">Four levels. Anything that sits on the page has a ring and almost no shadow; only what floats above it casts one.</p>
+        </div>
+        <div class="grid mt-48 grow">
+            <div class="c-3 col"><div class="grow" style="background:var(--surface);border-radius:20px;display:flex;align-items:center;justify-content:center"><div class="ui" style="--ui:2"><div style="width:120px;height:80px;border-radius:8px;background:var(--g50)"></div></div></div><div class="h4 mt-24">Inset</div><p class="note mt-8"><code>bg-gray-50</code>, no edge. Read-only fields, code, quiet groups.</p></div>
+            <div class="c-3 col"><div class="grow" style="background:var(--surface);border-radius:20px;display:flex;align-items:center;justify-content:center"><div class="ui" style="--ui:2"><div style="width:120px;height:80px;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05),0 0 0 1px rgba(3,7,18,.1)"></div></div></div><div class="h4 mt-24">Panel</div><p class="note mt-8"><code>ring-1 ring-gray-950/10 shadow-sm</code>. Cards, tables, widgets.</p></div>
+            <div class="c-3 col"><div class="grow" style="background:var(--surface);border-radius:20px;display:flex;align-items:center;justify-content:center"><div class="ui" style="--ui:2"><div style="width:120px;height:80px;border-radius:12px;background:#fff;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1),0 0 0 1px rgba(3,7,18,.1)"></div></div></div><div class="h4 mt-24">Floating</div><p class="note mt-8"><code>shadow-lg</code> and a ring. Menus, tooltips, toasts.</p></div>
+            <div class="c-3 col"><div class="grow" style="background:rgba(15,23,42,.45);border-radius:20px;display:flex;align-items:center;justify-content:center"><div class="ui" style="--ui:2"><div style="width:120px;height:80px;border-radius:12px;background:#fff;box-shadow:0 25px 50px -12px rgba(0,0,0,.25)"></div></div></div><div class="h4 mt-24">Overlay</div><p class="note mt-8">Dimmed, blurred page and <code>shadow-2xl</code>. Modals and slide-overs.</p></div>
+        </div>
+        <p class="note mt-32">In dark mode the ring becomes <code>ring-white/10</code> and the surface steps up one gray (page 900, panel 800); shadows stay but matter less.</p>
+    </div>
+</section>
+
+<!-- Icons -->
+<section class="slide">
+    {{top:Icons}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">One outline set</h2>
+            <p class="p"><code>&lt;x-aura::icon icon="…" size="…" /&gt;</code> draws from the icons in <code>resources/views/components/icon</code>. The page shows all of them.</p>
+        </div>
+        <div class="grid mt-40 grow">
+            <div class="c-8 col">{{shot:icons,light,rows-1-6}}</div>
+            <div class="c-4 stack" style="padding-left:16px">
+                <div><div class="h4">24 grid, outline, round caps</div><p class="note">Icons inherit the text colour through <code>currentColor</code>. No filled or duotone mixes.</p></div>
+                <div><div class="h4">Four sizes</div><p class="note row g-24 center" style="margin-top:12px;color:var(--ink)"><span class="row center g-8"><span style="width:16px;height:16px;display:flex">{{icon:search}}</span>xs 16</span><span class="row center g-8"><span style="width:20px;height:20px;display:flex">{{icon:search}}</span>sm 20</span><span class="row center g-8"><span style="width:24px;height:24px;display:flex">{{icon:search}}</span>base 24</span><span class="row center g-8"><span style="width:32px;height:32px;display:flex">{{icon:search}}</span>lg 32</span></p></div>
+                <div><div class="h4">Stroke 1.5</div><p class="note">57 paths use 1.5 and 25 use 2, so some icons look heavier. Redraw the outliers at 1.5.</p></div>
+                <div><div class="h4">Never alone without a name</div><p class="note">An icon-only button needs a tooltip and an <code>aria-label</code>.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Dark mode -->
+<section class="slide night">
+    {{top:Dark mode}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Dark is the same system, remapped</h2>
+            <p class="p">Dark mode adds the <code>dark</code> class to the page root. Setting: auto (follow the system), light or dark.</p>
+        </div>
+        <div class="grid mt-48 grow">
+            <div class="c-5">
+                <table class="token-table" style="color:#fff">
+                    <tr><th style="color:var(--g400)">Role</th><th style="color:var(--g400)">Light</th><th style="color:var(--g400)">Dark</th></tr>
+                    <tr><td style="border-color:var(--g800)">Page</td><td style="border-color:var(--g800)"><span class="dot" style="background:#fff"></span>white</td><td style="border-color:var(--g800)"><span class="dot" style="background:#0f172a;box-shadow:inset 0 0 0 1px #334155"></span>gray-900</td></tr>
+                    <tr><td style="border-color:var(--g800)">Panel</td><td style="border-color:var(--g800)"><span class="dot" style="background:#fff"></span>white</td><td style="border-color:var(--g800)"><span class="dot" style="background:#1e293b"></span>gray-800</td></tr>
+                    <tr><td style="border-color:var(--g800)">Edge</td><td style="border-color:var(--g800)">gray-950 / 10%</td><td style="border-color:var(--g800)">white / 10%</td></tr>
+                    <tr><td style="border-color:var(--g800)">Text</td><td style="border-color:var(--g800)">gray-900</td><td style="border-color:var(--g800)">white</td></tr>
+                    <tr><td style="border-color:var(--g800)">Secondary</td><td style="border-color:var(--g800)">gray-500</td><td style="border-color:var(--g800)">gray-400</td></tr>
+                    <tr><td style="border-color:var(--g800)">Links, accents</td><td style="border-color:var(--g800)"><span class="dot" style="background:#1f55e9"></span>primary-600</td><td style="border-color:var(--g800)"><span class="dot" style="background:#6894f6"></span>primary-400</td></tr>
+                    <tr><td style="border-color:var(--g800)">Status tint</td><td style="border-color:var(--g800)">100 fill, 700 text</td><td style="border-color:var(--g800)">900/50 fill, 400 text</td></tr>
+                </table>
+                <p class="note mt-32">Primary buttons keep primary-600 in both modes. Secondary text in dark is gray-400 on gray-900: {{cr:#9ca3af,#0f172a}}:1.</p>
+            </div>
+            <div class="c-7 col">{{shot:table,dark,rows-1-3}}</div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,81 @@
+<!-- 01 Cover -->
+<section class="slide blue" style="padding:0">
+    <div style="position:absolute;right:-120px;bottom:-60px;width:1180px;height:1060px;color:var(--p600)">{{mark}}</div>
+    <div style="position:absolute;right:180px;bottom:-60px;width:560px;height:503px;color:var(--p800)">{{mark}}</div>
+    <div class="col" style="position:absolute;inset:0;padding:96px 104px;z-index:2">
+        <div style="height:40px">{{logo}}</div>
+        <div style="margin-top:auto">
+            <h1 class="d-l" style="max-width:1000px">Aura design guidelines</h1>
+            <p class="lead mt-32" style="max-width:640px">Version 1, November 2026. One system for every admin screen, for review before it goes into the product.</p>
+        </div>
+    </div>
+</section>
+
+<!-- 02 Purpose -->
+<section class="slide">
+    {{top:Purpose}}
+    <div class="body">
+        <h1 class="d-xl" style="margin-left:-6px;max-width:1500px">One system for every admin screen.</h1>
+        <div class="rules mt-auto" style="--n:3">
+            <div>
+                <div class="h3">The style guide page is the source of truth</div>
+                <p class="p mt-16"><code>/admin/styleguide</code> renders the real Blade components with the live theme. If a pattern is not on that page, it is not part of the system yet.</p>
+            </div>
+            <div>
+                <div class="h3">This deck is its reviewable summary</div>
+                <p class="p mt-16">The rules in plain words, with screenshots taken from that page. When the deck and the page disagree, the page wins and the deck is rebuilt.</p>
+            </div>
+            <div>
+                <div class="h3">Tokens before templates</div>
+                <p class="p mt-16">Colour, spacing, radius and density come from theme variables that the Settings page controls. Components read them; they do not invent their own.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 03 How decisions get made -->
+<section class="slide soft">
+    {{top:Purpose}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">How a decision lands</h2>
+            <p class="p">Small enough to do every week. Nothing reaches the product without passing through the style guide page first.</p>
+        </div>
+        <div class="steps mt-auto">
+            <div><span class="n">1</span><div class="h3 mt-24">Propose</div><p class="p mt-12">A change starts as a screenshot and one sentence: what changes, and why it is better for the person using the admin.</p></div>
+            <div><span class="n">2</span><div class="h3 mt-24">Review</div><p class="p mt-12">Discussed in Discord with Enes and Bajram. Decided means written down here, with the reason.</p></div>
+            <div><span class="n">3</span><div class="h3 mt-24">Land on the page</div><p class="p mt-12">The component, its token and its style guide section change in the same pull request, in light and dark.</p></div>
+            <div><span class="n">4</span><div class="h3 mt-24">Follow everywhere</div><p class="p mt-12">Screens pick the change up through the component. One-off fixes in a single view are not accepted.</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- 04 Principles -->
+<section class="slide">
+    {{top:Principles}}
+    <div class="body">
+        <h2 class="h1 mw-12">Four rules behind every decision</h2>
+        <div class="grid mt-64 grow" style="align-content:stretch">
+            <div class="c-3 col" style="border-top:2px solid var(--ink);padding-top:28px">
+                <div class="h2" style="font-size:58px">Calm,<br><span class="quiet">dense enough.</span></div>
+                <p class="p mt-32">People work in the admin for hours. Quiet gray surfaces, one blue for action, and enough density to read a whole table without scrolling.</p>
+                <p class="note mt-auto"><b>In practice:</b> comfortable by default, compact as an option.</p>
+            </div>
+            <div class="c-3 col" style="border-top:2px solid var(--ink);padding-top:28px">
+                <div class="h2" style="font-size:58px">Tokens,<br><span class="quiet">not one-offs.</span></div>
+                <p class="p mt-32">Spacing, radius and colour come from theme variables. A value typed straight into a template is a bug until it becomes a token.</p>
+                <p class="note mt-auto"><b>In practice:</b> <code>--aura-*</code> variables and the <code>primary</code> and <code>gray</code> scales.</p>
+            </div>
+            <div class="c-3 col" style="border-top:2px solid var(--ink);padding-top:28px">
+                <div class="h2" style="font-size:58px">Light and dark,<br><span class="quiet">equal.</span></div>
+                <p class="p mt-32">Every component is designed, reviewed and captured in both modes. Dark mode is not an inverted afterthought.</p>
+                <p class="note mt-auto"><b>In practice:</b> no component ships without its <code>dark:</code> classes.</p>
+            </div>
+            <div class="c-3 col" style="border-top:2px solid var(--ink);padding-top:28px">
+                <div class="h2" style="font-size:58px">Defaults,<br><span class="quiet">visible.</span></div>
+                <p class="p mt-32">Whatever a setting can change, the style guide shows at its default, and the setting says which variable it drives.</p>
+                <p class="note mt-auto"><b>In practice:</b> a settings table on the page and in this deck.</p>
+            </div>
+        </div>
+    </div>
+</section>

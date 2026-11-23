@@ -1,0 +1,57 @@
+<!-- Open questions -->
+<section class="slide soft">
+    {{top:Open questions}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">What this review should settle</h2>
+            <p class="p">Gaps named in the team meeting, and what turned up while building this deck from the live page.</p>
+        </div>
+        <div class="grid mt-48 grow">
+            <div class="c-5 col" style="border-top:2px solid var(--ink);padding-top:24px">
+                <div class="h3">Under-documented</div>
+                <div class="stack mt-24">
+                    <div><div class="h4">Tabs</div><p class="note">Now on the page; which style goes where is not decided.</p></div>
+                    <div><div class="h4">Dark mode</div><p class="note">The mapping on slide 15 is not written down in the docs yet.</p></div>
+                    <div><div class="h4">Tables</div><p class="note">The parts are on the page; rules for filters, bulk actions and column settings are not.</p></div>
+                    <div><div class="h4">Advanced settings and the component library</div><p class="note">Expert mode, and a list of every Blade component with its props.</p></div>
+                </div>
+            </div>
+            <div class="c-7 col" style="border-top:2px solid var(--p600);padding-top:24px;padding-left:16px">
+                <div class="h3 blue-t">Found on the page</div>
+                <div class="stack mt-24">
+                    <div><div class="h4">Controls do not share a height</div><p class="note">xs inputs 24 px beside 28 px buttons; the table toolbar mixes 40 and 36. Proposal: <code>--aura-control-height</code>.</p></div>
+                    <div><div class="h4">Inputs ignore the corner setting</div><p class="note">Buttons follow <code>--aura-control-radius</code>, fields keep <code>rounded-lg</code>.</p></div>
+                    <div><div class="h4">Semantic colours are unused</div><p class="note">Components use Tailwind green, red and yellow, not <code>--aura-color-*</code>. Error text comes in two reds; red-500 is {{cr:#ef4444}}:1, below AA.</p></div>
+                    <div><div class="h4">Small drifts</div><p class="note">Form and editor tabs use different dark-mode blues; <code>button</code> and <code>button.primary</code> look the same; icons mix stroke 1.5 and 2.</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Rollout -->
+<section class="slide">
+    {{top:Rollout}}
+    <div class="body">
+        <h2 class="h1">Four steps. This deck is the first.</h2>
+        <div class="steps mt-64 grow">
+            <div class="next"><div class="row between baseline"><span class="n">1</span><span class="status">Now</span></div><div class="h3 mt-24">Review v1</div><p class="p mt-12">In Discord with Enes and Bajram. Each open question gets a decision or an owner.</p></div>
+            <div><div class="row between baseline"><span class="n">2</span><span class="status">Next</span></div><div class="h3 mt-24">Update the application</div><p class="p mt-12">Decisions go into the components and tokens first, so every screen follows without one-off fixes.</p></div>
+            <div><div class="row between baseline"><span class="n">3</span><span class="status">Then</span></div><div class="h3 mt-24">Validate every page</div><p class="p mt-12">A pass across all admin pages, light and dark, against this deck. Tracked in IVA-1515.</p></div>
+            <div><div class="row between baseline"><span class="n">4</span><span class="status">Always</span></div><div class="h3 mt-24">Keep the page true</div><p class="p mt-12">The style guide page stays the source of truth. The deck is rebuilt from it with three commands.</p></div>
+        </div>
+        <p class="note mt-auto"><code>capture.cjs</code> takes the screenshots, <code>build.cjs</code> assembles the slides, <code>export.cjs</code> writes the PDF. See <code>docs/design/deck/README.md</code>.</p>
+    </div>
+</section>
+
+<!-- Closing -->
+<section class="slide blue" style="padding:0">
+    <div style="position:absolute;right:-120px;bottom:-60px;width:1180px;height:1060px;color:var(--p600)">{{mark}}</div>
+    <div class="col" style="position:absolute;inset:0;padding:96px 104px;z-index:2">
+        <div style="height:40px">{{logo}}</div>
+        <div style="margin-top:auto">
+            <h2 class="d-l" style="max-width:1100px">The page is the truth.</h2>
+            <p class="lead mt-32" style="max-width:760px"><code style="color:#fff">/admin/styleguide</code>: every component, live, in the current theme.</p>
+        </div>
+    </div>
+</section>

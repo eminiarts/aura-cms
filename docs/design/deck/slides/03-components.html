@@ -1,0 +1,234 @@
+<!-- Part: Components -->
+<section class="slide blue">
+    <div style="position:absolute;right:-80px;bottom:-40px;width:900px;height:808px;color:var(--p600)">{{mark}}</div>
+    {{top:Part two}}
+    <div class="body">
+        <h1 class="d-xl">Components</h1>
+        <p class="lead mt-40" style="max-width:1000px">The pieces every screen is made of. Each picture is a screenshot of the style guide page, in the default theme, light and dark.</p>
+    </div>
+</section>
+
+<!-- Buttons -->
+<section class="slide">
+    {{top:Components}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Buttons</h2>
+            <p class="p"><code>&lt;x-aura::button&gt;</code>: seven variants as sub-components, five sizes, base by default. Every variant in every state, below.</p>
+        </div>
+        <div class="grid mt-40 grow">
+            <div class="c-9 col">{{shot:buttons,light,rows-1}}</div>
+            <div class="c-3 stack">
+                <div><div class="h4">One primary per view</div><p class="note">The main action is solid primary. Everything beside it is border or transparent.</p></div>
+                <div><div class="h4">Name the action</div><p class="note">A verb and its object: Create post, Save changes. Not OK, not Submit.</p></div>
+                <div><div class="h4">Red only for destroying</div><p class="note"><code>button.danger</code> is the quiet tint in a list, <code>button.error</code> the solid confirm in a dialog.</p></div>
+                <div><div class="h4">Base 36 px, sizes by role</div><p class="note">xs 28 in tables, sm 32 in toolbars, base 36 in forms, lg 44 and xl 52 on empty states and login.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Inputs and selects -->
+<section class="slide">
+    {{top:Components}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Inputs and selects</h2>
+            <p class="p">The raw inputs in <code>components/input</code>. Resource fields wrap them with a label, a help tooltip and the validation error.</p>
+        </div>
+        <div class="grid mt-40 grow">
+            <div class="c-8 col">{{split:forms,rows-2}}</div>
+            <div class="c-4 stack" style="padding-left:16px">
+                <div><div class="h4">Label above, always</div><p class="note">14 px medium. A required field says so in the label, not only in the error.</p></div>
+                <div><div class="h4">Error under the field, in words</div><p class="note">What is wrong and how to fix it. Today two styles exist (red-500 semibold, red-600 normal); red-500 is {{cr:#ef4444}}:1, below AA. Keep red-600.</p></div>
+                <div><div class="h4">Disabled is a fill, not a fade</div><p class="note">gray-50 background and gray-500 text, so the value stays readable.</p></div>
+                <div><div class="h4">A select is an input</div><p class="note">Same ring, same height, same radius, plus a chevron. Checkboxes, radios and toggles use primary-600 when on.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Control sizing -->
+<section class="slide">
+    {{top:Components}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">One control height</h2>
+            <p class="p">Controls that share a row share a height. Today each sets its own padding; red marks a height that differs from the button beside it.</p>
+        </div>
+        <div class="grid mt-40 grow">
+            <div class="c-8 col g-24">{{shot:sizing,light,rows-1}}{{shot:sizing,light,rows-3-4}}</div>
+            <div class="c-4 col" style="padding-left:16px">
+                <span class="cap">Proposal: <code>--aura-control-height</code></span>
+                <table class="token-table mt-12" style="font-size:18px">
+                    <tr><th>Size</th><th>Height</th><th>Used by</th></tr>
+                    <tr><td>xs</td><td class="tab">28 px</td><td class="muted">Row actions in tables</td></tr>
+                    <tr><td>sm</td><td class="tab">32 px</td><td class="muted">Filters, pagination, compact density</td></tr>
+                    <tr><td>base</td><td class="tab">36 px</td><td class="muted">Forms, dialogs, the table toolbar</td></tr>
+                    <tr><td>lg</td><td class="tab">44 px</td><td class="muted">Login, empty states</td></tr>
+                </table>
+                <div class="stack mt-32">
+                    <div><div class="h4">Inputs get the sizes buttons have</div><p class="note">Today inputs have base 36 and xs 24 only; xs sits beside 28 px buttons.</p></div>
+                    <div><div class="h4">Icon-only buttons are square</div><p class="note">Width equals the control height, so the ··· button stops being 32 next to 36.</p></div>
+                    <div><div class="h4">One toolbar, one height</div><p class="note">The table toolbar mixes 40 and 36 px. All of it moves to base.</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Tabs -->
+<section class="slide">
+    {{top:Components}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Tabs</h2>
+            <p class="p">Underline tabs split a long form into panels. Segmented tabs switch saved views of a table, and the view switch picks list or grid.</p>
+        </div>
+        <div class="grid mt-40 grow">
+            <div class="c-9 col g-24">{{shot:tabs,light,rows-1}}{{shot:tabs,dark,rows-2}}</div>
+            <div class="c-3 stack">
+                <div><div class="h4">Tabs switch views, never act</div><p class="note">Changing a tab must not save, delete or send anything.</p></div>
+                <div><div class="h4">Active is primary, or raised</div><p class="note">Underline tabs: primary text and a 2 px line. Segmented: a white segment with a ring on a gray-50 track.</p></div>
+                <div><div class="h4">Short labels, sentence case</div><p class="note">One or two words. More than six tabs means the list needs a filter instead.</p></div>
+                <div><div class="h4">Errors show on the tab</div><p class="note">A tab whose panel has an invalid field turns danger and gets an icon, so the error is found.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Dropdowns and popovers -->
+<section class="slide">
+    {{top:Components}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Dropdowns and popovers</h2>
+            <p class="p"><code>&lt;x-aura::dropdown&gt;</code> for menus of actions, <code>&lt;x-aura::tippy&gt;</code> for tooltips. Both float: ring and <code>shadow-lg</code>.</p>
+        </div>
+        <div class="grid mt-40 grow">
+            <div class="c-9 col g-24">{{shot:menus-open,light}}{{shot:popovers,dark}}</div>
+            <div class="c-3 stack">
+                <div><div class="h4">Open from the trigger's edge</div><p class="note">Aligned left or right to the button that opened it, never centred over it.</p></div>
+                <div><div class="h4">Destructive last, and red</div><p class="note">Delete sits at the bottom after a divider, in danger colour.</p></div>
+                <div><div class="h4">Tooltips explain, never hold actions</div><p class="note">If it has a link or a button, it is a popover and opens on click.</p></div>
+                <div><div class="h4">Escape and outside click close</div><p class="note">Focus returns to the trigger.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Tables -->
+<section class="slide">
+    {{top:Components}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Tables</h2>
+            <p class="p">The resource index: toolbar, filter tabs, the table card and pagination. The second row shows the selected state.</p>
+        </div>
+        <div class="grid mt-40 grow">
+            <div class="c-9 col">{{split:table,rows-1-3}}</div>
+            <div class="c-3 stack">
+                <div><div class="h4">Headers small, rows calm</div><p class="note">Headers 11 px uppercase gray-500; cells 14 px. Lines between rows, none between columns.</p></div>
+                <div><div class="h4">Selected is a tint and a bar</div><p class="note">primary-50 row and a 2 px primary edge, plus the checked box.</p></div>
+                <div><div class="h4">Status is a pill with a dot</div><p class="note">The same pill as on the badges page, so status reads the same everywhere.</p></div>
+                <div><div class="h4">Empty lives inside the card</div><p class="note">Icon, one line, one hint where the rows would be. Never an empty white box.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Badges -->
+<section class="slide">
+    {{top:Components}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Badges</h2>
+            <p class="p">Three shapes: status pills with a dot, sidebar counters, and trend pills on KPI cards.</p>
+        </div>
+        <div class="grid mt-40 grow">
+            <div class="c-9 col g-24">{{shot:badges,light}}{{shot:badges,dark}}</div>
+            <div class="c-3 stack">
+                <div><div class="h4">One colour per status</div><p class="note">Draft gray, In review yellow, Scheduled blue, Published green, Archived purple, Failed red. Fixed across resources.</p></div>
+                <div><div class="h4">Tint fill, 700 text</div><p class="note">100 fill and 700 text in light; 900/50 fill and 400 text in dark.</p></div>
+                <div><div class="h4">Text, not only colour</div><p class="note">A badge always has a word. Colour helps, it never carries the meaning alone.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Cards and widgets -->
+<section class="slide">
+    {{top:Components}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Cards and widgets</h2>
+            <p class="p"><code>.aura-card</code> is the base surface. KPI cards, sparklines and the loading skeleton are the real dashboard widgets.</p>
+        </div>
+        <div class="grid mt-40 grow">
+            <div class="c-9 col g-24">{{shot:cards,light}}{{shot:cards,dark}}</div>
+            <div class="c-3 stack">
+                <div><div class="h4">The card reads the tokens</div><p class="note">Padding is <code>--aura-panel-padding</code>, corners <code>--aura-panel-radius</code>. Never <code>p-5 rounded-xl</code> by hand.</p></div>
+                <div><div class="h4">Number first</div><p class="note">The value is the largest thing on a KPI card; the label and trend sit around it.</p></div>
+                <div><div class="h4">Skeletons match the card</div><p class="note">Same size and padding as the loaded card, so nothing jumps.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Modals and slide-overs -->
+<section class="slide soft">
+    {{top:Components}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Modals and slide-overs</h2>
+            <p class="p"><code>&lt;x-aura::dialog&gt;</code> opens either a centred panel or a panel from the right. Both dim and blur the page.</p>
+        </div>
+        <div class="col mt-40 grow">{{split:overlays,rows-2}}</div>
+        <div class="rules mt-40">
+            <div><div class="h4">Modal to confirm</div><p class="note">One question, two buttons. The confirm button names the action.</p></div>
+            <div><div class="h4">Slide-over to edit</div><p class="note">Forms that need the page behind them for context.</p></div>
+            <div><div class="h4">Cancel is transparent</div><p class="note">Left of the confirm, never a second solid button.</p></div>
+            <div><div class="h4">Always closable</div><p class="note">Close icon, Escape and a click outside.</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- Notifications and feedback -->
+<section class="slide">
+    {{top:Components}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Notifications and feedback</h2>
+            <p class="p">Toasts come from the <code>notify</code> event and the notification component in the layout. Spinners, skeletons and inline alerts cover the rest.</p>
+        </div>
+        <div class="grid mt-40 grow">
+            <div class="c-9 col g-24">{{split:notifications}}{{split:feedback}}</div>
+            <div class="c-3 stack">
+                <div><div class="h4">Toasts confirm, they do not ask</div><p class="note">Saved, deleted, sent. Anything that needs a decision is a dialog.</p></div>
+                <div><div class="h4">One line, past tense</div><p class="note">“Changes saved.” The bar shows how long it stays.</p></div>
+                <div><div class="h4">Errors stay until closed</div><p class="note">A failed save must not disappear before it is read.</p></div>
+                <div><div class="h4">Skeleton for pages, spinner for buttons</div><p class="note">A spinner never replaces a whole screen.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Charts -->
+<section class="slide">
+    {{top:Components}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Charts</h2>
+            <p class="p">Dashboard widgets: value, sparkline area and bar, bar, donut and pie, drawn with ApexCharts.</p>
+        </div>
+        <div class="grid mt-40 grow">
+            <div class="c-9 col">{{split:charts}}</div>
+            <div class="c-3 stack">
+                <div><div class="h4">Primary for the main series</div><p class="note">Further series step through the primary scale, then gray. No rainbow.</p></div>
+                <div><div class="h4">Sparklines have no axes</div><p class="note">They show a direction. The number beside them carries the value.</p></div>
+                <div><div class="h4">Grid in gray-200, labels gray-500</div><p class="note">In dark: gray-700 and gray-400. The data is the only strong colour.</p></div>
+                <div><div class="h4">Tabular figures</div><p class="note">Values and axis labels use tabular numbers, so they line up.</p></div>
+            </div>
+        </div>
+    </div>
+</section>

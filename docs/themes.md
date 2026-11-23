@@ -14,9 +14,12 @@ The published `config/aura.php` contains these theme defaults:
     'color-palette' => 'aura',
     'gray-color-palette' => 'slate',
     'darkmode-type' => 'auto',       // auto, light, or dark
-    'sidebar-size' => 'standard',    // standard or compact
+    'sidebar-size' => 'standard',    // standard, compact, or dense
     'sidebar-type' => 'dark',        // primary, light, or dark
     'sidebar-darkmode-type' => 'dark',
+    'interface-density' => 'comfortable', // comfortable or compact
+    'corner-radius' => 'rounded',    // rounded, subtle, or square
+    'appearance-expert-mode' => false,
 
     'login-bg' => false,
     'login-bg-darkmode' => false,
@@ -46,12 +49,15 @@ The form contains these fields:
 | --- | --- | --- |
 | Logo | `logo` | Uploaded image |
 | Logo dark mode | `logo-darkmode` | Uploaded image |
-| Size | `sidebar-size` | `standard`, `compact` |
+| Size | `sidebar-size` | `standard`, `compact`, `dense` |
 | Sidebar | `sidebar-type` | `primary`, `light`, `dark` |
 | Dark mode | `darkmode-type` | `auto`, `light`, `dark` |
 | Sidebar dark mode | `sidebar-darkmode-type` | `primary`, `light`, `dark` |
+| Interface density | `interface-density` | `comfortable`, `compact` |
+| Corner radius | `corner-radius` | `rounded`, `subtle`, `square` |
 | Primary color palette | `color-palette` | 39 presets or `custom` |
 | Gray color palette | `gray-color-palette` | 14 presets or `custom` |
+| Expert mode | `appearance-expert-mode` | `true`, `false` |
 
 The Sidebar dark mode field appears only when dark mode is set to auto.
 Choosing a custom palette reveals color fields for its 12 shades: 25, 50, 100,
@@ -83,8 +89,9 @@ empty array if no record exists, without falling back to global settings.
 Aura caches these reads for one hour. The layout uses the theme configuration
 as a fallback when it generates CSS.
 
-The Settings screen has no live preview. Reload after saving to apply the new
-styles and dark mode setting.
+The appearance fields (dark mode, sidebar, density, radius, palettes and the
+expert values) preview live on the Settings page. "Discard changes" restores
+the saved values; nothing is stored until you save.
 
 ## Color palettes
 
@@ -280,24 +287,96 @@ forced.
 
 The Size setting controls the sidebar width and item size. `standard` renders
 an 18rem sidebar (`md:w-72`) with 36px items. `compact` and `dense` render a
-14rem sidebar (`md:w-56`) with 32px and 28px items.
+14rem sidebar (`md:w-56`) with 32px and 28px items. The item size comes from
+the `--aura-sidebar-*` variables listed under [Advanced appearance](#advanced-appearance).
 
 ## Advanced appearance
 
-The Settings page also sets the interface density and corner radius:
+Three Settings fields control spacing, radius and sidebar size. Each preset
+writes a set of CSS variables on `:root`; `Aura\Base\ThemeTokens::design()`
+resolves them and `layout/colors.blade.php` prints them. Components read the
+variables, so one setting restyles the whole admin.
 
-- `interface-density`: `comfortable` or `compact` panel padding and gaps.
-- `corner-radius`: `rounded`, `subtle` or `square` panels and controls.
+### Interface density (`interface-density`)
 
-Both are emitted as CSS variables such as `--aura-panel-padding` and
-`--aura-panel-radius`. Appearance changes preview live on the Settings page
-and can be discarded until they are saved.
+| Variable | `comfortable` (default) | `compact` | Expert setting | Read by |
+| --- | --- | --- | --- | --- |
+| `--aura-panel-padding` | `1.25rem` (20px) | `1rem` (16px) | `expert-panel-padding` | `.aura-card` |
+| `--aura-panel-small-padding` | `0.5rem` (8px) | `0.375rem` (6px) | `expert-panel-small-padding` | `.aura-card-small` |
+| `--aura-layout-gap` | `1.5rem` (24px) | `1rem` (16px) | `expert-layout-gap` | Settings page panels |
+| `--aura-section-gap` | `1rem` (16px) | `0.75rem` (12px) | `expert-section-gap` | Settings page groups |
 
-Expert mode (`appearance-expert-mode`) exposes the individual spacing, radius,
-sidebar size and sidebar color values in pixels and hex colors. They start
-from the selected presets, and changing a preset updates the values it
-governs. "Restore expert defaults" resets them to the presets. Turning expert
-mode off renders the presets unchanged and keeps the expert values for later.
+### Corner radius (`corner-radius`)
+
+| Variable | `rounded` (default) | `subtle` | `square` | Expert setting | Read by |
+| --- | --- | --- | --- | --- | --- |
+| `--aura-panel-radius` | `0.75rem` (12px) | `0.375rem` (6px) | `0rem` | `expert-panel-radius` | `.aura-card` |
+| `--aura-control-radius` | `0.5rem` (8px) | `0.25rem` (4px) | `0rem` | `expert-control-radius` | `.aura-button`, `.aura-card-small`, sidebar items, search and toggle |
+
+### Sidebar size (`sidebar-size`)
+
+| Variable | `standard` (default) | `compact` | `dense` | Expert setting |
+| --- | --- | --- | --- | --- |
+| `--aura-sidebar-item-height` | `2.25rem` (36px) | `2rem` (32px) | `1.75rem` (28px) | `expert-sidebar-item-height` |
+| `--aura-sidebar-item-padding-x` | `0.75rem` (12px) | `0.5rem` (8px) | `0.375rem` (6px) | `expert-sidebar-item-padding-x` |
+| `--aura-sidebar-icon-size` | `1.25rem` (20px) | `1.125rem` (18px) | `1rem` (16px) | `expert-sidebar-icon-size` |
+| `--aura-sidebar-group-gap` | `0.25rem` (4px) | `0.25rem` (4px) | `0.125rem` (2px) | `expert-sidebar-group-gap` |
+| `--aura-sidebar-heading-gap` | `1.25rem` (20px) | `0.875rem` (14px) | `0.625rem` (10px) | `expert-sidebar-heading-gap` |
+
+The sidebar variables apply inside `.aura-sidebar`. The sidebar width is not a
+variable: 18rem for `standard`, 14rem for `compact` and `dense`.
+
+### Expert mode
+
+With `appearance-expert-mode` on, each expert setting above replaces its
+variable with a whole pixel value from 0 to 96 (other values are ignored).
+Expert mode also exposes six light and six dark sidebar colors
+(`expert-light-sidebar-background`, `-hover`, `-dropdown`, `-text`, `-icon`,
+`-icon-hover`, and the same with `expert-dark-`) as hex values. They write
+`--sidebar-bg`, `--sidebar-bg-hover`, `--sidebar-bg-dropdown`,
+`--sidebar-text`, `--sidebar-icon` and `--sidebar-icon-hover` for light mode
+and under `.dark`.
+
+The expert values start from the selected presets, and changing a preset
+updates the values it governs. "Restore expert defaults" resets them to the
+presets. Turning expert mode off renders the presets unchanged and keeps the
+expert values for later.
+
+```php
+'theme' => [
+    'corner-radius' => 'subtle',
+    'appearance-expert-mode' => true,
+    'expert-panel-radius' => 10,   // --aura-panel-radius: 10px
+],
+```
+
+### What the tokens do not cover
+
+There is no variable for control height, input and select radius, dropdown,
+modal and toast radius, or dashboard widget gaps. Those components use fixed
+Tailwind classes such as `rounded-lg` and `py-2`. Use the variables in your own
+views to follow the settings:
+
+```html
+<div class="aura-card">Panel padding and radius follow the settings.</div>
+<div style="gap: var(--aura-layout-gap)">…</div>
+```
+
+### Style guide
+
+`/admin/styleguide` renders every component with the live tokens. Its Design
+tokens section lists the table above from `ThemeTokens::design()` together with
+the value this page actually uses. URL parameters make a render repeatable:
+
+| Parameter | Values | Effect |
+| --- | --- | --- |
+| `mode` | `light`, `dark` | Render the style guide content in that mode. `light` removes the admin's `dark` class while the page is open. |
+| `section` | a section id, such as `buttons` or `table` | Render only that section, without the page header. |
+| `density` | `comfortable`, `compact` | Preview a density preset on the style guide only. |
+| `radius` | `rounded`, `subtle`, `square` | Preview a radius preset. |
+| `sidebar` | `standard`, `compact`, `dense` | Preview a sidebar size preset. |
+
+Previews are never saved.
 
 ## Logos, login backgrounds, and favicons
 
@@ -427,6 +506,7 @@ For implementation details, start with the files relevant to your change:
 | Theme styles | `resources/views/components/layout/colors.blade.php`, `resources/views/components/layout/styles.blade.php` |
 | Login and icons | `resources/views/components/layout/login.blade.php`, `resources/views/components/layout/favicon.blade.php`, `resources/views/navigation/logo.blade.php` |
 | Asset builds | `tailwind.config.js`, `vite.config.js` |
+| Style guide | `src/Livewire/Styleguide.php`, `resources/views/livewire/styleguide.blade.php`, `resources/views/styleguide/sections/` |
 
 Related guides:
 
