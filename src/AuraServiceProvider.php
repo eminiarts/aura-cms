@@ -166,7 +166,6 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura::navigation' => Navigation::class,
             'aura::global-search' => GlobalSearch::class,
             'aura::bookmark-page' => BookmarkPage::class,
-            'aura::notifications' => Notifications::class,
             'aura::edit-resource-field' => EditResourceField::class,
             'edit-field' => EditResourceField::class,
             'aura::media-manager' => config('aura.components.media-manager', MediaManager::class),
@@ -230,9 +229,16 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura.base.widgets.bar' => Bar::class,
         ];
 
+        // Read when the component is first rendered, not at boot, so a plugin can swap it from
+        // its register() or boot(). Livewire 4 resolves namespaced names ("aura::…") only through
+        // these resolvers and takes the first answer, so a plugin cannot override them otherwise.
+        $configurable = [
+            'aura::notifications' => fn () => config('aura.components.notifications') ?: Notifications::class,
+        ];
+
         // Register component resolver for Livewire 4.x compatibility
-        Livewire::resolveMissingComponent(function ($name) use ($componentMap) {
-            return $componentMap[$name] ?? null;
+        Livewire::resolveMissingComponent(function ($name) use ($componentMap, $configurable) {
+            return isset($configurable[$name]) ? $configurable[$name]() : ($componentMap[$name] ?? null);
         });
 
         return $this;

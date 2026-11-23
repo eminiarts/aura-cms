@@ -2,6 +2,7 @@
 
 use Aura\Base\Livewire\Dashboard;
 use Aura\Base\Livewire\MediaManager;
+use Aura\Base\Livewire\Notifications;
 use Aura\Base\Livewire\Profile;
 use Aura\Base\Livewire\Settings;
 use Aura\Base\Resources\Attachment;
@@ -81,6 +82,11 @@ return [
         // may override this with a drop-in replacement by publishing/setting
         // `aura.components.media-manager` to their own Livewire component.
         'media-manager' => MediaManager::class,
+
+        // The notifications slide-over the layout renders when features.notifications
+        // is on. A notifications plugin may replace it by setting
+        // `aura.components.notifications` to its own Livewire component.
+        'notifications' => Notifications::class,
     ],
 
     /*

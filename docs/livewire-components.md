@@ -39,7 +39,7 @@ The provider registers these short names.
 | `aura::navigation` | `Aura\Base\Livewire\Navigation` |
 | `aura::global-search` | `Aura\Base\Livewire\GlobalSearch` |
 | `aura::bookmark-page` | `Aura\Base\Livewire\BookmarkPage` |
-| `aura::notifications` | `Aura\Base\Livewire\Notifications` |
+| `aura::notifications` | `config('aura.components.notifications')` |
 | `aura::modals` | `Aura\Base\Livewire\Modals` |
 | `aura::edit-resource-field` | `Aura\Base\Livewire\EditResourceField` |
 | `edit-field` | `Aura\Base\Livewire\EditResourceField` |
