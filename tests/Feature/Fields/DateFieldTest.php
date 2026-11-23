@@ -108,7 +108,7 @@ describe('Date Field Rendering', function () {
 
     test('renders with date picker icon', function () {
         Livewire::test(Create::class, ['slug' => 'datemodel'])
-            ->assertSeeHtml('<svg class="w-5 h-5 text-gray-400"');
+            ->assertSeeHtml('aura-field-indicator');
     });
 
     test('displays an empty value instead of inventing a date', function ($value, $expected) {

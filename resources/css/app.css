@@ -79,7 +79,7 @@
 }
 
 /*
- * Panel radius: panels and the surfaces that float above the page (table card, modal, dropdown,
+ * Panel radius: panels and the surfaces that float above the page (modal, dropdown,
  * popover, toast, global search, login card). Small things inside a panel (list rows, icon tiles,
  * chips that are not pills) take .aura-radius-control instead. Pills and avatars stay round.
  */
@@ -533,7 +533,7 @@
 }
 
 .aura-page-count {
-    @apply ml-2 text-lg font-normal text-gray-400 dark:text-gray-500;
+    @apply ml-2 text-lg font-normal text-gray-500 dark:text-gray-400;
 }
 
 /* Relation tables on a record page: section title with its row count. */
@@ -542,7 +542,7 @@
 }
 
 .aura-section-count {
-    @apply ml-1.5 text-sm font-normal text-gray-400 dark:text-gray-500;
+    @apply ml-1.5 text-sm font-normal text-gray-500 dark:text-gray-400;
 }
 
 .aura-meta {
@@ -677,15 +677,6 @@
  * loaded after Aura's re-declares the base utility (.flex-col, .w-full, .border-gray-200/80) with the
  * same specificity and would beat Aura's md: and dark: variant. See docs/themes.md.
  */
-.aura-table-toolbar {
-    @apply flex flex-col gap-3 w-full md:flex-row md:items-center md:justify-between;
-}
-.aura-table-toolbar-search {
-    @apply w-full md:w-64 md:shrink-0;
-}
-.aura-table-toolbar-actions {
-    @apply flex justify-end items-center w-full md:w-auto;
-}
 
 /* Group field, variant "section": the framed sub-panel on the Settings page. */
 .aura-group-section {

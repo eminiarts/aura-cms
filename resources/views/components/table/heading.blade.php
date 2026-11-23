@@ -22,7 +22,7 @@
             <span class="table-heading">{{ $slot }}</span>
         </span>
     @else
-        <button type="button" {{ $attributes->except('class') }} class="group inline-flex items-center gap-x-1.5 -mx-2 px-2 py-1 rounded-md aura-table-header leading-4 whitespace-nowrap {{ $alignRight ? 'justify-end text-right' : 'text-left' }} transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 {{ $direction ? '!text-gray-900 dark:!text-white' : 'hover:text-gray-700 dark:hover:text-gray-200' }}">
+        <button type="button" {{ $attributes->except('class') }} class="group inline-flex items-center gap-x-1.5 -mx-2 px-2 py-1 aura-radius-control aura-table-header leading-4 whitespace-nowrap {{ $alignRight ? 'justify-end text-right' : 'text-left' }} transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 {{ $direction ? '!text-gray-900 dark:!text-white' : 'hover:text-gray-700 dark:hover:text-gray-200' }}">
             <x-aura::table.column-icon :type="$type" />
             <span class="table-heading">{{ $slot }}</span>
 

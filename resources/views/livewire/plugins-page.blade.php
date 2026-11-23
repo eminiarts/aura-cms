@@ -18,7 +18,7 @@
         {{ __('to install or update plugins.') }}
     </div>
 
-    {{-- The table card of the resource index (table/list-view): panel radius, header row, row dividers. --}}
+    {{-- A framed table (panel radius, header row, row dividers); resource tables use the card-less list (table/list-view). --}}
     <div class="aura-table-card aura-radius-panel overflow-hidden bg-white ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10" data-plugins-table>
         <div class="overflow-x-auto min-w-full align-middle">
             <table class="min-w-full">

@@ -48,6 +48,46 @@
     </div>
 </section>
 
+<!-- Fields -->
+<section class="slide">
+    {{top:Components}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Fields</h2>
+            <p class="p">A resource form is built from fields (<code>src/Fields</code>). Each one is the same wrapper around a form control, so a form reads as one surface.</p>
+        </div>
+        <div class="grid mt-40 grow">
+            <div class="c-8 col">{{split:fields,rows-1-2}}</div>
+            <div class="c-4 stack" style="padding-left:16px">
+                <div><div class="h4">One wrapper</div><p class="note"><code>fields/wrapper</code>: label (14 px medium, * when required), help as a tooltip beside it, the control, the error. Nothing else sets spacing.</p></div>
+                <div><div class="h4">One control</div><p class="note">Text, choice and date fields reuse the inputs: <code>.aura-field</code>, 36 px, <code>--aura-control-radius</code>. A field never sets its own height, ring or corners.</p></div>
+                <div><div class="h4">One trailing mark</div><p class="note">Selects show the same 16 px chevron; date pickers a calendar, time a clock. Same colour, same inset.</p></div>
+                <div><div class="h4">Width by layout</div><p class="note">25, 33, 50 or 100 %. Neighbours sit one layout gap apart and start at the panel padding.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Field types -->
+<section class="slide soft">
+    {{top:Components}}
+    <div class="body">
+        <div class="head">
+            <h2 class="h1">Every field type</h2>
+            <p class="p">44 field types in seven groups. The control column is what the field draws on a form; on view pages and in tables every field shows its value as text.</p>
+        </div>
+        <div class="field-groups mt-40">
+            <div><div class="h4">Text</div><table class="token-table"><tr><td>Text, Email, Phone, Number, Password</td><td class="muted">input</td></tr><tr><td>Textarea</td><td class="muted">input, grows</td></tr><tr><td>Slug</td><td class="muted">input + lock</td></tr><tr><td>Wysiwyg, Code, Json</td><td class="muted">editor in a field frame</td></tr></table></div>
+            <div><div class="h4">Choice</div><table class="token-table"><tr><td>Select</td><td class="muted">select</td></tr><tr><td>Status</td><td class="muted">listbox with the status pill</td></tr><tr><td>Radio, Checkbox</td><td class="muted">radios, checkboxes</td></tr><tr><td>Boolean</td><td class="muted">toggle</td></tr><tr><td>Tags, AdvancedSelect</td><td class="muted">chips + search</td></tr></table></div>
+            <div><div class="h4">Date, time, colour</div><table class="token-table"><tr><td>Date, Datetime</td><td class="muted">picker, calendar mark</td></tr><tr><td>Time</td><td class="muted">picker, clock mark</td></tr><tr><td>Color</td><td class="muted">input + swatch</td></tr></table></div>
+            <div><div class="h4">Relations</div><table class="token-table"><tr><td>BelongsTo</td><td class="muted">search select, avatar + title</td></tr><tr><td>HasMany, HasOne, BelongsToMany</td><td class="muted">the table, as a section</td></tr><tr><td>Roles, UserTeams, Permissions</td><td class="muted">select, list, matrix</td></tr></table></div>
+            <div><div class="h4">Media</div><table class="token-table"><tr><td>Image, File</td><td class="muted">media library picker</td></tr><tr><td>Embed</td><td class="muted">input + preview</td></tr></table></div>
+            <div><div class="h4">Layout</div><table class="token-table"><tr><td>Panel</td><td class="muted">card</td></tr><tr><td>Tabs, Tab</td><td class="muted">underline tabs</td></tr><tr><td>Group, Repeater</td><td class="muted">sub-panel, repeated rows</td></tr><tr><td>Heading, HorizontalLine</td><td class="muted">heading, divider</td></tr></table></div>
+            <div><div class="h4">Special</div><table class="token-table"><tr><td>ID, ViewValue</td><td class="muted">read-only text</td></tr><tr><td>Hidden</td><td class="muted">nothing</td></tr><tr><td>View, LivewireComponent</td><td class="muted">your own view</td></tr><tr><td>GlobalAdmin</td><td class="muted">toggle</td></tr></table></div>
+        </div>
+    </div>
+</section>
+
 <!-- Control sizing -->
 <section class="slide">
     {{top:Components}}
@@ -123,15 +163,15 @@
     <div class="body">
         <div class="head">
             <h2 class="h1">Tables</h2>
-            <p class="p">The resource index: toolbar, filter tabs, the table card and pagination. The second row shows the selected state.</p>
+            <p class="p">The resource index as it ships: page title with its count, one toolbar row, the list without a card, pagination. The picture is the live table on the style guide page.</p>
         </div>
         <div class="grid mt-40 grow">
-            <div class="c-9 col">{{split:table,rows-1-3}}</div>
+            <div class="c-9 col">{{split:table,rows-1}}</div>
             <div class="c-3 stack">
-                <div><div class="h4">Headers small, rows calm</div><p class="note">Headers 11 px uppercase gray-500; cells 14 px. Lines between rows, none between columns.</p></div>
-                <div><div class="h4">Selected is a tint and a bar</div><p class="note">primary-50 row and a 2 px primary edge, plus the checked box.</p></div>
-                <div><div class="h4">Status is a pill with a dot</div><p class="note">The same pill as on the badges page, so status reads the same everywhere.</p></div>
-                <div><div class="h4">Empty lives inside the card</div><p class="note">Icon, one line, one hint where the rows would be. Never an empty white box.</p></div>
+                <div><div class="h4">No card, hairlines</div><p class="note">A line under the header, between rows and at the end carry the list. No box, no lines between columns.</p></div>
+                <div><div class="h4">Headings say what a column is</div><p class="note">12 px sentence case, gray-500, with the field type&rsquo;s icon. Cells are 14 px.</p></div>
+                <div><div class="h4">Records have faces</div><p class="note">The lead column and relations show the record&rsquo;s avatar (image or initials) and its title. Circles for people, squares for everything else.</p></div>
+                <div><div class="h4">The row is the link</div><p class="note">Clicking a row opens the record; view and edit appear on hover or focus. Empty: the resource icon, one line, one action.</p></div>
             </div>
         </div>
     </div>

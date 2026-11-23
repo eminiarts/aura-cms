@@ -85,7 +85,7 @@
         <div class="flex flex-col gap-2 items-center">
             <x-aura::button>
                 <x-slot:icon><x-aura::icon icon="plus" size="sm" /></x-slot:icon>
-                <span>{{ __('Create Post') }}</span>
+                <span>{{ __('New post') }}</span>
             </x-aura::button>
             <span class="text-xs text-gray-400">{{ __('with icon slot') }}</span>
         </div>

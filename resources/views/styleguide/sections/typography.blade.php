@@ -31,10 +31,10 @@
         </div>
         <div class="grid gap-1 sm:grid-cols-[16rem_1fr] sm:items-baseline sm:gap-6">
             <span class="text-xs text-gray-400 dark:text-gray-500">table header (table/heading)</span>
-            <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Created at</span>
+            <span class="aura-table-header">Created at</span>
         </div>
         <div class="grid gap-1 sm:grid-cols-[16rem_1fr] sm:items-baseline sm:gap-6">
-            <span class="text-xs text-gray-400 dark:text-gray-500">help text</span>
+            <span class="text-xs text-gray-400 dark:text-gray-500">help text (fields/wrapper tooltip, field descriptions)</span>
             <span class="text-sm text-gray-500 dark:text-gray-400">A short hint that helps the user fill this field.</span>
         </div>
         <div class="grid gap-1 sm:grid-cols-[16rem_1fr] sm:items-baseline sm:gap-6">

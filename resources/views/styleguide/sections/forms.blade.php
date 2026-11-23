@@ -121,8 +121,8 @@
     <div class="aura-card">
         <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Toggles') }}</span>
         <div class="mt-4 space-y-4">
-            <x-aura::input.toggle wire:model="toggleOn" labelAfter="Enabled" />
-            <x-aura::input.toggle wire:model="toggleOff" labelAfter="Disabled" />
+            <x-aura::input.toggle wire:model="toggleOn" labelAfter="On" />
+            <x-aura::input.toggle wire:model="toggleOff" labelAfter="Off" />
             <div class="sg-force-focus">
                 <x-aura::input.toggle wire:model="toggleOn" labelAfter="Focus" />
             </div>

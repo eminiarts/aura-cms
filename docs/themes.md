@@ -316,7 +316,7 @@ variables, so one setting restyles the whole admin.
 
 | Variable | `rounded` (default) | `subtle` | `square` | Expert setting | Read by |
 | --- | --- | --- | --- | --- | --- |
-| `--aura-panel-radius` | `0.75rem` (12px) | `0.375rem` (6px) | `0rem` | `expert-panel-radius` | `.aura-card`, `.aura-radius-panel` (table card, kanban column, bulk-action bar, dropdown, modal, toast, global search), the user menu popover (tippy theme `aura-small`), `.aura-group-section`, `.aura-login-card` |
+| `--aura-panel-radius` | `0.75rem` (12px) | `0.375rem` (6px) | `0rem` | `expert-panel-radius` | `.aura-card`, `.aura-radius-panel` (kanban column, bulk-action bar, dropdown, modal, toast, global search), the user menu popover (tippy theme `aura-small`), `.aura-group-section`, `.aura-login-card` |
 | `--aura-control-radius` | `0.5rem` (8px) | `0.25rem` (4px) | `0rem` | `expert-control-radius` | `.aura-button`, `.aura-field` (inputs, selects, textareas, addons, tags, date picker, code editor), `.aura-card-small`, pagination, `.aura-radius-control` (list rows and icon tiles inside panels, kanban cards, close and dismiss buttons, search results), segmented controls (`.aura-segmented`, items 2px smaller), sidebar items, collapsed sidebar icons, dropdown child items and container, team switcher, search and toggle |
 
 ### Sidebar size (`sidebar-size`)
@@ -581,9 +581,10 @@ beats Aura's `md:flex-row`, `.grid-cols-1` beats `sm:grid-cols-2`, and
 Aura's `dark:` variant compiles to `:where(.dark, .dark *)`, which adds none
 either. The problem shows up when the host build has the base class but not
 the variant, for example after an Aura update when the host CSS was not
-rebuilt. The table toolbar (`.aura-table-toolbar`) and the Settings sub-panels
-(`.aura-group-section`) use component classes instead of utility pairs, so a
-host stylesheet cannot stack the toolbar or keep a light border in dark mode.
+rebuilt. The table toolbar is one flex row on every width (no `flex-col` /
+`md:flex-row` pair to lose), and the Settings sub-panels (`.aura-group-section`)
+use a component class instead of a utility pair, so a host stylesheet cannot keep
+a light border in dark mode.
 The same goes for the light and dark colours of fields (`.aura-field`: surface,
 ring, placeholder, hover, focus, disabled, and the error ring from
 `.aura-field-invalid` or `aria-invalid="true"`), the validation message

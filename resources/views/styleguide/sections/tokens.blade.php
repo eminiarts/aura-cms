@@ -87,7 +87,7 @@
             {{ __('replaces any variable above with a pixel value from 0 to 96. When it is off, the presets apply unchanged and the expert values are kept for later. "Live value" shows what this page actually uses.') }}
         </p>
         <p class="mt-2">
-            {{ __('The layout gap spaces panels, columns and fields in every form, view and Settings page, the resource editor, the dashboard and the widget grid; content edges line up with the page title. Panels and floating surfaces (table card, modal, dropdown, popover, toast, search) take the panel radius, small things inside a panel the control radius. Control heights and the field radius: see Control sizing.') }}
+            {{ __('The layout gap spaces panels, columns and fields in every form, view and Settings page, the resource editor, the dashboard and the widget grid; content edges line up with the page title. Panels and floating surfaces (modal, dropdown, popover, toast, search) take the panel radius, small things inside a panel the control radius. Control heights and the field radius: see Control sizing.') }}
         </p>
     </div>
 </div>

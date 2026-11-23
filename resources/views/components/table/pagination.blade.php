@@ -24,21 +24,21 @@
 
             <div class="flex gap-1 items-center">
                 @if ($paginator->onFirstPage())
-                    <span class="{{ $btnBase }} {{ $btnDisabled }} w-9 h-9" aria-disabled="true" aria-label="{{ __('pagination.previous') }}">
+                    <span class="{{ $btnBase }} {{ $btnDisabled }} aura-control-square" aria-disabled="true" aria-label="{{ __('pagination.previous') }}">
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8 10 12.5" /></svg>
                     </span>
                 @else
-                    <button type="button" wire:click="previousPage('{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} {{ $btnIdle }} w-9 h-9" aria-label="{{ __('pagination.previous') }}">
+                    <button type="button" wire:click="previousPage('{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} {{ $btnIdle }} aura-control-square" aria-label="{{ __('pagination.previous') }}">
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8 10 12.5" /></svg>
                     </button>
                 @endif
 
                 @if ($paginator->hasMorePages())
-                    <button type="button" wire:click="nextPage('{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} {{ $btnIdle }} w-9 h-9" aria-label="{{ __('pagination.next') }}">
+                    <button type="button" wire:click="nextPage('{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} {{ $btnIdle }} aura-control-square" aria-label="{{ __('pagination.next') }}">
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
                     </button>
                 @else
-                    <span class="{{ $btnBase }} {{ $btnDisabled }} w-9 h-9" aria-disabled="true" aria-label="{{ __('pagination.next') }}">
+                    <span class="{{ $btnBase }} {{ $btnDisabled }} aura-control-square" aria-disabled="true" aria-label="{{ __('pagination.next') }}">
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
                     </span>
                 @endif
@@ -66,11 +66,11 @@
             <div class="flex gap-1 items-center">
                 {{-- Previous --}}
                 @if ($paginator->onFirstPage())
-                    <span class="{{ $btnBase }} {{ $btnDisabled }} w-8" aria-disabled="true" aria-label="{{ __('pagination.previous') }}">
+                    <span class="{{ $btnBase }} {{ $btnDisabled }} aura-control-square" aria-disabled="true" aria-label="{{ __('pagination.previous') }}">
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8 10 12.5" /></svg>
                     </span>
                 @else
-                    <button type="button" wire:click="previousPage('{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} {{ $btnIdle }} w-8" aria-label="{{ __('pagination.previous') }}">
+                    <button type="button" wire:click="previousPage('{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} {{ $btnIdle }} aura-control-square" aria-label="{{ __('pagination.previous') }}">
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8 10 12.5" /></svg>
                     </button>
                 @endif
@@ -100,11 +100,11 @@
 
                 {{-- Next --}}
                 @if ($paginator->hasMorePages())
-                    <button type="button" wire:click="nextPage('{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} {{ $btnIdle }} w-8" aria-label="{{ __('pagination.next') }}">
+                    <button type="button" wire:click="nextPage('{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} {{ $btnIdle }} aura-control-square" aria-label="{{ __('pagination.next') }}">
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
                     </button>
                 @else
-                    <span class="{{ $btnBase }} {{ $btnDisabled }} w-8" aria-disabled="true" aria-label="{{ __('pagination.next') }}">
+                    <span class="{{ $btnBase }} {{ $btnDisabled }} aura-control-square" aria-disabled="true" aria-label="{{ __('pagination.next') }}">
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
                     </span>
                 @endif

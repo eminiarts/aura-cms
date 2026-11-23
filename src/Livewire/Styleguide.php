@@ -155,7 +155,7 @@ class Styleguide extends Component
             __('Text') => ['Text' => 'input', 'Textarea' => 'input', 'Email' => 'input', 'Phone' => 'input', 'Number' => 'input', 'Password' => 'input', 'Slug' => 'input + lock', 'Wysiwyg' => 'editor', 'Code' => 'editor', 'Json' => 'editor'],
             __('Choice') => ['Select' => 'select', 'Status' => 'listbox + pill', 'Radio' => 'radios', 'Checkbox' => 'checkboxes', 'Boolean' => 'toggle', 'Tags' => 'chips', 'AdvancedSelect' => 'search + chips'],
             __('Date, time and colour') => ['Date' => 'date picker', 'Datetime' => 'date picker', 'Time' => 'input', 'Color' => 'input + swatch'],
-            __('Relations') => ['BelongsTo' => 'search select', 'BelongsToMany' => 'table', 'HasMany' => 'table', 'HasOne' => 'table', 'Roles' => 'select', 'UserTeams' => 'list', 'Permissions' => 'matrix'],
+            __('Relations') => ['BelongsTo' => 'search select', 'BelongsToMany' => 'table', 'HasMany' => 'table', 'HasOne' => 'placeholder (not built yet)', 'Roles' => 'select', 'UserTeams' => 'list', 'Permissions' => 'matrix'],
             __('Media') => ['Image' => 'media picker', 'File' => 'media picker', 'Embed' => 'input + preview'],
             __('Layout') => ['Panel' => 'card', 'Tabs' => 'tabs', 'Tab' => 'tab', 'Group' => 'sub-panel', 'Repeater' => 'repeated rows', 'Heading' => 'heading', 'HorizontalLine' => 'divider'],
             __('Special') => ['ID' => 'read-only', 'Hidden' => 'none', 'View' => 'custom view', 'ViewValue' => 'read-only', 'LivewireComponent' => 'component', 'GlobalAdmin' => 'toggle'],
@@ -163,7 +163,7 @@ class Styleguide extends Component
     }
 
     /**
-     * Live specimens of the resource fields, grouped like the field picker. Each one is
+     * Live specimens of the resource fields, grouped by what they draw. Each one is
      * the real fields/* view a resource form renders, bound to $form.
      *
      * @return array<string, list<array<string, mixed>>>
@@ -271,7 +271,7 @@ class Styleguide extends Component
             ],
             'typography' => [
                 'label' => __('Typography'),
-                'description' => __('One font family from the theme (--aura-font-sans). The admin uses text-xs to text-2xl.'),
+                'description' => __('One font family from the theme (--aura-font-sans). The admin uses text-2xs to text-3xl; recurring roles are listed below.'),
             ],
             'icons' => [
                 'label' => __('Icons'),
@@ -295,7 +295,7 @@ class Styleguide extends Component
             ],
             'badges' => [
                 'label' => __('Badges & pills'),
-                'description' => __('Three badge shapes are in use: status pills (dot + ring), sidebar badges and trend pills.'),
+                'description' => __('Four pill shapes are in use: status pills (dot + ring), sidebar counters, trend pills and chips (selected values in Tags and AdvancedSelect).'),
             ],
             'cards' => [
                 'label' => __('Cards & panels'),
@@ -375,7 +375,7 @@ class Styleguide extends Component
             '--aura-panel-small-padding' => '.aura-card-small',
             '--aura-layout-gap' => '.aura-layout-row/-cell ('.__('panels and fields in every form, widgets').'), .aura-layout-panel, .aura-layout-grid ('.__('dashboard, record layout').')',
             '--aura-section-gap' => '.aura-group-section, '.__('Settings page groups'),
-            '--aura-panel-radius' => '.aura-card, .aura-radius-panel ('.__('table card, modal, dropdown, popover, toast, search').'), .aura-group-section, .aura-login-card',
+            '--aura-panel-radius' => '.aura-card, .aura-radius-panel ('.__('modal, dropdown, popover, toast, search, kanban column, bulk bar').'), .aura-group-section, .aura-login-card',
             '--aura-control-radius' => '.aura-button, .aura-field, .aura-card-small, .aura-radius-control ('.__('list rows, icon tiles').'), .aura-segmented, '.__('sidebar items'),
             '--aura-sidebar-item-height' => '.aura-sidebar .aura-sidebar-item',
             '--aura-sidebar-item-padding-x' => '.aura-sidebar .aura-sidebar-item',

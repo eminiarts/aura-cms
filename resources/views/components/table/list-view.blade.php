@@ -36,7 +36,7 @@
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Try a different search or clear the filters.') }}</p>
                 @else
                     @unless ($isRelationTable)
-                        <div class="flex justify-center items-center mb-3 w-10 h-10 rounded-lg bg-gray-950/[0.04] text-gray-400 dark:bg-white/5 dark:text-gray-500 [&>svg]:size-5" aria-hidden="true">
+                        <div class="flex justify-center items-center mb-3 w-10 h-10 aura-radius-control bg-gray-950/[0.04] text-gray-400 dark:bg-white/5 dark:text-gray-500 [&>svg]:size-5" aria-hidden="true">
                             {!! $tableModel->getIcon() !!}
                         </div>
                     @endunless

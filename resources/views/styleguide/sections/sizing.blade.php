@@ -9,10 +9,10 @@
     $widgetDate = 'aura-field aura-control-sm pr-2 pl-3 text-sm';
 
     $scale = [
-        'xs' => ['label' => __('Extra small'), 'variable' => '--aura-control-height-xs', 'usage' => __('Table filters, row actions')],
-        'sm' => ['label' => __('Small'), 'variable' => '--aura-control-height-sm', 'usage' => __('Widget filters, pagination')],
-        'base' => ['label' => __('Base'), 'variable' => '--aura-control-height', 'usage' => __('Forms, dialogs, page actions, the table toolbar')],
-        'lg' => ['label' => __('Large'), 'variable' => '--aura-control-height-lg', 'usage' => __('Login, empty states')],
+        'xs' => ['label' => __('Extra small'), 'variable' => '--aura-control-height-xs', 'usage' => __('Row actions, the selection bar')],
+        'sm' => ['label' => __('Small'), 'variable' => '--aura-control-height-sm', 'usage' => __('Pagination, widget filters, a relation table\'s New button')],
+        'base' => ['label' => __('Base'), 'variable' => '--aura-control-height', 'usage' => __('Forms, dialogs, page actions, the table toolbar, login, empty states')],
+        'lg' => ['label' => __('Large'), 'variable' => '--aura-control-height-lg', 'usage' => __('Reserved: not used in the admin yet')],
     ];
 @endphp
 
