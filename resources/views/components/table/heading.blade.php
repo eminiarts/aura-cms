@@ -14,7 +14,7 @@
      value type. A right-aligned column keeps the same order (mark, label) pushed to the right edge
      and puts the sort arrow in front, so the label stays flush with the numbers below it. --}}
 <th
-    {{ $attributes->merge(['class' => 'px-4 py-2.5 '.($alignRight ? 'text-right' : 'text-left')])->only('class') }}
+    {{ $attributes->merge(['class' => 'px-4 aura-table-heading-cell '.($alignRight ? 'text-right' : 'text-left')])->only('class') }}
 >
     @unless ($sortable)
         <span class="inline-flex items-center gap-x-1.5 aura-table-header whitespace-nowrap {{ $alignRight ? 'justify-end text-right' : 'text-left' }}">

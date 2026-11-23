@@ -88,6 +88,27 @@
 }
 
 /*
+ * Small radius: 16-24px things (checkboxes, list thumbnails) follow the control radius but stop at
+ * 4px, so "square" gives 0 and "rounded" does not turn a checkbox into a circle. Radios stay round.
+ */
+.aura-radius-small.aura-radius-small {
+    border-radius: min(var(--aura-control-radius, 0.5rem), 0.25rem);
+}
+
+/*
+ * Checkbox and radio boundary in dark mode: the field ring (gray-500, 3:1 against the gray-800
+ * card; gray-400 on hover). Only the idle state, so checked, focus and disabled keep their utilities.
+ * A component rule instead of dark: utilities, so a host stylesheet with its own .ring-gray-950/15
+ * cannot turn the dark ring back to the light one.
+ */
+.dark .aura-check.aura-check:not(:checked):not(:disabled):not(:focus-visible) {
+    --tw-ring-color: rgb(var(--gray-500));
+}
+.dark .aura-check.aura-check:not(:checked):not(:disabled):not(:focus-visible):hover {
+    --tw-ring-color: rgb(var(--gray-400));
+}
+
+/*
  * Segmented controls (table filter tabs, the list/grid/kanban switch): the track takes the control
  * radius, the items inside it a radius 2px smaller so the corners stay concentric.
  */
@@ -223,6 +244,9 @@
 .aura-control-min-xs.aura-control-min-xs {
     min-height: var(--aura-control-height-xs, 1.75rem);
 }
+.aura-control-min-sm.aura-control-min-sm {
+    min-height: var(--aura-control-height-sm, 2rem);
+}
 .aura-control-min-base.aura-control-min-base {
     min-height: var(--aura-control-height, 2.25rem);
 }
@@ -230,6 +254,28 @@
     aspect-ratio: 1 / 1;
     padding-left: 0;
     padding-right: 0;
+}
+/* A labelled toolbar button that drops its label on phones (.aura-label-sm-up) and is square there. */
+@media (max-width: 639.98px) {
+    .aura-control-square-max-sm.aura-control-square-max-sm {
+        aspect-ratio: 1 / 1;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+/*
+ * Table cells: the vertical padding follows the interface density (--aura-table-cell-padding-y,
+ * 12px comfortable, 8px compact). Headings take 2px less, so the heading row stays a bit lower
+ * than a body row. Horizontal padding stays in the markup.
+ */
+.aura-table-cell.aura-table-cell {
+    padding-top: var(--aura-table-cell-padding-y, 0.75rem);
+    padding-bottom: var(--aura-table-cell-padding-y, 0.75rem);
+}
+.aura-table-heading-cell.aura-table-heading-cell {
+    padding-top: max(0px, calc(var(--aura-table-cell-padding-y, 0.75rem) - 0.125rem));
+    padding-bottom: max(0px, calc(var(--aura-table-cell-padding-y, 0.75rem) - 0.125rem));
 }
 
 /* Color field swatch (Pickr renders the button): a square base control beside the input. */

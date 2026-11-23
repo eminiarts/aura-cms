@@ -307,10 +307,11 @@ variables, so one setting restyles the whole admin.
 
 | Variable | `comfortable` (default) | `compact` | Expert setting | Read by |
 | --- | --- | --- | --- | --- |
-| `--aura-panel-padding` | `1.25rem` (20px) | `1rem` (16px) | `expert-panel-padding` | `.aura-card` (panels, dashboard panels and stat cards, widgets, the user Teams card), the Settings sub-panels (`.aura-group-section`), the login card (`.aura-login-card`: 1.5× on phones, 2× from `sm`), `.aura-card-bleed` (sparklines) |
+| `--aura-panel-padding` | `1.25rem` (20px) | `1rem` (16px) | `expert-panel-padding` | `.aura-card` (panels, dashboard panels and stat cards, widgets), the Settings sub-panels (`.aura-group-section`), the login card (`.aura-login-card`: 1.5× on phones, 2× from `sm`), `.aura-card-bleed` (sparklines) |
 | `--aura-panel-small-padding` | `0.5rem` (8px) | `0.375rem` (6px) | `expert-panel-small-padding` | `.aura-card-small` |
 | `--aura-layout-gap` | `1.5rem` (24px) | `1rem` (16px) | `expert-layout-gap` | Space between panels and columns: `.aura-layout-row` / `.aura-layout-cell` (panels, tabs and fields in every form, view and Settings page, the resource editor, widgets), `.aura-layout-panel` (space below a panel), `.aura-widget-grid`, `.aura-layout-grid` (dashboard, record layout regions) |
 | `--aura-section-gap` | `1rem` (16px) | `0.75rem` (12px) | `expert-section-gap` | Space below a group inside a panel: Settings sub-panels (`.aura-group-section`) and top-level Settings groups |
+| `--aura-table-cell-padding-y` | `0.75rem` (12px) | `0.5rem` (8px) | – | Vertical padding of table cells: `.aura-table-cell` (resource and relation table rows, the Plugins and user Teams tables) and `.aura-table-heading-cell` (column headings, 2px less) |
 
 ### Corner radius (`corner-radius`)
 

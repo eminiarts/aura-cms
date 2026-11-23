@@ -15,12 +15,12 @@
     }
 @endphp
 
-<div class="flex items-center space-x-3">
+<div class="flex items-center space-x-2">
     @if($thumbnailField)
         @if($thumbnailId)
-            <x-aura::image :id="$thumbnailId" alt="{{ $item->title() }}" class="object-cover w-12 h-12 rounded shrink-0" />
+            <x-aura::image :id="$thumbnailId" alt="{{ $item->title() }}" class="object-cover w-5 h-5 aura-radius-small shrink-0" />
         @else
-            <div class="aura-chip-avatar flex justify-center items-center w-12 h-12 rounded shrink-0">
+            <div class="aura-chip-avatar flex justify-center items-center w-5 h-5 aura-radius-small shrink-0">
             </div>
         @endif
     @endif
@@ -29,7 +29,7 @@
       @if(isset($field['description']) && $field['description'] && $field['description'] != '')
         @if($item->{$field['description']})
           <div class="line-clamp-1">
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $item->{$field['description']} }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $item->{$field['description']} }}</p>
           </div>
         @endif
       @endif

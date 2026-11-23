@@ -13,7 +13,7 @@
     <div>
         <label for="{{ $for }}" class="block text-sm font-medium leading-5 text-gray-700 dark:text-gray-200">{{ $label }}</label>
 
-        <div class="mt-1 relative rounded-md {{ $shadow ? 'shadow-none' : '' }}">
+        <div class="mt-1 relative aura-radius-control {{ $shadow ? 'shadow-none' : '' }}">
             {{ $slot }}
 
             @if ($error)

@@ -1,26 +1,27 @@
+{{-- Same look as a relation table on a record page: section title, sentence-case headings, hairlines, no card. --}}
 <div class="w-full" wire:key="user-teams-{{ $userId }}">
-    <div class="aura-card">
-        <h3 class="mb-4 font-semibold text-gray-900 dark:text-gray-100">
+    <div>
+        <h3 class="mb-3 aura-section-title">
             {{ __('Team Memberships') }}
         </h3>
 
         @if (count($this->memberships))
             <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left" wire:key="memberships-table">
-                    <thead class="text-[11px] font-semibold tracking-wide text-gray-500 uppercase border-b border-gray-200/80 dark:text-gray-400 dark:border-white/10">
-                        <tr>
-                            <th class="px-3 py-2">{{ __('Team') }}</th>
-                            <th class="px-3 py-2">{{ __('Role') }}</th>
-                            <th class="px-3 py-2 text-right">{{ __('Actions') }}</th>
+                <table class="min-w-full text-sm text-left" wire:key="memberships-table">
+                    <thead>
+                        <tr class="border-b border-gray-200/80 dark:border-white/10">
+                            <x-aura::table.heading>{{ __('Team') }}</x-aura::table.heading>
+                            <x-aura::table.heading>{{ __('Role') }}</x-aura::table.heading>
+                            <x-aura::table.heading align="right">{{ __('Actions') }}</x-aura::table.heading>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="border-b divide-y divide-gray-200/60 border-gray-200/80 dark:divide-white/[0.06] dark:border-white/10">
                         @foreach ($this->memberships as $membership)
-                            <tr class="border-b border-gray-100 dark:border-white/5" wire:key="membership-{{ $membership['team_id'] }}">
-                                <td class="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">
+                            <tr wire:key="membership-{{ $membership['team_id'] }}">
+                                <td class="px-4 font-medium text-gray-900 aura-table-cell dark:text-white">
                                     {{ $membership['team_name'] }}
                                 </td>
-                                <td class="px-3 py-2">
+                                <td class="px-4 aura-table-cell">
                                     @if ($membership['can_manage'])
                                         <div class="w-48">
                                             <x-aura::input.select
@@ -39,7 +40,7 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td class="px-3 py-2 text-right">
+                                <td class="px-4 text-right aura-table-cell">
                                     @if ($membership['can_manage'])
                                         <x-aura::button.danger
                                             size="sm"
@@ -62,7 +63,7 @@
         @endif
 
         @if (count($this->teamOptions))
-            <div class="pt-4 mt-6 border-t border-gray-100 dark:border-white/5" wire:key="attach-form">
+            <div class="mt-6" wire:key="attach-form">
                 <h4 class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {{ __('Add to a team') }}
                 </h4>

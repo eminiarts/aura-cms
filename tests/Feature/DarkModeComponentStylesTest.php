@@ -193,6 +193,42 @@ describe('component classes with a dark style', function () {
         }
     });
 
+    test('checkboxes and radios take the dark field ring from .aura-check and the small radius', function () {
+        expect(darkModeBuiltCss())
+            ->toContain('.dark .aura-check.aura-check:not(:checked):not(:disabled):not(:focus-visible){--tw-ring-color:rgb(var(--gray-500))}')
+            ->toContain('.aura-radius-small.aura-radius-small{border-radius:min(var(--aura-control-radius,.5rem), .25rem)}');
+
+        $checkbox = Blade::render('<x-aura::input.checkbox label="Remember" />');
+        $radio = Blade::render('<x-aura::input.radio label="One" />');
+
+        expect($checkbox)->toContain('aura-check')->toContain('aura-radius-small')
+            ->not->toContain('ring-white/20')
+            ->not->toMatch('/(?<![\w:-])rounded(?![\w-])/')
+            ->and($radio)->toContain('aura-check')->toContain('rounded-full')->not->toContain('ring-white/20')
+            ->and(darkModeView('components/fields/permissions.blade.php'))->toContain('form-checkbox aura-check')->not->toContain('ring-white/20');
+    });
+
+    test('floating panels are gray-800 with the white/10 ring and the panel radius', function () {
+        foreach (['components/fields/advanced-select.blade.php', 'components/fields/filters/advanced-select.blade.php'] as $view) {
+            $source = darkModeView($view);
+
+            expect($source)->toContain('aura-radius-panel ring-1')
+                ->and($source)->toContain('dark:bg-gray-800 dark:ring-white/10')
+                ->and($source)->toMatch('/x-ref="searchField"\s+class="[^"]*aura-field/')
+                ->and($source)->toContain('aura-dropdown-item')
+                ->and($source)->not->toContain('dark:bg-gray-900');
+        }
+
+        expect(darkModeView('livewire/global-search.blade.php'))
+            ->toContain('aura-search-panel aura-radius-panel')
+            ->toContain('dark:bg-gray-800 dark:ring-white/10')
+            ->not->toContain('dark:border-gray-700')
+            ->and(darkModeView('components/table/context-menu.blade.php'))
+            ->toContain('aura-radius-panel')
+            ->toContain('aura-dropdown-item')
+            ->not->toMatch('/(?<![\w:-])rounded-(?:md|lg)(?![\w-])/');
+    });
+
     test('the 2FA status uses the alert classes', function () {
         $source = darkModeView('profile/two-factor-authentication-form.blade.php');
 
@@ -247,6 +283,11 @@ describe('pages', function () {
         expect($select[0] ?? '')->toContain('aura-field aura-control-sm');
         expect($html)->toContain('dusk="detach-'.$team->id.'"')
             ->and($html)->toContain('text-red-700 bg-red-500/10')
-            ->and($html)->not->toContain('class="text-sm border-gray-300 rounded-md');
+            ->and($html)->not->toContain('class="text-sm border-gray-300 rounded-md')
+            // The resource table look: sentence-case headings and density padding, no card or uppercase heading row.
+            ->and($html)->toContain('aura-table-heading-cell')
+            ->and($html)->toContain('aura-table-cell')
+            ->and($html)->not->toContain('aura-card')
+            ->and($html)->not->toContain('uppercase border-b');
     });
 });

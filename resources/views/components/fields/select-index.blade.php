@@ -19,7 +19,8 @@
 @if (count($values))
     <div class="flex flex-wrap gap-1">
         @foreach ($values as $item)
-            <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md whitespace-nowrap {{ $colors[$item] ?? 'bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/10 dark:bg-white/5 dark:text-gray-300 dark:ring-white/10' }}">
+            {{-- Same pill as the Status field (status-index), so a colored option reads the same everywhere. --}}
+            <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium whitespace-nowrap rounded-full ring-1 ring-inset ring-gray-950/10 dark:ring-white/10 {{ $colors[$item] ?? 'bg-gray-50 text-gray-600 dark:bg-white/5 dark:text-gray-300' }}">
                 {{ __($labels[$item] ?? $item) }}
             </span>
         @endforeach

@@ -5,7 +5,7 @@
     <div class="hidden sm:block shrink-0" data-resource-editor-button>
         <x-aura::dropdown align="right" width="w-44">
             <x-slot name="trigger">
-                <x-aura::button.border type="button" class="w-9 !px-0 [&>span:first-child]:ml-0" title="{{ __('More actions') }}" aria-label="{{ __('More actions') }}" aria-haspopup="menu">
+                <x-aura::button.border type="button" title="{{ __('More actions') }}" aria-label="{{ __('More actions') }}" aria-haspopup="menu">
                     <x-slot:icon>
                         <x-aura::icon.dots />
                     </x-slot>

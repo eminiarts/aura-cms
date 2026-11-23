@@ -30,7 +30,7 @@
     $bulk = collect($rows)->mapWithKeys(fn ($row, $group) => ['resource:'.$group => $slugs([...array_values(array_diff_key($row['cells'], ['scope' => null])), ...$row['other']])])->merge($featureGroups);
     $columns = collect($abilities)->map(fn ($label, $ability) => $slugs(array_column(array_column($rows, 'cells'), $ability)));
 
-    $checkboxClass = 'form-checkbox block size-4 shrink-0 rounded border-0 bg-white text-primary-600 shadow-xs ring-1 ring-gray-950/15 transition duration-150 cursor-pointer hover:ring-gray-950/25 checked:bg-primary-600 checked:ring-primary-600 checked:hover:bg-primary-700 checked:hover:ring-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:bg-gray-800 dark:ring-white/20 dark:hover:ring-white/30 dark:checked:bg-primary-600 dark:checked:ring-primary-600 dark:focus-visible:ring-offset-gray-900';
+    $checkboxClass = 'form-checkbox aura-check block size-4 shrink-0 aura-radius-small border-0 bg-white text-primary-600 shadow-xs ring-1 ring-gray-950/15 transition duration-150 cursor-pointer hover:ring-gray-950/25 checked:bg-primary-600 checked:ring-primary-600 checked:hover:bg-primary-700 checked:hover:ring-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:bg-gray-800 dark:checked:bg-primary-600 dark:checked:ring-primary-600 dark:focus-visible:ring-offset-gray-900';
 @endphp
 
 <x-aura::fields.conditions :field="$field" :model="$model">

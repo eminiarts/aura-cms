@@ -17,13 +17,13 @@
                 x-on:click="@if ($field) toggleRow($event, {{ $row->id }}) @else Livewire.dispatch('open-attachment-details', { id: {{ $row->id }}, ids: rows.map(Number) }) @endif"
                 data-attachment-card="{{ $row->id }}">
                 <div class="relative">
-                    <div class="overflow-hidden relative w-full bg-gray-100 rounded-lg shadow-sm transition-all duration-300 ease-in-out dark:bg-gray-800 aspect-w-10 aspect-h-7 hover:shadow-md focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100 {{ $isRecentUpload ? 'ring-2 ring-green-400 ring-offset-2 dark:ring-offset-gray-900' : '' }}"
+                    <div class="overflow-hidden relative w-full bg-gray-100 aura-radius-control shadow-sm transition-all duration-300 ease-in-out dark:bg-gray-800 aspect-w-10 aspect-h-7 hover:shadow-md focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100 {{ $isRecentUpload ? 'ring-2 ring-green-400 ring-offset-2 dark:ring-offset-gray-900' : '' }}"
                         :class="{
                             'shadow-[inset_0_0_0_4px_theme(colors.primary.500)]': selected.includes('{{ $row->id }}'),
                             'opacity-50': maxFilesReached && !selected.includes('{{ $row->id }}')
                         }">
                         @include('aura::attachment.thumbnail')
-                        <div class="rounded-lg absolute inset-0 opacity-0 shadow-[inset_0_0_0_4px_theme(colors.primary.500)]"
+                        <div class="aura-radius-control absolute inset-0 opacity-0 shadow-[inset_0_0_0_4px_theme(colors.primary.500)]"
                              :class="{ 'opacity-100': selected.includes('{{ $row->id }}') }"></div>
                     </div>
 

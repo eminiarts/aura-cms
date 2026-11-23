@@ -32,20 +32,20 @@
                 <tbody class="divide-y divide-gray-100 dark:divide-white/5">
                     @forelse ($installedPackages as $name => $package)
                         <tr class="transition-colors duration-150 hover:bg-gray-50/80 dark:hover:bg-white/[0.04]">
-                            <td class="px-6 py-3 text-sm font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                            <td class="px-4 aura-table-cell text-sm font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                 {{ $name }}
                                 @if (in_array('laravel', $package['keywords']))
                                     <span class="inline-flex items-center px-2 py-0.5 ml-2 text-xs font-medium rounded-full aura-chip">Laravel</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-3 text-sm whitespace-nowrap">
+                            <td class="px-4 aura-table-cell text-sm whitespace-nowrap">
                                 <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-medium whitespace-nowrap rounded-full aura-chip-primary">{{ $package['version'] }}</span>
                             </td>
-                            <td class="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">{{ $package['description'] ?: __('No description available.') }}</td>
+                            <td class="px-4 aura-table-cell text-sm text-gray-600 dark:text-gray-300">{{ $package['description'] ?: __('No description available.') }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="px-6 py-10 text-sm text-center text-gray-500 dark:text-gray-400">{{ __('No packages found.') }}</td>
+                            <td colspan="3" class="px-4 py-10 text-sm text-center text-gray-500 dark:text-gray-400">{{ __('No packages found.') }}</td>
                         </tr>
                     @endforelse
                 </tbody>

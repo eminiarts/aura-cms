@@ -105,11 +105,17 @@ test('design presets emit stable density radius and sidebar variables', function
     ]))->toMatchArray([
         '--aura-panel-padding' => '1rem',
         '--aura-layout-gap' => '1rem',
+        '--aura-table-cell-padding-y' => '0.5rem',
         '--aura-panel-radius' => '0rem',
         '--aura-control-radius' => '0rem',
         '--aura-sidebar-item-height' => '1.75rem',
         '--aura-sidebar-icon-size' => '1rem',
     ]);
+});
+
+test('table cell padding follows the interface density', function () {
+    expect(ThemeTokens::design([])['--aura-table-cell-padding-y'])->toBe('0.75rem')
+        ->and(ThemeTokens::design(['interface-density' => 'compact'])['--aura-table-cell-padding-y'])->toBe('0.5rem');
 });
 
 test('design emits one fixed control height per size in every preset', function () {

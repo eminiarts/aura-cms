@@ -28,21 +28,21 @@
                     @if(is_array($data) && isset($data['modal']))
                     <!-- if it's an array and has a modal, then open the modal -->
                     <a wire:click="openBulkActionModal('{{ $action }}', {{json_encode($data)}})"
-                    class="flex items-center px-3 py-1.5 text-sm text-gray-700 rounded-md transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
+                    class="flex items-center px-3 py-1.5 text-sm text-gray-700 aura-dropdown-item transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
                     role="menuitem" tabindex="-1" id="menu-item-6">
                         {{ $data['label'] }}
                     </a>
                     @elseif(is_array($data) && optional($data)['method'] == 'collection')
                         <!-- call collection action on model -->
                         <a wire:click="bulkCollectionAction('{{ $action }}', {{json_encode($data)}})"
-                            class="flex items-center px-3 py-1.5 text-sm text-gray-700 rounded-md transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
+                            class="flex items-center px-3 py-1.5 text-sm text-gray-700 aura-dropdown-item transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
                             role="menuitem" tabindex="-1" id="menu-item-6">
                             {{ $data['label'] }}
                         </a>
                     @else
                     <!-- if it's not an array, it's a string, so keep the old behavior -->
                     <a wire:click="bulkAction('{{ $action }}')"
-                        class="flex items-center px-3 py-1.5 text-sm text-gray-700 rounded-md transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
+                        class="flex items-center px-3 py-1.5 text-sm text-gray-700 aura-dropdown-item transition-colors duration-150 cursor-pointer group hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
                         role="menuitem" tabindex="-1" id="menu-item-6">
                         {{ is_array($data) ? $data['label'] : $data }}
                     </a>

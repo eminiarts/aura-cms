@@ -15,7 +15,7 @@
         @endif
 
         @if($this->settings['actions'])
-        <th class="table-row-actions px-4 py-2.5 aura-table-header text-right">
+        <th class="table-row-actions px-4 aura-table-heading-cell aura-table-header text-right">
             <span class="sr-only">{{ __('Actions') }}</span>
         </th>
         @endif

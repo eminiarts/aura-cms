@@ -156,12 +156,14 @@ final class ThemeTokens
                 '--aura-panel-small-padding' => '0.375rem',
                 '--aura-layout-gap' => '1rem',
                 '--aura-section-gap' => '0.75rem',
+                '--aura-table-cell-padding-y' => '0.5rem',
             ],
             default => [
                 '--aura-panel-padding' => '1.25rem',
                 '--aura-panel-small-padding' => '0.5rem',
                 '--aura-layout-gap' => '1.5rem',
                 '--aura-section-gap' => '1rem',
+                '--aura-table-cell-padding-y' => '0.75rem',
             ],
         };
 

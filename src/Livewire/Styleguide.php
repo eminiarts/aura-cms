@@ -375,6 +375,7 @@ class Styleguide extends Component
             '--aura-panel-small-padding' => '.aura-card-small',
             '--aura-layout-gap' => '.aura-layout-row/-cell ('.__('panels and fields in every form, widgets').'), .aura-layout-panel, .aura-layout-grid ('.__('dashboard, record layout').')',
             '--aura-section-gap' => '.aura-group-section, '.__('Settings page groups'),
+            '--aura-table-cell-padding-y' => '.aura-table-cell, .aura-table-heading-cell ('.__('resource and relation tables, 2px less').')',
             '--aura-panel-radius' => '.aura-card, .aura-radius-panel ('.__('modal, dropdown, popover, toast, search, kanban column, bulk bar').'), .aura-group-section, .aura-login-card',
             '--aura-control-radius' => '.aura-button, .aura-field, .aura-card-small, .aura-radius-control ('.__('list rows, icon tiles').'), .aura-segmented, '.__('sidebar items'),
             '--aura-sidebar-item-height' => '.aura-sidebar .aura-sidebar-item',

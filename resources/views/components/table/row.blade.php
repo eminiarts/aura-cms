@@ -53,7 +53,7 @@
                     default => '',
                 };
             @endphp
-            <td class="px-4 py-3 text-sm {{ $cellClass }} {{ $firstVisibleColumn ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300' }}">
+            <td class="px-4 text-sm aura-table-cell {{ $cellClass }} {{ $firstVisibleColumn ? 'font-medium text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300' }}">
                 @if ($displayIsEmpty)
                     <span class="text-gray-400 dark:text-gray-500">–</span>
                 @elseif ($firstVisibleColumn)
@@ -91,7 +91,7 @@
     @endif
 
     @if ($this->settings['actions'])
-        <td class="px-3 py-2">
+        <td class="px-3 py-0">
             @include('aura::components.table.row-actions')
         </td>
     @endif

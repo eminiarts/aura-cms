@@ -103,7 +103,7 @@
             <div class="fixed inset-0 z-30">
                 <div class="absolute inset-0 backdrop-blur-sm bg-black/10 dark:bg-black/20"></div>
                 <div class="flex absolute inset-0 justify-center items-center">
-                    <div class="aura-search-panel aura-radius-panel overflow-hidden p-0 mx-5 w-full max-w-2xl bg-white shadow-xl dark:bg-gray-900 dark:border dark:border-gray-700" @click.away="closeSearch()">
+                    <div class="aura-search-panel aura-radius-panel overflow-hidden p-0 mx-5 w-full max-w-2xl bg-white ring-1 shadow-xl ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10" @click.away="closeSearch()">
                         <div class="flex items-center">
                             <div class="px-3">
                                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -119,7 +119,7 @@
 
                             <div class="relative mx-3 w-6 h-6">
 
-                                <span wire:loading.remove @click="closeSearch()" class="cursor-pointer text-[10px] text-gray-400 dark:text-gray-600 lowercase bg-white dark:bg-gray-900 shadow-lg aura-radius-control border border-gray-100 dark:border-gray-800 w-6 h-6 flex items-center justify-center">esc</span>
+                                <span wire:loading.remove @click="closeSearch()" class="cursor-pointer text-[10px] text-gray-400 lowercase bg-white shadow-lg aura-radius-control border border-gray-100 dark:text-gray-400 dark:bg-white/5 dark:border-white/10 w-6 h-6 flex items-center justify-center">esc</span>
 
                                 <div wire:loading class="absolute top-0 right-0 w-6">
                                     <div role="status" class="mx-auto w-full">
@@ -133,7 +133,7 @@
                             </div>
                         </div>
 
-                        <div class="p-2 border-t dark:border-gray-700">
+                        <div class="p-2 border-t border-gray-950/10 dark:border-white/10">
                             <div>
 
                                 {{-- Alpine template if $refs.searchField input length is 0 --}}
@@ -148,7 +148,7 @@
 
                                             <template x-for="(page, index) in visitedPages" :key="'search-item-' + index">
                                                 <li class="flex px-2 py-2 aura-radius-control cursor-pointer select-item"
-                                                    :class="{'bg-primary-500 dark:bg-primary-400/30 text-white': index === selectedIndex, 'hover:bg-gray-100 dark:hover:bg-gray-800': index != selectedIndex }">
+                                                    :class="{'bg-primary-500 dark:bg-primary-400/30 text-white': index === selectedIndex, 'hover:bg-gray-100 dark:hover:bg-white/5': index != selectedIndex }">
                                                     <div class="flex justify-center items-center mr-3 rounded-full search-list-icon text-primary-400 shrink-0">
                                                         {{-- SVG Icon Circle --}}
                                                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -169,8 +169,8 @@
                                             @endif
 
                                             @foreach ($this->bookmarks as $key => $bookmark)
-                                                <li class="flex px-2 py-2 aura-radius-control cursor-pointer bookmark-item select-item hover:bg-gray-100 focus:bg-gray-200 dark:hover:bg-gray-800 dark:focus:bg-gray-700"
-                                                    :class="{'bg-primary-500 dark:bg-primary-400/30 text-white': 5 + {{ $key }} === selectedIndex, 'hover:bg-gray-100 dark:hover:bg-gray-800': 5 + {{ $key }} != selectedIndex }">
+                                                <li class="flex px-2 py-2 aura-radius-control cursor-pointer bookmark-item select-item hover:bg-gray-100 focus:bg-gray-200 dark:hover:bg-white/5 dark:focus:bg-white/10"
+                                                    :class="{'bg-primary-500 dark:bg-primary-400/30 text-white': 5 + {{ $key }} === selectedIndex, 'hover:bg-gray-100 dark:hover:bg-white/5': 5 + {{ $key }} != selectedIndex }">
                                                     <div class="flex justify-center items-center mr-3 rounded-full search-list-icon text-primary-400 shrink-0">
                                                         {{-- SVG Icon Circle --}}
                                                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -208,9 +208,9 @@
 
                                         @foreach ($group as $key => $result)
                                             <li
-                                                class="flex px-2 py-2 aura-radius-control cursor-default select-none hover:bg-gray-100 focus:bg-gray-200 dark:hover:bg-gray-800 dark:focus:bg-gray-700 select-item" id="option-1" role="option" tabindex="-1"
+                                                class="flex px-2 py-2 aura-radius-control cursor-default select-none hover:bg-gray-100 focus:bg-gray-200 dark:hover:bg-white/5 dark:focus:bg-white/10 select-item" id="option-1" role="option" tabindex="-1"
                                                 wire:key="search-result-{{ $i }}"
-                                                :class="{'bg-primary-500 dark:bg-primary-400/30 text-white': {{ $i }} === selectedIndex, 'hover:bg-gray-100 dark:hover:bg-gray-800': {{ $i }} != selectedIndex }">
+                                                :class="{'bg-primary-500 dark:bg-primary-400/30 text-white': {{ $i }} === selectedIndex, 'hover:bg-gray-100 dark:hover:bg-white/5': {{ $i }} != selectedIndex }">
 
                                                 <div class="flex justify-center items-center mr-3 rounded-full search-list-icon text-primary-400 shrink-0">
                                                     {{-- SVG Icon Circle --}}

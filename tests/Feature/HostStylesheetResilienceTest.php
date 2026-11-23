@@ -105,7 +105,7 @@ test('inputs and selects share the button sizes and the field radius', function 
 })->with(['xs', 'sm', 'base', 'lg']);
 
 test('token-driven elements carry no competing radius utility in the package views', function () {
-    $tokenClass = '/(?<![\w-])aura-(?:button|field|card|card-small|sidebar-item|sidebar-dropdown-button|sidebar-dropdown-button-expanded|sidebar-dropdown-collapsed|sidebar-search|sidebar-toggle|sidebar-icon|sidebar-child-item|sidebar-team-switcher|radius-panel|radius-control|modal-panel|dropdown-item|segmented|segmented-item|group-section|login-card)(?![\w-])/';
+    $tokenClass = '/(?<![\w-])aura-(?:button|field|card|card-small|sidebar-item|sidebar-dropdown-button|sidebar-dropdown-button-expanded|sidebar-dropdown-collapsed|sidebar-search|sidebar-toggle|sidebar-icon|sidebar-child-item|sidebar-team-switcher|radius-panel|radius-control|radius-small|modal-panel|dropdown-item|segmented|segmented-item|group-section|login-card)(?![\w-])/';
     $offenders = [];
 
     foreach (Finder::create()->files()->in(dirname(__DIR__, 2).'/resources/views')->name('*.blade.php') as $file) {
@@ -154,6 +154,29 @@ test('the built CSS sets token properties with a doubled class selector', functi
         ->toContain('.aura-radius-control.aura-radius-control{border-radius:var(--aura-control-radius,.5rem)}')
         ->toContain('.aura-radius-panel.aura-radius-panel{border-radius:var(--aura-panel-radius,.75rem)}')
         ->toContain('.aura-sidebar-groups.aura-sidebar-groups{gap:var(--aura-sidebar-group-gap,.25rem)}');
+});
+
+test('table cells take their vertical padding from the density token, not py utilities', function () {
+    expect(auraBuiltCss())
+        ->toContain('.aura-table-cell.aura-table-cell{padding-top:var(--aura-table-cell-padding-y,.75rem);padding-bottom:var(--aura-table-cell-padding-y,.75rem)}')
+        ->toContain('.aura-table-heading-cell.aura-table-heading-cell{padding-top:max(0px, calc(var(--aura-table-cell-padding-y,.75rem) - .125rem))')
+        ->toContain('.aura-control-min-sm.aura-control-min-sm{min-height:var(--aura-control-height-sm,2rem)}');
+
+    $offenders = [];
+
+    foreach (auraViewClasses() as [$file, $class]) {
+        if (preg_match('/(?<![\w-])aura-table-(?:cell|heading-cell)(?![\w-])/', $class) && preg_match('/(?<![\w:\[-])py-\d/', $class)) {
+            $offenders[] = $file.': '.$class;
+        }
+    }
+
+    expect($offenders)->toBe([]);
+
+    foreach (['components/table/row.blade.php', 'components/table/cell.blade.php', 'components/table/heading.blade.php', 'components/table/table-header.blade.php'] as $view) {
+        expect(file_get_contents(dirname(__DIR__, 2).'/resources/views/'.$view))
+            ->toMatch('/aura-table-(?:heading-)?cell/')
+            ->not->toMatch('/(?<![\w:\[-])py-(?:2\.5|3)(?![\w-])/');
+    }
 });
 
 test('the table toolbar keeps one row and the settings sub-panel switches color through a component class', function () {

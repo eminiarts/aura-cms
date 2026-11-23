@@ -446,28 +446,26 @@
 
             <template x-if="showListbox">
                 <ul x-ref="listbox" x-transition.origin.top x-cloak
-                    class="overflow-y-auto absolute left-0 z-10 mt-2 w-full max-h-96 bg-white rounded-md border divide-y shadow-md origin-top outline-none divide-gray-500/30 border-gray-500/30 dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-700">
+                    class="overflow-y-auto absolute left-0 z-10 p-1 mt-2 w-full max-h-96 bg-white aura-radius-panel ring-1 shadow-lg origin-top outline-none ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10">
                     <template x-if="searchable">
-                        <li class="border-none">
-                            <div>
-                                <input x-model.debounce.500ms="search" autofocus x-ref="searchField"
-                                    class="px-4 py-2.5 w-full placeholder-gray-500 text-gray-900 border-none focus:ring-primary-600 focus:outline-none"
-                                    placeholder="{{ __('Search...')}}">
-                            </div>
+                        <li class="pb-1">
+                            <input x-model.debounce.500ms="search" autofocus x-ref="searchField"
+                                class="block px-3 w-full text-sm border-0 aura-field aura-control-sm focus:outline-none"
+                                placeholder="{{ __('Search...')}}">
                         </li>
                     </template>
 
                     <template x-if="loading">
-                        <li role="status" class="px-4 py-3 text-sm text-gray-500">{{ __('Loading...') }}</li>
+                        <li role="status" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">{{ __('Loading...') }}</li>
                     </template>
                     <template x-if="loadError">
-                        <li class="px-4 py-3 text-sm">
+                        <li class="px-3 py-2 text-sm">
                             <span role="alert">{{ __('Unable to load options.') }}</span>
                             <button type="button" @click="fetchApi()" class="underline">{{ __('Retry') }}</button>
                         </li>
                     </template>
                     <template x-if="!loading && !loadError && filteredItems.length === 0">
-                        <li class="px-4 py-3 text-sm text-gray-500">{{ __('No results found.') }}</li>
+                        <li class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">{{ __('No results found.') }}</li>
                     </template>
                     <template x-if="!loading">
                         <template x-for="item in filteredItems" :key="item.id">
@@ -475,11 +473,11 @@
                                 :class="{
                                     'dark:bg-primary-500/20 dark:hover:bg-primary-500/30 dark:focus:bg-primary-500/30 bg-primary-50 hover:bg-primary-100 focus:outline-none': isSelected(
                                         item),
-                                    'dark:bg-gray-900 dark:hover:bg-gray-800 dark:focus:bg-gray-800 bg-white hover:bg-gray-50 focus:bg-gray-100 focus:outline-none':
+                                    'hover:bg-gray-100 focus:bg-gray-100 focus:outline-none dark:hover:bg-white/5 dark:focus:bg-white/5':
                                         !isSelected(item),
                                     'opacity-50 cursor-not-allowed': isDisabled(item),
                                 }"
-                                class="flex gap-2 justify-between items-center px-4 py-2 w-full text-sm transition-colors cursor-pointer focus:ring-primary-600"
+                                class="flex gap-2 justify-between items-center px-3 py-2 w-full text-sm aura-dropdown-item transition-colors duration-150 cursor-pointer"
                                 tabindex="0" role="option" @click="selectItem(item)"
                                 @keydown.enter.stop.prevent="selectItem(item)"
                                 @keydown.space.stop.prevent="selectItem(item)">
@@ -499,7 +497,7 @@
                     </template>
                     <template x-if="api && hasMore && !loading && !loadError">
                         <li>
-                            <button type="button" @click="fetchApi(true)" class="px-4 py-3 w-full text-sm text-primary-600">{{ __('Load more') }}</button>
+                            <button type="button" @click="fetchApi(true)" class="px-3 py-2 w-full text-sm aura-dropdown-item text-primary-600 hover:bg-gray-100 dark:text-primary-400 dark:hover:bg-white/5">{{ __('Load more') }}</button>
                         </li>
                     </template>
                 </ul>

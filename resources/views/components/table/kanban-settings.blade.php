@@ -33,7 +33,7 @@
             <div class="w-60">
                 <div class="p-2 kanban-wrapper" drag-root="reorderKanbanStatuses" role="none">
                     @foreach($this->kanbanStatuses as $key => $status)
-                        <label class="flex gap-2 items-center px-2 py-1.5 rounded-md transition-colors duration-150 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5 sortable"
+                        <label class="flex gap-2 items-center px-2 py-1.5 aura-dropdown-item transition-colors duration-150 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5 sortable"
                             for="status_{{$key}}" id="{{ $key }}">
 
                             <x-aura::input.checkbox wire:model.live="kanbanStatuses.{{ $key }}.visible" value="true" id="status_{{$key}}" />

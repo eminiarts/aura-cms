@@ -15,11 +15,11 @@
         </button>
 
         <div x-show="open" @click.away="open = false"
-             class="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 shadow-lg max-h-60 rounded-lg p-1 text-base ring-1 ring-gray-950/10 dark:ring-white/10 overflow-auto focus:outline-none sm:text-sm"
+             class="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 shadow-lg max-h-60 aura-radius-panel p-1 text-base ring-1 ring-gray-950/10 dark:ring-white/10 overflow-auto focus:outline-none sm:text-sm"
              x-ref="listbox">
             @foreach ($field['options'] as $option)
                 <div @click="selected = '{{ $option['key'] }}'; open = false"
-                     class="cursor-default select-none relative rounded-md py-2 pl-2 pr-9 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                     class="cursor-default select-none relative aura-dropdown-item py-2 pl-2 pr-9 transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
                      data-value="{{ $option['key'] }}"
                      data-color="{{ $option['color'] }}">
                     <span class="flex items-center">

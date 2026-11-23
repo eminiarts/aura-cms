@@ -21,7 +21,7 @@
                 && ! $this->settings['create_in_modal'] && $this->createLink;
         @endphp
         {{-- A relation section's row keeps the 32px button height without a button too, so its title sits at the same height. --}}
-        <div class="flex justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3 min-h-8' : 'mt-1 min-h-9 sm:mt-6' }}" @if ($isRelationTable) data-relation-header @endif>
+        <div class="flex justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3 aura-control-min-sm' : 'mt-1 aura-control-min-base sm:mt-6' }}" @if ($isRelationTable) data-relation-header @endif>
 
             @if ($this->settings['title'])
                 <div class="min-w-0">
@@ -55,10 +55,11 @@
 
             @can('create', $model)
                 @if ($this->settings['create'] && ! $createInEmptyState)
-                    <div class="create-resource">
-                        <div>
+                    {{-- Flex wrappers: an inline-flex button in a block box would add a line-box descender (34px row). --}}
+                    <div class="flex create-resource">
+                        <div class="flex">
                             @if ($this->settings['create_in_modal'])
-                                <a href="#"
+                                <a href="#" class="flex"
                                     wire:click.prevent="$dispatch('openModal', { component: 'aura::resource-create-modal', arguments: {
                                 type: '{{ $this->model->getType() }}',
                                 params: {

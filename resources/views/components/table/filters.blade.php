@@ -26,13 +26,13 @@
         @endif
     </div>
 
-    <hr class="my-4 border-t border-gray-200 dark:border-white/10">
+    <hr class="my-4 border-t border-gray-950/10 dark:border-white/10">
 
     <p class="block mt-6 font-semibold">{{ __('Custom Filters') }}</p>
 
     <div wire:key="filters-custom-{{ $selectedFilter }}">
         @foreach($filters['custom'] as $groupKey => $group)
-            <div class="px-3 py-3 mt-4 bg-white rounded-lg ring-1 shadow-xs ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10">
+            <div class="px-3 py-3 mt-4 bg-white aura-radius-panel ring-1 shadow-xs ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10">
                 <div class="flex justify-between items-center mb-2">
                     <div class="text-base font-semibold">
                         @if($groupKey > 0)
@@ -53,7 +53,7 @@
                 </div>
 
                 @foreach($group['filters'] as $filterKey => $filter)
-                <div class="p-2 mt-2 bg-gray-50 rounded-lg ring-1 ring-gray-950/10 dark:bg-white/5 dark:ring-white/10">
+                <div class="p-2 mt-2 bg-gray-50 aura-radius-control ring-1 ring-gray-950/10 dark:bg-white/5 dark:ring-white/10">
                     <div class="flex space-x-1">
                         @if($filterKey > 0)
                         <div class="w-16 shrink-0">

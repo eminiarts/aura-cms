@@ -288,7 +288,7 @@
                             $activeMonth = $this->quickFilters['month'] ?? null;
                             $uploadMonths = $model::uploadMonths();
 
-                            $segmentBase = 'px-3 py-1 text-sm font-medium rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
+                            $segmentBase = 'px-3 py-1 text-sm font-medium aura-segmented-item transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
                             $segmentActive = 'bg-white text-gray-900 shadow-xs ring-1 ring-gray-950/[0.07] dark:bg-gray-700 dark:text-white dark:ring-white/10';
                             $segmentIdle = 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200';
                         @endphp
@@ -296,7 +296,7 @@
                         <div
                             x-ref="segment"
                             x-show="!compact"
-                            class="inline-flex gap-0.5 isolate items-center p-0.5 rounded-lg bg-gray-950/[0.04] dark:bg-white/5"
+                            class="inline-flex gap-0.5 isolate items-center p-0.5 aura-segmented bg-gray-950/[0.04] dark:bg-white/5"
                         >
                             <button
                                 type="button"
