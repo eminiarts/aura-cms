@@ -111,5 +111,13 @@ module.exports = {
         },
     },
 
-    plugins: [require('@tailwindcss/forms'), require('@tailwindcss/typography'), require('tailwind-scrollbar'), require('@tailwindcss/aspect-ratio'),],
+    plugins: [
+        require('@tailwindcss/forms'), require('@tailwindcss/typography'), require('tailwind-scrollbar'), require('@tailwindcss/aspect-ratio'),
+        // row-hover: a hover state that waits until the pointer has moved since the page rendered
+        // (resources/js/app.js sets .aura-pointer-still), so a list that loads under a resting cursor
+        // does not open with one row highlighted.
+        function ({ addVariant }) {
+            addVariant('row-hover', ':root:not(.aura-pointer-still) &:hover');
+        },
+    ],
 };

@@ -252,7 +252,7 @@ class Table extends Component
         if ($this->settings['sort_columns'] && $this->settings['columns_global_key']) {
             $option = Aura::getOption($this->settings['columns_global_key']);
 
-            return empty($option) ? $headers->toArray() : $option;
+            return $this->withoutParentColumn(empty($option) ? $headers->toArray() : $option);
         }
 
         if ($this->settings['sort_columns'] && $this->settings['columns_user_key'] && $sort = auth()->user()->getOption($this->settings['columns_user_key'])) {
@@ -262,7 +262,7 @@ class Table extends Component
             })->toArray();
         }
 
-        return $headers;
+        return $this->withoutParentColumn($headers);
     }
 
     public function loadTable()
@@ -772,6 +772,29 @@ class Table extends Component
         }
 
         return array_values(array_unique($relations));
+    }
+
+    /**
+     * A relation table on a record page (HasMany) would repeat the record in
+     * every row through its foreign key column, so that column is left out.
+     */
+    protected function withoutParentColumn($headers)
+    {
+        $foreignKey = $this->parent ? optional($this->field)['foreign_key'] : null;
+
+        if (! $foreignKey || ! is_string($foreignKey)) {
+            return $headers;
+        }
+
+        if ($headers instanceof Collection) {
+            return $headers->except($foreignKey);
+        }
+
+        if (is_array($headers)) {
+            unset($headers[$foreignKey]);
+        }
+
+        return $headers;
     }
 
     private function isValidMediaType(string $type): bool

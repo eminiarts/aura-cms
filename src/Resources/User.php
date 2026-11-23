@@ -139,6 +139,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         ];
     }
 
+    // People: a round avatar.
+    public function avatarShape(): ?string
+    {
+        return 'circle';
+    }
+
     /**
      * Determine if the user belongs to the given team.
      *
@@ -332,6 +338,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'conditional_logic' => [],
                 'slug' => 'avatar',
                 'on_create' => false,
+                // The table's leading avatar already shows the image (or the initials), so no second column.
+                'on_index' => false,
                 'max_files' => 1,
                 'display' => [self::class, 'displayAvatarField'],
                 'style' => [

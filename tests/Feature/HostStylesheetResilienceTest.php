@@ -156,19 +156,21 @@ test('the built CSS sets token properties with a doubled class selector', functi
         ->toContain('.aura-sidebar-groups.aura-sidebar-groups{gap:var(--aura-sidebar-group-gap,.25rem)}');
 });
 
-test('the table toolbar and settings sub-panel switch layout and color through component classes', function () {
+test('the table toolbar keeps one row and the settings sub-panel switches color through a component class', function () {
     $css = auraBuiltCss();
 
     expect($css)
-        ->toMatch('/\.aura-table-toolbar\{[^}]*flex-direction:column/')
-        ->toMatch('/@media \((?:min-width:768px|width>=768px)\)\{\.aura-table-toolbar\{[^}]*flex-direction:row/')
         ->toContain('.dark .aura-group-section{border-color:rgb(var(--gray-700) / .8)');
 
     $views = dirname(__DIR__, 2).'/resources/views';
 
+    // One flex row on every width (phones may wrap it), so no host base class
+    // such as .flex-col can stack it against an md: variant.
     expect(file_get_contents($views.'/livewire/table.blade.php'))
-        ->toContain('class="aura-table-toolbar"')
-        ->not->toContain('md:flex-row');
+        ->toContain("'flex gap-2 items-center w-full'")
+        ->toContain('aura-field aura-control-base')
+        ->not->toContain('md:flex-row')
+        ->not->toContain('flex-col');
 
     expect(file_get_contents($views.'/components/fields/group.blade.php'))
         ->toContain('aura-group-section')
