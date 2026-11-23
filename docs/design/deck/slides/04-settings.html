@@ -55,6 +55,7 @@
             <tr><td></td><td><code>--aura-sidebar-icon-size</code></td><td class="tab">standard <b>20 px</b> · compact 18 px · dense 16 px</td></tr>
             <tr><td></td><td><code>--aura-sidebar-group-gap</code></td><td class="tab">standard <b>4 px</b> · compact 4 px · dense 2 px</td></tr>
             <tr><td></td><td><code>--aura-sidebar-heading-gap</code></td><td class="tab">standard <b>20 px</b> · compact 14 px · dense 10 px</td></tr>
+            <tr><td>Every preset</td><td><code>--aura-control-height</code></td><td class="tab">xs 28 px · sm 32 px · <b>base 36 px</b> · lg 44 px · xl 52 px</td></tr>
         </table>
         <p class="note mt-auto">Expert mode replaces any of these with a pixel value (<code>expert-panel-radius</code> → <code>--aura-panel-radius</code>, and so on).</p>
     </div>
@@ -72,7 +73,7 @@
             <div class="c-6 col" style="border-top:2px solid var(--ink);padding-top:28px">
                 <div class="h3">What expert mode adds</div>
                 <div class="stack mt-32">
-                    <div><div class="h4">Layout in pixels</div><p class="note">All 11 layout variables, one field each. Empty fields keep the preset.</p></div>
+                    <div><div class="h4">Layout in pixels</div><p class="note">All 11 layout variables and the base control height, one field each. Empty fields keep the preset.</p></div>
                     <div><div class="h4">Sidebar colours per mode</div><p class="note">Background, hover, menu, text, icon and icon hover, for light and for dark.</p></div>
                     <div><div class="h4">Palette carried over</div><p class="note">Switching it on starts from the current palette's colours, not from Aura blue.</p></div>
                 </div>
@@ -80,8 +81,7 @@
             <div class="c-6 col" style="border-top:2px solid var(--p600);padding-top:28px">
                 <div class="h3 blue-t">Not a token yet</div>
                 <div class="stack mt-32">
-                    <div><div class="h4">Control height</div><p class="note">Inputs, selects and buttons each set their own padding. See “One control height”.</p></div>
-                    <div><div class="h4">Input and select radius</div><p class="note">Hard-coded <code>rounded-lg</code>; they ignore the corner setting.</p></div>
+                    <div><div class="h4">Dropdown, modal and toast radius</div><p class="note">Fixed Tailwind classes; they ignore the corner setting.</p></div>
                     <div><div class="h4">Type scale and shadows</div><p class="note">Tailwind defaults, plus one-offs like the 11 px table header.</p></div>
                 </div>
             </div>

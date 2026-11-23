@@ -63,7 +63,7 @@
             },
             'disable': []
         });" @change="$dispatch('input', { value: $event.target.value })" wire:ignore
-            class="flex relative rounded-md shadow-sm">
+            class="flex relative">
             <span
                 class="pointer-events-none h-full absolute right-0 inline-flex items-center px-3 text-gray-700 dark:text-gray-400 sm:text-sm
                 @if ($field['field']->isDisabled($this->form, $field)) opacity-50 cursor-not-allowed @endif
@@ -80,7 +80,7 @@
                 placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"
                 wire:model="form.fields.{{ optional($field)['slug'] }}" @endif
                 x-ref="input" @if ($field['field']->isDisabled($this->form, $field)) disabled @endif
-                class="px-3 py-2 w-full bg-white rounded-md border appearance-none cursor-pointer hover:bg-gray-50 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed border-gray-500/30 dark:border-gray-700 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900" />
+                class="aura-field aura-control-base px-3 w-full text-sm bg-white border appearance-none cursor-pointer hover:bg-gray-50 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed border-gray-500/30 dark:border-gray-700 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900" />
         </div>
     @endif
 </x-aura::fields.wrapper>

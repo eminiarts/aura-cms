@@ -19,8 +19,8 @@
             <div class="c-7 col" style="border-top:2px solid var(--p600);padding-top:24px;padding-left:16px">
                 <div class="h3 blue-t">Found on the page</div>
                 <div class="stack mt-24">
-                    <div><div class="h4">Controls do not share a height</div><p class="note">xs inputs 24 px beside 28 px buttons; the table toolbar mixes 40 and 36. Proposal: <code>--aura-control-height</code>.</p></div>
-                    <div><div class="h4">Inputs ignore the corner setting</div><p class="note">Buttons follow <code>--aura-control-radius</code>, fields keep <code>rounded-lg</code>.</p></div>
+                    <div><div class="h4">Controls did not share a height</div><p class="note">Settled: <code>--aura-control-height</code>, xs 28 · sm 32 · base 36 · lg 44, for buttons, inputs and selects alike.</p></div>
+                    <div><div class="h4">Inputs ignored the corner setting</div><p class="note">Settled: fields follow <code>--aura-control-radius</code> like buttons.</p></div>
                     <div><div class="h4">Semantic colours are unused</div><p class="note">Components use Tailwind green, red and yellow, not <code>--aura-color-*</code>. Error text comes in two reds; red-500 is {{cr:#ef4444}}:1, below AA.</p></div>
                     <div><div class="h4">Small drifts</div><p class="note">Form and editor tabs use different dark-mode blues; <code>button</code> and <code>button.primary</code> look the same; icons mix stroke 1.5 and 2.</p></div>
                 </div>

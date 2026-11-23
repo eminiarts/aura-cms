@@ -26,23 +26,25 @@
             <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
                 <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path></svg>
             </div>
-            <input type="text" class="block h-10 w-full py-2 pl-9 pr-3 text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 dark:placeholder:text-gray-500 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]" placeholder="{{ __('Search for items') }}">
+            <input type="text" class="aura-field aura-control-base block w-full pl-9 pr-3 text-sm text-gray-900 bg-white border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 dark:placeholder:text-gray-500 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]" placeholder="{{ __('Search for items') }}">
         </div>
     </div>
     <div class="space-x-4 aura-table-toolbar-actions">
         <div class="flex space-x-2">
-            <div class="inline-flex isolate gap-0.5 items-center p-0.5 rounded-lg bg-gray-950/[0.04] dark:bg-white/5">
-                <button type="button" class="inline-flex relative items-center p-1.5 rounded-md {{ $segmentActive }}"><span class="sr-only">{{ __('List view') }}</span><x-aura::icon icon="list" size="sm" /></button>
-                <button type="button" class="inline-flex relative items-center p-1.5 rounded-md {{ $segmentIdle }}"><span class="sr-only">{{ __('Grid view') }}</span><x-aura::icon icon="grid" size="sm" /></button>
-                <button type="button" class="inline-flex relative items-center p-1.5 rounded-md {{ $segmentIdle }}"><span class="sr-only">{{ __('Kanban view') }}</span><x-aura::icon icon="kanban" size="sm" /></button>
+            <div class="flex aura-control-base">
+                <div class="inline-flex isolate gap-0.5 items-stretch p-0.5 h-full rounded-lg bg-gray-950/[0.04] dark:bg-white/5">
+                    <button type="button" class="inline-flex relative justify-center items-center rounded-md aspect-square {{ $segmentActive }}"><span class="sr-only">{{ __('List view') }}</span><x-aura::icon icon="list" size="sm" /></button>
+                    <button type="button" class="inline-flex relative justify-center items-center rounded-md aspect-square {{ $segmentIdle }}"><span class="sr-only">{{ __('Grid view') }}</span><x-aura::icon icon="grid" size="sm" /></button>
+                    <button type="button" class="inline-flex relative justify-center items-center rounded-md aspect-square {{ $segmentIdle }}"><span class="sr-only">{{ __('Kanban view') }}</span><x-aura::icon icon="kanban" size="sm" /></button>
+                </div>
             </div>
-            <x-aura::button.border class="h-10">
+            <x-aura::button.border>
                 <x-slot:icon><x-aura::icon icon="table" size="sm" /></x-slot:icon>
                 {{ __('Settings') }}
             </x-aura::button.border>
             @include('aura::components.table.filter')
         </div>
-        <button type="button" class="inline-flex gap-1.5 items-center px-3 py-1.5 h-9 text-sm font-medium text-gray-700 bg-white rounded-lg ring-1 shadow-xs transition-colors duration-150 ring-gray-950/10 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:ring-white/10 dark:hover:bg-gray-700/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+        <button type="button" class="aura-button aura-control-base inline-flex gap-1.5 items-center px-3 text-sm font-medium text-gray-700 bg-white ring-1 shadow-xs transition-colors duration-150 ring-gray-950/10 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:ring-white/10 dark:hover:bg-gray-700/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
             {{ __('Actions') }}
             <svg class="-mr-0.5 w-4 h-4 text-gray-400 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
         </button>
@@ -154,7 +156,7 @@
     <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Anatomy') }}</span>
     <dl class="grid gap-x-8 gap-y-2 mt-4 text-sm md:grid-cols-2">
         @foreach ([
-            'livewire/table' => __('Toolbar: search (h-10), view switch, settings, filters, bulk actions'),
+            'livewire/table' => __('Toolbar at base height: search, view switch, settings, filters, bulk actions'),
             'table/filter-tabs' => __('Saved filters as segmented tabs; hidden when there are none'),
             'table/list-view' => __('Card, table, empty state; includes header, rows and footer'),
             'table/table-header + table/heading' => __('Header row; sortable headings show the sort arrow'),

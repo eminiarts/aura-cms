@@ -31,6 +31,9 @@ class Styleguide extends Component
         'sidebar-size' => ['standard', 'compact', 'dense'],
     ];
 
+    /** Group of the design variables that no preset changes (the control height scale). */
+    public const FIXED_GROUP = 'control-height';
+
     /** @var list<string> */
     public const MODES = ['light', 'dark'];
 
@@ -69,9 +72,10 @@ class Styleguide extends Component
     }
 
     /**
-     * Each appearance setting with the CSS variables it writes and their value per preset.
+     * Each appearance setting with the CSS variables it writes and their value per preset, plus
+     * one fixed group (FIXED_GROUP) for the variables that are the same in every preset.
      *
-     * @return array<string, array{label: string, default: string, presets: array<string, array<string, string>>, variables: array<string, array{expert: string|null, usedBy: string}>}>
+     * @return array<string, array{label: string, default: string, fixed: bool, presets: array<string, array<string, string>>, variables: array<string, array{expert: string|null, usedBy: string}>}>
      */
     public function designTokens(): array
     {
@@ -101,11 +105,28 @@ class Styleguide extends Component
             $groups[$setting] = [
                 'label' => $labels[$setting],
                 'default' => $presets[0],
+                'fixed' => false,
                 'presets' => array_map(
                     fn (array $tokens): array => array_intersect_key($tokens, array_flip($variables)),
                     $values,
                 ),
                 'variables' => collect($variables)->mapWithKeys(fn (string $variable): array => [$variable => [
+                    'expert' => $expertSettings[$variable] ?? null,
+                    'usedBy' => $usedBy[$variable] ?? '',
+                ]])->all(),
+            ];
+        }
+
+        $owned = collect($groups)->flatMap(fn (array $group): array => array_keys($group['variables']))->all();
+        $fixed = array_diff_key(ThemeTokens::design([]), array_flip($owned));
+
+        if ($fixed !== []) {
+            $groups[self::FIXED_GROUP] = [
+                'label' => __('Control height'),
+                'default' => 'fixed',
+                'fixed' => true,
+                'presets' => ['fixed' => $fixed],
+                'variables' => collect(array_keys($fixed))->mapWithKeys(fn (string $variable): array => [$variable => [
                     'expert' => $expertSettings[$variable] ?? null,
                     'usedBy' => $usedBy[$variable] ?? '',
                 ]])->all(),
@@ -139,7 +160,7 @@ class Styleguide extends Component
         ];
 
         foreach ($this->designTokens() as $setting => $group) {
-            if (isset($group['presets'][$selected[$setting]])) {
+            if (isset($selected[$setting], $group['presets'][$selected[$setting]])) {
                 $tokens = [...$tokens, ...$group['presets'][$selected[$setting]]];
             }
         }
@@ -187,15 +208,15 @@ class Styleguide extends Component
             ],
             'buttons' => [
                 'label' => __('Buttons'),
-                'description' => __('<x-aura::button> with variants as sub-components and sizes through the size prop. Radius follows --aura-control-radius.'),
+                'description' => __('<x-aura::button> with variants as sub-components and sizes through the size prop. Height follows --aura-control-height-*, radius --aura-control-radius.'),
             ],
             'forms' => [
                 'label' => __('Form controls'),
-                'description' => __('Inputs from components/input/*. Resource fields wrap them with a label, help tooltip and validation error (fields/wrapper).'),
+                'description' => __('Inputs from components/input/*, sized like buttons (xs, sm, base, lg) and rounded with --aura-control-radius. Resource fields wrap them with a label, help tooltip and validation error (fields/wrapper).'),
             ],
             'sizing' => [
                 'label' => __('Control sizing'),
-                'description' => __('Controls that sit next to each other should share one height. There is no height token: each control sizes itself through padding and line height. Heights below are measured in the browser.'),
+                'description' => __('Controls that sit next to each other share one height. Buttons, inputs and selects take one size prop; the height of each size comes from --aura-control-height-*, the corners from --aura-control-radius. Heights below are measured in the browser.'),
             ],
             'badges' => [
                 'label' => __('Badges & pills'),
@@ -280,12 +301,17 @@ class Styleguide extends Component
             '--aura-layout-gap' => __('Settings page panels'),
             '--aura-section-gap' => __('Settings page groups'),
             '--aura-panel-radius' => '.aura-card',
-            '--aura-control-radius' => '.aura-button, .aura-card-small, '.__('sidebar items'),
+            '--aura-control-radius' => '.aura-button, .aura-field, .aura-card-small, '.__('sidebar items'),
             '--aura-sidebar-item-height' => '.aura-sidebar .aura-sidebar-item',
             '--aura-sidebar-item-padding-x' => '.aura-sidebar .aura-sidebar-item',
             '--aura-sidebar-icon-size' => '.aura-sidebar .sidebar-item svg',
             '--aura-sidebar-group-gap' => '.aura-sidebar-groups',
             '--aura-sidebar-heading-gap' => '.aura-sidebar .aura-sidebar-heading',
+            '--aura-control-height-xs' => '.aura-control-xs, .aura-control-min-xs',
+            '--aura-control-height-sm' => '.aura-control-sm',
+            '--aura-control-height' => '.aura-control-base, .aura-control-min-base, '.__('color swatch'),
+            '--aura-control-height-lg' => '.aura-control-lg',
+            '--aura-control-height-xl' => '.aura-control-xl',
         ];
     }
 }

@@ -76,7 +76,7 @@
             <span class="text-xs text-gray-400">icon-xs</span>
         </div>
     </div>
-    <p class="mt-4 text-xs text-gray-400 dark:text-gray-500">{{ __('Size sets padding, text size and gap. Measured heights are in Control sizing.') }}</p>
+    <p class="mt-4 text-xs text-gray-400 dark:text-gray-500">{{ __('Size sets the height (--aura-control-height-*), padding, text size and gap. Icon-only buttons are square. Measured heights are in Control sizing.') }}</p>
 </div>
 
 <div class="mt-4 aura-card">

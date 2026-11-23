@@ -190,6 +190,24 @@ test('expert appearance validates colors and restores defaults', function () {
         ->assertSet('form.fields.expert-panel-radius', 12);
 });
 
+test('expert mode can change the base control height', function () {
+    Livewire::test(Settings::class)
+        ->set('form.fields.appearance-expert-mode', true)
+        ->assertSet('form.fields.expert-control-height', 36)
+        ->assertSee('Control height')
+        ->set('form.fields.expert-control-height', 97)
+        ->call('save')
+        ->assertHasErrors(['form.fields.expert-control-height' => 'max'])
+        ->set('form.fields.expert-control-height', 40)
+        ->assertSee('--aura-control-height: 40px;')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->call('restoreExpertDefaults')
+        ->assertSet('form.fields.expert-control-height', 36);
+
+    expect(Option::firstOrFail()->value['expert-control-height'])->toBe(40);
+});
+
 test('expert appearance inherits the selected presets when it is enabled', function () {
     Livewire::test(Settings::class)
         ->set('form.fields.color-palette', 'red')

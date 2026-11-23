@@ -365,10 +365,10 @@
         <div class="relative p-0 w-full bg-transparent border-0 aura-input" :class="{ 'aura-input-xs': size === 'xs' }">
             <label class="sr-only">{{ __('Select Entry') }}</label>
             <button type="button"
-                class="flex relative justify-between items-center w-full bg-white border appearance-none shadow-xs border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
+                class="aura-field flex relative justify-between items-center w-full bg-white border appearance-none shadow-xs border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
                 :class="{
-                    'min-h-[2.625rem] px-3 pt-1 pb-0 rounded-lg': size === 'default',
-                    'min-h-[2rem] px-1 pt-1 pb-0 rounded-md': size === 'xs'
+                    'aura-control-min-base px-3 py-px': size === 'default',
+                    'aura-control-min-xs px-1 py-0.5': size === 'xs'
                 }"
                 x-ref="listboxButton" @click="toggleListbox">
 
@@ -389,7 +389,7 @@
                         <template x-for="(item, index) in value" :key="item">
                             {{-- <pre x-html="'item: ' + item + ', selected: ' + selectedItemMarkup(item)"></pre> --}}
 
-                            <div class="inline-flex gap-1 items-center py-0.5 pr-2 pl-1 mr-2 mb-1 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 draggable-selectmany-item"
+                            <div class="inline-flex gap-1 items-center py-0.5 pr-2 pl-1 my-0.5 mr-2 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 draggable-selectmany-item"
                                 :data-id="item" @mousedown.prevent="startDragging(index, $event)"
                                 :class="{ 'shadow-item': index == dragIndex }">
 

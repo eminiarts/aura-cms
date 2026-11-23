@@ -817,6 +817,7 @@ class Settings extends Component
         $numericLabels = [
             'expert-panel-radius' => 'Panel radius',
             'expert-control-radius' => 'Button and control radius',
+            'expert-control-height' => 'Control height',
             'expert-panel-padding' => 'Panel padding',
             'expert-panel-small-padding' => 'Small panel padding',
             'expert-layout-gap' => 'Layout gap',
@@ -893,6 +894,7 @@ class Settings extends Component
         return [
             'expert-panel-radius' => 12,
             'expert-control-radius' => 8,
+            'expert-control-height' => 36,
             'expert-panel-padding' => 20,
             'expert-panel-small-padding' => 8,
             'expert-layout-gap' => 24,

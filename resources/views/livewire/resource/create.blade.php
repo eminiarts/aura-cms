@@ -18,7 +18,7 @@
         @if(!$inModal)
         <div class="save-resource">
             @if($showSaveButton)
-            <x-aura::button size="lg" wire:click="save">
+            <x-aura::button wire:click="save">
                 <div wire:loading wire:target="save">
                     <x-aura::icon.loading />
                 </div>

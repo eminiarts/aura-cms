@@ -24,7 +24,7 @@
         @if($canUpdate)
             <div class="flex gap-2 items-center">
                 @if($page === 'general' && ($form['fields']['appearance-expert-mode'] ?? false))
-                    <x-aura::button.border size="sm" wire:click="restoreExpertDefaults">
+                    <x-aura::button.border wire:click="restoreExpertDefaults">
                         {{ __('Restore expert defaults') }}
                     </x-aura::button.border>
                 @endif
@@ -32,7 +32,7 @@
                     <span class="text-xs font-medium text-amber-700 dark:text-amber-300">
                         {{ __('Unsaved changes') }}
                     </span>
-                    <x-aura::button.border size="sm" wire:click="discardAppearanceChanges">
+                    <x-aura::button.border wire:click="discardAppearanceChanges">
                         {{ __('Discard changes') }}
                     </x-aura::button.border>
                 @endif

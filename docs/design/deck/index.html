@@ -483,7 +483,7 @@
                 <p class="note mt-8 tab">Panel 0 &nbsp;·&nbsp; control 0</p>
             </div>
         </div>
-        <p class="note mt-32"><b>Gap today:</b> cards, buttons and sidebar items read <code>--aura-panel-radius</code> and <code>--aura-control-radius</code>. Inputs and selects still hard-code <code>rounded-lg</code>, so with Square the button next to a field turns square and the field does not. Drawn here as intended.</p>
+        <p class="note mt-32">Cards read <code>--aura-panel-radius</code>; buttons, inputs, selects and sidebar items read <code>--aura-control-radius</code>, so with Square the button and the field next to it turn square together.</p>
     </div>
 </section>
 
@@ -576,7 +576,7 @@
                 <div><div class="h4">One primary per view</div><p class="note">The main action is solid primary. Everything beside it is border or transparent.</p></div>
                 <div><div class="h4">Name the action</div><p class="note">A verb and its object: Create post, Save changes. Not OK, not Submit.</p></div>
                 <div><div class="h4">Red only for destroying</div><p class="note"><code>button.danger</code> is the quiet tint in a list, <code>button.error</code> the solid confirm in a dialog.</p></div>
-                <div><div class="h4">Base 36 px, sizes by role</div><p class="note">xs 28 in tables, sm 32 in toolbars, base 36 in forms, lg 44 and xl 52 on empty states and login.</p></div>
+                <div><div class="h4">Base 36 px, sizes by role</div><p class="note">xs 28 in tables, sm 32 for filters and pagination, base 36 in forms and toolbars, lg 44 and xl 52 on empty states and login.</p></div>
             </div>
         </div>
     </div>
@@ -608,12 +608,12 @@
     <div class="body">
         <div class="head">
             <h2 class="h1">One control height</h2>
-            <p class="p">Controls that share a row share a height. Today each sets its own padding; red marks a height that differs from the button beside it.</p>
+            <p class="p">Controls that share a row share a height. Each size reads one <code>--aura-control-height</code> value; red marks a height that differs from the button beside it.</p>
         </div>
         <div class="grid mt-40 grow">
             <div class="c-8 col g-24"><div class="frame rows-1" style="flex-grow:594"><div class="fit" style="--ar:2368/594;--arn:3.9865;max-width:1894px"><figure class="shot light" style="background:rgb(255, 255, 255)"><img src="assets/screens/sizing-light.png" alt="sizing, light mode" style="top:0.000%;height:353.535%"></figure></div></div><div class="frame rows-3-4" style="flex-grow:698"><div class="fit" style="--ar:2368/698;--arn:3.3926;max-width:1894px"><figure class="shot light" style="background:rgb(255, 255, 255)"><img src="assets/screens/sizing-light.png" alt="sizing, light mode" style="top:-139.255%;height:300.860%"></figure></div></div></div>
             <div class="c-4 col" style="padding-left:16px">
-                <span class="cap">Proposal: <code>--aura-control-height</code></span>
+                <span class="cap">Token: <code>--aura-control-height</code></span>
                 <table class="token-table mt-12" style="font-size:18px">
                     <tr><th>Size</th><th>Height</th><th>Used by</th></tr>
                     <tr><td>xs</td><td class="tab">28 px</td><td class="muted">Row actions in tables</td></tr>
@@ -622,9 +622,9 @@
                     <tr><td>lg</td><td class="tab">44 px</td><td class="muted">Login, empty states</td></tr>
                 </table>
                 <div class="stack mt-32">
-                    <div><div class="h4">Inputs get the sizes buttons have</div><p class="note">Today inputs have base 36 and xs 24 only; xs sits beside 28 px buttons.</p></div>
-                    <div><div class="h4">Icon-only buttons are square</div><p class="note">Width equals the control height, so the ··· button stops being 32 next to 36.</p></div>
-                    <div><div class="h4">One toolbar, one height</div><p class="note">The table toolbar mixes 40 and 36 px. All of it moves to base.</p></div>
+                    <div><div class="h4">Inputs get the sizes buttons have</div><p class="note">Inputs and selects take xs, sm, base and lg; xs is 28 like the xs button.</p></div>
+                    <div><div class="h4">Icon-only buttons are square</div><p class="note">Width equals the control height: the ··· button is 36 next to 36.</p></div>
+                    <div><div class="h4">One toolbar, one height</div><p class="note">Search, view switch, settings, filters and bulk actions are all base, 36 px.</p></div>
                 </div>
             </div>
         </div>
@@ -844,6 +844,7 @@
             <tr><td></td><td><code>--aura-sidebar-icon-size</code></td><td class="tab">standard <b>20 px</b> · compact 18 px · dense 16 px</td></tr>
             <tr><td></td><td><code>--aura-sidebar-group-gap</code></td><td class="tab">standard <b>4 px</b> · compact 4 px · dense 2 px</td></tr>
             <tr><td></td><td><code>--aura-sidebar-heading-gap</code></td><td class="tab">standard <b>20 px</b> · compact 14 px · dense 10 px</td></tr>
+            <tr><td>Every preset</td><td><code>--aura-control-height</code></td><td class="tab">xs 28 px · sm 32 px · <b>base 36 px</b> · lg 44 px · xl 52 px</td></tr>
         </table>
         <p class="note mt-auto">Expert mode replaces any of these with a pixel value (<code>expert-panel-radius</code> → <code>--aura-panel-radius</code>, and so on).</p>
     </div>
@@ -861,7 +862,7 @@
             <div class="c-6 col" style="border-top:2px solid var(--ink);padding-top:28px">
                 <div class="h3">What expert mode adds</div>
                 <div class="stack mt-32">
-                    <div><div class="h4">Layout in pixels</div><p class="note">All 11 layout variables, one field each. Empty fields keep the preset.</p></div>
+                    <div><div class="h4">Layout in pixels</div><p class="note">All 11 layout variables and the base control height, one field each. Empty fields keep the preset.</p></div>
                     <div><div class="h4">Sidebar colours per mode</div><p class="note">Background, hover, menu, text, icon and icon hover, for light and for dark.</p></div>
                     <div><div class="h4">Palette carried over</div><p class="note">Switching it on starts from the current palette's colours, not from Aura blue.</p></div>
                 </div>
@@ -869,8 +870,7 @@
             <div class="c-6 col" style="border-top:2px solid var(--p600);padding-top:28px">
                 <div class="h3 blue-t">Not a token yet</div>
                 <div class="stack mt-32">
-                    <div><div class="h4">Control height</div><p class="note">Inputs, selects and buttons each set their own padding. See “One control height”.</p></div>
-                    <div><div class="h4">Input and select radius</div><p class="note">Hard-coded <code>rounded-lg</code>; they ignore the corner setting.</p></div>
+                    <div><div class="h4">Dropdown, modal and toast radius</div><p class="note">Fixed Tailwind classes; they ignore the corner setting.</p></div>
                     <div><div class="h4">Type scale and shadows</div><p class="note">Tailwind defaults, plus one-offs like the 11 px table header.</p></div>
                 </div>
             </div>
@@ -939,8 +939,8 @@
             <div class="c-7 col" style="border-top:2px solid var(--p600);padding-top:24px;padding-left:16px">
                 <div class="h3 blue-t">Found on the page</div>
                 <div class="stack mt-24">
-                    <div><div class="h4">Controls do not share a height</div><p class="note">xs inputs 24 px beside 28 px buttons; the table toolbar mixes 40 and 36. Proposal: <code>--aura-control-height</code>.</p></div>
-                    <div><div class="h4">Inputs ignore the corner setting</div><p class="note">Buttons follow <code>--aura-control-radius</code>, fields keep <code>rounded-lg</code>.</p></div>
+                    <div><div class="h4">Controls did not share a height</div><p class="note">Settled: <code>--aura-control-height</code>, xs 28 · sm 32 · base 36 · lg 44, for buttons, inputs and selects alike.</p></div>
+                    <div><div class="h4">Inputs ignored the corner setting</div><p class="note">Settled: fields follow <code>--aura-control-radius</code> like buttons.</p></div>
                     <div><div class="h4">Semantic colours are unused</div><p class="note">Components use Tailwind green, red and yellow, not <code>--aura-color-*</code>. Error text comes in two reds; red-500 is 3.8:1, below AA.</p></div>
                     <div><div class="h4">Small drifts</div><p class="note">Form and editor tabs use different dark-mode blues; <code>button</code> and <code>button.primary</code> look the same; icons mix stroke 1.5 and 2.</p></div>
                 </div>

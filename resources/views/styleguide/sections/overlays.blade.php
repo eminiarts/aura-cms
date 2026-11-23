@@ -60,8 +60,8 @@
                 <x-aura::input.text placeholder="My first post" />
             </div>
             <div class="flex gap-3 justify-end px-6 py-4 border-t border-gray-950/5 bg-gray-50/50 dark:border-white/10 dark:bg-white/[0.02]">
-                <x-aura::button.transparent size="sm">{{ __('Cancel') }}</x-aura::button.transparent>
-                <x-aura::button size="sm">{{ __('Save') }}</x-aura::button>
+                <x-aura::button.transparent>{{ __('Cancel') }}</x-aura::button.transparent>
+                <x-aura::button>{{ __('Save') }}</x-aura::button>
             </div>
         </div>
     </div>

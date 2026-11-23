@@ -22,7 +22,7 @@
                 <div><div class="h4">One primary per view</div><p class="note">The main action is solid primary. Everything beside it is border or transparent.</p></div>
                 <div><div class="h4">Name the action</div><p class="note">A verb and its object: Create post, Save changes. Not OK, not Submit.</p></div>
                 <div><div class="h4">Red only for destroying</div><p class="note"><code>button.danger</code> is the quiet tint in a list, <code>button.error</code> the solid confirm in a dialog.</p></div>
-                <div><div class="h4">Base 36 px, sizes by role</div><p class="note">xs 28 in tables, sm 32 in toolbars, base 36 in forms, lg 44 and xl 52 on empty states and login.</p></div>
+                <div><div class="h4">Base 36 px, sizes by role</div><p class="note">xs 28 in tables, sm 32 for filters and pagination, base 36 in forms and toolbars, lg 44 and xl 52 on empty states and login.</p></div>
             </div>
         </div>
     </div>
@@ -54,12 +54,12 @@
     <div class="body">
         <div class="head">
             <h2 class="h1">One control height</h2>
-            <p class="p">Controls that share a row share a height. Today each sets its own padding; red marks a height that differs from the button beside it.</p>
+            <p class="p">Controls that share a row share a height. Each size reads one <code>--aura-control-height</code> value; red marks a height that differs from the button beside it.</p>
         </div>
         <div class="grid mt-40 grow">
             <div class="c-8 col g-24">{{shot:sizing,light,rows-1}}{{shot:sizing,light,rows-3-4}}</div>
             <div class="c-4 col" style="padding-left:16px">
-                <span class="cap">Proposal: <code>--aura-control-height</code></span>
+                <span class="cap">Token: <code>--aura-control-height</code></span>
                 <table class="token-table mt-12" style="font-size:18px">
                     <tr><th>Size</th><th>Height</th><th>Used by</th></tr>
                     <tr><td>xs</td><td class="tab">28 px</td><td class="muted">Row actions in tables</td></tr>
@@ -68,9 +68,9 @@
                     <tr><td>lg</td><td class="tab">44 px</td><td class="muted">Login, empty states</td></tr>
                 </table>
                 <div class="stack mt-32">
-                    <div><div class="h4">Inputs get the sizes buttons have</div><p class="note">Today inputs have base 36 and xs 24 only; xs sits beside 28 px buttons.</p></div>
-                    <div><div class="h4">Icon-only buttons are square</div><p class="note">Width equals the control height, so the ··· button stops being 32 next to 36.</p></div>
-                    <div><div class="h4">One toolbar, one height</div><p class="note">The table toolbar mixes 40 and 36 px. All of it moves to base.</p></div>
+                    <div><div class="h4">Inputs get the sizes buttons have</div><p class="note">Inputs and selects take xs, sm, base and lg; xs is 28 like the xs button.</p></div>
+                    <div><div class="h4">Icon-only buttons are square</div><p class="note">Width equals the control height: the ··· button is 36 next to 36.</p></div>
+                    <div><div class="h4">One toolbar, one height</div><p class="note">Search, view switch, settings, filters and bulk actions are all base, 36 px.</p></div>
                 </div>
             </div>
         </div>

@@ -23,6 +23,7 @@ final class ThemeTokens
     private const DESIGN_OVERRIDES = [
         'expert-panel-radius' => '--aura-panel-radius',
         'expert-control-radius' => '--aura-control-radius',
+        'expert-control-height' => '--aura-control-height',
         'expert-panel-padding' => '--aura-panel-padding',
         'expert-panel-small-padding' => '--aura-panel-small-padding',
         'expert-layout-gap' => '--aura-layout-gap',
@@ -203,7 +204,17 @@ final class ThemeTokens
             ],
         };
 
-        $tokens = [...$densityTokens, ...$radiusTokens, ...$sidebarTokens];
+        // One height per control size, shared by buttons, inputs and selects. Fixed per size:
+        // density changes padding and gaps, not the size of a control.
+        $controlTokens = [
+            '--aura-control-height-xs' => '1.75rem',
+            '--aura-control-height-sm' => '2rem',
+            '--aura-control-height' => '2.25rem',
+            '--aura-control-height-lg' => '2.75rem',
+            '--aura-control-height-xl' => '3.25rem',
+        ];
+
+        $tokens = [...$densityTokens, ...$radiusTokens, ...$sidebarTokens, ...$controlTokens];
 
         if (! self::expertEnabled($theme)) {
             return $tokens;

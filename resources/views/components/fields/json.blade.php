@@ -11,7 +11,7 @@
         $maxHeight = (int) (optional($field)['max_height'] ?? 600);
     @endphp
 
-    <div class="overflow-hidden w-full bg-white rounded-lg border appearance-none border-gray-500/30 shadow-xs focus-within:border-primary-300 focus-within:ring focus-within:ring-primary-300 focus-within:ring-opacity-50 dark:focus-within:ring-primary-500 dark:focus-within:ring-opacity-50 dark:bg-gray-900">
+    <div class="aura-field overflow-hidden w-full bg-white border appearance-none border-gray-500/30 shadow-xs focus-within:border-primary-300 focus-within:ring focus-within:ring-primary-300 focus-within:ring-opacity-50 dark:focus-within:ring-primary-500 dark:focus-within:ring-opacity-50 dark:bg-gray-900">
         <div
             wire:ignore
             x-data="{ fieldSlug: @js($fieldSlug), minHeight: {{ $minHeight }}, maxHeight: {{ $maxHeight }}, error: null }"

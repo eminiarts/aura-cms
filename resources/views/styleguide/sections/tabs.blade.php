@@ -82,18 +82,20 @@
     <div class="aura-card" x-data="{ selected: 'list' }">
         <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('View switch (table/switch-view)') }}</span>
         <div class="mt-4">
-            <div class="inline-flex isolate gap-0.5 items-center p-0.5 rounded-lg bg-gray-950/[0.04] dark:bg-white/5">
+            <div class="flex aura-control-base">
+            <div class="inline-flex isolate gap-0.5 items-stretch p-0.5 h-full rounded-lg bg-gray-950/[0.04] dark:bg-white/5">
                 @foreach (['list' => 'List view', 'grid' => 'Grid view', 'kanban' => 'Kanban view'] as $view => $label)
                     <button type="button" x-on:click="selected = '{{ $view }}'"
                         :class="selected === '{{ $view }}' ? @js($segmentActive) : @js($segmentIdle)"
-                        class="inline-flex relative items-center p-1.5 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                        class="inline-flex relative justify-center items-center rounded-md transition-colors duration-150 aspect-square focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                         <span class="sr-only">{{ __($label) }}</span>
                         <x-aura::icon :icon="$view" size="sm" />
                     </button>
                 @endforeach
             </div>
+            </div>
         </div>
-        <p class="mt-4 text-xs text-gray-400 dark:text-gray-500">{{ __('Same segmented style as the filter tabs, with p-0.5 instead of p-1.') }}</p>
+        <p class="mt-4 text-xs text-gray-400 dark:text-gray-500">{{ __('Same segmented style as the filter tabs, with p-0.5 instead of p-1. The track is one base-height control (36px), the segments are square inside it.') }}</p>
     </div>
 </div>
 

@@ -24,13 +24,17 @@
 
 <div class="mt-6 space-y-4">
     @foreach ($tokenGroups as $setting => $group)
-        @php($active = $previewed[$setting] !== '' ? $previewed[$setting] : ($savedTheme[$setting] ?? $group['default']))
+        @php($active = $group['fixed'] ? 'fixed' : ($previewed[$setting] !== '' ? $previewed[$setting] : ($savedTheme[$setting] ?? $group['default'])))
 
         <div class="overflow-hidden bg-white rounded-xl ring-1 shadow-xs dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10" data-token-group="{{ $setting }}">
             <div class="flex flex-wrap gap-x-3 gap-y-1 items-baseline px-5 py-3 border-b border-gray-950/5 dark:border-white/10">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ $group['label'] }}</h3>
-                <code class="text-xs text-gray-500 dark:text-gray-400">{{ $setting }}</code>
-                <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('default') }}: {{ $group['default'] }} · {{ $previewed[$setting] !== '' ? __('previewing') : __('saved') }}: {{ $active }}@if ($expertMode) · {{ __('expert mode on') }}@endif</span>
+                @if ($group['fixed'])
+                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('One height per control size, the same in every preset. Density changes padding and gaps, not heights.') }}@if ($expertMode) · {{ __('expert mode on') }}@endif</span>
+                @else
+                    <code class="text-xs text-gray-500 dark:text-gray-400">{{ $setting }}</code>
+                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('default') }}: {{ $group['default'] }} · {{ $previewed[$setting] !== '' ? __('previewing') : __('saved') }}: {{ $active }}@if ($expertMode) · {{ __('expert mode on') }}@endif</span>
+                @endif
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full">
@@ -39,7 +43,11 @@
                             <x-aura::table.heading>{{ __('Variable · expert setting') }}</x-aura::table.heading>
                             @foreach (array_keys($group['presets']) as $preset)
                                 <x-aura::table.heading>
-                                    {{ $preset }}@if ($preset === $active) <span class="ml-1 text-primary-600 dark:text-primary-400">●</span>@endif
+                                    @if ($group['fixed'])
+                                        {{ __('every preset') }}
+                                    @else
+                                        {{ $preset }}@if ($preset === $active) <span class="ml-1 text-primary-600 dark:text-primary-400">●</span>@endif
+                                    @endif
                                 </x-aura::table.heading>
                             @endforeach
                             <x-aura::table.heading>{{ $expertMode ? __('Saved (expert)') : __('Saved') }}</x-aura::table.heading>
@@ -79,7 +87,7 @@
             {{ __('replaces any variable above with a pixel value from 0 to 96. When it is off, the presets apply unchanged and the expert values are kept for later. "Live value" shows what this page actually uses.') }}
         </p>
         <p class="mt-2">
-            {{ __('No token exists for control height, input radius, layout gaps outside Settings, modal, dropdown or toast radius. Those components use fixed Tailwind classes; see Control sizing.') }}
+            {{ __('No token exists for layout gaps outside Settings, or for modal, dropdown and toast radius. Those components use fixed Tailwind classes. Control heights and the field radius: see Control sizing.') }}
         </p>
     </div>
 </div>
@@ -118,15 +126,15 @@
                         <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('panel') }} {{ $px($tokens['--aura-panel-radius']) }} · {{ __('control') }} {{ $px($tokens['--aura-control-radius']) }}</span>
                     </div>
                     <div class="flex gap-3 items-center p-3 mt-2 aura-card">
-                        <x-aura::button size="sm">{{ __('Button') }}</x-aura::button>
-                        <x-aura::button.border size="sm">{{ __('Border') }}</x-aura::button.border>
+                        <x-aura::button>{{ __('Button') }}</x-aura::button>
+                        <x-aura::button.border>{{ __('Border') }}</x-aura::button.border>
                         <div class="w-28">
                             <x-aura::input.text placeholder="{{ __('Input') }}" />
                         </div>
                     </div>
                 </div>
             @endforeach
-            <p class="text-xs text-gray-400 dark:text-gray-500">{{ __('Panels (.aura-card) and buttons (.aura-button) follow the preset. The input keeps rounded-lg (8px) in every preset. A host stylesheet loaded after Aura\'s cannot override the token radius or padding.') }}</p>
+            <p class="text-xs text-gray-400 dark:text-gray-500">{{ __('Panels (.aura-card), buttons (.aura-button) and fields (.aura-field) follow the preset. A host stylesheet loaded after Aura\'s cannot override the token radius or padding.') }}</p>
         </div>
     </div>
 

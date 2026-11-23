@@ -112,6 +112,51 @@ test('design presets emit stable density radius and sidebar variables', function
     ]);
 });
 
+test('design emits one fixed control height per size in every preset', function () {
+    $heights = [
+        '--aura-control-height-xs' => '1.75rem',
+        '--aura-control-height-sm' => '2rem',
+        '--aura-control-height' => '2.25rem',
+        '--aura-control-height-lg' => '2.75rem',
+        '--aura-control-height-xl' => '3.25rem',
+    ];
+
+    expect(ThemeTokens::design([]))->toMatchArray($heights)
+        ->and(ThemeTokens::design([
+            'interface-density' => 'compact',
+            'corner-radius' => 'square',
+            'sidebar-size' => 'dense',
+        ]))->toMatchArray($heights);
+});
+
+test('expert mode overrides the base control height only', function () {
+    $settings = [
+        'appearance-expert-mode' => true,
+        'expert-control-height' => 40,
+    ];
+
+    expect(ThemeTokens::designOverrides())->toHaveKey('expert-control-height', '--aura-control-height')
+        ->and(ThemeTokens::design($settings))->toMatchArray([
+            '--aura-control-height' => '40px',
+            '--aura-control-height-xs' => '1.75rem',
+            '--aura-control-height-sm' => '2rem',
+            '--aura-control-height-lg' => '2.75rem',
+        ])
+        ->and(ThemeTokens::design([...$settings, 'appearance-expert-mode' => false])['--aura-control-height'])->toBe('2.25rem')
+        ->and(ThemeTokens::design([...$settings, 'expert-control-height' => 200])['--aura-control-height'])->toBe('2.25rem');
+});
+
+test('the layout prints the control height variables', function () {
+    $html = view('aura::components.layout.colors', [
+        'settings' => ThemeTokens::resolve(),
+    ])->render();
+
+    expect($html)
+        ->toContain('--aura-control-height: 2.25rem;')
+        ->toContain('--aura-control-height-xs: 1.75rem;')
+        ->toContain('--aura-control-height-lg: 2.75rem;');
+});
+
 test('scoped renderer isolates temporary preview variables and scripts', function () {
     $html = view('aura::components.layout.colors', [
         'settings' => [

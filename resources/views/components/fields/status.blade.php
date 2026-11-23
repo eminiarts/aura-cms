@@ -1,7 +1,7 @@
 <x-aura::fields.wrapper :field="$field">
     <div x-data="{ open: false, selected: @entangle('form.fields.' . $field['slug']) }" class="relative" wire:ignore>
         <button @click="open = !open" type="button"
-                class="relative w-full bg-white dark:bg-gray-800 rounded-lg shadow-sm ring-1 ring-inset ring-gray-950/10 dark:ring-white/10 pl-3 pr-10 py-2 text-left cursor-default transition-shadow focus:outline-none focus:ring-2 focus:ring-primary-500 sm:text-sm">
+                class="aura-field aura-control-base relative w-full bg-white dark:bg-gray-800 shadow-sm ring-1 ring-inset ring-gray-950/10 dark:ring-white/10 pl-3 pr-10 text-left text-sm cursor-default transition-shadow focus:outline-none focus:ring-2 focus:ring-primary-500">
             <span class="flex items-center">
                 <span x-show="selected"
                       :class="selected ? $refs.listbox.querySelector(`[data-value='${selected}']`).getAttribute('data-color') : ''"

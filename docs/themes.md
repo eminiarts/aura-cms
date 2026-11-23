@@ -298,8 +298,9 @@ the `--aura-sidebar-*` variables listed under [Advanced appearance](#advanced-ap
 ## Advanced appearance
 
 Three Settings fields control spacing, radius and sidebar size. Each preset
-writes a set of CSS variables on `:root`; `Aura\Base\ThemeTokens::design()`
-resolves them and `layout/colors.blade.php` prints them. Components read the
+writes a set of CSS variables on `:root`, together with the fixed control
+heights; `Aura\Base\ThemeTokens::design()` resolves them and
+`layout/colors.blade.php` prints them. Components read the
 variables, so one setting restyles the whole admin.
 
 ### Interface density (`interface-density`)
@@ -316,7 +317,7 @@ variables, so one setting restyles the whole admin.
 | Variable | `rounded` (default) | `subtle` | `square` | Expert setting | Read by |
 | --- | --- | --- | --- | --- | --- |
 | `--aura-panel-radius` | `0.75rem` (12px) | `0.375rem` (6px) | `0rem` | `expert-panel-radius` | `.aura-card` |
-| `--aura-control-radius` | `0.5rem` (8px) | `0.25rem` (4px) | `0rem` | `expert-control-radius` | `.aura-button`, `.aura-card-small`, sidebar items, search and toggle |
+| `--aura-control-radius` | `0.5rem` (8px) | `0.25rem` (4px) | `0rem` | `expert-control-radius` | `.aura-button`, `.aura-field` (inputs, selects, textareas, addons, tags, date picker, code editor), `.aura-card-small`, pagination, sidebar items, search and toggle |
 
 ### Sidebar size (`sidebar-size`)
 
@@ -331,11 +332,42 @@ variables, so one setting restyles the whole admin.
 The sidebar variables apply inside `.aura-sidebar`. The sidebar width is not a
 variable: 18rem for `standard`, 14rem for `compact` and `dense`.
 
+### Control height
+
+Buttons, inputs and selects share one height per size. No preset changes it:
+density changes padding and gaps, not the size of a control.
+
+| Variable | Value | Size | Expert setting | Read by |
+| --- | --- | --- | --- | --- |
+| `--aura-control-height-xs` | `1.75rem` (28px) | `xs`, `icon-xs` | — | `.aura-control-xs`, `.aura-control-min-xs` |
+| `--aura-control-height-sm` | `2rem` (32px) | `sm` | — | `.aura-control-sm` |
+| `--aura-control-height` | `2.25rem` (36px) | `base` | `expert-control-height` | `.aura-control-base`, `.aura-control-min-base`, the color field swatch |
+| `--aura-control-height-lg` | `2.75rem` (44px) | `lg` | — | `.aura-control-lg` |
+| `--aura-control-height-xl` | `3.25rem` (52px) | `xl` (buttons only) | — | `.aura-control-xl` |
+
+`<x-aura::button>`, `<x-aura::input>` (and `input.text`, `input.email`, …) and
+`<x-aura::input.select>` take the same `size` prop: `xs`, `sm`, `base` (the
+default) or `lg`; buttons also have `xl` and `icon-xs`. The size adds an
+`.aura-control-{size}` class, which sets the height and no vertical padding.
+Buttons centre their content with flexbox and inputs and selects centre their
+text, so the text size (12px at `xs`, 14px at `sm` and `base`, 16px at `lg`)
+does not change the height. Icon-only buttons are square at the control height.
+Fields that grow with their content (tags, multi-selects) use the height as a
+minimum (`.aura-control-min-*`).
+
+Use the classes in your own views to line up with Aura's controls:
+
+```html
+<select class="aura-field aura-control-sm …">…</select>
+<button class="aura-button aura-control-base px-4 …">Export</button>
+```
+
 ### Expert mode
 
 With `appearance-expert-mode` on, each expert setting above replaces its
 variable with a whole pixel value from 0 to 96 (other values are ignored).
-Expert mode also exposes six light and six dark sidebar colors
+`expert-control-height` changes the base control height only; the xs, sm, lg
+and xl heights stay fixed. Expert mode also exposes six light and six dark sidebar colors
 (`expert-light-sidebar-background`, `-hover`, `-dropdown`, `-text`, `-icon`,
 `-icon-hover`, and the same with `expert-dark-`) as hex values. They write
 `--sidebar-bg`, `--sidebar-bg-hover`, `--sidebar-bg-dropdown`,
@@ -357,9 +389,8 @@ expert values for later.
 
 ### What the tokens do not cover
 
-There is no variable for control height, input and select radius, dropdown,
-modal and toast radius, or dashboard widget gaps. Those components use fixed
-Tailwind classes such as `rounded-lg` and `py-2`. Use the variables in your own
+There is no variable for dropdown, modal and toast radius, or dashboard widget
+gaps. Those components use fixed Tailwind classes such as `rounded-lg`. Use the variables in your own
 views to follow the settings:
 
 ```html
@@ -510,13 +541,14 @@ host CSS last.
 
 Aura protects the theme tokens against this:
 
-- The rules for `.aura-card`, `.aura-card-small`, `.aura-button`, the sidebar
-  items, dropdown triggers, search and collapse toggles, and
-  `.aura-sidebar-groups` use a doubled class (`.aura-button.aura-button`). A
-  host `.rounded-lg` or `.p-4` cannot override the radius, padding, or gap of
-  the Advanced appearance presets.
-- These elements carry no `rounded-*` or padding utility that competes with
-  the token rule.
+- The rules for `.aura-card`, `.aura-card-small`, `.aura-button`,
+  `.aura-field`, the `.aura-control-*` heights, the sidebar items, dropdown
+  triggers, search and collapse toggles, and `.aura-sidebar-groups` use a
+  doubled class (`.aura-button.aura-button`). A host `.rounded-lg`, `.p-4` or
+  `.h-10` cannot override the radius, padding, gap or height of the Advanced
+  appearance presets.
+- These elements carry no `rounded-*`, height or vertical padding utility that
+  competes with the token rule.
 
 Aura cannot protect its responsive and dark variants. A host base utility
 beats an Aura `md:` or `dark:` variant of the same property: host `.flex-col`

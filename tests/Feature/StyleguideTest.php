@@ -87,7 +87,14 @@ test('section keeps its global number when rendered alone', function () {
 test('design token table documents every preset value from ThemeTokens', function () {
     $groups = (new Styleguide)->designTokens();
 
-    expect(array_keys($groups))->toBe(array_keys(Styleguide::DESIGN_PRESETS));
+    expect(array_keys($groups))->toBe([...array_keys(Styleguide::DESIGN_PRESETS), Styleguide::FIXED_GROUP])
+        ->and($groups[Styleguide::FIXED_GROUP]['presets']['fixed'])->toBe([
+            '--aura-control-height-xs' => '1.75rem',
+            '--aura-control-height-sm' => '2rem',
+            '--aura-control-height' => '2.25rem',
+            '--aura-control-height-lg' => '2.75rem',
+            '--aura-control-height-xl' => '3.25rem',
+        ]);
 
     foreach (Styleguide::DESIGN_PRESETS as $setting => $presets) {
         expect(array_keys($groups[$setting]['presets']))->toBe($presets);
@@ -103,10 +110,21 @@ test('design token table documents every preset value from ThemeTokens', functio
 
     $documented = collect($groups)->flatMap(fn (array $group): array => array_keys($group['variables']))->all();
 
-    // Every design variable belongs to exactly one setting and has its expert override listed.
+    // Every design variable belongs to exactly one group and every expert override is listed.
     expect($documented)->toEqualCanonicalizing(array_keys(ThemeTokens::design([])))
-        ->and(collect($groups)->flatMap(fn (array $group): array => array_column($group['variables'], 'expert'))->all())
+        ->and(collect($groups)->flatMap(fn (array $group): array => array_filter(array_column($group['variables'], 'expert')))->all())
         ->toEqualCanonicalizing(array_keys(ThemeTokens::designOverrides()));
+});
+
+test('control sizing section measures every size against the height tokens', function () {
+    $this->get(route('aura.styleguide', ['section' => 'sizing']))
+        ->assertOk()
+        ->assertSee('data-sizing-row="xs"', false)
+        ->assertSee('data-sizing-row="sm"', false)
+        ->assertSee('data-sizing-row="base"', false)
+        ->assertSee('data-sizing-row="lg"', false)
+        ->assertSee('--aura-control-height-sm')
+        ->assertDontSee('There is no height token');
 });
 
 test('preset parameters preview their variables on the style guide only', function () {

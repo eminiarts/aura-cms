@@ -19,7 +19,7 @@
         >
             <x-aura::input.text :disabled="$field['field']->isDisabled($this->form, $field)" x-model="color" error="form.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" id="resource-field-{{ optional($field)['slug'] }}" autocomplete="{{ optional($field)['autocomplete'] ?? '' }}"></x-aura::input.text>
 
-            <input type="color" x-model="color" class="absolute right-4 top-1/2 z-10 w-6 h-6 rounded-full border-none transform -translate-y-1/2 cursor-pointer" />
+            <input type="color" x-model="color" class="absolute inset-y-0 right-1 z-10 p-1.5 h-full w-[var(--aura-control-height,2.25rem)] bg-transparent rounded-full border-none cursor-pointer [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-none" />
         </div>
     @else
 

@@ -20,13 +20,15 @@ if ($block) {
   $class = 'inline-flex' . ' ' . $class;
 }
 
+// Height comes from the .aura-control-* rule (--aura-control-height-*); sizes set padding-x,
+// gap and text only. icon-xs is the square xs button.
 $sizes = [
-  'icon-xs' => 'gap-1 p-1 text-xs font-medium',
-  'xs' => 'gap-1.5 px-2.5 py-1.5 text-xs font-medium',
-  'sm' => 'gap-1.5 px-3 py-1.5 text-sm leading-5 font-medium',
-  'base' => 'gap-2 px-4 py-2 text-sm font-medium',
-  'lg' => 'gap-2 px-4 py-2.5 text-base font-medium',
-  'xl' => 'gap-2.5 px-5 py-3 text-lg font-medium',
+  'icon-xs' => 'aura-control-xs gap-1 text-xs font-medium',
+  'xs' => 'aura-control-xs gap-1.5 px-2.5 text-xs font-medium',
+  'sm' => 'aura-control-sm gap-1.5 px-3 text-sm font-medium',
+  'base' => 'aura-control-base gap-2 px-4 text-sm font-medium',
+  'lg' => 'aura-control-lg gap-2 px-4 text-base font-medium',
+  'xl' => 'aura-control-xl gap-2.5 px-5 text-lg font-medium',
 ];
 $iconSizes = [
   'icon-xs' => 'w-4',
@@ -39,6 +41,14 @@ $iconSizes = [
 
 if (!isset($sizes[$size])) {
   $size = 'base';
+}
+
+// Icon-only buttons (an icon and no visible text) are square at the control height.
+$visibleText = trim(strip_tags(preg_replace('/<span[^>]*\bsr-only\b[^>]*>.*?<\/span>/s', '', (string) $slot)));
+$hasIcon = ($icon ?? false) || str_contains((string) $slot, '<svg');
+$iconOnly = $size === 'icon-xs' || ($hasIcon && $visibleText === '');
+if ($iconOnly) {
+  $class .= ' aura-control-square';
 }
 
 $disabledClass = $disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';
@@ -61,7 +71,7 @@ $sharedClass = ' aura-button relative items-center justify-center whitespace-now
   @if($disabled) aria-disabled="true" @endif
 >
   @if ($icon ?? false)
-    <span class="inline-flex items-center justify-center shrink-0 -ml-0.5 {{ $iconSizes[$size] }}">
+    <span class="inline-flex items-center justify-center shrink-0 {{ $iconOnly ? '' : '-ml-0.5' }} {{ $iconSizes[$size] }}">
       {{ $icon }}
     </span>
   @endif
@@ -78,7 +88,7 @@ $sharedClass = ' aura-button relative items-center justify-center whitespace-now
   @if($disabled) disabled aria-disabled="true" @endif
 >
   @if ($icon ?? false)
-    <span class="inline-flex items-center justify-center shrink-0 -ml-0.5 {{ $iconSizes[$size] }}">
+    <span class="inline-flex items-center justify-center shrink-0 {{ $iconOnly ? '' : '-ml-0.5' }} {{ $iconSizes[$size] }}">
       {{ $icon }}
     </span>
   @endif

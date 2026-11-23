@@ -372,7 +372,7 @@
         <div class="relative p-0 w-full bg-transparent border-0 aura-input">
             <label class="sr-only">{{ __('Select Entry') }}</label>
             <button type="button"
-                class="relative flex items-center justify-between w-full px-3 pt-1 pb-0 border rounded-lg shadow-xs appearance-none min-h-[2.625rem] border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
+                class="aura-field aura-control-min-base relative flex items-center justify-between w-full px-3 py-px border shadow-xs appearance-none border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
                 x-ref="listboxButton" @click="toggleListbox">
 
                 <div class="flex items-center w-full">
@@ -392,7 +392,7 @@
                             <template x-for="(item, index) in value" :key="item">
                                 {{-- <pre x-html="'item: ' + item + ', selected: ' + selectedItemMarkup(item)"></pre> --}}
 
-                                <div class="inline-flex gap-1 items-center py-0.5 pr-2 pl-1 mr-2 mb-1 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 draggable-selectmany-item"
+                                <div class="inline-flex gap-1 items-center py-0.5 pr-2 pl-1 my-0.5 mr-2 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 draggable-selectmany-item"
                                     :data-id="item" @mousedown.prevent="startDragging(index, $event)"
                                     :class="{ 'shadow-item': index == dragIndex }">
 

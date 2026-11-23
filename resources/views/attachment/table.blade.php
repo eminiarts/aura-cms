@@ -271,7 +271,7 @@
                                     </svg>
                                 </div>
                                 <input type="text" id="table-search"
-                                    class="block w-56 max-w-full text-sm bg-white rounded-lg shadow-xs transition appearance-none border border-gray-500/30 pl-10 pr-3 py-1.5 focus:outline-none ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:dark:bg-gray-800 dark:bg-transparent dark:border-gray-700 dark:focus:border-gray-500 z-[1]"
+                                    class="aura-field aura-control-base block w-56 max-w-full text-sm bg-white shadow-xs transition appearance-none border border-gray-500/30 pl-10 pr-3 focus:outline-none ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:dark:bg-gray-800 dark:bg-transparent dark:border-gray-700 dark:focus:border-gray-500 z-[1]"
                                     placeholder="{{ __('Search for items') }}" wire:model.live.debounce="search">
 
                             </div>
@@ -328,7 +328,7 @@
                             wire:change="setQuickFilter('type', $event.target.value)"
                             data-type-dropdown
                             aria-label="{{ __('Media type') }}"
-                            class="px-3 py-1.5 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
+                            class="aura-field aura-control-base px-3 text-sm text-gray-600 bg-white border transition appearance-none border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
                         >
                             <option value="" @selected($activeType === null)>{{ __('All types') }}</option>
                             @foreach ($model::MEDIA_TYPES as $typeKey => $typeLabel)
@@ -340,7 +340,7 @@
                             <select
                                 wire:change="setQuickFilter('month', $event.target.value)"
                                 data-month-filter
-                                class="px-3 py-1.5 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
+                                class="aura-field aura-control-base px-3 text-sm text-gray-600 bg-white border transition appearance-none border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
                             >
                                 <option value="" @selected($activeMonth === null)>{{ __('All dates') }}</option>
                                 @foreach ($uploadMonths as $month)
@@ -373,7 +373,7 @@
 
                             @if ($this->settings['settings'])
                                 @if ($currentView == 'list' && $model->showTableSettings())
-                                    @include('aura::components.table.settings', ['controlHeight' => 'h-9'])
+                                    @include('aura::components.table.settings')
                                 @endif
                             @endif
 
@@ -383,9 +383,8 @@
                                 @endif
                             @endif
 
-                            {{-- The media toolbar's controls are h-9; resource tables use h-10. --}}
                             @if ($this->settings['filters'])
-                                @include($this->settings['views']['filter'], ['controlHeight' => 'h-9'])
+                                @include($this->settings['views']['filter'])
                             @endif
                         </div>
                     @endif

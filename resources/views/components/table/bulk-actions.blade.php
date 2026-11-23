@@ -4,9 +4,9 @@
     <div class="relative ml-1">
         <x-aura::dropdown align="right" width="60">
         <x-slot name="trigger">
-            <span class="inline-flex rounded-lg">
+            <span class="inline-flex">
                 <button type="button"
-                class="inline-flex gap-1.5 items-center h-9 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white rounded-lg ring-1 shadow-xs transition-colors duration-150 ring-gray-950/10 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:ring-white/10 dark:hover:bg-gray-700/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                class="aura-button aura-control-base inline-flex gap-1.5 items-center px-3 text-sm font-medium text-gray-700 bg-white ring-1 shadow-xs transition-colors duration-150 ring-gray-950/10 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:ring-white/10 dark:hover:bg-gray-700/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                 {{ __('Actions') }}
 
 
