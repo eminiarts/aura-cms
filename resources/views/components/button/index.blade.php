@@ -6,7 +6,7 @@
   'compact' => false,
   'block' => false,
   'size' => 'base',
-  'class' => 'text-white bg-primary-600 hover:bg-primary-500 active:bg-primary-700 focus-visible:ring-primary-500',
+  'class' => 'text-white bg-primary-600 shadow-button hover:bg-primary-500 active:bg-primary-700 focus-visible:ring-primary-500',
   'type' => 'button',
   'navigate' => true,
   'disabled' => false,
@@ -20,21 +20,25 @@ if ($block) {
   $class = 'inline-flex' . ' ' . $class;
 }
 
+// Fixed heights so buttons, inputs and chips align on one baseline:
+// xs 28px, sm 32px, base 36px, lg 40px, xl 48px. icon-xs (28px) and icon (36px) are square, icon-only.
 $sizes = [
-  'icon-xs' => 'gap-1 p-1 text-xs font-medium rounded-md',
-  'xs' => 'gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md',
-  'sm' => 'gap-1.5 px-3 py-1.5 text-sm leading-5 font-medium rounded-lg',
-  'base' => 'gap-2 px-4 py-2 text-sm font-medium rounded-lg',
-  'lg' => 'gap-2 px-4 py-2.5 text-base font-medium rounded-lg',
-  'xl' => 'gap-2.5 px-5 py-3 text-lg font-medium rounded-xl',
+  'icon-xs' => 'h-7 w-7 p-0 text-xs font-medium rounded-md',
+  'icon' => 'h-9 w-9 p-0 text-sm font-medium rounded-lg',
+  'xs' => 'h-7 gap-1.5 px-2.5 text-xs font-medium rounded-md',
+  'sm' => 'h-8 gap-1.5 px-3 text-sm font-medium rounded-lg',
+  'base' => 'h-9 gap-2 px-3.5 text-sm font-medium rounded-lg',
+  'lg' => 'h-10 gap-2 px-4 text-sm font-medium rounded-lg',
+  'xl' => 'h-12 gap-2.5 px-5 text-base font-medium rounded-xl',
 ];
 $iconSizes = [
-  'icon-xs' => 'w-4',
-  'xs' => 'w-4',
-  'sm' => 'w-4',
-  'base' => 'w-5',
-  'lg' => 'w-5',
-  'xl' => 'w-6',
+  'icon-xs' => 'size-3.5',
+  'icon' => 'size-4',
+  'xs' => 'size-3.5',
+  'sm' => 'size-4',
+  'base' => 'size-4',
+  'lg' => 'size-4',
+  'xl' => 'size-5',
 ];
 
 if (!isset($sizes[$size])) {
@@ -61,7 +65,7 @@ $sharedClass = ' aura-button relative items-center justify-center whitespace-now
   @if($disabled) aria-disabled="true" @endif
 >
   @if ($icon ?? false)
-    <span class="inline-flex items-center justify-center shrink-0 -ml-0.5 {{ $iconSizes[$size] }}">
+    <span class="inline-flex items-center justify-center shrink-0 -ml-0.5 [&_svg]:size-full {{ $iconSizes[$size] }}">
       {{ $icon }}
     </span>
   @endif
@@ -78,7 +82,7 @@ $sharedClass = ' aura-button relative items-center justify-center whitespace-now
   @if($disabled) disabled aria-disabled="true" @endif
 >
   @if ($icon ?? false)
-    <span class="inline-flex items-center justify-center shrink-0 -ml-0.5 {{ $iconSizes[$size] }}">
+    <span class="inline-flex items-center justify-center shrink-0 -ml-0.5 [&_svg]:size-full {{ $iconSizes[$size] }}">
       {{ $icon }}
     </span>
   @endif

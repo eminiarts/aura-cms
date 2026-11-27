@@ -139,6 +139,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         ];
     }
 
+    public function avatarShape(): ?string
+    {
+        return 'circle';
+    }
+
     /**
      * Determine if the user belongs to the given team.
      *
@@ -302,6 +307,21 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return $model->displayAvatar($value);
     }
 
+    /**
+     * The current team's name (escaped: views print display values raw), or the stored id when the team
+     * cannot be read. A lookup by key, not currentTeam(), which switches a user without a team.
+     */
+    public static function displayCurrentTeamField($value, self $model): mixed
+    {
+        if (blank($value)) {
+            return $value;
+        }
+
+        $team = config('aura.resources.team', Team::class)::query()->find($value);
+
+        return $team ? e($team->name) : $value;
+    }
+
     public function getAvatarUrlAttribute()
     {
         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
@@ -317,7 +337,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'global' => true,
             ],
             [
-                'name' => 'Personal Infos',
+                'name' => 'Personal information',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => 'required',
                 'slug' => 'user-details',
@@ -332,6 +352,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'conditional_logic' => [],
                 'slug' => 'avatar',
                 'on_create' => false,
+                // The table's leading avatar already shows the image (or the initials), so no second column.
+                'on_index' => false,
                 'max_files' => 1,
                 'display' => [self::class, 'displayAvatarField'],
                 'style' => [
@@ -365,13 +387,15 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 ],
             ],
             [
-                'name' => 'Current Team',
+                'name' => 'Current team',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'on_index' => false,
                 'on_forms' => false,
                 'searchable' => false,
                 'slug' => 'current_team_id',
+                // The record view names the team instead of printing its id.
+                'display' => [self::class, 'displayCurrentTeamField'],
             ],
             [
                 'name' => 'Role',
@@ -407,7 +431,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 ],
             ],
             [
-                'name' => 'Global Admin',
+                'name' => 'Global admin',
                 'slug' => 'global_admin',
                 'type' => 'Aura\\Base\\Fields\\GlobalAdmin',
                 'instructions' => 'Instance-level operator with access across all teams. Only a Global Admin can grant or revoke this.',

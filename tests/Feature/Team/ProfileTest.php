@@ -23,7 +23,7 @@ describe('Profile Component Rendering', function () {
     it('renders the profile component', function () {
         livewire(Profile::class)
             ->assertSee('Profile')
-            ->assertSee('Personal Infos')
+            ->assertSee('Personal information')
             ->assertSee('Password')
             ->assertSee('2FA')
             ->assertSee('Delete');

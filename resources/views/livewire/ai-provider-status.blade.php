@@ -5,28 +5,33 @@
         </div>
     @endif
 
-    <div class="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-        <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-700">
-            <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('Configured providers') }}</h2>
+    {{-- A card in the shared look: section title and description, then one row per provider. --}}
+    <div class="overflow-hidden bg-white rounded-xl ring-1 shadow-xs ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10" style="border-radius: var(--aura-panel-radius, 0.75rem)">
+        <div class="px-5 py-4 border-b border-gray-950/[0.06] dark:border-white/10">
+            <h2 class="aura-section-title">{{ __('Configured providers') }}</h2>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {{ __('Provider settings come from config/ai.php and your environment. Run php artisan config:cache after changing them when configuration is cached.') }}
+                {{-- The path and the command are code chips; the sentence stays one translatable string. --}}
+                {!! strtr(e(__('Provider settings come from :file and your environment. Run :command after changing them when configuration is cached.')), [
+                    ':file' => '<code class="aura-code">config/ai.php</code>',
+                    ':command' => '<code class="aura-code">php artisan config:cache</code>',
+                ]) !!}
             </p>
         </div>
 
         @if($this->providers() === [])
             <div class="px-5 py-8 text-center">
-                <p class="font-medium text-gray-900 dark:text-white">{{ __('None configured') }}</p>
+                <h3 class="aura-section-title">{{ __('None configured') }}</h3>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Add provider credentials to the application environment to enable AI features.') }}</p>
             </div>
         @else
-            <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            <div class="divide-y divide-gray-950/[0.06] dark:divide-white/10">
                 @foreach($this->providers() as $provider)
                     <div class="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between" wire:key="ai-provider-{{ $provider['name'] }}">
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
-                                <p class="font-medium text-gray-900 dark:text-white">{{ $provider['label'] }}</p>
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $provider['label'] }}</p>
                                 @if($provider['default'])
-                                    <span class="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-950 dark:text-primary-300">{{ __('Default') }}</span>
+                                    <span class="aura-tag aura-tag-status bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-300">{{ __('Default') }}</span>
                                 @endif
                             </div>
                             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">

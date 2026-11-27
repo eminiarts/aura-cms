@@ -7,6 +7,7 @@ use Illuminate\Filesystem\Filesystem;
 test('theme token defaults expose the stable light and dark contract', function () {
     expect(config('aura.theme.font'))->toBe([
         'family' => [
+            'Inter',
             'ui-sans-serif',
             'system-ui',
             'sans-serif',
@@ -15,7 +16,7 @@ test('theme token defaults expose the stable light and dark contract', function 
             'Segoe UI Symbol',
             'Noto Color Emoji',
         ],
-        'stylesheet' => false,
+        'stylesheet' => 'vendor/aura/public/inter.css',
     ])->and(config('aura.theme.colors.light'))->toBe([
         'primary' => 'var(--primary-600)',
         'background' => '255 255 255',
@@ -79,7 +80,7 @@ test('renderer emits the semantic variables for both color schemes', function ()
     ])->render();
 
     expect($html)
-        ->toContain('--aura-font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";')
+        ->toContain('--aura-font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";')
         ->toContain('--aura-color-primary: var(--primary-600);')
         ->toContain('--aura-color-background: 255 255 255;')
         ->toContain('--aura-color-panel: 250 250 250;')
@@ -219,7 +220,7 @@ test('host and stored settings override tokens without losing package defaults',
         ->and(ThemeTokens::colors($theme, 'dark')['danger'])->toBe('220 38 38');
 });
 
-test('font stylesheet is absent by default and accepts only a local asset path', function () {
+test('font stylesheet defaults to the bundled Inter and accepts only a local asset path', function () {
     $defaultHtml = view('aura::components.layout.styles', ['settings' => []])->render();
     $localHtml = view('aura::components.layout.styles', [
         'settings' => [
@@ -231,12 +232,18 @@ test('font stylesheet is absent by default and accepts only a local asset path',
     ])->render();
 
     expect($defaultHtml)
-        ->not->toContain('inter.css')
+        ->toContain('href="http://localhost/vendor/aura/public/inter.css"')
         ->not->toContain('fonts.googleapis.com')
         ->not->toContain('fonts.gstatic.com')
         ->and($localHtml)
+        ->not->toContain('inter.css')
         ->toContain('href="http://localhost/fonts/acme-sans.css"')
         ->toContain('--aura-font-sans: "Acme Sans", sans-serif;');
+
+    // A host that wants a system font switches the stylesheet off.
+    expect(view('aura::components.layout.styles', [
+        'settings' => ['font' => ['family' => ['system-ui', 'sans-serif'], 'stylesheet' => false]],
+    ])->render())->not->toContain('inter.css');
 
     foreach (['https://fonts.example.com/theme.css', '//fonts.example.com/theme.css', 'data:text/css,body{}'] as $remoteStylesheet) {
         $html = view('aura::components.layout.styles', [
@@ -282,7 +289,7 @@ test('renderer rejects malformed token values', function () {
     ]);
 
     expect(ThemeTokens::fontFamily($theme))->toBe(
-        'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+        '"Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
     )->and(ThemeTokens::colors($theme, 'light')['text'])->toBe('24 24 27')
         ->and(ThemeTokens::colors($theme, 'light')['danger'])->toBe('220 38 38');
 });
@@ -321,7 +328,7 @@ PHP);
             ->and($cachedConfiguration['aura']['theme']['colors']['light']['primary'])
             ->toBe('var(--primary-600)')
             ->and($cachedConfiguration['aura']['theme']['font']['stylesheet'])
-            ->toBeFalse();
+            ->toBe('vendor/aura/public/inter.css');
     } finally {
         $filesystem->deleteDirectory($basePath);
     }

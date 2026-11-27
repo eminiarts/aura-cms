@@ -59,7 +59,7 @@ $values = $field['field']->values($field['model']);
                 x-model="search"
                 autofocus
                 class="px-4 py-2.5 w-full placeholder-gray-500 text-gray-900 border-none focus:outline-none"
-                placeholder="Search..."
+                placeholder="Search…"
 
             </div>
           </li>

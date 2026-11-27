@@ -195,11 +195,11 @@ final class ThemeTokens
                 '--aura-sidebar-heading-gap' => '0.875rem',
             ],
             default => [
-                '--aura-sidebar-item-height' => '2.25rem',
-                '--aura-sidebar-item-padding-x' => '0.75rem',
-                '--aura-sidebar-icon-size' => '1.25rem',
+                '--aura-sidebar-item-height' => '2rem',
+                '--aura-sidebar-item-padding-x' => '0.625rem',
+                '--aura-sidebar-icon-size' => '1.125rem',
                 '--aura-sidebar-group-gap' => '0.25rem',
-                '--aura-sidebar-heading-gap' => '1.25rem',
+                '--aura-sidebar-heading-gap' => '1.125rem',
             ],
         };
 

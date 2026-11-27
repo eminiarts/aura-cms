@@ -117,12 +117,14 @@ return [
         'darkmode-type' => 'auto',
 
         /*
-        | The system stack is the default and makes no network requests. To use
-        | a custom font, publish/serve its CSS in the host application and set
-        | stylesheet to a local public path such as "fonts/brand.css".
+        | Inter (variable, SIL OFL) ships with the package and is served from
+        | the published assets, so the default makes no network request. To use
+        | another font, set family to your own stack and stylesheet to a local
+        | public path such as "fonts/brand.css" (or false for a system font).
         */
         'font' => [
             'family' => [
+                'Inter',
                 'ui-sans-serif',
                 'system-ui',
                 'sans-serif',
@@ -131,7 +133,7 @@ return [
                 'Segoe UI Symbol',
                 'Noto Color Emoji',
             ],
-            'stylesheet' => false,
+            'stylesheet' => 'vendor/aura/public/inter.css',
         ],
 
         /*

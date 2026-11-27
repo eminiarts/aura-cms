@@ -79,7 +79,7 @@ describe('Boolean Field Rendering', function () {
 
     test('renders in create form', function () {
         Livewire::test(Create::class, ['slug' => 'boolean'])
-            ->assertSee('Create Boolean Model')
+            ->assertSee('New boolean model')
             ->assertSee('Boolean for Test')
             ->assertSeeHtml('<button x-ref="toggle"');
     });

@@ -16,7 +16,7 @@ trait ProfileFields
                 'global' => true,
             ],
             [
-                'name' => 'Personal Infos',
+                'name' => 'Personal information',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'user-details',
                 'style' => [
@@ -50,7 +50,7 @@ trait ProfileFields
                 'global' => true,
             ],
             [
-                'name' => 'Change Password',
+                'name' => 'Change password',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'user-details',
                 'style' => [
@@ -58,21 +58,21 @@ trait ProfileFields
                 ],
             ],
             [
-                'name' => 'Current Password',
+                'name' => 'Current password',
                 'type' => 'Aura\\Base\\Fields\\Password',
                 'validation' => ['required_with:form.fields.password', 'current_password'],
                 'slug' => 'current_password',
                 'on_index' => false,
             ],
             [
-                'name' => 'New Password',
+                'name' => 'New password',
                 'type' => 'Aura\\Base\\Fields\\Password',
                 'validation' => ['nullable', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
                 'slug' => 'password',
                 'on_index' => false,
             ],
             [
-                'name' => 'Confirm Password',
+                'name' => 'Confirm password',
                 'type' => 'Aura\\Base\\Fields\\Password',
                 'validation' => ['required_with:form.fields.password', 'same:form.fields.password'],
                 'slug' => 'password_confirmation',
@@ -85,7 +85,7 @@ trait ProfileFields
                 'global' => true,
             ],
             [
-                'name' => 'Two Factor Authentication',
+                'name' => 'Two-factor authentication',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'user-2fa',
                 'style' => [
@@ -107,7 +107,7 @@ trait ProfileFields
                 'global' => true,
             ],
             [
-                'name' => 'Delete Account',
+                'name' => 'Delete account',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'user-delete-panel',
                 'style' => [

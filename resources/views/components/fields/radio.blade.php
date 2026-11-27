@@ -2,7 +2,8 @@
 @endphp
 
 <x-aura::fields.wrapper :field="$field">
-
+    {{-- 8px between options, so a choice list keeps the rhythm of the rest of the form. --}}
+    <div class="flex flex-col gap-2 py-0.5">
     @foreach(optional($field)['options'] as $key => $option)
 
         @if (is_array($option))
@@ -47,5 +48,5 @@
             @endif
         @endif
     @endforeach
-
+    </div>
 </x-aura::fields.wrapper>

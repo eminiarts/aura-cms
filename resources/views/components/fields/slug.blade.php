@@ -81,7 +81,7 @@
             wire:model="form.fields.{{ optional($field)['slug'] }}"
             @endif
         >
-            <x-aura::input.text type="text" x-bind:disabled="!custom" id="slug" @keyup="value = slugifyTyping($event.target.value)" x-model="value" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"/>
+            <x-aura::input.text type="text" x-bind:disabled="!custom" id="slug" @keyup="value = slugifyTyping($event.target.value)" x-model="value" :placeholder="\Aura\Base\Fields\Field::placeholderFor($field)"/>
         </div>
 
         @if(optional($field)['custom'])

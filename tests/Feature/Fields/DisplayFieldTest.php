@@ -76,7 +76,7 @@ describe('ViewValue Field Rendering', function () {
 
     test('renders in create form', function () {
         Livewire::test(Create::class, ['slug' => 'displaymodel'])
-            ->assertSee('Create Display Model')
+            ->assertSee('New display model')
             ->assertSee('View Only Field');
     });
 });

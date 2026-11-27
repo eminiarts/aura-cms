@@ -46,7 +46,7 @@
 
         <!-- Confirm Password -->
         <div>
-            <x-aura::input-label class="!mt-0" for="password_confirmation" :value="__('Confirm Password')" />
+            <x-aura::input-label class="!mt-0" for="password_confirmation" :value="__('Confirm password')" />
 
             <x-aura::input.text id="password_confirmation" class="block w-full"
                             type="password"

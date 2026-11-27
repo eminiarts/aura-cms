@@ -90,7 +90,7 @@ describe('Slug Field Configuration', function () {
 describe('Slug Field Rendering', function () {
     test('renders in create form', function () {
         Livewire::test(Create::class, ['slug' => 'slug-model'])
-            ->assertSee('Create Slug Model')
+            ->assertSee('New slug model')
             ->assertSee('Slug for Test')
             ->assertSeeHtml('type="text"')
             ->assertSee('Slug');

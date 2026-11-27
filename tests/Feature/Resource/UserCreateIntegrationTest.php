@@ -15,7 +15,7 @@ beforeEach(function () {
 
 test('user create form renders with correct fields', function () {
     Livewire::test(Create::class, ['slug' => 'user'])
-        ->assertSee('Create User')
+        ->assertSee('New user')
         ->assertSee('Name')
         ->assertSee('Email')
         ->assertSee('Password')

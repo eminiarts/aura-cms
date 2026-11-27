@@ -1,5 +1,5 @@
 <div>
-    <x-aura::dialog.title>{{ __('Create Resource') }}</x-aura::dialog.title>
+    <x-aura::dialog.title>{{ __('Create resource') }}</x-aura::dialog.title>
 
     <x-aura::validation-errors />
 

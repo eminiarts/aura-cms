@@ -157,7 +157,7 @@ describe('deleting filters', function () {
             ->toHaveKey('test-filter');
 
         $component->set('selectedFilter', 'test-filter');
-        $component->assertSee('Delete Filter');
+        $component->assertSee('Delete filter');
 
         $component->call('deleteFilter', 'test-filter');
         $component->dispatch('refreshTable');

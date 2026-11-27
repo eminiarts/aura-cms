@@ -1,4 +1,6 @@
 @checkCondition($this->model, $field, $this->form)
+    {{-- px-2, the section gutter (panels, tabs): the list's own cell padding insets its rows, so the
+         list lines up with the tab bar and section titles instead of sitting 8px further in. --}}
     <div class="w-full px-2 {{ $field['style']['class'] ?? '' }}">
         @php
             unset($field['relation']);

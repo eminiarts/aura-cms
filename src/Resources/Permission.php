@@ -27,6 +27,12 @@ class Permission extends Resource
 
     protected static string $type = 'Permission';
 
+    // Config rows, not entities: no avatar.
+    public function avatarShape(): ?string
+    {
+        return null;
+    }
+
     public static function getFields(): array
     {
         return [

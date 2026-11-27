@@ -1,36 +1,20 @@
 <div>
-    @section('title', __($resource->getPluralName()))
+    @section('title', $resource->pluralName())
 
     {{ app('aura')::injectView('index_before') }}
 
-    <div class="flex justify-between items-start">
-
+    {{-- Breadcrumb row. Phones hide it: the top bar and the page title orient there.
+         It names the resource like the page title does (pluralName, not the raw type). --}}
+    <div class="hidden sm:block">
         <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
-                iconClass="text-gray-500 w-6 h-6 mr-0" />
-            <x-aura::breadcrumbs.li :title="__($resource->getPluralName())" />
+ />
+            <x-aura::breadcrumbs.li :title="$resource->pluralName()" />
         </x-aura::breadcrumbs>
-
-        <div>
-            @if (config('aura.features.resource_editor'))
-                    @if ($resource->isAppResource())
-                        <x-aura::button.transparent :href="route('aura.resource.editor', $slug)" size="">
-                            <x-aura::icon icon="cog" class="mr-2" />
-                            {{ __('Edit Resource') }}
-                        </x-aura::button.transparent>
-                    @endif
-            @endif
-        </div>
     </div>
 
-    {{ app('aura')::injectView('widgets_before') }}
-
-    @if ($widgets = $resource->widgets())
-        @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $resource])
-    @endif
-
-    {{ app('aura')::injectView('widgets_after') }}
-
-
-    <livewire:aura::table :model="$resource" :settings="$resource->indexTableSettings()" />
+    {{-- The resource's widgets render inside the table, between the page header and the toolbar
+         (components/table/widgets), so the page reads title first. --}}
+    {{-- The resource page's table carries the "Edit resource" control in its toolbar (a resource may switch it off). --}}
+    <livewire:aura::table :model="$resource" :settings="array_merge(['resource_editor' => true, 'widgets' => true], $resource->indexTableSettings())" />
 </div>

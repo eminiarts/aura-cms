@@ -12,23 +12,37 @@
 @if ($paginator->hasPages())
     <nav role="navigation" aria-label="{{ __('Pagination Navigation') }}" class="flex justify-between items-center">
 
-        {{-- Mobile --}}
+        {{-- Mobile: page position and the same chevron pager as desktop --}}
         <div class="flex flex-1 gap-2 justify-between items-center sm:hidden">
-            @if ($paginator->onFirstPage())
-                <span class="{{ $btnBase }} {{ $btnDisabled }} px-3 bg-white ring-1 ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10">{!! __('pagination.previous') !!}</span>
-            @else
-                <button type="button" wire:click="previousPage('{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} px-3 text-gray-700 bg-white ring-1 shadow-xs ring-gray-950/10 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:ring-white/10 dark:hover:bg-gray-700/50">
-                    {!! __('pagination.previous') !!}
-                </button>
-            @endif
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+                @if ($isLengthAware)
+                    {!! __('Page :current of :last', ['current' => '<span class="font-medium text-gray-900 dark:text-white">'.$paginator->currentPage().'</span>', 'last' => '<span class="font-medium text-gray-900 dark:text-white">'.$paginator->lastPage().'</span>']) !!}
+                @else
+                    {!! __('Page :current', ['current' => '<span class="font-medium text-gray-900 dark:text-white">'.$paginator->currentPage().'</span>']) !!}
+                @endif
+            </p>
 
-            @if ($paginator->hasMorePages())
-                <button type="button" wire:click="nextPage('{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} px-3 text-gray-700 bg-white ring-1 shadow-xs ring-gray-950/10 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:ring-white/10 dark:hover:bg-gray-700/50">
-                    {!! __('pagination.next') !!}
-                </button>
-            @else
-                <span class="{{ $btnBase }} {{ $btnDisabled }} px-3 bg-white ring-1 ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10">{!! __('pagination.next') !!}</span>
-            @endif
+            <div class="flex gap-1 items-center">
+                @if ($paginator->onFirstPage())
+                    <span class="{{ $btnBase }} {{ $btnDisabled }} w-9 h-9" aria-disabled="true" aria-label="{{ __('pagination.previous') }}">
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8 10 12.5" /></svg>
+                    </span>
+                @else
+                    <button type="button" wire:click="previousPage('{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} {{ $btnIdle }} w-9 h-9" aria-label="{{ __('pagination.previous') }}">
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8 10 12.5" /></svg>
+                    </button>
+                @endif
+
+                @if ($paginator->hasMorePages())
+                    <button type="button" wire:click="nextPage('{{ $pageName }}')" wire:loading.attr="disabled" class="{{ $btnBase }} {{ $btnIdle }} w-9 h-9" aria-label="{{ __('pagination.next') }}">
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
+                    </button>
+                @else
+                    <span class="{{ $btnBase }} {{ $btnDisabled }} w-9 h-9" aria-disabled="true" aria-label="{{ __('pagination.next') }}">
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
+                    </span>
+                @endif
+            </div>
         </div>
 
         {{-- Desktop --}}

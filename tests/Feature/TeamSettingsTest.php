@@ -57,13 +57,13 @@ test('appearance choices preview on the full page and can be discarded', functio
 
 test('sidebar darkmode choices stay available for every page color scheme', function () {
     Livewire::test(Settings::class)
-        ->assertSee('Sidebar Darkmode')
+        ->assertSee('Sidebar (dark mode)')
         ->set('form.fields.darkmode-type', 'dark')
-        ->assertSee('Sidebar Darkmode')
+        ->assertSee('Sidebar (dark mode)')
         ->set('form.fields.sidebar-darkmode-type', 'primary')
         ->assertSeeHtml('data-preview-sidebar-darkmode-type="primary"')
         ->set('form.fields.darkmode-type', 'light')
-        ->assertSee('Sidebar Darkmode');
+        ->assertSee('Sidebar (dark mode)');
 });
 
 test('saved appearance choices persist', function () {

@@ -1,6 +1,6 @@
 @aware(['field', 'model', 'form', 'mode'])
 
-<div class="flex flex-wrap items-start -mx-2 w-full">
+<div class="flex flex-wrap items-start -mx-2 w-[calc(100%+1rem)]">
     @if(optional($field)['fields'])
         @foreach($field['fields'] as $key => $field)
             @checkCondition($this->model ?? $model, $field, $this->form ?? $form)

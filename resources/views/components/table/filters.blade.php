@@ -20,7 +20,7 @@
         <div class="flex justify-between items-center my-4">
             <h4 class="font-semibold text-primary-600">Filter: {{ $this->userFilters[$this->selectedFilter]['name'] }}</h4>
             <x-aura::button.transparent size="xs" wire:click="deleteFilter('{{ $this->selectedFilter }}')">
-            <x-aura::icon icon="trash" size="xs"/> {{ __('Delete Filter') }}
+            <x-aura::icon icon="trash" size="xs"/> {{ __('Delete filter') }}
         </x-aura::button.transparent>
         </div>
         @endif
@@ -28,7 +28,7 @@
 
     <hr class="my-4 border-t border-gray-200 dark:border-white/10">
 
-    <p class="block mt-6 font-semibold">{{ __('Custom Filters') }}</p>
+    <p class="block mt-6 font-semibold">{{ __('Custom filters') }}</p>
 
     <div wire:key="filters-custom-{{ $selectedFilter }}">
         @foreach($filters['custom'] as $groupKey => $group)
@@ -42,7 +42,7 @@
                                 size="xs"
                             />
                         @else
-                            <span class="text-sm">{{ __('Filter Group') }} {{ $groupKey + 1 }}</span>
+                            <span class="text-sm">{{ __('Filter group') }} {{ $groupKey + 1 }}</span>
                         @endif
                     </div>
                     <div class="mr-2">
@@ -155,19 +155,19 @@
                 @endforeach
 
                 <x-aura::button.light size="xs" wire:click="addSubFilter({{ $groupKey }})" class="mt-2">
-                    {{ __('Add Filter') }}
+                    {{ __('Add filter') }}
                 </x-aura::button.light>
             </div>
         @endforeach
     </div>
 
     <x-aura::button.light size="xs" wire:click="addFilterGroup" class="mt-4">
-        {{ __('Add Filter Group') }}
+        {{ __('Add filter group') }}
     </x-aura::button.light>
 
 
     <x-aura::button.transparent size="xs" wire:click="resetFilter" class="mt-4">
-        {{ __('Reset Filter') }}
+        {{ __('Reset filter') }}
     </x-aura::button.transparent>
 
 

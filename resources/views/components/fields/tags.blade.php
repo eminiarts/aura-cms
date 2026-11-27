@@ -88,7 +88,7 @@ class=""
     x-ref="tags"
     name='tags'
     class='flex items-center min-h-[42px] w-full bg-white rounded-lg appearance-none shadow-xs border-gray-500/30 tags focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed'
-    placeholder='{{ $field['name'] }}'
+    placeholder="{{ \Aura\Base\Fields\Field::placeholderFor($field) }}"
     :disabled="disabled"
 >
 

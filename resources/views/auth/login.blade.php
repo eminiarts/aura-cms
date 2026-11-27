@@ -14,7 +14,7 @@
 
     <div class="mb-8">
         <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __('Welcome back') }}</h1>
-        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('Login to your account to continue.') }}</p>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('Log in to your account to continue.') }}</p>
     </div>
 
     <!-- Session Status -->
@@ -77,9 +77,12 @@
         </div>
 
         <div class="mt-4">
-            <x-aura::button.border href="{{ route('aura.login-as', ['id' => $localAdmin->id]) }}" size="xs" class="justify-center w-full login-as-admin">
-                <x-aura::icon.user class="mr-2 -ml-1 w-4 h-4" />
-                Admin
+            {{-- Same 36px height as the Log in button above. --}}
+            <x-aura::button.border href="{{ route('aura.login-as', ['id' => $localAdmin->id]) }}" class="justify-center w-full login-as-admin">
+                <x-slot:icon>
+                    <x-aura::icon.user />
+                </x-slot>
+                {{ __('Admin') }}
             </x-aura::button.border>
         </div>
     @endif
