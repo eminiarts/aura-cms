@@ -315,20 +315,27 @@
             />
         @endif
 
-        {{-- Media Manager button (field edit views) --}}
+        {{-- Media Manager button (field edit views): a secondary outline button that names what it picks
+             ("Choose image", "Choose files"); the field view puts the current value's preview beside it. --}}
         @if ($button && ! $disabled)
-            <div class="z-[2] relative mt-2">
-                <x-aura::button.light
+            @php
+                $pickerNoun = str_ends_with((string) ($field['type'] ?? ''), '\\File') ? 'file' : 'image';
+                $pickerLabel = (int) ($field['max_files'] ?? 0) > 1
+                    ? ($pickerNoun === 'file' ? __('Choose files') : __('Choose images'))
+                    : ($pickerNoun === 'file' ? __('Choose file') : __('Choose image'));
+            @endphp
+            <div class="z-[2] relative">
+                <x-aura::button.border
                     data-media-picker-button="{{ $field['slug'] }}"
                     wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { model: {{ json_encode($for) }}, slug: '{{ $field['slug'] }}', selected: {{ json_encode($selected) }} }})">
                     <x-slot:icon>
-                        <x-aura::icon icon="media" class="" />
+                        <x-aura::icon icon="media" class="text-gray-500 dark:text-gray-400" />
                     </x-slot>
-                    <span>{{ __('Media library') }}</span>
-                </x-aura::button.light>
+                    <span>{{ $pickerLabel }}</span>
+                </x-aura::button.border>
             </div>
         @elseif ($disabled)
-            <div class="mt-2">
+            <div>
                 <x-aura::button.light disabled>
                     <x-slot:icon>
                         <x-aura::icon icon="media" class="" />
@@ -378,39 +385,16 @@
                             </x-aura::button.border>
                         </div>
                     </div>
-                @else
-                    {{-- Standalone Media Library page: breadcrumb row (phones hide it, as on
-                         resource indexes), then the title row with the upload action, which
-                         shrinks to a 36px icon button on phones. --}}
-                    <div class="hidden sm:block">
-                        <x-aura::breadcrumbs>
-                            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
-                            <x-aura::breadcrumbs.li :title="__('Media library')" />
-                        </x-aura::breadcrumbs>
-                    </div>
-
-                    <div class="flex gap-4 justify-between items-center mt-1 sm:mt-6">
-                        <h1 class="aura-page-title">
-                            {{ __('Media library') }}
-                        </h1>
-
-                        <x-aura::button.border
-                            type="button"
-                            class="shrink-0 max-sm:w-9 max-sm:px-0 max-sm:[&>span:first-child]:ml-0"
-                            title="{{ __('Upload files') }}"
-                            x-on:click="triggerFileUpload()">
-                            <x-slot:icon>
-                                <x-aura::icon.upload />
-                            </x-slot>
-                            <span class="sr-only sm:not-sr-only">{{ __('Upload files') }}</span>
-                        </x-aura::button.border>
-                    </div>
                 @endif
+
+                {{-- The standalone Media library page's breadcrumb and title row (with the file count and the
+                     upload action) live in the table's header (aura/attachment/header, media_page), so the
+                     count follows search and filters. --}}
 
                 {{-- In the picker (field set) the dialog heading above is the only
                      title; hide the table's own heading and its destructive bulk
                      actions, which do not belong in a selection dialog. --}}
-                <livewire:aura::table wire:key="media-uploader-table" :model="$model" :field="$field" :settings="$field ? ['header' => false, 'bulk_actions' => false] : []" />
+                <livewire:aura::table wire:key="media-uploader-table" :model="$model" :field="$field" :settings="$field ? ['header' => false, 'bulk_actions' => false] : ['media_page' => true]" />
             </div>
         @endif
     </div>

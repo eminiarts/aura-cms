@@ -1,4 +1,8 @@
-@props(['cols' => null])
+{{-- splitOnPhones: below lg the block dissolves into the dashboard grid (contents), the create actions
+     take order-1 and the workspace links order-3, so the caller can place its own blocks between them.
+     title: the block's heading (default "Quick actions"). adminOnly: render only for people who see the
+     team links. withDocs: the documentation links close the block under a small label. --}}
+@props(['cols' => null, 'create' => [], 'splitOnPhones' => false, 'title' => null, 'adminOnly' => false, 'withDocs' => false])
 
 @php
     $colSpan = match($cols) {
@@ -10,27 +14,55 @@
 
     // One quiet row per action: 16px icon, label.
     $rowClass = 'flex gap-2.5 items-center px-2 w-full h-8 text-sm text-left text-gray-700 rounded-md transition-colors duration-150 group hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.04] dark:hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
-    $iconClass = 'size-4 shrink-0 text-gray-400 transition-colors duration-150 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300';
+    $iconClass = 'size-4 shrink-0 text-gray-500 transition-colors duration-150 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-200';
 
-    // Each action shows only to users the target lets in, with the checks the target itself runs
-    // (CreateResource and PluginsPage mount, the settings page authorizer, the team edit policy).
+    // Each action shows only to users the target lets in (see Dashboard::workspaceLinks()).
     $user = auth()->user();
-    $isSuperAdmin = (bool) $user?->isSuperAdmin();
-    $generalSettings = app(\Aura\Base\Settings\SettingsRegistry::class)->page('general');
     $team = config('aura.teams') ? $user?->currentTeam : null;
+    $links = \Aura\Base\Livewire\Dashboard::workspaceLinks($user);
 
-    $canCreateResource = config('aura.features.create_resource') && ! app()->environment('production') && $isSuperAdmin;
-    $canSettings = config('aura.features.settings') && $generalSettings
-        && app(\Aura\Base\Settings\SettingsPageAuthorizer::class)->canView($generalSettings, $user);
-    $canEditTeam = $team && $user->can('update', $team);
-    $canPlugins = config('aura.features.plugins') && $isSuperAdmin;
+    $canCreateResource = $links['createResource'];
+    $canSettings = $links['settings'];
+    $canEditTeam = $links['editTeam'];
+    $canPlugins = $links['plugins'];
+    $hasAdmin = $canCreateResource || $canSettings || $canEditTeam || $canPlugins;
+
+    // "New …" links (label, url) lead; the admin links follow under a small "Team" label.
+    $create = collect($create)->filter(fn ($action) => filled($action['url'] ?? null))->values();
+    // Without create actions there is nothing to split: the workspace links stay under the title.
+    $splitOnPhones = $splitOnPhones && $create->isNotEmpty() && $hasAdmin;
 @endphp
 
-@if ($canCreateResource || $canSettings || $canEditTeam || $canPlugins)
-<div {{ $attributes->merge(['class' => trim("{$colSpan} min-w-0")]) }} data-dashboard-quick-actions>
-    <h2 class="pb-2 border-b border-gray-200 aura-section-title dark:border-white/10">{{ __('Quick actions') }}</h2>
+@if (($create->isNotEmpty() || $hasAdmin) && (! $adminOnly || $hasAdmin))
+{{-- Without cols the block sits in the dashboard's side column, which dissolves into the 12-column grid
+     below lg: unsplit, it spans the full row there and follows the stats, where the create actions go. --}}
+<div {{ $attributes->merge(['class' => trim("{$colSpan} min-w-0".($splitOnPhones ? ' max-lg:contents' : ($colSpan === '' ? ' max-lg:col-span-12 max-lg:order-1' : '')))]) }} data-dashboard-quick-actions>
+    <div @class(['min-w-0', 'col-span-12 order-1 lg:order-none' => $splitOnPhones])>
+    <h2 class="pb-2 border-b border-gray-200 aura-section-title dark:border-white/10">{{ $title ?? __('Quick actions') }}</h2>
 
-    <div class="flex flex-col gap-0.5 mt-2 -mx-2">
+    @if ($create->isNotEmpty())
+        <div class="flex flex-col gap-0.5 mt-2 -mx-2" data-dashboard-create-actions>
+            @foreach ($create as $action)
+                <a href="{{ $action['url'] }}" wire:navigate class="{{ $rowClass }}">
+                    <x-aura::icon.plus class="{{ $iconClass }}" aria-hidden="true" />
+                    <span class="truncate">{{ $action['label'] }}</span>
+                </a>
+            @endforeach
+        </div>
+    @endif
+
+    </div>
+
+    @if ($hasAdmin)
+    <div @class(['min-w-0', 'col-span-12 order-3 lg:order-none' => $splitOnPhones]) data-dashboard-workspace>
+    @if ($splitOnPhones)
+        {{-- On its own below lg the group gets a section title; beside the create actions a small label. --}}
+        <h2 class="pb-2 border-b border-gray-200 lg:hidden aura-section-title dark:border-white/10">{{ __('Team') }}</h2>
+        <p class="hidden mt-5 mb-1 text-xs font-medium text-gray-500 lg:block dark:text-gray-400">{{ __('Team') }}</p>
+    @elseif ($create->isNotEmpty())
+        <p class="mt-5 mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">{{ __('Team') }}</p>
+    @endif
+    <div @class(['flex flex-col gap-0.5 -mx-2', 'mt-2' => $create->isEmpty() || $splitOnPhones, 'lg:mt-0' => $splitOnPhones])>
         @if ($canCreateResource)
             <button type="button" onclick="Livewire.dispatch('openModal', { component: 'aura::create-resource' })" class="{{ $rowClass }}">
                 <svg class="{{ $iconClass }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" color="currentColor" fill="none" aria-hidden="true">
@@ -75,5 +107,11 @@
             </a>
         @endif
     </div>
+    </div>
+    @endif
+
+    @if ($withDocs)
+        <x-aura::dashboard.docs bare />
+    @endif
 </div>
 @endif

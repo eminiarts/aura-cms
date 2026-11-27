@@ -12,3 +12,14 @@
   font-display: swap;
   src: url("/vendor/aura/public/fonts/inter/InterVariable.woff2?v=4.001-tnum") format("woff2");
 }
+
+/* Inter's square punctuation (ss07): periods, commas, colons and i/j dots take the square of the
+   wordmark's flat cuts. Set here, not in app.css, so it only applies where this Inter is in use;
+   code keeps its own font's defaults. */
+body {
+  font-feature-settings: "ss07";
+}
+
+code, kbd, samp, pre {
+  font-feature-settings: normal;
+}

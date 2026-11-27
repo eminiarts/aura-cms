@@ -6,6 +6,8 @@ use Aura\Base\Models\Post;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 class Option extends Resource
 {
@@ -38,6 +40,37 @@ class Option extends Resource
         return static::where('name', $name)->first();
     }
 
+    public function displayLabel(): string
+    {
+        $segments = $this->keySegments();
+
+        if ($segments === []) {
+            return (string) $this->name;
+        }
+
+        $first = Str::of(Str::snake(array_shift($segments)))->replace(['_', '-'], ' ')->squish()->lower()->ucfirst()->toString();
+
+        // A team's or user's "settings" alone reads as the global settings page.
+        if ($first === 'Settings' && $segments === [] && ($scope = $this->displayScope())) {
+            $first = __($scope).' '.__('settings');
+        }
+
+        return implode(' · ', [$first, ...$segments]);
+    }
+
+    /**
+     * Whose option this is, read from the key prefix: "User" for user.{id}.*, "Team" for team.{id}.*,
+     * null for other keys.
+     */
+    public function displayScope(): ?string
+    {
+        return match (true) {
+            (bool) preg_match('/^user\.\d+\./', (string) $this->name) => 'User',
+            (bool) preg_match('/^team\.\d+\./', (string) $this->name) => 'Team',
+            default => null,
+        };
+    }
+
     public static function getFields(): array
     {
         return [
@@ -47,6 +80,8 @@ class Option extends Resource
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
+                // The key in words first, its scope, then the stored key in mono (displayLabel()).
+                'display_view' => 'aura::components.fields.option-name-index',
                 'style' => [
                     'width' => '100',
                 ],
@@ -55,12 +90,24 @@ class Option extends Resource
                 'name' => 'Value',
                 'type' => 'Aura\\Base\\Fields\\Json',
                 'validation' => 'required|json',
-                'on_index' => false,
+                // Lists show it in words ("Empty", "On", "3 settings", Json::summary()), the JSON in the tooltip.
+                'on_index' => true,
+                'list_summary' => true,
                 'slug' => 'value',
                 'decode' => false,
                 'style' => [
                     'width' => '100',
                 ],
+            ],
+            [
+                // List only: the record page carries the date in its meta line.
+                'name' => 'Updated',
+                'type' => 'Aura\\Base\\Fields\\Datetime',
+                'slug' => 'updated_at',
+                'display_format' => 'M j, Y',
+                'on_index' => true,
+                'on_forms' => false,
+                'on_view' => false,
             ],
         ];
     }
@@ -73,6 +120,23 @@ class Option extends Resource
     public static function getWidgets(): array
     {
         return [];
+    }
+
+    /** Options are part of the settings: the list reads "Settings / Options". */
+    public function indexBreadcrumbParent(): ?array
+    {
+        return Route::has('aura.settings') ? ['title' => __('Settings'), 'href' => route('aura.settings')] : null;
+    }
+
+    /**
+     * A readable label for the stored key, for lists: "user.1.sidebarToggled" is "Sidebar toggled",
+     * "user.1.table_view.Attachment" is "Table view · Attachment", "team.1.settings" is "Team settings".
+     * The key's first segment is put in words; later segments (resource names) stay as stored.
+     * Display only: the key itself is never changed.
+     */
+    public function indexDescription(): ?string
+    {
+        return __('Stored key/value settings. For developers.');
     }
 
     /**
@@ -151,5 +215,17 @@ class Option extends Resource
             array_pop($segments);
             Cache::forget(implode('.', $segments).'.*');
         }
+    }
+
+    /**
+     * The key's segments without a user.{id} or team.{id} prefix.
+     *
+     * @return list<string>
+     */
+    private function keySegments(): array
+    {
+        $name = (string) preg_replace('/^(user|team)\.\d+\./', '', (string) $this->name);
+
+        return array_values(array_filter(explode('.', $name), fn (string $segment) => $segment !== ''));
     }
 }

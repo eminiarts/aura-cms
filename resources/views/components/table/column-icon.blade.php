@@ -1,8 +1,9 @@
 {{--
-    Column-type mark for a table heading: a 12px outline glyph in front of the label that says what
+    Column-type mark for a table heading: a 14px outline glyph in front of the label that says what
     kind of value the column holds (text, email, number, date, status, relation ...), the way a CRM
-    header does. Always leads the label, also on right-aligned number columns. Pass the field class
-    (`type`); unknown types render nothing.
+    header does. Every typed column carries one, so a header never mixes marked and bare labels. Always
+    leads the label, also on right-aligned number columns. Pass the field class (`type`); unknown types
+    render nothing.
 --}}
 @props(['type' => null])
 
@@ -21,7 +22,7 @@
             is_a($type, \Aura\Base\Fields\Select::class, true), is_a($type, \Aura\Base\Fields\Radio::class, true), is_a($type, \Aura\Base\Fields\Checkbox::class, true), is_a($type, \Aura\Base\Fields\Tags::class, true) => 'M2.5 3.5h11v9h-11zM6 7.5l2 2 2-2',
             // Relation: an arrow out to the related record, not a chain link.
             is_a($type, \Aura\Base\Fields\BelongsTo::class, true), is_a($type, \Aura\Base\Fields\HasMany::class, true), is_a($type, \Aura\Base\Fields\HasOne::class, true), is_a($type, \Aura\Base\Fields\BelongsToMany::class, true), is_a($type, \Aura\Base\Fields\AdvancedSelect::class, true) => 'M4 12 12 4M5.5 4H12v6.5',
-            // Text: a T, which reads as "text" at 12px where three lines read as a drag handle.
+            // Text: a T, which reads as "text" at 14px where three lines read as a drag handle.
             is_a($type, \Aura\Base\Fields\Text::class, true), is_a($type, \Aura\Base\Fields\Textarea::class, true), is_a($type, \Aura\Base\Fields\Slug::class, true), is_a($type, \Aura\Base\Fields\Wysiwyg::class, true) => 'M3.5 4h9M8 4v8.5',
             default => null,
         };
@@ -29,7 +30,7 @@
 @endphp
 
 @if ($path)
-    <svg {{ $attributes->merge(['class' => 'w-3 h-3 shrink-0 text-gray-400 dark:text-gray-500']) }} viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-column-icon>
+    <svg {{ $attributes->merge(['class' => 'w-3.5 h-3.5 shrink-0 text-gray-500 dark:text-gray-400']) }} viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-column-icon>
         <path d="{{ $path }}" />
     </svg>
 @endif

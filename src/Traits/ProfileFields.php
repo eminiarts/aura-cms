@@ -43,6 +43,23 @@ trait ProfileFields
                     'width' => '100',
                 ],
             ],
+            // Account deletion closes the Details tab as its own section, not a tab of its own.
+            [
+                'name' => 'Delete account',
+                'type' => 'Aura\\Base\\Fields\\Panel',
+                'slug' => 'user-delete-panel',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'name' => 'Delete account',
+                'type' => 'Aura\\Base\\Fields\\View',
+                'view' => 'aura::profile.delete-user-form',
+                'validation' => '',
+                'conditional_logic' => [],
+                'slug' => 'delete-account',
+            ],
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Password',
@@ -80,7 +97,7 @@ trait ProfileFields
             ],
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => '2FA',
+                'name' => 'Two-factor',
                 'slug' => '2fa',
                 'global' => true,
             ],
@@ -100,29 +117,6 @@ trait ProfileFields
                 'conditional_logic' => [],
                 'slug' => '2fa',
             ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => 'Delete',
-                'slug' => 'delete-tab',
-                'global' => true,
-            ],
-            [
-                'name' => 'Delete account',
-                'type' => 'Aura\\Base\\Fields\\Panel',
-                'slug' => 'user-delete-panel',
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
-            [
-                'name' => '2FA',
-                'type' => 'Aura\\Base\\Fields\\View',
-                'view' => 'aura::profile.delete-user-form',
-                'validation' => '',
-                'conditional_logic' => [],
-                'slug' => '2fa',
-            ],
-
         ];
     }
 }

@@ -16,12 +16,17 @@
             // Record count (after search and filters) beside the title, on the page and on relation sections alike.
             $rowCount = isset($rows) && method_exists($rows, 'total') ? $rows->total() : null;
             $createLabel = __('New :resource', ['resource' => Str::lower(__($model->singularName()))]);
-            // A page list without any records shows its create button in the empty state (list-view), not twice.
-            $createInEmptyState = ! $isRelationTable && ($collectionIsEmpty ?? false) && ($currentView ?? null) === 'list'
-                && ! $this->settings['create_in_modal'] && $this->createLink;
+            // A page's description goes under the title row, so the title sits at the height of every other page title.
+            $indexDescription = ! $isRelationTable && $this->settings['title'] && method_exists($model, 'indexDescription') ? $model->indexDescription() : null;
+            // A top-level list page has no trail above: the title row starts the page and carries the bookmark.
+            $pageBookmark = ! $isRelationTable && ($this->settings['page_bookmark'] ?? false);
+            // An empty list page words its create button in the empty block (components/table/list-view).
+            $createInEmptyBlock = $emptyPage ?? false;
         @endphp
         {{-- A relation section's row keeps the 32px button height without a button too, so its title sits at the same height. --}}
-        <div class="flex justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3 min-h-8' : 'mt-1 min-h-9 sm:mt-6' }}" @if ($isRelationTable) data-relation-header @endif>
+        {{-- The page's create button keeps its object ("New company") while it fits beside the title and reads
+             "+ New" only when the full label would wrap the title (table/create-button). --}}
+        <div class="flex gap-3 justify-between items-center {{ $isRelationTable ? 'mt-2 mb-3 min-h-8' : 'mt-1 min-h-9 sm:min-h-[3.375rem] sm:items-end'.($pageBookmark ? ' sm:mt-0' : ' sm:mt-8').(filled($indexDescription) ? '' : ' sm:mb-8') }}" @if ($isRelationTable) data-relation-header @endif>
 
             @if ($this->settings['title'])
                 <div class="min-w-0">
@@ -33,13 +38,19 @@
                             @endif
                         </h2>
                     @else
-                        <h1 class="aura-page-title">
-                            {{ __($model->pluralName()) }}
-                            @if ($rowCount !== null && ! ($collectionIsEmpty ?? false))
-                                <span class="aura-page-count">{{ number_format($rowCount) }}</span>
+                        <div class="flex gap-1 items-center min-w-0">
+                            <h1 class="aura-page-title">
+                                {{ __($model->pluralName()) }}
+                                @if ($rowCount !== null && ! ($collectionIsEmpty ?? false))
+                                    <span class="aura-page-count">{{ number_format($rowCount) }}</span>
+                                @endif
+                            </h1>
+                            @if ($pageBookmark)
+                                <x-aura::page-bookmark />
                             @endif
-                        </h1>
+                        </div>
                     @endif
+
 
                     @if (optional(optional($this)->field)['description'])
                         <span class="aura-meta">{{ __($this->field['description']) }}</span>
@@ -48,17 +59,17 @@
             @endif
 
 
-            {{-- No records yet: no toolbar, so "Edit resource" sits on the title row. --}}
-            @if (! $isRelationTable && ($collectionIsEmpty ?? false))
-                @include('aura::components.table.resource-editor-button')
+            @if ($createInEmptyBlock)
+                @include('aura::components.table.resource-editor-button', ['standalone' => true])
             @endif
 
             @can('create', $model)
-                @if ($this->settings['create'] && ! $createInEmptyState)
-                    <div class="create-resource">
+                @if ($this->settings['create'] && ! $createInEmptyBlock)
+                    {{-- A page's create button takes the width the title leaves (it decides there whether its full label fits). --}}
+                    <div class="create-resource {{ $isRelationTable ? 'shrink-0' : 'flex-1' }}">
                         <div>
                             @if ($this->settings['create_in_modal'])
-                                <a href="#"
+                                <a href="#" @class(['block' => ! $isRelationTable])
                                     wire:click.prevent="$dispatch('openModal', { component: 'aura::resource-create-modal', arguments: {
                                 type: '{{ $this->model->getType() }}',
                                 params: {
@@ -74,12 +85,7 @@
                                             <span>{{ $createLabel }}</span>
                                         </x-aura::button.border>
                                     @else
-                                        <x-aura::button>
-                                            <x-slot:icon>
-                                                <x-aura::icon icon="plus" />
-                                            </x-slot>
-                                            <span>{{ $createLabel }}</span>
-                                        </x-aura::button>
+                                        <x-aura::table.create-button :label="$createLabel" />
                                     @endif
                                 </a>
                             @else
@@ -92,12 +98,7 @@
                                             <span>{{ $createLabel }}</span>
                                         </x-aura::button.border>
                                     @else
-                                        <x-aura::button href="{{ $this->createLink }}">
-                                            <x-slot:icon>
-                                                <x-aura::icon icon="plus" />
-                                            </x-slot>
-                                            <span>{{ $createLabel }}</span>
-                                        </x-aura::button>
+                                        <x-aura::table.create-button :href="$this->createLink" :label="$createLabel" />
                                     @endif
                                 @endif
                             @endif
@@ -107,6 +108,10 @@
             @endcan
 
         </div>
+
+        @if (filled($indexDescription))
+            <p class="mt-1 text-sm text-gray-500 sm:mb-8 dark:text-gray-400" data-page-description>{{ $indexDescription }}</p>
+        @endif
     @endif
 @endif
 @if ($this->settings['header_after'])

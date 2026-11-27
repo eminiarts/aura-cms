@@ -65,7 +65,7 @@
             </label>
 
             {{-- Caption flush with the thumbnail edge. x-file-name truncates the base name and keeps the
-                 extension ("master-services-agre….pdf"); the media library plugin uses the same caption. --}}
+                 extension ("master-servi…ent.pdf"); the media library plugin uses the same caption. --}}
             <div class="mt-2">
                 <p x-data x-file-name class="aura-tile-name" title="{{ $row->name }}">{{ $row->name }}</p>
                 <p class="aura-tile-meta">
@@ -86,17 +86,6 @@
                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                             {{ __('Drag and drop your first file anywhere in this window, or upload one directly.') }}
                         </p>
-                    </div>
-                    <div x-data="{ canUpload: !!document.getElementById('file-upload') }">
-                        <x-aura::button.primary
-                            x-cloak
-                            x-show="canUpload"
-                            type="button"
-                            class="flex items-center space-x-2"
-                            x-on:click="document.getElementById('file-upload').click()">
-                            <x-aura::icon.upload class="w-5 h-5" />
-                            <span>{{ __('Upload files') }}</span>
-                        </x-aura::button.primary>
                     </div>
                 </div>
             </div>

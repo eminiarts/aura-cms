@@ -70,7 +70,8 @@ class TeamInvitation extends Resource
 
     public function singularName(): string
     {
-        return 'Team invitation';
+        // "Invitations" in the list title and search ("Search invitations…"), the word the Invite user button leads to.
+        return 'Invitation';
     }
 
     /**

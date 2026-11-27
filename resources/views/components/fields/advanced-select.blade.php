@@ -373,7 +373,7 @@
             <label class="sr-only">{{ __('Select entry') }}</label>
             {{-- Same trigger as the other selects (BelongsTo, Select): 36px, hairline ring, chevron; chips wrap and grow it. --}}
             <button type="button"
-                class="flex relative justify-between items-center py-1 pr-9 pl-3 w-full min-h-9 text-base text-left text-gray-900 bg-white rounded-lg ring-1 shadow-xs transition duration-150 appearance-none sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 dark:hover:ring-white/20"
+                class="aura-touch-control flex relative justify-between items-center py-1 pr-9 pl-3 w-full min-h-9 text-base text-left text-gray-900 bg-white rounded-lg ring-1 shadow-xs transition duration-150 appearance-none sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-950/40 dark:text-gray-100 dark:ring-white/15 dark:hover:ring-white/25"
                 x-ref="listboxButton" @click="toggleListbox">
 
                 <div class="flex items-center w-full">
@@ -441,10 +441,8 @@
 
                     </template>
 
-                    <div class="flex absolute inset-y-0 right-0 items-center pr-2.5 pointer-events-none shrink-0" aria-hidden="true">
-                        <svg class="text-gray-400 size-4 dark:text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M4.25 6.25 8 10l3.75-3.75" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
+                    <div class="flex absolute inset-y-0 right-0 items-center pr-3 pointer-events-none shrink-0" aria-hidden="true">
+                        <x-aura::icon.caret direction="down" class="text-gray-500 size-4 dark:text-gray-400" />
                     </div>
                 </div>
             </button>

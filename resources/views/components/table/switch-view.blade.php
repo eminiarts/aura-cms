@@ -5,8 +5,8 @@
         $switchIdle = 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200';
     @endphp
     <div>
-        <div class="inline-flex isolate gap-0.5 items-center p-0.5 rounded-lg bg-gray-950/[0.04] dark:bg-white/5">
-            <button wire:click="switchView('list')" type="button"
+        <div class="inline-flex isolate gap-0.5 items-center p-0.5 rounded-lg bg-gray-950/[0.04] dark:bg-white/5" data-view-switch>
+            <button wire:click="switchView('list')" type="button" title="{{ __('List') }}"
                 class="{{ $switchBase }} {{ ($currentView ?? 'list') == 'list' ? $switchActive : $switchIdle }}">
                 <span class="sr-only">List View</span>
                 <x-aura::icon icon="list" size="sm" />
@@ -21,7 +21,7 @@
             @endif
 
             @if (($this->resolvedKanbanConfiguration()['enabled'] ?? false) || $model->tableKanbanView())
-                <button wire:click="switchView('kanban')" type="button"
+                <button wire:click="switchView('kanban')" type="button" title="{{ __('Board') }}"
                     class="{{ $switchBase }} {{ ($currentView ?? null) == 'kanban' ? $switchActive : $switchIdle }}">
                     <span class="sr-only">Kanban View</span>
                     <x-aura::icon icon="kanban" size="sm" />

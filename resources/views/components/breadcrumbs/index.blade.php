@@ -11,7 +11,7 @@
 <a href="{{ $parent['href'] }}" wire:navigate
     class="inline-flex gap-1 items-center -ml-1 max-w-full h-5 text-sm font-medium text-gray-500 rounded-sm transition-colors duration-150 sm:hidden hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-400 dark:hover:text-white"
     data-breadcrumb-back>
-    <svg class="size-4 shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m10 12-4-4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <x-aura::icon.caret direction="left" class="size-4 shrink-0" />
     <span class="truncate">{!! e($parent['title'], false) !!}</span>
 </a>
 @endif

@@ -18,7 +18,7 @@
     @endphp
 
 </head>
-<body class="font-sans antialiased text-gray-800 bg-gray-50 dark:bg-gray-950 dark:text-gray-100">
+<body class="font-sans antialiased text-gray-800 bg-gray-50 dark:bg-gray-900 dark:text-gray-100">
 
     @if ($loginBgUrl && $loginBgDarkUrl)
         <script>
@@ -34,44 +34,140 @@
         </script>
     @endif
 
-    <div class="isolate relative bg-bottom bg-no-repeat bg-cover"
-        @if ($loginBgUrl && $loginBgDarkUrl)
-            style="background-image: url('{{ $loginBgUrl }}');"
-            data-darkmode-image="{{ $loginBgDarkUrl }}"
-        @elseif ($loginBgUrl)
-            style="background-image: url('{{ $loginBgUrl }}');"
-        @elseif ($loginBgDarkUrl)
-            style="background-image: url('{{ $loginBgDarkUrl }}');"
-        @endif
-    >
-        @unless ($hasCustomBg)
-            <div aria-hidden="true" class="overflow-hidden absolute inset-0 -z-10 pointer-events-none">
-                <div class="absolute inset-x-0 top-0 h-96 bg-gradient-to-b to-transparent from-white dark:from-white/[0.04]"></div>
-                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[64rem] h-[32rem] rounded-full opacity-60 blur-3xl bg-gradient-to-b from-primary-100/60 to-transparent dark:from-primary-500/[0.07] dark:opacity-100"></div>
-            </div>
-        @endunless
+    @if ($hasCustomBg)
+        <div class="isolate relative bg-bottom bg-no-repeat bg-cover"
+            @if ($loginBgUrl && $loginBgDarkUrl)
+                style="background-image: url('{{ $loginBgUrl }}');"
+                data-darkmode-image="{{ $loginBgDarkUrl }}"
+            @elseif ($loginBgUrl)
+                style="background-image: url('{{ $loginBgUrl }}');"
+            @elseif ($loginBgDarkUrl)
+                style="background-image: url('{{ $loginBgDarkUrl }}');"
+            @endif
+        >
+            <main class="flex relative flex-col justify-center items-center px-6 py-12 min-h-screen">
+                <div class="w-full sm:max-w-md">
+                    <div class="flex justify-center">
+                        <a href="/" class="block w-32 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                            <x-dynamic-component :component="config('aura.views.logo')" />
+                        </a>
+                    </div>
 
-        <main class="flex relative flex-col justify-center items-center px-6 py-12 min-h-screen">
-            <div class="w-full sm:max-w-md">
-                <div class="flex justify-center">
-                    <a href="/" class="block w-32 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
-                        <x-dynamic-component :component="config('aura.views.logo')" />
+                    <div class="aura-auth mt-8 w-full px-6 py-8 sm:px-10 sm:py-10 rounded-2xl ring-1 backdrop-blur-xl bg-white/95 ring-gray-950/10 shadow-xl shadow-gray-950/[0.08] dark:bg-gray-900/90 dark:ring-white/10 dark:shadow-black/40">
+                        {{ $slot }}
+                    </div>
+
+                    <p class="mt-8 text-xs text-center text-gray-400 dark:text-gray-500">
+                        &copy; {{ date('Y') }} {{ config('app.name') }}
+                    </p>
+                </div>
+            </main>
+        </div>
+    @else
+        @php
+            // From lg the page is split: a brand panel in the sidebar's own colors (sidebar type and its
+            // dark-mode type from Settings) and the form beside it, no card. Below lg: wordmark, then form.
+            $themeSettings = app('aura')::getOption('settings') ?? [];
+            $sidebarType = $themeSettings['sidebar-type'] ?? config('aura.theme.sidebar-type', 'dark');
+            $sidebarDarkType = $themeSettings['sidebar-darkmode-type'] ?? config('aura.theme.sidebar-darkmode-type', 'dark');
+            $panelOnLight = $sidebarType === 'light';
+            $panelOnLightDark = $sidebarDarkType === 'light';
+            // The Λ outline repeats Aura's own wordmark: with a custom logo it would be a stranger's mark.
+            $customLogo = config('aura.views.logo') !== 'aura::application-logo'
+                || filled($themeSettings['logo'] ?? null)
+                || filled($themeSettings['logo-darkmode'] ?? null);
+            // aura.theme.login-line: null shows the default line, a string replaces it, false hides it.
+            $loginLine = config('aura.theme.login-line');
+            $loginLine = $loginLine === false ? null : __(is_string($loginLine) && $loginLine !== '' ? $loginLine : 'Every record in one place.');
+            // aura.theme.login-subline: one quieter line under it, none by default.
+            $loginSubline = filled(config('aura.theme.login-subline')) ? __(config('aura.theme.login-subline')) : null;
+            // The mark before the line takes the active sidebar item's mark color.
+            $markColor = ['light' => 'bg-primary-600', 'primary' => 'bg-white', 'dark' => 'bg-primary-400'][$sidebarType] ?? 'bg-primary-400';
+            $markDarkColor = ['light' => 'dark:bg-primary-600', 'primary' => 'dark:bg-white', 'dark' => 'dark:bg-primary-400'][$sidebarDarkType] ?? 'dark:bg-primary-400';
+            // aura.theme.login-image: one image, or one per color scheme.
+            $loginImage = config('aura.theme.login-image');
+            $loginImage = is_array($loginImage) ? $loginImage : ['light' => $loginImage, 'dark' => $loginImage];
+            $loginImageUrl = fn ($path) => filled($path) ? (\Illuminate\Support\Str::startsWith($path, ['http://', 'https://', '/']) ? $path : asset($path)) : null;
+            $loginImageLight = $loginImageUrl($loginImage['light'] ?? null) ?? $loginImageUrl($loginImage['dark'] ?? null);
+            $loginImageDark = $loginImageUrl($loginImage['dark'] ?? null) ?? $loginImageLight;
+        @endphp
+
+        {{-- The form pane is the app's page: white, dark gray-900, so inputs and buttons look as they do in the app.
+             In dark mode the dark brand panel is the dark sidebar (gray-950), one step below the form pane. --}}
+        <div class="min-h-screen bg-white lg:grid lg:grid-cols-12 dark:bg-gray-900">
+            <aside class="hidden lg:block lg:col-span-5 aura-sidebar-type-{{ $sidebarType }} aura-sidebar-darkmode-type-{{ $sidebarDarkType }}">
+                <div class="flex overflow-hidden relative flex-col justify-between p-10 h-full aura-sidebar-bg">
+                    @php
+                        $wordmarkColor = ($panelOnLight ? 'text-gray-900' : 'text-white').' '.($panelOnLightDark ? 'dark:text-gray-900' : 'dark:text-white');
+                    @endphp
+                    <a href="/" class="relative block w-[7.5rem] rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                        <x-dynamic-component :component="config('aura.views.logo')" class="block w-full h-auto {{ $wordmarkColor }}" />
+                    </a>
+
+                    {{-- The line (and its subline) in the top third; with a product image the image follows 48px
+                         below it, 720px wide from the panel's left padding, bleeding off the right and bottom edge
+                         (the dark-scheme image swaps in with the dark class). Without one, the outlined Λ. --}}
+                    <div @class(['relative', 'mt-[12vh]' => $loginImageLight, 'mt-auto' => ! $loginImageLight])>
+                        @if ($loginLine)
+                            <div class="flex gap-3 items-start" data-login-line>
+                                <span class="mt-1 w-[3px] h-6 shrink-0 {{ $markColor }} {{ $markDarkColor }}" aria-hidden="true"></span>
+                                <div>
+                                    <p @class([
+                                        'max-w-sm text-2xl leading-8',
+                                        $panelOnLight ? 'text-gray-900' : 'text-white',
+                                        $panelOnLightDark ? 'dark:text-gray-900' : 'dark:text-white',
+                                    ]) style="font-weight: 650; letter-spacing: -0.022em">{{ $loginLine }}</p>
+                                    @if ($loginSubline)
+                                        <p @class([
+                                            'mt-2 max-w-sm text-[15px] leading-6',
+                                            $panelOnLight ? 'text-gray-600' : 'text-white/70',
+                                            $panelOnLightDark ? 'dark:text-gray-600' : 'dark:text-white/70',
+                                        ]) data-login-subline>{{ $loginSubline }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
+                    @if ($loginImageLight)
+                        <div class="relative flex-1 mt-12 min-h-0" data-login-image-frame>
+                            <img src="{{ $loginImageLight }}" alt="" aria-hidden="true" data-login-image
+                                @class(['absolute top-0 left-0 w-[720px] max-w-none rounded-tl-xl ring-1 shadow-2xl ring-white/10 shadow-black/40 pointer-events-none select-none', 'dark:hidden' => $loginImageDark !== $loginImageLight])>
+                            @if ($loginImageDark !== $loginImageLight)
+                                <img src="{{ $loginImageDark }}" alt="" aria-hidden="true" data-login-image-dark
+                                    class="hidden absolute top-0 left-0 w-[720px] max-w-none rounded-tl-xl ring-1 shadow-2xl ring-white/10 shadow-black/40 pointer-events-none select-none dark:block">
+                            @endif
+                        </div>
+                    @elseif (! $customLogo)
+                        {{-- One Λ of the wordmark, outlined at 1px and cropped by the panel's corner. --}}
+                        <x-aura::icon.apex-outline :class="\Illuminate\Support\Arr::toCssClasses([
+                            'absolute -right-32 -bottom-24 w-[36rem] pointer-events-none',
+                            $panelOnLight ? 'stroke-gray-950/10' : 'stroke-white/10',
+                            $panelOnLightDark ? 'dark:stroke-gray-950/10' : 'dark:stroke-white/10',
+                        ])" />
+                    @endif
+                </div>
+            </aside>
+
+            <main class="flex flex-col px-6 py-6 min-h-screen sm:px-10 sm:py-8 lg:col-span-7">
+                <div class="lg:hidden">
+                    <a href="/" class="block w-[7.5rem] rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                        <x-dynamic-component :component="config('aura.views.logo')" class="block w-full h-auto text-gray-900 dark:text-white" />
                     </a>
                 </div>
 
-                <div @class([
-                    'mt-8 w-full px-6 py-8 sm:px-10 sm:py-10 rounded-2xl ring-1',
-                    'bg-white ring-gray-950/10 shadow-xl shadow-gray-950/[0.04] dark:bg-gray-900 dark:ring-white/10 dark:shadow-black/30' => ! $hasCustomBg,
-                    'backdrop-blur-xl bg-white/95 ring-gray-950/10 shadow-xl shadow-gray-950/[0.08] dark:bg-gray-900/90 dark:ring-white/10 dark:shadow-black/40' => $hasCustomBg,
-                ])>
-                    {{ $slot }}
+                <div class="flex flex-1 justify-center items-start pt-14 pb-12 lg:items-center lg:py-12">
+                    <div class="w-full max-w-sm aura-auth">
+                        {{ $slot }}
+                    </div>
                 </div>
 
-                <p class="mt-8 text-xs text-center text-gray-400 dark:text-gray-500">
+                {{-- The copyright closes the form side on every screen, under the form's column, so the brand panel holds only the brand. --}}
+                <p class="mx-auto w-full max-w-sm text-xs text-gray-400 dark:text-gray-500" data-login-copyright>
                     &copy; {{ date('Y') }} {{ config('app.name') }}
                 </p>
-            </div>
-        </main>
-    </div>
+            </main>
+        </div>
+    @endif
 </body>
 </html>

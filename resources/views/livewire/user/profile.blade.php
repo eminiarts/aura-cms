@@ -1,20 +1,19 @@
-<div>
+{{-- The profile is a form: one readable, left-aligned column (max-w-3xl) as on the resource forms,
+     breadcrumb and header included, so Save ends at the form's right edge. --}}
+<div class="max-w-3xl" data-form-body>
     @section('title', 'Profile')
 
     {{ app('aura')::injectView('profile_before_header') }}
 
-    {{-- Page header as on index pages: breadcrumb from sm, then the title row with the action. --}}
-    <div class="hidden sm:block">
-        <x-aura::breadcrumbs>
-            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
-            <x-aura::breadcrumbs.li title="{{ __('Profile') }}" />
-        </x-aura::breadcrumbs>
-    </div>
+    {{-- Page header as on index pages. The profile is a top-level page: no trail, the bookmark beside the title. --}}
+    <div class="flex gap-4 justify-between items-center mt-1 mb-6 sm:mt-0 sm:mb-8 sm:min-h-[3.375rem] sm:items-end">
+        <div class="flex gap-1 items-center min-w-0">
+            <h1 class="aura-page-title">{{ __('Profile') }}</h1>
+            <x-aura::page-bookmark />
+        </div>
 
-    <div class="flex gap-4 justify-between items-center mt-1 mb-6 sm:mt-6">
-        <h1 class="aura-page-title">{{ __('Profile') }}</h1>
-
-        <div class="shrink-0">
+        {{-- Phones save from the bar on the bottom edge, as on resource forms and settings. --}}
+        <div class="shrink-0 max-sm:hidden">
             <x-aura::button wire:click="save">
                 <div wire:loading wire:target="save">
                     <x-aura::icon.loading  />
@@ -51,5 +50,5 @@
     @endforeach
     </div>
 
-
+    @include('aura::livewire.resource.form-bar', ['cancelUrl' => null])
 </div>

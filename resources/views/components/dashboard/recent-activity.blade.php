@@ -1,6 +1,8 @@
-@props(['items'])
+@props(['items', 'action' => null])
 
-{{-- Unboxed list under a hairline title: avatar, record name, resource, time. Rows open the record. --}}
+{{-- Unboxed list under a hairline title: avatar, record name, resource, time. Rows open the record.
+     Phones stack resource and time under the name ("Company · 6 days ago"). An empty list can carry
+     one primary action (label, url), e.g. "New company". --}}
 <div {{ $attributes->merge(['class' => 'min-w-0']) }} data-dashboard-recent>
     <div class="flex justify-between items-baseline pb-2 border-b border-gray-200 dark:border-white/10">
         <h2 class="aura-section-title">{{ __('Recently edited') }}</h2>
@@ -15,20 +17,33 @@
                         @if (! empty($item['avatar']))
                             {!! $item['avatar'] !!}
                         @else
-                            <span class="flex justify-center items-center w-7 h-7 text-gray-400 rounded-md shrink-0 bg-gray-950/[0.04] dark:bg-white/5 dark:text-gray-500 [&>svg]:size-4" aria-hidden="true">
+                            <span class="aura-avatar aura-avatar-md aura-avatar-square aura-avatar-tone-gray [&>svg]:size-4" aria-hidden="true">
                                 {!! $item['icon'] !!}
                             </span>
                         @endif
-                        <span class="flex-1 min-w-0 text-sm font-medium text-gray-900 truncate dark:text-white">{{ $item['title'] }}</span>
+                        <span class="flex-1 min-w-0">
+                            <span class="block text-sm font-medium text-gray-900 truncate dark:text-white">{{ $item['title'] }}</span>
+                            <span class="block truncate sm:hidden aura-meta">{{ $item['resource'] }}@if ($item['updated_at']) &middot; {{ $item['updated_at']->diffForHumans() }}@endif</span>
+                        </span>
                         <span class="hidden text-sm text-gray-500 shrink-0 sm:block dark:text-gray-400">{{ $item['resource'] }}</span>
                         @if ($item['updated_at'])
-                            <span class="w-24 text-right shrink-0 aura-meta" title="{{ $item['updated_at']->toDayDateTimeString() }}">{{ $item['updated_at']->diffForHumans(['short' => true]) }}</span>
+                            <span class="hidden w-24 text-right shrink-0 sm:block aura-meta" title="{{ $item['updated_at']->toDayDateTimeString() }}">{{ $item['updated_at']->diffForHumans() }}</span>
                         @endif
                     </a>
                 </li>
             @endforeach
         </ul>
     @else
-        <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">{{ __('Nothing edited yet. Records you create or edit show up here.') }}</p>
+        <div class="flex flex-wrap gap-x-4 gap-y-3 items-center mt-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Nothing edited yet. Records you create or edit show up here.') }}</p>
+            @if (filled($action['url'] ?? null))
+                <x-aura::button :href="$action['url']" data-dashboard-empty-action>
+                    <x-slot:icon>
+                        <x-aura::icon icon="plus" />
+                    </x-slot>
+                    <span>{{ $action['label'] }}</span>
+                </x-aura::button>
+            @endif
+        </div>
     @endif
 </div>

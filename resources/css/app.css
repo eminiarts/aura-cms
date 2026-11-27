@@ -56,13 +56,14 @@ body {
    reserved for titles and the leading table column, 500 for labels,
    buttons and nav, 400 for everything else. */
 .aura-page-title {
-    @apply text-2xl font-semibold text-gray-900 dark:text-white;
-    letter-spacing: var(--aura-tracking-display);
+    @apply text-2xl text-gray-900 dark:text-white;
+    font-weight: 650;
+    letter-spacing: -0.022em;
 }
 
-/* Stat value (dashboard cards): 30px, 600, tabular. Color stays on the element so a calm card can mute it. */
+/* Stat value (dashboard cards): 28px, 600, tabular. Color stays on the element so a calm card can mute it. */
 .aura-stat-value {
-    @apply text-3xl font-semibold leading-none;
+    @apply text-[1.75rem] font-semibold leading-none tabular-nums;
     letter-spacing: var(--aura-tracking-display);
 }
 
@@ -70,14 +71,83 @@ body {
    tracking-tight (-0.025em) pinches the round letters. Applies to page titles, stat values, fact numbers. */
 :root {
     --aura-tracking-display: -0.02em;
+
+    /* Edges. --aura-edge outlines a surface (cards, tiles, record cards), --aura-hairline divides
+       inside one (table rows, section rules). Both derive from the gray palette's darkest step. */
+    --aura-edge: rgb(var(--gray-950) / 0.12);
+    --aura-hairline: rgb(var(--gray-950) / 0.08);
+
+    /* The mark: one leg of the wordmark's Λ, a 3px bar whose ends are cut at 60 degrees. It says
+       "here" (active nav item, selected row) and is the one shape that carries primary on its own. */
+    --aura-mark-clip: polygon(0 5.2px, 100% 0, 100% calc(100% - 5.2px), 0 100%);
+    /* The same leg lying down (3px tall, ends cut at 60 degrees): under the current page number. */
+    --aura-mark-clip-x: polygon(5.2px 0, 100% 0, calc(100% - 5.2px) 100%, 0 100%);
+}
+
+.dark {
+    --aura-edge: rgb(255 255 255 / 0.12);
+    --aura-hairline: rgb(255 255 255 / 0.08);
+}
+
+.aura-mark {
+    width: 3px;
+    clip-path: var(--aura-mark-clip);
+}
+
+.aura-mark-x {
+    height: 3px;
+    clip-path: var(--aura-mark-clip-x);
+}
+
+/* A number's unit ("CHF" in "CHF 84,500", "%" in "12%") sits a step smaller and quieter than the figure. */
+.aura-num-unit {
+    @apply font-normal text-gray-500 dark:text-gray-400;
+    font-size: 0.85em;
+    letter-spacing: 0;
+}
+
+/* Controls (inputs, selects, textareas, icon buttons drawn with rounded-lg) take the control radius
+   from Settings > Corner radius, like .aura-button. Element plus class, so an app's own .rounded-lg,
+   loaded after Aura's CSS, does not undo it. */
+:is(input, select, textarea, button).rounded-lg {
+    border-radius: var(--aura-control-radius, 0.375rem);
+}
+
+/* Form controls (input, native select, select and relation triggers) are 36px on desktop and 44px
+   touch targets on phones. min-height wins over their h-9, and the xs size does not carry the hook. */
+@media (max-width: 639px) {
+    .aura-touch-control {
+        min-height: 2.75rem;
+    }
+}
+
+/* Auth pages (layout/login): the inputs and the submit button share one 40px height; phones keep the
+   44px touch minimum above. The local "Log in as admin" shortcut stays smaller on purpose. */
+.aura-auth .aura-touch-control,
+.aura-auth .aura-button:not(.login-as-admin) {
+    height: 2.5rem;
+}
+
+/* Native selects keep @tailwindcss/forms' size but draw the caret (icon/caret, down).
+   Zero added specificity, so bg-none and list boxes ([multiple], [size]) keep theirs. */
+select:where(:not([multiple], [size]:not([size="1"]))) {
+    /* The glyph's right end 16px from the edge, where the custom selects' 16px caret box (12px in) ends it. */
+    background-position: right 0.5625rem center;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='-4 -4 24 24'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M4 6C4 6 6.946 10 8 10C9.054 10 12 6 12 6'/%3e%3c/svg%3e");
+}
+
+/* Dark surfaces: the caret in gray-400, like the other functional icons there. */
+:where(.dark) select:where(:not([multiple], [size]:not([size="1"]))) {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='-4 -4 24 24'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M4 6C4 6 6.946 10 8 10C9.054 10 12 6 12 6'/%3e%3c/svg%3e");
 }
 
 .aura-eyebrow {
-    @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+    @apply text-[0.8125rem] leading-5 font-medium text-gray-500 dark:text-gray-300;
 }
 
+/* 16px/24px: a step under the 24px page title, a step over the 14px body. */
 .aura-section-title {
-    @apply text-sm font-semibold text-gray-900 dark:text-white;
+    @apply text-base/6 font-semibold text-gray-900 dark:text-white;
 }
 
 .aura-body {
@@ -85,34 +155,97 @@ body {
 }
 
 .aura-meta {
-    @apply text-xs text-gray-500 dark:text-gray-400;
+    @apply text-xs text-gray-500 dark:text-gray-300;
 }
 
 .aura-table-header {
-    @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+    @apply text-[0.8125rem] leading-5 font-medium text-gray-600 dark:text-gray-300;
 }
 
 /* Section count next to a section title ("Contacts 12"). */
 .aura-section-count {
-    @apply ml-1.5 text-sm font-normal text-gray-400 dark:text-gray-500;
+    @apply ml-1.5 text-sm font-normal tabular-nums text-gray-500 dark:text-gray-400;
 }
 
 /* Record count next to the page title ("Companies 14"), the page-level twin of the section count. */
 .aura-page-count {
-    @apply ml-2 text-lg font-normal text-gray-400 dark:text-gray-500;
+    @apply ml-2 text-lg font-normal tabular-nums text-gray-500 dark:text-gray-400;
+}
+
+/* Values on one line joined with " · ", wrapping only when they do not fit. Every item carries its dot
+   in front; the list is pulled 12px left inside a clipping box, so the dot of whichever item starts a
+   line falls outside and only the dots between values show. A value longer than the line truncates. */
+.aura-dot-list {
+    @apply flex flex-wrap;
+    margin-left: -0.75rem;
+    clip-path: inset(-0.25rem -0.25rem -0.25rem 0.75rem);
+}
+
+.aura-dot-list-item {
+    @apply flex h-5 min-w-0 max-w-full items-center whitespace-nowrap;
+}
+
+/* An item that takes a whole line (a relation chip or a tag in a phone row): it starts a line, so its dot
+   is clipped, and the next item starts the line after it. */
+.aura-dot-list-item.aura-dot-list-item-line {
+    flex-basis: 100%;
+}
+
+.aura-dot-list-item::before {
+    content: "·";
+    @apply w-3 shrink-0 text-center text-gray-400 dark:text-gray-500;
+}
+
+/* A list page's create button (table/create-button): "New company" while it fits beside the title, "New"
+   only when the full label would wrap the title. Both copies share one grid cell. The full one sits on a
+   one-line wrapping row behind a zero-width first item, so when it does not fit it wraps onto the second
+   line, which the row clips; the short copy under it then shows. The row contributes no size of its own
+   (zero width and height, cancelled padding), so the cell is as narrow as "New" allows and as wide as the
+   title leaves. The 4px padding keeps the focus ring inside the clip. */
+.aura-create-fit {
+    display: grid;
+    justify-items: end;
+    align-items: center;
+}
+
+.aura-create-fit > * {
+    grid-area: 1 / 1;
+}
+
+.aura-create-fit-full {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-content: flex-start;
+    /* The first line can be as short as the empty marker, so the gap alone must push line two out of the clip. */
+    row-gap: 10rem;
+    justify-self: stretch;
+    align-self: start;
+    width: 0;
+    min-width: calc(100% + 0.5rem);
+    height: 0;
+    min-height: calc(100% + 0.5rem);
+    margin: -0.25rem;
+    padding: 0.25rem;
+    overflow: hidden;
+}
+
+.aura-create-fit-full::before {
+    content: "";
+    width: 0;
 }
 
 /* Tag family. One 22px chip for every inline enum value: neutral (.aura-tag,
    option values) and status (.aura-tag-status, tinted with a dot; the tint
    comes from the option's own color classes). Same height, radius, 12px medium
    text and padding. Fill and text sit in :where() so a status option's utility
-   classes override them. Relations are not chips (see .aura-record-link).
+   classes override them. A relation is a chip of its own (.aura-record-link).
    Used from PHP display() methods too, so it lives in CSS (src/Fields is
    outside the content globs). */
 .aura-tag {
     @apply inline-flex max-w-full items-center gap-1.5 whitespace-nowrap px-1.5 text-xs font-medium leading-none ring-1 ring-inset;
     height: 1.375rem;
-    border-radius: calc(var(--aura-control-radius, 0.5rem) * 0.75);
+    border-radius: calc(var(--aura-control-radius, 0.375rem) * 0.75);
 }
 
 :where(.aura-tag) {
@@ -190,8 +323,17 @@ body {
 
 /* Inline code chip for a path or command inside running text ("Run `php artisan config:cache`"):
    monospace one step under the text, on the neutral tag fill with its hairline. */
+/* A path or command inside running text: an inline chip on every viewport. */
 .aura-code {
-    @apply whitespace-nowrap rounded px-1 py-px font-mono text-[0.8125em] text-gray-800 bg-gray-950/[0.05] dark:text-gray-200 dark:bg-white/[0.07];
+    @apply rounded font-mono text-[0.8125em] text-gray-800 bg-gray-950/[0.05] dark:text-gray-200 dark:bg-white/[0.07];
+    padding: 0.125rem 0.375rem;
+    /* One box per chip: it moves to the next line as a whole instead of splitting mid-path; only a chip
+       wider than the whole line wraps inside its box. */
+    display: inline-block;
+    max-width: 100%;
+    vertical-align: baseline;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
     box-shadow: inset 0 0 0 1px rgb(var(--gray-950) / 0.06);
 }
 
@@ -210,16 +352,45 @@ body {
     padding-left: 0.1875rem;
 }
 
-/* Relation value (BelongsTo in tables and record views): the related record as
-   plain text, 14px gray-900, with its 20px avatar in front, underlined on
-   hover. Reads as a name, not a badge, so a row with three relations stays
-   calm; enum values keep their tags. */
+/* Relation value (BelongsTo in tables, record views, the facts strip): the related record as one
+   object, a 24px chip in its record's shape. Pill when it leads with a person's round avatar,
+   squared at the control radius for everything else. The 20px avatar or icon sits 2px from the
+   chip edge. Quiet fill at rest, a primary tint on hover. Without an href (phone list rows flatten
+   links to spans) it is plain text again: no fill, no padding. */
 .aura-record-link {
-    @apply inline-flex max-w-full items-center gap-1.5 align-middle text-sm text-gray-900 decoration-gray-400 underline-offset-[3px] transition-colors duration-150 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:rounded-sm dark:text-gray-100 dark:decoration-gray-500;
+    @apply inline-flex max-w-full items-center gap-1.5 align-middle font-medium leading-none text-gray-900 bg-gray-950/[0.04] transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-100 dark:bg-white/[0.06];
+    height: 1.5rem;
+    padding: 0 0.5rem 0 0.125rem;
+    font-size: 0.8125rem;
+    border-radius: var(--aura-control-radius, 0.375rem);
+}
+
+/* Only with a pointer that can hover: a tap on a touch screen leaves :hover stuck, which drew the chip
+   in primary on phones while desktop showed it neutral. */
+@media (hover: hover) {
+    a.aura-record-link:hover {
+        @apply bg-primary-500/10 text-primary-700 dark:bg-primary-400/15 dark:text-primary-200;
+    }
+}
+
+.aura-record-link:has(> .aura-avatar-circle) {
+    border-radius: 9999px;
+}
+
+.aura-record-link:not(:has(> .aura-avatar, > .aura-record-link-icon)) {
+    padding-left: 0.5rem;
+}
+
+.aura-record-link:not([href]) {
+    @apply bg-transparent dark:bg-transparent;
+    height: auto;
+    padding: 0;
+    font-size: inherit;
+    font-weight: inherit;
 }
 
 .aura-record-link-icon {
-    @apply shrink-0 text-gray-400 dark:text-gray-500;
+    @apply flex size-5 shrink-0 items-center justify-center text-gray-400 dark:text-gray-500;
 }
 
 .aura-record-link-icon svg {
@@ -257,21 +428,45 @@ body {
     opacity: 0.7;
 }
 
-/* No external-link mark on mail links, nor on a link flattened to a span (phone list rows). */
+/* No external-link mark on mail and phone links, nor on a link flattened to a span (phone list rows). */
 .aura-link[href^="mailto:"]::after,
+.aura-link[href^="tel:"]::after,
 .aura-link:not([href])::after {
     content: none;
 }
 
-/* Entity avatar. Initials on a tint derived from the record title, or the
-   record's own image. Square for organisations and things, circle for people.
-   The eight tones a name maps to (Resource::avatarTones) come from families the
-   tags do not use (blue, orange, teal, gray, yellow, green, red belong to status
-   and category chips) and leave the warm band to them, so an avatar never echoes
-   the tag beside it. The older tone classes stay for callers that pass a tone. */
+/* Touch screens have no hover to reveal a link, so a value link (website, email, phone) keeps a quiet
+   underline there. */
+@media (hover: none) {
+    .aura-link[href] {
+        @apply underline decoration-gray-300 dark:decoration-gray-600;
+    }
+}
+
+/* Entity avatar. Initials on a tint picked from the record key, or the record's own
+   image. Square for organisations and things, circle for people. The eight tones a key
+   maps to (Resource::avatarTones) come from muted families the tags do not use (blue,
+   orange, teal, gray, yellow, green, red belong to status and category chips), so an
+   avatar never echoes the tag beside it. tone-primary follows the palette for apps that
+   return ['primary']; the other tone classes stay for callers that pass a tone. */
+/* Empty list page: the resource's icon on a 40px tile above the empty block's title (components/table/list-view). */
+.aura-empty-icon {
+    @apply inline-flex size-10 items-center justify-center rounded-control bg-gray-50 text-gray-500 ring-1 ring-inset ring-gray-950/[0.06] dark:bg-white/5 dark:text-gray-400 dark:ring-white/10;
+}
+
+.aura-empty-icon svg {
+    @apply size-5;
+}
+
 .aura-avatar {
-    @apply inline-flex shrink-0 select-none items-center justify-center overflow-hidden font-semibold uppercase leading-none;
-    letter-spacing: 0.02em;
+    @apply inline-flex shrink-0 select-none items-center justify-center overflow-hidden uppercase leading-none;
+    font-weight: 650;
+    letter-spacing: 0;
+}
+
+/* A tinted tile carries a 1px inset edge in its own hue, so the -50 fill holds its shape on white. */
+.aura-avatar:not(.aura-avatar-image) {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 20%, transparent);
 }
 
 .aura-avatar img {
@@ -286,28 +481,30 @@ body {
 .aura-avatar-lg { width: 2.5rem; height: 2.5rem; font-size: 0.875rem; }
 
 .aura-avatar-circle { border-radius: 9999px; }
-.aura-avatar-square.aura-avatar-xs { border-radius: 0.25rem; }
-.aura-avatar-square.aura-avatar-sm { border-radius: 0.3125rem; }
-.aura-avatar-square.aura-avatar-md { border-radius: 0.375rem; }
-.aura-avatar-square.aura-avatar-lg { border-radius: 0.5rem; }
+/* Square tiles follow Settings > Corner radius: the small sizes one step inside the control radius,
+   md at the control radius, lg (record header) at the panel radius. */
+.aura-avatar-square.aura-avatar-xs,
+.aura-avatar-square.aura-avatar-sm { border-radius: max(0px, calc(var(--aura-control-radius, 0.375rem) - 2px)); }
+.aura-avatar-square.aura-avatar-md { border-radius: var(--aura-control-radius, 0.375rem); }
+.aura-avatar-square.aura-avatar-lg { border-radius: var(--aura-panel-radius, 0.5rem); }
 
 .aura-avatar-image { @apply bg-gray-100 ring-1 ring-inset ring-gray-950/[0.06] dark:bg-white/10 dark:ring-white/10; }
-.aura-avatar-tone-primary { @apply bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300; }
-.aura-avatar-tone-gray { @apply bg-gray-200 text-gray-700 dark:bg-white/[0.12] dark:text-gray-300; }
-.aura-avatar-tone-blue { @apply bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300; }
-.aura-avatar-tone-green { @apply bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300; }
-.aura-avatar-tone-yellow { @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-300; }
-.aura-avatar-tone-indigo { @apply bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300; }
-.aura-avatar-tone-purple { @apply bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300; }
-.aura-avatar-tone-pink { @apply bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-300; }
-.aura-avatar-tone-orange { @apply bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300; }
-.aura-avatar-tone-teal { @apply bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300; }
-.aura-avatar-tone-violet { @apply bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300; }
-.aura-avatar-tone-fuchsia { @apply bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-500/20 dark:text-fuchsia-300; }
-.aura-avatar-tone-rose { @apply bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300; }
-.aura-avatar-tone-amber { @apply bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300; }
-.aura-avatar-tone-lime { @apply bg-lime-100 text-lime-700 dark:bg-lime-500/20 dark:text-lime-300; }
-.aura-avatar-tone-cyan { @apply bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300; }
+.aura-avatar-tone-primary { @apply bg-primary-50 text-primary-700 dark:bg-primary-400/15 dark:text-primary-300; }
+.aura-avatar-tone-gray { @apply bg-gray-50 text-gray-600 dark:bg-white/[0.06] dark:text-gray-400; }
+.aura-avatar-tone-blue { @apply bg-blue-50 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300; }
+.aura-avatar-tone-green { @apply bg-green-50 text-green-700 dark:bg-green-400/15 dark:text-green-300; }
+.aura-avatar-tone-yellow { @apply bg-yellow-50 text-yellow-800 dark:bg-yellow-400/15 dark:text-yellow-300; }
+.aura-avatar-tone-indigo { @apply bg-indigo-50 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300; }
+.aura-avatar-tone-purple { @apply bg-purple-50 text-purple-700 dark:bg-purple-400/15 dark:text-purple-300; }
+.aura-avatar-tone-pink { @apply bg-pink-50 text-pink-700 dark:bg-pink-400/15 dark:text-pink-300; }
+.aura-avatar-tone-orange { @apply bg-orange-50 text-orange-700 dark:bg-orange-400/15 dark:text-orange-300; }
+.aura-avatar-tone-teal { @apply bg-teal-50 text-teal-700 dark:bg-teal-400/15 dark:text-teal-300; }
+.aura-avatar-tone-violet { @apply bg-violet-50 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300; }
+.aura-avatar-tone-fuchsia { @apply bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-300; }
+.aura-avatar-tone-rose { @apply bg-rose-50 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300; }
+.aura-avatar-tone-amber { @apply bg-amber-50 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300; }
+.aura-avatar-tone-lime { @apply bg-lime-50 text-lime-700 dark:bg-lime-400/15 dark:text-lime-300; }
+.aura-avatar-tone-cyan { @apply bg-cyan-50 text-cyan-700 dark:bg-cyan-400/15 dark:text-cyan-300; }
 
 /* Row actions (view, edit) sit at gray-500 and, where a pointer can hover, stay hidden until the row
    is hovered or holds focus. The row itself opens the record (table/row), so they are a shortcut. */
@@ -323,10 +520,12 @@ body {
     }
 }
 
+/* Surfaces are flat: a 1px edge, no shadow (shadows stay on solid buttons and overlays). */
 .aura-card {
-    @apply p-5 bg-white rounded-xl shadow-xs ring-1 ring-gray-950/10;
+    @apply p-5 bg-white ring-1;
+    --tw-ring-color: var(--aura-edge);
     padding: var(--aura-panel-padding, 1.25rem);
-    border-radius: var(--aura-panel-radius, 0.75rem);
+    border-radius: var(--aura-panel-radius, 0.5rem);
 }
 
 /* Record page.
@@ -358,6 +557,20 @@ body {
 
 .aura-record-header {
     @apply contents sm:flex sm:items-center sm:justify-between sm:gap-4;
+}
+
+/* Narrow phones (below 400px): a record title is 22/28 so a two-word name keeps one line more often,
+   and the title row's buttons (Edit, the actions menu) align to the top of the title block, not to the
+   middle of a wrapped title. */
+@media (max-width: 399.98px) {
+    .aura-record-block .aura-page-title {
+        font-size: 1.375rem;
+        line-height: 1.75rem;
+    }
+
+    .aura-record-block .aura-record-title-action {
+        align-self: flex-start;
+    }
 }
 
 .aura-record-header-actions {
@@ -398,8 +611,10 @@ body {
     @apply flex min-w-0 flex-col justify-center gap-1;
 }
 
+/* Facts are divided by a plain vertical hairline (--aura-edge). */
 .aura-record-fact + .aura-record-fact {
-    @apply border-l border-gray-200 pl-6 dark:border-white/10;
+    border-left: 1px solid var(--aura-edge);
+    padding-left: 1.5rem;
 }
 
 .aura-record-fact-value {
@@ -415,16 +630,26 @@ body {
    quiet .aura-meta sentence under the details column (or under the related records when the
    record has no details column). Each time carries its full timestamp as a tooltip. */
 .aura-record-meta {
-    @apply mt-5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-500 dark:text-gray-400;
+    @apply mt-5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] leading-5 text-gray-600 dark:text-gray-300;
 }
 
 .aura-record-meta time,
 .aura-record-meta [data-record-meta-author] {
-    @apply text-gray-700 dark:text-gray-300;
+    @apply text-gray-800 dark:text-gray-200;
 }
 
 .aura-record-meta-sep {
     @apply text-gray-300 dark:text-gray-600;
+}
+
+/* Beside or under a narrow column (the Properties rail, phones) the meta is two lines, Created then Updated,
+   without the dot between them, so no line ends on a dangling "·". */
+.aura-record-meta.aura-record-meta-stacked {
+    @apply flex-col items-start gap-y-0.5;
+}
+
+.aura-record-meta-stacked .aura-record-meta-sep {
+    display: none;
 }
 
 /* A view panel: section title, then one row per value. */
@@ -433,7 +658,7 @@ body {
 }
 
 .aura-record-section-title {
-    @apply mb-1 border-b border-gray-200 pb-2 text-sm font-semibold text-gray-900 dark:border-white/10 dark:text-white;
+    @apply mb-1 border-b border-gray-200 pb-2 text-base/6 font-semibold text-gray-900 dark:border-white/10 dark:text-white;
 }
 
 .aura-record-section .aura-view-row {
@@ -489,8 +714,197 @@ body {
 
 @screen lg {
     .aura-record-rail .aura-view-row {
-        grid-template-columns: 6.5rem minmax(0, 1fr);
+        grid-template-columns: 7rem minmax(0, 1fr);
         column-gap: 0.75rem;
+    }
+}
+
+/* Record template (RecordViewSections::template(), data-record-template): company, contact, deal and task
+   pages share one frame. Header: a 40px tile (the avatar, or the resource icon on a tinted square), eyebrow,
+   title, then up to three facts, 13px label over a 20px/600 tabular value. */
+.aura-record-icon-tile {
+    @apply flex size-10 shrink-0 items-center justify-center bg-gray-50 text-gray-500 ring-1 ring-inset ring-gray-950/10 dark:bg-white/5 dark:text-gray-400 dark:ring-white/10;
+    border-radius: var(--aura-panel-radius, 0.5rem);
+}
+
+.aura-record-icon-tile svg {
+    @apply size-5;
+}
+
+.aura-record-template .aura-record-fact-number,
+.aura-record-fact-text {
+    @apply text-xl font-semibold tabular-nums leading-7 text-gray-900 dark:text-white;
+}
+
+.aura-record-template .aura-record-fact-value {
+    min-height: 1.75rem;
+}
+
+/* Phones: the facts form equal columns with a hairline between them, no orphan on a row of its own. Three
+   facts share one row (values 18px, amounts compact: "CHF 84.5K", dates "Nov 27"); two or four form a 2x2
+   grid, a fourth under a horizontal hairline. */
+@media (max-width: 639.98px) {
+    .aura-record-template .aura-record-facts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 1rem;
+        row-gap: 0.75rem;
+    }
+
+    .aura-record-template .aura-record-fact:nth-child(odd) {
+        border-left: 0;
+        padding-left: 0;
+    }
+
+    .aura-record-template .aura-record-fact:nth-child(even) {
+        padding-left: 1rem;
+    }
+
+    .aura-record-template .aura-record-fact:nth-child(n + 3) {
+        border-top: 1px solid var(--aura-edge);
+        padding-top: 0.75rem;
+    }
+
+    .aura-record-template .aura-record-facts:has(> .aura-record-fact:nth-child(3):last-child) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        column-gap: 0.75rem;
+    }
+
+    .aura-record-template .aura-record-facts:has(> .aura-record-fact:nth-child(3):last-child) > .aura-record-fact + .aura-record-fact {
+        border-top: 0;
+        border-left: 1px solid var(--aura-edge);
+        padding-top: 0;
+        padding-left: 0.75rem;
+    }
+
+    .aura-record-template .aura-record-facts:has(> .aura-record-fact:nth-child(3):last-child) .aura-record-fact-number,
+    .aura-record-template .aura-record-facts:has(> .aura-record-fact:nth-child(3):last-child) .aura-record-fact-text {
+        @apply truncate text-lg leading-7;
+    }
+}
+
+/* An empty body is one quiet link to the form. */
+.aura-record-body-add {
+    @apply inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors duration-150 hover:text-gray-900 focus:outline-none focus-visible:underline dark:text-gray-400 dark:hover:text-white;
+}
+
+/* Rail values wrap instead of truncating: the 20rem column has no room for a tooltip-only value. */
+.aura-record-template .aura-record-rail .aura-view-value {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+/* Activity (components/resource/activity): one row per change, the actor's 24px avatar on a 1px line
+   that joins the avatars, the sentence in 14px, the time right in 13px (under the sentence on phones). */
+.aura-activity-item {
+    @apply relative flex gap-3 pb-4;
+}
+
+.aura-activity-item:not(:last-child)::before {
+    @apply absolute w-px bg-gray-200 dark:bg-white/10;
+    content: "";
+    left: 0.71875rem;
+    top: 1.75rem;
+    bottom: 0.25rem;
+}
+
+.aura-activity-item:last-child,
+.aura-activity-item-last {
+    padding-bottom: 0;
+}
+
+.aura-activity-item.aura-activity-item-last::before {
+    display: none;
+}
+
+.aura-activity-avatar {
+    @apply flex h-6 shrink-0 items-center;
+}
+
+.aura-activity-body {
+    @apply flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-6;
+}
+
+.aura-activity-text {
+    @apply min-w-0 text-sm leading-6 text-gray-600 dark:text-gray-300;
+}
+
+.aura-activity-strong {
+    @apply font-medium text-gray-900 dark:text-white;
+}
+
+.aura-activity-value {
+    @apply text-gray-900 dark:text-gray-100;
+}
+
+.aura-activity-time {
+    @apply shrink-0 whitespace-nowrap text-[13px] leading-5 tabular-nums text-gray-500 sm:leading-6 dark:text-gray-400;
+}
+
+.aura-activity-more {
+    @apply ml-9 mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none focus-visible:underline dark:text-gray-300 dark:hover:text-white;
+}
+
+/* Phones: the list toolbar's controls are 44px touch targets (search, icon buttons, labelled Filters, the
+   view switch), one row height. */
+@media (max-width: 639.98px) {
+    .aura-table-toolbar #table-search,
+    .aura-table-toolbar .aura-button {
+        height: 2.75rem;
+    }
+
+    .aura-table-toolbar .aura-button:is(.w-9, [class~="max-sm:w-9"]) {
+        width: 2.75rem;
+    }
+
+    .aura-table-toolbar [data-view-switch] > button {
+        padding: 0.625rem;
+    }
+}
+
+/* Rail properties are one 44px row each, label and value centred, whether the value is text, a tag or
+   an avatar link (baseline alignment made a tag row 46px and a text row 41px). */
+.aura-record-rail .aura-view-row {
+    min-height: 2.5rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    align-items: center;
+}
+
+/* Phones: the rail's short properties (status, priority, dates, people) stay label-left, value-right rows,
+   a property list rather than stacked label-over-value blocks. So do the details beside related records
+   (company, contact), as long as the value fits beside its 7rem label: a longer one (an email address, a
+   website, a sentence) wraps under the label at full width instead of breaking in a narrow column. */
+@media (max-width: 639.98px) {
+    .aura-record-details .aura-view-row {
+        display: flex;
+        flex-wrap: wrap;
+        column-gap: 0.75rem;
+        row-gap: 0.125rem;
+        align-items: center;
+        min-height: 2.75rem;
+        padding-top: 0.375rem;
+        padding-bottom: 0.375rem;
+    }
+
+    .aura-record-details .aura-view-row > :first-child {
+        flex: 0 0 7rem;
+        margin-bottom: 0;
+    }
+
+    .aura-record-details .aura-view-row > :last-child {
+        flex: 1 1 auto;
+    }
+
+    .aura-record-rail .aura-view-row {
+        display: grid;
+        grid-template-columns: 7rem minmax(0, 1fr);
+        column-gap: 0.75rem;
+    }
+
+    .aura-record-rail .aura-view-row > :first-child {
+        margin-bottom: 0;
     }
 }
 
@@ -524,17 +938,9 @@ body {
 /* Related-record card (a BelongsTo relation on a record without lists): avatar,
    resource name, title, then up to three of the related record's own values. */
 .aura-record-card {
-    @apply block rounded-xl bg-white p-4 shadow-xs ring-1 ring-gray-950/10 transition duration-150 dark:bg-gray-800 dark:ring-white/10;
-    border-radius: var(--aura-panel-radius, 0.75rem);
-}
-
-/* From sm the card's values are right-aligned: a link's hover mark keeps its space at rest and would
-   end the website 15px short of the other values, so cards drop it (the card's chevron and ring
-   already say "opens"). */
-@screen sm {
-    .aura-record-card dd .aura-link::after {
-        content: none;
-    }
+    @apply block bg-white p-4 ring-1 transition duration-150 dark:bg-gray-800;
+    --tw-ring-color: var(--aura-edge);
+    border-radius: var(--aura-panel-radius, 0.5rem);
 }
 
 a.aura-record-card:hover {
@@ -552,18 +958,41 @@ a.aura-record-card:focus-visible {
     width: 100% !important;
 }
 
-/* Board (kanban). Columns have no fill: a title of dot, name and count, then cards. A card is a
-   13px white tile with a hairline ring and the smallest shadow; the ring darkens on hover. */
+/* Board (kanban). A column is a quiet panel (gray-50, dark white at 2%, the panel radius, 8px padding):
+   a title of dot, name and count, then cards. A card is a white tile with 16px padding, the panel radius
+   and the surface edge, no shadow; the edge darkens on hover. Title 14px at 500 and body 13px, two lines
+   each; from sm the text block keeps the height of both (.aura-board-card-text), so every card's meta row
+   sits at the same place. Meta row 24px (the assignee avatar is 24px). */
+.aura-board-column {
+    @apply bg-gray-50 p-2 dark:bg-white/[0.02];
+    border-radius: var(--aura-panel-radius, 0.5rem);
+}
+
 .aura-board-column-title {
     @apply flex items-center gap-2 px-0.5 pb-2.5 text-sm font-semibold text-gray-900 dark:text-white;
+}
+
+.aura-board-column .aura-board-column-title {
+    @apply px-1.5 pt-1 pb-2;
 }
 
 .aura-board-column-count {
     @apply text-[13px] font-normal tabular-nums text-gray-400 dark:text-gray-500;
 }
 
+/* A column title with a sum (kanban column_total) tightens its gaps, so "Proposal 4 CHF 329,700" fits a 13rem column. */
+.aura-board-column-title:has(.aura-board-column-total) {
+    gap: 0.375rem;
+}
+
+.aura-board-column-total {
+    @apply whitespace-nowrap text-[13px] font-medium tabular-nums text-gray-600 dark:text-gray-300;
+}
+
 .aura-board-card {
-    @apply block rounded-lg bg-white p-3 text-[13px] leading-5 shadow-xs ring-1 ring-gray-950/[0.08] transition duration-150 dark:bg-gray-800 dark:ring-white/10;
+    @apply block bg-white p-4 text-[13px] leading-5 ring-1 transition duration-150 dark:bg-gray-800;
+    --tw-ring-color: var(--aura-edge);
+    border-radius: var(--aura-panel-radius, 0.5rem);
 }
 
 a.aura-board-card:hover {
@@ -574,16 +1003,34 @@ a.aura-board-card:focus-visible {
     @apply outline-none ring-2 ring-primary-500;
 }
 
+/* From sm, where columns sit side by side; a phone shows one column and sizes cards to their text. */
+@media (min-width: 640px) {
+    .aura-board-card-text {
+        min-height: 5.25rem;
+    }
+}
+
 .aura-board-card-title {
-    @apply font-medium text-gray-900 dark:text-gray-100;
+    @apply line-clamp-2 text-sm font-medium text-gray-900 dark:text-gray-100;
 }
 
 .aura-board-card-body {
-    @apply mt-0.5 text-gray-500 dark:text-gray-400;
+    @apply mt-1 line-clamp-2 text-gray-500 dark:text-gray-300;
 }
 
+/* The meta row wraps instead of overflowing a narrow card: a second line rather than a value past the edge. */
 .aura-board-card-meta {
-    @apply mt-2.5 flex h-5 items-center gap-3 text-xs text-gray-500 dark:text-gray-400;
+    @apply mt-3 flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-gray-500 dark:text-gray-300;
+}
+
+/* A card footer with a person: the meta row takes the flexible column, the 24px avatar a fixed one, so the
+   avatar never leaves the card; the meta wraps beside it when it does not fit one line. */
+.aura-board-card-footer {
+    @apply mt-3 grid grid-cols-[minmax(0,1fr)_1.5rem] items-start gap-x-2;
+}
+
+.aura-board-card-footer > .aura-board-card-meta {
+    @apply mt-0;
 }
 
 .aura-board-empty {
@@ -592,9 +1039,12 @@ a.aura-board-card:focus-visible {
 
 /* Media tile (attachments grid, media library). The hairline sits in an overlay above the image
    (an inset box-shadow on the box would hide under the <img>), so image and placeholder tiles get
-   the same edge; selected tiles draw a 2px primary ring inside the edge. No shadow, no zoom. */
+   the same edge; selected tiles draw a 2px primary ring inside the edge. No shadow, no zoom. The
+   ring takes the radius of the tile box it sits in. */
 .aura-tile-ring {
-    @apply pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-gray-950/[0.08] transition duration-150 dark:ring-white/10;
+    @apply pointer-events-none absolute inset-0 ring-1 ring-inset transition duration-150;
+    --tw-ring-color: var(--aura-edge);
+    border-radius: inherit;
 }
 
 @media (hover: hover) {
@@ -607,16 +1057,32 @@ a.aura-board-card:focus-visible {
     @apply ring-2 ring-primary-500 dark:ring-primary-400;
 }
 
+/* A tile caption never grows wider than its tile: min-width 0 and max-width 100% in any flex or grid
+   parent, and a wrapping name may break anywhere, not only at a hyphen. */
 .aura-tile-name {
     @apply truncate text-[13px] font-medium leading-5 text-gray-900 dark:text-gray-100;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+/* Phones: a tile name may take two lines before x-file-name shortens it in the middle (extension kept);
+   the directive reads the line count from --aura-file-name-lines. */
+@media (max-width: 639.98px) {
+    .aura-tile-name {
+        --aura-file-name-lines: 2;
+        white-space: normal;
+        text-overflow: clip;
+        max-height: 2.5rem;
+    }
 }
 
 .aura-tile-meta {
-    @apply mt-0.5 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400;
+    @apply mt-0.5 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-300;
 }
 
 .dark .aura-card {
-    @apply bg-gray-800 ring-white/10;
+    @apply bg-gray-800;
 }
 
 /* Phones: a 12px card inset plus the 8px field gutter puts titles and
@@ -628,16 +1094,17 @@ a.aura-board-card:focus-visible {
 }
 
 .aura-card-small {
-    @apply p-2 bg-white rounded-lg shadow-xs ring-1 ring-gray-950/10;
+    @apply p-2 bg-white ring-1;
+    --tw-ring-color: var(--aura-edge);
     padding: var(--aura-panel-small-padding, 0.5rem);
-    border-radius: var(--aura-control-radius, 0.5rem);
+    border-radius: var(--aura-control-radius, 0.375rem);
 }
 .dark .aura-card-small {
-    @apply bg-gray-800 ring-white/10;
+    @apply bg-gray-800;
 }
 
 .aura-button {
-    border-radius: var(--aura-control-radius, 0.5rem);
+    border-radius: var(--aura-control-radius, 0.375rem);
 }
 
 .aura-sidebar-item,
@@ -646,7 +1113,7 @@ a.aura-board-card:focus-visible {
 .aura-sidebar-dropdown-collapsed,
 .aura-sidebar-search,
 .aura-sidebar-toggle {
-    border-radius: var(--aura-control-radius, 0.5rem);
+    border-radius: var(--aura-control-radius, 0.375rem);
 }
 
 .aura-sidebar .aura-sidebar-item,
@@ -674,7 +1141,7 @@ a.aura-board-card:focus-visible {
 }
 
 .aura-sidebar-size-dense .aura-sidebar-header {
-    height: 3.5rem;
+    height: 3rem;
 }
 
 .aura-sidebar-size-dense .aura-sidebar-footer {
@@ -780,8 +1247,10 @@ a.aura-board-card:focus-visible {
 .aura-sidebar-darkmode-type-light .aura-sidebar-bg {
     @apply dark:text-gray-900 dark:border-gray-950/10 dark:bg-gray-50 dark:shadow-gray-400 md:dark:shadow-none;
 }
+/* In dark mode the canvas is gray-900 too, so the dark sidebar steps down to gray-950: the two
+   surfaces stay apart without relying on the hairline alone. */
 .aura-sidebar-darkmode-type-dark .aura-sidebar-bg {
-    @apply dark:text-gray-300 dark:border-white/[0.08] dark:bg-gray-900 dark:shadow-gray-400 md:dark:shadow-none;
+    @apply dark:text-gray-300 dark:border-white/[0.08] dark:bg-gray-950 dark:shadow-gray-400 md:dark:shadow-none;
 }
 
 
@@ -852,7 +1321,7 @@ a.aura-board-card:focus-visible {
     @apply dark:scrollbar-thumb-gray-300 dark:scrollbar-track-gray-50
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-scrollbar{
-    @apply dark:scrollbar-thumb-white/10 dark:scrollbar-track-gray-900;
+    @apply dark:scrollbar-thumb-white/10 dark:scrollbar-track-gray-950;
 }
 
 
@@ -868,7 +1337,7 @@ a.aura-board-card:focus-visible {
     @apply text-gray-400 hover:text-gray-700 hover:bg-gray-950/5 focus:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-toggle{
-    @apply text-gray-500 hover:text-gray-200 hover:bg-white/[0.06] focus:ring-primary-500;
+    @apply text-gray-400 hover:text-gray-200 hover:bg-white/[0.06] focus:ring-primary-500;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-toggle{
@@ -878,7 +1347,7 @@ a.aura-board-card:focus-visible {
     @apply dark:text-gray-400 dark:hover:text-gray-700 dark:hover:bg-gray-950/5 dark:focus:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-toggle {
-    @apply dark:text-gray-500 dark:hover:text-gray-200 dark:hover:bg-white/[0.06] dark:focus:ring-primary-500;
+    @apply dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-white/[0.06] dark:focus:ring-primary-500;
 }
 
 /* .aura-sidebar-search */
@@ -955,23 +1424,23 @@ a.aura-board-card:focus-visible {
 /* .aura-sidebar-team-name */
 .aura-sidebar-team-name {}
 .aura-sidebar-type-primary .aura-sidebar-team-name{
-    @apply text-white/60;
+    @apply text-white/70;
 }
 .aura-sidebar-type-light .aura-sidebar-team-name{
     @apply text-gray-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-team-name {
-    @apply text-gray-500;
+    @apply text-gray-400;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-team-name{
-    @apply dark:text-white/60;
+    @apply dark:text-white/70;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-team-name{
     @apply dark:text-gray-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-team-name {
-    @apply dark:text-gray-500;
+    @apply dark:text-gray-400;
 }
 
 
@@ -997,7 +1466,9 @@ a.aura-board-card:focus-visible {
 }
 
 
-/* .aura-sidebar-dropdown-button and .aura-sidebar-dropdown-container */
+/* .aura-sidebar-dropdown-button and .aura-sidebar-dropdown-container
+   An open group is not a selection: its button keeps the idle item color and the group gets no tint,
+   so only the active child reads as current. The children sit indented under it. */
 
 /* Base Styles */
 .aura-sidebar-dropdown-button,
@@ -1010,95 +1481,95 @@ a.aura-board-card:focus-visible {
 
 /* Primary Sidebar Type */
 .aura-sidebar-type-primary .aura-sidebar-dropdown-button {
-    @apply text-white/70 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
+    @apply text-white/80 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
 }
 .aura-sidebar-type-primary .aura-sidebar-dropdown-button-expanded {
-    @apply text-white bg-transparent hover:bg-white/10 focus-visible:ring-white/50;
+    @apply text-white/80 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
 }
 .aura-sidebar-type-primary .aura-sidebar-dropdown-container-expanded {
-    @apply rounded-lg bg-sidebar-bg-dropdown/60;
+    @apply rounded-lg;
 }
 .aura-sidebar-type-primary .aura-sidebar-dropdown-collapsed {
-    @apply text-white/70 hover:text-white hover:bg-white/10;
+    @apply text-white/80 hover:text-white hover:bg-white/10;
 }
 
 /* Light Sidebar Type */
 .aura-sidebar-type-light .aura-sidebar-dropdown-button {
-    @apply text-gray-500 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
+    @apply text-gray-600 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-light .aura-sidebar-dropdown-button-expanded {
-    @apply text-gray-900 bg-transparent hover:bg-gray-950/5 focus-visible:ring-primary-500;
+    @apply text-gray-600 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-light .aura-sidebar-dropdown-container-expanded {
-    @apply rounded-lg bg-gray-950/[0.03];
+    @apply rounded-lg;
 }
 .aura-sidebar-type-light .aura-sidebar-dropdown-collapsed {
-    @apply text-gray-500 hover:text-gray-900 hover:bg-gray-950/5;
+    @apply text-gray-600 hover:text-gray-900 hover:bg-gray-950/5;
 }
 
 /* Dark Sidebar Type */
 .aura-sidebar-type-dark .aura-sidebar-dropdown-button {
-    @apply text-gray-400 bg-transparent hover:text-white hover:bg-white/[0.06] focus-visible:ring-primary-500;
+    @apply text-gray-300 bg-transparent hover:text-white hover:bg-white/[0.06] focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-dropdown-button-expanded {
-    @apply text-white bg-transparent hover:bg-white/[0.06] focus-visible:ring-primary-500;
+    @apply text-gray-300 bg-transparent hover:text-white hover:bg-white/[0.06] focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-dropdown-container-expanded {
-    @apply rounded-lg bg-white/[0.04];
+    @apply rounded-lg;
 }
 .aura-sidebar-type-dark .aura-sidebar-dropdown-collapsed {
-    @apply text-gray-400 hover:text-white hover:bg-white/[0.06];
+    @apply text-gray-300 hover:text-white hover:bg-white/[0.06];
 }
 
 /* Darkmode Primary Sidebar Type */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-button {
-    @apply dark:text-white/70 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
+    @apply dark:text-white/80 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
 }
 
 .aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-button-expanded {
-    @apply dark:text-white dark:bg-transparent dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
+    @apply dark:text-white/80 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
 }
 
 .aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-container-expanded {
-    @apply dark:rounded-lg dark:bg-sidebar-bg-dropdown/60;
+    @apply dark:rounded-lg;
 }
 
 .aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-collapsed {
-    @apply dark:text-white/70 dark:hover:text-white dark:hover:bg-white/10;
+    @apply dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10;
 }
 
 /* Darkmode Light Sidebar Type */
 .aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-button {
-    @apply dark:text-gray-500 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
+    @apply dark:text-gray-600 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-button-expanded {
-    @apply dark:text-gray-900 dark:bg-transparent dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
+    @apply dark:text-gray-600 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-container-expanded {
-    @apply dark:rounded-lg dark:bg-gray-950/[0.03];
+    @apply dark:rounded-lg;
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-collapsed {
-    @apply dark:text-gray-500 dark:hover:text-gray-900 dark:hover:bg-gray-950/5;
+    @apply dark:text-gray-600 dark:hover:text-gray-900 dark:hover:bg-gray-950/5;
 }
 
 /* Darkmode Dark Sidebar Type */
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-button {
-    @apply dark:text-gray-400 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
+    @apply dark:text-gray-300 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-button-expanded {
-    @apply dark:text-white dark:bg-transparent dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
+    @apply dark:text-gray-300 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-container-expanded {
-    @apply dark:rounded-lg dark:bg-white/[0.04];
+    @apply dark:rounded-lg;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-collapsed {
-    @apply dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/[0.06];
+    @apply dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/[0.06];
 }
 
 
@@ -1112,11 +1583,11 @@ a.aura-board-card:focus-visible {
 }
 /* Light Sidebar Type */
 .aura-sidebar-type-light .aura-sidebar-icon {
-    @apply text-gray-400 group-hover:text-gray-500 group-[.is-active]:text-primary-600;
+    @apply text-gray-500 group-hover:text-gray-700 group-[.is-active]:text-primary-600;
 }
 /* Dark Sidebar Type: the active item's icon is the one place this sidebar carries the primary color. */
 .aura-sidebar-type-dark .aura-sidebar-icon {
-    @apply text-gray-500 group-hover:text-gray-300 group-[.is-active]:text-primary-400;
+    @apply text-gray-400 group-hover:text-gray-200 group-[.is-active]:text-primary-400;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-icon {
@@ -1124,11 +1595,11 @@ a.aura-board-card:focus-visible {
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-icon {
-    @apply dark:text-gray-400 dark:group-hover:text-gray-500 dark:group-[.is-active]:text-primary-600;
+    @apply dark:text-gray-500 dark:group-hover:text-gray-700 dark:group-[.is-active]:text-primary-600;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-icon {
-    @apply dark:text-gray-500 dark:group-hover:text-gray-300 dark:group-[.is-active]:text-primary-400;
+    @apply dark:text-gray-400 dark:group-hover:text-gray-200 dark:group-[.is-active]:text-primary-400;
 }
 
 /* .aura-sidebar-heading (group label: 12px medium, sentence case) */
@@ -1140,7 +1611,7 @@ a.aura-board-card:focus-visible {
     @apply text-gray-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-heading {
-    @apply text-gray-500;
+    @apply text-gray-400;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-heading{
@@ -1150,7 +1621,7 @@ a.aura-board-card:focus-visible {
     @apply dark:text-gray-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-heading {
-    @apply dark:text-gray-500;
+    @apply dark:text-gray-400;
 }
 
 /* .aura-sidebar-avatar (user card at the bottom) */
@@ -1193,66 +1664,83 @@ a.aura-board-card:focus-visible {
 }
 
 .aura-sidebar-type-primary .aura-sidebar-item {
-    @apply text-white/70 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
+    @apply text-white/80 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
 }
-/* Active item, every sidebar type: a 2px hairline on the left edge plus a tint of the accent
-   (white on the primary sidebar). The tint is the one place the sidebar carries the primary color. */
+/* Active item, every sidebar type: the mark (one Λ leg, see --aura-mark-clip) plus a tint. The mark is
+   a bar of its own, 4px before the tinted pill (in the nav's gutter, which is at least 8px), so it never
+   reads as a clipped sliver of the pill's rounded edge. The mark carries the accent: white on the primary
+   sidebar, primary-600 on the light one, primary-400 on the dark one. */
+.aura-sidebar-item.is-active {
+    position: relative;
+}
+.aura-sidebar-item.is-active::before {
+    content: "";
+    position: absolute;
+    left: -7px;
+    top: 0.375rem;
+    bottom: 0.375rem;
+    width: 3px;
+    clip-path: var(--aura-mark-clip);
+}
+
 .aura-sidebar-type-primary .aura-sidebar-item.is-active {
-    @apply relative text-white bg-white/15 hover:bg-white/15;
+    @apply text-white bg-white/15 hover:bg-white/15;
 }
 .aura-sidebar-type-primary .aura-sidebar-item.is-active::before {
-    content: "";
-    @apply absolute left-0 inset-y-1.5 w-0.5 rounded-full bg-white;
+    @apply bg-white;
 }
 
 .aura-sidebar-type-light .aura-sidebar-item {
-    @apply text-gray-500 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
+    @apply text-gray-600 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-light .aura-sidebar-item.is-active {
-    @apply relative text-primary-700 bg-primary-50 hover:bg-primary-50;
+    @apply text-primary-700 bg-primary-50 hover:bg-primary-50;
 }
 .aura-sidebar-type-light .aura-sidebar-item.is-active::before {
-    content: "";
-    @apply absolute left-0 inset-y-1.5 w-0.5 rounded-full bg-primary-600;
+    @apply bg-primary-600;
 }
 
-/* Dark sidebar: one quiet active state, a white tint with white text and the icon in primary (no
-   edge hairline, no primary fill), so the current item reads as "here", not as a second button. */
+/* Dark sidebar: a white tint with white text, the icon and the mark in primary-400 (no primary fill),
+   so the current item reads as "here", not as a second button. */
 .aura-sidebar-type-dark .aura-sidebar-item {
-    @apply text-gray-400 bg-transparent hover:text-gray-100 hover:bg-white/[0.06] focus-visible:ring-primary-500;
+    @apply text-gray-300 bg-transparent hover:text-white hover:bg-white/[0.06] focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-item.is-active {
-    @apply text-white bg-white/[0.08] hover:bg-white/[0.08];
+    @apply text-white bg-white/10 hover:bg-white/10;
+}
+.aura-sidebar-type-dark .aura-sidebar-item.is-active::before {
+    @apply bg-primary-400;
 }
 
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-item {
-    @apply dark:text-white/70 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
+    @apply dark:text-white/80 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
 }
 .aura-sidebar-darkmode-type-primary .aura-sidebar-item.is-active {
-    @apply dark:relative dark:text-white dark:bg-white/15 dark:hover:bg-white/15;
+    @apply dark:text-white dark:bg-white/15 dark:hover:bg-white/15;
 }
 .aura-sidebar-darkmode-type-primary .aura-sidebar-item.is-active::before {
-    content: "";
-    @apply dark:absolute dark:left-0 dark:inset-y-1.5 dark:w-0.5 dark:rounded-full dark:bg-white;
+    @apply dark:bg-white;
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-item {
-    @apply dark:text-gray-500 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
+    @apply dark:text-gray-600 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-item.is-active {
-    @apply dark:relative dark:text-primary-700 dark:bg-primary-50 dark:hover:bg-primary-50;
+    @apply dark:text-primary-700 dark:bg-primary-50 dark:hover:bg-primary-50;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-item.is-active::before {
-    content: "";
-    @apply dark:absolute dark:left-0 dark:inset-y-1.5 dark:w-0.5 dark:rounded-full dark:bg-primary-600;
+    @apply dark:bg-primary-600;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-item {
-    @apply dark:text-gray-400 dark:bg-transparent dark:hover:text-gray-100 dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
+    @apply dark:text-gray-300 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-item.is-active {
-    @apply dark:text-white dark:bg-white/[0.08] dark:hover:bg-white/[0.08];
+    @apply dark:text-white dark:bg-white/10 dark:hover:bg-white/10;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-item.is-active::before {
+    @apply dark:bg-primary-400;
 }
 
 /* .aura-sidebar-badge — theme-aware nav badge pill.
@@ -1343,4 +1831,46 @@ a.aura-board-card:focus-visible {
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-team-switcher {
     @apply dark:text-gray-200 dark:bg-transparent dark:hover:bg-white/[0.06] dark:focus-visible:ring-primary-500;
+}
+
+/* A related list on a record page (has-many and friends) sits in the main column beside the Properties rail:
+   8px cell gutters instead of 16px, and the record name (11rem), short texts (10rem), addresses (13rem) and
+   related records (7.5rem) end in an ellipsis, so its columns fit before it has to scroll. */
+.aura-relation-table th,
+.aura-relation-table td {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.aura-relation-table .aura-record-link-title {
+    @apply block max-w-[7.5rem] truncate;
+}
+
+.aura-relation-table th:first-child,
+.aura-relation-table td:first-child {
+    padding-left: 1rem;
+}
+
+/* A list keeps no column for the row actions: they appear over the row's right end on hover or focus (where a pointer
+   can hover; touch screens keep the column), on the row's hover tone with a short fade in front, so the value columns get the width. */
+@media (hover: hover) and (pointer: fine) {
+    .aura-list-table th.table-row-actions,
+    .aura-list-table td.table-row-actions-cell {
+        position: relative;
+        width: 0;
+        padding: 0;
+    }
+
+    .aura-list-table td.table-row-actions-cell .aura-row-actions {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        padding-left: 1.5rem;
+        background: linear-gradient(to right, transparent, rgb(var(--gray-50)) 1.25rem);
+    }
+
+    .dark .aura-list-table td.table-row-actions-cell .aura-row-actions {
+        background: linear-gradient(to right, transparent, color-mix(in srgb, rgb(var(--gray-900)), white 4%) 1.25rem);
+    }
 }

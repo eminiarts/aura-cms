@@ -44,19 +44,32 @@
         }
     }">
 
-        {{-- Phone top bar: the mark on the page background (not the sidebar logo, which is drawn for the sidebar color) and the drawer button. --}}
+        {{-- Phone top bar: the mark on the page background (not the sidebar logo, which is drawn for the sidebar color),
+             search, the `navigation_mobile_actions` inject point (a notifications bell) and the drawer button. --}}
         <div class="flex justify-between items-center pr-3 pl-5 h-14 border-b border-gray-200/80 md:hidden dark:border-white/10 aura-mobile-bar">
             <div class="w-[5.5rem]">
                 <x-aura::application-logo class="w-full h-auto" />
             </div>
 
-            <button type="button" x-on:click="toggleSidebar()" class="inline-flex justify-center items-center w-10 h-10 text-gray-700 rounded-lg transition-colors duration-150 hover:bg-gray-950/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-200 dark:hover:bg-white/[0.06]">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M3 12H15M3 6H21M3 18H21" stroke="currentcolor" stroke-width="2" stroke-linecap="round"
-                          stroke-linejoin="round"/>
-                </svg>
-                <span class="sr-only">{{ __('Toggle sidebar') }}</span>
-            </button>
+            <div class="flex items-center gap-1">
+                @if(config('aura.features.global_search'))
+                    <button type="button" x-on:click="$dispatch('search')" class="inline-flex justify-center items-center w-10 h-10 text-gray-700 rounded-lg transition-colors duration-150 hover:bg-gray-950/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-200 dark:hover:bg-white/[0.06]">
+                        <x-aura::icon.search class="w-5 h-5" aria-hidden="true" />
+                        <span class="sr-only">{{ __('Search') }}</span>
+                    </button>
+                @endif
+
+                {{ app('aura')::injectView('navigation_mobile_actions') }}
+
+                <button type="button" x-on:click="toggleSidebar()" class="inline-flex justify-center items-center w-10 h-10 text-gray-700 rounded-lg transition-colors duration-150 hover:bg-gray-950/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-200 dark:hover:bg-white/[0.06]">
+                    {{-- Three equal bars at the nav icons' 1.5 stroke. --}}
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M4 6.5H20M4 12H20M4 17.5H20" stroke="currentcolor" stroke-width="1.5" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                    <span class="sr-only">{{ __('Toggle sidebar') }}</span>
+                </button>
+            </div>
         </div>
 
         <div
@@ -97,7 +110,7 @@
                 <div class="flex overflow-y-auto overflow-x-visible flex-col flex-1 px-0 pt-0 pb-5 space-y-1 aura-sidebar-scrollbar">
 
                     <div class="flex flex-col {{ $this->compact ? 'px-2' : 'px-4' }} space-y-1">
-                        <div class="flex-shrink-0 h-[4.5rem] flex items-center justify-between aura-sidebar-header">
+                        <div class="flex-shrink-0 h-14 flex items-center justify-between aura-sidebar-header">
 
                             <div class="hide-collapsed">
                                 @include('aura::navigation.logo')
@@ -133,14 +146,10 @@
                         @if(config('aura.features.global_search'))
                             <button type="button" @click="$dispatch('search')"
                                     class="hidden items-center py-1.5 pr-3 pl-2.5 w-full text-sm leading-6 rounded-lg ring-1 shadow-sm aura-sidebar-search lg:flex">
-                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true" class="flex-none mr-2.5 w-5 h-5">
-                                    <path d="m19 19-3.5-3.5" stroke="currentColor" stroke-width="2"
-                                          stroke-linecap="round" stroke-linejoin="round"></path>
-                                    <circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round"></circle>
-                                </svg>
-                                {{ __('Search') }}
-                                <span class="flex-none pl-3 ml-auto font-medium text-2xs opacity-80">⌘K</span>
+                                <x-aura::icon.search class="flex-none mr-2.5 w-5 h-5" aria-hidden="true" />
+                                {{-- The collapsed rail keeps the icon only. --}}
+                                <span class="hide-collapsed">{{ __('Search') }}</span>
+                                <span class="flex-none pl-3 ml-auto font-medium text-2xs opacity-80 hide-collapsed">⌘K</span>
                             </button>
                         @endif
 
@@ -173,12 +182,11 @@
                         <div class="flex justify-between items-center pb-20 w-full md:pb-0">
                             <x-aura::navigation.team-switcher>
                                 <x-slot:title>
-                                    {{-- User card: 32px avatar, name, current team. --}}
+                                    {{-- User card: the user's avatar as everywhere else (x-aura::avatar, 28px), name, current team. --}}
                                     <div class="block min-w-0 flex-1 group">
                                         <div class="flex min-w-0 items-center">
                                             <div class="shrink-0">
-                                                <img class="inline-block object-cover w-8 h-8 rounded-full ring-1 ring-inset aura-sidebar-avatar"
-                                                     src="{{ auth()->user()->avatarUrl }}" alt="">
+                                                <x-aura::avatar :record="auth()->user()" size="md" class="flex" />
                                             </div>
                                             <div class="ml-2.5 min-w-0 hide-collapsed">
                                                 <p class="truncate text-[13px] leading-4 font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
@@ -191,6 +199,9 @@
                                 @include('aura::navigation.footer-popup')
 
                             </x-aura::navigation.team-switcher>
+
+                            {{-- Footer actions beside the user card, e.g. a notifications bell from a plugin. --}}
+                            {{ app('aura')::injectView('navigation_footer_actions') }}
 
                             {{-- @if(config('aura.features.notifications'))
                                 <div class="ml-2">
@@ -211,8 +222,7 @@
                                     <div class="block min-w-0 flex-1 group">
                                         <div class="flex min-w-0 items-center">
                                             <div class="shrink-0">
-                                                <img class="inline-block object-cover w-8 h-8 rounded-full ring-1 ring-inset aura-sidebar-avatar"
-                                                    src="{{ auth()->user()->avatarUrl }}" alt="">
+                                                <x-aura::avatar :record="auth()->user()" size="md" class="flex" />
                                             </div>
                                             <div class="ml-2.5 min-w-0 hide-collapsed">
                                                 <p class="truncate text-[13px] leading-4 font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>

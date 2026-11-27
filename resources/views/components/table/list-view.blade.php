@@ -24,64 +24,87 @@
     {{-- No card around the list: a header hairline, row dividers and a closing hairline carry the table. --}}
     <div class="overflow-hidden">
 
-        @if ($isEmpty)
-            {{-- A page with no records at all has no toolbar above, so no hairline either; lists keep it. --}}
+        @if ($isEmpty && ! $isFiltered && ! $isRelationTable)
+            @php
+                // A resource may word its own empty page (title, line, action) in aura/{type}/empty,
+                // like its header in aura/{type}/header; the block around it stays shared.
+                $emptyView = 'aura.'.Str::lower($tableModel->getType()).'.empty';
+                $emptyView = View::exists($emptyView) ? $emptyView : (View::exists('aura::'.$emptyView) ? 'aura::'.$emptyView : null);
+                $emptyIcon = method_exists($tableModel, 'getIcon') ? trim((string) $tableModel->getIcon()) : '';
+            @endphp
+            {{-- A list page without records: one centred block between hairlines, no column header and no
+                 toolbar (nothing to search or arrange yet): the resource's icon on a 40px tile, a section title,
+                 one line and the one create button (the page header leaves it out while the list is empty). --}}
+            <div class="flex flex-col items-center px-4 py-16 text-center border-y border-aura-hairline" data-table-empty data-table-empty-page>
+                @if ($emptyIcon !== '')
+                    <span class="mb-4 aura-empty-icon" aria-hidden="true">{!! $emptyIcon !!}</span>
+                @endif
+
+                @if ($emptyView)
+                    @include($emptyView)
+                @else
+                    <h3 class="aura-section-title">{{ __('No :resources yet', ['resources' => $pluralLabel]) }}</h3>
+                    <p class="mt-1 max-w-sm text-sm text-gray-500 dark:text-gray-400">{{ __('Create the first one to get started.') }}</p>
+
+                    @can('create', $tableModel)
+                        @if ($this->settings['create'] && $this->createLink && ! $this->settings['create_in_modal'])
+                            <div class="mt-5">
+                                <x-aura::button :href="$this->createLink">
+                                    <x-slot:icon>
+                                        <x-aura::icon icon="plus" />
+                                    </x-slot>
+                                    <span>{{ __('New :resource', ['resource' => $singularLabel]) }}</span>
+                                </x-aura::button>
+                            </div>
+                        @endif
+                    @endcan
+                @endif
+            </div>
+        @elseif ($isEmpty)
+            {{-- No matches for a search or filter, or an empty related list: from sm the real column header
+                 (no bulk checkbox, no sort), then one left-aligned block between hairlines, a section title and
+                 one line (a related list: the title only). Phones get the same block without the header. --}}
+            @if ($this->headers && $visibleColumnKeys->isNotEmpty())
+                <div class="hidden overflow-x-auto min-w-full align-middle sm:block">
+                    <table class="min-w-full">
+                        @include($this->settings['views']['table_header'])
+                    </table>
+                </div>
+            @endif
             <div @class([
-                'flex flex-col items-center px-6 text-center',
-                'border-t border-gray-200/80 dark:border-white/10' => $isRelationTable || $isFiltered,
-                $isRelationTable ? 'py-8' : 'py-14',
-            ])>
+                'border-y border-aura-hairline sm:px-4',
+                'sm:border-t-0' => $this->headers && $visibleColumnKeys->isNotEmpty(),
+                $isRelationTable ? 'py-6' : 'py-10',
+            ]) data-table-empty>
                 @if ($isFiltered)
                     <h3 class="aura-section-title">{{ __('No matching :resources', ['resources' => $pluralLabel]) }}</h3>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Try a different search or clear the filters.') }}</p>
                 @else
-                    @unless ($isRelationTable)
-                        <div class="flex justify-center items-center mb-3 w-10 h-10 rounded-lg bg-gray-950/[0.04] text-gray-400 dark:bg-white/5 dark:text-gray-500 [&>svg]:size-5" aria-hidden="true">
-                            {!! $tableModel->getIcon() !!}
-                        </div>
-                    @endunless
-                    @php
-                        // A resource may word its own empty page (title, line, action) in aura/{type}/empty,
-                        // like its header in aura/{type}/header; the icon box above stays shared.
-                        $emptyView = 'aura.'.Str::lower($tableModel->getType()).'.empty';
-                        $emptyView = $isRelationTable ? null : (View::exists($emptyView) ? $emptyView : (View::exists('aura::'.$emptyView) ? 'aura::'.$emptyView : null));
-                    @endphp
-
-                    @if ($emptyView)
-                        @include($emptyView)
-                    @else
                     <h3 class="aura-section-title">{{ __('No :resources yet', ['resources' => $pluralLabel]) }}</h3>
-                    @endif
-
-                    @unless ($isRelationTable || $emptyView)
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Create the first one to get started.') }}</p>
-
-                        @can('create', $tableModel)
-                            @if ($this->settings['create'] && ! $this->settings['create_in_modal'] && $this->createLink)
-                                <div class="mt-5">
-                                    <x-aura::button href="{{ $this->createLink }}">
-                                        <x-slot:icon>
-                                            <x-aura::icon icon="plus" />
-                                        </x-slot>
-                                        <span>{{ __('New :resource', ['resource' => $singularLabel]) }}</span>
-                                    </x-aura::button>
-                                </div>
-                            @endif
-                        @endcan
-                    @endunless
                 @endif
             </div>
         @else
-            <div @class(['overflow-x-auto min-w-full align-middle', 'hidden sm:block' => $stackOnMobile])>
-                <table class="min-w-full">
-                    @include($this->settings['views']['table_header'])
+            {{-- A table wider than its column scrolls inside it, never past the page; while columns sit off to the
+                 right a short fade on the page background says so (as on the boards). --}}
+            <div @class(['relative', 'hidden sm:block' => $stackOnMobile]) x-data="{
+                    more: false,
+                    update() {
+                        const el = this.$refs.scroller;
+                        this.more = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+                    },
+                }" x-init="update()" x-on:resize.window="update()" data-table-scroll>
+                <div x-ref="scroller" x-on:scroll.passive="update()" class="overflow-x-auto min-w-full align-middle">
+                    <table @class(['min-w-full aura-list-table', 'aura-relation-table' => $isRelationTable])>
+                        @include($this->settings['views']['table_header'])
 
-                    <tbody class="border-b divide-y divide-gray-200/60 border-gray-200/80 dark:divide-white/[0.06] dark:border-white/10">
-                        @foreach ($rows as $row)
-                            @include($this->settings['views']['row'])
-                        @endforeach
-                    </tbody>
-                </table>
+                        <tbody class="border-b divide-y divide-aura-hairline border-aura-hairline">
+                            @foreach ($rows as $row)
+                                @include($this->settings['views']['row'])
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div x-show="more" x-cloak class="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent pointer-events-none dark:from-gray-900" aria-hidden="true" data-table-fade></div>
             </div>
 
             @if ($stackOnMobile)
@@ -94,11 +117,17 @@
                     $plainText = fn ($html) => is_scalar($html) ? trim(html_entity_decode(strip_tags((string) $html), ENT_QUOTES)) : '';
                     $isBlank = fn ($value) => $value === null || (is_string($value) && trim(strip_tags($value)) === '' && ! str_contains($value, '<svg'));
 
-                    $mobileRows = $rows->map(function ($row) use ($visibleColumnKeys, $flattenLinks, $leadsWithTitle) {
+                    $mobileRows = $rows->map(function ($row) use ($visibleColumnKeys, $flattenLinks, $leadsWithTitle, $columnTypes, $tableModel) {
                         return [
                             'row' => $row,
                             'title' => $leadsWithTitle ? trim((string) $row->title()) : '',
-                            'displays' => $visibleColumnKeys->mapWithKeys(fn ($key) => [$key => $flattenLinks($row->display($key))]),
+                            'displays' => $visibleColumnKeys->mapWithKeys(fn ($key) => [$key => $flattenLinks(
+                                match ($columnTypes[$key] ?? null) {
+                                    'Aura\\Base\\Fields\\Number' => \Aura\Base\Fields\Number::unitMarkup($tableModel->fieldBySlug($key) ?? [], $row->display($key)),
+                                    'Aura\\Base\\Fields\\Json' => \Aura\Base\Fields\Json::listPreview($tableModel->fieldBySlug($key) ?? ['slug' => $key], $row) ?? $row->display($key),
+                                    default => $row->display($key),
+                                }
+                            )]),
                         ];
                     });
 
@@ -116,12 +145,30 @@
                         ->values();
                     $relationKeys = $relationKeys->count() > 1 ? $relationKeys : collect();
 
+                    // A Boolean column with a date column named after it ("Published" and "Published at") reads as one
+                    // state line on phones, "Published · Sep 6, 2026" or "Not published", instead of a bare check icon.
+                    $isType = fn ($key, $class) => is_string($columnTypes[$key] ?? null) && is_a($columnTypes[$key], $class, true);
+                    $columnLabel = fn ($key) => trim((string) ($this->headers[$key] ?? ''));
+                    $stateKeys = null;
+                    foreach ($visibleColumnKeys as $index => $boolKey) {
+                        if ((! $leadsWithTitle && $index === 0) || ! $isType($boolKey, \Aura\Base\Fields\Boolean::class) || $columnLabel($boolKey) === '') {
+                            continue;
+                        }
+                        $dateKey = $visibleColumnKeys->first(fn ($key) => ($isType($key, \Aura\Base\Fields\Date::class) || $isType($key, \Aura\Base\Fields\Datetime::class))
+                            && Str::startsWith(Str::lower($columnLabel($key)), Str::lower($columnLabel($boolKey)).' '));
+                        if ($dateKey) {
+                            $stateKeys = [$boolKey, $dateKey];
+                            break;
+                        }
+                    }
+
                     // The meta lines show the same columns on every row: the two most filled other columns on this page
                     // (in column order), so one row cannot show a company where the next shows a phone number.
                     // Columns the record name already contains (first and last name) and the leading column stay out.
                     $metaKeys = $visibleColumnKeys
                         ->reject(fn ($key, $index) => ! $leadsWithTitle && $index === 0)
                         ->reject(fn ($key) => $relationKeys->contains($key))
+                        ->reject(fn ($key) => in_array($key, $stateKeys ?? [], true))
                         ->reject(fn ($key) => $leadsWithTitle && $mobileRows->every(function ($item) use ($key, $plainText) {
                             $text = $plainText($item['displays'][$key]);
 
@@ -142,9 +189,34 @@
                     $numberKey = $metaKeyOfType(\Aura\Base\Fields\Number::class);
                     $statusKey = $metaKeyOfType(\Aura\Base\Fields\Status::class);
                     $pairedKeys = ($numberKey && $statusKey) ? [$statusKey, $numberKey] : [];
+
+                    // A resource may set its phone rows itself with mobileListRow(): ['tag' => slug, 'lines' => [[slug, …], …]].
+                    // The tag (a category) sits beside the name, each line joins its values as plain text with " · "
+                    // (relations as names), a dash when all are empty, so every row has the same lines. In a related
+                    // list the relation to the page's own record drops out (a company's contacts do not repeat it).
+                    $customRow = method_exists($tableModel, 'mobileListRow') ? $tableModel->mobileListRow() : null;
+                    $customLine = function ($row, array $keys) use ($tableModel, $plainText, $relationName) {
+                        return collect($keys)
+                            ->reject(function ($key) use ($row, $tableModel) {
+                                $field = $tableModel->fieldBySlug($key) ?? [];
+                                $isRelation = is_string($field['type'] ?? null) && is_a($field['type'], \Aura\Base\Fields\BelongsTo::class, true);
+
+                                return $isRelation && $this->parent && is_string($field['resource'] ?? null)
+                                    && is_a($this->parent, $field['resource']) && (string) $row->{$key} === (string) $this->parent->getKey();
+                            })
+                            ->map(function ($key) use ($row, $tableModel, $plainText, $relationName) {
+                                $type = $tableModel->fieldBySlug($key)['type'] ?? null;
+
+                                return is_string($type) && is_a($type, \Aura\Base\Fields\BelongsTo::class, true)
+                                    ? $relationName($row->display($key))
+                                    : $plainText($row->display($key));
+                            })
+                            ->filter(fn ($text) => $text !== '' && $text !== '–')
+                            ->implode(' · ');
+                    };
                 @endphp
-                {{-- Phones: one line for the record, its relations on one line when it has several, then the same two columns on every row, one per line (a status and a number share one). --}}
-                <ul class="border-t border-b divide-y divide-gray-200/60 border-gray-200/80 sm:hidden dark:divide-white/[0.06] dark:border-white/10">
+                {{-- Phones: one line for the record, its relations on one line when it has several, then the same two columns on every row (a status and a number share one line); a Boolean state with its date joins the meta line, its row's tags lead that line and the title gets the full width, up to two lines. --}}
+                <ul class="border-t border-b divide-y divide-aura-hairline border-aura-hairline sm:hidden">
                     @foreach ($mobileRows as $item)
                         @php
                             $row = $item['row'];
@@ -152,10 +224,27 @@
                             $rowTitle = $item['title'];
                             $primary = $rowTitle !== '' ? e($rowTitle) : $displays->first();
                             $hasAvatar = method_exists($row, 'avatarShape') && $row->avatarShape();
-                            // A blank value keeps its line as a dash, so every row has the same lines and height.
                             $metaValues = $metaKeys->reject(fn ($key) => in_array($key, $pairedKeys, true))->map(fn ($key) => $displays[$key])->values();
                             $relationLine = $relationKeys->map(fn ($key) => $relationName($displays[$key]))->filter(fn ($name) => $name !== '')->implode(' · ');
                             $rowUrl = auth()->user()?->can('view', $row) ? $row->viewUrl() : null;
+
+                            // A row with a state line: its tags (a category) lead the meta line, the state joins it as
+                            // "Release 1.8.0 · Jul 12, 2026" (the date when the state is on, the label when it has no
+                            // date, "Not published" when it is off), so the title keeps the full width, up to two lines.
+                            $titleTags = collect();
+                            if ($stateKeys) {
+                                $isTag = fn ($value) => preg_match('/class=["\'][^"\']*\baura-tag\b/', (string) $value) === 1;
+                                $titleTags = $metaValues->reject(fn ($value) => $isBlank($value))->filter($isTag)->values();
+                                $metaValues = $metaValues->reject($isTag)->values();
+
+                                [$stateBool, $stateDate] = $stateKeys;
+                                $stateDateText = $row->{$stateBool} ? $plainText($displays[$stateDate]) : '';
+                                $metaValues->push(e(match (true) {
+                                    ! $row->{$stateBool} => __('Not :state', ['state' => Str::lower($columnLabel($stateBool))]),
+                                    $stateDateText !== '' && $stateDateText !== '–' => $stateDateText,
+                                    default => $columnLabel($stateBool),
+                                }));
+                            }
                         @endphp
                         <li wire:key="mobile-row-{{ $row->id }}">
                             <{{ $rowUrl ? 'a' : 'div' }} @if ($rowUrl) href="{{ $rowUrl }}" wire:navigate @endif
@@ -163,8 +252,36 @@
                                 @if ($hasAvatar)
                                     <x-aura::avatar :record="$row" size="md" />
                                 @endif
+                                @if ($customRow)
+                                <div class="flex-1 min-w-0" data-mobile-row-custom>
+                                    <div class="flex gap-2 items-center min-w-0">
+                                        <span class="text-sm font-medium text-gray-900 truncate dark:text-white">
+                                            @if ($primary === null || $primary === '')
+                                                <span class="text-gray-400 dark:text-gray-500">–</span>
+                                            @else
+                                                {!! $primary !!}
+                                            @endif
+                                        </span>
+                                        @if (filled($customRow['tag'] ?? null) && ! $isBlank($tagHtml = $flattenLinks($row->display($customRow['tag']))))
+                                            <span class="flex shrink-0" data-mobile-row-tag>{!! $tagHtml !!}</span>
+                                        @endif
+                                    </div>
+                                    @foreach ($customRow['lines'] ?? [] as $lineKeys)
+                                        @php
+                                            $lineText = $customLine($row, (array) $lineKeys);
+                                        @endphp
+                                        <div class="mt-0.5 h-5 text-sm text-gray-500 truncate dark:text-gray-400" data-mobile-row-line>
+                                            @if ($lineText === '')
+                                                <span class="text-gray-400 dark:text-gray-500">–</span>
+                                            @else
+                                                {{ $lineText }}
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                                @else
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-sm font-medium text-gray-900 truncate dark:text-white">
+                                    <div @class(['text-sm font-medium text-gray-900 dark:text-white', 'truncate' => ! $stateKeys, 'line-clamp-2 break-words' => (bool) $stateKeys])>
                                         @if ($primary === null || $primary === '')
                                             <span class="text-gray-400 dark:text-gray-500">–</span>
                                         @else
@@ -191,21 +308,37 @@
                                             @endforeach
                                         </div>
                                     @endif
-                                    {{-- One quiet line per meta value: two values side by side would both cut off on a phone. --}}
-                                    @foreach ($metaValues as $metaValue)
-                                        <div class="flex items-center mt-0.5 min-w-0 h-5 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400 [&_.aura-link]:text-inherit [&_.aura-record-link]:text-inherit">
-                                            @if ($isBlank($metaValue))
-                                                <span class="text-gray-400 dark:text-gray-500">–</span>
+                                    {{-- Plain text meta values share one quiet line, joined with " · ", and wrap onto a second
+                                         line only when they do not fit (.aura-dot-list drops the dot at a line start). A relation
+                                         chip or a tag always takes a line of its own, so rows keep one rhythm whatever their data.
+                                         Blank values drop out; a row with none keeps one line as a dash. --}}
+                                    @if ($metaValues->isNotEmpty())
+                                        @php
+                                            $filledMeta = $metaValues->reject(fn ($value) => $isBlank($value));
+                                        @endphp
+                                        <div class="mt-0.5 text-sm text-gray-500 dark:text-gray-400 [&_.aura-link]:text-inherit [&_.aura-record-link]:text-inherit" data-mobile-row-meta>
+                                            @if ($filledMeta->isEmpty() && $titleTags->isEmpty())
+                                                <div class="h-5 text-gray-400 dark:text-gray-500">–</div>
+                                            @elseif ($titleTags->isNotEmpty())
+                                                <div class="flex gap-2 items-center min-w-0">
+                                                    @foreach ($titleTags as $titleTag)
+                                                        <span class="flex shrink-0" data-mobile-row-tag>{!! $titleTag !!}</span>
+                                                    @endforeach
+                                                    <span class="min-w-0 truncate">{!! $filledMeta->map(fn ($value) => (string) $value)->implode(' · ') !!}</span>
+                                                </div>
                                             @else
-                                                <span class="min-w-0 truncate">{!! $metaValue !!}</span>
+                                                <div class="aura-dot-list">
+                                                    @foreach ($filledMeta as $metaValue)
+                                                        <span @class(['aura-dot-list-item', 'aura-dot-list-item-line' => preg_match('/class=["\'][^"\']*\baura-(record-link|tag)\b/', (string) $metaValue) === 1])><span class="min-w-0 truncate">{!! $metaValue !!}</span></span>
+                                                    @endforeach
+                                                </div>
                                             @endif
                                         </div>
-                                    @endforeach
+                                    @endif
                                 </div>
+                                @endif
                                 @if ($rowUrl)
-                                    <svg class="w-4 h-4 text-gray-300 shrink-0 dark:text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                                    </svg>
+                                    <x-aura::icon.caret direction="right" class="w-4 h-4 text-gray-400 shrink-0" />
                                 @endif
                             </{{ $rowUrl ? 'a' : 'div' }}>
                         </li>

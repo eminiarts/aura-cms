@@ -6,6 +6,8 @@ use Livewire\Component;
 
 class PluginsPage extends Component
 {
+    public const CORE_PACKAGE = 'eminiarts/aura-cms';
+
     public $installedPackages = [];
 
     public function getInstalledPackages()
@@ -65,10 +67,25 @@ class PluginsPage extends Component
                 'description' => $packageJson['description'] ?? '',
                 'keywords' => $packageJson['keywords'] ?? [],
                 'version' => $version ?? '',
+                'type' => $packageJson['type'] ?? 'library',
+                // Required only in require-dev: a development tool, not part of the running app.
+                'dev' => array_key_exists($package, $composerJson['require-dev'] ?? [])
+                    && ! array_key_exists($package, $composerJson['require'] ?? []),
             ];
         }
 
         return $installedPackages;
+    }
+
+    /**
+     * Aura's own packages and plugins (eminiarts/aura-*, aura/*, or an aura-* package type), so the
+     * page can list them apart from the other Composer packages.
+     */
+    public static function isAuraPackage(string $name, ?string $type = null): bool
+    {
+        return str_starts_with($name, 'eminiarts/aura')
+            || str_starts_with($name, 'aura/')
+            || str_starts_with((string) $type, 'aura');
     }
 
     public function mount()
@@ -80,6 +97,20 @@ class PluginsPage extends Component
 
     public function render()
     {
-        return view('aura::livewire.plugins-page')->layout('aura::components.layout.app');
+        // Every installed package lands in exactly one place. The core package is the CMS itself, not a
+        // plugin: it shows as the page meta ("Aura CMS 1.x-dev") instead of a row.
+        $packages = collect($this->installedPackages);
+        $core = $packages->pull(static::CORE_PACKAGE);
+
+        [$aura, $other] = $packages
+            ->partition(fn ($package, $name) => static::isAuraPackage($name, $package['type'] ?? null));
+
+        return view('aura::livewire.plugins-page', [
+            'coreVersion' => $core['version'] ?? null,
+            // The page title counts Aura plugins; other Composer packages count in their own section.
+            'pluginCount' => $aura->count(),
+            'plugins' => $aura->all(),
+            'otherPackages' => $other->all(),
+        ])->layout('aura::components.layout.app');
     }
 }

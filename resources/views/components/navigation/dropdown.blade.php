@@ -44,15 +44,15 @@
                     {{ $title }}
                 </div>
 
-                <span x-cloak x-show="expanded" aria-hidden="true" class="ml-3 opacity-60 aura-sidebar-chevron">
+                <span x-cloak x-show="expanded" aria-hidden="true" class="ml-3 opacity-75 aura-sidebar-chevron">
                 <x-aura::icon.chevron-up class="w-4 h-4"/>
                 </span>
-                <span x-cloak x-show="!expanded" aria-hidden="true" class="ml-3 opacity-60 aura-sidebar-chevron">
+                <span x-cloak x-show="!expanded" aria-hidden="true" class="ml-3 opacity-75 aura-sidebar-chevron">
                 <x-aura::icon.chevron-down class="w-4 h-4"/>
                 </span>
             </button>
 
-            <div x-show="expanded" x-ref="container" x-cloak class="p-1.5" x-aura::collapse>
+            <div x-show="expanded" x-ref="container" x-cloak class="pt-0.5 pb-1 pl-3" x-aura::collapse>
                 {{ $slot }}
             </div>
         </div>

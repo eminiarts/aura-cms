@@ -3,6 +3,7 @@
 use Aura\Base\Livewire\Resource\View;
 use Aura\Base\RecordLayout\RecordViewSections;
 use Aura\Base\Resource;
+use Aura\Base\Resources\Role;
 use Livewire\Livewire;
 
 beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
@@ -79,4 +80,26 @@ test('the view page renders a tabbed record in its form frame', function () {
         ->assertSeeHtml('data-record-frame="form"')
         ->assertSeeHtml('aura-card')
         ->assertDontSeeHtml('data-record-section=');
+});
+
+test('user, team and role views mirror their edit forms, not the record template', function () {
+    $team = $this->user->currentTeam;
+    $role = Role::query()->firstOrFail();
+
+    foreach (['user' => $this->user, 'team' => $team, 'role' => $role] as $slug => $record) {
+        expect(RecordViewSections::formFrame($record->viewFields(), $record))->not->toBeNull()
+            ->and(RecordViewSections::template($record->viewFields(), $record))->toBeFalse();
+
+        Livewire::test(View::class, ['id' => $record->id, 'slug' => $slug])
+            ->assertSeeHtml('data-record-frame="form"')
+            ->assertDontSeeHtml('data-record-template')
+            ->assertDontSeeHtml('data-record-rail');
+    }
+})->skip(fn () => ! config('aura.teams'), 'Requires teams');
+
+test('a narrow panel beside other values takes the record template', function () {
+    $rail = new FormFrameRailResource;
+
+    expect(RecordViewSections::template($rail->viewFields(), $rail))->toBeTrue()
+        ->and(RecordViewSections::template((new FormFramePlainResource)->viewFields(), new FormFramePlainResource))->toBeFalse();
 });

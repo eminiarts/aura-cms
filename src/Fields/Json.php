@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Fields;
 
+use Illuminate\Support\Str;
+
 class Json extends Field
 {
     public $edit = 'aura::fields.json';
@@ -85,6 +87,37 @@ class Json extends Field
         return $json === false ? '' : $json;
     }
 
+    /**
+     * A JSON value as one mono line for lists: a string as it is, anything else as compact JSON, cut at
+     * $limit characters, the full text (up to 500) in the tooltip. Escaped. Null for a field with its own
+     * display (closure or display_view), which keeps it. A field with 'list_summary' => true shows summary()
+     * in words instead, the JSON still in the tooltip.
+     */
+    public static function listPreview(array $field, $model, int $limit = 60): ?string
+    {
+        if (isset($field['display']) || isset($field['display_view'])) {
+            return null;
+        }
+
+        $value = $model->{$field['slug']};
+
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $text = is_string($value)
+            ? $value
+            : (string) json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+
+        if ($field['list_summary'] ?? false) {
+            return '<span class="block max-w-md text-sm text-gray-600 truncate dark:text-gray-300" title="'.e(Str::limit($text, 500)).'">'
+                .e(static::summary($value)).'</span>';
+        }
+
+        return '<span class="block max-w-md font-mono text-xs text-gray-600 truncate dark:text-gray-400" title="'.e(Str::limit($text, 500)).'">'
+            .e(Str::limit($text, $limit)).'</span>';
+    }
+
     // public function getFields()
     // {
     //     return array_merge(parent::getFields(), [
@@ -121,5 +154,26 @@ class Json extends Field
         }
 
         return $value;
+    }
+
+    /**
+     * A stored value in words, for lists of settings: [] or {} is "Empty", true/false "On"/"Off", an object
+     * "3 settings", a list "3 items", a string or number as it is. A string holding JSON is read as that JSON.
+     */
+    public static function summary($value): string
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value = json_last_error() === JSON_ERROR_NONE ? $decoded : $value;
+        }
+
+        return match (true) {
+            $value === null, $value === '', $value === [] => __('Empty'),
+            $value === true => __('On'),
+            $value === false => __('Off'),
+            is_array($value) && array_is_list($value) => trans_choice(':count item|:count items', count($value), ['count' => count($value)]),
+            is_array($value) => trans_choice(':count setting|:count settings', count($value), ['count' => count($value)]),
+            default => (string) $value,
+        };
     }
 }

@@ -1,19 +1,25 @@
 @if ($compact)
 {{-- Compact (index strip): 12px name over a 20px value, the change as quiet colored text. --}}
-<div class="flex flex-col justify-center px-4 py-3 h-full min-w-0" @if (!$isCached) wire:init="loadWidget" @endif wire:key="value-widget-{{ $widget['slug'] ?? '' }}">
+<div class="flex flex-col justify-center px-3 py-3 h-full min-w-0 sm:px-4" @if (!$isCached) wire:init="loadWidget" @endif wire:key="value-widget-{{ $widget['slug'] ?? '' }}">
     @if($loaded)
         @php
             $hasPrevious = optional($widget)['previous'] !== false
                 && (float) str_replace("'", '', $this->values['previous'] ?? '0') != 0.0;
         @endphp
-        <span class="text-xs font-medium text-gray-500 truncate dark:text-gray-400">{{ __($widget['name']) }}</span>
-        <div class="flex gap-2 items-baseline mt-1 min-w-0">
-            <span class="text-xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">{{ $this->values['current'] ?? 'N/A' }}</span>
+        {{-- Phones fit three cells to a row: the name may take two lines there. --}}
+        <span class="text-xs font-medium text-gray-500 dark:text-gray-400 line-clamp-2 sm:line-clamp-none sm:truncate">{{ $this->title() }}</span>
+        {{-- The change names what it compares against ("+50% vs previous 30 days"). Phones keep the figure only (the
+             words stay for screen readers): the range select above the strip names the period. --}}
+        <div class="flex flex-wrap gap-x-2 items-baseline mt-1 min-w-0">
+            <span class="text-xl font-semibold tracking-tight tabular-nums text-gray-900 shrink-0 dark:text-white">{{ $this->values['current'] ?? 'N/A' }}</span>
             @if($hasPrevious)
-                <span class="text-xs font-medium tabular-nums {{ $this->values['change'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400' }}">
+                <span class="text-xs font-medium tabular-nums shrink-0 {{ $this->values['change'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400' }}">
                     <span class="sr-only">{{ $this->values['change'] >= 0 ? __('Increased by') : __('Decreased by') }}</span>
                     {{ $this->values['change'] >= 0 ? '+' : '' }}{{ $this->values['change'] }}%
                 </span>
+                @if ($this->comparisonLabel())
+                    <span class="min-w-0 text-xs text-gray-500 truncate max-sm:sr-only dark:text-gray-400">{{ $this->comparisonLabel() }}</span>
+                @endif
             @endif
         </div>
     @else
@@ -34,7 +40,7 @@
         @endphp
         <div class="flex flex-col justify-between h-full">
             <div class="flex gap-2 justify-between items-center">
-                <span class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">{{ __($widget['name']) }}</span>
+                <span class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">{{ $this->title() }}</span>
 
                 @if(optional($widget)['goal'] && is_numeric($widget['goal']))
                     @php
@@ -48,16 +54,16 @@
                 @elseif($hasPrevious)
                     @if($this->values['change'] >= 0)
                         <span class="inline-flex items-center gap-0.5 rounded-full bg-green-50 dark:bg-green-900/40 px-2 py-0.5 text-xs font-medium text-green-700 dark:text-green-400 shrink-0">
-                            <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 19V5M5 12l7-7 7 7" />
+                            <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M8 13V3.5M4.5 7 8 3.5 11.5 7" />
                             </svg>
                             <span class="sr-only">{{ __('Increased by') }}</span>
                             {{ $this->values['change'] }}%
                         </span>
                     @else
                         <span class="inline-flex items-center gap-0.5 rounded-full bg-red-50 dark:bg-red-900/40 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-400 shrink-0">
-                            <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 5v14M5 12l7 7 7-7" />
+                            <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M8 3v9.5M4.5 9 8 12.5 11.5 9" />
                             </svg>
                             <span class="sr-only">{{ __('Decreased by') }}</span>
                             {{ $this->values['change'] }}%

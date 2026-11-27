@@ -45,16 +45,20 @@
 
         <x-aura::dropdown width="w-72">
             <x-slot name="trigger">
-                {{-- $iconTriggerOnPhones (edit header): a 36px "more" button on phones, the labelled button from sm. --}}
+                {{-- $iconTriggerOnPhones (the record title row on view and edit): a 36px outline "more" button on
+                     every viewport, as the list toolbars' overflow menu, named by its tooltip "Actions". Other
+                     callers keep the labelled button. --}}
                 @if ($iconTriggerOnPhones ?? false)
-                    <x-aura::button.border size="icon" class="sm:hidden" aria-label="{{ __('Actions') }}" aria-haspopup="menu">
+                    <x-aura::button.border size="icon" aria-label="{{ __('Actions') }}" aria-haspopup="menu"
+                        x-init="tippy($el, { content: @js(__('Actions')), arrow: false, theme: 'aura', placement: 'bottom', offset: [0, 8] })">
                         <x-aura::icon.dots class="size-4" aria-hidden="true" />
                     </x-aura::button.border>
-                @endif
-                <x-aura::button.transparent class="{{ ($iconTriggerOnPhones ?? false) ? 'hidden sm:inline-flex' : '' }}">
+                @else
+                <x-aura::button.transparent>
                     <x-aura::icon.dots class="mr-2 w-5 h-5" />
                     {{ __('Actions') }}
                 </x-aura::button.transparent>
+                @endif
             </x-slot>
             <x-slot name="content">
                 <div class="px-0">

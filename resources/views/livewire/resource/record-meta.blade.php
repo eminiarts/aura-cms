@@ -17,7 +17,7 @@
         }
     }
 
-    $wasUpdated = $createdAt && $updatedAt && $updatedAt->diffInSeconds($createdAt) >= 60;
+    $wasUpdated = $createdAt && $updatedAt && abs($createdAt->diffInSeconds($updatedAt)) >= 60;
 @endphp
 
 @if ($createdAt)

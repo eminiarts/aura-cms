@@ -187,6 +187,9 @@
             $collectionIsEmpty = $currentView !== 'kanban' && $rows->total() === 0
                 && blank($this->search ?? null) && blank($this->selectedFilter ?? null)
                 && empty(data_get($this->filters ?? [], 'custom'));
+            // An empty list page (not a related list) is one centred block with the create button
+            // (components/table/list-view): the header holds no create button, the toolbar waits for records.
+            $emptyPage = $collectionIsEmpty && ! optional(optional($this)->field)['name'];
         @endphp
 
         @include($this->settings['views']['header'])
@@ -196,7 +199,9 @@
         @endif
 
         @php
-            $hasToolbar = ! $collectionIsEmpty && ($this->settings['search'] || $this->settings['settings'] || $this->settings['filters']
+            // A list without records has no toolbar: nothing to search, arrange or filter yet. An empty related
+            // list keeps its search only when it has one; its arranging controls wait as well.
+            $hasToolbar = ! $emptyPage && ($this->settings['search'] || $this->settings['settings'] || $this->settings['filters']
                 || ($this->settings['bulk_actions'] && $this->bulkActions));
         @endphp
 
@@ -208,31 +213,34 @@
             @if ($hasToolbar)
             @php
                 $hasViewSwitch = $model->tableGridView() || ($this->resolvedKanbanConfiguration()['enabled'] ?? false) || $model->tableKanbanView();
-                $twoRowsOnPhones = $hasViewSwitch && ($this->settings['settings'] || $this->settings['filters']);
+                $twoRowsOnPhones = ! $collectionIsEmpty && $hasViewSwitch && ($this->settings['settings'] || $this->settings['filters']);
+                $columnsInActionsMenu = $this->settings['settings'] && $currentView == 'list' && $model->showTableSettings()
+                    && $this->settings['bulk_actions'] && $this->bulkActions
+                    && ($this->settings['views']['bulk_actions'] ?? null) === 'aura::components.table.bulk-actions';
             @endphp
-            <div @class(['flex gap-2 items-center w-full', 'max-sm:flex-wrap max-sm:gap-y-3' => $twoRowsOnPhones])>
+            <div @class(['flex gap-2 items-center w-full aura-table-toolbar', 'max-sm:flex-wrap max-sm:gap-y-3' => $twoRowsOnPhones])>
 
                 @if ($this->settings['search'])
                     <div @class(['flex-1 min-w-0 md:max-w-sm', 'max-sm:basis-full' => $twoRowsOnPhones])>
                         <label for="table-search" class="sr-only">{{ __('Search') }}</label>
                         <div class="relative">
                             <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
-                                <svg class="w-4 h-4 text-gray-400" fill="currentColor"
-                                    viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd"
-                                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                        clip-rule="evenodd"></path>
-                                </svg>
+                                <x-aura::icon.search class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" />
                             </div>
                             <input type="text" id="table-search"
-                                class="block h-9 w-full py-2 pl-9 pr-3 text-base sm:text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 dark:placeholder:text-gray-500 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"
+                                class="block h-9 w-full py-2 pl-9 pr-3 text-base sm:text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-500 dark:placeholder:text-gray-400 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"
                                 placeholder="{{ __('Search :resources…', ['resources' => Str::lower(__($model->pluralName()))]) }}" wire:model.live.debounce="search">
 
                         </div>
                     </div>
                 @endif
 
-                <div @class(['flex gap-2 items-center ml-auto shrink-0', 'max-sm:w-full' => $twoRowsOnPhones])>
+                {{-- An empty list's controls hold only the desktop "more" menu: phones drop the wrapper, so the search reaches the edge. --}}
+                <div @class(['flex gap-2 items-center ml-auto shrink-0', 'max-sm:w-full' => $twoRowsOnPhones, 'max-sm:hidden' => $collectionIsEmpty])>
+
+                    @if ($collectionIsEmpty)
+                        @include('aura::components.table.resource-editor-button', ['standalone' => true])
+                    @else
 
                     {{-- Columns --}}
                     @if ($this->settings['settings'] || $this->settings['filters'])
@@ -243,7 +251,10 @@
 
                         @if ($this->settings['settings'])
                             @if ($currentView == 'list' && $model->showTableSettings())
-                                @include('aura::components.table.settings')
+                                {{-- Phones: Columns is not a toolbar button of its own. With an actions menu it
+                                     becomes an item there (components/table/bulk-actions); without one its
+                                     trigger is the "more" button. --}}
+                                @include('aura::components.table.settings', ['phoneMenu' => $columnsInActionsMenu ? 'actions' : 'more'])
                             @endif
                         @endif
 
@@ -266,6 +277,7 @@
                     @endif
 
                     @include('aura::components.table.resource-editor-button')
+                    @endif
                 </div>
             </div>
             @endif

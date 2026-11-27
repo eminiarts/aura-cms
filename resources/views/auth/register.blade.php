@@ -2,7 +2,7 @@
 
     <div class="mb-8">
         <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __('Create your account') }}</h1>
-        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('Enter your details below to get started.') }}</p>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ config('aura.teams') ? __('Start with a team. You can invite others later.') : __('Enter your details below to get started.') }}</p>
     </div>
 
     <form method="POST" action="{{ route('aura.register') }}" onsubmit="document.getElementById('register-button').disabled = true;" class="space-y-5">
@@ -11,15 +11,15 @@
         @if(config('aura.teams'))
         <!-- Team -->
         <div>
-            <x-aura::input-label class="!mt-0" for="team" :value="__('Team')" />
-            <x-aura::input.text id="team" placeholder="{{ __('Your team name') }}" class="block w-full" type="text" name="team" :value="old('team')" required autofocus autocomplete="organization" />
+            <x-aura::input-label class="!mt-0" for="team" :value="__('Team name')" />
+            <x-aura::input.text id="team" placeholder="{{ __('Enter your team name') }}" class="block w-full" type="text" name="team" :value="old('team')" required autofocus autocomplete="organization" />
             <x-aura::input-error :for="$errors->get('team')" class="mt-2" />
         </div>
         @endif
 
         <!-- Name -->
         <div>
-            <x-aura::input-label class="!mt-0" for="name" :value="__('Name')" />
+            <x-aura::input-label class="!mt-0" for="name" :value="__('Your name')" />
             <x-aura::input.text id="name" placeholder="{{ __('Enter your name') }}" class="block w-full" type="text" name="name" :value="old('name')" required :autofocus="!config('aura.teams')" autocomplete="name" />
             <x-aura::input-error :for="$errors->get('name')" class="mt-2" />
         </div>
@@ -36,7 +36,7 @@
             <x-aura::input-label class="!mt-0" for="password" :value="__('Password')" />
 
             <x-aura::input.text id="password" class="block w-full"
-                            type="password"
+                            type="password" :reveal="true"
                             name="password"
                             placeholder="{{ __('Create a password') }}"
                             required autocomplete="new-password" />
@@ -49,7 +49,7 @@
             <x-aura::input-label class="!mt-0" for="password_confirmation" :value="__('Confirm password')" />
 
             <x-aura::input.text id="password_confirmation" class="block w-full"
-                            type="password"
+                            type="password" :reveal="true"
                             name="password_confirmation"
                             placeholder="{{ __('Repeat your password') }}"
                             required autocomplete="new-password" />

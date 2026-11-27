@@ -75,9 +75,7 @@
 
             {{-- Up-down selector mark: this opens a menu, it does not expand in place. --}}
             <div class="ml-2 opacity-50 shrink-0 hide-collapsed">
-                <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M5 6 8 3l3 3M5 10l3 3 3-3" />
-                </svg>
+                <x-aura::icon.caret direction="up-down" class="w-3.5 h-3.5" />
             </div>
         </div>
 

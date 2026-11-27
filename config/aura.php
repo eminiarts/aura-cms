@@ -179,6 +179,19 @@ return [
         'login-bg' => false,
         'login-bg-darkmode' => false,
 
+        // Line on the login brand panel: null shows the default, a string replaces it
+        // (passed through __()), false hides it.
+        'login-line' => null,
+
+        // One quieter line under the login line ("Companies, contacts and deals for your team."),
+        // passed through __(). null shows none.
+        'login-subline' => null,
+
+        // Product image on the login brand panel (lg and up): a path under public/ or a URL, or
+        // ['light' => …, 'dark' => …] for one per color scheme. It starts 48px under the login line and
+        // bleeds off the panel's right and bottom edge. null keeps the outlined Λ.
+        'login-image' => null,
+
         'app-favicon' => false,
         'app-favicon-darkmode' => false,
     ],
@@ -200,6 +213,23 @@ return [
         // A view that replaces the admin sidebar for signed-in users, e.g. 'layouts.sidebar'.
         // null keeps Aura's navigation. The view is included inside the layout's flex row.
         'navigation' => null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Navigation
+    |--------------------------------------------------------------------------
+    |
+    | Optional sidebar layout. `groups` orders the groups (unlisted groups
+    | follow). `items` is keyed by item slug and may set `group`, `sort`,
+    | `dropdown`, `name`, `icon` (an x-aura::icon name or raw SVG) and
+    | `hidden`. Empty keeps the order the resources declare.
+    |
+    */
+
+    'navigation' => [
+        'groups' => [],
+        'items' => [],
     ],
 
     /*
@@ -253,6 +283,8 @@ return [
         'user_invitations' => true,
         'invitation_expiry' => 7,
         'create_teams' => env('AURA_CREATE_TEAMS', true),
+        // The "Log in as admin" shortcut on the login page (local environment, .test hosts only).
+        'local_login' => true,
     ],
 
     /*

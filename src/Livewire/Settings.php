@@ -132,7 +132,7 @@ class Settings extends Component
                 ],
             ],
             [
-                'name' => 'Size',
+                'name' => 'Sidebar size',
                 'type' => 'Aura\\Base\\Fields\\Radio',
                 'live' => true,
                 'options' => [
@@ -151,34 +151,48 @@ class Settings extends Component
                 ],
                 'slug' => 'sidebar-size',
                 'style' => [
-                    'width' => '25',
+                    'width' => '33',
                 ],
             ],
             [
-                'name' => 'Sidebar',
+                'name' => 'Sidebar color',
                 'type' => 'Aura\\Base\\Fields\\Radio',
                 'live' => true,
                 'options' => [
-                    [
-                        'key' => 'primary',
-                        'value' => 'Primary',
-                    ],
-                    [
-                        'key' => 'light',
-                        'value' => 'Light',
-                    ],
-                    [
-                        'key' => 'dark',
-                        'value' => 'Dark',
-                    ],
+                    ['key' => 'primary', 'value' => 'Primary', 'preview' => static::sidebarSample('primary', false)],
+                    ['key' => 'light', 'value' => 'Light', 'preview' => static::sidebarSample('light', false)],
+                    ['key' => 'dark', 'value' => 'Dark', 'preview' => static::sidebarSample('dark', false)],
                 ],
                 'slug' => 'sidebar-type',
                 'style' => [
-                    'width' => '25',
+                    'width' => '33',
                 ],
             ],
             [
-                'name' => 'Dark mode',
+                'name' => 'Sidebar color (dark mode)',
+                'type' => 'Aura\\Base\\Fields\\Radio',
+                'live' => true,
+                'options' => [
+                    ['key' => 'primary', 'value' => 'Primary', 'preview' => static::sidebarSample('primary', true)],
+                    ['key' => 'light', 'value' => 'Light', 'preview' => static::sidebarSample('light', true)],
+                    ['key' => 'dark', 'value' => 'Dark', 'preview' => static::sidebarSample('dark', true)],
+                ],
+                'slug' => 'sidebar-darkmode-type',
+                'style' => [
+                    'width' => '33',
+                ],
+            ],
+            // One Theme card: color mode and both palettes side by side, then the custom color groups of the one set to Custom.
+            [
+                'type' => 'Aura\\Base\\Fields\\Panel',
+                'name' => 'Theme',
+                'slug' => 'panel-theme-primary',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'name' => 'Color mode',
                 'live' => true,
                 'type' => 'Aura\\Base\\Fields\\Radio',
                 'options' => [
@@ -197,92 +211,7 @@ class Settings extends Component
                 ],
                 'slug' => 'darkmode-type',
                 'style' => [
-                    'width' => '25',
-                ],
-            ],
-
-            [
-                'name' => 'Sidebar (dark mode)',
-                'type' => 'Aura\\Base\\Fields\\Radio',
-                'live' => true,
-                'options' => [
-                    [
-                        'key' => 'primary',
-                        'value' => 'Primary',
-                    ],
-                    [
-                        'key' => 'light',
-                        'value' => 'Light',
-                    ],
-                    [
-                        'key' => 'dark',
-                        'value' => 'Dark',
-                    ],
-                ],
-                'slug' => 'sidebar-darkmode-type',
-                'style' => [
-                    'width' => '25',
-                ],
-            ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Panel',
-                'name' => 'Advanced appearance',
-                'slug' => 'panel-theme-advanced',
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
-            [
-                'name' => 'Interface density',
-                'type' => 'Aura\\Base\\Fields\\Radio',
-                'live' => true,
-                'options' => [
-                    [
-                        'key' => 'comfortable',
-                        'value' => 'Comfortable',
-                    ],
-                    [
-                        'key' => 'compact',
-                        'value' => 'Compact',
-                    ],
-                ],
-                'slug' => 'interface-density',
-                'default' => 'comfortable',
-                'style' => [
-                    'width' => '50',
-                ],
-            ],
-            [
-                'name' => 'Corner radius',
-                'type' => 'Aura\\Base\\Fields\\Radio',
-                'live' => true,
-                'options' => [
-                    [
-                        'key' => 'rounded',
-                        'value' => 'Rounded',
-                    ],
-                    [
-                        'key' => 'subtle',
-                        'value' => 'Subtle',
-                    ],
-                    [
-                        'key' => 'square',
-                        'value' => 'Square',
-                    ],
-                ],
-                'slug' => 'corner-radius',
-                'default' => 'rounded',
-                'style' => [
-                    'width' => '50',
-                ],
-            ],
-            // One Theme card: both palettes side by side, then the custom color groups of the one set to Custom.
-            [
-                'type' => 'Aura\\Base\\Fields\\Panel',
-                'name' => 'Theme',
-                'slug' => 'panel-theme-primary',
-                'style' => [
-                    'width' => '100',
+                    'width' => '33',
                 ],
             ],
 
@@ -334,9 +263,10 @@ class Settings extends Component
                     'custom' => 'Custom',
                 ],
                 'slug' => 'color-palette',
+                'swatches' => static::paletteSwatches(),
                 'live' => true,
                 'style' => [
-                    'width' => '50',
+                    'width' => '33',
                 ],
             ],
             [
@@ -360,9 +290,10 @@ class Settings extends Component
                     'custom' => 'Custom',
                 ],
                 'slug' => 'gray-color-palette',
+                'swatches' => static::paletteSwatches(),
                 'live' => true,
                 'style' => [
-                    'width' => '50',
+                    'width' => '33',
                 ],
             ],
             [
@@ -582,6 +513,59 @@ class Settings extends Component
                 'slug' => 'gray-950',
             ],
 
+            // Advanced last: density, corner radius, then the expert toggle and its token groups.
+            [
+                'type' => 'Aura\\Base\\Fields\\Panel',
+                'name' => 'Advanced appearance',
+                'slug' => 'panel-theme-advanced',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'name' => 'Interface density',
+                'type' => 'Aura\\Base\\Fields\\Radio',
+                'live' => true,
+                'options' => [
+                    [
+                        'key' => 'comfortable',
+                        'value' => 'Comfortable',
+                    ],
+                    [
+                        'key' => 'compact',
+                        'value' => 'Compact',
+                    ],
+                ],
+                'slug' => 'interface-density',
+                'default' => 'comfortable',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'Corner radius',
+                'type' => 'Aura\\Base\\Fields\\Radio',
+                'live' => true,
+                'options' => [
+                    [
+                        'key' => 'rounded',
+                        'value' => 'Rounded',
+                    ],
+                    [
+                        'key' => 'subtle',
+                        'value' => 'Subtle',
+                    ],
+                    [
+                        'key' => 'square',
+                        'value' => 'Square',
+                    ],
+                ],
+                'slug' => 'corner-radius',
+                'default' => 'rounded',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
         ];
 
         $fields = collect($fields)->map(function (array $field): array {
@@ -689,6 +673,14 @@ class Settings extends Component
         $this->model->setAttribute('value', $stored);
     }
 
+    /** 16px swatch per palette in the palette selects: the palette's primary (600) color. */
+    public static function paletteSwatches(): array
+    {
+        return collect(ThemeTokens::paletteNames())
+            ->mapWithKeys(fn (string $palette) => [$palette => ThemeTokens::expertPaletteColors(['color-palette' => $palette])['primary']])
+            ->all();
+    }
+
     public function render()
     {
         return view('aura::livewire.settings')->layout('aura::components.layout.app');
@@ -747,6 +739,15 @@ class Settings extends Component
         return app(SettingsRegistry::class)->page($this->page) ?? abort(404);
     }
 
+    /**
+     * 56x40 picture of the sidebar color option beside its radio, on a light or dark page. A view and its data,
+     * not HTML: the fields are built before the aura view namespace exists (the radio field renders it).
+     */
+    public static function sidebarSample(string $type, bool $dark): array
+    {
+        return ['aura::settings.sidebar-sample', ['type' => $type, 'dark' => $dark]];
+    }
+
     public function updated(string $property, mixed $value): void
     {
         if ($this->page !== 'general') {
@@ -789,12 +790,6 @@ class Settings extends Component
     {
         $condition = static fn ($model, $form): bool => (bool) ($form['fields']['appearance-expert-mode'] ?? false);
         $fields = [
-            [
-                'type' => 'Aura\\Base\\Fields\\Panel',
-                'name' => 'Expert appearance',
-                'slug' => 'panel-theme-expert',
-                'style' => ['width' => '100'],
-            ],
             [
                 'name' => 'Expert mode',
                 'instructions' => 'Fine-tune shared design tokens. Disable this to use the selected presets unchanged.',
@@ -890,8 +885,8 @@ class Settings extends Component
     private static function expertDefaults(): array
     {
         return [
-            'expert-panel-radius' => 12,
-            'expert-control-radius' => 8,
+            'expert-panel-radius' => 8,
+            'expert-control-radius' => 6,
             'expert-panel-padding' => 20,
             'expert-panel-small-padding' => 8,
             'expert-layout-gap' => 24,
@@ -942,7 +937,7 @@ class Settings extends Component
         $radius = match ($this->form['fields']['corner-radius'] ?? 'rounded') {
             'square' => [0, 0],
             'subtle' => [6, 4],
-            default => [12, 8],
+            default => [8, 6],
         };
         [$values['expert-panel-radius'], $values['expert-control-radius']] = $radius;
 

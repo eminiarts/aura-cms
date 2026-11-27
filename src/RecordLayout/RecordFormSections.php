@@ -13,41 +13,46 @@ use Aura\Base\Fields\Panel;
  *
  * Forms with several panels, side-by-side panels or tabs are returned unchanged.
  * `card` marks a simple form of plain inputs without a panel: the page puts them in
- * the same card a panel would give them, so every form reads as one.
+ * the same card a panel would give them, so every form reads as one. `rail` marks a
+ * form with a narrow panel (RecordViewSections::isRailPanel()) beside other fields:
+ * the page shows that panel as a right rail and uses the full content width. Every
+ * other form keeps the readable width, tabbed forms included.
  */
 final class RecordFormSections
 {
     /**
      * @param  array<int|string, array<string, mixed>>  $fields  Output of Resource::editFields() / createFields().
-     * @return array{fields: array<int|string, array<string, mixed>>, single: bool, card: bool}
+     * @return array{fields: array<int|string, array<string, mixed>>, single: bool, card: bool, rail: bool}
      */
     public static function arrange(array $fields): array
     {
+        $rail = collect($fields)->contains(fn ($field) => RecordViewSections::isRailPanel($field))
+            && collect($fields)->contains(fn ($field) => ! RecordViewSections::isRailPanel($field));
         $panels = [];
 
         foreach ($fields as $key => $field) {
             if (($field['field'] ?? null) instanceof Panel) {
                 $panels[] = $key;
             } elseif (self::isGroup($field)) {
-                return ['fields' => $fields, 'single' => false, 'card' => false];
+                return ['fields' => $fields, 'single' => false, 'card' => false, 'rail' => $rail];
             }
         }
 
         if (count($panels) > 1) {
-            return ['fields' => $fields, 'single' => false, 'card' => false];
+            return ['fields' => $fields, 'single' => false, 'card' => false, 'rail' => $rail];
         }
 
         if ($panels !== []) {
             $panel = $fields[$panels[0]];
 
             if (count($fields) > 1 || (string) ($panel['style']['width'] ?? '100') !== '100') {
-                return ['fields' => $fields, 'single' => false, 'card' => false];
+                return ['fields' => $fields, 'single' => false, 'card' => false, 'rail' => $rail];
             }
 
             $fields[$panels[0]]['hide_title'] = true;
         }
 
-        return ['fields' => $fields, 'single' => $fields !== [], 'card' => $panels === [] && $fields !== []];
+        return ['fields' => $fields, 'single' => $fields !== [], 'card' => $panels === [] && $fields !== [], 'rail' => false];
     }
 
     /**

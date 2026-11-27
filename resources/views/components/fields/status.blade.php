@@ -1,7 +1,7 @@
 <x-aura::fields.wrapper :field="$field">
-    <div x-data="{ open: false, selected: @entangle('form.fields.' . $field['slug']) }" class="relative" wire:ignore>
+    <div x-data="{ open: false, selected: @if (optional($field)['live']) @entangle('form.fields.' . $field['slug']).live @else @entangle('form.fields.' . $field['slug']) @endif }" class="relative" wire:ignore>
         <button @click="open = !open" type="button"
-                class="flex relative items-center w-full h-9 bg-white dark:bg-gray-800 rounded-lg shadow-xs ring-1 ring-gray-950/10 hover:ring-gray-950/20 dark:ring-white/10 dark:hover:ring-white/20 pl-2 pr-9 text-left text-base cursor-default transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary-500 sm:text-sm">
+                class="aura-touch-control flex relative items-center w-full h-9 bg-white dark:bg-gray-950/40 rounded-lg shadow-xs ring-1 ring-gray-950/10 hover:ring-gray-950/20 dark:ring-white/15 dark:hover:ring-white/25 pl-2 pr-9 text-left text-base cursor-default transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary-500 sm:text-sm">
             <span class="flex items-center">
                 <span x-show="selected"
                       :class="selected ? $refs.listbox.querySelector(`[data-value='${selected}']`).getAttribute('data-color') : ''"
@@ -11,10 +11,8 @@
                 </span>
                 <span x-show="!selected" class="pl-1 text-gray-400 dark:text-gray-500">{{ __('Select :field…', ['field' => Str::lower(__($field['name']))]) }}</span>
             </span>
-            <span class="flex absolute inset-y-0 right-0 items-center pr-2.5 pointer-events-none">
-                <svg class="size-4 text-gray-400 dark:text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path d="M4.25 6.25 8 10l3.75-3.75" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
+            <span class="flex absolute inset-y-0 right-0 items-center pr-3 pointer-events-none">
+                <x-aura::icon.caret direction="down" class="size-4 text-gray-500 dark:text-gray-400" />
             </span>
         </button>
 

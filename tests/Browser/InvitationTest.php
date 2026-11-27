@@ -20,9 +20,9 @@ test('a super admin invites a new email; the signed link registers them into the
     // Open the invite modal from the Users index header and fill the real form.
     $page = visit('/admin/user');
 
-    $page->click('Invite')->wait(1);
+    $page->click('Invite user')->wait(1);
 
-    $page->assertSee('Invite User');
+    $page->assertSee('Send invite');
 
     $page->fill('#aura_field_email', 'newbie@example.com')
         ->select('#aura_field_role', (string) $role->id);

@@ -19,17 +19,26 @@
 ])
 
 
+@php
+    // The placeholder says what to do ("Select date"), not the label again; a field's own placeholder wins.
+    $pickerPlaceholder = optional($field)['placeholder'] ?? match ($type) {
+        'datetime' => __('Select date and time'),
+        'time' => __('Select time'),
+        default => __('Select date'),
+    };
+@endphp
+
 <x-aura::fields.wrapper :field="$field">
     @if ($native)
         @if ($live)
             <x-aura::input :type="$type" wire:model.live="form.fields.{{ optional($field)['slug'] }}"
                 error="form.fields.{{ optional($field)['slug'] }}"
-                placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"
+                placeholder="{{ $pickerPlaceholder }}"
                 autocomplete="{{ optional($field)['autocomplete'] ?? '' }}"></x-aura::input>
         @else
             <x-aura::input :type="$type" wire:model="form.fields.{{ optional($field)['slug'] }}"
                 error="form.fields.{{ optional($field)['slug'] }}"
-                placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"
+                placeholder="{{ $pickerPlaceholder }}"
                 autocomplete="{{ optional($field)['autocomplete'] ?? '' }}"></x-aura::input>
         @endif
     @else
@@ -85,10 +94,10 @@
             <input
                 @if ($live) wire:model.live="form.fields.{{ optional($field)['slug'] }}"
                 @else
-                placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"
+                placeholder="{{ $pickerPlaceholder }}"
                 wire:model="form.fields.{{ optional($field)['slug'] }}" @endif
                 x-ref="input" @if ($field['field']->isDisabled($this->form, $field)) disabled @endif
-                class="block py-1.5 pr-9 pl-3 w-full h-9 text-base text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition duration-150 appearance-none cursor-pointer sm:text-sm placeholder:text-gray-400 ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:ring-white/10 dark:hover:ring-white/20 dark:disabled:bg-gray-800/50" />
+                class="block py-1.5 pr-9 pl-3 w-full h-9 aura-touch-control text-base text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition duration-150 appearance-none cursor-pointer sm:text-sm placeholder:text-gray-400 ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:bg-gray-950/40 dark:text-gray-100 dark:placeholder:text-gray-400 dark:ring-white/15 dark:hover:ring-white/25 dark:disabled:bg-gray-800/50" />
         </div>
     @endif
 </x-aura::fields.wrapper>

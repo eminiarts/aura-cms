@@ -106,9 +106,7 @@
                     <div class="overflow-hidden p-0 mx-5 w-full max-w-2xl bg-white rounded-md shadow-xl dark:bg-gray-900 dark:border dark:border-gray-700" @click.away="closeSearch()">
                         <div class="flex items-center">
                             <div class="px-3">
-                                <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.25 19.25L15.5 15.5M4.75 11C4.75 7.54822 7.54822 4.75 11 4.75C14.4518 4.75 17.25 7.54822 17.25 11C17.25 14.4518 14.4518 17.25 11 17.25C7.54822 17.25 4.75 14.4518 4.75 11Z"></path>
-                                </svg>
+                                <x-aura::icon.search width="24" height="24" aria-hidden="true" />
                             </div>
 
                             <input x-model.debounce.300ms="search" x-ref="searchField" class="py-4 px-2 focus:outline-none relative block w-full rounded-none rounded-t-md bg-transparent focus:z-10 focus:border-0 focus:!border-none sm:text-sm" style="border: none; box-shadow: none;" aria-autocomplete="list" aria-labelledby="docsearch-label" id="docsearch-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="{{ __('Search') }}" maxlength="64" type="search"

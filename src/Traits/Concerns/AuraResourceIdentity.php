@@ -34,20 +34,30 @@ trait AuraResourceIdentity
      */
     public function avatarImageId(): int|string|null
     {
+        $slug = $this->avatarImageSlug();
+
+        if ($slug === null) {
+            return null;
+        }
+
+        $value = $this->{$slug} ?? null;
+
+        if (is_array($value)) {
+            $value = $value[0] ?? null;
+        }
+
+        return $value ?: null;
+    }
+
+    /** Slug of the Image field avatarImageId() reads (avatar, logo, image or photo), null without one. */
+    public function avatarImageSlug(): ?string
+    {
         foreach (['avatar', 'logo', 'image', 'photo'] as $slug) {
             $field = $this->fieldBySlug($slug);
 
-            if (! $field || ($field['type'] ?? null) !== 'Aura\\Base\\Fields\\Image') {
-                continue;
+            if ($field && ($field['type'] ?? null) === 'Aura\\Base\\Fields\\Image') {
+                return $slug;
             }
-
-            $value = $this->{$slug} ?? null;
-
-            if (is_array($value)) {
-                $value = $value[0] ?? null;
-            }
-
-            return $value ?: null;
         }
 
         return null;
@@ -83,27 +93,36 @@ trait AuraResourceIdentity
     }
 
     /**
-     * Tint derived from the title, so the same record always gets the same color. A trailing
-     * " (#id)" (Role, the generic fallback title) is left out, as in the initials: the tint
-     * follows the name, so "Admin (#1)" and "Admin (#2)" share it.
+     * The record's tint, the same wherever the record shows (header, rows, chips, its avatar
+     * field). A numeric key picks the tone by modulo, so consecutive records walk through the
+     * palette and a list shows an even mix; a hash of a short name list clusters. Records
+     * without a numeric key (unsaved, string keys) fall back to a hash of the title, a trailing
+     * " (#id)" left out as in the initials.
      */
     public function avatarTone(): string
     {
         $tones = static::avatarTones();
+        $key = $this->getKey();
+
+        if (is_int($key) || (is_string($key) && ctype_digit($key))) {
+            return $tones[(int) $key % count($tones)];
+        }
+
         $name = preg_replace('/\s*\(#\d+\)$/u', '', trim((string) $this->title()));
 
         return $tones[crc32(Str::lower(trim($name))) % count($tones)];
     }
 
     /**
-     * Tints an avatar may use: eight Tailwind families the status and category
-     * tags do not use (those hold blue, orange, teal, gray, yellow, green and
-     * red). The warm band stays with the tags, so an avatar never echoes the
-     * chip in its row. Red stays reserved for errors.
+     * Tints an avatar may use: eight muted Tailwind families the status and category
+     * tags do not use (those hold blue, orange, teal, gray, yellow, green and red), so an
+     * avatar never echoes the chip in its row. Red stays reserved for errors. The order
+     * alternates cool and warm hues, so neighbouring keys never get two near-identical
+     * tints. A resource or app returns its own list (['primary'] for one palette tint).
      */
     public static function avatarTones(): array
     {
-        return ['indigo', 'purple', 'fuchsia', 'pink', 'rose', 'violet', 'lime', 'cyan'];
+        return ['indigo', 'lime', 'pink', 'cyan', 'purple', 'rose', 'violet', 'fuchsia'];
     }
 
     public static function getName(): ?string
@@ -130,6 +149,21 @@ trait AuraResourceIdentity
         return static::$type;
     }
 
+    /**
+     * The page the list page sits under, as ['title' => …, 'href' => …], or null. A list page with a parent
+     * shows the trail "Parent / List"; without one it is a top-level page: no trail, the bookmark beside the title.
+     */
+    public function indexBreadcrumbParent(): ?array
+    {
+        return null;
+    }
+
+    /** Optional one-line description under the list page title. */
+    public function indexDescription(): ?string
+    {
+        return null;
+    }
+
     public function isAppResource()
     {
         return Str::startsWith(get_class($this), 'App');
@@ -138,6 +172,12 @@ trait AuraResourceIdentity
     public function isVendorResource()
     {
         return ! $this->isAppResource();
+    }
+
+    /** The resource in its generated permission names and group ("View Any Media files"). */
+    public function permissionName()
+    {
+        return $this->pluralName();
     }
 
     public function pluralName()

@@ -1,4 +1,5 @@
-@props(['cols' => null])
+{{-- bare: only a small "Documentation" label and the links, for a block that brings its own title (Setup). --}}
+@props(['cols' => null, 'bare' => false])
 
 @php
     $colSpan = match($cols) {
@@ -11,9 +12,13 @@
 
 {{-- Same three guides as before, as quiet rows; a small external-link mark says they leave the app. --}}
 <div {{ $attributes->merge(['class' => trim("{$colSpan} min-w-0")]) }} data-dashboard-docs>
-    <h2 class="pb-2 border-b border-gray-200 aura-section-title dark:border-white/10">{{ __('Documentation') }}</h2>
+    @if ($bare)
+        <p class="mt-5 mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">{{ __('Documentation') }}</p>
+    @else
+        <h2 class="pb-2 border-b border-gray-200 aura-section-title dark:border-white/10">{{ __('Documentation') }}</h2>
+    @endif
 
-    <div class="flex flex-col gap-0.5 mt-2 -mx-2">
+    <div @class(['flex flex-col gap-0.5 -mx-2', 'mt-2' => ! $bare])>
         @foreach ([
             ['title' => __('Getting started'), 'url' => 'https://aura-cms.com/docs/'],
             ['title' => __('Resources'), 'url' => 'https://aura-cms.com/docs/resources'],

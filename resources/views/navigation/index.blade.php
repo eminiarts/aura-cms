@@ -68,7 +68,7 @@
                     @else
                         @if(isset($resource['resource']))
                             @can('viewAny', app($resource['resource']))
-                                <x-aura::navigation.item :route="isset($resource['route']) ? $resource['route'] : '#'" :strict="false" :tooltip="__(isset($resource['name']) ? $resource['name'] : '')" :compact="$this->compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null">
+                                <x-aura::navigation.item :route="isset($resource['route']) ? $resource['route'] : '#'" :strict="false" :tooltip="__(isset($resource['name']) ? $resource['name'] : '')" :compact="$this->compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null" :activeRoutes="$resource['activeRoutes'] ?? []">
                                     <div class="aura-sidebar-icon">
                                         @if(isset($resource['icon']))
                                             {!! $resource['icon'] !!}
@@ -79,7 +79,7 @@
                             @endcan
                         @else
 
-                            <x-aura::navigation.item :route="isset($resource['route']) ? $resource['route'] : '#'" :strict="false" :tooltip="__(isset($resource['name']) ? $resource['name'] : '')" :compact="$this->compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null" :onclick="$resource['onclick'] ?? ''"
+                            <x-aura::navigation.item :route="isset($resource['route']) ? $resource['route'] : '#'" :strict="false" :tooltip="__(isset($resource['name']) ? $resource['name'] : '')" :compact="$this->compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null" :onclick="$resource['onclick'] ?? ''" :activeRoutes="$resource['activeRoutes'] ?? []"
 
                             >
                                 @if(isset($resource['icon']) && $resource['icon'] !== '')

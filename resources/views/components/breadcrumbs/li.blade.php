@@ -9,8 +9,8 @@
 
 @php
 // A quiet trail: 13px medium, links gray-500 (gray-900 on hover), the current page gray-700, so the
-// page title below stays the loudest line. Icons are 16px and take the text color; the chevron is
-// a 14px gray-300 separator. A passed iconClass still sizes an icon.
+// page title below stays the loudest line. Icons are 16px and take the text color; the separator is
+// a single leg of the Λ caret, 14px, gray-300. A passed iconClass still sizes an icon.
 $isSeparator = $icon === 'arrow-right';
 
 if (! $iconClass) {
@@ -18,6 +18,16 @@ if (! $iconClass) {
 }
 
 $iconWrapper = 'flex shrink-0 '.($isSeparator ? 'text-gray-300 dark:text-gray-600' : '');
+
+// The home crumb is one Λ of the wordmark, outlined like the auth panel's; with a custom logo it
+// would be a stranger's mark, so the dashboard icon stays.
+$apexHome = false;
+if ($icon === 'dashboard' && (string) $title === '') {
+    $themeSettings = app('aura')::getOption('settings') ?? [];
+    $apexHome = config('aura.views.logo') === 'aura::application-logo'
+        && blank($themeSettings['logo'] ?? null)
+        && blank($themeSettings['logo-darkmode'] ?? null);
+}
 
 // The trail's last titled link is the page's parent: the breadcrumbs wrapper (rendered after its
 // slot) turns it into the phone back link. The home icon has no title and never becomes the parent.
@@ -34,12 +44,26 @@ if ($href && (string) $title !== '') {
         @if ((string) $title === '')
             <span class="sr-only">{{ __('Go to home') }}</span>
         @endif
-        <x-aura::icon :icon="$icon" size="xs" :iconClass="$iconClass" :class="$iconWrapper" />
+        @if ($apexHome)
+            <x-aura::icon.apex-outline class="overflow-visible w-auto h-3.5 stroke-current [stroke-width:1.5]" data-breadcrumb-home />
+        @elseif ($isSeparator)
+            <span class="{{ $iconWrapper }}" aria-hidden="true">
+                <svg class="{{ $iconClass }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt"><path d="M5.5 12.3 10.5 3.7" /></svg>
+            </span>
+        @else
+            <x-aura::icon :icon="$icon" size="xs" :iconClass="$iconClass" :class="$iconWrapper" />
+        @endif
         {!! e($title, false) !!}
     </a>
     @else
     <div class="inline-flex items-center gap-x-1.5">
-        <x-aura::icon :icon="$icon" size="xs" :iconClass="$iconClass" :class="$iconWrapper" />
+        @if ($isSeparator)
+            <span class="{{ $iconWrapper }}" aria-hidden="true">
+                <svg class="{{ $iconClass }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt"><path d="M5.5 12.3 10.5 3.7" /></svg>
+            </span>
+        @else
+            <x-aura::icon :icon="$icon" size="xs" :iconClass="$iconClass" :class="$iconWrapper" />
+        @endif
         <span class="text-[13px] font-medium leading-5 text-gray-700 dark:text-gray-300">{!! e($title, false) !!}</span>
     </div>
     @endif

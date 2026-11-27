@@ -13,6 +13,36 @@ class Number extends Field
     public $view = 'aura::fields.view-value';
 
     /**
+     * Mark the unit of a displayed value ("CHF" in "CHF 84,500") as .aura-num-unit, for views that show
+     * the value as a figure (table cell, record fact, view value). display() stays plain text: it feeds
+     * exports, search and titles too. Leaves anything that does not start or end with the unit alone.
+     *
+     * @param  array<string, mixed>  $field
+     */
+    /**
+     * A large figure shortened for a narrow slot (a record's facts strip on phones): "CHF 84.5K",
+     * "CHF 1.2M", with the field's unit as display() frames it, escaped. Null below 10,000 or for
+     * a non-number, where the full figure fits.
+     */
+    public static function compactDisplay(array $field, mixed $value): ?string
+    {
+        if (! is_numeric($value) || abs((float) $value) < 10_000) {
+            return null;
+        }
+
+        $number = (float) $value;
+        [$divisor, $letter] = abs($number) >= 1_000_000 ? [1_000_000, 'M'] : [1_000, 'K'];
+        $short = rtrim(rtrim(number_format($number / $divisor, 1, $field['decimal_separator'] ?? '.', ''), '0'), '.,').$letter;
+
+        $prefix = (string) ($field['prefix'] ?? '');
+        $suffix = (string) ($field['suffix'] ?? '');
+
+        return e(($prefix !== '' ? $prefix.(preg_match('/\pL$/u', $prefix) ? "\u{00A0}" : '') : '')
+            .$short
+            .($suffix !== '' ? (preg_match('/^\pL/u', $suffix) ? "\u{00A0}" : '').$suffix : ''));
+    }
+
+    /**
      * Optional display formatting. Only applies when the field sets
      * `decimals` and/or `thousands_separator` (plus `decimal_separator`),
      * otherwise the stored value is shown as before. With
@@ -192,6 +222,26 @@ class Number extends Field
     public function set($post, $field, $value)
     {
         return $value;
+    }
+
+    public static function unitMarkup(array $field, mixed $display): mixed
+    {
+        if (! is_string($display) || $display === '') {
+            return $display;
+        }
+
+        $prefix = (string) ($field['prefix'] ?? '');
+        $suffix = (string) ($field['suffix'] ?? '');
+
+        if ($prefix !== '' && str_starts_with($display, $prefix)) {
+            $display = '<span class="aura-num-unit">'.$prefix.'</span>'.substr($display, strlen($prefix));
+        }
+
+        if ($suffix !== '' && str_ends_with($display, $suffix)) {
+            $display = substr($display, 0, -strlen($suffix)).'<span class="aura-num-unit">'.$suffix.'</span>';
+        }
+
+        return $display;
     }
 
     public function value($value)

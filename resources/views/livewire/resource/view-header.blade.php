@@ -1,9 +1,18 @@
 @php
     // Key fields promoted under the title: a number large and tabular, a status as its tag.
     $facts = \Aura\Base\RecordLayout\RecordViewSections::header($this->viewFields, $model);
+    // Computed facts (a company's open pipeline) from the resource's optional recordHighlights(): each
+    // ['label' => …, 'value' => string or Htmlable, 'short' => optional phone value], after the field facts, three facts in all.
+    $highlights = method_exists($model, 'recordHighlights') ? array_values(array_filter((array) $model->recordHighlights(), fn ($item) => is_array($item) && isset($item['label']))) : [];
+    $highlights = array_slice($highlights, 0, max(0, 3 - count($facts)));
+    $recordTemplate ??= false;
     $canEdit = Route::has('aura.' . $slug . '.edit') && auth()->user()?->can('update', $model);
+    // The actions menu sits in the title row (a 36px "more" button beside the pencil on phones, as on the
+    // edit header); a resource that shows its actions as buttons keeps them in the action row.
+    $actionButtons = count($this->actions) && $this->model::$showActionsAsButtons;
+    $actionsMenu = count($this->actions) && ! $actionButtons;
     // Without other actions the phone action row would only hold Edit, which moves into the title row.
-    $hasPhoneActions = $recordLayout->panels(\Aura\Base\RecordLayout\RecordLayoutRegion::HeaderActions) !== [] || count($this->actions);
+    $hasPhoneActions = $recordLayout->panels(\Aura\Base\RecordLayout\RecordLayoutRegion::HeaderActions) !== [] || $actionButtons;
 @endphp
 
 {{-- The same spacing as the edit and create headers, so avatar, eyebrow and title stay put when switching. --}}
@@ -17,16 +26,25 @@
             {{-- The record is the subject of the page: its avatar, resource name as eyebrow, record title as H1. --}}
             @if ($model->avatarShape())
                 <x-aura::avatar :record="$model" size="lg" />
+            @elseif ($recordTemplate && filled($model->getIcon()))
+                {{-- The record template keeps the 40px tile for records without an avatar: the resource icon. --}}
+                <span class="aura-record-icon-tile" aria-hidden="true">{!! $model->getIcon() !!}</span>
             @endif
             <div class="min-w-0">
                 <p class="aura-eyebrow">{{ __($model->singularName()) }}</p>
                 <h1 class="mt-0.5 break-words aura-page-title line-clamp-2 sm:line-clamp-1" title="{{ $model->title() }}">{{ $model->title() }}</h1>
             </div>
 
+            @if ($actionsMenu)
+                <div class="ml-auto shrink-0 sm:-mr-2 aura-record-title-action">
+                    @include('aura::livewire.resource.actions', ['iconTriggerOnPhones' => true])
+                </div>
+            @endif
+
             {{-- Phones: Edit is a 36px pencil in the title row, so the header has no action band of its own. --}}
             @if ($canEdit)
                 <x-aura::button.border size="icon" href="{{ route('aura.' . $slug . '.edit', $model->id) }}"
-                    class="ml-auto shrink-0 sm:hidden" aria-label="{{ __('Edit') }}"
+                    class="shrink-0 sm:hidden aura-record-title-action {{ $actionsMenu ? '' : 'ml-auto' }}" aria-label="{{ __('Edit') }}"
                     x-data x-init="tippy($el, { content: @js(__('Edit')), arrow: false, theme: 'aura', placement: 'bottom', offset: [0, 8] })">
                     <x-aura::icon.edit class="size-4" aria-hidden="true" />
                 </x-aura::button.border>
@@ -46,7 +64,9 @@
                 </div>
             @endif
 
-            @include('aura::livewire.resource.actions')
+            @if ($actionButtons)
+                @include('aura::livewire.resource.actions')
+            @endif
 
             {{-- A reading page has no primary action: Edit is a secondary button with its pencil. --}}
             @if ($canEdit)
@@ -60,7 +80,7 @@
         </div>
     </div>
 
-    @if ($facts !== [])
+    @if ($facts !== [] || $highlights !== [])
         <div class="aura-record-facts sm:mt-5" data-record-facts>
             @foreach ($facts as $fact)
                 @php
@@ -83,10 +103,44 @@
                     @elseif ($isEmpty)
                         <span class="aura-record-fact-value text-gray-400 dark:text-gray-500">–</span>
                     @elseif ($instance instanceof \Aura\Base\Fields\Number)
-                        <span class="aura-record-fact-number">{!! $value !!}</span>
+                        @php
+                            $compact = $recordTemplate ? \Aura\Base\Fields\Number::compactDisplay($fact, $model->{$fact['slug']}) : null;
+                        @endphp
+                        <span class="aura-record-fact-number">
+                            @if ($compact)
+                                <span class="max-sm:hidden">{!! \Aura\Base\Fields\Number::unitMarkup($fact, $value) !!}</span><span class="sm:hidden" title="{{ html_entity_decode(strip_tags((string) $value)) }}">{!! \Aura\Base\Fields\Number::unitMarkup($fact, $compact) !!}</span>
+                            @else
+                                {!! \Aura\Base\Fields\Number::unitMarkup($fact, $value) !!}
+                            @endif
+                        </span>
                     @else
-                        <span class="aura-record-fact-value">{!! $value !!}</span>
+                        @php
+                            // Phones: a date of this year drops the year in the facts strip ("Nov 27").
+                            $shortDate = null;
+                            if ($recordTemplate && ($instance instanceof \Aura\Base\Fields\Date || $instance instanceof \Aura\Base\Fields\Datetime) && filled($model->{$fact['slug']})) {
+                                try {
+                                    $parsedDate = \Illuminate\Support\Carbon::parse($model->{$fact['slug']});
+                                    $shortDate = $parsedDate->year === now()->year ? $parsedDate->format('M j') : null;
+                                } catch (\Throwable $e) {
+                                    $shortDate = null;
+                                }
+                            }
+                        @endphp
+                        <span @class(['aura-record-fact-value', 'aura-record-fact-text' => $recordTemplate && ! ($instance instanceof \Aura\Base\Fields\BelongsTo)])>@if ($shortDate)<span class="max-sm:hidden">{!! $value !!}</span><span class="sm:hidden">{{ $shortDate }}</span>@else{!! $value !!}@endif</span>
                     @endif
+                </div>
+            @endforeach
+            @foreach ($highlights as $highlight)
+                <div class="aura-record-fact" data-record-highlight>
+                    <span class="aura-eyebrow">{{ $highlight['label'] }}</span>
+                    {{-- An optional 'short' value replaces it on phones, where three facts share one row ("CHF 84.5K"). --}}
+                    <span class="aura-record-fact-number">
+                        @if (filled($highlight['short'] ?? null))
+                            <span class="max-sm:hidden">{{ $highlight['value'] ?? '–' }}</span><span class="sm:hidden">{{ $highlight['short'] }}</span>
+                        @else
+                            {{ $highlight['value'] ?? '–' }}
+                        @endif
+                    </span>
                 </div>
             @endforeach
         </div>

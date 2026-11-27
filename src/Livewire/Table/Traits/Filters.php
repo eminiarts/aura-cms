@@ -108,7 +108,8 @@ trait Filters
     #[Computed]
     public function fieldsForFilter()
     {
-        return $this->fields->mapWithKeys(function ($field) {
+        // A computed list value (a count or sum from indexQuery()) has no column to filter on.
+        return $this->fields->reject(fn ($field) => ! empty($field['computed']))->mapWithKeys(function ($field) {
             $fieldInstance = app($field['type']);
 
             return [

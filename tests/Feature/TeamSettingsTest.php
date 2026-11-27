@@ -57,13 +57,13 @@ test('appearance choices preview on the full page and can be discarded', functio
 
 test('sidebar darkmode choices stay available for every page color scheme', function () {
     Livewire::test(Settings::class)
-        ->assertSee('Sidebar (dark mode)')
+        ->assertSee('Sidebar color (dark mode)')
         ->set('form.fields.darkmode-type', 'dark')
-        ->assertSee('Sidebar (dark mode)')
+        ->assertSee('Sidebar color (dark mode)')
         ->set('form.fields.sidebar-darkmode-type', 'primary')
         ->assertSeeHtml('data-preview-sidebar-darkmode-type="primary"')
         ->set('form.fields.darkmode-type', 'light')
-        ->assertSee('Sidebar (dark mode)');
+        ->assertSee('Sidebar color (dark mode)');
 });
 
 test('saved appearance choices persist', function () {
@@ -187,7 +187,7 @@ test('expert appearance validates colors and restores defaults', function () {
         ->set('form.fields.expert-panel-radius', 0)
         ->call('restoreExpertDefaults')
         ->assertSet('form.fields.expert-light-sidebar-background', '#1643d7')
-        ->assertSet('form.fields.expert-panel-radius', 12);
+        ->assertSet('form.fields.expert-panel-radius', 8);
 });
 
 test('expert appearance inherits the selected presets when it is enabled', function () {

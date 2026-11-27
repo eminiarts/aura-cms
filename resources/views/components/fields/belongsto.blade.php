@@ -111,14 +111,12 @@
                 @endphp
                 <button x-listbox:button :disabled="disabled"
                     x-ref="button"
-                    class="flex relative gap-2 justify-between items-center px-3 w-full h-9 text-base text-left text-gray-900 bg-white rounded-lg ring-1 shadow-xs transition duration-150 appearance-none sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 dark:hover:ring-white/20 dark:disabled:bg-gray-800/50 dark:disabled:text-gray-500 z-[1]">
+                    class="aura-touch-control flex relative gap-2 justify-between items-center px-3 w-full h-9 text-base text-left text-gray-900 bg-white rounded-lg ring-1 shadow-xs transition duration-150 appearance-none sm:text-sm ring-gray-950/10 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:bg-gray-950/40 dark:text-gray-100 dark:ring-white/15 dark:hover:ring-white/25 dark:disabled:bg-gray-800/50 dark:disabled:text-gray-500 z-[1]">
                     <span x-text="value ? findItem(value) : @js($placeholder)"
                         :class="value ? '' : 'text-gray-400 dark:text-gray-500'"
                         class="truncate"></span>
 
-                    <svg class="size-4 shrink-0 text-gray-400 dark:text-gray-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                        <path d="M4.25 6.25 8 10l3.75-3.75" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
+                    <x-aura::icon.caret direction="down" class="size-4 shrink-0 text-gray-500 dark:text-gray-400" />
                 </button>
 
                 <ul x-listbox:options x-transition.origin.top.right x-cloak

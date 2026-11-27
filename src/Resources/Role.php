@@ -93,6 +93,12 @@ class Role extends Resource
      * writes (which fire no model events) so a Shadow or catalog role created or
      * deleted mid-request takes effect on the next permission check.
      */
+    // A role is a set of permissions, not an entity: no initials tile.
+    public function avatarShape(): ?string
+    {
+        return null;
+    }
+
     public static function bumpCatalogVersion(): void
     {
         static::$catalogVersion++;
@@ -256,6 +262,17 @@ class Role extends Resource
                 ],
             ],
             [
+                // List only: the members holding the role in this team, counted in indexQuery().
+                'name' => 'Users',
+                'slug' => 'users_count',
+                'computed' => true,
+                'type' => 'Aura\\Base\\Fields\\Number',
+                'on_index' => true,
+                'on_forms' => false,
+                'on_view' => false,
+                'searchable' => false,
+            ],
+            [
                 'name' => 'Description',
                 'slug' => 'description',
                 'type' => 'Aura\\Base\\Fields\\Textarea',
@@ -268,7 +285,7 @@ class Role extends Resource
             ],
             [
                 // Permissions sit in this panel rather than their own: the
-                // Admin toggle hides them, which would leave an empty panel.
+                // Full access toggle hides them, which would leave an empty panel.
                 'name' => 'Access',
                 'slug' => 'role-access',
                 'type' => 'Aura\\Base\\Fields\\Panel',
@@ -277,10 +294,11 @@ class Role extends Resource
                 ],
             ],
             [
-                'name' => 'Admin',
+                // Label only; the stored slug stays super_admin.
+                'name' => 'Full access',
                 'slug' => 'super_admin',
                 'type' => 'Aura\Base\Fields\Boolean',
-                'instructions' => 'Admins have access to all permissions and can manage other users.',
+                'instructions' => 'Grants every permission in this team.',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -297,7 +315,7 @@ class Role extends Resource
                 'name' => 'Global role',
                 'slug' => 'is_global',
                 'type' => 'Aura\\Base\\Fields\\Boolean',
-                'instructions' => 'Available in every team as part of the shared Role Catalog. Only a Global Admin can define global roles.',
+                'instructions' => 'Available in every team as part of the shared role catalog. Only a global admin can define global roles.',
                 'validation' => '',
                 'default' => false,
                 'on_index' => false,
@@ -373,10 +391,14 @@ class Role extends Resource
     public function indexQuery($query, $table = null)
     {
         if (config('aura.teams')) {
-            $query->shadowResolved(static::currentTeamIdForResolution());
+            $teamId = static::currentTeamIdForResolution();
+            $query->shadowResolved($teamId);
+
+            // The Users column: members holding the role in this team, one subquery for the page.
+            return $query->withCount(['users as users_count' => fn ($users) => $users->where('user_role.team_id', $teamId)]);
         }
 
-        return $query;
+        return $query->withCount('users as users_count');
     }
 
     /**
@@ -506,14 +528,18 @@ class Role extends Resource
             ->withTimestamps();
     }
 
+    /**
+     * The role's name, as in breadcrumbs, headers and role pickers. Lists that can hold two roles of one
+     * name (a Global Role and a Team Role) tell them apart by the Global badge, not by the id.
+     */
     public function title()
     {
         if (isset($this->title)) {
-            return $this->title." (#{$this->id})";
+            return $this->title;
         } elseif (isset($this->name)) {
-            return $this->name." (#{$this->id})";
+            return $this->name;
         } else {
-            return "Role (#{$this->id})";
+            return __('Role');
         }
     }
 

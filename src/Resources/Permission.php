@@ -4,6 +4,7 @@ namespace Aura\Base\Resources;
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resource;
+use Illuminate\Support\Str;
 
 class Permission extends Resource
 {
@@ -33,6 +34,60 @@ class Permission extends Resource
         return null;
     }
 
+    /** The group as the list's tag (escaped: views print display values raw). */
+    public static function displayGroupField($value, self $model): string
+    {
+        if (blank($value)) {
+            return '';
+        }
+
+        return '<span class="aura-tag">'.e(static::displayLabel($value)).'</span>';
+    }
+
+    /**
+     * A generated permission name or group in sentence case: "View Any Media Library" is "View all media
+     * library", "Media-Folders" is "Media folders". Words in capitals (API) keep them. The policy terms of
+     * the generated names read as what they grant (GenerateResourcePermissions, ResourcePolicy): viewAny is
+     * "View all …", forceDelete "Permanently delete …", and scope, which limits view, update and delete to
+     * the records the user owns (user_id), "Limit … to own records". Display only.
+     */
+    public static function displayLabel(?string $value): string
+    {
+        $words = preg_split('/[\s_-]+/u', trim((string) $value), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        $words = array_map(
+            fn (string $word) => preg_match('/^\p{Lu}{2,}$/u', $word) ? $word : Str::lower($word),
+            $words,
+        );
+
+        $label = implode(' ', $words);
+
+        $label = match (true) {
+            str_starts_with($label, 'view any ') => 'view all '.substr($label, 9),
+            str_starts_with($label, 'force delete ') => 'permanently delete '.substr($label, 13),
+            str_starts_with($label, 'scope ') => 'limit '.substr($label, 6).' to own records',
+            default => $label,
+        };
+
+        return Str::ucfirst($label);
+    }
+
+    /** Escaped: views print display values raw. */
+    public static function displayNameField($value, self $model): string
+    {
+        return e(static::displayLabel($value));
+    }
+
+    /** The slug is a key, so it reads as one: 12px mono (escaped: views print display values raw). */
+    public static function displaySlugField($value, self $model): string
+    {
+        if (blank($value)) {
+            return '';
+        }
+
+        return '<span class="font-mono text-xs text-gray-600 dark:text-gray-300">'.e($value).'</span>';
+    }
+
     public static function getFields(): array
     {
         return [
@@ -42,6 +97,8 @@ class Permission extends Resource
                 'slug' => 'name',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
+                // Shown in sentence case ("Create media library"); the stored name stays as generated.
+                'display' => [self::class, 'displayNameField'],
                 'conditional_logic' => [],
                 'wrapper' => '',
                 'on_index' => true,
@@ -52,6 +109,7 @@ class Permission extends Resource
                 'name' => 'Slug',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
+                'display' => [self::class, 'displaySlugField'],
                 'on_index' => true,
                 'slug' => 'slug',
                 'style' => [
@@ -74,6 +132,7 @@ class Permission extends Resource
                 'slug' => 'group',
                 'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => '',
+                'display' => [self::class, 'displayGroupField'],
                 'conditional_logic' => [],
                 'options' => [
                     'Invoice' => 'Invoice',

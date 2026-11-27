@@ -229,7 +229,7 @@ describe('Team Resource View', function () {
 
         // Check tab structure
         expect($component->viewFields[0]['fields'])->toHaveCount(3);
-        expect($component->viewFields[0]['fields'][0]['name'])->toBe('Team');
+        expect($component->viewFields[0]['fields'][0]['name'])->toBe('Details');
         expect($component->viewFields[0]['fields'][1]['name'])->toBe('Users');
         expect($component->viewFields[0]['fields'][2]['name'])->toBe('Invitations');
 

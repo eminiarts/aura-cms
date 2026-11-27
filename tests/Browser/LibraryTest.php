@@ -65,10 +65,11 @@ test('view switching, search, and the type and date filters narrow the library',
 
     $page->click('All')->wait(2);
 
-    // Month dropdown: pick the month of the backdated upload.
+    // Upload date sits in the Filters panel: pick the month of the backdated upload.
     $month = Carbon::now()->subMonths(2)->format('Y-m');
 
-    $page->select('[data-month-filter]', $month)->wait(2);
+    $page->click('.toggleFilters button')->wait(1);
+    $page->select('#media-month-filter', $month)->wait(2);
 
     $page->assertSee('vintage.jpg')->assertDontSee('sunset.jpg');
 });
@@ -126,7 +127,7 @@ test('bulk selection deletes multiple attachments', function () {
 
     // The selection lives client-side until the next Livewire request —
     // the bulk action itself carries it to the server.
-    $page->click('Actions')->wait(1);
+    $page->click('.bulk-actions button[aria-label="Actions"]')->wait(1);
     $page->click('Delete')->wait(2);
 
     expect(Attachment::query()->find($first->id))->toBeNull()

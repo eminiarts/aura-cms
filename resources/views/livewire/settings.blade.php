@@ -1,22 +1,28 @@
-<div>
+{{-- Settings are a form: one readable, left-aligned column (max-w-3xl) as on the resource forms, breadcrumb
+     and header included, so Save ends at the form's right edge and short controls do not stretch into
+     half-empty cards. --}}
+<div class="max-w-3xl" data-form-body>
     @section('title', 'Edit Settings')
 
-    {{-- Page header as on index pages: the trail (a back link on phones), then title, description and actions. --}}
-    <x-aura::breadcrumbs>
-        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
-        @if($page === 'general')
-            <x-aura::breadcrumbs.li :title="__('Settings')" />
-        @else
+    {{-- Page header as on index pages. General settings are a top-level page: no trail, the bookmark beside
+         the title. The other settings pages read "Settings / AI" (a back link to Settings on phones). --}}
+    @if($page !== 'general')
+        <x-aura::breadcrumbs>
+            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
             <x-aura::breadcrumbs.li :href="route('aura.settings')" :title="__('Settings')" />
             <x-aura::breadcrumbs.li :title="__($this->settingsPage()->title)" />
-        @endif
-    </x-aura::breadcrumbs>
+        </x-aura::breadcrumbs>
+    @endif
 
-    <div class="flex gap-4 justify-between items-center mt-1 mb-6 sm:mt-6">
-        <div class="min-w-0">
+    @php
+        $settingsDescription = $this->settingsPage()->description;
+    @endphp
+    {{-- The title sits in the 54px band every page title shares; a description goes under the row. --}}
+    <div @class(['flex gap-4 justify-between items-center mt-1 sm:min-h-[3.375rem] sm:items-end', 'sm:mt-0' => $page === 'general', 'sm:mt-8' => $page !== 'general', 'mb-6 sm:mb-8' => blank($settingsDescription)])>
+        <div class="flex gap-1 items-center min-w-0">
             <h1 class="aura-page-title">{{ $page === 'general' ? __('Settings') : __($this->settingsPage()->title) }}</h1>
-            @if(filled($this->settingsPage()->description))
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __($this->settingsPage()->description) }}</p>
+            @if($page === 'general')
+                <x-aura::page-bookmark />
             @endif
         </div>
 
@@ -35,15 +41,22 @@
                         {{ __('Discard changes') }}
                     </x-aura::button.border>
                 @endif
-                <x-aura::button wire:click="save">
-                    <div wire:loading wire:target="save">
-                        <x-aura::icon.loading  />
-                    </div>
-                    {{ __('Save') }}
-                </x-aura::button>
+                {{-- Phones save from the bar on the bottom edge, as on resource forms. --}}
+                <div class="max-sm:hidden">
+                    <x-aura::button wire:click="save">
+                        <div wire:loading wire:target="save">
+                            <x-aura::icon.loading  />
+                        </div>
+                        {{ __('Save') }}
+                    </x-aura::button>
+                </div>
             </div>
         @endif
     </div>
+
+    @if(filled($settingsDescription))
+        <p class="mt-1 mb-6 text-sm text-gray-500 sm:mb-8 dark:text-gray-400" data-page-description>{{ __($settingsDescription) }}</p>
+    @endif
 
     @if($page === 'general')
         @php
@@ -156,5 +169,9 @@
             @endcheckCondition
         @endforeach
     </div>
+
+    @if($canUpdate)
+        @include('aura::livewire.resource.form-bar', ['cancelUrl' => null])
+    @endif
 
 </div>

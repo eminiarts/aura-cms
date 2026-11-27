@@ -1,7 +1,7 @@
 <div class="">
 
     <form wire:submit.prevent="save">
-        <x-aura::dialog.title>{{ __('Invite User') }}</x-aura::dialog.title>
+        <x-aura::dialog.title>{{ __('Invite user') }}</x-aura::dialog.title>
 
         <div class="flex flex-wrap">
 
@@ -26,7 +26,7 @@
                 <div wire:loading wire:target="save">
                     <x-aura::icon.loading />
                 </div>
-                {{ __('Invite') }}
+                {{ __('Send invite') }}
             </x-aura::button.primary>
         </x-aura::dialog.footer>
 

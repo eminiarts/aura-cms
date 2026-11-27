@@ -8,7 +8,9 @@
   'badge' => false,
   'badgeColor' => 'primary',
   'onclick' => false,
-  'href' => null
+  'href' => null,
+  // Route name patterns of other pages that belong to this item (a plugin page that replaces a resource).
+  'activeRoutes' => [],
 ])
 
 @php
@@ -32,7 +34,8 @@
         || $currentUrl === Request::getSchemeAndHttpHost().$target
     );
 
-    $isActive = $matchesCurrent($route) || $matchesCurrent($href);
+    $isActive = $matchesCurrent($route) || $matchesCurrent($href)
+        || ($currentRouteName && collect($activeRoutes)->contains(fn ($pattern) => is_string($pattern) && Str::is($pattern, $currentRouteName)));
 
     // A resource's view, edit and create pages belong to its index item.
     if (! $isActive && $currentRouteName && preg_match('/^(.+)\.(view|edit|create)$/', $currentRouteName, $routeMatch) && Route::has($routeMatch[1].'.index')) {

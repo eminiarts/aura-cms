@@ -1,10 +1,10 @@
 @php($chartHeight = $compact ? 40 : 80)
 {{-- Compact (index strip): name and total on the left, a 40px chart filling the rest of the cell. --}}
-<div class="{{ $compact ? 'flex flex-col justify-center px-4 py-3 h-full min-w-0' : 'overflow-hidden h-full aura-card' }}" wire:key="sparkline-area-{{ $widget['slug'] ?? '' }}" @if (!$isCached) wire:init="loadWidget" @endif>
+<div class="{{ $compact ? 'flex flex-col justify-center px-3 py-3 h-full min-w-0 sm:px-4' : 'overflow-hidden h-full aura-card' }}" wire:key="sparkline-area-{{ $widget['slug'] ?? '' }}" @if (!$isCached) wire:init="loadWidget" @endif>
     @if($loaded)
     <div class="{{ $compact ? 'flex gap-4 items-center' : 'flex flex-col justify-between h-full' }}">
         <div class="{{ $compact ? 'min-w-0 sm:shrink-0' : 'flex gap-2 justify-between items-center' }}">
-            <span class="{{ $compact ? 'block text-xs' : 'text-sm' }} font-medium text-gray-500 truncate dark:text-gray-400">{{ __($widget['name']) }}</span>
+            <span class="{{ $compact ? 'block text-xs' : 'text-sm' }} font-medium text-gray-500 truncate dark:text-gray-400">{{ $this->title() }}</span>
             <span class="{{ $compact ? 'block mt-1 text-xl tracking-tight tabular-nums' : 'text-sm' }} font-semibold text-gray-900 dark:text-white">{{ array_sum($this->values['current']) }}</span>
         </div>
 

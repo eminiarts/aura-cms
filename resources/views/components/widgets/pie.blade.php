@@ -2,7 +2,7 @@
     @if($loaded)
     <div>
         <div class="flex gap-2 justify-between items-center mb-4">
-            <span class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">{{ __($widget['name']) }}</span>
+            <span class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">{{ $this->title() }}</span>
         </div>
 
         <div class="w-full">

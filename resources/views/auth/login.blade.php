@@ -3,7 +3,9 @@
     @php
         // Same condition as the aura.login-as route in routes/auth.php: that route
         // 404s outside local + .test, so the button must not render there either.
-        $localLoginAs = app()->environment('local')
+        // aura.auth.local_login = false hides the shortcut (a demo that signs in with seeded accounts).
+        $localLoginAs = config('aura.auth.local_login', true)
+            && app()->environment('local')
             && \Illuminate\Support\Str::endsWith(request()->getHost(), '.test');
 
         // Bypass TeamScope: guests have no team, and fail-closed scoping returns no users.
@@ -35,7 +37,7 @@
             <x-aura::input-label class="!mt-0" for="password" :value="__('Password')" />
 
             <x-aura::input.text id="password" class="block w-full"
-                            type="password"
+                            type="password" :reveal="true"
                             name="password"
                             placeholder="{{ __('Enter your password') }}"
                             required autocomplete="current-password" />
@@ -44,15 +46,15 @@
         </div>
 
         <div class="flex justify-between items-center">
-            <!-- Remember Me -->
-            <label for="remember_me" class="inline-flex gap-2 items-center">
-                <input id="remember_me" type="checkbox" class="w-4 h-4 rounded border-gray-300 shadow-xs text-primary-600 focus:ring-primary-500 dark:border-white/20 dark:bg-gray-800 dark:checked:bg-primary-600 dark:focus:ring-offset-gray-900" name="remember">
+            <!-- Remember Me: the whole label is the tap target, a 44px row on phones. -->
+            <label for="remember_me" class="inline-flex gap-2 items-center pr-3 -my-1 min-h-11 cursor-pointer sm:my-0 sm:min-h-0">
+                <input id="remember_me" type="checkbox" class="w-4 h-4 rounded border-gray-400 shadow-xs cursor-pointer text-primary-600 focus:ring-primary-500 dark:border-gray-500 dark:bg-gray-950/40 dark:checked:bg-primary-600 dark:focus:ring-offset-gray-900" name="remember">
                 <span class="text-sm text-gray-600 select-none dark:text-gray-300">{{ __('Remember me') }}</span>
             </label>
 
             <!-- Forgot Password? -->
             @if (Route::has('aura.password.request'))
-                <a class="text-sm font-medium rounded-md text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-900" href="{{ route('aura.password.request') }}">
+                <a class="inline-flex items-center -my-1 min-h-11 text-sm font-medium rounded-md sm:my-0 sm:min-h-0 text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-900" href="{{ route('aura.password.request') }}">
                     {{ __('Forgot your password?') }}
                 </a>
             @endif
@@ -70,19 +72,19 @@
     @endif
 
     @if($localAdmin)
-        <div class="flex gap-3 items-center mt-8" aria-hidden="true">
+        {{-- A developer shortcut, not part of the sign-in: muted, smaller (32px) and set apart by its divider. --}}
+        <div class="flex gap-3 items-center mt-10" aria-hidden="true">
             <div class="flex-1 h-px bg-gray-950/5 dark:bg-white/10"></div>
-            <span class="text-xs font-medium tracking-wider text-gray-400 uppercase dark:text-gray-500">{{ __('Local') }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ __('Local development') }}</span>
             <div class="flex-1 h-px bg-gray-950/5 dark:bg-white/10"></div>
         </div>
 
-        <div class="mt-4">
-            {{-- Same 36px height as the Log in button above. --}}
-            <x-aura::button.border href="{{ route('aura.login-as', ['id' => $localAdmin->id]) }}" class="justify-center w-full login-as-admin">
+        <div class="mt-3">
+            <x-aura::button.border size="sm" href="{{ route('aura.login-as', ['id' => $localAdmin->id]) }}" class="justify-center w-full !text-gray-600 !shadow-none dark:!text-gray-300 login-as-admin">
                 <x-slot:icon>
                     <x-aura::icon.user />
                 </x-slot>
-                {{ __('Admin') }}
+                {{ __('Log in as admin') }}
             </x-aura::button.border>
         </div>
     @endif

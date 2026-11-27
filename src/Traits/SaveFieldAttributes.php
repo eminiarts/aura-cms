@@ -33,6 +33,11 @@ trait SaveFieldAttributes
 
         static::saved(function ($post) {
             static::persistMetaFieldsOnSaved($post);
+
+            // RecordsActivity compares after the meta fields are written, whatever the listener order.
+            if (method_exists($post, 'recordActivityAfterSave')) {
+                $post->recordActivityAfterSave();
+            }
         });
     }
 
