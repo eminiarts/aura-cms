@@ -221,6 +221,14 @@ class Role extends Resource
     {
         return [
             [
+                'name' => 'Details',
+                'slug' => 'role-details',
+                'type' => 'Aura\\Base\\Fields\\Panel',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
                 'name' => 'Name',
                 'slug' => 'name',
                 'type' => 'Aura\\Base\\Fields\\Text',
@@ -276,6 +284,16 @@ class Role extends Resource
                 'on_view' => true,
             ],
             [
+                // Permissions sit in this panel rather than their own: the
+                // Full access toggle hides them, which would leave an empty panel.
+                'name' => 'Access',
+                'slug' => 'role-access',
+                'type' => 'Aura\\Base\\Fields\\Panel',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
                 // Label only; the stored slug stays super_admin.
                 'name' => 'Full access',
                 'slug' => 'super_admin',
@@ -289,6 +307,9 @@ class Role extends Resource
                 'on_view' => true,
                 'live' => true,
                 'default' => false,
+                'style' => [
+                    'width' => '50',
+                ],
             ],
             [
                 'name' => 'Global role',

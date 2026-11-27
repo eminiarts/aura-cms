@@ -2,90 +2,81 @@
 @php
     $name = 'form.fields.'  . optional($field)['slug'];
 
-    $groups = app($field['resource'])->get()->map(function($item, $key) {
-        return [
-            'name' => $item->fields['name'],
-            'description' => $item->fields['description'],
-            'slug' => $item->fields['slug'],
-            'group' => $item->group,
-        ];
-    })->groupBy('group')->toArray();
+    $abilities = \Aura\Base\Fields\Permissions::ABILITIES;
 
+    $features = collect(\Aura\Base\Facades\Aura::permissions())
+        ->map(fn ($permission, $key) => [...$permission, 'slug' => $key])
+        ->groupBy('group');
+
+    $rows = \Aura\Base\Fields\Permissions::matrix(app($field['resource'])->get()->map(fn ($item) => [
+        'name' => $item->fields['name'],
+        'description' => $item->fields['description'],
+        'slug' => $item->fields['slug'],
+        'group' => $item->group,
+    ]));
+
+    $hasOther = collect($rows)->contains(fn ($row) => $row['other'] !== []);
+
+    $slugs = fn ($items) => collect($items)->filter()->pluck('slug')->values()->all();
+
+    // __() returns a whole lang file as an array when the text names one
+    // (a group called "validation"), so keep the registered text then.
+    $translate = fn (?string $text) => is_string($translated = __($text ?? '')) ? $translated : $text;
+
+    // Slug lists for the Alpine toggles: every permission per group, the ones
+    // bulk selection may switch on (all but "scope"), and each ability column.
+    $featureGroups = $features->mapWithKeys(fn ($items, $group) => ['feature:'.$group => $slugs($items)]);
+    $groups = collect($rows)->mapWithKeys(fn ($row, $group) => ['resource:'.$group => $slugs([...array_values($row['cells']), ...$row['other']])])->merge($featureGroups);
+    $bulk = collect($rows)->mapWithKeys(fn ($row, $group) => ['resource:'.$group => $slugs([...array_values(array_diff_key($row['cells'], ['scope' => null])), ...$row['other']])])->merge($featureGroups);
+    $columns = collect($abilities)->map(fn ($label, $ability) => $slugs(array_column(array_column($rows, 'cells'), $ability)));
+
+    $checkboxClass = 'form-checkbox block size-4 shrink-0 rounded border-0 bg-white text-primary-600 shadow-xs ring-1 ring-gray-950/15 transition duration-150 cursor-pointer hover:ring-gray-950/25 checked:bg-primary-600 checked:ring-primary-600 checked:hover:bg-primary-700 checked:hover:ring-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:bg-gray-800 dark:ring-white/20 dark:hover:ring-white/30 dark:checked:bg-primary-600 dark:checked:ring-primary-600 dark:focus-visible:ring-offset-gray-900';
 @endphp
 
 <x-aura::fields.conditions :field="$field" :model="$model">
 <div class="w-full" x-data="{
     groups: @js($groups),
+    bulk: @js($bulk),
+    columns: @js($columns),
     field: @entangle($name),
     init(){
-
-        if (this.field === null) {
-            this.field = {};
-        }
-
-        // if this.field is null, set it to an empty array
-        if (Array.isArray(this.field) && this.field.length === 0) {
+        if (this.field === null || Array.isArray(this.field)) {
             this.field = {};
         }
 
         // Set the initial value of the field to false, if not set
-        for (const [key, value] of Object.entries(this.groups)) {
-            for (const [key2, value2] of Object.entries(value)) {
-                if (this.field[value2['slug']] === undefined) {
-                    this.field[value2['slug']] = false;
-                }
+        Object.values(this.groups).flat().forEach(slug => {
+            if (this.field[slug] === undefined) {
+                this.field[slug] = false;
             }
-        }
-
-        // Remove any keys from this.field that are not in the groups items (item.slug)
-        {{-- for (const [key, value] of Object.entries(this.field)) {
-            if (!this.groups.flat().map(item => item.slug).includes(key)) {
-                delete this.field[key];
-            }
-        } --}}
-    },
-    selectAll(group){
-        this.groups[group].forEach(item => {
-            if (item.slug.includes('scope')) {
-                return;
-            }
-
-            this.field[item.slug] = true;
         });
     },
-    selectAllGroups(){
-        for (const [key, value] of Object.entries(this.groups)) {
-            this.selectAll(key);
+    allOn(slugs){
+        return slugs.length > 0 && slugs.every(slug => Boolean(this.field[slug]));
+    },
+    setAll(slugs, value){
+        slugs.forEach(slug => this.field[slug] = value);
+    },
+    toggleColumn(ability){
+        this.setAll(this.columns[ability], ! this.allOn(this.columns[ability]));
+    },
+    toggleGroup(group){
+        if (this.allOn(this.bulk[group])) {
+            this.setAll(this.groups[group], false);
+        } else {
+            this.setAll(this.bulk[group], true);
         }
     },
     selectedCount(group){
-        return this.groups[group].filter(item => Boolean(this.field[item.slug])).length;
+        return this.bulk[group].filter(slug => Boolean(this.field[slug])).length;
     },
-    removeAll(group){
-        this.groups[group].forEach(item => {
-            this.field[item.slug] = false;
-        });
+    selectAllGroups(){
+        this.setAll(Object.values(this.bulk).flat(), true);
     },
     removeAllGroups(){
-        for (const [key, value] of Object.entries(this.groups)) {
-            this.removeAll(key);
-        }
+        this.setAll(Object.values(this.groups).flat(), false);
     },
 }">
-<style>
-    .aura-permissions-groups {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
-        align-items: start;
-        gap: 0.75rem;
-    }
-
-    .aura-permissions-options {
-        display: flex;
-        flex-direction: column;
-        row-gap: 0;
-    }
-</style>
 <x-aura::fields.wrapper :field="$field">
     <div class="flex items-center justify-end gap-1 mb-3">
         <button type="button" @click="removeAllGroups()" class="px-3 py-1.5 text-xs font-medium text-gray-500 transition-colors rounded-md hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100">
@@ -96,42 +87,100 @@
         </button>
     </div>
 
-    <div class="aura-permissions-groups">
-        @foreach($groups as $group => $items)
-            <section class="overflow-hidden border rounded-lg border-gray-500/20 dark:border-gray-700">
-                <div class="flex items-start justify-between min-w-0 gap-3 px-4 pt-4 pb-2">
-                    <div class="min-w-0">
-                        <h4 class="min-w-0 text-sm font-semibold leading-5 text-gray-900 break-words dark:text-gray-100">{{ \Aura\Base\Resources\Permission::displayLabel($group) }}</h4>
-                        <span class="block mt-0.5 text-[11px] font-medium text-gray-400 dark:text-gray-500">
-                            <span x-text="selectedCount('{{ $group }}')"></span> / <span>{{ count($items) }}</span>
-                        </span>
-                    </div>
-
-                    <div class="flex items-center pt-0.5 text-xs shrink-0">
-                        <button type="button" @click="selectAll('{{ $group }}')" class="font-medium text-gray-500 transition-colors whitespace-nowrap hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400">
-                            {{ __('Select all') }}
-                        </button>
-                        <button type="button" @click="removeAll('{{ $group }}')" class="pl-2 ml-2 font-medium text-gray-500 transition-colors border-l whitespace-nowrap border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:border-gray-700 dark:hover:text-gray-100">
-                            {{ __('Clear') }}
-                        </button>
-                    </div>
-                </div>
-
-                <div class="aura-permissions-options min-w-0 px-2 pb-2">
-                    @foreach($items as $item)
-                        <label for="permissions_{{ $item['slug'] }}" class="flex min-w-0 items-start gap-2.5 px-2 py-1.5 text-sm rounded-md cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/70">
-                            <input x-model="field['{{ $item['slug'] }}']" type="checkbox" id="permissions_{{ $item['slug'] }}" class="w-4 h-4 mt-0.5 bg-white rounded border-0 ring-1 ring-gray-400 shadow-xs transition duration-150 ease-in-out cursor-pointer shrink-0 form-checkbox text-primary-600 hover:ring-gray-500 checked:ring-primary-600 focus:ring-primary-500 dark:bg-gray-950/40 dark:ring-gray-500 dark:hover:ring-gray-400 dark:checked:bg-primary-600 dark:checked:ring-primary-600">
-                            <span class="min-w-0 leading-5 text-gray-700 dark:text-gray-200">
-                                <span class="block">{{ \Aura\Base\Resources\Permission::displayLabel($item['name']) }}</span>
-                                @if($item['description'])
-                                    <span class="block text-xs leading-4 text-gray-400">{{ $item['description'] }}</span>
-                                @endif
-                            </span>
-                        </label>
+    @if($features->isNotEmpty())
+        <div class="mb-4 overflow-x-auto rounded-lg border border-gray-500/20 dark:border-gray-700">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50/80 dark:bg-white/[0.03] border-b border-gray-200/80 dark:border-white/10">
+                        <th scope="col" colspan="2" class="px-4 py-2.5 text-left">
+                            <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ __('Features') }}</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                    @foreach($features as $group => $items)
+                        <tr class="transition-colors hover:bg-gray-50/80 dark:hover:bg-white/[0.04]">
+                            <th scope="row" class="px-4 py-1 text-left font-normal">
+                                <button type="button" @click="toggleGroup(@js('feature:'.$group))" title="{{ __('Toggle all :group permissions', ['group' => $translate($group)]) }}" aria-label="{{ __('Toggle all :group permissions', ['group' => $translate($group)]) }}" class="flex items-baseline gap-2 py-1 text-left whitespace-nowrap rounded-md transition-colors text-gray-900 hover:text-primary-600 dark:text-gray-100 dark:hover:text-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                                    <span class="font-medium">{{ $translate($group) }}</span>
+                                    <span class="text-[11px] font-medium text-gray-400 dark:text-gray-500">
+                                        <span x-text="selectedCount(@js('feature:'.$group))"></span>/{{ count($items) }}
+                                    </span>
+                                </button>
+                            </th>
+                            <td class="px-4 py-1.5">
+                                <div class="flex flex-wrap gap-x-4 gap-y-2">
+                                    @foreach($items as $item)
+                                        <label for="permissions_{{ $item['slug'] }}" title="{{ $translate($item['description']) }}" class="inline-flex items-center gap-2 py-1 cursor-pointer text-gray-700 dark:text-gray-300">
+                                            <input x-model="field[@js($item['slug'])]" type="checkbox" id="permissions_{{ $item['slug'] }}" class="{{ $checkboxClass }}">
+                                            <span>{{ $translate($item['name']) }}</span>
+                                            <span class="text-xs font-mono text-gray-400 dark:text-gray-500">{{ $item['slug'] }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </td>
+                        </tr>
                     @endforeach
-                </div>
-            </section>
-        @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+
+    <div class="overflow-x-auto rounded-lg border border-gray-500/20 dark:border-gray-700">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-gray-50/80 dark:bg-white/[0.03] border-b border-gray-200/80 dark:border-white/10">
+                    <th scope="col" class="px-4 py-2.5 text-left">
+                        <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ __('Resource') }}</span>
+                    </th>
+                    @foreach($abilities as $ability => $label)
+                        <th scope="col" class="px-2 py-2.5 text-center {{ $ability === 'scope' ? 'border-l border-gray-200/80 dark:border-white/10' : '' }}">
+                            <button type="button" @click="toggleColumn('{{ $ability }}')" title="{{ $ability === 'scope' ? __('Limit to records the user owns. Toggle for all resources.') : __('Toggle for all resources') }}" aria-label="{{ __('Toggle :ability for all resources', ['ability' => __($label)]) }}" class="px-1.5 py-1 text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap rounded-md transition-colors text-gray-500 hover:bg-gray-100 hover:text-primary-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                                {{ __($label) }}
+                            </button>
+                        </th>
+                    @endforeach
+                    @if($hasOther)
+                        <th scope="col" class="px-4 py-2.5 text-left border-l border-gray-200/80 dark:border-white/10">
+                            <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ __('Other') }}</span>
+                        </th>
+                    @endif
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                @foreach($rows as $group => $row)
+                    <tr class="transition-colors hover:bg-gray-50/80 dark:hover:bg-white/[0.04]">
+                        <th scope="row" class="px-4 py-1 text-left font-normal">
+                            <button type="button" @click="toggleGroup(@js('resource:'.$group))" title="{{ __('Toggle all :group permissions', ['group' => $group]) }}" aria-label="{{ __('Toggle all :group permissions', ['group' => $group]) }}" class="flex items-baseline gap-2 py-1 text-left whitespace-nowrap rounded-md transition-colors text-gray-900 hover:text-primary-600 dark:text-gray-100 dark:hover:text-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                                <span class="font-medium">{{ $group }}</span>
+                                <span class="text-[11px] font-medium text-gray-400 dark:text-gray-500">
+                                    <span x-text="selectedCount(@js('resource:'.$group))"></span>/{{ count($bulk['resource:'.$group]) }}
+                                </span>
+                            </button>
+                        </th>
+                        @foreach($abilities as $ability => $label)
+                            <td class="p-0 text-center {{ $ability === 'scope' ? 'border-l border-gray-200/80 dark:border-white/10' : '' }}">
+                                @if($item = $row['cells'][$ability])
+                                    <label for="permissions_{{ $item['slug'] }}" title="{{ $item['description'] ?: $item['name'] }}" class="flex justify-center px-2 py-2.5 cursor-pointer">
+                                        <input x-model="field[@js($item['slug'])]" type="checkbox" id="permissions_{{ $item['slug'] }}" aria-label="{{ $item['name'] }}" class="{{ $checkboxClass }}">
+                                    </label>
+                                @endif
+                            </td>
+                        @endforeach
+                        @if($hasOther)
+                            <td class="px-4 py-1.5 border-l border-gray-200/80 dark:border-white/10">
+                                @foreach($row['other'] as $item)
+                                    <label for="permissions_{{ $item['slug'] }}" title="{{ $item['description'] }}" class="flex items-center gap-2 py-1 cursor-pointer whitespace-nowrap">
+                                        <input x-model="field[@js($item['slug'])]" type="checkbox" id="permissions_{{ $item['slug'] }}" class="{{ $checkboxClass }}">
+                                        <span class="text-gray-700 dark:text-gray-200">{{ $item['name'] }}</span>
+                                    </label>
+                                @endforeach
+                            </td>
+                        @endif
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
 </x-aura::fields.wrapper>
 </div>

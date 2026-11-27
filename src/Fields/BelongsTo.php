@@ -112,7 +112,7 @@ class BelongsTo extends Field implements PreloadsTableDisplay
             // renders this raw, so escape it.
             $leading = '';
 
-            if ($related && method_exists($related, 'avatarShape') && $related->avatarShape()) {
+            if ($related instanceof Resource && $related->avatarShape()) {
                 $leading = $related->avatarHtml('xs');
             } elseif ($related && method_exists($related, 'getIcon') && (string) $related->getIcon() !== '') {
                 $leading = "<span class='aura-record-link-icon' aria-hidden='true'>".$related->getIcon().'</span>';

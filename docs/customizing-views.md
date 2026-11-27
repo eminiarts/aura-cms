@@ -415,6 +415,13 @@ class EditProduct extends BaseEdit
 }
 ```
 
+A full-page component that draws its own frame, such as a top bar and side panels, can pass `flush` to Aura's layout. The content area then renders the page without padding and without the version line, as a flex column that fills the remaining height. The page handles its own scrolling:
+
+```php
+return view('livewire.project-page')
+    ->layout('aura::components.layout.app', ['flush' => true]);
+```
+
 Use `aura::components.layout.app` when referring to Aura's package layout from `->layout()` or `#[Layout]`. Use `aura::layout.app` only where Blade expects the anonymous component alias, such as:
 
 ```blade

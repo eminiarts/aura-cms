@@ -40,6 +40,10 @@ _Avoid_: custom role, local role
 When a team defines a role with the same slug as a global role, the team's definition replaces the global one inside that team; other teams are unaffected. Deleting the shadow falls back to the global definition. A role's identity within a team is its slug.
 _Avoid_: overriding (ambiguous), forking
 
+**Custom Permission**:
+A permission an application or plugin defines in code for a capability that is not resource CRUD, such as running an eval. Roles grant it like any other permission. Admins grant it but cannot create it.
+_Avoid_: ability (Laravel's broader term), feature flag
+
 **Membership**:
 A user's belonging to a team, always with exactly one role in that team. Global Admins entering a team they don't belong to are visiting, not members.
 _Avoid_: association, assignment
