@@ -98,7 +98,7 @@ final class RecordViewSections
         }
 
         // Values the header facts strip shows are not repeated, as on the record layout.
-        $shownElsewhere = array_column(self::header($fields, $model), 'slug');
+        $shownElsewhere = self::headerFactSlugs($fields, $model);
 
         if ($shownElsewhere !== []) {
             $sections = self::partition($fields, $model, $shownElsewhere) ?? $sections;
@@ -149,6 +149,22 @@ final class RecordViewSections
         }
 
         return array_values(array_filter([$number, $status]));
+    }
+
+    /**
+     * Slugs the default header's facts strip shows, which the details column
+     * then leaves out. A resource with its own viewHeaderView() may not render
+     * them, so nothing is left out there.
+     *
+     * @return array<int, string>
+     */
+    public static function headerFactSlugs(array $fields, $model): array
+    {
+        if (! method_exists($model, 'viewHeaderView') || $model->viewHeaderView() !== 'aura::livewire.resource.view-header') {
+            return [];
+        }
+
+        return array_column(self::header($fields, $model), 'slug');
     }
 
     /**

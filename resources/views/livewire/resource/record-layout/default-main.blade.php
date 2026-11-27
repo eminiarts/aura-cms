@@ -42,7 +42,7 @@
         // When nothing else is left, the page renders header and related records without a details column.
         if (! $inModal && $formFrame === null) {
             $shownElsewhere = array_merge(
-                array_column(\Aura\Base\RecordLayout\RecordViewSections::header($this->viewFields, $model), 'slug'),
+                \Aura\Base\RecordLayout\RecordViewSections::headerFactSlugs($this->viewFields, $model),
                 array_map(fn ($card) => $card['field']['slug'], $cards),
             );
 

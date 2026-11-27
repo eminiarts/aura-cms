@@ -25,9 +25,14 @@ class Number extends Field
         $hasDecimals = isset($field['decimals']) && $field['decimals'] !== '';
         $hasSeparator = isset($field['thousands_separator']) && $field['thousands_separator'] !== '';
 
+        // A host display_view or index component gets the stored value, as before.
+        if (optional($field)['display_view'] || $this->index) {
+            return parent::display($field, $value, $model);
+        }
+
         if ($isNumber && ($hasDecimals || $hasSeparator)) {
             $decimals = $hasDecimals
-                ? (int) $field['decimals']
+                ? max(0, (int) $field['decimals'])
                 : (str_contains((string) $value, '.') ? strlen(substr(strrchr((string) $value, '.'), 1)) : 0);
 
             if (! empty($field['trim_zero_decimals']) && fmod((float) $value, 1.0) === 0.0) {

@@ -63,3 +63,18 @@ test('a related-record card needs the view right on the related record', functio
 
     expect(RecordViewSections::cards($owner->viewFields(), $owner))->toBe([]);
 });
+
+test('details keep the header facts when the resource renders its own header', function () {
+    $default = new VisibilityHeaderResource;
+
+    $custom = new class extends VisibilityHeaderResource
+    {
+        public function viewHeaderView()
+        {
+            return 'custom.view-header';
+        }
+    };
+
+    expect(RecordViewSections::headerFactSlugs($default->viewFields(), $default))->toBe(['stage'])
+        ->and(RecordViewSections::headerFactSlugs($custom->viewFields(), $custom))->toBe([]);
+});
