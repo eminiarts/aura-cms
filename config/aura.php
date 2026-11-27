@@ -196,6 +196,10 @@ return [
         'layout' => 'aura::layout.app',
         'login-layout' => 'aura::layout.login',
         'logo' => 'aura::application-logo',
+
+        // A view that replaces the admin sidebar for signed-in users, e.g. 'layouts.sidebar'.
+        // null keeps Aura's navigation. The view is included inside the layout's flex row.
+        'navigation' => null,
     ],
 
     /*

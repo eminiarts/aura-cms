@@ -124,35 +124,37 @@
     @endif
 
 
-    {{-- Same field gutter as the edit page: panels bring px-2, so their cards line up with the title.
-         A block, not flex, so the cards' bottom margins keep collapsing into one section gap. --}}
-    <div class="-mx-2">
-    @foreach($this->fieldsForView as $key => $field)
-        <style>
-            #resource-field-{{ optional($field)['slug'] }}-wrapper {
-                width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
-                @if(optional($field)['type'] === 'Aura\\Base\\Fields\\Panel')
-                    margin-bottom: var(--aura-layout-gap, 1rem);
-                @elseif(optional($field)['type'] === 'Aura\\Base\\Fields\\Group')
-                    margin-bottom: var(--aura-section-gap, 1rem);
+    {{-- Each field view renders its own #resource-field-…-wrapper with its width; a second wrapper here would halve a 50% panel again.
+         Panels bring px-2, so with -mx-2 their cards line up with the title. --}}
+    <div class="flex flex-wrap items-start -mx-2">
+        @foreach($this->fieldsForView as $key => $field)
+            {{-- Flex items do not collapse margins, so the gap replaces the card's own mb-8 instead of adding to it. --}}
+            @if(optional($field)['type'] === 'Aura\\Base\\Fields\\Panel')
+                <style>
+                    #resource-field-{{ optional($field)['slug'] }}-wrapper > .aura-card {
+                        margin-bottom: var(--aura-layout-gap, 1rem);
+                    }
+                </style>
+            @elseif(optional($field)['type'] === 'Aura\\Base\\Fields\\Group')
+                <style>
+                    #resource-field-{{ Str::slug(optional($field)['slug']) }}-wrapper {
+                        margin-bottom: var(--aura-section-gap, 1rem);
+                    }
+                </style>
+            @endif
+
+            @checkCondition($model, $field, $form)
+                @if(optional($field)['type'] === 'Aura\\Base\\Fields\\View')
+                    {{-- A View field (a settings page's own block) renders no wrapper, so it gets a full row and the panels' px-2. --}}
+                    <div class="w-full px-2" wire:key="resource-field-{{ $key }}">
+                        <x-dynamic-component :component="$field['field']->edit()" mode="edit" :field="$field" :form="$form" />
+                    </div>
+                @else
+                    <x-dynamic-component :component="$field['field']->edit()" mode="edit" :field="$field" :form="$form"
+                        wire:key="resource-field-{{ $key }}" />
                 @endif
-            }
-
-            @media screen and (max-width: 768px) {
-                #resource-field-{{ optional($field)['slug'] }}-wrapper {
-                    width: 100%;
-                }
-            }
-        </style>
-
-        @checkCondition($model, $field, $form)
-            {{-- A View field (a settings page's own block) brings no gutter, so it gets the panels' px-2. --}}
-            <div wire:key="resource-field-{{ $key }}" @class(['w-full', 'px-2' => optional($field)['type'] === 'Aura\\Base\\Fields\\View'])
-            id="resource-field-{{ optional($field)['slug'] }}-wrapper">
-            <x-dynamic-component :component="$field['field']->edit()" mode="edit" :field="$field" :form="$form" />
-            </div>
-        @endcheckCondition
-    @endforeach
+            @endcheckCondition
+        @endforeach
     </div>
 
 </div>
