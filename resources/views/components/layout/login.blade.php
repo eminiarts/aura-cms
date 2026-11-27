@@ -81,7 +81,7 @@
             $loginLine = $loginLine === false ? null : __(is_string($loginLine) && $loginLine !== '' ? $loginLine : 'Every record in one place.');
             // aura.theme.login-subline: one quieter line under it, none by default.
             $loginSubline = filled(config('aura.theme.login-subline')) ? __(config('aura.theme.login-subline')) : null;
-            // The mark before the line takes the active sidebar item's mark color.
+            // The mark before the line takes the sidebar type's accent color.
             $markColor = ['light' => 'bg-primary-600', 'primary' => 'bg-white', 'dark' => 'bg-primary-400'][$sidebarType] ?? 'bg-primary-400';
             $markDarkColor = ['light' => 'dark:bg-primary-600', 'primary' => 'dark:bg-white', 'dark' => 'dark:bg-primary-400'][$sidebarDarkType] ?? 'dark:bg-primary-400';
             // aura.theme.login-image: one image, or one per color scheme.
