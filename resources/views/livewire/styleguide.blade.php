@@ -312,7 +312,7 @@
                 <span class="flex gap-2 items-center text-sm text-gray-600 dark:text-gray-300"><span class="block h-5 aura-mark bg-primary-600 dark:bg-primary-400"></span>.aura-mark — 3px, ends cut at 60° (--aura-mark-clip), one leg of the wordmark</span>
             </div>
             <ul class="grid grid-cols-1 gap-x-6 gap-y-1 mt-3 text-sm text-gray-600 sm:grid-cols-2 dark:text-gray-300">
-                <li>{{ __('Position: the mark (.aura-mark) on the active navigation item (a bar of its own, 4px before the pill) and on selected rows, the selected tab') }}</li>
+                <li>{{ __('Position: the mark (.aura-mark) on selected rows and the selected tab') }}</li>
                 <li>{{ __('Action: the one primary button per screen (create and save; a view page has none)') }}</li>
                 <li>{{ __('Checked controls, focus rings, text links in auth and settings copy, the required asterisk on form labels (primary-600, dark primary-400)') }}</li>
                 <li>{{ __('Live figures: dashboard trend lines') }}</li>
@@ -1086,7 +1086,7 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">09</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Sidebar') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Real navigation.item / navigation.heading components inside the three sidebar themes (config: sidebar-type). Standard size: 32px items, 13px medium labels, 18px icons at 1.5 stroke; group labels 12px medium in sentence case. Every sidebar type marks the active item with the mark (.aura-mark, one Λ leg, 3px with 60° cuts) 4px before its tinted pill: white on the primary sidebar, primary-600 on the light one, primary-400 on the dark one, whose surface is gray-900 of the chosen gray palette rather than a fixed near-black. The first item shows the active state.') }}
+            {{ __('Real navigation.item / navigation.heading components inside the three sidebar themes (config: sidebar-type). Standard size: 32px items, 13px medium labels, 18px icons at 1.5 stroke; group labels 12px medium in sentence case. Every sidebar type marks the active item with a tinted pill only: white/15 on the primary sidebar, primary-50 on the light one, white/10 on the dark one, whose surface is gray-900 of the chosen gray palette rather than a fixed near-black. The first item shows the active state.') }}
         </p>
 
         <div class="grid grid-cols-1 gap-4 mt-6 md:grid-cols-3">
