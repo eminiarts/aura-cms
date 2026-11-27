@@ -21,7 +21,7 @@ class Text extends Field
      */
     public function display($field, $value, $model)
     {
-        if (! optional($field)['display_view'] && is_string($value) && ($label = $this->urlLabel(trim($value))) !== null) {
+        if (! optional($field)['display_view'] && ! $this->index && is_string($value) && ($label = $this->urlLabel(trim($value))) !== null) {
             $url = e(trim($value));
 
             return "<a class='aura-link' href='{$url}' title='{$url}' target='_blank' rel='noopener noreferrer'>".e($label).'</a>';

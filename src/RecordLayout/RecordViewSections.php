@@ -2,6 +2,7 @@
 
 namespace Aura\Base\RecordLayout;
 
+use Aura\Base\ConditionalLogic;
 use Aura\Base\Fields\BelongsTo;
 use Aura\Base\Fields\Number;
 use Aura\Base\Fields\Panel;
@@ -41,7 +42,7 @@ final class RecordViewSections
      */
     public static function cards(array $fields, $model): array
     {
-        $flat = self::flatten($fields);
+        $flat = self::flatten($fields, $model);
 
         if ($flat === null) {
             return [];
@@ -62,7 +63,8 @@ final class RecordViewSections
 
             $related = ($id !== null && $id !== '' && class_exists($field['resource'])) ? $field['resource']::find($id) : null;
 
-            if (! $related instanceof Resource) {
+            // The card shows the related record's own values, so it needs the same right as its page.
+            if (! $related instanceof Resource || ! (auth()->user()?->can('view', $related) ?? false)) {
                 continue;
             }
 
@@ -115,7 +117,7 @@ final class RecordViewSections
      */
     public static function header(array $fields, $model): array
     {
-        $flat = self::flatten($fields);
+        $flat = self::flatten($fields, $model);
 
         if ($flat === null || $flat === []) {
             return [];
@@ -218,16 +220,20 @@ final class RecordViewSections
 
     /**
      * The record's value fields, panels unwrapped. Null when the tree holds
-     * other groups (tabs), the custom-layout case.
+     * other groups (tabs), the custom-layout case. Fields hidden by their own
+     * or their panel's conditional logic are left out, as on the details column,
+     * so header facts and cards never show a value the viewer may not see.
      *
      * @return array<int, array<string, mixed>>|null
      */
-    private static function flatten(array $fields): ?array
+    private static function flatten(array $fields, $model): ?array
     {
         $flat = [];
 
         foreach ($fields as $field) {
             if (($field['field'] ?? null) instanceof Panel) {
+                $panelShown = ConditionalLogic::shouldDisplayField($model, $field);
+
                 foreach ($field['fields'] ?? [] as $child) {
                     if (self::isRelatedList($child)) {
                         continue;
@@ -237,7 +243,9 @@ final class RecordViewSections
                         return null;
                     }
 
-                    $flat[] = $child;
+                    if ($panelShown && ConditionalLogic::shouldDisplayField($model, $child)) {
+                        $flat[] = $child;
+                    }
                 }
 
                 continue;
@@ -251,7 +259,9 @@ final class RecordViewSections
                 return null;
             }
 
-            $flat[] = $field;
+            if (ConditionalLogic::shouldDisplayField($model, $field)) {
+                $flat[] = $field;
+            }
         }
 
         return $flat;

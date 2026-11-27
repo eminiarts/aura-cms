@@ -122,7 +122,7 @@ test('removing a permission from a role blocks the affected page for a member ho
 
     $granted = visit('/admin/gallery-page');
 
-    $granted->assertSee('GalleryPages');
+    $granted->assertSee('Gallery-Pages');
 
     // The team Super Admin removes the viewAny permission through the Role edit
     // form's matrix.
@@ -145,5 +145,5 @@ test('removing a permission from a role blocks the affected page for a member ho
 
     $blocked->assertSee('403')
         ->assertSee('This action is unauthorized')
-        ->assertDontSee('GalleryPages');
+        ->assertDontSee('Gallery-Pages');
 });

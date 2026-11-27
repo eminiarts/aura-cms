@@ -24,7 +24,9 @@
     $choices = collect($options)->map(fn ($option) => ['key' => (string) $option['key'], 'label' => __($option['value']), 'color' => $option['color'] ?? null])->values();
     $keys = ($required ? collect() : collect([''])) ->merge($choices->pluck('key'))->values();
   @endphp
-  <div class="relative" wire:ignore data-select-tags
+  {{-- wire:ignore keeps Alpine's state across updates; the key remounts the control when the server-side
+       options or disabled state change (a live field the options or disabled closure depend on). --}}
+  <div class="relative" wire:ignore wire:key="select-tags-{{ $slug }}-{{ md5(json_encode([$choices, $disabled])) }}" data-select-tags
     x-data="{
       open: false,
       active: 0,

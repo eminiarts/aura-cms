@@ -11,8 +11,9 @@
     $pluralLabel = Str::lower(__($tableModel->pluralName()));
     $singularLabel = Str::lower(__($tableModel->singularName()));
 
-    // The stacked phone list mirrors the default row; a resource with its own row view keeps its table (scrollable).
-    $stackOnMobile = ! $isEmpty && $this->settings['views']['row'] === 'aura::components.table.row';
+    // The stacked phone list mirrors the default row; a resource with its own row view keeps its table (scrollable),
+    // and so does a table that opens records in a modal: the stacked rows are page links.
+    $stackOnMobile = ! $isEmpty && $this->settings['views']['row'] === 'aura::components.table.row' && ! $this->settings['view_in_modal'];
 
     // Phone rows lead with the record's display name (the record page H1) when the resource defines one;
     // the generic "Type (#id)" fallback is no name, so those rows keep leading with their first column.
